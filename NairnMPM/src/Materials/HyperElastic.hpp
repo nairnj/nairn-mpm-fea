@@ -31,17 +31,20 @@ class HyperElastic : public MaterialBase
         // initialize
         virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
-        virtual void SetInitialParticleState(MPMBase *,int) const;
+        virtual void SetInitialParticleState(MPMBase *,int,int) const;
     
 		// Methods (make virtual if any subclass needs them)
-        double IncrementDeformation(MPMBase *,Matrix3,Tensor *,int) const;
-		double GetResidualStretch(MPMBase *,double &,ResidualStrains *) const;
+		virtual double GetIncrementalResJ(MPMBase *,ResidualStrains *) const;
+		virtual void TrackResidualStrain(MPMBase *,double,int) const;
+		virtual void BeginActivePhase(MPMBase *,int,int) const;
+		virtual double IncrementDeformation(MPMBase *,Matrix3,Tensor *,int) const;
+		virtual double GetResidualStretch(MPMBase *,double &,ResidualStrains *) const;
         virtual double GetCpMinusCv(MPMBase *) const;
     
         // Accessors
         virtual double GetVolumetricTerms(double,double) const;
         virtual void GetNewtonPressureTerms(double,double,double &,double &) const;
-        virtual double GetCurrentRelativeVolume(MPMBase *) const;
+        virtual double GetCurrentRelativeVolume(MPMBase *,int) const;
 		virtual int AltStrainContains(void) const;
     
     protected:
@@ -52,6 +55,8 @@ class HyperElastic : public MaterialBase
         int UofJOption;             // pick U(J) function
         double Ksp;                 // specific bulk modulus
         double Ka2sp;               // For Cp-Cv
+	
+		int J_History;				// HE material track J in this variable and Jres in next one
 };
 
 #endif

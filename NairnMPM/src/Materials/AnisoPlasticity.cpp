@@ -24,6 +24,7 @@
 #include "Exceptions/CommonException.hpp"
 #include "System/UnitsController.hpp"
 #include "Exceptions/MPMWarnings.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"		// only need to trial solution method
 
 #define ITERATIVE_STRESS_UPDATE
 int iterSteps = 10;
@@ -95,34 +96,44 @@ const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
 	// check at least some yielding
 	if(syzz<0. && syxx<0. && syyy<0. && tyxy<0. && tyxz<0. && tyyz<0.)
 		return "No yield stresses were defined";
+	
+	// check non zeros
+	if(syzz==0. || syxx==0. || syyy==0. || tyxy==0. || tyxz==0. || tyyz==0.)
+		return "No yield stresses can be zero";
 
-	// check A is positive semi definite
-	double rsxx=0.,rsyy=0.,rszz=0.;
-	if(syxx>=0.)
-		rsxx=1./(syxx*syxx);
-	if(syyy>=0.)
-		rsyy=1./(syyy*syyy);
-	if(syzz>=0.)
-		rszz=1./(syzz*syzz);
-	double arg = rsxx*rsxx + rsyy*rsyy + rszz*rszz - rsyy*rsxx - rszz*rsxx - rsyy*rszz ;
-	double fgh = 0.5*(rsxx+rsyy+rszz);
-	if(arg<0.) return "Hill plastic potential is not postive semidefinite (1)";
-	if(fgh-sqrt(arg)<0.) return "Hill plastic potential is not postive semidefinite (2)";
+	// check A is positive semi definite (watching for round off error is all the same)
+	if(syzz>0. && syxx>0. && syyy>0. && syxx==syyy && syxx==syzz)
+	{	// OK if all the same
+	}
+	else
+	{	double rsxx=0.,rsyy=0.,rszz=0.;
+		if(syxx>0.)
+			rsxx=1./(syxx*syxx);
+		if(syyy>0.)
+			rsyy=1./(syyy*syyy);
+		if(syzz>0.)
+			rszz=1./(syzz*syzz);
+		// check all the same
+		double arg = rsxx*rsxx + rsyy*rsyy + rszz*rszz - rsyy*rsxx - rszz*rsxx - rsyy*rszz ;
+		double fgh = 0.5*(rsxx+rsyy+rszz);
+		if(arg<0.) return "Hill plastic potential is not postive semidefinite (1)";
+		if(fgh-sqrt(arg)<0.) return "Hill plastic potential is not postive semidefinite (2)";
+	}
 	
 	// reciprocals of reduced normal yield stresses
-	if(syxx>=0.)
+	if(syxx>0.)
     {	syxxred2=rho/syxx;
 		syxxred2*=syxxred2;
 	}
 	else
 		syxxred2=0.;		// 1/inf^2
-	if(syyy>=0.)
+	if(syyy>0.)
     {	syyyred2=rho/syyy;
 		syyyred2*=syyyred2;
 	}
 	else
 		syyyred2=0.;		// 1/inf^2
-	if(syzz>=0.)
+	if(syzz>0.)
 	{	syzzred2=rho/syzz;
 		syzzred2*=syzzred2;
 	}
@@ -225,7 +236,7 @@ int AnisoPlasticity::SizeOfMechanicalProperties(int &altBufferSize) const
 }
 
 // Get current anisotropic properties (NULL on memory error)
-void *AnisoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
+void *AnisoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer,int offset) const
 {
 	// large rotation does not need to rotate stiffness matrix
 	if(useLargeRotation)
@@ -338,7 +349,7 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 
 	// Step 3: Rotation for plastic potential (not needed here because using material axes)
 	
     // Step 4: Calculate plastic potential f
-	UpdateTrialAlpha(mptr,np,&(p->hp));
+	UpdateTrialAlpha(mptr,np,&(p->hp),0);
 	double sAstrial = GetMagnitudeHill(strial,np);
 	double ftrial = sAstrial - GetYield(&(p->hp));
 	
@@ -429,7 +440,7 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 
     IncrementHeatEnergy(mptr,res->dT,0.,dispEnergy);
 	
 	// Step 11: update internal variables
-	UpdatePlasticInternal(mptr,np,&(p->hp));
+	UpdatePlasticInternal(mptr,np,&(p->hp),0);
 }
 
 // Get sqrt(s As) where s is stress in material axis system
@@ -565,7 +576,7 @@ double AnisoPlasticity::LRSolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Ma
 			//GetDfCdf(strial,np,p);
 			//UpdateStress(strial,&stk,lambdaInitial,np,p);
 			//GetDfCdf(&stk,np,p);
-			UpdateTrialAlpha(mptr,np,lambdaInitial,&(p->hp));
+			UpdateTrialAlpha(mptr,np,lambdaInitial,&(p->hp),0);
 			return lambdaInitial;
 		}
 	}
@@ -611,9 +622,12 @@ double AnisoPlasticity::LRSolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Ma
 				if(step>50)
 				{	// if fails, use current lambda2, which will be the minimium f found so far
 					if(warnings.Issue(warnNonconvergence,1)==GAVE_WARNING)
-					{	mptr -> Describe();
-						cout << "# Using minimum lambda while increasing = " << lambda2 << " with f = " << f2 << endl;
-						LRPrintFk(mptr,strial,stk,lambda2,np,p,ftrial,lambdaInitial);
+					{
+#pragma omp critical (output)
+						{	mptr -> Describe();
+							cout << "# Using minimum lambda while increasing = " << lambda2 << " with f = " << f2 << endl;
+							LRPrintFk(mptr,strial,stk,lambda2,np,p,ftrial,lambdaInitial);
+						}
 					}
 					return lambda2;
 				}
@@ -649,9 +663,12 @@ double AnisoPlasticity::LRSolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Ma
 				if(step>50)
 				{	// if fails, use current lambda1, which will be the minimium f found so far
 					if(warnings.Issue(warnNonconvergence,1)==GAVE_WARNING)
-					{	mptr -> Describe();
-						cout << "# Using minimum lambda while decreasing = " << lambda1 << " with f = " << f1 << endl;
-						LRPrintFk(mptr,strial,stk,lambda1,np,p,ftrial,lambdaInitial);
+					{	
+#pragma omp critical (output)
+						{	mptr -> Describe();
+							cout << "# Using minimum lambda while decreasing = " << lambda1 << " with f = " << f1 << endl;
+							LRPrintFk(mptr,strial,stk,lambda1,np,p,ftrial,lambdaInitial);
+						}
 					}
 					return lambda1;
 				}
@@ -683,9 +700,12 @@ double AnisoPlasticity::LRSolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Ma
 				{	// Probably solution. Just return the current value which is likely the
 					// minimum of the parabola
 					if(warnings.Issue(warnNonconvergence,1)==GAVE_WARNING)
-					{	mptr -> Describe();
-						cout << "# Using minimum lambda in parabola = " << lambda2 << " with f = " << f2 << endl;
-						LRPrintFk(mptr,strial,stk,lambda2,np,p,ftrial,lambdaInitial);
+					{	
+#pragma omp critical (output)
+						{	mptr -> Describe();
+							cout << "# Using minimum lambda in parabola = " << lambda2 << " with f = " << f2 << endl;
+							LRPrintFk(mptr,strial,stk,lambda2,np,p,ftrial,lambdaInitial);
+						}
 					}
 					return lambda2;
 				}
@@ -753,15 +773,18 @@ double AnisoPlasticity::LRSolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Ma
 	
 	if(step>20)
 	{	if(warnings.Issue(warnNonconvergence,2)==GAVE_WARNING)
-		{	mptr -> Describe();
-			cout << "# Using final lambda = " << lambdak << " with f = " << fk << endl;
-			LRPrintFk(mptr,strial,stk,lambdak,np,p,ftrial,lambdaInitial);
+		{	
+#pragma omp critical (output)
+			{	mptr -> Describe();
+				cout << "# Using final lambda = " << lambdak << " with f = " << fk << endl;
+				LRPrintFk(mptr,strial,stk,lambdak,np,p,ftrial,lambdaInitial);
+			}
 		}
 	}
 	
 	// output df (from last lambdak), alpha (here with last lambdak), and lambdak (the return value)
 	LRUpdateStress(strial,stk,lambdak,np,p);
-	UpdateTrialAlpha(mptr,np,lambdak,&(p->hp));
+	UpdateTrialAlpha(mptr,np,lambdak,&(p->hp),0);
 	return lambdak;
 }
 
@@ -821,7 +844,10 @@ void AnisoPlasticity::LRUpdateStress(Matrix3 &strial,Matrix3 &stk,double lambda,
 	
 	// if use all steps print warning
 	if(warnings.Issue(warnNonconvergence,3)==GAVE_WARNING)
-	{	cout << "# Failed to update stress in " << iterSteps << " steps with final Delta = " << sqrt(diffnorm) << endl;
+	{	
+#pragma omp critical (output)
+		{	cout << "# Failed to update stress in " << iterSteps << " steps with final Delta = " << sqrt(diffnorm) << endl;
+		}
 	}
 #else
 	// Now get stress using current slopes
@@ -847,7 +873,7 @@ double AnisoPlasticity::LRGetFkFromLambdak(MPMBase *mptr,Matrix3 &strial,Matrix3
 	LRUpdateStress(strial,stk,lambda,np,p);
 	
 	// update alpha using new lambda and -h from most recent LRGetDfDsigma()
-	UpdateTrialAlpha(mptr,np,lambda,&(p->hp));
+	UpdateTrialAlpha(mptr,np,lambda,&(p->hp),0);
 	
 	// update fk using new stress and alpha
 	return GetMagnitudeHill(stk,np) - GetYield(&(p->hp));
@@ -867,7 +893,7 @@ double AnisoPlasticity::LRPrintFk(MPMBase *mptr,Matrix3 &strial,Matrix3 &stk,
 	}
 	// resent
 	LRUpdateStress(strial,stk,lambda,np,p);
-	UpdateTrialAlpha(mptr,np,lambda,&(p->hp));
+	UpdateTrialAlpha(mptr,np,lambda,&(p->hp),0);
 }
 
 #pragma mark AnisoPlasticity::Methods (Small Rotation)
@@ -953,7 +979,7 @@ void AnisoPlasticity::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTim
 	p->rzyx[5][5] = p->rzyx[0][0] - p->rzyx[0][1];
 
     // Step 4: Calculate plastic potential f
-	UpdateTrialAlpha(mptr,np,&(p->hp));
+	UpdateTrialAlpha(mptr,np,&(p->hp),0);
 	Tensor srot;
 	double sAstrial = GetMagnitudeRotatedHill(&stk,&srot,np,p);
 	double ftrial = sAstrial - GetYield(&(p->hp));
@@ -1022,7 +1048,7 @@ void AnisoPlasticity::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTim
     IncrementHeatEnergy(mptr,res->dT,0.,dispEnergy);
 
 	// Step 11: update internal variables
-	UpdatePlasticInternal(mptr,np,&(p->hp));
+	UpdatePlasticInternal(mptr,np,&(p->hp),0);
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -1107,7 +1133,7 @@ void AnisoPlasticity::SRConstitutiveLaw3D(MPMBase *mptr,Matrix3 du,double delTim
 	RtotT.GetRStress(p->rzyx);
 	
     // Step 4: Calculate plastic potential f
-	UpdateTrialAlpha(mptr,np,&(p->hp));
+	UpdateTrialAlpha(mptr,np,&(p->hp),0);
 	Tensor srot;
 	double sAstrial = GetMagnitudeRotatedHill(&stk,&srot,np,p);
 	double ftrial = sAstrial - GetYield(&(p->hp));
@@ -1180,7 +1206,7 @@ void AnisoPlasticity::SRConstitutiveLaw3D(MPMBase *mptr,Matrix3 du,double delTim
     IncrementHeatEnergy(mptr,res->dT,0.,dispEnergy);
 	
 	// Step 11: update internal variables
-	UpdatePlasticInternal(mptr,np,&(p->hp));
+	UpdatePlasticInternal(mptr,np,&(p->hp),0);
 }
 
 // Get sqrt(s As) and also return rotated stresses in case caller needs them
@@ -1280,7 +1306,7 @@ void AnisoPlasticity::GetDfDsigma(Tensor *st0,int np,AnisoPlasticProperties *p) 
 			dfdtyzrot = tyyzred2*srot.yz / rootSAS;
 			dfdtxzrot = tyxzred2*srot.xz / rootSAS;
 			
-			// rotate to analysis coordinates df = Rsig^-1^T dfrot = Re ftot, which is transpose of rzyx array
+			// rotate to analysis coordinates df = Rsig^-1^T dfrot = Re dfrot, which is transpose of rzyx array
 			p->dfds.xx = p->rzyx[0][0]*dfdsxxrot+p->rzyx[1][0]*dfdsyyrot+p->rzyx[2][0]*dfdszzrot
 							+p->rzyx[3][0]*dfdtyzrot+p->rzyx[4][0]*dfdtxzrot+p->rzyx[5][0]*dfdtxyrot;
 			p->dfds.yy = p->rzyx[0][1]*dfdsxxrot+p->rzyx[1][1]*dfdsyyrot+p->rzyx[2][1]*dfdszzrot
@@ -1323,6 +1349,46 @@ void AnisoPlasticity::GetDfDsigma(Tensor *st0,int np,AnisoPlasticProperties *p) 
 // Ouptut is lambdak, final df, final alpha
 double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tensor *strial,AnisoPlasticProperties *p) const
 {
+	if(fmobj->dflag[7]!=0)
+	{	// solve here
+		Matrix3 *Rtot = mptr->GetRtotPtr();
+		// Get 6X6 rotation matrix
+		double R[6][6];
+		Rtot->GetRStrain(R);
+		
+		// Now find A' = Re A Re^T
+		double Am[6][6],Ap[6][6];
+		Am[0][0] = gTerm+hTerm;
+		Am[0][1] = -hTerm;
+		Am[0][2] = -gTerm;
+		Am[1][0] = -hTerm;
+		Am[1][1] = fTerm+hTerm;
+		Am[1][2] = -fTerm;
+		Am[2][0] = -gTerm;
+		Am[2][1] = -fTerm;
+		Am[2][2] = fTerm+gTerm;
+		Am[3][3] = tyyzred2;
+		Am[4][4] = tyxzred2;
+		Am[5][5] = tyxyred2;
+		
+		// find Re A Re^T exploiting known zeros in Am
+		int i,j,k,k3,l;
+		for(i=0;i<6;i++)
+		{	for(j=i;j<6;j++)
+			{	double cterm = 0.;
+				for(k=0;k<3;k++)
+				{	k3 = k+3;
+					cterm += R[i][k3]*R[j][k3]*Am[k3][k3];
+					for(l=0;l<3;l++)
+						cterm += R[i][k]*R[j][l]*Am[k][l];
+				}
+				Ap[i][j] = cterm;
+			}
+		}
+
+		return 0.;
+	}
+	
 	int step;
 	double lambda1,lambda2,f1,f2;
 	
@@ -1351,7 +1417,7 @@ double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tens
 	//GetDfCdf(&stk,np,p);
 
 	// Find f using new slopes at lambda1
-	//UpdateTrialAlpha(mptr,np,lambda2,&(p->hp));
+	//UpdateTrialAlpha(mptr,np,lambda2,&(p->hp),0);
 	//Tensor srot;
 	//f2 = GetMagnitudeRotatedHill(&stk,&srot,np,p) - GetYield(&(p->hp));
 	
@@ -1387,7 +1453,7 @@ double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tens
 			//GetDfCdf(strial,np,p);
 			//UpdateStress(strial,&stk,lambdaInitial,np,p);
 			//GetDfCdf(&stk,np,p);
-			UpdateTrialAlpha(mptr,np,lambdaInitial,&(p->hp));
+			UpdateTrialAlpha(mptr,np,lambdaInitial,&(p->hp),0);
 			cout << " # Failed to bracket in 50 steps" << endl;
 			return lambdaInitial;
 		}
@@ -1434,9 +1500,12 @@ double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tens
 				if(step>50)
 				{	// if fails, use current lambda2, which will be the minimium f found so far
 					if(warnings.Issue(warnNonconvergence,1)==GAVE_WARNING)
-					{	mptr -> Describe();
-						cout << "# Using minimum lambda while increasing = " << lambda2 << " with f = " << f2 << endl;
-						SRPrintFk(mptr,strial,&stk,lambda2,np,p,ftrial,lambdaInitial);
+					{	
+#pragma omp critical (output)
+						{	mptr -> Describe();
+							cout << "# Using minimum lambda while increasing = " << lambda2 << " with f = " << f2 << endl;
+							SRPrintFk(mptr,strial,&stk,lambda2,np,p,ftrial,lambdaInitial);
+						}
 					}
 					return lambda2;
 				}
@@ -1472,9 +1541,12 @@ double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tens
 				if(step>50)
 				{	// if fails, use current lambda1, which will be the minimium f found so far
 					if(warnings.Issue(warnNonconvergence,1)==GAVE_WARNING)
-					{	mptr -> Describe();
-						cout << "# Using minimum lambda while decreasing = " << lambda1 << " with f = " << f1 << endl;
-						SRPrintFk(mptr,strial,&stk,lambda1,np,p,ftrial,lambdaInitial);
+					{	
+#pragma omp critical (output)
+						{	mptr -> Describe();
+							cout << "# Using minimum lambda while decreasing = " << lambda1 << " with f = " << f1 << endl;
+							SRPrintFk(mptr,strial,&stk,lambda1,np,p,ftrial,lambdaInitial);
+						}
 					}
 					return lambda1;
 				}
@@ -1506,9 +1578,12 @@ double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tens
 				{	// Probably solution. Just return the current value which is likely the
 					// minimum of the parabola
 					if(warnings.Issue(warnNonconvergence,1)==GAVE_WARNING)
-					{	mptr -> Describe();
-						cout << "# Using minimum lambda in parabola = " << lambda2 << " with f = " << f2 << endl;
-						SRPrintFk(mptr,strial,&stk,lambda2,np,p,ftrial,lambdaInitial);
+					{	
+#pragma omp critical (output)
+						{	mptr -> Describe();
+							cout << "# Using minimum lambda in parabola = " << lambda2 << " with f = " << f2 << endl;
+							SRPrintFk(mptr,strial,&stk,lambda2,np,p,ftrial,lambdaInitial);
+						}
 					}
 					return lambda2;
 				}
@@ -1576,15 +1651,18 @@ double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tens
 	
 	if(step>20)
 	{	if(warnings.Issue(warnNonconvergence,2)==GAVE_WARNING)
-		{	mptr -> Describe();
-			cout << "# Using final lambda = " << lambdak << " with f = " << fk << endl;
-			SRPrintFk(mptr,strial,&stk,lambdak,np,p,ftrial,lambdaInitial);
+		{	
+#pragma omp critical (output)
+			{	mptr -> Describe();
+				cout << "# Using final lambda = " << lambdak << " with f = " << fk << endl;
+				SRPrintFk(mptr,strial,&stk,lambdak,np,p,ftrial,lambdaInitial);
+			}
 		}
 	}
 	
 	// output df (from last stress), alpha (here with latest lambda), and lamda (the return value)
 	UpdateStress(strial,&stk,lambdak,np,p);
-	UpdateTrialAlpha(mptr,np,lambdak,&(p->hp));
+	UpdateTrialAlpha(mptr,np,lambdak,&(p->hp),0);
 	return lambdak;
 }
 
@@ -1640,7 +1718,10 @@ void AnisoPlasticity::UpdateStress(Tensor *strial,Tensor *stk,double lambda,int 
 	
 	// if use all steps print warning
 	if(warnings.Issue(warnNonconvergence,3)==GAVE_WARNING)
-	{	cout << "# Failed to update stress in " << iterSteps << " steps with final Delta = " << sqrt(diffnorm/p->snorm) << endl;
+	{	
+#pragma omp critical (output)
+		{	cout << "# Failed to update stress in " << iterSteps << " steps with final Delta = " << sqrt(diffnorm/p->snorm) << endl;
+		}
 	}
 #else
 	// Now get stress using updated slopes
@@ -1663,7 +1744,7 @@ double AnisoPlasticity::GetFkFromLambdak(MPMBase *mptr,Tensor *strial,Tensor *st
 	UpdateStress(strial,stk,lambda,np,p);
 	
 	// update alpha using new lambda and -h from most recent GetDfDsigma()
-	UpdateTrialAlpha(mptr,np,lambda,&(p->hp));
+	UpdateTrialAlpha(mptr,np,lambda,&(p->hp),0);
 	
 	// update fk using new stress and alpha
 	Tensor srot;
@@ -1683,7 +1764,7 @@ double AnisoPlasticity::SRPrintFk(MPMBase *mptr,Tensor *strial,Tensor *stk,
 		cout << lambdak << "," << fk << endl;
 	}
 	UpdateStress(strial,stk,lambda,np,p);
-	UpdateTrialAlpha(mptr,np,lambda,&(p->hp));
+	UpdateTrialAlpha(mptr,np,lambda,&(p->hp),0);
 }
 
 #pragma mark AnisoPlasticity::Accessors

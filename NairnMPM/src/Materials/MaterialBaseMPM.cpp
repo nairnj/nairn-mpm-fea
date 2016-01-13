@@ -25,6 +25,7 @@
 #include "Materials/Nonlinear2Hardening.hpp"
 #include "Materials/DDBHardening.hpp"
 #include "System/UnitsController.hpp"
+#include "Materials/ContactLaw.hpp"
 #include <vector>
 
 // global
@@ -36,6 +37,7 @@ vector<int> MaterialBase::activeMatIDs;					// list of active material velocity 
 int MaterialBase::incrementalDefGradTerms = 2;			// terms in exponential of deformation gradient
 int MaterialBase::maxPropertyBufferSize = 0.;           // maximum buffer size needed among active materials to get copy of mechanical properties
 int MaterialBase::maxAltBufferSize = 0.;                // maximum optional buffer size needed for more properties (e.g., hardenling law)
+bool MaterialBase::extrapolateRigidBCs = false;			// rigid BCs extrapolated (new) or projected (old)
 
 #pragma mark MaterialBase::Initialization
 
@@ -179,7 +181,7 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
 		}
 	}
     
-    return((char *)NULL);
+    return (char *)NULL;
 }
 
 // Material that allow hardening laws must accept
@@ -232,12 +234,12 @@ void MaterialBase::SetHardeningLaw(char *lawName)
     
     // pass on to the material
     if(!AcceptHardeningLaw(pLaw,lawID))
-        ThrowSAXException("The hardening law '%s' is not allows by material",lawName);
+        ThrowSAXException("The hardening law '%s' is not allowed by material",lawName);
 }
 
 // A Material that allows hardening laws should accept this one or it can
 // veto the choice by returning FALSE
-bool MaterialBase::AcceptHardeningLaw(HardeningLawBase *pLaw,int lawID) { return FALSE; }
+bool MaterialBase::AcceptHardeningLaw(HardeningLawBase *pLaw,int lawID) { return false; }
 
 /*	Verify andcCalculate properties used in analyses. If error, return string with an error message.
  This is called once at start of the calculation just before the material properties
@@ -270,7 +272,7 @@ const char *MaterialBase::VerifyAndLoadProperties(int np)
 // print any properties common to all MPM material types
 void MaterialBase::PrintCommonProperties(void) const
 {
-	if(Rigid() || isTractionLaw()) return;
+	if(Rigid() || MaterialStyle()==TRACTION_MAT) return;
 	
 	// print density
 	PrintProperty("rho",rho*UnitsController::Scaling(1000.),"");
@@ -304,6 +306,17 @@ void MaterialBase::PrintCommonProperties(void) const
         else
             PrintProperty("    AV heating off",FALSE);
 	}
+	
+	// particle damping
+	if(matUsePDamping)
+	{	cout << "Particle damping: " << matPdamping << " /sec";
+        if(matUsePICDamping)
+			cout << ", PIC damping fraction: " << matFractionPIC << endl;
+		else
+			cout << endl;
+	}
+	else if(matUsePICDamping)
+		cout << "Particle PIC damping fraction: " << matFractionPIC << endl;
 	
 	// optional color
 	if(red>=0.)
@@ -466,7 +479,7 @@ void MaterialBase::ValidateForUse(int np) const
 			{	throw CommonException("Material with undefined traction law material for propagation",
 									  "MaterialBase::ValidateForUse");
 			}
-			if(!theMaterials[tractionMat[i]-1]->isTractionLaw())
+			if(theMaterials[tractionMat[i]-1]->MaterialStyle()!=TRACTION_MAT)
 			{	throw CommonException("Material with propagation material that is not a traction law",
 									  "MaterialBase::ValidateForUse");
 			}
@@ -487,19 +500,11 @@ void MaterialBase::ValidateForUse(int np) const
 	}
 }
 
-// create and return pointer to material-specific data on a particle
-//	using this material. Called once at start of analysis for each
-//	particle.
-// If a material subclass override this method, it is responsible for
-//  creating space for super class history varibles too. There is
-//  no mechanism now for calling super classes to prepend or
-//  append the data.
-char *MaterialBase::InitHistoryData(void) { return NULL; }
-
 // If needed, a material can initialize particle state
 // For example, ideal gas initializes to base line pressure
 // Such a class must pass on the super class after its own initializations
-void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np) const
+// The offset is to allow relocatable history data in child materials (e.g., phases)
+void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 {
 	if(isolatedSystemAndParticles)
     {   // need to add initial heat energy, because special cases in this mode
@@ -514,7 +519,9 @@ void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np) const
 // not thread safe due to push_back()
 int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activeNum)
 {	if(!multiMaterials)
-	{	if(field<0)
+	{	// for first particle using this material, add to active material IDs and check required
+		// material buffer sizes
+		if(field<0)
 		{	field=0;
 			activeField=activeNum;
 			fieldNum=1;
@@ -540,7 +547,11 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activ
 				{	throw CommonException("Material class trying to share velocity field with an incompatible material type",
 										  "MaterialBase::SetField");
 				}
-			
+				if(matRef->MaterialStyle() != MaterialStyle())
+				{	throw CommonException("Material class trying to share velocity field with an incompatible material type",
+										  "MaterialBase::SetField");
+				}
+				
 				// base material cannot share too
 				if(matRef->GetShareMatField()>=0)
 				{	throw CommonException("Material class trying to share velocity field with a material that share's its field",
@@ -595,98 +606,145 @@ double MaterialBase::MaximumDiffusion(void) const { return diffusionCon; }
 double MaterialBase::MaximumDiffusivity(void) const { return kCond/heatCapacity; }
 
 // material-to-material contact
-void MaterialBase::SetFriction(double friction,int matID,double Dn,double Dnc,double Dt)
+void MaterialBase::SetFriction(int lawID,int matID)
 {	
 	if(lastFriction==NULL)
     {   // if this material did not have an friction settings, create one now
         // and tell the new object it is the only one (i.e., it's next is NULL)
-		lastFriction=(ContactDetails *)malloc(sizeof(ContactDetails));
+		lastFriction=(ContactPair *)malloc(sizeof(ContactPair));
 		lastFriction->nextFriction=NULL;
 	}
 	else
     {   // if this material already has a friction setting, create a new one,
         // set it to point to the prior one (in lastFriction), and then set
         // this material's lastFriction to this latest one
-		ContactDetails *newFriction=(ContactDetails *)malloc(sizeof(ContactDetails));
+		ContactPair *newFriction=(ContactPair *)malloc(sizeof(ContactPair));
 		newFriction->nextFriction=(char *)lastFriction;
 		lastFriction=newFriction;
 	}
     // the law type is set later in MaterialBase::ContactOutput()
-	lastFriction->friction=friction;
+	lastFriction->lawID=lawID;
 	lastFriction->matID=matID;
-	lastFriction->Dn=Dn;
-	lastFriction->Dnc=Dnc;
-	lastFriction->Dt=Dt;
 }
 
-// Look for contact to a given material and return contact details
-// by checking on friction settings for this material. If found return
-// the ContactDetails, otherwise return NULL
-ContactDetails *MaterialBase::GetContactToMaterial(int otherMatID)
-{	ContactDetails *currentFriction=lastFriction;
-	while(currentFriction!=NULL)
-	{	if(currentFriction->matID==otherMatID) return currentFriction;
-		currentFriction=(ContactDetails *)currentFriction->nextFriction;
+// material-to-material contact
+void MaterialBase::SetDamping(double matDamping,double matPIC)
+{	if(matDamping>-1e12)
+	{	matPdamping = matDamping;
+		matUsePDamping = true;
 	}
-	return NULL;
+	else
+		matUsePDamping = false;
+    if(matPIC>=0.)
+	{   matFractionPIC = matPIC;
+        matUsePICDamping = true;
+    }
+    else
+        matUsePICDamping = false;
+}
+
+// Change damping if this material request it
+// On input, particleAlpha and gridAlpha should be the global settings
+// if material has particle damping and PIC, change to
+//      particleAlpha   =  matPIC/dt + matPdamping(t)
+//      gridAlpha       = -matPIC/dt + damping(t)
+// if material has only particle damping, change to
+//      particleAlpha   =  alpha(PIC)/dt + matPdamping(t)
+// if material has only particle PICdamping, change to
+//      particleAlpha    =  matPIC/dt + pdamping(t) = matPIC/dt + (particleAlpha - alpha(PIC)/dt)
+//      gridAlpha       = -matPIC/dt + damping(t)
+void MaterialBase::GetMaterialDamping(double &particleAlpha,double &gridAlpha,double nonPICGridAlpha,double globalPIC) const
+{	// has either type
+	if(matUsePDamping)
+	{	if(matUsePICDamping)
+		{	particleAlpha = matFractionPIC/timestep + matPdamping;
+			gridAlpha = -matFractionPIC/timestep + nonPICGridAlpha;
+		}
+		else
+		{	particleAlpha = globalPIC + matPdamping;
+		}
+	}
+	
+	// if has particle PIC only
+	else if(matUsePICDamping)
+	{	particleAlpha += matFractionPIC/timestep - globalPIC;
+		gridAlpha = -matFractionPIC/timestep + nonPICGridAlpha;
+	}
+}
+
+// Look for contact to a given material and return contact law ID
+// by checking on friction settings for this material.
+int MaterialBase::GetContactToMaterial(int otherMatID)
+{	ContactPair *currentFriction=lastFriction;
+	while(currentFriction!=NULL)
+	{	if(currentFriction->matID==otherMatID) return currentFriction->lawID;
+		currentFriction=(ContactPair *)currentFriction->nextFriction;
+	}
+	return -1;
 }	
 
 // Print contact law settings for cracks and finalize variables
 void MaterialBase::ContactOutput(int thisMatID)
 {
-	char hline[200];
+	ContactPair *currentFriction=lastFriction;
 	
-	ContactDetails *currentFriction=lastFriction;
-	
-	if(currentFriction!=NULL)
-		cout << "Custom contact between material " << thisMatID << " and" << endl;
-	
-    // Law determined by friction coefficient
-    // <= -10 : Revert to single velocity field
-    // -1 to -9 (actually -10 < friction < -.5 : stick conditions in contact, free in separation
-    // 0 : frictionless
-    // >=10 : imperfect interface
-    // otherwise : friction with that coefficient of friction
 	while(currentFriction!=NULL)
-	{	// Custom Contact
-		if(currentFriction->friction<=-10.)
-		{   currentFriction->law=NOCONTACT;
-			sprintf(hline,"contact nodes revert to center of mass velocity field");
-		}
-		else if(currentFriction->friction<-.5)
-		{   currentFriction->law=STICK;
-			sprintf(hline,"stick conditions");
-		}
-		else if(DbleEqual(currentFriction->friction,(double)0.))
-		{   currentFriction->law=FRICTIONLESS;
-			sprintf(hline,"frictionless sliding");
-		}
-		else if(currentFriction->friction>10.)
-		{   currentFriction->law=IMPERFECT_INTERFACE;
-			if(currentFriction->Dnc<-100.e6) currentFriction->Dnc=currentFriction->Dn;
-			const char *label = UnitsController::Label(INTERFACEPARAM_UNITS);
-			sprintf(hline,"imperfect interface\n         Dn = %g %s, Dnc = %g %s, Dt = %g %s",
-					currentFriction->Dn*UnitsController::Scaling(1.e-6),label,
-					currentFriction->Dnc*UnitsController::Scaling(1.e-6),label,
-					currentFriction->Dt*UnitsController::Scaling(1.e-6),label);
-		}
-		else
-		{   currentFriction->law=FRICTIONAL;
-			sprintf(hline,"frictional with coefficient of friction: %.6f",currentFriction->friction);
-		}
-		
-		cout << "     material " << currentFriction->matID << ": " << hline << endl;
-		
-		currentFriction=(ContactDetails *)currentFriction->nextFriction;
+	{	cout << "Custom contact between material " << thisMatID << " and material "
+				<< currentFriction->matID << ": material "
+				<< (MaterialBase::GetContactLawNum(currentFriction->lawID)+1)
+				<< endl;
+		currentFriction=(ContactPair *)currentFriction->nextFriction;
 	}
 }
 
-// create buffer for material data with the requested number of
-// doubles and set eash one to zero
-double *MaterialBase::CreateAndZeroDoubles(int numDoubles) const
+// Convert readID (1 based) to material number for contact law (0 based)
+int MaterialBase::GetContactLawNum(int readID)
 {
-	// create buffer
-	double *p=new double[numDoubles];
+	// check if already a real ID
+	if(readID<1000) return readID-1;
+	
+	// look for out ID in defined amterials
+	int clmat=nmat-1;
+	while(clmat>=0)
+	{	ContactLaw *matLaw = (ContactLaw *)theMaterials[clmat];
+		if(matLaw->autoID == readID) return clmat;
+		clmat--;
+	}
+	return -1;
+}
+
+#pragma mark MaterialBase::History Data Methods
+
+// return number of bytes needed for history data
+// a negative number means this material does not support combined history
+//	data that might be offset from particle history pointer
+int MaterialBase::SizeOfHistoryData(void) const { return -1; }
+
+// create and return pointer to material-specific data on a particle
+//	using this material. Called once at start of analysis for each
+//	particle.
+// If a material subclass overrides this method, it is responsible for
+//  creating space for super class history variables too. There is
+//  no mechanism now for calling super classes to prepend or
+//  append the data.
+// First is material points and second is for traction laws
+char *MaterialBase::InitHistoryData(char *pchr,MPMBase *mptr) { return NULL; }
+char *MaterialBase::InitHistoryData(char *pchr) { return NULL; }
+
+// archive material data for this material type when requested.
+double MaterialBase::GetHistory(int num,char *historyPtr) const { return (double)0.; }
+
+// if pchr==NULL, create buffer for material data with the requested number of double
+//		otherwise assume it already exists and is big enough
+// set each double in the history data to zero
+double *MaterialBase::CreateAndZeroDoubles(char *pchr,int numDoubles) const
+{
+	// create buffer (if needed)
+	double *p;
+	if(pchr==NULL)
+		p = new double[numDoubles];
+	else
+		p = (double *)pchr;
 	
 	// set all to zero
 	int i;
@@ -696,13 +754,15 @@ double *MaterialBase::CreateAndZeroDoubles(int numDoubles) const
 	return p;
 }
 
-
 #pragma mark MaterialBase::Methods
 
 // All maternal classes must override to handle their constitutive law
-void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res) const
+void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res,int historyOffset) const
 {
 }
+
+// get incremental residual voluje change (needed for phase change materials
+double MaterialBase::GetIncrementalResJ(MPMBase *mptr,ResidualStrains *res) const { return 0.; }
 
 // buffer size for mechanical properties
 int MaterialBase::SizeOfMechanicalProperties(int &altBufferSize) const
@@ -711,7 +771,7 @@ int MaterialBase::SizeOfMechanicalProperties(int &altBufferSize) const
 }
 
 // Get copy of properties that depend on material state
-void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
+void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer,int offset) const
 {	return NULL;
 }
 
@@ -732,47 +792,58 @@ double MaterialBase::GetCpHeatCapacity(MPMBase *mptr) const { return GetHeatCapa
 double MaterialBase::GetCpMinusCv(MPMBase *mptr) const { return 0; }
 
 // Increment heat energy using Cv(dT-dTq0) - dPhi, where Cv*dTq0 + dPhi = Cv dTad is total
-//		dispated energy (it can by provided as either a temperature rise or an energy)
-// dTq0 is temperature rise due to material mechanisms if the process was adiabatic
-// dPhi is dissipated energy that is converted to temperature rise
+//		dispated energy
+// dTq0 is temperature rise due to material mechanisms if the process was adiabatic and reversible
+// dPhi is dissipated energy that is converted to temperature rise (it is irreverisble)
 void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,double dPhi) const
 {
 	double Cv = GetHeatCapacity(mptr);					// in nJ/(g-K)
-	double dispEnergy = Cv*dTq0 + dPhi;                     // = Cv dTad
 	
 	// Isolated means no conduction and no thermal ramp (and in future if have other ways
 	//		to change particle temperature, those are not active either)
 	// In this mode, adiabatic has dq=0 and isothermal releases all as heat
     if(isolatedSystemAndParticles)
     {   // Here dText = 0
-        // If adiabatic, dq = 0 (nothing to add)
-        // If isothermal dq = -Cv dTad
-		if(!ConductionTask::adiabatic)
-        {   mptr->AddHeatEnergy(-dispEnergy);
-            mptr->AddEntropy(-dispEnergy/mptr->pPreviousTemperature);
+		if(ConductionTask::adiabatic)
+		{	// dq = 0 (nothing to add)
+			
+			// but dissipated energy is treated as irreversible entropy
+			mptr->AddEntropy(dPhi/mptr->pPreviousTemperature);
+			
+			// add so particle temperature will rise
+			mptr->Add_dTad(dTq0+dPhi/Cv);
+		}
+		else
+        {	// If isothermal dq = -Cv dTad = -Cv dTq0 - dPhi
+			double baseHeat = -Cv*dTq0;
+			mptr->AddHeatEnergy(baseHeat-dPhi);
+			
+			// for entropy dS = -Cv dTad/T + dPhi/T = - Cv dTq0/T
+            mptr->AddEntropy(baseHeat/mptr->pPreviousTemperature);
         }
     }
 	else
-	{	// For non isolated particle use dq = Cv(dT-dTad)
-        // If adiabatic, the Cv dT term in next step will include Cv dTad from
-        //    this step to give particle dq = 0. If isothermal, it will not and
-        //    dq will be disspated heat
-        double totalHeat = Cv*dT - dispEnergy;
-		mptr->AddHeatEnergy(totalHeat);
+	{	// Here dText is not zero
         if(ConductionTask::adiabatic)
-        {   double dTad = dispEnergy/Cv;
-            mptr->AddEntropy(Cv*dT/mptr->pPreviousTemperature - dispEnergy/(mptr->pPreviousTemperature+dTad));
+        {   // For adiabatic use dq = Cv(dT-dTad(n-1)) where Cv dTad(n-1) has been buffered
+			double revHeat = Cv*(dT - mptr->GetClearPrevious_dTad());
+			mptr->AddHeatEnergy(revHeat);
+			
+			// entropy add irreversible term
+			mptr->AddEntropy((revHeat + dPhi)/mptr->pPreviousTemperature);
+			
+			// add so particle temperature will rise
+			mptr->Add_dTad(dTq0+dPhi/Cv);
         }
         else
-        {   mptr->AddEntropy(totalHeat/mptr->pPreviousTemperature);
+		{	// for isothermal, all of dT is dText and no buffer dTad
+			double baseHeat = Cv*(dT - dTq0);
+			mptr->AddHeatEnergy(baseHeat-dPhi);
+			
+			// entropy
+			mptr->AddEntropy(baseHeat/mptr->pPreviousTemperature);
         }
 	}
-    
-	// The dispated energy is added here, but only if adiabatic, in which case it will be
-    // converted to particle temperature rise later in the calculations. This temperature
-    // change works with conduction on or off
-    if(ConductionTask::adiabatic)
-        mptr->AddDispEnergy(dispEnergy);
 }
 
 // Correct stress update for rotations using hypoelasticity approach
@@ -879,7 +950,14 @@ Vector MaterialBase::IsotropicJToK(Vector d,Vector C,Vector J0,int np,double nuL
 	
     double dx = d.x;
     double dy = d.y;
-    double J0x = fabs(J0.x);                        // J0.x should be always positive
+	
+	// J0.x should be always positive. If not set K's to zero
+	if(J0.x<=0.)
+	{	SIF.x = 0.0;
+		SIF.y = 0.0;
+		return SIF;
+    }
+    double J0x = J0.x;                        
 	
 	double kf=0.;
     if(np==PLANE_STRESS_MPM)
@@ -1329,31 +1407,34 @@ bool MaterialBase::ControlCrackSpeed(CrackSegment *crkTip,double &waitTime)
 	speed, be conservative and return the maximum possible save speed.
 	It is also called by crack propagation, for which threeD is always FALSE
 		and mptr is NULL
-	It is also called by silent boundary conditions if ShearWaveSpeed() is not
-		overridden. These boundary conditions only work (and not even sure of that)
-		for isotropic materials.
 	The method is abstract (in MaterialBase.hpp) so all sub classes must implement
 */
 //double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) { }
 
 /* Calculate shear wave speed for material in mm/sec. This is only called for silent
-	boundary conditions. This base class return WaveSpeed()/sqrt(3). A new
+	boundary conditions. This base class return CurrentWaveSpeed()/sqrt(3). A new
 	material only needs to override this method if it will implement silent boundary
 	conditions and if the base class method is not correct.
+	offset allows relocatable history data (if needed)
 */
-double MaterialBase::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return WaveSpeed(threeD,mptr)/sqrt(3.); }
+double MaterialBase::ShearWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
+{	return CurrentWaveSpeed(threeD,mptr,offset)/sqrt(3.);
+}
 
-/* This method is only called by the custom task to adjust the wave speed depending on
+/* This method is called by the custom task to adjust the wave speed depending on
     particle stress state. The default implementation calls the WaveSpeed() method used
     at the start of the time step. If wave speed depends on particle state in a known way,
     this method can be overridden to get the current wave speed. The custom task to
     adjust time step will only work for materials that override this method for
     particle-dependent results.
+	It is also called by silent boundary conditions if ShearWaveSpeed() is not
+		overridden. These boundary conditions only work (and not even sure of that)
+		for isotropic materials.
+	offset allows relocatable history data (if needed)
 */
-double MaterialBase::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const { return WaveSpeed(threeD,mptr); }
-
-// archive material data for this material type when requested.
-double MaterialBase::GetHistory(int num,char *historyPtr) const { return (double)0.; }
+double MaterialBase::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
+{	return WaveSpeed(threeD,mptr);
+}
 
 // return TRUE if rigid particle (for contact or for BC)
 bool MaterialBase::Rigid(void) const { return false; }
@@ -1364,11 +1445,8 @@ short MaterialBase::RigidBC(void) const { return false; }
 // return TRUE is rigid BC particle (not rigid for contact)
 short MaterialBase::RigidContact(void) const { return false; }
 
-// check if traction law material
-bool MaterialBase::isTractionLaw(void) const { return false; }
-
 // check if membrane material
-bool MaterialBase::isMembrane(void) const { return false; }
+int MaterialBase::MaterialStyle(void) const { return SOLID_MAT; }
 
 // check if keeps crack tip
 int MaterialBase::KeepsCrackTip(void) const { return constantTip; }
@@ -1386,18 +1464,21 @@ int MaterialBase::GetMVFFlags(int matfld)
 }
 
 // convert field number (zero based) to material ID for that field (zero based)
+// When materials share a field, it is material ID for the base field
 int MaterialBase::GetFieldMatID(int matfld) { return fieldMatIDs[matfld]; }
 
 // convert active material number (zero based) to material ID for that field (zero based)
+// These are no rigid only
 int MaterialBase::GetActiveMatID(int matfld) { return activeMatIDs[matfld]; }
 
 // Get current relative volume change - only used to convert speific results to actual values when archiving
 // Materials with explicit treatment of large deformation will need it (e.g., Hyperelastic)
-double MaterialBase::GetCurrentRelativeVolume(MPMBase *mptr) const { return 1.; }
+// offset version if for phase transition materials
+double MaterialBase::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const { return 1.; }
 
 // Copy stress to a read-only tensor variable
 // Subclass material can override, such as to combine pressure and deviatory stress into full stress
-Tensor MaterialBase::GetStress(Tensor *sp,double pressure) const
+Tensor MaterialBase::GetStress(Tensor *sp,double pressure,MPMBase *) const
 {   Tensor stress = *sp;
     return stress;
 }
@@ -1408,9 +1489,9 @@ double MaterialBase::GetArtificalViscosity(double Dkk,double c) const
 {
     double avred = 0.;
     if(Dkk<0 && artificialViscosity)
-    {   double divuij = fabs(Dkk);                                  // sec^-1
-        double dcell = mpmgrid.GetAverageCellSize();                // mm
-        avred = dcell*divuij*(avA1*c + avA2*dcell*divuij);			// Pa mm^3/g = mm^2/sec^2
+    {   double divuij = fabs(Dkk);                                  // T^-1
+        double dcell = mpmgrid.GetAverageCellSize();                // L
+        avred = dcell*divuij*(avA1*c + avA2*dcell*divuij);			// L^2/T^2 = F L/M = Pressure/rho = Kirchoff Pressure/rho0
     }
     return avred;
 }
@@ -1421,3 +1502,8 @@ bool MaterialBase::SupportsArtificialViscosity(void) const { return false; }
 // return code indicated what is store in the "plastic strain" on the material, which can
 // only be a symmetrix tensor
 int MaterialBase::AltStrainContains(void) const { return NOTHING; }
+
+// concentraion saturation (mptr cannot be NULL)
+double MaterialBase::GetConcSaturation(MPMBase *mptr) const { return concSaturation; }
+
+

@@ -18,11 +18,12 @@
 			( Description | Analysis | DevelFlag | ConsistentUnits )+>
 
 <!ELEMENT	MPMHeader
-			( MatlPtsPerElement | Cracks | MPMMethod | Timing | PDamping | PFeedbackDamping | ArchiveGroup | ArchiveRoot 
-			| CrackArchiveOrder | MPMArchiveOrder | ProgSteps | Damping | FeedbackDamping
-			| GlobalArchive | DefGradTerms | Diffusion | StressFreeTemp | GIMP | LeaveLimit | MultiMaterialMode
-			| MaxTime | TimeStep | TimeFactor | ArchiveTime | FirstArchiveTime | GlobalArchiveTime )*>
-			
+			( MatlPtsPerElement | Cracks | MPMMethod | Timing | ArchiveGroup | ArchiveRoot | MPMArchiveOrder
+			| CrackArchiveOrder | ProgSteps | Damping | FeedbackDamping | GlobalArchive
+			| DefGradTerms | Diffusion | StressFreeTemp | GIMP | LeaveLimit | MultiMaterialMode
+            | PDamping | PFeedbackDamping | TimeStep | TimeFactor | MaxTime | ArchiveTime | FirstArchiveTime
+			| GlobalArchiveTime | ExtrapolateRigid )*>
+
 <!ELEMENT	Cracks
 			( Friction | Propagate | AltPropagate | JContour | MovePlane | ContactPosition | PropagateLength )*>
 			
@@ -31,9 +32,10 @@
 <!ATTLIST	MultiMaterialMode
 			Vmin CDATA #IMPLIED
 			Dcheck (0|1) #IMPLIED
-			Normals (0|1|2|3) #IMPLIED
-			RigidBias CDATA #IMPLIED>
-
+			Normals (0|1|2|3|4) #IMPLIED
+			RigidBias CDATA #IMPLIED
+			Polar CDATA #IMPLIED
+			Azimuth CDATA #IMPLIED>
 
 <!-- Define the mesh -->
 
@@ -87,8 +89,8 @@
 			thick CDATA #IMPLIED>
 
 <!ELEMENT	Body
-			( RotateX | RotateY | RotateZ | Unrotate
-			| Oval | Rect | Polygon | Sphere | Box | Cylinder | Polyhedron | Torus | Shell )*>
+			( RotateX | RotateY | RotateZ | Unrotate | Oval | Rect | Polygon
+			| Sphere | Box | Cylinder | Polyhedron | Torus | Shell )*>
 <!ATTLIST	Body
 			mat CDATA #IMPLIED
 			matname CDATA #IMPLIED
@@ -136,6 +138,8 @@
 			( pt | Line | Circle | Thickness)*>
 <!ATTLIST	CrackList
 			type (fixed|free) #IMPLIED
+			law CDATA #IMPLIED
+			lawname CDATA #IMPLIED
 			friction CDATA #IMPLIED
 			Dn CDATA #IMPLIED
 			Dnt CDATA #IMPLIED
@@ -145,14 +149,14 @@
 <!-- Define material properties -->
 
 <!ELEMENT	Material
-			( rho | E | nu | G | alpha | yield | beta | yieldMax | Lame
+			( rho | E | nu | G | alpha | yield | beta | yieldMax
 				| EA | ET | GA | nuA | nuT | alphaA | alphaT | betaA | betaT | Ep
-				| Ex | ER | Ey | EZ | Ez | Gxy | Gyx | GRZ | GZR | Gxz | Gzx 
+				| Ex | ER | Ey | EZ | Ez | Gxy | Gyx | GRZ | GZR | Gxz | Gzx
 				| GRT | GTR | Gyz | Gzy | GZT | GTZ
 				| nuxy | nuyx | nuRZ | nuZR | nuxz | nuzx | nuRT | nuTR | nuyz | nuzy | nuZT | nuTZ
-				| alphax | alphay | alphaz | alphaR | alphaZ
+				| alphax | alphay | alphaz | alphaR | alphaZ | largeRotation | Dn | Dnt | Dnc | Dt | coeff | coeffStatic
 				| betax | betay | betaz | betaR | betaZ | CritComp | CritTens | xihard | Elastic
-				| K | G0 | ntaus | Gk | tauk | xGrow | yGrow | shareMatField
+				| K | G0 | ntaus | Gk | tauk | xGrow | yGrow | Lame | shareMatField
 				| G1 | G2 | speed | maxLength | Propagate | AltPropagate | initTime
 				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset | stress | function | minCOD
 				| reversible | irreversible | beta0 | betad | sigmaI | sigmaII | kIe | kIIe | nmix
@@ -164,10 +168,10 @@
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0
                 | kCondR | kCondZ | Hardening | C1SL | C2SL | UJOption | ArtificialVisc | avA1 | avA2
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
-				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | S3 | GPpG0 | GTpG0 | gamma0
+				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | S3 | GPpG0 | GTpG0 | gamma0 | pressureLaw
 				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2
                 | tayM | rhoW | rhoC | fo | flim | fsto | sto | m | n | alp | burg | K1 | alpstar
-                | betastar | k0 | Atd | Btd | tempDepend | MMG )* >
+                | betastar | k0 | Atd | Btd | tempDepend | MMG | PDamping )* >
 <!ATTLIST	Material
 			Type CDATA #REQUIRED
 			Name CDATA #REQUIRED>
@@ -236,12 +240,12 @@
 <!-- Thermal analysis -->
 
 <!ELEMENT	Thermal
-			( Conduction?, CrackTipHeating?, EnergyCoupling?, NoAVHeating?, Isothermal?, CrackContactHeating?, ContactHeating? ) >
+			( Conduction | CrackTipHeating | EnergyCoupling | NoAVHeating | Isothermal | CrackContactHeating | ContactHeating )* >
 
 <!-- Gravity analysis -->
 
 <!ELEMENT	Gravity
-			( BodyXForce?, BodyYForce?, BodyZForce? )>
+			( BodyXForce?, BodyYForce?, BodyZForce?, GridBodyXForce?, GridBodyYForce?, GridBodyZForce? )>
 
 <!-- Custom Tasks -->
 
@@ -269,6 +273,8 @@
 <!ELEMENT	MatlPtsPerElement (#PCDATA)>
 <!ELEMENT	Friction (#PCDATA)>
 <!ATTLIST	Friction
+			law CDATA #IMPLIED
+			lawname CDATA #IMPLIED
 			Dn CDATA #IMPLIED
 			Dnt CDATA #IMPLIED
 			Dnc CDATA #IMPLIED
@@ -342,12 +348,16 @@
 <!ELEMENT	BodyXForce (#PCDATA)>
 <!ELEMENT	BodyYForce (#PCDATA)>
 <!ELEMENT	BodyZForce (#PCDATA)>
+<!ELEMENT	GridBodyXForce (#PCDATA)>
+<!ELEMENT	GridBodyYForce (#PCDATA)>
+<!ELEMENT	GridBodyZForce (#PCDATA)>
 <!ELEMENT	Isothermal (#PCDATA)>
 <!ATTLIST	Isothermal
 			time CDATA #IMPLIED
 			start CDATA #IMPLIED>
 <!ELEMENT	StressFreeTemp (#PCDATA)>
 <!ELEMENT	LeaveLimit (#PCDATA)>
+<!ELEMENT	ExtrapolateRigid EMPTY>
 <!ELEMENT	GIMP EMPTY>
 <!ATTLIST	GIMP
 			type (Dirac|uGIMP|lCPDI|qCPDI) #IMPLIED>
@@ -365,8 +375,6 @@
 <!ELEMENT	E (#PCDATA)>
 <!ELEMENT	nu (#PCDATA)>
 <!ELEMENT	G (#PCDATA)>
-<!ELEMENT	Lame (#PCDATA)>
-<!ELEMENT	shareMatField (#PCDATA)>
 <!ELEMENT	alpha (#PCDATA)>
 <!ELEMENT	beta (#PCDATA)>
 <!ELEMENT	yield (#PCDATA)>
@@ -499,6 +507,15 @@
 <!ELEMENT	initTime (#PCDATA)>
 <!ELEMENT	maxLength (#PCDATA)>
 <!ELEMENT	K (#PCDATA)>
+<!ELEMENT	Lame (#PCDATA)>
+<!ELEMENT	largeRotation (#PCDATA)>
+<!ELEMENT	Dn (#PCDATA)>
+<!ELEMENT	Dnt (#PCDATA)>
+<!ELEMENT	Dnc (#PCDATA)>
+<!ELEMENT	Dt (#PCDATA)>
+<!ELEMENT	coeff (#PCDATA)>
+<!ELEMENT	coeffStatic (#PCDATA)>
+<!ELEMENT	shareMatField (#PCDATA)>
 <!ELEMENT	G0 (#PCDATA)>
 <!ELEMENT	ntaus (#PCDATA)>
 <!ELEMENT	Gk (#PCDATA)>
@@ -535,6 +552,7 @@
 			blue CDATA #IMPLIED
             alpha CDATA #IMPLIED>
 <!ELEMENT	betahard (#PCDATA)>
+<!ELEMENT	pressureLaw (#PCDATA)>
 <!ELEMENT	C0 (#PCDATA)>
 <!ELEMENT	S1 (#PCDATA)>
 <!ELEMENT	S2 (#PCDATA)>

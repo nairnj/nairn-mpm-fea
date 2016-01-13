@@ -245,7 +245,7 @@ int DDBHardening::SizeOfHardeningProps(void) const { return sizeof(DDBHPropertie
 // UpdateStrainsFirstTask calls MechanicalProps, which is then passed to UpdateStrain,
 // which belongs to the MatPoint3D class. This function calls MPMConstitutiveLaw().
 // So this function below is called every timestep prior to constitutive calcs..
-void *DDBHardening::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer)
+void *DDBHardening::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer,int offset)
 {
 	DDBHProperties *p = (DDBHProperties *)altBuffer;
 
@@ -263,11 +263,11 @@ void *DDBHardening::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer
 	}
 
 	// update variables from stored history values
-	p->rhoC = mptr->GetHistoryDble(RHOC_HISTORY);
-	p->rhoW = mptr->GetHistoryDble(RHOW_HISTORY);
-	p->rhoCDot = mptr->GetHistoryDble(RHOCDOT_HISTORY);
-	p->rhoWDot = mptr->GetHistoryDble(RHOWDOT_HISTORY); 
-	p->yieldC = mptr->GetHistoryDble(YLDC_HISTORY)*1.e6/parent->rho;
+	p->rhoC = mptr->GetHistoryDble(RHOC_HISTORY,offset);
+	p->rhoW = mptr->GetHistoryDble(RHOW_HISTORY,offset);
+	p->rhoCDot = mptr->GetHistoryDble(RHOCDOT_HISTORY,offset);
+	p->rhoWDot = mptr->GetHistoryDble(RHOWDOT_HISTORY,offset); 
+	p->yieldC = mptr->GetHistoryDble(YLDC_HISTORY,offset)*1.e6/parent->GetRho(NULL);
 
 	// nothing needed from superclass (HardenLawBase)
 	return p;
@@ -279,7 +279,6 @@ void DDBHardening::DeleteCopyOfHardeningProps(void *properties,int np) const
 	DDBHProperties *p = (DDBHProperties *)properties;
 	delete p;
 }
-
 
 #pragma mark DDBHardening::Law Methods
 
@@ -331,7 +330,7 @@ double DDBHardening::GetYield(MPMBase *mptr,int np,double delTime,HardeningAlpha
 	// update stress
 	double rst=p->fr*rstw+(1.-p->fr)*rstc;					// F/L^2
 	p->yieldP = p->yieldC;									// F/L^2
-	p->yieldInc = tayM*rst*(SQRT_THREE/parent->rho);		// F/L^2
+	p->yieldInc = tayM*rst*(SQRT_THREE/parent->GetRho(mptr));		// F/L^2
 	p->yieldC = p->yieldInc + yldred;						// F/L^2
 	
 	// return new stress value
@@ -369,47 +368,61 @@ double DDBHardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime,Hardeni
 
 #pragma mark DDBHardening::Return Mapping
 
-double DDBHardening::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,double psKred,double Pfinal,double delTime, HardeningAlpha *a,void *p) const
+double DDBHardening::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,double psKred,double Pfinal,double delTime, HardeningAlpha *a,void *p,int offset) const
 {
 	// overwrite for saving of internal variables after...
 
-	double lambdak = HardeningLawBase::SolveForLambdaBracketed(mptr, np, strial, stk, Gred, psKred, Pfinal, delTime, a, p);
+	double lambdak = HardeningLawBase::SolveForLambdaBracketed(mptr, np, strial, stk, Gred, psKred, Pfinal, delTime, a, p, offset);
 
 	// set all history variables when done:
 	// update internal variables from temporary values
 	DDBHProperties *prop = (DDBHProperties *)p;
 		
 	// update history variables
-	mptr->SetHistoryDble(EP_HISTORY,a->alpint);
-	mptr->SetHistoryDble(EPDOT_HISTORY,a->dalpha/delTime);
-	mptr->SetHistoryDble(YLDC_HISTORY,prop->yieldC*parent->rho/1.e6);
-	mptr->SetHistoryDble(GRAIN_HISTORY,prop->dSize);
-	mptr->SetHistoryDble(RHOC_HISTORY,prop->rhoCtemp);
-	mptr->SetHistoryDble(RHOW_HISTORY,prop->rhoWtemp);
-	mptr->SetHistoryDble(RHOCDOT_HISTORY,prop->rhoCDotTemp);
-	mptr->SetHistoryDble(RHOWDOT_HISTORY,prop->rhoWDotTemp);
+	mptr->SetHistoryDble(EP_HISTORY,a->alpint,offset);
+	mptr->SetHistoryDble(EPDOT_HISTORY,a->dalpha/delTime,offset);
+	mptr->SetHistoryDble(YLDC_HISTORY,prop->yieldC*parent->GetRho(mptr)/1.e6,offset);
+	mptr->SetHistoryDble(GRAIN_HISTORY,prop->dSize,offset);
+	mptr->SetHistoryDble(RHOC_HISTORY,prop->rhoCtemp,offset);
+	mptr->SetHistoryDble(RHOW_HISTORY,prop->rhoWtemp,offset);
+	mptr->SetHistoryDble(RHOCDOT_HISTORY,prop->rhoCDotTemp,offset);
+	mptr->SetHistoryDble(RHOWDOT_HISTORY,prop->rhoWDotTemp,offset);
 
     // return final answer
 	return lambdak;
 }
 
+void DDBHardening::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime,int offset) const
+{	mptr->SetHistoryDble(EP_HISTORY,0.,offset);
+	mptr->SetHistoryDble(EPDOT_HISTORY,0.,offset);
+	mptr->SetHistoryDble(YLDC_HISTORY,0.,offset);
+	mptr->SetHistoryDble(GRAIN_HISTORY,dSize0,offset);
+	mptr->SetHistoryDble(RHOC_HISTORY,rhoC0,offset);
+	mptr->SetHistoryDble(RHOW_HISTORY,rhoW0,offset);
+	mptr->SetHistoryDble(RHOCDOT_HISTORY,0.,offset);
+	mptr->SetHistoryDble(RHOWDOT_HISTORY,0.,offset);
+}
 
+// over-riding base class
+void DDBHardening::UpdatePlasticInternal(MPMBase *mptr,int np,HardeningAlpha *a,int offset) const
+{		// all variables updated in DDBHardening::SolveForLambdaBracketed
+}
 
-#pragma mark DDBHardening:HistoryVariables
+#pragma mark DDBHardening:History Data Methods
 
 // The base class hardening law has cumulative equivalent plastic strain
 //		(defined as dalpha = sqrt((2/3)||dep||))
 // This class has a further 5 history variables
-int DDBHardening::HistoryDoublesNeeded(void) const 
-{ 
-	/* See header file for current numbered list, but generally: 
-	1. cumulative plastic strain,  
-	2. equivalent von mises yield stress (MPa)
-	3. strain rate (s^-1),
-	4. grain size (m)
-	x. volume fraction of dislocation density in cell wall
-	x. total dislocation density (m^-2)  */
-
+int DDBHardening::HistoryDoublesNeeded(void) const
+{
+	/* See header file for current numbered list, but generally:
+	 1. cumulative plastic strain,
+	 2. equivalent von mises yield stress (MPa)
+	 3. strain rate (s^-1),
+	 4. grain size (m)
+	 x. volume fraction of dislocation density in cell wall
+	 x. total dislocation density (m^-2)  */
+	
 	return NUMBER_HISTORY;
 }
 
@@ -419,24 +432,7 @@ void DDBHardening::InitPlasticHistoryData(double *p) const
 	p[GRAIN_HISTORY] = dSize0; // calculated in VerifyProps above
 	p[RHOC_HISTORY] = rhoC0;
 	p[RHOW_HISTORY] = rhoW0;
-
-}
-
-void DDBHardening::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime) const
-{	mptr->SetHistoryDble(EP_HISTORY,0.);
-	mptr->SetHistoryDble(EPDOT_HISTORY,0.);
-	mptr->SetHistoryDble(YLDC_HISTORY,0.);
-	mptr->SetHistoryDble(GRAIN_HISTORY,dSize0);
-	mptr->SetHistoryDble(RHOC_HISTORY,rhoC0);
-	mptr->SetHistoryDble(RHOW_HISTORY,rhoW0);
-	mptr->SetHistoryDble(RHOCDOT_HISTORY,0.);
-	mptr->SetHistoryDble(RHOWDOT_HISTORY,0.);
-}
-
-
-// over-riding base class
-void DDBHardening::UpdatePlasticInternal(MPMBase *mptr,int np,HardeningAlpha *a) const
-{		// all variables updated in DDBHardening::SolveForLambdaBracketed
+	
 }
 
 // Return history data for this material type when requested (this material has 8)
@@ -449,7 +445,6 @@ double DDBHardening::GetHistory(int num,char *historyPtr) const
 	}
 	return history;
 }
-
 
 #pragma mark DDBHardening:Step Methods
 

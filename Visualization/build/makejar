@@ -22,15 +22,15 @@
 
 usage1="usage: makejar [-wml?]"
 usage2=".........w=Windows (default), m=Mac, l=Linux, ?=this message"
-clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar"
+clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.9.1.jar"
 
 while getopts ":wcmlu" opt; do
   case $opt in
-    w ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar" ;;
-    c ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar" ;;
-    m ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar ;;
-    l ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar ;;
-    u ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar ;;
+    w ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.9.1.jar" ;;
+    c ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.9.1.jar" ;;
+    m ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.9.1.jar ;;
+    l ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar: ;;
+    u ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar: ;;
     \?) echo $usage1
         echo $usage2
         exit 1 ;;
@@ -50,6 +50,8 @@ cp ../../src/Interface/Resources/*.* Resources
 cd ..
 jar xf ../src/lib/JNPlot2D.jar
 jar xf ../src/lib/JNFramework.jar
+jar xf ../src/lib/jsch-0.1.51.jar
+jar xf ../src/lib/VectorGraphics2D-0.9.1.jar
 jar cvmf Manifest NairnFEAMPMViz.jar *.class geditcom -C Resources .
 
 # delete compiled files (or comment out to retain them)
@@ -57,3 +59,5 @@ rm -r Resources
 rm *.class
 rm -r geditcom
 rm -r META-INF
+rm -r com
+em -r de

@@ -65,7 +65,7 @@ void MoveCracksTask::Execute(void)
 		catch(CommonException err)
 		{	if(mcErr==NULL)
             {
-#pragma omp critical
+#pragma omp critical (error)
                 mcErr = new CommonException(err);
             }
 		}
@@ -92,7 +92,7 @@ void MoveCracksTask::Execute(void)
 		catch(CommonException err)
 		{	if(mcErr==NULL)
             {
-#pragma omp critical
+#pragma omp critical (error)
                 mcErr = new CommonException(err);
             }
 		}

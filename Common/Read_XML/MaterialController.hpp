@@ -15,12 +15,14 @@
 
 #include "Read_XML/ParseController.hpp"
 
+class ContactLaw;
+
 class MaterialController : public ParseController
 {
     public:
 #ifdef MPM_CODE
-		double friction,Dn,Dnc,Dt;			// temporary variables when reading friction
-		int otherMatID;
+		double matPdamping,matFractionPIC;		// temporary variables when reading particle damping
+		ParseController *autoContactCtrl;
 #endif
 		ParseController *nameCtrl;
 	
@@ -37,7 +39,12 @@ class MaterialController : public ParseController
 		void SetCriterion(int,int);
 		void SetDirection(int,int);
 		void SetTractionMat(int,int);
-		void SetMaterialFriction(void);
+		void SetMaterialFriction(int,int);
+		int AddAutoContactLaw(ContactLaw *);
+		int NumAutoContactLaws(void);
+		void SetMaterialDamping(void);
+		void SetFractionPIC(void);
+		void SetFractionPIC(double);
 #endif
 		int GetIDFromName(char *);
 		int GetIDFromNewName(char *);

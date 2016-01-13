@@ -164,6 +164,8 @@ int GlobalQuantity::DecodeGlobalQuantity(char *quant,int *hcode)
 		theQuant=HELMHOLZ_ENERGY;
 	else if(strcmp(quant,"Interface Energy")==0)
 		theQuant=INTERFACE_ENERGY;
+	else if(strcmp(quant,"Friction Work")==0)
+		theQuant=FRICTION_WORK;
 	else if(strcmp(quant,"Work Energy")==0)
 		theQuant=WORK_ENERGY;
 	else if(strcmp(quant,"Plastic Energy")==0)
@@ -273,11 +275,11 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		case AVG_SXY:
 			if(quantity==AVG_SXY) qid=XY;
             threeD = fmobj->IsThreeD();
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{   matid=mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
-				{	rho0=theMaterials[matid]->rho;
-                    rho = rho0/theMaterials[matid]->GetCurrentRelativeVolume(mpm[p]);
+				{	rho0=theMaterials[matid]->GetRho(mpm[p]);
+                    rho = rho0/theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
                     Tensor sp = mpm[p]->ReadStressTensor();
  					value+=rho*Tensor_i(&sp,qid);
 					numAvged++;
@@ -303,7 +305,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			if(quantity==AVG_EYYE) qid=YY;
 		case AVG_EXYE:
 			if(quantity==AVG_EXYE) qid=XY;
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	if(theMaterials[mpm[p]->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
 					{	// elastic strain = total strain minus plastic strain
@@ -344,7 +346,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			if(quantity==AVG_EYYP) qid=YY;
 		case AVG_EXYP:
 			if(quantity==AVG_EXYP) qid=XY;
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	if(theMaterials[mpm[p]->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
 					{	// plastic strain all ready
@@ -380,7 +382,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			if(quantity==AVG_EYY) qid=YY;
 		case AVG_EXY:
 			if(quantity==AVG_EXY) qid=XY;
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	Matrix3 biot = mpm[p]->GetBiotStrain();
 					value += biot.get(qid,2.);
@@ -410,7 +412,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			if(quantity==AVG_FZY) qid=ZY;
 		case AVG_FZX:
 			if(quantity==AVG_FZX) qid=ZX;
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	Matrix3 F = mpm[p]->GetDeformationGradientMatrix();
 					value += F.get(qid,1.);
@@ -430,7 +432,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
         case INTERNAL_ENERGY:
         case HELMHOLZ_ENERGY:
             threeD = fmobj->IsThreeD();
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
                 {   switch(quantity)
                     {   case KINE_ENERGY:
@@ -466,15 +468,20 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			value *= UnitsController::Scaling(1.e-9);
 			break;
 		
-		// interface energy (J i Legacy)
+		// interface energy (J in Legacy)
 		case INTERFACE_ENERGY:
 			value = NodalPoint::interfaceEnergy*UnitsController::Scaling(1.e-9);;
+			break;
+			
+		// fricitonal work (J in Legacy)
+		case FRICTION_WORK:
+			value = NodalPoint::frictionWork*UnitsController::Scaling(1.e-9);;
 			break;
 			
 		// energies (Volume*energy) (J in Legacy)
 		case PLAS_ENERGY:
             threeD = fmobj->IsThreeD();
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
                 {   value+=mpm[p]->mp*mpm[p]->GetPlastEnergy();
                 }
@@ -484,7 +491,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		
 		// velocity x
 		case AVG_VELX:
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	value+=mpm[p]->vel.x;
 					numAvged++;
@@ -495,7 +502,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// velocity y
 		case AVG_VELY:
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	value+=mpm[p]->vel.y;
 					numAvged++;
@@ -506,7 +513,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// velocity z
 		case AVG_VELZ:
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	value+=mpm[p]->vel.z;
 					numAvged++;
@@ -517,7 +524,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// x displacement
 		case AVG_DISPX:
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	value+=(mpm[p]->pos.x-mpm[p]->origpos.x);
 					numAvged++;
@@ -528,7 +535,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// y displacement
 		case AVG_DISPY:
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	value+=(mpm[p]->pos.y-mpm[p]->origpos.y);
 					numAvged++;
@@ -539,7 +546,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// z displacement
 		case AVG_DISPZ:
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	value+=(mpm[p]->pos.z-mpm[p]->origpos.z);
 					numAvged++;
@@ -550,7 +557,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// temperature
 		case AVG_TEMP:
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	value+=mpm[p]->pPreviousTemperature;
 					numAvged++;
@@ -561,9 +568,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		
 		case WTFRACT_CONC:
 		{	double totalWeight=0.;
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
-				{	double csat=theMaterials[mpm[p]->MatID()]->concSaturation;
+				{	double csat=mpm[p]->GetConcSaturation();
 					value+=mpm[p]->pPreviousConcentration*csat*mpm[p]->mp;
 					totalWeight+=mpm[p]->mp;
 					numAvged++;
@@ -596,9 +603,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			break;
             
 		case HISTORY_VARIABLE:
-			for(p=0;p<nmpms;p++)
+			for(p=0;p<nmpmsNR;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
-				{	value+=theMaterials[mpm[p]->MatID()]->GetHistory(subcode,mpm[p]->GetHistoryPtr());
+				{	value+=theMaterials[mpm[p]->MatID()]->GetHistory(subcode,mpm[p]->GetHistoryPtr(0));
 					numAvged++;
 				}
 			}
@@ -690,7 +697,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			value = qreaction*UnitsController::Scaling(1.e-9);
 			break;
 		}
-			
+		
 		// grid kinetic energy (J in Legacy)
 		case GRID_KINE_ENERGY:
 		{	double totalMass;

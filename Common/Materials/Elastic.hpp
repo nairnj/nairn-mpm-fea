@@ -39,13 +39,13 @@ class Elastic : public MaterialBase
 #ifdef MPM_CODE
 		virtual void PrintCommonProperties(void) const;
 #endif
-    
+	
 		// methods
 		void FillUnrotatedElasticProperties(ElasticProperties *,int);
 #ifdef MPM_CODE
 		virtual void HypoIncrementDeformation(MPMBase *,Matrix3) const;
         virtual double GetCpMinusCv(MPMBase *) const;
-		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
 		virtual void LRConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 		virtual void LRElasticConstitutiveLaw(MPMBase *,Matrix3,Matrix3,Matrix3,Matrix3,Matrix3 *,int,void *,ResidualStrains *) const;
 		virtual void SRConstitutiveLaw2D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;

@@ -37,7 +37,11 @@ class HEIsotropic : public HyperElastic
         virtual char *InputMaterialProperty(char *,int &,double &);
         virtual bool AcceptHardeningLaw(HardeningLawBase *,int );
         virtual const char *VerifyAndLoadProperties(int);
-		virtual char *InitHistoryData(void);
+	
+		// history data
+		virtual int SizeOfHistoryData(void) const;
+		virtual double GetHistory(int,char *) const;
+		virtual char *InitHistoryData(char *,MPMBase *);
 	
 		// const methods
         virtual void ValidateForUse(int) const;
@@ -45,32 +49,30 @@ class HEIsotropic : public HyperElastic
 		
 		// step methods
         virtual int SizeOfMechanicalProperties(int &) const;
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *,int) const;
 	
 		// constitutive law
-        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
-        virtual void UpdatePressure(MPMBase *,double,double,int,double,double,HEPlasticProperties *,ResidualStrains *,double) const;
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
+        virtual void UpdatePressure(MPMBase *,double,double,int,double,double,HEPlasticProperties *,ResidualStrains *,
+									double,int,double &,double &) const;
         Tensor GetTrialDevStressTensor(Tensor *,double,int,double) const;
         virtual double GetMagnitudeS(Tensor *st,int) const;
         Tensor GetNormalTensor(Tensor *,double,int) const;
     
 		// accessors
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
-        virtual Tensor GetStress(Tensor *,double) const;
+        virtual Tensor GetStress(Tensor *,double,MPMBase *) const;
 		virtual const char *MaterialType(void) const;
 		virtual int MaterialTag() const;
 		virtual double WaveSpeed(bool,MPMBase *) const;
-        virtual double GetHistory(int,char *) const;
         virtual bool SupportsArtificialViscosity(void) const;
 		virtual int AltStrainContains(void) const;
-	
+    
     protected:
 		double G1;
 		// double aI,betaI		// isotropic expansion defined in super classes
-	
-       double G1sp;
+		double G1sp;
 		HardeningLawBase *plasticLaw;
-		int J_history;						// History variable may move depending on plastic law
 };
 
 #endif

@@ -12,6 +12,7 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Elements/ElementBase.hpp"
 #include "System/UnitsController.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 
 // global
 MatPtLoadBC *firstLoadedPt=NULL;
@@ -85,8 +86,8 @@ MatPtLoadBC *MatPtLoadBC::AddMPLoad(double bctime)
 	else
 	{	double mp=mpm[ptNum-1]->mp;												// in g
 		int matnum=mpm[ptNum-1]->MatID();
-		double cd=theMaterials[matnum]->WaveSpeed(FALSE,mpm[ptNum-1]);			// in mm/sec (2D or isotropic only)
-		double cs=theMaterials[matnum]->ShearWaveSpeed(FALSE,mpm[ptNum-1]);		// in mm/sec
+		double cd=theMaterials[matnum]->CurrentWaveSpeed(FALSE,mpm[ptNum-1],0);	// in mm/sec (2D or isotropic only)
+		double cs=theMaterials[matnum]->ShearWaveSpeed(FALSE,mpm[ptNum-1],0);		// in mm/sec
 		Vector pVel=mpm[ptNum-1]->vel;
 		Vector *pFext=mpm[ptNum-1]->GetPFext();
 		

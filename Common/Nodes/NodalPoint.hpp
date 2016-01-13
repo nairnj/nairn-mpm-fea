@@ -21,10 +21,6 @@ class TransportTask;
 #include "Nodes/CrackVelocityField.hpp"
 #include "Cracks/CrackHeader.hpp"
 
-// include to extrapolate crack surface velocities using Sum Ni pi / Sum Ni mi
-// rather than Sum Ni (pi/mi) = Sum Ni vi
-//#define CRACK_SURFACE_BY_MOMENTUM_EXTRAP
-
 #endif
 
 class NodalPoint : public LinkedObject
@@ -33,7 +29,7 @@ class NodalPoint : public LinkedObject
 		// variables (changed in MPM time step)
 		double gTemperature;		// absolute T in MPM, delta T in FEA
 #ifdef MPM_CODE
-		CrackVelocityField **cvf;	// material velocity fields
+		CrackVelocityField **cvf;	// crack velocity fields
 		double gVolume;
 		double gConcentration;
 		double fdiff;				// diffusion
@@ -42,6 +38,7 @@ class NodalPoint : public LinkedObject
 		unsigned short fixedDirection;
 	
 		static double interfaceEnergy;		// total tracked each time step
+		static double frictionWork;			// cumulative friction work
 #endif
 	
 		// constants (not changed in MPM time step)
@@ -101,7 +98,7 @@ class NodalPoint : public LinkedObject
 		// specific task methods
 		void PrepareForFields(void);
         void ZeroDisp(void);
-        int GetFieldForCrack(bool,bool,DispField **,int);
+		int GetFieldForCrack(bool,bool,DispField **,int);
         void ZeroDisp(NodalPoint *);
         void CopyUGradientStressEnergy(NodalPoint *);
         void DeleteDisp(void);
@@ -115,7 +112,7 @@ class NodalPoint : public LinkedObject
 		void AddVolume(short,int,double);
         void AddUGradient(short,double,double,double,double,double,int,double);
 		void AddMatWeights(double,double *);
-        // GRID_JTERMS
+		// GRID_JTERMS
         void AddGridVelocity(short,double,double,double);
         void AddEnergy(short,double,double,double,double);
         void AddStress(short,double,Tensor *);
@@ -124,30 +121,34 @@ class NodalPoint : public LinkedObject
 		void CalcVelocityForStrainUpdate(void);
         short GetCMVelocity(Vector *);
         void CalcStrainField(void);
-        void Interpolate(NodalPoint *,NodalPoint *,double,int);
+		void Interpolate(NodalPoint *,NodalPoint *,double,int);
         void CrackContact(bool,double,CrackNode **,CrackNode **);
 		void CrackContactThree(int,bool,double);
 		void CrackInterfaceForce(void);
 		void InterfaceForceInteractingCracks(int);
 		void MaterialContactOnNode(double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
         void MaterialInterfaceForce(MaterialInterfaceNode *);
-		void GetMatVolumeGradient(int,Vector *) const;
+        void GetMatVolumeGradient(int,Vector *) const;
         void SetMomVel(Vector *);
         void AddMomVel(Vector *,double);
 		void ReflectMomVel(Vector *,NodalPoint *);
         void SetFtotDirection(Vector *,double,Vector *);
         void AddFtotDirection(Vector *,double,double,Vector *);
 		void ReflectFtotDirection(Vector *,double,NodalPoint *,Vector *);
- 		void SetFixedDirection(int);
+		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);
 		void CalcTotalMassAndCount(void);
-#ifdef COMBINE_RIGID_MATERIALS
-		void CopyRigidParticleField(void);
-#endif
 		void AddGetContactForce(bool,Vector *,double,Vector *);
+		void AddRigidBCInfo(MPMBase *,double,int,Vector *);
+		int ReadAndZeroRigidBCInfo(Vector *,double *,double *);
 #else
         void InitForceField(void);
         void PrintAvgStress(void);
+#endif
+	
+		// NairnMPM methods
+#ifdef MPM_CODE
+		void CopyRigidParticleField(void);
 #endif
 
 		// class methods

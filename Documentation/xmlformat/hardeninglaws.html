@@ -17,17 +17,17 @@
 
 <h1>Using Hardening Laws</h1>
 
-<p>Some materials allow the use of hardening laws. The possible laws are described fully on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Hardening_Laws">OSUPDocs Wiki</a>. This section brierly lists the properties. Hardening law properties are assigned with a material definition that uses the law:</p>
+<p>Some materials allow the use of hardening laws. The possible laws are described fully on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Hardening_Laws">OSUPDocs Wiki</a>. This section briefly lists the properties. Hardening law properties are assigned with a material definition that uses the law:</p>
 
 <pre>
 &lt;Material Type='9' Name='Isotropic Plastic'&gt;
          &#x22ee;
-     &lt;plasticLaw&gt;(Law_Name or number)&lt;/plasticLaw&gt;
+     &lt;Hardening&gt;(Law_Name or number)&lt;/Hardening&gt;
      (Law properties)
 &lt;/Material&gt;
 </pre>
 
-<p>where the <code>plasticLaw</code> command selects the law (using the law name or number from the table below). The law selection is followed by commands to set any properties specific to that law. Several <a href="definematl.html">materials</a> can use hardening laws.</p>
+<p>where the <code>Hardening</code> command selects the law (using the law name or number from the table below). The law selection is followed by commands to set any properties specific to that law. Several <a href="definematl.html">materials</a> can use hardening laws.</p>
 
 <p>The following table lists the available hardening laws. Click any one to see the law and the properties needed for that law.</p>
 

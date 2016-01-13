@@ -85,7 +85,7 @@ void MatPoint2D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void
 {
     // update particle strain and stress using its constitutive law
 	const MaterialBase *matRef = theMaterials[MatID()];
-    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res);
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res,0);
 }
 
 // Move position (2D) (in mm) possibly with particle damping and accWt = dt/2
@@ -286,7 +286,7 @@ double MatPoint2D::GetRelativeVolume(void)
 // when volumeType is DEFORMED_AREA or DEFORMED_AREA_FOR_GRADIENT, get t0*Ap, where
 //    Ap is deformed particle area and t0 in initial thickness
 double MatPoint2D::GetVolume(int volumeType)
-{	double rho=theMaterials[MatID()]->rho;				// in g/mm^3
+{	double rho=GetRho();								// in g/mm^3
 	if(volumeType==DEFORMED_VOLUME)
 		return GetRelativeVolume()*mp/rho;				// in mm^3
 	

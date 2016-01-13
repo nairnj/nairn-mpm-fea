@@ -15,19 +15,18 @@ Analysis #analysis$
 MPMMethod USF,lCPDI
 
 ! ********** Parameters Section **********
-#matID$="idealgas"		    ! can be "idealgas" or "liquid"
-#strain=-50				! strain
-#tmult=20
+#matID$="idealgas"		! can be "idealgas" or "liquid"
+#strain=0				! strain
+#room=50				! extra strain room for thermal expansion
+#tmult=100
 
 #cell=5                 ! cell size (cubic cells)
 #ywidth=40              ! width in the y direction (mult of cell)
 #zwidth=40              ! width in the z direction (mult of cell)
 #length=100             ! Length in x direction (mult of cell)
 
-StressFreeTemp 300
-#startTemp=300
-!ThermalRamp 100,3
-conduction "Yes","Isothermal"
+StressFreeTemp 288.15
+#startTemp=288.15
 
 ! calculate wave speed (mm/sec)
 if #matID$="idealgas"
@@ -45,6 +44,10 @@ endif
 #disp=#strain*#length/100                ! mm of displacement
 #disprate=1000*#disp/#time               ! displacement rate mm/s
 
+#totalHeat=8							 ! total heat applied as flux on the edges
+#constP=#P0							 ! <0 to ignore
+conduction "Yes","Adiabatic"
+
 ! Archiving
 Archive "Results/"&#matID$
 TimeStep 1000,#time,.05
@@ -57,6 +60,7 @@ if #matID$="idealgas"
     rho #rho0
     P0 #P0
     T0 #T0
+    kCond 300
   Done
 endif
 
@@ -90,20 +94,32 @@ Material "wallz","Wall","Rigid"
   direction 4
 Done
 
+if #constP>0
+  Material "plug","Isotropic","Isotropic"
+    E 1
+    nu .33
+    alpha 0
+    rho .1
+  Done
+endif
+
 ! global archive
 GlobalArchive sxx,#matID$
 GlobalArchive exx,#matID$
 GlobalArchive "Strain Energy",#matID$
 GlobalArchive "Entropy",#matID$
+GlobalArchive "Heat Energy",#matID$
+GlobalArchive "Work Energy",#matID$
+GlobalArchive "Internal Energy",#matID$
 GlobalArchiveTime #time/100
 
 ! ********** Grid and Material Points Section **********
 
 ! Extra length for pulling (mult of cell)
 if #strain<0
-  #excess=2*#cell
+  #excess=int(#room*#length/(100*#cell)+2)*#cell
 else
-  #excess=int(#strain*#length/(100*#cell)+2)*#cell
+  #excess=int((#strain+#room)*#length/(100*#cell)+2)*#cell
 endif
 
 #ycells=int(#ywidth/#cell+.5)+4
@@ -153,9 +169,35 @@ else
     Rect 0,#length+#excess,#ywidth,#ywidth+#cell
   EndRegion
 
-  Region "rigid",1,0, #zwidth
-    Rect #length,#length+#cell,-2*#cell,#ywidth+2*#cell
-  EndRegion
+  if #constP>0
+    Region "plug",0,0,#zwidth
+      Rect #length,#length+2*#cell,0,#ywidth
+    EndRegion
+    LoadLine #length+2*#cell,#cell/2,#length+2*#cell,#ywidth-#cell/2,#cell/2
+      Traction "x",2,"constant",-0.101
+    EndLoadLine
+  else
+    Region "rigid",1,0, #zwidth
+      Rect #length,#length+#cell,-2*#cell,#ywidth+2*#cell
+    EndRegion
+  endif
+  
+  if #totalHeat>0
+     #area=2*(#length+#ywidth)*#zwidth/1e6
+  	 #dQ=1000*#totalHeat/(#time*#area)
+     LoadLine #cell/4,0,#cell/4,#ywidth
+       HeatFlux "external",4,"constant",#dQ
+     EndLoadLine
+     LoadLine #length-#cell/4,0,#length-#cell/4,#ywidth
+       HeatFlux "external",2,"constant",#dQ
+     EndLoadLine
+     LoadLine 0,#cell/4,#length,#cell/4
+       HeatFlux "external",1,"constant",#dQ
+     EndLoadLine
+     LoadLine 0,#ywidth-#cell/4,#length,#ywidth-#cell/4
+       HeatFlux "external",3,"constant",#dQ
+     EndLoadLine
+  endif
 endif
 
 CustomTask AdjustTimeStep

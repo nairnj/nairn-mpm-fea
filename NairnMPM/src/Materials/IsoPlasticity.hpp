@@ -42,15 +42,18 @@ class IsoPlasticity : public IsotropicMat
         virtual char *InputMaterialProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
         virtual bool AcceptHardeningLaw(HardeningLawBase *,int );
-		virtual char *InitHistoryData(void);
 	
+		// history data
+		virtual char *InitHistoryData(char *,MPMBase *);
+		virtual double GetHistory(int,char *) const;
+ 	
 		// const methods
         virtual void PrintMechanicalProperties(void) const;
 		
 		// methods
         virtual int SizeOfMechanicalProperties(int &) const;
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
-		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *,int) const;
+		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
 		virtual void LRConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
         virtual void LRPlasticityConstLaw(MPMBase *,double,double,double,double,double,int,
                                         double,double,PlasticProperties *,ResidualStrains *,Matrix3 *) const;
@@ -63,15 +66,13 @@ class IsoPlasticity : public IsotropicMat
 										double,double,PlasticProperties *,ResidualStrains *,Matrix3 *) const;
 		
 		// custom methods: Find yield function and solve for lambda
-		virtual void UpdatePressure(MPMBase *,double,int,PlasticProperties *,ResidualStrains *,double) const;
+		virtual void UpdatePressure(MPMBase *,double,int,PlasticProperties *,ResidualStrains *,double,double &,double &) const;
         virtual double GetMagnitudeSFromDev(Tensor *,int) const;
 		virtual void GetDfDsigma(double,Tensor *,int,Tensor *) const;
-		virtual void ElasticUpdateFinished(MPMBase *,int,double) const;
 		
 		// accessors
-        virtual Tensor GetStress(Tensor *,double) const;
-		virtual double GetHistory(int,char *) const;
-        int MaterialTag(void) const;
+        virtual Tensor GetStress(Tensor *,double,MPMBase *) const;
+       int MaterialTag(void) const;
         const char *MaterialType(void) const;
 		virtual int AltStrainContains(void) const;
 		

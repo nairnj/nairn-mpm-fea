@@ -618,8 +618,8 @@ void ArchiveData::ArchiveResults(double atime)
 		// Tracked stress is (Kirchoff Stress)/rho0 = (Cauchy stress)/rho
 		// Convert to actual stress (Legacy units Pa)
         int matid = mpm[p]->MatID();
-        rho0=theMaterials[matid]->rho;
-        rho = rho0/theMaterials[matid]->GetCurrentRelativeVolume(mpm[p]);
+        rho0=theMaterials[matid]->GetRho(mpm[p]);
+        rho = rho0/theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
         Tensor sp = mpm[p]->ReadStressTensor();
         sxx=rho*sp.xx;
         syy=rho*sp.yy;
@@ -732,31 +732,31 @@ void ArchiveData::ArchiveResults(double atime)
         
         // ------- material history data on particle (whatever units the material chooses)
         if(mpmOrder[ARCH_History]=='Y')
-        {   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(1,mpm[p]->GetHistoryPtr());
+        {   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(1,mpm[p]->GetHistoryPtr(0));
             app+=sizeof(double);
         }
 		else if(mpmOrder[ARCH_History]!='N')
 		{	if(mpmOrder[ARCH_History]&0x01)
-			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(1,mpm[p]->GetHistoryPtr());
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(1,mpm[p]->GetHistoryPtr(0));
 				app+=sizeof(double);
 			}
 			if(mpmOrder[ARCH_History]&0x02)
-			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(2,mpm[p]->GetHistoryPtr());
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(2,mpm[p]->GetHistoryPtr(0));
 				app+=sizeof(double);
 			}
 			if(mpmOrder[ARCH_History]&0x04)
-			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(3,mpm[p]->GetHistoryPtr());
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(3,mpm[p]->GetHistoryPtr(0));
 				app+=sizeof(double);
 			}
 			if(mpmOrder[ARCH_History]&0x08)
-			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(4,mpm[p]->GetHistoryPtr());
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(4,mpm[p]->GetHistoryPtr(0));
 				app+=sizeof(double);
 			}
 		}
 		
 		// ------- concentration and gradients convert to wt fraction units using csat for this material
         if(mpmOrder[ARCH_Concentration]=='Y')
-		{	double csat=theMaterials[mpm[p]->MatID()]->concSaturation;
+		{	double csat=mpm[p]->GetConcSaturation();
 		
            *(double *)app=mpm[p]->pConcentration*csat;
             app+=sizeof(double);
@@ -1269,7 +1269,7 @@ void ArchiveData::ArchiveHistoryFile(double atime,vector< int > quantity)
         
         // history data
         MaterialBase *matptr = theMaterials[mpm[p]->MatID()];
-        char *hptr = mpm[p]->GetHistoryPtr();
+        char *hptr = mpm[p]->GetHistoryPtr(0);
         for(q=0;q<quantity.size();q++)
         {   afile << "\t" << matptr->GetHistory(quantity[q],hptr);
         }

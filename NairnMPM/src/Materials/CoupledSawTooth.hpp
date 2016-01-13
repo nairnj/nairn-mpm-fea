@@ -25,7 +25,9 @@ class CoupledSawTooth : public CohesiveZone
 
         // methods
         virtual const char *VerifyAndLoadProperties(int);
-		virtual char *InitHistoryData(void);
+	
+		// history data
+		virtual char *InitHistoryData(char *);
 	
 		// const methods
         virtual void PrintMechanicalProperties(void) const;

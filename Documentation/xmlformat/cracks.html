@@ -20,7 +20,7 @@
 <p>MPM simulations can have cracks and can have multiple cracks, but cracks are currently only allowed in 2D or axisymmetric analyses. The details on defining cracks is given on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Defining_Cracks">OSUPdocs wiki</a>. In brief, each crack is defined by a <code>&lt;CrackList&gt;</code> structure with subordinate commands to define its path with a series of line segments. The format is:</p>
 
 <pre>
-&lt;CrackList friction='0.1' Dn='200' Dnc='-1' Dnt='200' Dt='5'&gt;
+&lt;CrackList law='(law)' lawname='(lawname)'&gt;
   (<a href="#cgeom">define crack in crack geometry commands</a>)
 &lt;/CrackList&gt;
 
@@ -31,10 +31,8 @@
 
 <ul>
 
-<li><code>friction</code> sets custom frictional properties and it is set with same numeric values used in the <a href="mpmheader.html#cfriction">crack settings friction command</a>.</li>
+<li><code>(law)</code> (or <code>(lawname)</code>) - sets custom contact method for his crack by choosing a <a href="definematl.html#CLM">contact law material</a> using <a href="definematl.html#nameOrNum">number (or name)</a>.</li>
 
-<li><code>Dn</code>, <code>Dnc</code>, <code>Dnt</code>, <code>Dt</code> - These optional interfacial stiffness attributes let you
-specify an <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Imperfect_Interfaces">imperfect interface</a> for this crack that is different than the default contact law entered in the <a href="mpmheader.html#cfriction">crack settings friction command</a>.</li>
 </ul>
 
 <p>Any crack can be specified as fixed (<i>i.e.</i>, they will not translate with the analysis and will not track positions of the crack tip surfaces). by adding a <code>type='fixed'</code> attribute to the <code>&lt;CrackList&gt;</code> command. Fixed cracks are only used for modeling certain special effects.

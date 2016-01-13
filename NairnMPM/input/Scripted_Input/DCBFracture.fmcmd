@@ -16,9 +16,6 @@ EndHeader
 Analysis #analysis$
 MPMMethod USAVG,"uGIMP"
 Processors 2
-XMLData "MPMHeader"
-    <FractionFLIP>0.0</FractionFLIP>
-EndXMLData
 
 ! ********** Parameters Section **********
 #cwidth=.5				! cell width
@@ -32,14 +29,15 @@ EndXMLData
 
 #damp=0					! damping (<0 for feedback, >0 for global)
 #target$=".1*sign(t-20)"				! kinetic energy (microJ) determined by simulation prior to crack
+#fractionPIC=1				! amount of PIC in the simulation (0 to 1)
 
 #endld$="rigid"	    	! "load", "rigid"
-#rvel=10				! Single arm end velocity (mm/sec)
+#rvel=100				! Single arm end velocity (mm/sec)
 
 ! isotropic material
 #Ebase=10
 #nubase=.33
-#vibs=1					! beam vibrations times until initiation
+#vibs=.1					! beam vibrations times until initiation
 #rho=1
 
 ! Full opening Delta = 2 delta = 2Pa^3/(3EI)
@@ -63,6 +61,7 @@ Comment "Arm loading rate = "&#loadRate&" N/ms"
 #tvib = 1787.*sqrt(#rho*#width*#depth/(10^9*#Estar*#Ibeam))*(#a*#a)
 Comment "Arm vibration time = "&#tvib&" ms"
 #tinit = #vibs*#tvib
+Comment "Initiation time = "&#tinit&" ms"
 
 ! displacement at initiation (by beam theory)
 #dinit=#tinit*#rvel/1000
@@ -86,22 +85,29 @@ Comment "Initial G = "&(#Grate*#loadRate*#loadRate)&"*t^2 J/m^2/ms^2"
 
 ! ********** MPM Header **********
 Archive "Results/FullDCB/beam"
-ArchiveTime #maxTime/200ToArchive velocity,stress,strain,rotstrain
-ToArchive strainenergy,stressintensity,jintegralTimeStep 1000,#maxTime
+ArchiveTime #maxTime/200
+ToArchive velocity,stress,strain,rotstrain
+ToArchive strainenergy,stressintensity,jintegral
+TimeStep 1000,#maxTime
 
 ! optional damping
-if #damp>0
-  Damping #damp
-else if #damp<0
-  FeedbackDamping -#damp,#target$
+if #damp<0
+  FeedbackDamping -#damp,#target$,#fractionPIC
+else
+  Damping #damp,#fractionPIC
 endif
 
 ! crac propagation
 Propagate "critical err"
 Friction "none"
 MovePlane avg
-! ********** MATERIALS SECTION **********
-Material "beamtop","Polymer","Isotropic"  E #Ebase  nu #nubase  a 60  rho #rho
+
+! ********** MATERIALS SECTION **********
+Material "beamtop","Polymer","Isotropic"
+  E #Ebase
+  nu #nubase
+  a 60
+  rho #rho
   JIc #JIc
   constantTip 1
 Done
@@ -151,7 +157,8 @@ if #damp<0
   GlobalArchive "alpha"
 endif
 
-! ********** GRID SECTION ***********
+
+! ********** GRID SECTION ***********
 #ledge=#cwidth			 					! left edge extra space (mult of cwidth)
 #redge=3*#cwidth						 	! right edge extra space (mult of cwidth)
 #top=int(10*#dinit/#cheight+3*#cheight)*#cheight      ! top (and bottom for full) extra space (mult of cheight)
@@ -163,7 +170,9 @@ endif
 GridThickness #width
 GridHoriz #horiz
 GridVert 2*#vert
-GridRect -#ledge,#length+#redge,-#depth-#top,#depth+#top! ********* MATERIAL POINT SECTION *****
+GridRect -#ledge,#length+#redge,-#depth-#top,#depth+#top
+
+! ********* MATERIAL POINT SECTION *****
 
 ! the sedge
 if #endld$="wedge"
@@ -185,7 +194,8 @@ endif
 
 ! Beam
 Region "beamtop",0,0,#width
-  Rect 0,#length,#shift,#depth+#shiftEndRegion
+  Rect 0,#length,#shift,#depth+#shift
+EndRegion
 Region "beambot",0,0,#width
   Rect 0,#length,-#depth+#shift,#shift
 EndRegion
@@ -195,16 +205,20 @@ EndRegion
 NewCrack #tip+(#cwidth/10),-0.000001+#shift,"beamtop"
 GrowCrackLine #length-#cwidth/4,-0.000001+#shift,#res,"exterior"
 
-! ***** BOUNDARY CONDITION SECTION *****
+
+! ***** BOUNDARY CONDITION SECTION *****
 MoveLine -#cwidth,0,0,0
   Velocity y,constant
 EndMoveLine
-! end loads on beam armsif #endld$="load"
+
+! end loads on beam arms
+if #endld$="load"
   LoadRect #length-(#cwidth/2),#length,#shift,#depth+#shift
     LoadType "net"
     Load y,linear,#loadRate
     !Load y,linear,-#loadRate,#tinit
-  EndLoadRect  LoadRect #length-(#cwidth/2),#length,-#depth+#shift,#shift
+  EndLoadRect
+  LoadRect #length-(#cwidth/2),#length,-#depth+#shift,#shift
     LoadType "net"
     Load y,linear,-#loadRate
     !Load y,linear,#loadRate,#tinit

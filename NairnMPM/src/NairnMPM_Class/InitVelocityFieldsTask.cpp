@@ -49,7 +49,7 @@ void InitVelocityFieldsTask::Execute(void)
 		for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
 		{   // get material point (only in this patch)
 			MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
-			
+
 			while(mpmptr!=NULL)
 			{	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
 				const int matfld = matID->GetField();                           // material velocity field
@@ -65,11 +65,7 @@ void InitVelocityFieldsTask::Execute(void)
 				
 				// Only need to decipher crack velocity field if has cracks (firstCrack!=NULL)
 				//      and if this material allows cracks.
-#ifdef COMBINE_RIGID_MATERIALS
 				bool decipherCVF = firstCrack!=NULL && block!=FIRST_RIGID_CONTACT;
-#else
-				bool decipherCVF = firstCrack!=NULL;
-#endif
 				
 				// Check each node
 				for(int i=1;i<=numnds;i++)
@@ -118,13 +114,13 @@ void InitVelocityFieldsTask::Execute(void)
 						// Use vfld=0 if no cracks found
 						if(cfound>0)
 						{   // In parallel, this is critical code
-#pragma omp critical
+#pragma omp critical (addcvf)
 							{   try
 								{   vfld = ndptr->AddCrackVelocityField(matfld,cfld);
 								}
 								catch(CommonException err)
 								{   if(initErr==NULL)
-									initErr = new CommonException(err);
+										initErr = new CommonException(err);
 								}
 							}
 						}
@@ -139,13 +135,13 @@ void InitVelocityFieldsTask::Execute(void)
 					// When some materials ignore cracks, those materials always use [0]
 					if(maxMaterialFields>1 && ndptr->NeedsMatVelocityField(vfld,matfld))
 					{   // If parallel, this is critical code
-#pragma omp critical
+#pragma omp critical (addcvf)
 						{   try
 							{   ndptr->AddMatVelocityField(vfld,matfld);
 							}
 							catch(CommonException err)
 							{   if(initErr==NULL)
-								initErr = new CommonException(err);
+									initErr = new CommonException(err);
 							}
 						}
 						

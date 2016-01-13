@@ -14,24 +14,8 @@
 
 #pragma mark IsotropicMat::Methods
 
-#ifdef TRACK_RTOT
-
-// If needed, a material can initialize particle state
-// For subclasses of TransIsotropic, rotation matrix is tracked in large rotation mode
-//		and in small rotation is 3D
-void IsotropicMat::SetInitialParticleState(MPMBase *mptr,int np) const
-{	// store initial rotation, but only for large rotation mode
-	if(useLargeRotation)
-		mptr->InitRtot(Matrix3::Identity());
-	
-	// call super class
-    Elastic::SetInitialParticleState(mptr,np);
-}
-
-#endif
-
 // Isotropic material can use read-only initial properties
-void *IsotropicMat::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
+void *IsotropicMat::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer,int offset) const
 {	return (void *)&pr;
 }
 
@@ -45,7 +29,7 @@ Vector IsotropicMat::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 	du are (gradient rates X time increment) to give deformation gradient change
 	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMETRIC_MPM, otherwise dvzz=0
  */
-void IsotropicMat::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+void IsotropicMat::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res,int historyOffset) const
 {	if(useLargeRotation)
 		LRConstitutiveLaw(mptr,du,delTime,np,properties,res);
 	else
@@ -76,18 +60,6 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     Matrix3 dR;
     Matrix3 dV = dF.LeftDecompose(&dR,NULL);
 	
-#ifdef TRACK_RTOT
-	// read previous rotation and update it
-	Matrix3 *Rnm1 = mptr->GetRtotPtr();
-	Matrix3 Rtot = dR*(*Rnm1);
-	mptr->SetRtot(Rtot);
-
-	// get strain increments de = (dV-I) dR Fnm1 Rtot^T
-	dV(0,0) -= 1.;
-	dV(1,1) -= 1.;
-	dV(2,2) -= 1.;
-	Matrix3 de = (dV*dR)*(pFnm1*Rtot.Transpose());
-#else
 	// decompose to get previous stretch
 	Matrix3 Vnm1 = pFnm1.LeftDecompose(NULL,NULL);
 	
@@ -96,7 +68,6 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	dV(1,1) -= 1.;
 	dV(2,2) -= 1.;
 	Matrix3 de = dV*Vnm1.RMRT(dR);
-#endif
 	
 	// Update total deformation gradient
 	Matrix3 pF = dF*pFnm1;
@@ -370,7 +341,7 @@ double IsotropicMat::WaveSpeed(bool threeD,MPMBase *mptr) const
 }
 
 // Calculate shear wave speed in L/sec
-double IsotropicMat::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt(G/rho); }
+double IsotropicMat::ShearWaveSpeed(bool threeD,MPMBase *mptr,int offset) const { return sqrt(G/rho); }
 
 
 

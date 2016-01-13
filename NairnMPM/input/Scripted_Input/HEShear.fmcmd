@@ -194,6 +194,7 @@ if #bcs$="rigid"
   endif
 
   ! define rigid materials
+  ExtrapolateRigid
   Material "rigid","Loading Clamp","Rigid"
     if #analysis$="3D MPM"
       direction 7

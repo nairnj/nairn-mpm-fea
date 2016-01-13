@@ -32,29 +32,29 @@ class NewMaterial : public MaterialBase
 		virtual void PrintMechanicalProperties(void) const;
 		//virtual void PrintTransportProperties(void) const;
 		//virtual void ValidateForUse(int) const;
+		//virtual void SetInitialParticleState(MPMBase *,int,int) const;
 	
-		// History-dependent properties
-        //virtual void SetInitialParticleState(MPMBase *,int) const;
-		//virtual char *InitHistoryData(void);
+		// history data
+ 		//virtual char *InitHistoryData(char *pchr,MPMBase *);
 		//virtual double GetHistory(int,char *) const;
 		
 		// contitutive law methods
-        //virtual int SizeOfMechanicalProperties(int &altBufferSize) const
-        //virtual void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
+        //virtual int SizeOfMechanicalProperties(int &altBufferSize) const;
+        //virtual void *GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer,int) const;
 		//virtual void GetTransportProps(MPMBase *,int,TransportProperties *) const;
 		//virtual double GetHeatCapacity(MPMBase *) const;
 		//virtual double NewMaterial::GetCpMinusCv(MPMBase *) const;
-        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
 				
 		// accessors
 		virtual const char *MaterialType(void) const;
 		virtual int MaterialTag() const;
 		virtual double WaveSpeed(bool,MPMBase *) const;
-		//virtual double ShearWaveSpeed(bool,MPMBase *) const;
-        //virtual double CurrentWaveSpeed(bool,MPMBase *) const;
+		//virtual double ShearWaveSpeed(bool,MPMBase *,int) const;
+        //virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;
 		//virtual double MaximumDiffusion(void) const;
         //virtual double MaximumDiffusivity(void) const;
-        //virtual Tensor GetStress(Tensor *sp,double pressure) const;
+        //virtual Tensor GetStress(Tensor *sp,double pressure,MPMBase *) const;
         //virtual bool SupportsArtificialViscosity(void) const;
 		
     protected:

@@ -17,24 +17,39 @@
 
 <h1>Deprecated Commands</h1>
 
-<p>The following commands have been deprecated. The most common reasons are to change the default units for the command or to change the style of the input. These commands all still work.</p>
+<p>The following commands have been deprecated (in alphabetical order). The most common reasons are to change the default units for the command or to change the style of the input. These commands all still work.</p>
 
 <dl>
 
-<dt>&lt;TimeStep&gt;(time step)/&gt;</dt>
-<dd>Replaced by <a href="mpmheader.html#MPMMethods"><code>&lt;Timing&gt;</code></a>. Enter <code>(time step)</code> for the MPM time step (in <a href="units.html">time units</a> or in units set by a optional <a href="#units"><code>units</code> attribute</a>). Deprecated in 11.0.0.</dd>
-
-<dt>&lt;MaxTime&gt;(max time)/&gt;</dt>
-<dd>Replaced by <a href="mpmheader.html#MPMMethods"><code>&lt;Timing&gt;</code></a>. Enter <code>(max time)</code> for the time that the calculations will stop (in <a href="units.html">time units</a> or in units set by a optional <a href="#units"><code>units</code> attribute</a>). Deprecated in 11.0.0.</dd>
-
-<dt>&lt;TimeFactor&gt;(time factor)/&gt;</dt>
-<dd>Replaced by <a href="mpmheader.html#MPMMethods"><code>&lt;Timing&gt;</code></a>. Enter <code>(time factor)</code> for the Courant-Friedrichs-Levy (or CFL) factor to use when determining the MPM time step. The time step used in the analysis will be the minimum of the one determined using this factor and the one entered in <code>(time step)</code>. The default CFL is 0.5. Deprecated in 11.0.0.</dd>
-
 <dt>&lt;ArchiveTime maxProps="(props)"&gt;(time)&lt;/ArchiveTime&gt;</dt>
-<dd>Replaced by <a href="mpmheader.html#archiving"><code>&lt;ArchiveGroup&gt;</code></a>. Enter <code>(time)</code> for the time interval between archiving (in <a href="units.html">time units</a> or in units set by a optional <a href="#units"><code>units</code> attribute</a>). The <code>(props)</code> attribute forces archiving if <code>(props)</code> propagations and/or debonds have occurred since the last archive (default is 0, which disables counting of propagations). Deprecated in 11.0.0.</dd>
+<dd>Replaced by <a href="mpmheader.html#archiving"><code>&lt;ArchiveGroup&gt;</code></a>. Enter <code>(time)</code> for the time interval between archiving (in <a href="units.html">time units</a> or in units set by a optional <a href="#units"><code>units</code> attribute</a>). The <code>(props)</code> attribute forces archiving if <code>(props)</code> propagations and/or debonds have occurred since the last archive (default is 0, which disables counting of propagations). Deprecated in 2.0.0.</dd>
+
+<dt>&lt;CrackList friction='0.1' Dn='200' Dnc='-1' Dnt='200' Dt='5'&gt; ... &lt;/CrackList&gt;</dt>
+<dd>This command used to set custom crack contact properties (by methods explain <a href="#friction">below</a>). All the above attributes have been replaced by <code>law</code> and <code>lawname</code> attributes to set properties using a <a href="definematl.html#CLM">contact law</a>.</dd>
 
 <dt>&lt;FirstArchiveTime&gt;(first time)&lt;/FirstArchiveTime&gt;</dt>
-<dd>Replaced by <a href="mpmheader.html#archiving"><code>&lt;ArchiveGroup&gt;</code></a>. Enter <code>(first time)</code> for the first time results are archived (in <a href="units.html">time units</a> or in units set by a optional <a href="#units"><code>units</code> attribute</a>). Deprecated in 11.0.0.</dd>
+<dd>Replaced by <a href="mpmheader.html#archiving"><code>&lt;ArchiveGroup&gt;</code></a>. Enter <code>(first time)</code> for the first time results are archived (in <a href="units.html">time units</a> or in units set by a optional <a href="#units"><code>units</code> attribute</a>). Deprecated in 2.0.0.</dd>
+
+<dt><a name="friction"></a>&lt;Friction Dt='(Dt)' Dn='(Dnt)' Dnc='(Dnc)' mat='(num)' matname='(name)'&gt;(frict)&lt;/Friction&gt;</dt>
+<dd>This command sets friction or imperfect interface properties and may be used in the <a href="mpmheader.html#multi">&lt;MultiMaterialMode&gt;</a> block, in the <a href="mpmheader.html#cracks">&lt;Crack&gt;</a> block, or in a <a href="definematl.html#cmn4">material definition block</a>. All the above attributes have been replaced by <code>law</code> and <code>lawname</code> attributes to set properties using a <a href="definematl.html#CLM">contact law</a>. The former command settings are:
+<ul class="lev2args">
+<li><code>(frict)</code>=(zero or positive number) - contact is by friction with the supplied coefficient of friction (which defaults to 0).</li>
+<li><code>(frict)</code>=(or a number between -1 and -9) - contact by stick conditions.</li>
+<li><code>(frict)</code>=(or a number less than -10) - reverts to a single velocity field. A better approach to contact with a single velocity field is to have two or more materials <a href="definematl.html#cmn4">share the same velocity field</a>.</li>
+<li><code>(frict)</code>=11 - converts multimaterial interactions to be an <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Imperfect_Interfaces">imperfect interface</a> with interface parameters supplied in <code>(Dt)</code>, <code>(Dnt)</code>, and <code>(Dnc)</code> for tangential direction and normal direction in tension or compression, respectively. If <code>(Dnc)</code> is not give it is set equal to <code>(Dnt)</code> (interface parameters in <a href="units.html">pressure/length units</a>).</li>
+<li><code>(mat)</code> (or <code>(matname)</code>) - sets custom contact properties (from settings in other parameters) to use for contact between current material and a second material, which is specified using <a href="definematl.html#nameOrNum">number or name</a>. These attributes are only allowed when the command is in a <a href="definematl.html#cmn4">material definition block</a>.</li>
+</ul>
+In a <a href="mpmheader.html#multi">&lt;MultiMaterialMode&gt;</a> block, the parameters set default multimaterial mode contact properties. In a <a href="mpmheader.html#cracks">&lt;Crack&gt;</a> block, the parameters set default multimaterial mode contact properties. In a <a href="definematl.html#cmn4">material definition block</a>, the commands set custom contact properties between two materials.
+</dd>
+
+<dt>&lt;MaxTime&gt;(max time)/&gt;</dt>
+<dd>Replaced by <a href="mpmheader.html#MPMMethods"><code>&lt;Timing&gt;</code></a>. Enter <code>(max time)</code> for the time that the calculations will stop (in <a href="units.html">time units</a> or in units set by a optional <a href="#units"><code>units</code> attribute</a>). Deprecated in 2.0.0.</dd>
+
+<dt>&lt;TimeFactor&gt;(time factor)/&gt;</dt>
+<dd>Replaced by <a href="mpmheader.html#MPMMethods"><code>&lt;Timing&gt;</code></a>. Enter <code>(time factor)</code> for the Courant-Friedrichs-Levy (or CFL) factor to use when determining the MPM time step. The time step used in the analysis will be the minimum of the one determined using this factor and the one entered in <code>(time step)</code>. The default CFL is 0.5. Deprecated in 2.0.0.</dd>
+
+<dt>&lt;TimeStep&gt;(time step)/&gt;</dt>
+<dd>Replaced by <a href="mpmheader.html#MPMMethods"><code>&lt;Timing&gt;</code></a>. Enter <code>(time step)</code> for the MPM time step (in <a href="units.html">time units</a> or in units set by a optional <a href="#units"><code>units</code> attribute</a>). Deprecated in 2.0.0.</dd>
 
 </dl>
 

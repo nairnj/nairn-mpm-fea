@@ -16,7 +16,7 @@
 class GridPatch;
 class NodalPoint;
 
-// grid type - all 3D ones above the marker
+// grid type - all 3D ones above the marker, all known grid types > 0
 // Square, Rect, Cubic, and orthogonal all have equal element sizes
 // Variable means rectangular (2D) or orthogonal (3D), but variable element sizes
 enum {	UNKNOWN_GRID=-1,NOT_CARTESIAN=0,SQUARE_GRID,RECTANGULAR_GRID,VARIABLE_RECTANGULAR_GRID,
@@ -50,8 +50,8 @@ class MeshInfo
 		void SetCartesian(int,double,double,double);
 		void SetElements(int,int,int,double,double,double,double,double,double);
 		int GetCartesian(void);
-		bool IsStructuredGrid(void);
-        bool IsStructuredEqualElementsGrid(void);
+		bool IsStructuredGrid(void) const;
+        bool IsStructuredEqualElementsGrid(void) const;
         bool Is3DGrid(void);
 		void GetGridPoints(int *,int *,int *);
 		double GetDefaultThickness();
@@ -66,11 +66,12 @@ class MeshInfo
         void SetParticleLength(int);
         double GetParametersForBCs(int axis,double *,double *);
         double GetCellVolume(void);
-		double InterfaceContactArea(Vector *,Vector *,double,Vector *,double *,double *);
         double GetPerpendicularDistance(Vector *,Vector *,double);
 		double GetNormalCODAdjust(Vector *,Vector *,double);
         Vector GetCellSize(void);
         double GetCellXSize(void);
+		double GetCellYSize(void);
+		double GetCellZSize(void);
         Vector GetParticleSize(void);
         double GetParticleXSize(void);
         double GetParticleYSize(void);
@@ -78,7 +79,8 @@ class MeshInfo
         double GetParticleSemiLength(void);
 		
 	private:
-		int cartesian;					// non-zero (NOT_CARTESIAN) is a regular grid
+		int cartesian;					// non-zero (NOT_CARTESIAN=0) is a regular grid
+		bool equalElementSizes;			// true is all elements the same size
 		int totalElems;					// total number of elements
 		int horiz,vert,depth;			// number of elements in that direction (if from a grid)
 		double cellVolume;				// cell volume

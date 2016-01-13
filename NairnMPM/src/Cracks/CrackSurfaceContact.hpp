@@ -21,6 +21,7 @@
 class MPMBase;
 class NodalPoint;
 class CrackVelocityField;
+class ContactLaw;
 
 // crack contact law
 enum { NOCONTACT=0,STICK,FRICTIONLESS,FRICTIONAL,IMPERFECT_INTERFACE};
@@ -34,11 +35,10 @@ enum { MAXIMUM_VOLUME_GRADIENT=0,MAXIMUM_VOLUME,AVERAGE_MAT_VOLUME_GRADIENTS,EAC
 class CrackSurfaceContact
 {
     public:
-		double friction,Dn,Dnc,Dt;
-		double materialFriction,materialDn,materialDnc,materialDt;
+		int materialContactLawID,crackContactLawID;
+		ContactLaw *materialContactLaw;
 		bool hasImperfectInterface,displacementCheck;
 		double materialContactVmin,rigidGradientBias;
-		short materialContactLaw;
 		int materialNormalMethod;
 		Vector contactNormal;
 		
@@ -51,30 +51,23 @@ class CrackSurfaceContact
 		bool GetDeltaMomentum(NodalPoint *np,Vector *,CrackVelocityField *,CrackVelocityField *,Vector *,int,bool,double,int *);
 		short MaterialContact(Vector *,Vector *,double,bool,double);
 		void Output(void);
-		void CrackOutput(bool,double,double,double,double,int);
+		void CustomCrackContactOutput(int &,int);
 		void MaterialOutput(void);
-		short GetInterfaceForceOnCrack(NodalPoint *,Vector *,CrackVelocityField *,CrackVelocityField *,Vector *,int,double *,double);
+		bool GetInterfaceForceOnCrack(NodalPoint *,Vector *,CrackVelocityField *,CrackVelocityField *,Vector *,int,double *,double);
 		bool GetMoveOnlySurfaces(void) const;
 		void SetMoveOnlySurfaces(bool);
 		bool GetPreventPlaneCrosses(void) const;
 		void SetPreventPlaneCrosses(bool);
-		int GetMaterialContactLaw(int,int);
-		double GetMaterialFriction(int,int);
-        void GetMaterialInterface(int,int,double *,double *,double *);
+		ContactLaw *GetMaterialContactLaw(int,int);
 		void SetContactNormal(double,double);
 	
 		void MaterialContactPairs(int);
 	
 	private:
-		short ContactLaw;
-		ContactDetails *CrackContactLaw;
-		ContactDetails **mmContact;
+		ContactLaw **crackContactLaw;
+		ContactLaw ***mmContactLaw;
 		bool moveOnlySurfaces;
         bool preventPlaneCrosses;
-
-		void TangentialSlipDeltaP(Vector *,Vector *);
-		void NormalSlipDeltaP(Vector *,Vector *);
-		void FrictionalDeltaP(Vector *,Vector *,int);
 };
 
 extern CrackSurfaceContact contact;

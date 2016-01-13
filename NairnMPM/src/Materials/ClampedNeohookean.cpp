@@ -99,21 +99,25 @@ void ClampedNeohookean::ValidateForUse(int np) const
 	Neohookean::ValidateForUse(np);
 }
 
-#pragma mark Neohookean::History Data
+#pragma mark Neohookean::History Data Methods
 
-// Store J, which is calculated incrementally, and available for archiving and Jp
-// initialize to 1
-char *ClampedNeohookean::InitHistoryData(void)
-{	double *p = CreateAndZeroDoubles(2);
-	p[0] = 1.;
-	p[1] = 1.;
+// return number of bytes needed for history data
+int ClampedNeohookean::SizeOfHistoryData(void) const { return 2*sizeof(double);; }
+
+// Store J, Jres, and Jp, which is calculated incrementally, and available for archiving and Jp
+// initialize all to 1
+char *ClampedNeohookean::InitHistoryData(char *pchr,MPMBase *mptr)
+{	double *p = CreateAndZeroDoubles(pchr,3);
+	p[J_History] = 1.;
+	p[J_History+1] = 1.;
+	p[JP_HISTORY] = 1.;
 	return (char *)p;
 }
 
 // archive material data for this material type when requested.
 double ClampedNeohookean::GetHistory(int num,char *historyPtr) const
 {   double history=0.;
-    if(num==1 || num==2)
+    if(num>0 && num<=3)
     {	double *J=(double *)historyPtr;
         history=J[num-1];
     }
@@ -128,15 +132,16 @@ double ClampedNeohookean::GetHistory(int num,char *historyPtr) const
 	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 	This material tracks pressure and stores deviatoric stress only in particle stress tensor
  */
-void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,
+										   ResidualStrains *res,int historyOffset) const
 {
 	// Update total deformation gradient, and calculate trial B
     Tensor Btrial;
 	double detDF = IncrementDeformation(mptr,du,&Btrial,np);
     
 	// global J
-	double J = detDF * mptr->GetHistoryDble(J_History);
-	mptr->SetHistoryDble(J);
+	double J = detDF * mptr->GetHistoryDble(J_History,historyOffset);
+	mptr->SetHistoryDble(J_History,J,historyOffset);
 	
 	// convert Btrial to matrix to get eigenvalues and check for clamping
 	Matrix3 Belas(Btrial.xx,Btrial.xy,Btrial.xz,
@@ -179,10 +184,10 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 		// get Je and Jp
 		Je = sqrt(lam2.x*lam2.y*lam2.z);
 		Jp = J/Je;
-		mptr->SetHistoryDble(JP_HISTORY,Jp);
+		mptr->SetHistoryDble(JP_HISTORY,Jp,historyOffset);
 	}
 	else
-	{	Jp = mptr->GetHistoryDble(JP_HISTORY);
+	{	Jp = mptr->GetHistoryDble(JP_HISTORY,historyOffset);
 		Je = J/Jp;
 		if(elasticModel==ELASTIC_DISNEY)
 			Ucol = Belas.Eigenvectors(lam2);
@@ -206,9 +211,11 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 	double altLamesp = pr.Lamesp*arg;
 
 	// account for residual stresses
-	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);
+	double dJres = GetIncrementalResJ(mptr,res);
+	double Jres = dJres*mptr->GetHistoryDble(J_History+1,historyOffset);
+	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
+	double resStretch = pow(Jres,1./3.);
 	double Jres23 = resStretch*resStretch;
-	double Jres = Jres23*resStretch;
 		
 	// account for residual stresses relative to elastic J
 	double Jeff = Je/Jres;
@@ -280,7 +287,7 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
     double dilEnergy = -avgP*delV;
 	
 	// incremental residual energy
-	double delVres = 1. - 1./(dresStretch*dresStretch*dresStretch);
+	double delVres = 1. - 1./dJres;
 	double resEnergy = -avgP*delVres;
 
 	// incremental work energy = shear energy
@@ -311,8 +318,8 @@ const char *ClampedNeohookean::MaterialType(void) const { return "Clamped Neohoo
 bool ClampedNeohookean::SupportsArtificialViscosity(void) const { return false; }
 
 //	calculate current wave speed in L/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
-double ClampedNeohookean::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
-{	double Jp = mptr->GetHistoryDble(JP_HISTORY);
+double ClampedNeohookean::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
+{	double Jp = mptr->GetHistoryDble(JP_HISTORY,offset);
 	double arg = exp(hardening*(1.-Jp));
     return sqrt(arg*(Kbulk+4.*G/3.)/rho);
 }

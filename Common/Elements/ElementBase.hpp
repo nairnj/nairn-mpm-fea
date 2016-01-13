@@ -75,7 +75,7 @@ class ElementBase : public LinkedObject
         // prototypes for abstract methods (must override)
         virtual short ElementName(void) = 0;
 		virtual int FaceNodes(void) = 0;
-        virtual short PtInElement(Vector &) = 0;
+        virtual short PtInElement(Vector &) const = 0;
 	
 		// const prototypes
 		virtual int NumberNodes(void) const = 0;

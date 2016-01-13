@@ -5,7 +5,7 @@
 !    sr = -Po (1 - ri^2/r^2)/(1 - ri^2/r0^2)
 !
 ! Sphere Radial Stress
-!    sr = -Po (1 - ri^3/r^3)/(1 - ri^3/r0^3)Ê
+!    sr = -Po (1 - ri^3/r^3)/(1 - ri^3/r0^3)
 !
 ! This file is in development pending best way to handle boundary conditions
 
@@ -250,4 +250,3 @@ else
     Velocity skewxy,constant,0,0,90-#ccwAngle
   EndMoveLine
 endif
-

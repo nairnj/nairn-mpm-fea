@@ -12,7 +12,7 @@
 
 BoxController::BoxController(int block) : ShapeController(block)
 {
-    axis = 0;    // 0 for box, 1,2,3 for axis of a cylinder
+    axis = 0;			// 0 for box, 1,2,3 for axis of a cylinder
     coneRadius = 1.;    // between -1 and 1 for radius at top (>0) or botton (<0), cylinder only
 }
 
@@ -44,9 +44,6 @@ void BoxController::SetProperty(const char *aName,char *value,CommonReadHandler 
 bool BoxController::FinishSetup(void)
 {
     ShapeController::FinishSetup();
-    
-    // done for box
-    if(axis==0) return TRUE;
     
     // midpoints
     xmid = (xmin+xmax)/2.;

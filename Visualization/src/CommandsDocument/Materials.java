@@ -20,6 +20,7 @@ public class Materials
 	private CmdViewer doc;
 	private int criterion,direction,traction;
 	private int altCriterion,altDirection,altTraction;
+	private double matDamping,matPIC;
 	
 	//----------------------------------------------------------------------------
 	// Initialize
@@ -43,6 +44,8 @@ public class Materials
 		altCriterion = -1;
 		altDirection = -1;
 		altTraction = -1;
+		matDamping = -1.1e12;
+		matPIC = -1.;
 	}
 	
 	//----------------------------------------------------------------------------
@@ -98,6 +101,12 @@ public class Materials
 		options.put("taitliquid", new Integer(27));
 		options.put("neohookean", new Integer(28));
 		options.put("clampedneohookean", new Integer(29));
+		options.put("isosoftening", new Integer(50));
+		options.put("phasetransition", new Integer(30));
+		options.put("ignorecontact", new Integer(60));
+		options.put("coulombfriction", new Integer(61));
+		options.put("adhesivefriction", new Integer(63));
+		options.put("linearinterface", new Integer(62));
 		matType = doc.readIntOption(args.get(3),options,null);
 		if(matType<0)
 			throw new Exception("'Material' type not yet supported in scripting commands.\nUse XML method instead: "+args);
@@ -148,6 +157,17 @@ public class Materials
 				if(altDirection>=0) xmldata.append(" direction='"+altDirection+"'");
 				if(altTraction>=0) xmldata.append(" traction='"+altTraction+"'");
 				xmldata.append("/>\n");
+			}
+			
+			// damping
+			if(matDamping>-1.e12 || matPIC>=0.)
+			{	xmldata.append("    <PDamping");
+				if(matPIC>=0.)
+					xmldata.append(" PIC='"+matPIC+"'");
+				if(matDamping>-1.e12)
+					xmldata.append(">"+matDamping+"</PDamping>\n");
+				else
+					xmldata.append("/>\n");
 			}
 			
 			// viscoelastic
@@ -215,6 +235,12 @@ public class Materials
 			int value = doc.readIntArg(args.get(1));
 			if(value<0 || value>1)
 				throw new Exception("'IdealRubber' property must be integer 0 or 1:\n"+args);
+			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("pressurelaw"))
+		{	prop = "pressureLaw";
+			int value = doc.readIntArg(args.get(1));
 			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
 			return;
 		}
@@ -287,6 +313,24 @@ public class Materials
 				throw new Exception("'"+args.get(0)+"' material property has unknown traction law material:\n"+args);
 			return;
 		}
+		else if(prop.toLowerCase().equals("solidphase"))
+		{	String phase = doc.readStringArg(args.get(1));
+			int phaseNum = doc.mats.getMatID(phase);
+			if(phaseNum==-1) phaseNum = doc.readIntArg(args.get(1));
+			if(phaseNum<=0)
+				throw new Exception("'"+args.get(0)+"' material property has unknown solid phase material:\n"+args);
+			xmldata.append("    <SolidPhase>"+phaseNum+"</SolidPhase>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("liquidphase"))
+		{	String phase = doc.readStringArg(args.get(1));
+			int phaseNum = doc.mats.getMatID(phase);
+			if(phaseNum==-1) phaseNum = doc.readIntArg(args.get(1));
+			if(phaseNum<=0)
+				throw new Exception("'"+args.get(0)+"' material property has unknown liquid phase material:\n"+args);
+			xmldata.append("    <LiquidPhase>"+phaseNum+"</LiquidPhase>\n");
+			return;
+		}
 		else if(prop.toLowerCase().equals("temperature"))
 		{	prop = "SetTemperature";
 			// 0 or 1
@@ -333,12 +377,18 @@ public class Materials
 		}
 		
 		// These require special handling
+		else if(prop.toLowerCase().equals("contact"))
+		{	xmldata.append(parent.doContactLaw(args,2));
+			return;
+		}
 		else if(prop.toLowerCase().equals("friction"))
-		{	xmldata.append(parent.doFriction(args,2));
+		{	// Deprecated - use contact instead
+			xmldata.append(parent.doFriction(args,2));
 			return;
 		}
 		else if(prop.toLowerCase().equals("interface"))
-		{	xmldata.append(parent.doImperfectInterface(args,2));
+		{	// Deprecated - use contact instead
+			xmldata.append(parent.doImperfectInterface(args,2));
 			return;
 		}
 		else if(prop.toLowerCase().equals("color"))
@@ -395,6 +445,18 @@ public class Materials
 		{	xmldata.append("    <Hardening>"+doc.readStringArg(args.get(1))+"</Hardening>\n");
 			return;
 		}
+		else if(prop.toLowerCase().equals("initiation"))
+		{	xmldata.append("    <Initiation>"+doc.readStringArg(args.get(1))+"</Initiation>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeningi"))
+		{	xmldata.append("    <SofteningI>"+doc.readStringArg(args.get(1))+"</SofteningI>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeningii"))
+		{	xmldata.append("    <SofteningII>"+doc.readStringArg(args.get(1))+"</SofteningII>\n");
+			return;
+		}
 		else if(prop.toLowerCase().equals("tauk"))
 		{	taukGk.append("    <tauk>"+doc.readDoubleArg(args.get(1))+"</tauk>\n");
 			ntaus++;
@@ -403,6 +465,14 @@ public class Materials
 		else if(prop.toLowerCase().equals("gk"))
 		{	taukGk.append("    <Gk>"+doc.readDoubleArg(args.get(1))+"</Gk>\n");
 			nGs++;
+			return;
+		}
+		else if(prop.toLowerCase().equals("matdamping"))
+		{	matDamping = doc.readDoubleArg(args.get(1));
+			return;
+		}
+		else if(prop.toLowerCase().equals("matpic"))
+		{	matPIC = doc.readDoubleArg(args.get(1));
 			return;
 		}
 		

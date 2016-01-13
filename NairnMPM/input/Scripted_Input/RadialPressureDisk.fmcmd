@@ -11,8 +11,8 @@ Header
 EndHeader
 
 Analysis "Axisymmetric MPM"
-#method$="uGIMP"
-MPMMethod USF,#method$
+#method$="CPDI"
+MPMMethod USAVG,#method$
 Processors 4
 
 ! ********** Parameters Section **********
@@ -183,4 +183,3 @@ else
     EndLoadLine
   endif
 endif
-

@@ -17,6 +17,13 @@ class MPMBase;
 class GhostNode;
 class NodalPoint;
 
+typedef struct {
+	MPMBase *movingMptr;
+	void *newPatch;
+	MPMBase *previousMptr;
+	void *previousMoveData;
+} MovingData;
+
 enum { FIRST_NONRIGID=0,FIRST_RIGID_CONTACT,FIRST_RIGID_BC };
 
 class GridPatch
@@ -38,6 +45,8 @@ class GridPatch
         void ZeroDisp(void);
         void JKTaskReduction(void);
         void DeleteDisp(void);
+		bool AddMovingParticle(MPMBase *,GridPatch *,MPMBase *);
+		void MoveParticlesToNewPatches(void);
 		void AddParticle(MPMBase *);
 		void RemoveParticleAfter(MPMBase *,MPMBase *);
 	
@@ -62,6 +71,7 @@ class GridPatch
 		int fullRank;
         int baseInterior;
         int baseApex;
+		MovingData *lastToMove;
 };
 
 extern GridPatch **patches;

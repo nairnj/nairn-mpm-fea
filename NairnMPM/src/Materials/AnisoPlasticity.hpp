@@ -61,7 +61,7 @@ class AnisoPlasticity : public Orthotropic
 			
 		// methods
         virtual int SizeOfMechanicalProperties(int &) const;
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *,int) const;
 		virtual int AltStrainContains(void) const;
 		virtual ElasticProperties *GetElasticPropertiesPointer(void *) const;
 	
@@ -87,11 +87,11 @@ class AnisoPlasticity : public Orthotropic
 		virtual double SRPrintFk(MPMBase *,Tensor *,Tensor *,double,int,AnisoPlasticProperties *,double,double) const;
  		
 		// hardening term methods (move to hardening law class when want more hardening options)
-		virtual void UpdateTrialAlpha(MPMBase *,int,AnisoHardProperties *) const = 0;
-		virtual void UpdateTrialAlpha(MPMBase *,int,double,AnisoHardProperties *p) const = 0;
+		virtual void UpdateTrialAlpha(MPMBase *,int,AnisoHardProperties *,int) const = 0;
+		virtual void UpdateTrialAlpha(MPMBase *,int,double,AnisoHardProperties *p,int) const = 0;
 		virtual double GetYield(AnisoHardProperties *p) const = 0;
 		virtual double GetDfAlphaDotH(MPMBase *,int,AnisoHardProperties *p) const = 0;
-		virtual void UpdatePlasticInternal(MPMBase *,int,AnisoHardProperties *p) const = 0;
+		virtual void UpdatePlasticInternal(MPMBase *,int,AnisoHardProperties *p,int) const = 0;
 		
    protected:
 		double syxx,syyy,syzz,tyyz,tyxz,tyxy;

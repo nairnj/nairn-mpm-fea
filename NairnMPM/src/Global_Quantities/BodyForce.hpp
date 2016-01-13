@@ -46,6 +46,7 @@ class BodyForce
 		void Activate(void);
 		void GetGridBodyForce(Vector *,NodalPoint *,double);
 		double GetDamping(double);
+		double GetPICDamping(void);
         double GetParticleDamping(double);
         double GetNonPICDamping(double);
         double GetNonPICParticleDamping(double);
@@ -56,7 +57,7 @@ class BodyForce
 		void SetGridDampingFunction(char *,bool);
 		void SetGridBodyForceFunction(char *,int);
 		void SetFractionPIC(double);
-	
+
 	private:
         double alpha,maxAlpha;
         ROperation *function;

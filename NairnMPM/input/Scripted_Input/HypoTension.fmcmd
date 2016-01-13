@@ -38,9 +38,9 @@ EndHeader
 ! pick strain update method usually "USF" or "USAVG"
 #update$ = "USAVG"
 
-! material options: isotropic, iptrans, normtrans, ortho, isoplasticity, mgeos
-! bistable, viscoelastic, hill, wood
-#matID$="hill"
+! material options: isotropic, iptrans, normtrans, ortho, isoplasticity, isosoftening
+! bistable, hill, wood, viscoelastic, MGviscoelastic
+#matID$="MGviscoelastic"
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2, JohnsonCook
@@ -48,27 +48,29 @@ EndHeader
 
 ! Dimensions
 #cell=1
-#length=40			! length
-#width=6			! width
-#thick=3			! thickness
+#length=20			! length
+#width=5			! width
+#thick=1			! thickness
+#hole=0				! hole diameter (only if rotate=0)
 
 ! rotate sample to test off-grid loading (2D only)
 #rotate = 0
 
 ! Load by strain (estimated for force and traction loads)
 #loading$ = "rigid"	! Loading = "force", "traction", "rigid", "contact", "thermal"
-#fixsides$ = "no"	! "yes" or "no" for sides fixed in y direction (2D) or y and z (3D)
-#strain = 5	        ! Maximum strain (%) (stress needed is estimated for force and tractions using base modulus) or dT if thermal
+#fixsides$ = "yes"	! "yes" or "no" for sides fixed in y direction (2D) or y and z (3D) or "z" or "y" for 3D in z or y direction only (i.e. plane strain)
+#strain = 10        ! Maximum strain (%) (stress needed is estimated for force and tractions using base modulus) or dT if thermal
+#relRate = .1		! loading rate as percent of wave speed
+#factor = 0.4			! time step factor
 
 ! Loading rate
-#relRate = .2		! loading rate as percent of wave speed
-#hold = 1		! hold time (multiple of loading time)
+#hold = 0		! hold time (multiple of loading time)
 #unload = 0		! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
 ! Damping parameter - for feedback or regular, depending on BCs
 #damp = 0
-#fbdamp = 0.0
-#factor = 0.4			! time step factor
+#fbdamp = 0
+#fPIC = 0
 
 ! temperature option to test energy coupling
 StressFreeTemp 294
@@ -82,8 +84,26 @@ StressFreeTemp 294
 #rho=1
 #nuBase=.33
 #aBase=60
-#angle=-30			! 2D z rotation angle for anisotopic materials
+#angle=0			! 2D z rotation angle for anisotopic materials
 #yldstrain=1
+#largeRotation=1	! 1 for large rotation method
+
+! Chage for special case materials
+if #matID$="MGviscoelastic"
+  #gamma0 = 0.85
+  #C0=2180
+  #rho=1.181
+  #Cv = 1466
+  #Kbase = #rho*#C0^2/1000
+  #Gbase = 2320
+  #Gbase = 1000
+  #Ebase=9*#Kbase*#Gbase/(3*#Kbase+#Gbase)
+  #nuBase=(3*#Kbase-2*#Gbase)/(6*#Kbase+2*#Gbase)
+  #aBase = #gamma0*#Cv*1e6/(3*#C0*#C0)
+endif
+
+#K0=#Ebase/(3*(1-2*#nuBase))
+#G0=#Ebase/(2*(1+#nuBase))
 
 ! *********************** Start Calculation Commands **************************
 ! Analysis type
@@ -119,7 +139,8 @@ else
 endif
 
 ! calculate time to reach peak state
-#speed = 1000*sqrt(#Ebase*1000/#rho)		! elastic wave speed in mm/s
+!#speed = 1000*sqrt(#Ebase*1000/#rho)		! elastic wave speed in mm/s
+#speed=1000*sqrt(1000*(#K0+4*#G0/3)/#rho)	! wave speed (mm/sec)
 #disp = #strain*#length/100			! mm of displacement
 #disprate = #relRate*#speed/100
 if #strain<0
@@ -138,16 +159,15 @@ if #rotate!=0
 endif
 
 ! Archiving
-if #fixsides$="yes"
-  Archive "Results/ConstrainedTension/"&#analysis$&"-"&#method$&"-"&#update$&"/"&#loading$&"/"&#matID$
-else
+if #fixsides$="no"
   Archive "Results/Tension/"&#analysis$&"-"&#method$&"-"&#update$&"/"&#loading$&"/"&#matID$
+else
+  Archive "Results/ConstrainedTension/"&#analysis$&"-"&#method$&"-"&#update$&"/"&#loading$&"/"&#matID$
 endif
 #maxTime=(1+#hold+#unload)*#time
 TimeStep 1000,#maxTime,#factor
 ArchiveTime #maxTime/100
-ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain,workenergy,heatenergy
-
+ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain,workenergy,temperature,heatenergy
 
 ! ------------ Material Definitions
 #isPlastic$="no"
@@ -158,7 +178,57 @@ if #matID$="isotropic"
     nu #nuBase
     a #aBase
     rho #rho
+    if #largeRotation>0
+      largeRotation 1
+    endif
   Done
+endif
+
+if #matID$="isosoftening"
+  #isPlastic$="yes"
+  ToArchive history2,history3,history4
+  Material "isosoftening","Isotropic Softening Material","IsoSoftening"
+    rho #rho
+    largeRotation 1
+    E #Ebase
+    nu #nuBase
+    a #aBase
+    Initiation MaxPrinciple
+    sigmac 30
+    tauc 10
+    SofteningI Linear
+    I-Gc 10000
+    SofteningII Linear
+    II-Gc 10000
+  Done
+!  XMLData Material,"isosoftening"
+!  <Material Type="50" Name="Isotropic Softening Material">
+!    <rho>1</rho>
+!    <largeRotation>1</largeRotation>
+!    <E>1000</E>
+!    <nu>0.33</nu>
+!    <alpha>60</alpha>
+!    <Initiation>MaxPrinciple</Initiation>
+!    <sigmac>30</sigmac>
+!    <tauc>10</tauc>
+!    <SofteningI>Linear</SofteningI>
+!    <I-Gc>10000</I-Gc>
+!    <SofteningII>Linear</SofteningII>
+!    <II-Gc>210000</II-Gc>
+!  </Material>
+!  EndXMLData
+  
+  XMLData Material,"isosoftening2"
+  <Material Type="50" Name="Isotropic Softening Material">
+    <rho>1</rho>
+    <largeRotation>1</largeRotation>
+    <E>1000</E>
+    <nu>0.33</nu>
+    <alpha>60</alpha>
+    <!--<sigmac>30</sigmac>
+    <tauc>20</tauc>-->
+  </Material>
+  EndXMLData
 endif
 
 if #matID$="isoplasticity"
@@ -168,6 +238,9 @@ if #matID$="isoplasticity"
     nu #nuBase
     a #aBase
     rho #rho
+    if #largeRotation>0
+      largeRotation 1
+    endif
     if #hardID$!=""
       hardening #hardID$
     endif
@@ -203,66 +276,6 @@ if #matID$="isoplasticity"
   Done
 endif
 
-if #matID$="mgeos"
-  !   For MGSCGL, #Ebase=K=#rho*C0^2, e.g. for Tungsten rho=19.256, C0=4004,
-  !				K=0.001 rho C0^2 MPa (rho in g/cm^2, C0 in m/sec)
-  ! Copper
-  #Ebase= 120000
-  #rho=8.96
-  #nuBase=.25
-  #aBase=0
-
-  ! Tungston
-  #Ebase=308776
-  #rho=19.256
-  #nuBase=.28
-  #aBase=4.5
-
-  #isPlastic$="yes"
-  #C0base = sqrt(1000*#Ebase/#rho)
-  #Gbase = 3*#Ebase*(1-2*#nuBase)/(2*(1+#nuBase))
-  Material #matID$,"Tungsten","MGEOSMaterial"
-    C0 #C0base
-    S1 1.35
-    S2 0
-    S3 0
-    gamma0 1.64
-    rho #rho
-    G #Gbase
-    Cv 134
-    if #hardID$!=""
-      hardening #hardID$
-    endif
-    if #hardID$="Linear"
-      yield abs(#Ebase*#yldstrain/100)
-      Ep #Ebase/3
-    else if #hardID$="Nonlinear"
-      yield abs(#Ebase*#yldstrain/200)
-      Khard 5000
-      nhard .24
-    else if #hardID$="JohnsonCook"
-      Ajc 90
-      Bjc 292
-      njc .31
-      Cjc 0.025
-      ep0jc 1
-      Tmjc 1356
-      mjc 1.09
-    else if #hardID$="SCGL"
-      yield 2200
-      GPpG0 0.01e-3
-      GTpG0 -2.2e-4
-      !GPpG0 0
-      !GTpG0 0
-      yieldMax 4000
-      betahard 7.7
-      nhard 0.13
-    endif
-    Cv 383
-    kCond 0.202
-  Done
-endif
-
 if #matID$="viscoelastic"
   #isPlastic$="yes"
   Material "viscoelastic","Viscoelastic Material","Viscoelastic"
@@ -273,6 +286,28 @@ if #matID$="viscoelastic"
     a #aBase
     rho #rho
   Done
+endif
+
+if #matID$="MGviscoelastic"
+  ToArchive history1,history2
+  Material #matID$,"MGEOS Viscoelastic Material","Viscoelastic"
+    pressureLaw 1
+    K #Kbase
+    C0 #C0
+    gamma0 #gamma0
+    S1 2.088
+    S2 0
+    S3 0
+
+    G0 #Gbase
+    Gk #Ebase/(4*(1+#nuBase))
+    tauk #maxTime/4000
+    rho #rho
+    Cv #Cv
+  Done
+  
+  CustomTask AdjustTimeStep
+  Parameter verbose,1
 endif
 
 if #matID$="bistable"
@@ -288,6 +323,9 @@ if #matID$="bistable"
     transition "dilation"
     reversible "yes"
     rho #rho
+    if #largeRotation>0
+      largeRotation 1
+    endif
   Done
 endif
 
@@ -301,6 +339,9 @@ if #matID$="normtrans"
     aA 20
     aT 60
     rho #rho
+    if #largeRotation>0
+      largeRotation 1
+    endif
   Done
 endif
 
@@ -314,6 +355,9 @@ if #matID$="iptrans"
     aA #aBase/5
     aT #aBase
     rho #rho
+    if #largeRotation>0
+      largeRotation 1
+    endif
   Done
 endif
 
@@ -332,6 +376,9 @@ if #matID$="ortho"
     ay 40
     az 60
     rho #rho
+    if #largeRotation>0
+      largeRotation 1
+    endif
   Done
 endif
 
@@ -339,24 +386,29 @@ if #matID$="hill"
   #isPlastic$="yes"
   Material "hill","Orthotropic Hill Plastic",15
     Ex #Ebase
-    Ey #Ebase/3
-    Ez 2*#Ebase
-    nuxy .33
+    Ey #Ebase/10
+    Ez #Ebase/5
+    nuxy .25
     nuxz .25
-    nuyz .2
-    Gxy #Ebase/(4*1.33)
-    Gxz 2*#Ebase/(2*1.33)
-    Gyz 2*#Ebase/(2*1.33)
-    ax 60
-    ay 60
+    nuyz .35
+    Gxy #Ebase/5
+    Gxz #Ebase/5
+    Gyz #Ebase/10
+    ax 20
+    ay 40
     az 60
     rho #rho
-    yldxx abs(#Ebase*#yldstrain/100)
+    yldxx abs(100*#Ebase*#yldstrain/100)
     yldyy abs(#Ebase*#yldstrain/100)
     yldzz abs(#Ebase*#yldstrain/100)
     yldxy abs(#Ebase*#yldstrain/100/sqrt(3))
+    yldxz abs(#Ebase*#yldstrain/100/sqrt(3))
+    yldyz abs(#Ebase*#yldstrain/100/sqrt(3))
     Khard 100
     nhard 1
+    if #largeRotation>0
+      largeRotation 1
+    endif
   Done
 endif
 
@@ -438,9 +490,7 @@ if #fbdamp>0
   GlobalArchive alpha
   GlobalArchive "Kinetic Energy"
 endif
-if #damp>0
-  Damping #damp
-endif
+Damping #damp,#fPIC
 
 ! additional and global archive
 if #isPlastic$="yes"
@@ -458,11 +508,20 @@ GlobalArchive "Strain Energy",#matID$
 if #isPlastic$="yes"
   GlobalArchive exxe,#matID$
   GlobalArchive exxp,#matID$
+  GlobalArchive eyye,#matID$
+  GlobalArchive eyyp,#matID$
+  GlobalArchive exye,#matID$
+  GlobalArchive exyp,#matID$
+  GlobalArchive ezze,#matID$
+  GlobalArchive ezzp,#matID$
   GlobalArchive "Plastic Energy",#matID$
 endif
 if #tmode$!="isothermal"
   GlobalArchive temp,#matID$
   GlobalArchive "Heat Energy",#matID$
+else if #matID$="MGviscoelastic"
+  GlobalArchive "Heat Energy",#matID$
+  GlobalArchive "Internal Energy",#matID$
 endif
 
 ! reaction and contact forces
@@ -523,9 +582,18 @@ if #analysis$="3D MPM"
   GridRect #gleft,#gright,#gbot,#gtop,#zmin,#zmax
   
   ! material points for object
-  Region #matID$,0,0,0,"angle",#angle,"temp",#startTemp
-    Box 0,#length,0,#width,0,#thick
-  EndRegion
+  if #matID$="isosoftening"
+    Region #matID$,0,0,#thick,"temp",#startTemp
+      Box #length/8,7*#length/8,0,#width,0,#thick
+    EndRegion
+    Region "isosoftening2",0,0,#thick,"temp",#startTemp
+      Box 0,#length,0,#width,0,#thick
+    EndRegion
+  else
+    Region #matID$,0,0,0,"angle",#angle,"temp",#startTemp
+      Box 0,#length,0,#width,0,#thick
+    EndRegion
+  endif
 else
   GridThickness #thick
   GridRect #gleft,#gright,#gbot,#gtop
@@ -539,9 +607,23 @@ else
       PolyPt -#sn*#width,#cs*#width
     EndRegion
   else
-    Region #matID$,0,0,#thick,"angle",#angle,"temp",#startTemp
-      Rect 0,#length,0,#width
-    EndRegion
+    if #hole>0
+      Hole
+        Oval (#length-#hole)/2,(#length+#hole)/2,(#width-#hole)/2,(#width+#hole)/2
+      EndHole
+    endif
+    if #matID$="isosoftening"
+      Region #matID$,0,0,#thick,"temp",#startTemp
+        Rect #length/8,7*#length/8,0,#width
+      EndRegion
+      Region "isosoftening2",0,0,#thick,"temp",#startTemp
+        Rect 0,#length,0,#width
+      EndRegion
+    else
+      Region #matID$,0,0,#thick,"angle",#angle,"temp",#startTemp
+        Rect 0,#length,0,#width
+      EndRegion
+    endif
   endif
 endif
 
@@ -657,21 +739,25 @@ if #rotate!=0
 endif
 
 ! Fixed sides
-if #fixsides$="yes"
+if #fixsides$!="no"
   if #analysis$="3D MPM"
     #midpt=-#cell/2
-    MoveBox #gleft,-1.01*#cell,#zmin,#gright,.01*#cell,#zmax
-      Velocity y,constant,0
-    EndMoveBox
-    MoveBox #gleft,#width-.01*#cell,#zmin,#gright,#width+1.01*#cell,#zmax
-      Velocity y,constant,0
-    EndMoveBox
-    MoveBox #gleft,#gbot,-1.01*#cell,#gright,#gtop,.01*#cell
-      Velocity z,constant,0
-    EndMoveBox
-    MoveBox #gleft,#gbot,#thick-.01*#cell,#gright,#gtop,#thick+1.01*#cell
-      Velocity z,constant,0
-    EndMoveBox
+    if #fixsides$!="z"
+      MoveBox #gleft,-1.01*#cell,#zmin,#gright,.01*#cell,#zmax
+        Velocity y,constant,0
+      EndMoveBox
+      MoveBox #gleft,#width-.01*#cell,#zmin,#gright,#width+1.01*#cell,#zmax
+        Velocity y,constant,0
+      EndMoveBox
+    endif
+    if #fixsides$!="y"
+      MoveBox #gleft,#gbot,-1.01*#cell,#gright,#gtop,.01*#cell
+        Velocity z,constant,0
+      EndMoveBox
+      MoveBox #gleft,#gbot,#thick-.01*#cell,#gright,#gtop,#thick+1.01*#cell
+        Velocity z,constant,0
+      EndMoveBox
+    endif
   else if #rotate!=0
     Stop "Fixed sides cannot be used with rotated specimens (yet)"
   else

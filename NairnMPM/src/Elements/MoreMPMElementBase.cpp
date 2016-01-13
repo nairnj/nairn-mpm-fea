@@ -70,8 +70,15 @@ void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
 	See GetShapeFunctions() if need to change
   NOTE: This is only called by crack update and do not need to save xipos.
 */
+#define CRACK_POINT
 void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vector *pos) const
 {
+#ifdef CRACK_POINT
+	Vector xipos;
+	GetNodes(numnds,nds);
+	GetXiPos(pos,&xipos);
+	ShapeFunction(&xipos,FALSE,&fn[1],NULL,NULL,NULL);
+#else
 	Vector xipos,lp;
 	int ndIDs[maxShapeNodes];
 	
@@ -108,6 +115,7 @@ void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vec
             GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
             break;
      }
+#endif
 }
 
 /* Just get nodes and shape functions
@@ -596,7 +604,7 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
     {   for(j=1;j<ncnds;j++)
         {   if(cnodes[j]<cnodes[j-1])
             {
-#pragma omp critical
+#pragma omp critical (output)
                 {   cout << "Not Sorted: " << endl;
                     for(i=0;i<ncnds;i++)
                     {   cout << "# node = " << cnodes[i] << ", ws*Si = " << wsSi[i] << ", wgx*Si = " << wgSi[i].x << ", wgy*Si = " << wgSi[i].y << endl;

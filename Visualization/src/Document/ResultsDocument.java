@@ -307,6 +307,8 @@ public class ResultsDocument extends AbstractTableModel
 			if(word1.equals("Isotropic"))
 			{	if(word2.equals("Dugdale"))
 					matl=new MaterialBase(matName,MaterialBase.DUGDALE);
+            	else if(word2.equals("Softening"))
+            		matl=new MaterialBase(matName,MaterialBase.ISOSOFTENING);
 				else
 					matl=new IsotropicMat(matName);
 			}
@@ -335,7 +337,11 @@ public class ResultsDocument extends AbstractTableModel
 			else if(word1.equals("Triangular"))
 				matl=new MaterialBase(matName,MaterialBase.COHESIVEZONEMATERIAL);
 			else if(word1.equals("Linear"))
-				matl=new MaterialBase(matName,MaterialBase.LINEARTRACTIONMATERIAL);
+			{	if(word2.equals("Imperfect"))
+					matl=new MaterialBase(matName,MaterialBase.LINEARIMPERFECT);
+				else
+					matl=new MaterialBase(matName,MaterialBase.LINEARTRACTIONMATERIAL);
+			}
 			else if(word1.equals("Cubic"))
 				matl=new MaterialBase(matName,MaterialBase.CUBICTRACTIONMATERIAL);
 			else if(word1.equals("Elastic-Plastic"))
@@ -353,9 +359,19 @@ public class ResultsDocument extends AbstractTableModel
 			else if(word1.equals("Hyperelastic"))
 	        {   if(word2.equals("Isotropic"))
 					matl=new MaterialBase(matName,MaterialBase.HEISOTROPIC);
+				else if(word2.equals("MGEOS"))
+					matl=new MaterialBase(matName,MaterialBase.HEMGEOSMATERIAL);
 				else
 					matl=new MaterialBase(matName,MaterialBase.HEANISOTROPIC);
 	        }
+			else if(word1.equals("Phase"))
+				matl=new MaterialBase(matName,MaterialBase.PHASETRANSITION);
+			else if(word1.equals("Contact"))
+				matl=new MaterialBase(matName,MaterialBase.IGNORECONTACT);
+			else if(word1.equals("Coulomb"))
+				matl=new MaterialBase(matName,MaterialBase.COULOMBFRICTION);
+			else if(word1.equals("Adhesion"))
+				matl=new MaterialBase(matName,MaterialBase.ADHESIVEFRICTION);
 			else
 			{	// try to continue with unknown material type
 				matl=new MaterialBase(matName,MaterialBase.UNKNOWNMATERIAL);
@@ -694,8 +710,15 @@ public class ResultsDocument extends AbstractTableModel
 				// get time and file name (split any number of spaces)
 				words=line.trim().split(" +");
 				if(words.length<3) continue;
-				Double atime=new Double(words[1]);
-				addArchiveFile(atime.doubleValue()*units.altTimeScale(),words[2]);
+				
+				// errors might be non-comment text
+				try
+				{	Double atime=new Double(words[1]);
+					addArchiveFile(atime.doubleValue()*units.altTimeScale(),words[2]);
+				}
+				catch (Exception e)
+				{	System.out.println("Invalid line with archived files:\n   "+line);
+				}
 			}
 			s.close();
 			

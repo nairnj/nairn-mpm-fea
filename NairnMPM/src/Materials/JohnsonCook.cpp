@@ -94,7 +94,7 @@ const char *JohnsonCook::VerifyAndLoadProperties(int np)
         return "The melting temperature must be >= the reference temperature";
     
 	// reduced prooperties
-    Bred = Bjc/parent->rho;
+    Bred = Bjc/parent->GetRho(NULL);
 	
     // reduced yield stress or Ajc
 	HardeningLawBase::VerifyAndLoadProperties(np);
@@ -113,7 +113,7 @@ const char *JohnsonCook::VerifyAndLoadProperties(int np)
 int JohnsonCook::SizeOfHardeningProps(void) const { return sizeof(JCProperties); }
 
 // Get copy of particle-state dependent properties
-void *JohnsonCook::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer)
+void *JohnsonCook::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer,int offset)
 {
 	JCProperties *p = (JCProperties *)altBuffer;
 	
@@ -212,7 +212,7 @@ double JohnsonCook::GetYieldIncrement(MPMBase *mptr,int np,double delTime,Harden
 // watch for temperature above the melting point and zero out the deviatoric stress
 double JohnsonCook::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,
 							double Gred,double psKred,double Pfinal,double delTime,
-							HardeningAlpha *a,void *properties) const
+							HardeningAlpha *a,void *properties,int offset) const
 {
     // if melted, return for zero deviatoric stress
 	JCProperties *p = (JCProperties *)properties;
@@ -221,7 +221,7 @@ double JohnsonCook::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,T
     }
     
     // assume error in bracking is because near melting, convert error to zero deviatoric stress
-    return HardeningLawBase::SolveForLambdaBracketed(mptr,np,strial,stk,Gred,psKred,Pfinal,delTime,a,properties);
+    return HardeningLawBase::SolveForLambdaBracketed(mptr,np,strial,stk,Gred,psKred,Pfinal,delTime,a,properties,offset);
 }
 
 #pragma mark JohnsonCook::Accessors

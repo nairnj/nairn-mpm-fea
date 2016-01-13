@@ -105,12 +105,14 @@ void CohesiveZone::PrintMechanicalProperties(void) const
 	cout << endl;
 }
 
+#pragma mark CohesiveZone::History Data Methods
+
 // history variables:
 // h[0] is max mode I opening (starting at first peak location)
 // h[1] is max mode II opening (starting at first peak location)
-char *CohesiveZone::InitHistoryData(void)
+char *CohesiveZone::InitHistoryData(char *pchr)
 {
-    double *p = CreateAndZeroDoubles(2);
+    double *p = CreateAndZeroDoubles(pchr,2);
 	p[0]=umidI;
 	p[1]=umidII;
     return (char *)p;

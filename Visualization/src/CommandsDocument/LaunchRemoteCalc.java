@@ -8,17 +8,19 @@
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
 import geditcom.JNFramework.*;
@@ -28,8 +30,9 @@ public class LaunchRemoteCalc extends JNDialog
 	private JPanel values=new JPanel();
 	private JTextField remoteOutputName = new JTextField();
 	private JTextField localSaveFolder = new JTextField();
-	private JCheckBox makeUnique = new JCheckBox("Create Unique Subfolder");
-	private JCheckBox clearContents = new JCheckBox("Clear Parent Folder First");
+	private JRadioButton overWrite = new JRadioButton("Overwrite");
+	private JRadioButton createUnique = new JRadioButton("Create Unique");
+	private JRadioButton clearParent = new JRadioButton("Clear Parent");
 	private JComboBox doDownload;
 	
 	private String remoteFolder;
@@ -80,22 +83,37 @@ public class LaunchRemoteCalc extends JNDialog
 		gridbag.setConstraints(label,c);
 		values.add(label);
 		
-		c.gridx=1;
-		c.weightx=5.;
-		c.gridwidth = 1;
-		gridbag.setConstraints(makeUnique,c);
-		makeUnique.setToolTipText("Check to force unique folder on the server within the entered parent folder");
-		makeUnique.setFocusable(false);
-		values.add(makeUnique);
-		if(initUnique) makeUnique.setSelected(true);
+		JPanel panel1 = new JPanel(new GridLayout(1,3));
+		ButtonGroup writeOption = new ButtonGroup();
 		
-		c.gridx=2;
-		gridbag.setConstraints(clearContents,c);
-		clearContents.setToolTipText("Check to delete prior contents of the parent folder before the new calculations");
-		clearContents.setFocusable(false);
-		values.add(clearContents);
-		if(initClear) clearContents.setSelected(true);
-
+		overWrite.setFocusable(false);
+		overWrite.setToolTipText("Choose to overwrite files with same name in the parent folder");
+		writeOption.add(overWrite);
+		panel1.add(overWrite);
+		
+		createUnique.setFocusable(false);
+		createUnique.setToolTipText("Choose to force unique folder on the server within the parent folder");
+		writeOption.add(createUnique);
+		panel1.add(createUnique);
+		
+		clearParent.setFocusable(false);
+		clearParent.setToolTipText("Choose to delete prior contents of the parent folder before the new calculations");
+		writeOption.add(clearParent);
+		panel1.add(clearParent);
+		
+		if(initUnique)
+			createUnique.setSelected(true);
+		else if(initClear)
+			clearParent.setSelected(true);
+		else
+			overWrite.setSelected(true);
+			
+		c.gridx=1;
+		c.weightx = 10.;
+		c.gridwidth = 2;
+		gridbag.setConstraints(panel1,c);
+		values.add(panel1);
+		
 		// Download save destination  -------------------------------------------
 		c.insets=new Insets(0,0,0,0);
 		c.gridx=0;
@@ -207,8 +225,8 @@ public class LaunchRemoteCalc extends JNDialog
 	// accessors
 	public String getRemoteFolder() { return remoteFolder; }
 	public String getRemoteFileName() { return remoteFileName; }
-	public boolean getMakeUnique() { return makeUnique.isSelected(); }
-	public boolean getClearContents() { return clearContents.isSelected(); }
+	public boolean getMakeUnique() { return createUnique.isSelected(); }
+	public boolean getClearContents() { return clearParent.isSelected(); }
 	public String getLocalFolder() { return localSaveFolder.getText(); }
 	public int getDoDownload() { return doDownload.getSelectedIndex(); }
 }

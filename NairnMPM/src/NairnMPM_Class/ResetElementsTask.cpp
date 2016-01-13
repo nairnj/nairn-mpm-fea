@@ -26,6 +26,9 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/CommonException.hpp"
 
+// uncomment to make this task parallel
+#define PARALLEL_RESET
+
 #pragma mark CONSTRUCTORS
 
 ResetElementsTask::ResetElementsTask(const char *name) : MPMTask(name)
@@ -38,14 +41,102 @@ ResetElementsTask::ResetElementsTask(const char *name) : MPMTask(name)
 // Stop if off the grid
 void ResetElementsTask::Execute(void)
 {
-	CommonException *resetErr = NULL;
-	
 	// update feedback damping now if needed
 	bodyFrc.UpdateAlpha(timestep,mtime);
-
-	// This block should be made parallel
-	// But when do so, need method to move particle  between patches while keeping threads independent
+	
+	// how many patches?
 	int totalPatches = fmobj->GetTotalNumberOfPatches();
+	
+#ifdef PARALLEL_RESET
+	// initialize error
+	CommonException *resetErr = NULL;
+
+	// parallel over patches
+#pragma omp parallel
+	{
+        // thread for patch pn
+		int pn = GetPatchNumber();
+        
+		try
+		{	// resetting all element types
+			for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_BC;block++)
+			{	// get first material point in this block
+				MPMBase *mptr = patches[pn]->GetFirstBlockPointer(block);
+				MPMBase *prevMptr = NULL;		// previous one of this type in current patch
+				while(mptr!=NULL)
+				{	int status = ResetElement(mptr);
+					
+					if(status==LEFT_GRID)
+					{	// particle has left the grid
+						mptr->IncrementElementCrossings();
+						
+						// enter warning only if this particle did not leave the grid before
+						if(!mptr->HasLeftTheGridBefore())
+						{	int result = warnings.Issue(fmobj->warnParticleLeftGrid,-1);
+							if(result==REACHED_MAX_WARNINGS || result==GAVE_WARNING)
+							{
+#pragma omp critical (output)
+								{	mptr->Describe();
+								}
+								// abort if needed
+								if(result==REACHED_MAX_WARNINGS)
+								{	char errMsg[100];
+									sprintf(errMsg,"Too many particles have left the grid\n  (plot x displacement to see last one).");
+									mptr->origpos.x=-1.e6;
+									throw CommonException(errMsg,"ResetElementsTask::Execute");
+								}
+							}
+							
+							// set this particle has left the grid once
+							mptr->SetHasLeftTheGridBefore(TRUE);
+						}
+						
+						// bring back to the previous element
+						ReturnToElement(mptr);
+					}
+					
+					else if(status==NEW_ELEMENT && totalPatches>1)
+					{	// did it also move to a new patch?
+						int newpn = mpmgrid.GetPatchForElement(mptr->ElemID());
+						if(pn != newpn)
+						{	if(!patches[pn]->AddMovingParticle(mptr,patches[newpn],prevMptr))
+							{	throw CommonException("Out of memory storing data for particle changing patches","ResetElementsTask::Execute");
+							}
+						}
+					}
+					
+					else if(status==LEFT_GRID_NAN)
+					{
+#pragma omp critical (output)
+						{	cout << "# Particle has left the grid and position is nan" << endl;
+							mptr->Describe();
+						}
+						throw CommonException("Particle has left the grid and position is nan","ResetElementsTask::Execute");
+					}
+					
+					// next material point and update previous particle
+					prevMptr = mptr;
+					mptr = (MPMBase *)mptr->GetNextObject();
+				}
+			}
+		}
+		catch(CommonException err)
+        {   if(resetErr==NULL)
+			{
+#pragma omp critical (error)
+				resetErr = new CommonException(err);
+			}
+		}
+	}
+
+	// throw now if was an error
+	if(resetErr!=NULL) throw *resetErr;
+    
+	// reduction phase moves the particles
+	for(int pn=0;pn<totalPatches;pn++)
+		patches[pn]->MoveParticlesToNewPatches();
+	
+#else
 	
 	int status;
 	MPMBase *mptr,*prevMptr,*nextMptr;
@@ -63,15 +154,15 @@ void ResetElementsTask::Execute(void)
 				
 					// enter warning only if this particle did not leave the grid before
 					if(!mptr->HasLeftTheGridBefore())
-					{	if(warnings.Issue(fmobj->warnParticleLeftGrid,-1)==REACHED_MAX_WARNINGS)
-						{	// print message and log error
-							if(resetErr==NULL)
-							{	mptr->Describe();
-								char errMsg[100];
+					{	int result = warnings.Issue(fmobj->warnParticleLeftGrid,-1);
+						if(result==REACHED_MAX_WARNINGS || result==GAVE_WARNING)
+						{	mptr->Describe();
+							// abort if needed
+							if(result==REACHED_MAX_WARNINGS)
+							{	char errMsg[100];
 								sprintf(errMsg,"Too many particles have left the grid\n  (plot x displacement to see last one).");
 								mptr->origpos.x=-1.e6;
-								resetErr = new CommonException(errMsg,"ResetElementsTask::Execute");
-								throw *resetErr;
+								throw CommonException(errMsg,"ResetElementsTask::Execute");
 							}
 						}
 						
@@ -102,8 +193,7 @@ void ResetElementsTask::Execute(void)
 				else if(status==LEFT_GRID_NAN)
 				{	cout << "# Particle has left the grid and position is nan" << endl;
 					mptr->Describe();
-					resetErr = new CommonException("Particle has left the grid and position is nan","ResetElementsTask::Execute");
-					throw *resetErr;
+					throw CommonException("Particle has left the grid and position is nan","ResetElementsTask::Execute");
 				}
 				
 				// next material point and update previous particle
@@ -112,9 +202,7 @@ void ResetElementsTask::Execute(void)
 			}
 		}
 	}
-	
-	// if error occurred then throw it
-	if(resetErr) throw *resetErr;
+#endif
 }
 
 // Find element for particle. Return FALSE if left

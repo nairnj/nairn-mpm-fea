@@ -134,23 +134,39 @@ public class Cracks
 		
 		}
 		
-		// friction or traction
+		// contact law ID, Deprecated friction setting, or "traction"
 		int mat=-1;
 		if(args.size()>4)
 		{	String frict = doc.readStringArg(args.get(4));
+		
+			// look for traction law
 			if(frict.toLowerCase().equals("traction"))
 			{	// get traction material (but can't check if traction law)
 				if(args.size()>5)
-					mat = doc.mats.getMatID(doc.readStringArg(args.get(5)));
-				if(mat==-1)
-					throw new Exception("'NewCrack' has unknown traction law material:\n"+args);
+				{	mat = doc.mats.getMatID(doc.readStringArg(args.get(5)));
+					if(mat==-1)
+						throw new Exception("'NewCrack' has unknown traction law material:\n"+args);
+				}
 			}
-			else
-			{	// look for custom friction setting
-				ArrayList<String> fargs = new ArrayList<String>();
-				fargs.add("Friction");
-				fargs.add(frict);
-				crackFriction=doc.doFriction(fargs,3);
+			
+			// did not set traction, so look for contact law
+			if(mat==-1)
+			{	// look for contact law material
+				int lawMat = doc.mats.getMatID(frict);
+				if(lawMat>0)
+					crackFriction=" law='"+lawMat+"'";
+				else
+				{	// look for custom friction setting
+					try
+					{	ArrayList<String> fargs = new ArrayList<String>();
+						fargs.add("Friction");
+						fargs.add(frict);
+						crackFriction=doc.doFriction(fargs,3);
+					}
+					catch(Exception e)
+					{	throw new Exception("'NewCrack' has invalid contact law material:\n"+args);
+					}
+				}
 			}
 		}
 		
@@ -242,7 +258,7 @@ public class Cracks
 		
 		// grow current crack XML
 		if(option==0)
-		{	currentCrack.append("    <Line x='"+ptx+"' y='"+pty+"'");
+		{	currentCrack.append("    <pt x='"+ptx+"' y='"+pty+"'");
 			if(tip!=-1) currentCrack.append(" tip='"+tip+"'");
 		}
 		else if(option==1)

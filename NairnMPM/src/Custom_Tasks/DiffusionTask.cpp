@@ -163,7 +163,7 @@ TransportTask *DiffusionTask::GetGradients(double stepTime)
         catch(CommonException err)
         {   if(transErr!=NULL)
             {
-#pragma omp critical
+#pragma omp critical (error)
                 transErr = new CommonException(err);
             }
         }

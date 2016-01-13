@@ -40,9 +40,7 @@ void PostExtrapolationTask::Execute(void)
 {
 	CommonException *massErr = NULL;
 	
-#ifdef COMBINE_RIGID_MATERIALS
 	bool combineRigid = firstCrack!=NULL && fmobj->multiMaterialMode && fmobj->hasRigidContactParticles;
-#endif
 	
 	// Post mass and momentum extrapolation calculations on nodes
 #pragma omp parallel
@@ -58,12 +56,9 @@ void PostExtrapolationTask::Execute(void)
 			NodalPoint *ndptr = nd[i];
 			
 			try
-            {
-#ifdef COMBINE_RIGID_MATERIALS
-                // combine rigid fields if necessary
+            {	// combine rigid fields if necessary
                 if(combineRigid)
                     ndptr->CopyRigidParticleField();
-#endif
 				// Get total nodal masses and count materials if multimaterial mode
 				ndptr->CalcTotalMassAndCount();
                 
@@ -83,13 +78,13 @@ void PostExtrapolationTask::Execute(void)
 			catch(CommonException err)
 			{	if(massErr==NULL)
 				{
-#pragma omp critical
+#pragma omp critical (error)
 					massErr = new CommonException(err);
 				}
 			}
 		}
 		
-#pragma omp critical
+#pragma omp critical (linknodes)
 		{
 			// link up crack nodes
 			if(lastCrackNode != NULL)

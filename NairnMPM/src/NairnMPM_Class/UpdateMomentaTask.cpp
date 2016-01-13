@@ -59,7 +59,7 @@ void UpdateMomentaTask::Execute(void)
 			catch(CommonException err)
 			{	if(umErr==NULL)
 				{
-#pragma omp critical
+#pragma omp critical (error)
 					umErr = new CommonException(err);
 				}
 			}
@@ -72,6 +72,5 @@ void UpdateMomentaTask::Execute(void)
 		
 	// adjust momenta and forces for crack contact on known nodes
 	CrackNode::CrackContactTask4(timestep);
-	
 }
 	

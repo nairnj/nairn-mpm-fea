@@ -20,8 +20,8 @@ public class NairnFEAMPMViz extends JNApplication
 	//----------------------------------------------------------------------------
 	
 	public NairnFEAMPMViz()
-	{	super("NairnFEAMPMViz","Version 6.2.0",
-				"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
+	{	super("NairnFEAMPMViz-OSP","Version 6.2.0",
+				"Java application for running and visualizing OSParticulas and NairnFEA calculations.");
 		NFMVPrefs.setWorkspace(chooser);
 		if(!finishLaunching(false))
 			new NFMVStartUp();

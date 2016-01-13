@@ -92,8 +92,13 @@ void GridForcesTask::Execute(void)
 					
 #ifdef CHECK_NAN
                     if(theFrc.x!=theFrc.x || theFrc.y!=theFrc.y || theFrc.z!=theFrc.z)
-                    {   cout << "\n# GridForcesTask::Execute: bad nodal force vfld = " << vfld << ", matfld = " << matfld << endl;
-                        ndptr->Describe();
+                    {
+#pragma omp critical (output)
+						{	cout << "\n# GridForcesTask::Execute: bad nodal force vfld = " << vfld << ", matfld = " << matfld;
+							PrintVector(" theFrc = ",&theFrc);
+							cout << endl;
+							ndptr->Describe();
+						}
                     }
 #endif
 					// transport forces
@@ -101,10 +106,7 @@ void GridForcesTask::Execute(void)
 					while(nextTransport!=NULL)
 						nextTransport=nextTransport->AddForces(ndptr,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],&t);
 				}
-				
-				// clear coupled dissipated energy if in conduction because done with it this time step
-				if(ConductionTask::active) mpmptr->SetDispEnergy(0.);
-				
+
 				// next material point
 				mpmptr = (MPMBase *)mpmptr->GetNextObject();
 			}
@@ -112,7 +114,7 @@ void GridForcesTask::Execute(void)
 		catch(CommonException err)
 		{	if(forceErr==NULL)
 			{
-#pragma omp critical
+#pragma omp critical (error)
 				forceErr = new CommonException(err);
 			}
 		}

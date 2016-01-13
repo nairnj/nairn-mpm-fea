@@ -19,7 +19,7 @@
 
 #include "Materials/Neohookean.hpp"
 
-#define JP_HISTORY 1
+#define JP_HISTORY 2
 #define ELASTIC_DISNEY 0
 #define ELASTIC_NH 1
 
@@ -36,17 +36,20 @@ class ClampedNeohookean : public Neohookean
 		virtual void PrintMechanicalProperties(void) const;
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void ValidateForUse(int) const;
-		virtual char *InitHistoryData(void);
+	
+		// history data
+		virtual int SizeOfHistoryData(void) const;
+		virtual char *InitHistoryData(char *,MPMBase *);
+		virtual double GetHistory(int,char *) const;
 	
 		// methods
-		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
 	
 		// accessors
 		virtual const char *MaterialType(void) const;
 		virtual int MaterialTag() const;
-		virtual double GetHistory(int,char *) const;
 		virtual bool SupportsArtificialViscosity(void) const;
-		virtual double CurrentWaveSpeed(bool,MPMBase *) const;
+		virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;
 	
 	protected:
 		double critComp,critTens,hardening;

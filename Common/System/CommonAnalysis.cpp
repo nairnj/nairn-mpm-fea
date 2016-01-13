@@ -75,14 +75,7 @@ void CommonAnalysis::StartResultsOutput(void)
 	/* development flags
 	 *
 	 *	Current Flags in Use in MPM Code
-	 *	 dflag[0]==3 - used to be specified normal, now prints error message
-	 *   dflag[0]==4 - cutting simulations - find normal from tool angle where the angle in [1] (interger only)
-	 *									also some other minor tweaks for cutting
-	 *   dflag[0]==5 - for radial normal vector
-	 *
-	 *   dflag[1]==parameter when dflag[1]==4
-     *
-     *   dflag[3]==xxyyzz - custom patch method for parallel (ignored if xx*yy*zz != numProcs)
+	 *	 none
 	 *
 	 */
 	int i;
@@ -90,6 +83,7 @@ void CommonAnalysis::StartResultsOutput(void)
 	for(i=0;i<NUMBER_DEVELOPMENT_FLAGS;i++)
 	{	if(dflag[i]!=0)
 		{	cout << "Development Flag #" << i << " = " << dflag[i] << endl;
+			cout << "... WARNING: unrecognized developer flag specified" << endl;
 			hasFlags=TRUE;
 		}
 	}

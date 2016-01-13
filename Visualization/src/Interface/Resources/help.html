@@ -312,21 +312,28 @@ This command is most useful when using scripting commands and you want to verify
 <li><code><a name="remoutput"></a>Remote Output</code><br>
 Enter a relative file path from your home directory on the server to the desired output file for the calculations. The relative path must contain at least one parent folder (<i>e.g.</i>, <code>RemoteOut/TwoDisks.mpm</code> where <code>TwoDisks.mpm</code> is the output file and <code>RemoteOut</code> is one parent folder). The path can contain more than one parent folder and the folders need not exist (they will be created if needed). If the file does not have the correct extension (<code>.mpm</code> or <code>.fea</code>), it will be added for you.
 </li>
-<li><code><a name="remoptions"</a>Remote Output Options</code><br>
-The check boxes under the remote output field provide three options for the remote files:
+<li><code><a name="remoptions"></a>Remote Output Options</code><br>
+The radio buttons under the remote output field provide three options for the remote files:
 <ol>
-<li><code>Overwrite</code>: the default (neither box checked) is to overwrite files in the provided destination folder. If you do not want to delete prior calculations, you can  provide non-existing folders in the "Remote Output" path.</li>
-<li><code>Unique</code>: If the "Create Unique Subfolder" box is checked, the output will create a unique subfolder in the parent folder of the "Remote Output" file named "<code>out#</code>" where "<code>#</code>" is a number selected to provide a unique name for a new folder. Running lots of remote calculations in this mode will eventually fill up server disk space.</li>
-<li><code>Clear</code>: If the "Clear Parent Folder First" is checked (and the "Create Unique Subfolder" box is not checked), the entire contents of the parent folder to the "Remote Output" file will be deleted before the calculations begin. This option is useful when running and downloading different types of calculations output to the same folder on the server (see <a href="#dlnotes">below</a>), but be careful not to delete files you need (<i>e.g.</i>, if the parent folder corresponds to an existing folder in your home directory with files you want to keep).</li>
+<li><code>Overwrite</code>: the default option is to overwrite files with the same names in the provided destination folder.
+If you do not want to overwrite prior calculations, you should provide at least one non-existing folder in the "Remote Output" path.</li>
+<li>Create Unique (<code>Unique</code>): with this option, the output will create a unique subfolder in the parent folder
+of the "Remote Output" file named "<code>out#</code>" where "<code>#</code>" is a number selected to provide a unique
+name for a new folder. Running lots of remote calculations in this mode will eventually fill up server disk space.</li>
+<li>Clear Parent (<code>Clear</code>): with this option, the entire contents of the parent folder to the "Remote Output" file
+will be deleted before the calculations begin. This option is useful when running and downloading
+different types of calculations with output to the same folder on the server
+(see <a href="#dlnotes">below</a>), but be careful not to delete files you need
+(<i>e.g.</i>, if the parent folder corresponds to an existing folder in your home directory with files you want to keep).</li>
 </ol>
 </li>
 
 <li><code><a name="locoptions"></a>Local Folder</code><br>
-When remote calculations are done, they can be automatically downloaded to one of you local files to allow this application to open and visualize results. This field has the full path of any folder on your local disk or any mounted disk. Click the "Change..." button to select a different folder. The three options for this local folder, which are selected with the menu below the field, are:
+When remote calculations are done, they can be automatically downloaded to a local folder on your computer to allow this application to open and visualize results. This field has the full path of any folder on your local disk or any mounted disk. Click the "Change..." button to select a different folder. The three options for this local folder, which are selected with the menu below the field, are:
 <ol>
-<li><code>Download</code>: When calculations are done, the entire parent folder to the "Remote Output" file is zipped to an archive file, downloaded to the local folder, and unzipped to a folder with the same name as the parent folder (see notes <a href="#dlnotes">below</a> on downloading). If a folder of that name already exists in the local folder, the downloaded files will replace those files with the same name, but leave files with different names in place.</li>
-<li><code>NoDownload</code>: This option will not download the files and therefore the results will not be opened for visualization. The calculations will remain on the server for you to access manually at a later time.</li>
-<li><code>Home</code>: This option specifies that the provided local folder is your home directory on the server running the remote calculations (in other words, you have mounted the server and can access your home folder with the "Change..." button). Because the server is mounted, there is no need to download the calculation results. Instead, this application will just open the file using the "Remote Output" relative path from the provided home directory. This mode is the fastest method if you are able to mount your home directory on the server with high-speed access.
+<li>Download to this Folder (<code>Download</code>): When calculations are done, the entire parent folder to the "Remote Output" file is zipped to an archive file, downloaded to the local folder, and unzipped to a folder with the same name as the parent folder (see notes <a href="#dlnotes">below</a> on downloading). If a folder of that name already exists in the local folder, the downloaded files will replace those files with the same name, but leave files with different names in place.</li>
+<li>Do not Download (<code>NoDownload</code>): This option will not download the files and therefore the results will not be opened for visualization. The calculations will remain on the server for you to access manually at a later time.</li>
+<li>Home Directory on Server (<code>Home</code>): This option specifies that the provided local folder is your home directory on the server running the remote calculations (in other words, you have mounted the server and can access your home folder with the "Change..." button). Because the server is mounted, there is no need to download the calculation results. Instead, this application will just open the file using the "Remote Output" relative path from the provided home directory. This mode is the fastest method if you are able to mount your home directory on the server with high-speed access.
 </ol>
 </li>
 

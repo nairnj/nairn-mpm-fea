@@ -79,7 +79,7 @@ TransportTask *ConductionTask::Initialize(void)
 	if(crackTipHeating)
 		cout << "   Crack tip heating activated" << endl;
 	if(crackContactHeating)
-		cout << "   Crack surface frictional heating activated" << endl;
+		cout << "   Crack contact frictional heating activated" << endl;
 	if(matContactHeating)
 		cout << "   Material contact frictional heating activated" << endl;
 	
@@ -103,7 +103,7 @@ TransportTask *ConductionTask::TransportTimeStep(int matid,double dcell,double *
 
 // Task 1 Extrapolation of temperature to the grid
 TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
-{	double Cp = theMaterials[mptr->MatID()]->GetCpHeatCapacity(mptr);   // nJ/(g-K)
+{	double Cp = theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);		// nJ/(g-K) using Cv is correct
 	double arg = mptr->mp*Cp*shape;										// nJ/K
 	double argT = mptr->pTemperature*arg;								// nJ
 	ndpt->gTemperature += argT;
@@ -185,7 +185,7 @@ TransportTask *ConductionTask::GetGradients(double stepTime)
         catch(CommonException err)
         {   if(transErr!=NULL)
             {
-#pragma omp critical
+#pragma omp critical (error)
                 transErr = new CommonException(err);
             }
         }
@@ -205,17 +205,6 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double 
 	// internal force based on conduction tensor
 	ndptr->fcond += mptr->FCond(GRAD_GLOBAL,dshdx,dshdy,dshdz,t);
 	
-	// add source terms
-	double heatSource = 0.;
-	
-	// if coupled to material dissipated energy, add and then zero dissipated energy
-	if(adiabatic)
-	{	// mp (g) * specific energy (nJ/g) = nJ
-		// To get nW, divide timestep (sec)
-		heatSource += sh*mptr->mp*mptr->GetDispEnergy()/timestep;
-		ndptr->fcond += heatSource;
-	}
-		
 	// next task
 	return nextTask;
 }
@@ -247,7 +236,7 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
 	}
     
-    // Set force to - mp Cp T(no BC)/timestep (once per node)
+    // Set force to - mp Cp T(no BC)/timestep (only once per node)
     nextBC=firstTempBC;
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mtime);
@@ -255,20 +244,20 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
 		{	if(nd[i]->fcond==0.)
 			{	double qflow = -nd[i]->gMpCp*nd[i]->gTemperature/deltime;
 				nd[i]->fcond = qflow;
-				nextBC->SuperposeQReaction(qflow);		// for global archive of boundary flow
+				nextBC->SuperposeQReaction(qflow);								// for global archive of boundary flow
 			}
 		}
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
 	}
     
-    // Now add each superposed concentration (* mp Cp) BC at incremented time
+    // Now add each superposed temperature (* mp Cp) BC at incremented time
     nextBC=firstTempBC;
     while(nextBC!=NULL)
     {	i=nextBC->GetNodeNum(mtime);
 		if(i!=0)
 		{	double qflow = nd[i]->gMpCp*nextBC->BCValue(mtime)/deltime;
 			nd[i]->fcond += qflow;
-			nextBC->SuperposeQReaction(qflow);		// for global archive of boundary flow
+			nextBC->SuperposeQReaction(qflow);			// for global archive of boundary flow
 		}
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
     }

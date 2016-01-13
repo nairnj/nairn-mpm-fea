@@ -31,7 +31,7 @@ Quad2D::Quad2D(int eNum,int *eNode,int eMat,double eAng,double eThick) :
 /*	Use ray crossing algorithm to find out if a point (pt.x,pt.y) is in an element
 	nd is pointer to 1-based array NodalPoints
 */
-short Quad2D::PtInElement(Vector &pt)
+short Quad2D::PtInElement(Vector &pt) const
 {
 	short i,ns=NumberSides(),crossings=0;
 	double d,x1,y1,x2,y2;

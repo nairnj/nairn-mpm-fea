@@ -219,10 +219,12 @@ void RigidMaterial::PrintMechanicalProperties(void) const
         if(expr2!=NULL) delete [] expr2;
         if(expr3!=NULL) delete [] expr3;
 		
-		if(mirrored<0)
-			cout << "Velocity mirrored at minimum edge" << endl;
-		else if(mirrored>0)
-			cout << "Velocity mirrored at maximum edge" << endl;
+		if(!MaterialBase::extrapolateRigidBCs)
+		{	if(mirrored<0)
+				cout << "Velocity mirrored at minimum edge" << endl;
+			else if(mirrored>0)
+				cout << "Velocity mirrored at maximum edge" << endl;
+		}
 	}
 	
 	if(setTemperature || setConcentration)
@@ -236,6 +238,11 @@ void RigidMaterial::PrintMechanicalProperties(void) const
             delete [] expr;
         }
     }
+	
+	if(MaterialBase::extrapolateRigidBCs)
+	{	if(setDirection&CONTROL_ANY_DIRECTION || setTemperature || setConcentration)
+			cout << "Boundary conditions set after extrapolating to the grid" << endl;
+	}
 	
 	if(setTemperature) someSetTemperature = TRUE;
 	

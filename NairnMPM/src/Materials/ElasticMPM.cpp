@@ -31,7 +31,7 @@ void Elastic::PrintCommonProperties(void) const
 	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMETRIC_MPM, otherwise dvzz=0
 	This method only called by TransIsotropic and subclasses
  */
-void Elastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res) const
+void Elastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res,int historyOffset) const
 {	if(useLargeRotation)
 		LRConstitutiveLaw(mptr,dv,delTime,np,properties,res);
 	else
@@ -66,22 +66,6 @@ void Elastic::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	// get pinitial rotation R0
 	Matrix3 R0 = mptr->GetInitialRotation();
 	
-#ifdef TRACK_RTOT
-	// read previous rotation
-	Matrix3 *Rtotnm1 = mptr->GetRtotPtr();
-	
-	// get incremental strain
-	dU(0,0) -= 1.;
-	dU(1,1) -= 1.;
-	dU(2,2) -= 1.;
-	Matrix3 RtotTUmI = (*Rtotnm1).Transpose()*dU;
-	Matrix3 Fnm1tot = pFnm1*R0;
-	Matrix3 de = RtotTUmI*Fnm1tot;
-	
-	// get total rotation and update
-	Matrix3 Rtot = dR*(*Rtotnm1);
-	mptr->SetRtot(Rtot);
-#else
 	// get previous rotation and stretch
     Matrix3 Rnm1;
 	Matrix3 Unm1 = pFnm1.RightDecompose(&Rnm1,NULL);
@@ -101,7 +85,6 @@ void Elastic::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	// get total rotation
 	Matrix3 Rtot = dR*Rtotnm1M3;
 	if(np==THREED_MPM) mptr->SetRtot(Rtot);
-#endif
 	
 	// Update total deformation gradient
 	Matrix3 pF = dF*pFnm1;

@@ -34,9 +34,9 @@ class SCGLHardening : public HardeningLawBase
     
 		// copy of properties
         virtual int SizeOfHardeningProps(void) const;
-		virtual void *GetCopyOfHardeningProps(MPMBase *,int,void *);
+		virtual void *GetCopyOfHardeningProps(MPMBase *,int,void *,int);
 		virtual void DeleteCopyOfHardeningProps(void *,int) const;
-		virtual double GetShearRatio(MPMBase *,double,double,void *) const;
+		virtual double GetShearRatio(MPMBase *,double,double,void *,int) const;
 	
         // hardening law core methods
         virtual double GetYield(MPMBase *,int,double,HardeningAlpha *a,void *) const;

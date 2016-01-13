@@ -47,13 +47,16 @@ class SLMaterial : public SCGLHardening
         virtual char *InputMaterialProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
         virtual void PrintYieldProperties(void) const;
- 		virtual int HistoryDoublesNeeded(void) const;
+	
+		// history data
+		virtual int HistoryDoublesNeeded(void) const;
+		virtual double GetHistory(int,char *) const;
 		
 		// copy of properties
         virtual int SizeOfHardeningProps(void) const;
-		virtual void *GetCopyOfHardeningProps(MPMBase *,int,void *);
+		virtual void *GetCopyOfHardeningProps(MPMBase *,int,void *,int);
 		virtual void DeleteCopyOfHardeningProps(void *,int) const;
-		virtual double GetShearRatio(MPMBase *,double,double,void *) const;
+		virtual double GetShearRatio(MPMBase *,double,double,void *,int) const;
 	
 		// methods
         virtual double GetYield(MPMBase *,int,double,HardeningAlpha *,void *) const;
@@ -61,14 +64,14 @@ class SLMaterial : public SCGLHardening
         virtual double GetK2Prime(MPMBase *,double,double,HardeningAlpha *a,void *) const;
 	
 		// return mapping
-        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double,HardeningAlpha *a,void *) const;
+        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,
+											   double,double,double,HardeningAlpha *a,void *,int) const;
 		double GetEpdot(double,double) const;
    
 		// update
-		virtual void ElasticUpdateFinished(MPMBase *,int,double) const;
+		virtual void ElasticUpdateFinished(MPMBase *,int,double,int) const;
 	
 		// accessors
-		virtual double GetHistory(int,char *) const;
         virtual const char *GetHardeningLawName(void) const;
  		
     protected:

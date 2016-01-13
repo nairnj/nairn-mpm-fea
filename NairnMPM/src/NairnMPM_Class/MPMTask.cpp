@@ -77,3 +77,13 @@ NodalPoint *MPMTask::GetNodePointer(int pn,int nodeNum)
     return nd[nodeNum];
 #endif
 }
+
+// return number of threads (>1 if in parallel section)
+bool MPMTask::GetNumberOfThreads(void)
+{
+#ifdef _OPENMP
+	return omp_get_num_threads();
+#else
+	return 1;
+#endif
+}

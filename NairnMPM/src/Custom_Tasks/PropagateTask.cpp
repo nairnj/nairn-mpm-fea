@@ -114,8 +114,8 @@ CustomTask *PropagateTask::StepCalculation(void)
                     grow.x=cellsPerPropagationStep*cSize*tipDir.x;
                     grow.y=cellsPerPropagationStep*cSize*tipDir.y;
 					
-					// adjust if crossing another crack
-					double p = nextCrack->AdjustGrowForCrossing(&grow,crkTip);
+					// adjust if crossing another crack - adjusts grow is need and returns resulting relative change (in p)
+					double p = nextCrack->AdjustGrowForCrossing(&grow,crkTip,cSize,&tipDir);
 					
 					// crack number and tip
 					archiver->IncrementPropagationCounter();
@@ -127,7 +127,7 @@ CustomTask *PropagateTask::StepCalculation(void)
 						<< " = " << crkTip->Jint.x*UnitsController::Scaling(1.e-3)
 						<< " + " << (crkTip->Jint.z-crkTip->Jint.x)*UnitsController::Scaling(1.e-3) << endl;
                     
-                    // if jump is .7 or more cells, make more than 1 segment
+                    // if jump is .7 or more cells, divide propagation into multiple segments
                     int iseg,numSegs = 1;
                     if(p*cellsPerPropagationStep>.7) numSegs= 2*(p*cellsPerPropagationStep+.25);
                     CrackSegment *newCrkTip;

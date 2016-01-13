@@ -23,10 +23,6 @@ class ConductionTask;
 class MPMBase;
 class HardeningLawBase;
 
-// When on, the large rotation materials track rotation matrix. Tests seem to show that round off
-// error cause tracking rotation to be less accurate, even though it is more efficient
-//#define TRACK_RTOT
-
 #else
 
 // C is stiffness matrix and some other things
@@ -42,6 +38,7 @@ typedef struct {
 enum { NO_PROPAGATION=0,MAXHOOPSTRESS,STEADYSTATEGROWTH,DELETED_TOTALENERGYBALANCE_USECUSTOMTASKIFNEEDED,
        STRAINENERGYDENSITY,EMPIRICALCRITERION,MAXCTODCRITERION,CRITICALERR };
 enum { DEFAULT_DIRECTION=0,SELF_SIMILAR,NORMAL_TO_COD,HOOP_FROM_COD,INITIAL_DIRECTION };
+enum { SOLID_MAT=0,MEMBRANE_MAT,TRACTION_MAT,CONTACT_MAT };
 
 // NOTHING:							alt strain is not used
 // ENG_BIOT_PLASTIC_STRAIN:			small strain plasticity it biot plastic strain in alt strain to total strain
@@ -55,15 +52,13 @@ enum { NOTHING,ENG_BIOT_PLASTIC_STRAIN,LEFT_CAUCHY_ELASTIC_B_STRAIN,LEFT_CAUCHY_
 class MaterialBase : public LinkedObject
 {
     public:
-		// variables (changed in MPM time step)
-	
-		// constants (not changed in MPM time step)
+		// variables
         char *name;
-        double rho,concSaturation,betaI;
-		float red,green,blue,alpha;
+ 		float red,green,blue,alpha;
 #ifdef FEA_CODE
 		ElasticProperties pr;
 #else
+		// crack settings
 		int criterion[2];
         double KIc,KIIc,KIexp,KIIexp,JIc,JIIc,delIc,delIIc,nmix;
 		double initSpeed;
@@ -73,9 +68,7 @@ class MaterialBase : public LinkedObject
 		Vector growDir;
 		int matPropagateDirection[2];
 		int tractionMat[2];
-        double diffusionCon,kCond;			// for isotropic properties
-		ContactDetails *lastFriction;
-	
+		
 		// class varibles
 		static vector<int> fieldMatIDs;		// 0 to # material in multimatrial mode
 		static vector<int> activeMatIDs;	// 0 to # active, non-rigid fields any mode
@@ -83,6 +76,7 @@ class MaterialBase : public LinkedObject
         static bool isolatedSystemAndParticles;
         static int maxPropertyBufferSize;
         static int maxAltBufferSize;
+		static bool extrapolateRigidBCs;
 #endif
         
         // constructors and destructors
@@ -95,18 +89,24 @@ class MaterialBase : public LinkedObject
         virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintMechanicalProperties(void) const;
 #ifdef MPM_CODE
-		virtual char *InitHistoryData(void);
+		// history data
+		virtual int SizeOfHistoryData(void) const;
+		virtual char *InitHistoryData(char *);
+		virtual char *InitHistoryData(char *,MPMBase *mptr);
+		virtual double GetHistory(int,char *) const;
+		double *CreateAndZeroDoubles(char *,int) const;
+	
 		virtual void FillTransportProperties(TransportProperties *);
 		virtual void SetHardeningLaw(char *);
-        virtual bool AcceptHardeningLaw(HardeningLawBase *,int );
+		virtual bool AcceptHardeningLaw(HardeningLawBase *,int);
+	
 		virtual void ValidateForUse(int) const;
 		virtual void PrintTransportProperties(void) const;
-        virtual void SetInitialParticleState(MPMBase *,int) const;
-		double *CreateAndZeroDoubles(int) const;
+        virtual void SetInitialParticleState(MPMBase *,int,int) const;
 #endif
 
 		// initialization (base class only)
-		void PrintMaterial(int) const;
+		virtual void PrintMaterial(int) const;
 		virtual void PrintCommonProperties(void) const;
 #ifdef MPM_CODE
 		void PrintCriterion(int,int) const;
@@ -116,12 +116,13 @@ class MaterialBase : public LinkedObject
 #ifdef MPM_CODE
 		virtual void GetTransportProps(MPMBase *,int,TransportProperties *) const;
         virtual int SizeOfMechanicalProperties(int &) const;
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *,int) const;
 		virtual double GetHeatCapacity(MPMBase *) const;
 		virtual double GetCpHeatCapacity(MPMBase *) const;
 		virtual double GetCpMinusCv(MPMBase *) const;
         virtual void IncrementHeatEnergy(MPMBase *,double,double,double) const;
-        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
+		virtual double GetIncrementalResJ(MPMBase *,ResidualStrains *) const;
 #else
 		virtual void LoadMechanicalPropertiesFEA(int,double,int);
 #endif
@@ -149,26 +150,26 @@ class MaterialBase : public LinkedObject
 		// accessors
 		virtual const char *MaterialType(void) const;
 		virtual int MaterialTag(void) const = 0;
+		virtual double GetRho(MPMBase *) const;
 #ifdef MPM_CODE
         virtual double WaveSpeed(bool,MPMBase *) const = 0;
-		virtual double ShearWaveSpeed(bool,MPMBase *) const;
-        virtual double CurrentWaveSpeed(bool,MPMBase *) const;
+		virtual double ShearWaveSpeed(bool,MPMBase *,int) const;
+        virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;
 		virtual double MaximumDiffusion(void) const;
         virtual double MaximumDiffusivity(void) const;
-        virtual double GetHistory(int,char *) const;
 		virtual bool Rigid(void) const;
 		virtual short RigidBC(void) const;
 		virtual short RigidContact(void) const;
-		virtual bool isTractionLaw(void) const;
-		virtual bool isMembrane(void) const;
+		virtual int MaterialStyle(void) const;
 		virtual int KeepsCrackTip(void) const;
-		virtual void SetFriction(double,int,double,double,double);
-		virtual ContactDetails *GetContactToMaterial(int);
+		virtual void SetFriction(int,int);
+		virtual int GetContactToMaterial(int);
 		virtual void ContactOutput(int);
         virtual double GetArtificalViscosity(double,double) const;
 		virtual bool SupportsArtificialViscosity(void) const;
 		virtual int GetShareMatField(void) const;
 		virtual int AltStrainContains(void) const;
+		virtual double GetConcSaturation(MPMBase *) const;
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif
@@ -178,8 +179,12 @@ class MaterialBase : public LinkedObject
 		virtual int SetField(int,bool,int,int &);
 		int GetField(void) const;
 		int GetActiveField(void) const;
-        virtual double GetCurrentRelativeVolume(MPMBase *) const;
-        virtual Tensor GetStress(Tensor *,double) const;
+		virtual double GetCurrentRelativeVolume(MPMBase *,int) const;
+        virtual Tensor GetStress(Tensor *,double,MPMBase *) const;
+	
+		// material damping
+		virtual void SetDamping(double,double);
+		virtual void GetMaterialDamping(double &,double &,double,double) const;
 #endif
 	
 		// class methods
@@ -190,15 +195,22 @@ class MaterialBase : public LinkedObject
 		static int GetMVFFlags(int);
 		static int GetFieldMatID(int);
 		static int GetActiveMatID(int);
+		static int GetContactLawNum(int);
 #endif
 		
 	protected:
-		// variables (changed in MPM time step)
+		double rho;
 #ifdef MPM_CODE
+		double concSaturation,betaI;
 		double heatCapacity;			// changed if depends on particle state
         bool artificialViscosity;       // true to false for artifical viscosity
         double avA1,avA2;               // artificial viscosity coefficients
 		TransportProperties tr;			// transport tensors
+		double diffusionCon,kCond;			// for isotropic properties
+		ContactPair *lastFriction;
+		double matPdamping,matFractionPIC;		// particle damping
+		bool matUsePDamping;                // true it particle damping or PIC damping changed in this material
+		bool matUsePICDamping;              // true if PIC damping was set
 #endif
 	
 		// constants (changed in MPM time step)

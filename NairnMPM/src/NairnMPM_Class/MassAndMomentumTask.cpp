@@ -113,7 +113,7 @@ void MassAndMomentumTask::Execute(void)
 		catch(CommonException err)
         {   if(massErr==NULL)
 			{
-#pragma omp critical
+#pragma omp critical (error)
 				massErr = new CommonException(err);
 			}
 		}

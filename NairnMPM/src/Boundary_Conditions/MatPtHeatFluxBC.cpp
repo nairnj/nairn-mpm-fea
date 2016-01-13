@@ -67,7 +67,7 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 	
 	if(style==SILENT)
 	{	TransportProperties t;
-		matptr->GetTransportProps(mpm[ptNum-1],fmobj->np,&t);
+		matptr->GetTransportProps(mpmptr,fmobj->np,&t);
 		Tensor *k = &(t.kCondTensor);
         
         // k is k/rho0 (nJ mm^2/(sec-K-g)), Dt in K/mm, k Dt (nJ mm/(sec-g))
@@ -82,7 +82,7 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 		}
 		
 		// remove 1/rho0 scaling on k to get nW/mm^2
-		ScaleVector(&fluxMag,matptr->rho);
+		ScaleVector(&fluxMag,matptr->GetRho(mpmptr));
 		
 		// need to get normal vector from cpdi functions below
         bcDir = N_DIRECTION;

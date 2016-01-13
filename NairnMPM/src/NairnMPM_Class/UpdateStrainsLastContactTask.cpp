@@ -94,7 +94,7 @@ void UpdateStrainsLastContactTask::Execute(void)
 		catch(CommonException err)
 		{	if(uslErr==NULL)
 			{
-#pragma omp critical
+#pragma omp critical (error)
 				uslErr = new CommonException(err);
 			}
 		}

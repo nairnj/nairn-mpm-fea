@@ -68,6 +68,7 @@ public class CmdViewer extends JNCmdTextDocument
 	private String fbDamping;
 	private String pfbDamping;
 	private String leaveLimit;
+	private String extrapolateRigid;
 	private String ptsPerElement;
 	private String diffusion;
 	private String conduction;
@@ -348,6 +349,7 @@ public class CmdViewer extends JNCmdTextDocument
 		fbDamping = null;
 		pfbDamping = null;
 		leaveLimit = null;
+		extrapolateRigid = null;
 		ptsPerElement = null;
 		diffusion = null;
 		conduction = null;
@@ -711,6 +713,9 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("leavelimit"))
 			doLeaveLimit(args);
 		
+		else if(theCmd.equals("extrapolaterigid"))
+			doExtrapolateRigid(args);
+		
 		else if(theCmd.equals("diffusion"))
 			doDiffusion(args);
 		
@@ -729,20 +734,36 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("contactposition"))
 			doContactPosition(args);
 		
+		else if(theCmd.equals("contactcracks"))
+			doContactLaw(args,0);
+		
 		else if(theCmd.equals("friction"))
+		{	// Deprecated - Use ContactCracks
 			doFriction(args,0);
+		}
 		
 		else if(theCmd.equals("imperfectinterface"))
+		{	// Deprecated - Use ContactCracks
 			doImperfectInterface(args,0);
+		}
+		
+		else if(theCmd.equals("contactmm"))
+			doContactLaw(args,1);
 		
 		else if(theCmd.equals("frictionmm"))
+		{	// deprecated - use ContactMM
 			doFriction(args,1);
+		}
 		
 		else if(theCmd.equals("imperfectinterfacemm"))
+		{	// deprecated - use ContactMM
 			doImperfectInterface(args,1);
+		}
 
 		else if(theCmd.equals("crackinterface"))
+		{	// Deprecated - used (frict) parameter for newCrack
 			doImperfectInterface(args,3);
+		}
 
 		else if(theCmd.equals("jcontour"))
 			cracks.doJContour(args);
@@ -1737,8 +1758,46 @@ public class CmdViewer extends JNCmdTextDocument
 		ContactPosition = "      <ContactPosition>"+cp+"</ContactPosition>\n";
 	}
 	
-	// Friction (number or stick, single (ignore), none),<material ID (only as material prop)>
+	// ContactMM (LawID),<material ID (only as material prop)>
 	// MMMode = 0 (cracks), 1 (multimaterial), 2 (material property), 3 an attribute
+	public String doContactLaw(ArrayList<String> args,int MMMode) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+		
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+		
+		// get law ID
+		int lawnum = mats.getMatID(readStringArg(args.get(1)));
+		if(lawnum<=0)
+			throw new Exception("'"+args.get(0)+"' as contact law property has unknown material ID:\n"+args);
+		
+		// material property needs material ID
+		if(MMMode==2)
+		{	if(args.size()<3)
+				throw new Exception("'"+args.get(0)+"' as material property has too few parameters:\n"+args);
+		
+			int matnum = mats.getMatID(readStringArg(args.get(2)));
+			if(matnum<=0)
+				throw new Exception("'"+args.get(0)+"' as material property has unknown material ID:\n"+args);
+			
+			String cmd = "    <Friction law='"+lawnum+"' mat='"+matnum+"'/>\n";
+			return cmd;
+		}
+		
+		// Friction for cracks or multimaterial mode
+		String cmd = "      <Friction law='"+lawnum+"'/>\n";
+		if(MMMode==1)
+			FrictionMM = cmd;
+		else if(MMMode==0)
+			cracks.setFriction(cmd);
+		return null;
+	}
+	
+	// Deprecated - use doContactLaw instead
+	// Friction (number or stick, single (ignore), none),<material ID (only as material prop)>
+	// MMMode = 0 (cracks), 1 (multimaterial), 2 (material property), 3 an attribute for CrackList
 	public String doFriction(ArrayList<String> args,int MMMode) throws Exception
 	{	// MPM Only
 		requiresMPM(args);
@@ -1793,6 +1852,7 @@ public class CmdViewer extends JNCmdTextDocument
 		return null;
 	}
 	
+	// Deprecated - use doContactLaw instead (3 uses NewCrack command (frict) ar instead)
 	// ImperfectInterface Dt,Dn,<Dnc>
 	// MMMode = 0 (cracks), 1 (multimaterial), 2 (material property), 3 (CrackInterface commmand)
 	public String doImperfectInterface(ArrayList<String> args,int MMMode) throws Exception
@@ -1877,6 +1937,23 @@ public class CmdViewer extends JNCmdTextDocument
 			fbDamping = fb;
 		else
 			pfbDamping = fb;
+	}
+	
+	// LeaveLimit #1 (integer)
+	public void doExtrapolateRigid(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// activate with no argument
+		if(args.size()<2)
+			extrapolateRigid = "    <ExtrapolateRigid/>\n";
+		else
+		{	String option = readStringArg(args.get(1));
+			if(option.toLowerCase().equals("yes"))
+				extrapolateRigid = "    <ExtrapolateRigid/>\n";
+			else
+				extrapolateRigid = null;
+		}
 	}
 	
 	// LeaveLimit #1 (integer)
@@ -2064,19 +2141,49 @@ public class CmdViewer extends JNCmdTextDocument
 	public void doGravity(ArrayList<String> args) throws Exception
 	{	// MPM Only
 		requiresMPM(args);
-	
-		// defaults
-		double gx=0.,gy=-9806.65,gz=0.;
 		
-		if(args.size()>1) gx = 1000.*readDoubleArg(args.get(1));
-		if(args.size()>2) gy = 1000.*readDoubleArg(args.get(2));
-		if(args.size()>3) gz = 1000.*readDoubleArg(args.get(3));
-
-		// the command
-		gravity = "    <BodyXForce>"+gx+"</BodyXForce>\n"+
-					"    <BodyYForce>"+gy+"</BodyYForce>\n"+
-					"    <BodyZForce>"+gz+"</BodyZForce>\n";
+		// defaults are 0,-9806.65,0 otherwise
+		
+		// x value
+		if(args.size()>1)
+		{	Object gxarg = readStringOrDoubleArg(args.get(1));
+			if(gxarg.getClass().equals(Double.class))
+			{	double gx = 1000.*((Double)gxarg).doubleValue();
+				gravity = "    <BodyXForce>"+gx+"</BodyXForce>\n";
+			}
+			else
+				gravity = "    <GridBodyXForce>"+(String)gxarg+"</GridBodyXForce>\n";
+		}
+		else
+			gravity = "    <BodyXForce>0.0</BodyXForce>\n";
+		
+		// y value
+		if(args.size()>2)
+		{	Object gyarg = readStringOrDoubleArg(args.get(2));
+			if(gyarg.getClass().equals(Double.class))
+			{	double gy = 1000.*((Double)gyarg).doubleValue();
+				gravity = gravity + "    <BodyYForce>"+gy+"</BodyYForce>\n";
+			}
+			else
+				gravity = gravity + "    <GridBodyYForce>"+(String)gyarg+"</GridBodyYForce>\n";
+		}
+		else
+			gravity = gravity + "    <BodyYForce>-9805.65</BodyYForce>\n";
+		
+		// z value
+		if(args.size()>3)
+		{	Object gzarg = readStringOrDoubleArg(args.get(3));
+			if(gzarg.getClass().equals(Double.class))
+			{	double gz = 1000.*((Double)gzarg).doubleValue();
+				gravity = gravity + "    <BodyZForce>"+gz+"</BodyZForce>\n";
+			}
+			else
+				gravity = gravity + "    <GridBodyZForce>"+(String)gzarg+"</GridBodyZForce>\n";
+		}
+		else
+			gravity = gravity + "    <BodyZForce>0.0</BodyZForce>\n";
 	}
+	
 	// PtsPerElement #1 (integer)
 	public void doPtsPerElement(ArrayList<String> args) throws Exception
 	{	// MPM Only
@@ -2301,6 +2408,7 @@ public class CmdViewer extends JNCmdTextDocument
 			if(pdamping!=null) xml.append(pdamping);
 			if(fbDamping!=null) xml.append(fbDamping);
 			if(pfbDamping!=null) xml.append(pfbDamping);
+			if(extrapolateRigid!=null) xml.append(extrapolateRigid);
 			if(leaveLimit!=null) xml.append(leaveLimit);
 			if(diffusion!=null) xml.append(diffusion);
 			

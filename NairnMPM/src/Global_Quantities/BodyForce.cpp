@@ -224,6 +224,12 @@ double BodyForce::GetNonPICParticleDamping(double utime)
     return nonPICDamping;
 }
 
+// Get PIC damping term alone
+double BodyForce::GetPICDamping(void)
+{   return usePICDamping ? fractionPIC/timestep : 0.;
+}
+
+
 // display gravity settings
 void BodyForce::Output(void)
 {

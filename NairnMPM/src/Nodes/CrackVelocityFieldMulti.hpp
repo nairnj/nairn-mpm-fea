@@ -32,10 +32,6 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual double GetTotalMassAndCount(void);
 		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
 		virtual void CopyVolumeGradient(int,Vector *);
-#ifdef COMBINE_RIGID_MATERIALS
-		virtual void CopyRigidFrom(MatVelocityField *,int);
-#endif
-		virtual MatVelocityField *GetRigidMaterialField(int *);
 		virtual void CopyMassAndMomentum(NodalPoint *);
         virtual void CopyMassAndMomentumLast(NodalPoint *);
 	
@@ -48,13 +44,11 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void RezeroNodeTask6(double);
 	
 		virtual void MaterialContactOnCVF(NodalPoint *,double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
-        virtual void GetFrictionalDeltaMomentum(Vector *,Vector *,double,double,Vector *,bool *,int);
 		virtual bool HasVolumeGradient(int) const;
 		virtual void GetVolumeGradient(int,const NodalPoint *,Vector *,double) const;
 		virtual void RigidMaterialContactOnCVF(int,bool,NodalPoint *,double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
+		virtual double GetContactArea(NodalPoint *,double,double,Vector *,Vector *,Vector *,double *,double *) const;
 		virtual double GetContactCOD(NodalPoint *,Vector *,Vector *,Vector *,double,double,bool *);
-		virtual bool GetInterfaceForcesForNode(Vector *,Vector *,double,double,
-										   double,Vector *,double *,double,Vector *,double,bool,bool,double);
 		virtual void CalcVelocityForStrainUpdate(void);
 	
 		// boundary conditions
@@ -70,7 +64,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void SumAndClearRigidContactForces(Vector *,bool,double,Vector *);
 		virtual double GetTotalMass(bool) const;
 		virtual void AddKineticEnergyAndMass(double &,double &);
-		virtual double GetVolumeNonrigid(bool);
+		virtual double GetVolumeNonrigid(bool) const;
 		virtual double GetVolumeTotal(NodalPoint *) const;
 		virtual Vector GetCMatMomentum(bool &,double *) const;
 		virtual Vector GetCMDisplacement(NodalPoint *,bool) const;
@@ -82,6 +76,10 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 #endif
 		virtual int PasteFieldMomenta(Vector *,int);
 		virtual void Describe(void) const;
+	
+		// NFM rigid materials ignore cracks
+		virtual void CopyRigidFrom(MatVelocityField *,int);
+		virtual MatVelocityField *GetRigidMaterialField(int *);
 	
 	private:
 		// variables (changed in MPM time step)

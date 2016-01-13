@@ -251,14 +251,14 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 // If needed, a material can initialize particle state
 // For subclasses of TransIsotropic, rotation matrix is tracked in large rotation mode
 //		and in small rotation is 3D
-void TransIsotropic::SetInitialParticleState(MPMBase *mptr,int np) const
+void TransIsotropic::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 {
 	// always track in 3D so transport properties does not need second decomposition
 	if(np==THREED_MPM)
 		mptr->InitRtot(mptr->GetInitialRotation());
 	
 	// call super class
-    Elastic::SetInitialParticleState(mptr,np);
+    Elastic::SetInitialParticleState(mptr,np,offset);
 }
 #endif
 
@@ -276,7 +276,7 @@ int TransIsotropic::SizeOfMechanicalProperties(int &altBufferSize) const
 }
 
 // Isotropic material can use read-only initial properties
-void *TransIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
+void *TransIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer,int offset) const
 {
 	// if large rotation mode (in material axes) or if isotropic in 2D plane, use initial properties
 	if(useLargeRotation || (MaterialTag()==TRANSISO1 && np!=THREED_MPM))

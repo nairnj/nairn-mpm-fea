@@ -95,7 +95,7 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 <li><a href="#thermal">Thermal Calculation</a> commands</li>
 <li><a href="#conc">Diffusion Calculation</a> command</li>
 <li><a href="#bconds">Boundary Condition</a> commands</li>
-<li><a href="#bconds">Gravitational Field</a> commands</li>
+<li><a href="#gravity">Gravitational Field</a> commands</li>
 <li><a href="#custom">Custom Task</a> commands</li>
 <li><a href="#xml">XML Insertion</a> commands</li>
 </ul>
@@ -475,7 +475,9 @@ previous results.</li>
 Select archiving frequency for MPM calculations. <code>(time)</code> is the archiving time in ms.
 The optional <code>(firstTime)</code> is the time to start archiving (in ms, default is 0).
 The optional <code>(props)</code> forces archiving if <code>(props)</code> propagations and/or
-debonds have occurred since the last archive (default is 0, which disables counting of propagations).</li>
+debonds have occurred since the last archive (default is 0, which disables counting of propagations).<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To create custom archiving schemes with various archiving intervals, you can create archiving blocks by using multiple <code>ArchiveTime</code> commands. Each subsequent command adds a new block that archives with new <tt>(time)</tt> and <tt>(props)</tt> settings. The new block starts at the new command's <code>(firstTime)</code> parameter, which must be later than the start of the previous archiving block.
+</li>
 <li><a name="toarchive"></a><code>ToArchive (quant1),&lt;(quant2)&gt;,...</code><br>
 Specify results to be archived in MPM calculations. The list can be in multiple arguments (<code>(quant1)</code>,
 <code>(quant2)</code>, etc.) and/or in multiple <code>ToArchive</code> commands. The archiving options are:
@@ -534,8 +536,9 @@ Global results are average values over the particles. Specify global result to b
 	<li><code>dispR</code> or <code>dispZ</code> - average component of axisymmetric displacement in mm (synonyms for <code>dispx</code> or <code>dispy</code>)</li>
 	<li><code>contactx</code>, <code>contacty</code>, or <code>contactz</code> - component of the total contact force on the grid for <a href="#mmmode">multimaterial mode</a> simulations when they include <a href="materials.html#rigid">rigid materials</a> that have <code>direction=8</code>. It is a sum of all contact forces for the rigid material on the object in Newtons.</li>
 	<li><code>contactR</code> or <code>contactZ</code> - component of the total contact force per radian on the axisymmetric grid in N (synonyms for <code>contactx</code> or <code>contacty</code>)</li>
-	<li><code>reactionx</code>, <code>reactiony</code>, or <code>reactionz</code> - component of the reaction force at nodes with velocity boundary conditions in N. If option <code>(material)</code> specifies a material, the force will be for all velocity conditions created by that <a href="materials.html#rigid">rigid material</a>; if <code>(material)</code> is omitted the force will sum all velocity boundary conditions (specified or created by rigid particles); if <code>(material)</code> &lt; 0, the force will be only for <a href="#velbc">velocity boundary conditions</a> with that boundary condition ID.</li>
-	<li><code>reactionR</code> or <code>reactionZ</code> - component of the reaction force per radian at axisymmetric nodes with velocity boundary conditions in N (synonyms for <code>reactionx</code> or <code>reactiony</code> and see those options for meaning of the <code>(material)</code> option)</li>
+	<li><code>reactionx</code>, <code>reactiony</code>, or <code>reactionz</code> - component of the reaction force at nodes with velocity boundary conditions in N. If option <code>(mat)</code> specifies a material, the force will be for all velocity conditions created by that <a href="materials.html#rigid">rigid material</a>; if <code>(mat)</code> is omitted the force will sum all velocity boundary conditions (specified or created by rigid particles); if <code>(mat)</code> &lt; 0, the force will be only for <a href="#velbc">velocity boundary conditions</a> with that boundary condition ID.  When the <a href="#mhother"><code>ExtrapolateRigid</code></a> option is used, set <code>(material)</code> to -40 to get reaction force for all rigid materials (and in this mode it is not possible to separate forces on different rigid materials).</li>
+	<li><code>reactionR</code> or <code>reactionZ</code> - component of the reaction force per radian at axisymmetric nodes with velocity boundary conditions in N (synonyms for <code>reactionx</code> or <code>reactiony</code> and see those options for meaning of the <code>(mat)</code> option)</li>
+	<li><code>heatWatts</code> - the heating force at nodes with velocity boundary conditions in Watts. If <code>(mat)</code> specifies a material, the heating rate will be for all temperature conditions created by that rigid material; if<code>(mat)</code> is omitted the heating rate will sum all temperature boundary conditions (specified or created by that <a href="materials.html#rigid">rigid material</a>); if <code>(mat)</code> &lt; 0, the heating rate will be only for <a href="#tempbc">temperature</a> boundary conditions with that boundary condition ID.</li>
 	<li><code>temp</code> - average temperature</li>	
 	<li><code>concentration</code> - weight fraction concentration</li>	
 	<li><code>Work Energy</code> - total work energy in J</li>
@@ -544,10 +547,11 @@ Global results are average values over the particles. Specify global result to b
 	<li><code>Strain Energy</code> - total external work in J</li>
 	<li><code>Heat Energy</code> - total heat energy in J</li>
 	<li><code>Entropy</code> - total entropy in J</li>
+	<li><code>Plastic Energy</code> - total dissipated energy in J</li>
 	<li><code>Internal Energy</code> - sum of work and heat energy (U = w + q) in J</li>
 	<li><code>Helmholz Energy</code> - total Helmholz free energy (A = U - TS) in J</li>
 	<li><code>Interface Energy</code> - total energy associated with cracks having imperfect interfaces in J.</li>
-	<li><code>Plastic Energy</code> - total plastic energy in J</li>
+	<li><code>Friction Work</code> - total friction work converted into heat in J.</li>
 	<li><code>alpha</code> - the total grid damping coefficient, &alpha;, which evolves when using feedback damping (in 1/sec)</li>
 	<li><code>palpha</code> - the total particle damping coefficient, &alpha;, which evolves when using particle feedback damping (in 1/sec)</li>
 	<li><code>Step number</code> - the current MPM step number</li>
@@ -563,7 +567,7 @@ equivalent to the small strain tensor.
 Specify time interval for archiving global results, <code>(time)</code> is the global archiving time in ms. If not specified, global archiving is done at the <a href="#atime">standard archiving time</a>.</li>
 </ul>
 
-<h3>Damping and Other Options</h3>
+<h3><a name="mhother"></a>Damping and Other Options</h3>
 
 <ul>
 <li><code>Damping (alphag),&lt;(PIC)&gt;</code><br>
@@ -576,6 +580,8 @@ Select options for alternative damping of MPM particle velocities. The two comma
 <a href="#function">user-defined function</a>) in micro joules. The optional
 <code>(maxAlphag)</code> (or p) is maximum damping factor in units 1/sec (default is to have no maximum).
 </li>
+<li><code>ExtrapolateRigid &lt;(option)&gt;</code><br>
+When this option is activated (with <code>(option)</code>="yes" or omitted), all <a href="materials.html#rigid">rigid material</a> particles that set boundary conditions for velocity, temperature, or concentration, will extrapolate to the grid first and then set boundary conditions on those extrapolated values instead of the rigid particle velocity, temperature, or concentration. It is normally used when the rigid particle values vary with position, such as loading in shear.</li>
 <li><code>LeaveLimit (allow)</code><br>
 Set number of particles allowed to leave the grid (in <code>(allow)</code>) before an analysis is stopped.
 If command is omitted, the limit is 1% of the particles. Set to 1 to stop when the first particle leaves the grid.</li>
@@ -830,11 +836,11 @@ the grid. The optional <code>(flip)</code> can be "yes" to flip image along its 
 <p>These commands define explicit crack paths:</p>
 
 <ul>
-<li><code>NewCrack (x),(y),&lt;(matoption)&gt;,&lt;(frict)&gt;,&lt;(tract)&gt;</code><br>
+<li><code>NewCrack (x),(y),&lt;(matoption)&gt;,&lt;(lawid)&gt;,&lt;(tract)&gt;</code><br>
 Start new crack at <code>(x,y)</code> (in mm). <code>(matoption)</code> can be crack tip material, &quot;fixed&quot; (to be fixed crack),
 &quot;exterior&quot; (for crack
-that extends beyond object), or &quot;free&quot; (no material). <code>(frict)</code> can set friction properties (as explained in the <a href="#frict">Friction command</a>) or can be
-&quot;traction&quot;. If <code>(frict)</code> is &quot;traction&quot;, <code>(tract)</code> must be a traction law material.</li>
+that extends beyond object), or &quot;free&quot; (no material). <code>(law)</code> can set a custom <a href="materials.html#contactlaws">contact law</a> for this crack (as explained in the <a href="#contactcracks">ContactCracks command</a>) or can be
+&quot;traction&quot;. If <code>(lawid)</code> is &quot;traction&quot;, <code>(tract)</code> must be a traction law material. (Note: a deprecated use of the <code>(lawid)</code> parameter was to set frictional contact by setting <code>(lawid)</code> to options allowed for the <a href="#frict">Friction Command</a>).</li>
 
 <li><code>GrowCrackLine (x),(y),(segs),&lt;(mat)&gt;,&lt;(tract)&gt;</code><br>
 Extend current crack to <code>(x,y)</code> (in mm) using <code>(segs)</code> crack segments. <code>(mat)</code> can be crack tip material, &quot;exterior&quot; (for crack that extends beyond object), or invalid ID (no material). <code>(tract)</code> is a traction law material to use in wake of crack propagation from this crack tip.</li>
@@ -849,9 +855,6 @@ Extend current crack to <code>(x,y)</code> using 1 crack segment. <code>(mat)</c
 <li><code>CrackThickness (thick)</code><br>
 Sets crack thickness to <code>(thick)</code> (in mm); only used or needed when crack has traction laws or crack tips release their energy into heat.</li>
 
-<li><code>CrackInterface (Dt),(Dn),&lt;(Dnc)&gt;</code><br>
-Set current crack to use custom imperfect interface properties. The parameters are the same as in the <a href="#imperfect">ImperfectInterface command</a>.</li>
-
 </ul>
 
 <h3><a name="csettings"></a>Crack Settings</h3>
@@ -859,18 +862,9 @@ Set current crack to use custom imperfect interface properties. The parameters a
 <p>This commands define default crack modeling settings (although each crack can change them to have cracks with different settings:</p>
 
 <ul>
-<li><a name="frict"></a><code>Friction (frict)</code><br>
-Set default crack contact friction properties with options:
-<ul>
-<li>number - the friction coefficient</li>
-<li>&quot;stick&quot; - to use stick contact</li>
-<li>&quot;single&quot; (or &quot;ignore&quot;) - to revert to single velocity field</li>
-<li>&quot;none&quot; - for frictionless contact (same as 0 and it is the default)</li>
-</ul>
+<li><a name="contactcracks"></a><code>ContactCracks (lawid)</code><br>
+Set default crack <a href="materials.html#contactlaws">contact law</a> using the law's ID in <code>(lawid)</code>. Any specific crack can use a different contact law by using the <code>(lawid)</code> aregument in the <a href="#cracks">NewCrack command</a>.
 </li>
-
-<li><a name="imperfect"></a><code>ImperfectInterface (Dt),(Dn),&lt;(Dnc)&gt;</code><br>
-Set default properties for crack surfaces to model an imperfect interface. <code>(Dt)</code> and <code>(Dn)</code> are the D<sub>t</sub> and D<sub>n</sub> interface parameters for tangential and normal traction (in MPa/mm). If (Dnc) is given, it is the normal interface parameter for compression (MPa/mm) and (Dn) is converted to be the normal interface parameter for tension. Any parameter can by -1 to indicate a prefect interface in that direction.</li>
 
 <li><a name="propagate"></a><code>Propagate (criterion),&lt;(direction)&gt;,&lt;(tract)&gt;</code><br>
 Activate and select crack propagation method. The (<code>criterion)</code> selects the crack propagation failure criterion (by name or number):
@@ -912,11 +906,31 @@ Used to set how crack plane particles move where <code>(how)</code> is "avg" or 
 
 <li><code>ContactPosition (con)</code><br>
 Determines method for detecting crack contact when using particle displacements and the distance (<code>(con)</code> entered relative to grid element dimensions) required to detect contact based on displacements extrapolated to the grid. It is usually omitted when all cracks start
-out in contact has <code>(con)</code> = 0.8 (default is omitted).</li>
+out in contact or else is is set to <code>(con)</code> = 0.8 (default is omitted).</li>
 
 </ul>
 
 <p>When modeling cracks, you can use the <a href="#toarchive">ToArchive command</a> to select various crack parameters for output in the archive files. The archiving options for crack parameters are jintegral, stress, and energybalance.</p>
+
+<p>The following are deprecated crack settings for setting contact law properties. They have been replaced by the <a href=#contactcracks">ContactCracks command</a> and the (lawid) parameter in the <a href="#cracks">NewCrack command</a>:</p>
+
+<ul>
+<li><a name="frict"></a><code>Friction (frict)</code> (<font color="red">deprecated</font>)<br>
+Set default crack contact friction properties with options:
+<ul>
+<li>number - the friction coefficient</li>
+<li>&quot;stick&quot; - to use stick contact</li>
+<li>&quot;single&quot; (or &quot;ignore&quot;) - to revert to single velocity field</li>
+<li>&quot;none&quot; - for frictionless contact (same as 0 and it is the default)</li>
+</ul>
+</li>
+
+<li><a name="imperfect"></a><code>ImperfectInterface (Dt),(Dn),&lt;(Dnc)&gt;</code> (<font color="red">deprecated</font>)<br>
+Set default properties for crack surfaces to model an imperfect interface. <code>(Dt)</code> and <code>(Dn)</code> are the D<sub>t</sub> and D<sub>n</sub> interface parameters for tangential and normal traction (in MPa/mm). If (Dnc) is given, it is the normal interface parameter for compression (MPa/mm) and (Dn) is converted to be the normal interface parameter for tension. Any parameter can by -1 to indicate a prefect interface in that direction.</li>
+</ul>
+
+<li><code>CrackInterface (Dt),(Dn),&lt;(Dnc)&gt;</code>  (<font color="red">deprecated</font>)<br>
+Used with a <a href="#cracks">new crack</a> definition, the command set current crack to use custom imperfect interface properties. The parameters are the same as in the <a href="#imperfect">ImperfectInterface command</a>.</li>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
@@ -961,29 +975,43 @@ contact calculations, with options:
 </ul>
 When <code>(norm)</code> is "maxgrad" or "avggrad", the <code>(rigidBiasOrAzimuth)</code> parameter sets a bias factor to use rigid normal over nonrigid material normal (default 1). When <code>(norm)</code> is "specify", the <code>(rigidBiasOrAzimuth)</code> and <code>(polar)</code> parameters set the azimuth (&phi;) and polar (&theta;) angles for the normal vector, which is given by (cos &phi; sin &theta;, sin &phi; sin &theta;, cos &theta;). For 2D calculations, the <code>(polar)</code> setting is ignored (and automatically set to 90 degrees). The normal should point from the lower-numbered material to the higher-numbered material. For contact with rigid materials, the normal should point from the non-rigid material to the rigid material.</li>
 
-<li><a name="frictmm"></a><code>FrictionMM (frict)</code><br>
+<li><code>ContactPosition (con)</code><br>
+Determines method for detecting crack contact when using particle displacements and the distance (<code>(con)</code> entered relative to grid element dimensions) required to detect contact based on displacements extrapolated to the grid. It is best omitted when all materials start
+out in contact has <code>(con)</code> = 0.8 (default is omitted) and the relative motions are small.</li>
+
+<li><a name="contactmm"></a><code>ContactMM (frict)</code><br>
+Set default multimaterial mode <a href="materials.html#contactlaws">contact law</a> by material ID in <code>(lawID)</code>.</li>
+
+<li><a name="contactprop"></a><code>Contact (lawid),(mat)</code><br>
+When this command is used within a <a href="#material">material</a> definition, it can set custom
+material-material <a href="materials.html#contactlaws">contact law</a> by that law's ID in <code>(lawid)</code> and where <code>(mat)</code> is material ID for the other material. Otherwise materials use the default
+settings from a <a href="#contactmm">ContactMM</a> command.</li>
+
+<li><code>shareMatField (matID)</code><br>
+When this command is used within a <a href="#material">material</a> definition, it allows two or more
+materials to <a href="materials.html#cmn4">share the same velocity field</a>.</li>
+
+</ul>
+
+<p>The following are deprecated commands to set multimaterial contact properites. The have been replaced by the above <a href="#contactmm">ContactMM</a> command and the <a href="#contactprop">Contact</a> material property:</p>
+
+<ul>
+
+<li><a name="frictmm"></a><code>FrictionMM (frict)</code> (<font color="red">deprecated</font>)<br>
 Set default multimaterial mode friction properties where (first) sets it as explained in the <a href="#frict">Friction command</a>.</li>
 
-<li><code>Friction (frict),#2</code><br>
+<li><code>Friction (frict),(mat)</code> (<font color="red">deprecated</font>)<br>
 When this command is used within a <a href="#material">material</a> definition, it can set custom
 material-material friction properties. <code>(frict)</code> is same as for <a href="#frict">Friction command</a>
 and <code>(mat)</code> is material ID for the other material. Otherwise materials use the default
 settings from a <a href="#frictmm">FrictionMM</a> or <a href="#imperfectmm">ImperfectInterfaceMM command</a>.</li>
 
-<li><a name="imperfectmm"></a><code>ImperfectInterfaceMM (Dt),(Dn),&lt;(Dnc)&gt;</code><br>
+<li><a name="imperfectmm"></a><code>ImperfectInterfaceMM (Dt),(Dn),&lt;(Dnc)&gt;</code>  (<font color="red">deprecated</font>)<br>
 Set default properties for material contact to model an imperfect interface. The parameters are entered as explained in the <a href="#imperfect">ImperfectInterface command</a>.</li>
 
-<li><code>Interface (Dt),(Dn),(Dnc),(mat)</code><br>
+<li><code>Interface (Dt),(Dn),(Dnc),(mat) (<font color="red">deprecated</font>)</code><br>
 When this command is used within a <a href="#material">material</a> definition, it can set custom
 material-material imperfect interface properties. <code>(Dt)</code>, <code>(Dn)</code>, and <code>(Dnc)</code> are same as for <a href="#imperfect">ImperfectInterface command</a> (except that <code>(Dnc)</code> is required). (mat) is material ID for the other material. Otherwise materials use the default settings from a <a href="#frictmm">FrictionMM</a> or <a href="#imperfectmm">ImperfectInterfaceMM command</a>.</li>
-
-<li><code>ContactPosition (con)</code><br>
-Determines method for detecting crack contact when using particle displacements and the distance (<code>(con)</code> entered relative to grid element dimensions) required to detect contact based on displacements extrapolated to the grid. It is best omitted when all materials start
-out in contact has <code>(con)</code> = 0.8 (default is omitted) and the relative motions are small.</li>
-
-<li><code>shareMatField (matID)</code><br>
-When this command is used within a <a href="#material">material</a> definition, it allows two or more
-materials to <a href="materials.html#cmn4">share the same velocity field</a>.</li>
 
 </ul>
 
@@ -1094,7 +1122,7 @@ Apply concentration conditions to selected nodes. <code>(style)</code> is style 
 </li>
 
 <li><code>BoundaryID &lt;(id)&gt;</code><br>
-Set ID for subsequent velocity boundary condition for use when global archiving reaction forces. The <code>(id)</code> should be negative. If omitted it is set to 0 (which means ID is not set). These IDs are needed when archiving <a href="#globalarchive">reaction forces</a>. If you need to get reaction force on boundary conditions created by <a href="#gridhoriz">symmetry planes</a>, those conditions will automatically have the following boundary IDs:
+Set ID for subsequent velocity boundary condition for use when global archiving reaction forces. The <code>(id)</code> should be negative. If omitted it is set to 0 (which means ID is not set). These IDs are needed when archiving <a href="#globalarchive">reaction forces</a>. If you need to get reaction force on boundary conditions created by <a href="#gridhoriz">symmetry planes</a> or by rigid particles when <a href="#mhother"><code>ExtrapolateRigid</code> command</a> is used, those conditions will automatically have the following boundary IDs:
 <ul>
 <li>-10: plane a minimum x edge</li>
 <li>-11: plane a maximum x edge</li>
@@ -1102,6 +1130,7 @@ Set ID for subsequent velocity boundary condition for use when global archiving 
 <li>-21: plane a maximum x edge</li>
 <li>-30: plane a minimum x edge</li>
 <li>-31: plane a maximum x edge</li>
+<li>-40: boundary condition created by extrapolating rigid particles</li>
 </ul>
 </li>
 
@@ -1232,8 +1261,8 @@ When both directions are periodic, a "Shear" value imposes average shear strain.
 <li><code>Gravity &lt;(ax)&gt;,&lt;(ay)&gt;,&lt;(az)&gt;</code><br>
 Apply body forces to all particles for simulations within a constant gravitational field
 where <code>(ax)</code>, <code>(ay)</code>, and <code>(az)</code> are the accelerations due to gravity (in m/sec<sup>2</sup>) in the x, y, and z
-directions, respectively (<code>(ax)</code> and <code>(ay)</code> are for R and Z directions in axisymmetric calculations). If all parameters
-are omitted, this commands activates gravity with earth's gravitation field in the y direction or (0,-9.8,0). If no Gravity command is used, there is no gravity.</li>
+directions, respectively (<code>(ax)</code> and <code>(ay)</code> are for R and Z directions in axisymmetric calculations). If any parameters or omitted, they are set to default values of (0,-9.8,0). If no Gravity command is used, there is no gravity.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Any of the parameters can alternatively be a <a href="#function">user-defined function</a> of x, y, and z (in mm) and t (in ms) to give position and/or time dependent body forces. When using a function, the functions should evaluate to acceleration in mm/sec<sup>2</sup> (instead of the m/sec<sup>2</sup> used for numerical settings).</li>
 
 </ul>
 

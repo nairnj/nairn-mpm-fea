@@ -46,7 +46,9 @@
 #include "Materials/PressureLaw.hpp"
 #include "Custom_Tasks/PropagateTask.hpp"
 #include "Read_XML/ShapeController.hpp"
+#include "MPM_Classes/MPMBase.hpp"
 #include "System/UnitsController.hpp"
+#include "Materials/ContactLaw.hpp"
 
 // Element types
 #include "Elements/FourNodeIsoparam.hpp"
@@ -59,6 +61,7 @@ MPMReadHandler::MPMReadHandler()
 {
 	crackCtrl=new CrackController();
     currentTask=NULL;
+	currentContact=NULL;
 }
 
 MPMReadHandler::~MPMReadHandler()
@@ -237,17 +240,26 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		new GlobalQuantity(quantityName,setWhichMat);
     }
 	
+	// Damping in MPMHEADER only, PDamping in MPMHEADER or in MATERIAL
     else if(strcmp(xName,"Damping")==0 || strcmp(xName,"PDamping")==0)
-	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
-    	input=DOUBLE_NUM;
-        bool gridDamp = true;
+	{	input=DOUBLE_NUM;
+        bool gridDamp = true,matDamp = false;
         if(strcmp(xName,"Damping")==0)
-        {   inputPtr=(char *)&bodyFrc.damping;
-            bodyFrc.useDamping=TRUE;
+		{	if(block!=MPMHEADER)
+				ThrowCompoundErrorMessage(xName,"command found at invalid location","");
+            inputPtr=(char *)&bodyFrc.damping;
+            bodyFrc.useDamping = true;
         }
-        else
-        {   inputPtr=(char *)&bodyFrc.pdamping;
-            bodyFrc.usePDamping=TRUE;
+        else if(block==MATERIAL)
+		{	inputPtr=(char *)&(matCtrl->matPdamping);
+			matCtrl->SetFractionPIC();
+			matDamp = true;
+		}
+		else
+        {   if(block!=MPMHEADER)
+				ThrowCompoundErrorMessage(xName,"command found at invalid location","");
+			inputPtr=(char *)&bodyFrc.pdamping;
+            bodyFrc.usePDamping = true;
             gridDamp = false;
         }
 		
@@ -256,12 +268,18 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"function")==0)
-			{	bodyFrc.SetGridDampingFunction(value,gridDamp);
+			{	if(matDamp)
+					ThrowSAXException("Material damping function of time is not allowed");
+				else
+					bodyFrc.SetGridDampingFunction(value,gridDamp);
 			}
             else if(strcmp(aName,"PIC")==0)
             {	double fractionPIC;
                 sscanf(value,"%lf",&fractionPIC);
-                bodyFrc.SetFractionPIC(fractionPIC);
+				if(matDamp)
+					matCtrl->SetFractionPIC(fractionPIC);
+				else
+					bodyFrc.SetFractionPIC(fractionPIC);
             }
             delete [] aName;
             delete [] value;
@@ -313,6 +331,11 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
 		input=INT_NUM;
         inputPtr=(char *)&MaterialBase::incrementalDefGradTerms;
+	}
+
+	else if(strcmp(xName,"ExtrapolateRigid")==0)
+	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+		MaterialBase::extrapolateRigidBCs = true;
 	}
 
     else if(strcmp(xName,"GIMP")==0)
@@ -456,70 +479,65 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"Friction")==0)
     {	if(block!=CRACKHEADER && block!=MULTIMATERIAL && block!=MATERIAL)
 			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
+		if(currentContact!=NULL)
+			ThrowCompoundErrorMessage(xName," command nested in another <Friction> command.","");
+		
+		char tempName[20];
+		strcpy(tempName,"Input Only");
+		currentContact = new ContactLaw(tempName);
     	input=DOUBLE_NUM;
-		double *theDn,*theDnc,*theDt;
-		char othername[200];
+		inputPtr=(char *)&(currentContact->contactProps.friction);
+		char othername[200],lawname[200];
 		othername[0]=0;
-		if(block==CRACKHEADER)
-        {   // Commmand in the <Cracks> element of the <MPMHeader>
-			inputPtr=(char *)&contact.friction;
-			theDn=&contact.Dn;
-			theDnc=&contact.Dnc;
-			theDt=&contact.Dt;
-		}
-		else if(block==MULTIMATERIAL)
-        {   // Commmand in the <MultiMaterialMode> element of the <MPMHeader>
-			inputPtr=(char *)&contact.materialFriction;
-			theDn=&contact.materialDn;
-			theDnc=&contact.materialDnc;
-			theDt=&contact.materialDt;
-		}
-		else
-        {   // Command in a material to set custom material-to-material contact
-			matCtrl->friction=0.;
-			inputPtr=(char *)&(matCtrl->friction);
-			matCtrl->Dn=-1.;
-			theDn=&(matCtrl->Dn);
-			matCtrl->Dnc=-101.e6;
-			theDnc=&(matCtrl->Dnc);
-			matCtrl->Dt=-1.;
-			theDt=&(matCtrl->Dt);
-			matCtrl->otherMatID=-1;
-		}
+		lawname[0]=0;
+		
     	numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
 			value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"Dn")==0 || strcmp(aName,"Dnt")==0)
-			{	sscanf(value,"%lf",theDn);
-				*theDn *= UnitsController::Scaling(1.e6);
+			{	sscanf(value,"%lf",&(currentContact->contactProps.Dn));
+				currentContact->contactProps.Dn *= UnitsController::Scaling(1.e6);
 			}
             else if(strcmp(aName,"Dnc")==0)
-			{	sscanf(value,"%lf",theDnc);
-				*theDnc *= UnitsController::Scaling(1.e6);
+			{	sscanf(value,"%lf",&(currentContact->contactProps.Dnc));
+				currentContact->contactProps.Dnc *= UnitsController::Scaling(1.e6);
 			}
 			else if(strcmp(aName,"Dt")==0)
-			{	sscanf(value,"%lf",theDt);
-				*theDt *= UnitsController::Scaling(1.e6);
+			{	sscanf(value,"%lf",&(currentContact->contactProps.Dt));
+				currentContact->contactProps.Dt *= UnitsController::Scaling(1.e6);
 			}
 			else if(strcmp(aName,"mat")==0)
             {   // only relevant in material definition
-				sscanf(value,"%d",&(matCtrl->otherMatID));
+				sscanf(value,"%d",&(currentContact->contactProps.otherMatID));
+			}
+			else if(strcmp(aName,"law")==0)
+			{	sscanf(value,"%d",&(currentContact->contactProps.contactLawID));
 			}
 			else if(strcmp(aName,"matname")==0)
 			{	if(strlen(value)>199) value[200]=0;
 				strcpy(othername,value);
 			}
+			else if(strcmp(aName,"lawname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(lawname,value);
+			}
 			delete [] value;
             delete [] aName;
         }
-		// if gave a mat name, it takes precedence over mat number (only relevant in material definition
+		
+		// if gave a mat name, it takes precedence over law number
+		if(strlen(lawname)>0)
+			currentContact->contactProps.contactLawID = matCtrl->GetIDFromNewName(lawname);
+		
+		// if gave a mat name, it takes precedence over mat number (only relevant in material definition)
 		if(strlen(othername)>0)
-			matCtrl->otherMatID = matCtrl->GetIDFromNewName(othername);
+			currentContact->contactProps.otherMatID = matCtrl->GetIDFromNewName(othername);
         
         // the inputPtr above will read in the friction coefficient (or numerical flag for other types of contact
+		// only used in old style when law name is not used
         
-        // the end of of friction element will transfer the material controller variable to the material
+        // the end of of friction element will transfer properties to appropriate contact properties
     }
     
     else if(strcmp(xName,"Propagate")==0 || strcmp(xName,"AltPropagate")==0)
@@ -824,10 +842,17 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	block=CRACKLIST;
 		CrackHeader *newCrack=new CrackHeader();
 		crackCtrl->AddCrack(newCrack);
-		newCrack->SetContact(contact.friction,contact.Dn,contact.Dnc,contact.Dt);
 		double gridThickness=mpmgrid.GetThickness();
 		if(gridThickness>0.) newCrack->SetThickness(gridThickness);
 		
+		// to hold custom contact law
+		char tempName[20];
+		strcpy(tempName,"Input Only");
+		currentContact = new ContactLaw(tempName);
+		char lawname[200];
+		lawname[0]=0;
+		bool hasCustomContact = false;
+
 		// read crack attributes
 		double dval;
 		numAttr=attrs.getLength();
@@ -842,26 +867,54 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			}
 			else if(strcmp(aName,"friction")==0)
             {	sscanf(value,"%lf",&dval);
-				newCrack->SetFriction(dval);
+				currentContact->contactProps.friction = dval;
+				hasCustomContact = true;
 			}
             else if(strcmp(aName,"Dn")==0 || strcmp(aName,"Dnt")==0)
             {	sscanf(value,"%lf",&dval);
-				dval *= UnitsController::Scaling(1.e6);
-				newCrack->SetDn(dval);
+				currentContact->contactProps.Dn = dval*UnitsController::Scaling(1.e6);
+				currentContact->contactProps.friction = 11.;
+				hasCustomContact = true;
 			}
             else if(strcmp(aName,"Dnc")==0)
             {	sscanf(value,"%lf",&dval);
-				dval *= UnitsController::Scaling(1.e6);
-				newCrack->SetDnc(dval);
+				currentContact->contactProps.Dnc = dval*UnitsController::Scaling(1.e6);
+				currentContact->contactProps.friction = 11.;
+				hasCustomContact = true;
 			}
             else if(strcmp(aName,"Dt")==0)
             {	sscanf(value,"%lf",&dval);
-				dval *= UnitsController::Scaling(1.e6);
-				newCrack->SetDt(dval);
+				currentContact->contactProps.Dt = dval*UnitsController::Scaling(1.e6);
+				currentContact->contactProps.friction = 11.;
+				hasCustomContact = true;
+			}
+			else if(strcmp(aName,"law")==0)
+			{	sscanf(value,"%d",&(currentContact->contactProps.contactLawID));
+			}
+			else if(strcmp(aName,"lawname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(lawname,value);
 			}
             delete [] aName;
             delete [] value;
         }
+		
+		// if gave a mat name, it takes precedence over law number
+		if(lawname[0])
+			currentContact->contactProps.contactLawID = matCtrl->GetIDFromNewName(lawname);
+		
+		// convert to the final contact law
+		int finalLawID = currentContact->contactProps.contactLawID;
+		if(finalLawID<0 && hasCustomContact)
+			finalLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,&(currentContact->contactProps),0.);
+		
+		// If has a law, put on the crack
+		if(finalLawID>=0)
+			newCrack->SetContactLawID(finalLawID);
+		
+		// done with currentContact
+		delete currentContact;
+		currentContact = NULL;
     }
 
 	// crack thickness (not needed if grid thickness correctly set in structure grid command)
@@ -1258,11 +1311,19 @@ void MPMReadHandler::myEndElement(char *xName)
     }
     
     else if(strcmp(xName,"Cracks")==0)
-    {	block=MPMHEADER;
+    {	// install frictionless if not provded
+		if(contact.crackContactLawID<0)
+		{	contact.crackContactLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,NULL,0.);
+		}
+    	block=MPMHEADER;
     }
     
     else if(strcmp(xName,"MultiMaterialMode")==0)
-    {	block=MPMHEADER;
+    {	// install frictionless if not provded
+		if(contact.materialContactLawID<0)
+		{	contact.materialContactLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,NULL,0.);
+		}
+		block=MPMHEADER;
     }
     
     else if(strcmp(xName,"Schedule")==0)
@@ -1270,8 +1331,33 @@ void MPMReadHandler::myEndElement(char *xName)
     }
     
     else if(strcmp(xName,"Friction")==0)
+    {	// Transfer contact law to appropriate location
+		
+		// convert to the final contact law
+		int finalLawID = currentContact->contactProps.contactLawID;
+		if(finalLawID<0)
+			finalLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,&(currentContact->contactProps),0.);
+		
+		// assign law to appropriate place
+		if(block==CRACKHEADER)
+		{	contact.crackContactLawID = finalLawID;
+		}
+		else if(block==MULTIMATERIAL)
+		{	contact.materialContactLawID = finalLawID;
+		}
+		else
+		{	// custom material/material contact
+			matCtrl->SetMaterialFriction(finalLawID,currentContact->contactProps.otherMatID);
+		}
+		
+		// done with currentContact
+		delete currentContact;
+		currentContact = NULL;
+    }
+    
+    else if(strcmp(xName,"PDamping")==0)
     {	if(block==MATERIAL)
-			matCtrl->SetMaterialFriction();
+			matCtrl->SetMaterialDamping();
     }
     
     else if(EndGenerator(xName))

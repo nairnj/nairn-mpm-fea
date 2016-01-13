@@ -127,13 +127,31 @@ void HEIsotropic::PrintMechanicalProperties(void) const
 	HyperElastic::PrintMechanicalProperties();
 }
 
+#pragma mark HEIsotropic:History Data Methods
+
+// return number of bytes needed for history data
+int HEIsotropic::SizeOfHistoryData(void) const
+{	return (plasticLaw->HistoryDoublesNeeded()+2)*sizeof(double); }
+
 // First ones for hardening law. Particle J appended at the end
-char *HEIsotropic::InitHistoryData(void)
-{	J_history = plasticLaw->HistoryDoublesNeeded();
-	double *p = CreateAndZeroDoubles(J_history+1);
+char *HEIsotropic::InitHistoryData(char *pchr,MPMBase *mptr)
+{	J_History = plasticLaw->HistoryDoublesNeeded();
+	double *p = CreateAndZeroDoubles(pchr,J_History+2);
     plasticLaw->InitPlasticHistoryData(p);
-	p[J_history]=1.;					// J
+	p[J_History]=1.;					// J
+	p[J_History+1]=1.;					// J
 	return (char *)p;
+}
+
+// this material has two history variables
+double HEIsotropic::GetHistory(int num,char *historyPtr) const
+{
+    double history=0.;
+	if(num>0 && num<=J_History+2)
+	{	double *p=(double *)historyPtr;
+		history=p[num-1];
+	}
+    return history;
 }
 
 #pragma mark HEIsotropic:Methods
@@ -145,11 +163,11 @@ int HEIsotropic::SizeOfMechanicalProperties(int &altBufferSize) const
 }
 
 // Get elastic and plastic properties, return null on error
-void *HEIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
+void *HEIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer,int offset) const
 {
 	HEPlasticProperties *p = (HEPlasticProperties *)matBuffer;
- 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np,altBuffer);
-	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),1.,p->hardProps);
+ 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np,altBuffer,offset);
+	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),1.,p->hardProps,offset);
 	
 	// Find current p->Gred and p->Kred (reduced moduli)
 	p->Gred = G1sp*Gratio;
@@ -165,7 +183,8 @@ void *HEIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer
     This material tracks pressure and stores deviatoric stress only in particle stress
         tensor
 */
-void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,
+									 ResidualStrains *res,int historyOffset) const
 {
 	HEPlasticProperties *p = (HEPlasticProperties *)properties;
 
@@ -182,20 +201,18 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     
 	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
     // This code handles plane strain, axisymmetric, and 3D - Plane stress is blocked
-	double J = detdF * mptr->GetHistoryDble(J_history);
-    
-    // save new J
-    mptr->SetHistoryDble(J_history,J);  // Stocking J
+	double J = detdF * mptr->GetHistoryDble(J_History,historyOffset);
+	mptr->SetHistoryDble(J_History,J,historyOffset);						// Stocking J
     
     // J is determinant of F (or sqrt root of determinant of B), Jeff is normalized to residual stretch
-	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);
-    double resStretch2 = resStretch*resStretch;
-    double Jres = resStretch2*resStretch;
+	double dJres = GetIncrementalResJ(mptr,res);
+	double Jres = dJres * mptr->GetHistoryDble(J_History+1,historyOffset);
+	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
     double Jeff = J/Jres;
 	
 	// Get hydrostatic stress component in subroutine
-	double detdFres = dresStretch*dresStretch*dresStretch;		// increment volumetric stretch
-    UpdatePressure(mptr,J,detdF,np,Jeff,delTime,p,res,detdFres);
+	double dTq0 = 0.,dispEnergy = 0.;
+    UpdatePressure(mptr,J,detdF,np,Jeff,delTime,p,res,dJres,historyOffset,dTq0,dispEnergy);
     
     // Others constants
     double J23 = pow(J, 2./3.)/Jres;
@@ -212,7 +229,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     
 	// Set alpint for particle
 	HardeningAlpha alpha;
-	plasticLaw->UpdateTrialAlpha(mptr,np,&alpha);
+	plasticLaw->UpdateTrialAlpha(mptr,np,&alpha,historyOffset);
 	
 	// Trial stress state
     double magnitude_strial = GetMagnitudeS(&stk,np);
@@ -258,9 +275,12 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 		// because deviatoric stress is traceless and deres has zero shear terms
 		// residual energy due to pressure was added in the pressure update
 		
-		// heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here
-        // and Cv(dT-dTq0) was done in pressure update
+		// heat energy is Cv(dT-dTq0) - dPhi, all from pressure update
+		IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
         
+		// give material chance to update history variables that change in elastic updates
+		plasticLaw->ElasticUpdateFinished(mptr,np,delTime,historyOffset);
+		
         return;
     }
     
@@ -273,7 +293,8 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     double MUbar = Jres*p->Gred*Ie1bar;
     
     // Find  lambda for this plastic state
-	double dlambda = plasticLaw->SolveForLambdaBracketed(mptr,np,magnitude_strial,&stk,MUbar,1.,1.,delTime,&alpha,p->hardProps);
+	double dlambda = plasticLaw->SolveForLambdaBracketed(mptr,np,magnitude_strial,&stk,
+														 MUbar,1.,1.,delTime,&alpha,p->hardProps,historyOffset);
     
     // update deviatoric stress (need to scale by J to get to Kirchoff stress/rho
 	Tensor nk = GetNormalTensor(&stk,magnitude_strial,np);
@@ -327,23 +348,20 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     // residual energy due to pressure was added in the pressure update
     
     // Plastic work increment per unit mass (dw/(rho0 V0)) (nJ/g)
-    double dispEnergy = dlambda*(sp->xx*nk.xx + sp->yy*nk.yy + sp->zz*nk.zz + 2.*sp->xy*nk.xy);
+    dispEnergy += dlambda*(sp->xx*nk.xx + sp->yy*nk.yy + sp->zz*nk.zz + 2.*sp->xy*nk.xy);
     if(np==THREED_MPM)  dispEnergy += 2.*dlambda*(sp->xz*nk.xz + sp->yz*nk.yz);
 	
     // Subtract q.dalpha to get final disispated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
     dispEnergy -= dlambda*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
     
-    // heat energy is Cv(dT-dTq0) - dPhi
-    // The dPhi is subtracted here because it will show up in next
-    //		time step within Cv dT (if adibatic heating occurs)
-    // The Cv(dT-dTq0) was done in update pressure
-    IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
-    
 	// The cumulative dissipated energy is tracked in plastic energy
     mptr->AddPlastEnergy(dispEnergy);
     
+    // heat energy is Cv(dT-dTq0) - dPhi
+    IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
+    
 	// update internal variables in the plastic law
-	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha);
+	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha,historyOffset);
 }
 
 #pragma mark HEIsotropic::Custom Methods
@@ -356,7 +374,8 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 // detdFres = (1+dres)^3 (approximately)
 // Here Tref and cref are starting conditions and T and c are current temperature and moisture
 void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,double Jeff,
-								 double delTime,HEPlasticProperties *p,ResidualStrains *res,double detdFres) const
+								 double delTime,HEPlasticProperties *p,ResidualStrains *res,double detdFres,int offset,
+								 double &dTq0,double &AVEnergy) const
 {
 	double Kterm = J*GetVolumetricTerms(Jeff,p->Kred);       // times J to get Kirchoff stress
     double P0 = mptr->GetPressure();
@@ -364,10 +383,10 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,doub
     // artifical viscosity
 	// delV is total incremental volumetric strain = total Delta(V)/V, here it is (Vn+1-Vn)/Vn+1
 	double delV = 1. - 1./detdF;
-    double QAVred = 0.,AVEnergy=0.;
+    double QAVred = 0.;
     if(delV<0. && artificialViscosity)
 	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(p->Kred*J));
-        if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
+        if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delV);
     }
     double Pfinal = -Kterm + QAVred;
     mptr->SetPressure(Pfinal);
@@ -379,10 +398,6 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,doub
     double avgP = 0.5*(P0+Pfinal);
 	double delVres = 1. - 1./detdFres;
     mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-avgP*delVres);
-	
-    // heat energy is Cv dT  - dPhi
-	// Here do Cv dT term and dPhi is done later
-    IncrementHeatEnergy(mptr,res->dT,0.,AVEnergy);
 }
 
 // get trial deviatoric stress tensor based on trial B
@@ -460,7 +475,7 @@ Vector HEIsotropic::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 
 // Copy stress to a read-only tensor variable
 // Subclass material can override, such as to combine pressure and deviatory stress into full stress
-Tensor HEIsotropic::GetStress(Tensor *sp,double pressure) const
+Tensor HEIsotropic::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
 {   Tensor stress = *sp;
     stress.xx -= pressure;
     stress.yy -= pressure;
@@ -479,20 +494,8 @@ double HEIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 {	return sqrt((Kbulk+4.*G1/3.)/rho);
 }
 
-// this material has two history variables
-double HEIsotropic::GetHistory(int num,char *historyPtr) const
-{
-    double history=0.;
-	if(num>0 && num<=J_history+1)
-	{	double *p=(double *)historyPtr;
-		history=p[num-1];
-	}
-    return history;
-}
-
 // if a subclass material supports artificial viscosity, override this and return TRUE
 bool HEIsotropic::SupportsArtificialViscosity(void) const { return true; }
 
 // store elastic B in alt strain while F has elastic + plastic deformation
 int HEIsotropic::AltStrainContains(void) const { return LEFT_CAUCHY_ELASTIC_B_STRAIN; }
-

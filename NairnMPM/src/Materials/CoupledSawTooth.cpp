@@ -77,11 +77,13 @@ void CoupledSawTooth::PrintMechanicalProperties(void) const
     cout <<  endl;
 }
 
+#pragma mark CohesiveZone::History Data Methods
+
 // history variables:
 // h is max effective displacement opening (starting at peak location)
-char *CoupledSawTooth::InitHistoryData(void)
+char *CoupledSawTooth::InitHistoryData(char *pchr)
 {
-	double *p = CreateAndZeroDoubles(5);
+	double *p = CreateAndZeroDoubles(pchr,5);
     p[0] = umidI;
     return (char *)p;
 }

@@ -59,7 +59,7 @@ void InitializationTask::Execute(void)
 			catch(CommonException err)
 			{	if(initErr==NULL)
 				{
-#pragma omp critical
+#pragma omp critical (error)
 					initErr = new CommonException(err);
 				}
 			}

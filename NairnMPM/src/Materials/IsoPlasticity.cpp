@@ -79,13 +79,21 @@ void IsoPlasticity::PrintMechanicalProperties(void) const
 	plasticLaw->PrintYieldProperties();
 }
 
+#pragma mark IsoPlasticity::History Data Methods
+
 // The IsoPlasticity has not history data, but its plasticity law might
-char *IsoPlasticity::InitHistoryData(void)
-{	int num = plasticLaw->HistoryDoublesNeeded();
+char *IsoPlasticity::InitHistoryData(char *pchr,MPMBase *mptr)
+{
+	int num = plasticLaw->HistoryDoublesNeeded();
 	if(num==0) return NULL;
-	double *p = CreateAndZeroDoubles(num);
+	double *p = CreateAndZeroDoubles(pchr,num);
 	plasticLaw->InitPlasticHistoryData(p);
     return (char *)p;
+}
+
+// IsoPlasticity has no history data, by the hardening law might
+double IsoPlasticity::GetHistory(int num,char *historyPtr) const
+{	return plasticLaw->GetHistory(num,historyPtr);
 }
 
 #pragma mark IsoPlasticity::Methods
@@ -101,7 +109,7 @@ char *IsoPlasticity::InitHistoryData(void)
 	This material tracks pressure and stores deviatoric stress only in particle stress
 		tensor
 */
-void IsoPlasticity::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+void IsoPlasticity::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res,int historyOffset) const
 {	if(useLargeRotation)
 		LRConstitutiveLaw(mptr,du,delTime,np,properties,res);
 	else
@@ -121,18 +129,6 @@ void IsoPlasticity::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
     Matrix3 dR;
     Matrix3 dV = dF.LeftDecompose(&dR,NULL);
 	
-#ifdef TRACK_RTOT
-	// Read and then update rotation matrix
-	Matrix3 *Rnm1 = mptr->GetRtotPtr();
-	Matrix3 Rtot = dR*(*Rnm1);
-	mptr->SetRtot(Rtot);
-	
-	// get strain increments de = (dV-I) dR Fnm1 Rtot^T
-	dV(0,0) -= 1.;
-	dV(1,1) -= 1.;
-	dV(2,2) -= 1.;
-	Matrix3 de = (dV*dR)*(pFnm1*Rtot.Transpose());
-#else
 	// decompose to get previous stretch
 	Matrix3 Vnm1 = pFnm1.LeftDecompose(NULL,NULL);
 	
@@ -141,7 +137,6 @@ void IsoPlasticity::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	dV(1,1) -= 1.;
 	dV(2,2) -= 1.;
 	Matrix3 de = dV*Vnm1.RMRT(dR);
-#endif
 	
 	// Update total deformation gradient
 	Matrix3 pF = dF*pFnm1;
@@ -185,7 +180,8 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 	
 	// allow arbitrary equation of state for pressure
     double P0 = mptr->GetPressure();
-	UpdatePressure(mptr,delV,np,p,res,eres);
+	double dTq0 = 0.,dispEnergy = 0.;
+	UpdatePressure(mptr,delV,np,p,res,eres,dTq0,dispEnergy);
     double Pfinal = mptr->GetPressure();
 	
     // Deviatoric stress increment
@@ -221,7 +217,7 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 	
     // Calculate plastic potential f = ||s|| - sqrt(2/3)*sy(alpha,rate,...)
 	HardeningAlpha alpha;
-	plasticLaw->UpdateTrialAlpha(mptr,np,&alpha);			// initialize to last value and zero plastic strain rate
+	plasticLaw->UpdateTrialAlpha(mptr,np,&alpha,0);			// initialize to last value and zero plastic strain rate
 	double strial = GetMagnitudeSFromDev(&stk,np);
     double ftrial = strial - SQRT_TWOTHIRDS*plasticLaw->GetYield(mptr,np,delTime,&alpha,p->hardProps);
 	if(ftrial<0.)
@@ -250,18 +246,18 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 			//mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy + (st0.xy+sp->xy)*dgxy));
 		}
 		
-        // heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here
-        // and Cv(dT-dTq0) was done in Update pressure
-        
 		// give subclass material chance to update history variables that change in elastic updates
-		ElasticUpdateFinished(mptr,np,delTime);
+		plasticLaw->ElasticUpdateFinished(mptr,np,delTime,0);
+		
+		// heat energy from pressure and any pressure method items
+		IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
 		
 		return;
     }
     
 	// Find  lambda for this plastic state
 	// Base class finds it numerically, subclass can override if solvable by more efficient methods
-    double lambdak = plasticLaw->SolveForLambdaBracketed(mptr,np,strial,&stk,p->Gred,p->psKred,Pfinal,delTime,&alpha,p->hardProps);
+    double lambdak = plasticLaw->SolveForLambdaBracketed(mptr,np,strial,&stk,p->Gred,p->psKred,Pfinal,delTime,&alpha,p->hardProps,0);
 	
 	// Now have lambda, finish update on this particle
 	Tensor dfds;
@@ -361,19 +357,18 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
     
     // dand subtract q dalpha to get isispated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
-    double dispEnergy = plastEnergy - qdalphaTerm;
-    
-    // heat energy is Cv(dT-dTq0) - dPhi
-    // The dPhi is subtracted here because it will show up in next
-    //		time step within Cv dT (if adibatic heating occurs)
-    // The Cv(dT-dTq0) was done in update pressure
-    IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
+    dispEnergy += plastEnergy - qdalphaTerm;
     
 	// The cumulative dissipated energy is tracked in plastic energy
     mptr->AddPlastEnergy(dispEnergy);
     
+    // heat energy is Cv(dT-dTq0) - dPhi
+    // The dPhi is subtracted here because it will show up in next
+    //		time step within Cv dT (if adibatic heating occurs)
+    IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
+    
 	// update internal variables
-	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha);
+	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha,0);
 }
 
 // To allow some subclasses to support large deformations, the initial calculation for incremental
@@ -389,7 +384,8 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 	double dezzr=dezz-eres;
 	
 	// allow arbitrary equation of state for pressure
-	UpdatePressure(mptr,delV,np,p,res,eres);
+	double dTq0 = 0.,dispEnergy = 0.;
+	UpdatePressure(mptr,delV,np,p,res,eres,dTq0,dispEnergy);
 	
     // Elastic deviatoric stress increment
 	Tensor *sp=mptr->GetStressTensor();
@@ -422,7 +418,7 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 	
     // Calculate plastic potential f = ||s|| - sqrt(2/3)*sy(alpha,rate,...)
 	HardeningAlpha alpha;
-	plasticLaw->UpdateTrialAlpha(mptr,np,&alpha);			// initialize to last value
+	plasticLaw->UpdateTrialAlpha(mptr,np,&alpha,0);			// initialize to last value
 	double strial = GetMagnitudeSFromDev(&stk,np);
     double ftrial = strial - SQRT_TWOTHIRDS*plasticLaw->GetYield(mptr,np,delTime,&alpha,p->hardProps);
 	if(ftrial<0.)
@@ -445,11 +441,11 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 		//mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy + (st0.zz+sp->zz)*dezz
 		//						 + (st0.yz+sp->yz)*dgyz + (st0.xz+sp->xz)*dgxz + (st0.xy+sp->xy)*dgxy));
 		
-        // heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here (dTq0=0 in this material)
-        // and Cv(dT-dTq0) was done in Update Pressure
-        
 		// give material chance to update history variables that change in elastic updates
-		ElasticUpdateFinished(mptr,np,delTime);
+		plasticLaw->ElasticUpdateFinished(mptr,np,delTime,0);
+		
+		// heat energy from pressure and any pressure method items
+		IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
 		
 		return;
 	}
@@ -458,7 +454,7 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 	// Base class finds it numerically, subclass can override if solvable by more efficient meethods
 	Tensor dfds;
 	GetDfDsigma(strial,&stk,np,&dfds);
-	double lambdak = plasticLaw->SolveForLambdaBracketed(mptr,np,strial,&stk,p->Gred,1.,1.,delTime,&alpha,p->hardProps);
+	double lambdak = plasticLaw->SolveForLambdaBracketed(mptr,np,strial,&stk,p->Gred,1.,1.,delTime,&alpha,p->hardProps,0);
 	
 	// Now have lambda, finish update on this particle
 	
@@ -500,20 +496,20 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
     
     // and subtrace q dalpa disispated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
-    double dispEnergy = plastEnergy - qdalphaTerm;
-    
-    // heat energy is Cv(dT-dTq0) - dPhi
-    // The dPhi is subtracted here because it will show up in next
-    //		time step within Cv dT (if adiabatic heating occurs)
-    // The Cv(dT-dTq0) was done already in update pressure
-    IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
+    dispEnergy += plastEnergy - qdalphaTerm;
     
 	// The cumulative dissipated energy is tracked in plastic energy
     // Setting the disp energy allows heating if mechanical energy is on
     mptr->AddPlastEnergy(dispEnergy);
     
+    // heat energy is Cv(dT-dTq0) - dPhi
+    // The dPhi is subtracted here because it will show up in next
+    //		time step within Cv dT (if adiabatic heating occurs)
+    // The Cv(dT-dTq0) was done already in update pressure
+    IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
+    
 	// update internal variables
-	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha);
+	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha,0);
 }
 
 #pragma mark IsoPlasticity::Methods (Small Rotation)
@@ -577,7 +573,8 @@ void IsoPlasticity::SRPlasticityConstLaw2D(MPMBase *mptr,Matrix3 du,double delTi
 
 	// allow arbitrary equation of state for pressure
     double P0 = mptr->GetPressure();
-	UpdatePressure(mptr,delV,np,p,res,eres);
+	double dTq0 = 0.,dispEnergy = 0.;
+	UpdatePressure(mptr,delV,np,p,res,eres,dTq0,dispEnergy);
     double Pfinal = mptr->GetPressure();
 	
     // Deviatoric stress increment
@@ -600,7 +597,7 @@ void IsoPlasticity::SRPlasticityConstLaw2D(MPMBase *mptr,Matrix3 du,double delTi
   
     // Calculate plastic potential f = ||s|| - sqrt(2/3)*sy(alpha,rate,...)
 	HardeningAlpha alpha;
-	plasticLaw->UpdateTrialAlpha(mptr,np,&alpha);			// initialize to last value and zero plastic strain rate
+	plasticLaw->UpdateTrialAlpha(mptr,np,&alpha,0);			// initialize to last value and zero plastic strain rate
 	double strial = GetMagnitudeSFromDev(&stk,np);
     double ftrial = strial - SQRT_TWOTHIRDS*plasticLaw->GetYield(mptr,np,delTime,&alpha,p->hardProps);
 	if(ftrial<0.)
@@ -627,18 +624,18 @@ void IsoPlasticity::SRPlasticityConstLaw2D(MPMBase *mptr,Matrix3 du,double delTi
 									   + (st0.xy+sp->xy)*dgxy));
 		}
 		
-        // heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here
-        // and Cv(dT-dTq0) was done in Update pressure
-        
 		// give subclass material chance to update history variables that change in elastic updates
-		ElasticUpdateFinished(mptr,np,delTime);
+		plasticLaw->ElasticUpdateFinished(mptr,np,delTime,0);
+		
+		// heat energy from pressure and any pressure method items
+		IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
 		
 		return;
     }
     
 	// Find  lambda for this plastic state
 	// Base class finds it numerically, subclass can override if solvable by more efficient methods
-    double lambdak = plasticLaw->SolveForLambdaBracketed(mptr,np,strial,&stk,p->Gred,p->psKred,Pfinal,delTime,&alpha,p->hardProps);
+    double lambdak = plasticLaw->SolveForLambdaBracketed(mptr,np,strial,&stk,p->Gred,p->psKred,Pfinal,delTime,&alpha,p->hardProps,0);
 	
 	// Now have lambda, finish update on this particle
 	Tensor dfds;
@@ -735,21 +732,21 @@ void IsoPlasticity::SRPlasticityConstLaw2D(MPMBase *mptr,Matrix3 du,double delTi
     // plastic strain work
     double plastEnergy = lambdak*(sp->xx*dfds.xx + sp->yy*dfds.yy + sp->zz*dfds.zz + 2.*sp->xy*dfds.xy);
     
-    // dand subtract q dalpha to get isispated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
+    // dand subtract q dalpha to get dissipated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
-    double dispEnergy = plastEnergy - qdalphaTerm;
+    dispEnergy += plastEnergy - qdalphaTerm;
+    
+	// The cumulative dissipated energy is tracked in plastic energy
+    mptr->AddPlastEnergy(dispEnergy);
     
     // heat energy is Cv(dT-dTq0) - dPhi
     // The dPhi is subtracted here because it will show up in next
     //		time step within Cv dT (if adibatic heating occurs)
     // The Cv(dT-dTq0) was done in update pressure
-    IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
-    
-	// The cumulative dissipated energy is tracked in plastic energy
-    mptr->AddPlastEnergy(dispEnergy);
+    IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
     
 	// update internal variables
-	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha);
+	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha,0);
 }
 
 // To allow some subclasses to support large deformations, the initial calculation for incremental
@@ -779,7 +776,8 @@ void IsoPlasticity::SRPlasticityConstLaw3D(MPMBase *mptr,Matrix3 du,double delTi
 	double dezzr=dvzz-eres;				// use in plane strain only
 	
 	// allow arbitrary equation of state for pressure
-	UpdatePressure(mptr,delV,np,p,res,eres);
+	double dTq0 = 0.,dispEnergy = 0.;
+	UpdatePressure(mptr,delV,np,p,res,eres,dTq0,dispEnergy);
 	
     // Elastic deviatoric stress increment
 	Tensor *sp=mptr->GetStressTensor();
@@ -803,7 +801,7 @@ void IsoPlasticity::SRPlasticityConstLaw3D(MPMBase *mptr,Matrix3 du,double delTi
   
     // Calculate plastic potential f = ||s|| - sqrt(2/3)*sy(alpha,rate,...)
 	HardeningAlpha alpha;
-	plasticLaw->UpdateTrialAlpha(mptr,np,&alpha);			// initialize to last value
+	plasticLaw->UpdateTrialAlpha(mptr,np,&alpha,0);			// initialize to last value
 	double strial = GetMagnitudeSFromDev(&stk,np);
     double ftrial = strial - SQRT_TWOTHIRDS*plasticLaw->GetYield(mptr,np,delTime,&alpha,p->hardProps);
 	if(ftrial<0.)
@@ -820,11 +818,11 @@ void IsoPlasticity::SRPlasticityConstLaw3D(MPMBase *mptr,Matrix3 du,double delTi
 								+ (st0.xz+sp->xz)*dgxz
 								+ (st0.xy+sp->xy)*dgxy));
 								
-        // heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here (dTq0=0 in this material)
-        // and Cv(dT-dTq0) was done in Update Pressure
-        
-		// give material chance to update history variables that change in elastic updates
-		ElasticUpdateFinished(mptr,np,delTime);
+ 		// give material chance to update history variables that change in elastic updates
+		plasticLaw->ElasticUpdateFinished(mptr,np,delTime,0);
+		
+		// heat energy from pressure and any pressure method items
+		IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
 		
 		return;
 	}
@@ -833,7 +831,7 @@ void IsoPlasticity::SRPlasticityConstLaw3D(MPMBase *mptr,Matrix3 du,double delTi
 	// Base class finds it numerically, subclass can override if solvable by more efficient meethods
 	Tensor dfds;
 	GetDfDsigma(strial,&stk,np,&dfds);
-	double lambdak = plasticLaw->SolveForLambdaBracketed(mptr,np,strial,&stk,p->Gred,1.,1.,delTime,&alpha,p->hardProps);
+	double lambdak = plasticLaw->SolveForLambdaBracketed(mptr,np,strial,&stk,p->Gred,1.,1.,delTime,&alpha,p->hardProps,0);
 	
 	// Now have lambda, finish update on this particle
         
@@ -877,20 +875,20 @@ void IsoPlasticity::SRPlasticityConstLaw3D(MPMBase *mptr,Matrix3 du,double delTi
     
     // and subtrace q dalpa disispated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
-    double dispEnergy = plastEnergy - qdalphaTerm;
-    
-    // heat energy is Cv(dT-dTq0) - dPhi
-    // The dPhi is subtracted here because it will show up in next
-    //		time step within Cv dT (if adiabatic heating occurs)
-    // The Cv(dT-dTq0) was done already in update pressure
-    IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
+    dispEnergy += plastEnergy - qdalphaTerm;
     
 	// The cumulative dissipated energy is tracked in plastic energy
     // Setting the disp energy allows heating if mechanical energy is on
     mptr->AddPlastEnergy(dispEnergy);
     
+    // heat energy is Cv(dT-dTq0) - dPhi
+    // The dPhi is subtracted here because it will show up in next
+    //		time step within Cv dT (if adiabatic heating occurs)
+    // The Cv(dT-dTq0) was done already in update pressure
+    IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
+    
 	// update internal variables
-	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha);
+	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha,0);
 }
 
 #pragma mark IsoPlasticity::Custom Methods
@@ -903,7 +901,8 @@ void IsoPlasticity::SRPlasticityConstLaw3D(MPMBase *mptr,Matrix3 du,double delTi
 // 5. Optionally change delV (which is passed by reference)
 // Notes:
 //  delV is incremental volume change on this step.
-void IsoPlasticity::UpdatePressure(MPMBase *mptr,double delV,int np,PlasticProperties *p,ResidualStrains *res,double eres) const
+void IsoPlasticity::UpdatePressure(MPMBase *mptr,double delV,int np,PlasticProperties *p,ResidualStrains *res,double eres,
+								   double &dTq0,double &dispEnergy) const
 {   // pressure change
     double dP = -p->Kred*delV;
     mptr->IncrementPressure(dP);
@@ -913,10 +912,6 @@ void IsoPlasticity::UpdatePressure(MPMBase *mptr,double delV,int np,PlasticPrope
     // Work energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
     double avgP = mptr->GetPressure()-0.5*dP;
     mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-3.*avgP*eres);
-
-    // heat energy is Cv dT  - dPhi
-	// Here do Cv dT term and dPhi is done later
-    IncrementHeatEnergy(mptr,res->dT,0.,0.);
 }
 
 // Get magnitude of the deviatoric stress tensor when input is a deviatoric stress
@@ -958,13 +953,6 @@ void IsoPlasticity::GetDfDsigma(double smag,Tensor *st0,int np,Tensor *dfds) con
     }
 }
 
-// material can override if history variable changes during elastic update
-// (e.g., history dependent on plastic strain rate now zero)
-// plastic law might all need it
-void IsoPlasticity::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime) const
-{	plasticLaw->ElasticUpdateFinished(mptr,np,delTime);
-}
-
 #pragma mark IsoPlasticity::Accessors
 
 // store plastic strain in alt strain
@@ -979,12 +967,12 @@ int IsoPlasticity::SizeOfMechanicalProperties(int &altBufferSize) const
 }
 
 // Isotropic material can use read-only initial properties
-void *IsoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
+void *IsoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer,int offset) const
 {
 	PlasticProperties *p = (PlasticProperties *)matBuffer;
 	*p = pr;
- 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np,altBuffer);
-	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),1.,p->hardProps);
+ 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np,altBuffer,offset);
+	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),1.,p->hardProps,offset);
 	p->Gred = G0red*Gratio;
 	
 	if(np==PLANE_STRESS_MPM)
@@ -999,17 +987,12 @@ void *IsoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuff
 
 // Copy stress to a read-only tensor variable
 // Subclass material can override, such as to combine pressure and deviatory stress into full stress
-Tensor IsoPlasticity::GetStress(Tensor *sp,double pressure) const
+Tensor IsoPlasticity::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
 {   Tensor stress = *sp;
     stress.xx -= pressure;
     stress.yy -= pressure;
     stress.zz -= pressure;
     return stress;
-}
-
-// IsoPlasticity has no history data, by the hardening law might
-double IsoPlasticity::GetHistory(int num,char *historyPtr) const
-{	return plasticLaw->GetHistory(num,historyPtr);
 }
 
 // Return the material tag

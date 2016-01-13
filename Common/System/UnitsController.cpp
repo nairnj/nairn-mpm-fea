@@ -14,7 +14,7 @@ int UnitsController::unitsType = LEGACY_UNITS;
 int UnitsController::lengthExp=0,UnitsController::massExp=0,UnitsController::timeExp=0;
 char UnitsController::length[3],UnitsController::mass[3],UnitsController::timeu[3];
 char UnitsController::velocity[6],UnitsController::force[10],UnitsController::pressure[10];
-char UnitsController::energy[10],UnitsController::density[10];
+char UnitsController::energy[10],UnitsController::density[10],UnitsController::heatFusion[18];
 char UnitsController::errRate[15],UnitsController::tractionSlope[15],UnitsController::viscosity[15];
 char UnitsController::heatCapacity[18],UnitsController::power[15],UnitsController::conductivity[20],UnitsController::convection[20];
 char UnitsController::heatFlux[15],UnitsController::stressIntensity[20],UnitsController::bcarg[10],UnitsController::concFlux[20];
@@ -92,6 +92,8 @@ const char *UnitsController::Label(int type)
 					return "cP";
 				case HEATCAPACITY_UNITS:
 					return "J/(kg-K)";
+				case HEATFUSION_UNITS:
+					return "J/kg";
 				case CONDUCTIVITY_UNITS:
 					return "W/(m-K)";
 				case CONVECTION_UNITS:
@@ -140,6 +142,8 @@ const char *UnitsController::Label(int type)
 					return viscosity;
 				case HEATCAPACITY_UNITS:
 					return heatCapacity;
+				case HEATFUSION_UNITS:
+					return heatFusion;
 				case CONDUCTIVITY_UNITS:
 					return conductivity;
 				case CONVECTION_UNITS:
@@ -323,6 +327,11 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 	strcat(heatCapacity,"/(");
 	strcat(heatCapacity,mass);
 	strcat(heatCapacity,"-K)");
+	
+	// heat fusion
+	strcpy(heatFusion,energy);
+	strcat(heatFusion,"/");
+	strcat(heatFusion,mass);
 	
 	// power
 	int powerexp = enerexp-timeExp;

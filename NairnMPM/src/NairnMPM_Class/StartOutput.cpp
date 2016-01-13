@@ -134,7 +134,7 @@ void NairnMPM::MyStartResultsOutput(void)
 			{	cout << "   New crack surface has traction law material " << propagateMat[i] << endl;
 				if(propagateMat[i]>nmat)
 					throw CommonException("Propagation traction law material is not defined","NairnMPM::MyStartResultsOutput");
-				if(!theMaterials[propagateMat[i]-1]->isTractionLaw())
+				if(theMaterials[propagateMat[i]-1]->MaterialStyle()!=TRACTION_MAT)
 					throw CommonException("Propagation traction law is not a traction law material","NairnMPM::MyStartResultsOutput");
 			}
 		}

@@ -9,9 +9,7 @@
 #include "Elements/ElementBase.hpp"
 #include "Read_XML/LineController.hpp"
 
-/********************************************************************************
-	LineController: Constructors and Destructor
-********************************************************************************/
+#pragma mark LineController: Constructors and Destructor
 
 LineController::LineController(int block) : ShapeController(block)
 {
@@ -34,9 +32,7 @@ bool LineController::FinishSetup(void)
     return TRUE;
 }
 
-/********************************************************************************
-	LineController: methods
-********************************************************************************/
+#pragma mark LineController: methods
 
 // Deterime if point is sufficiently close to the line from
 //   (xmin,ymin) to (xmax,ymax). Must be within rectangle a

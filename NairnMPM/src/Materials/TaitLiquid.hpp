@@ -31,29 +31,30 @@ class TaitLiquid : public HyperElastic
         virtual const char *VerifyAndLoadProperties(int);
         virtual void PrintMechanicalProperties(void) const;
         virtual void ValidateForUse(int) const;
-        virtual void SetInitialParticleState(MPMBase *,int) const;
+        virtual void SetInitialParticleState(MPMBase *,int,int) const;
     
-        // history variables
-        char *InitHistoryData(void);
+        // history data
+		virtual int SizeOfHistoryData(void) const;
+ 		virtual char *InitHistoryData(char *,MPMBase *);
         double GetHistory(int num,char *historyPtr) const;
     
         // contitutive law methods
-        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
-        
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
+		virtual void BeginActivePhase(MPMBase *mptr,int np,int historyOffset) const;
+    
         // accessors
         virtual const char *MaterialType(void) const;
         virtual int MaterialTag() const;
         virtual double WaveSpeed(bool,MPMBase *) const;
-        virtual double CurrentWaveSpeed(bool,MPMBase *) const;
-        virtual Tensor GetStress(Tensor *sp,double pressure) const;
-        virtual double GetCurrentRelativeVolume(MPMBase *) const;
+        virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;
+        virtual Tensor GetStress(Tensor *sp,double pressure,MPMBase *) const;
+		virtual double GetCurrentRelativeVolume(MPMBase *,int) const;
 		virtual void SetPressureFunction(char *);
     
     protected:
 		// unique properties
 		double viscosity;
 	
-        int J_history;
         double TwoEtasp;
 		double gamma0;
 		ROperation *function;

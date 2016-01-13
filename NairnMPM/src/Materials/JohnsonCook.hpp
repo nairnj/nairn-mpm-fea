@@ -35,7 +35,7 @@ class JohnsonCook : public HardeningLawBase
 	
 		// copy of properties
         virtual int SizeOfHardeningProps(void) const;
-		virtual void *GetCopyOfHardeningProps(MPMBase *,int,void *);
+		virtual void *GetCopyOfHardeningProps(MPMBase *,int,void *,int);
 		virtual void DeleteCopyOfHardeningProps(void *,int) const;
     
         // hardening law core methods
@@ -45,7 +45,8 @@ class JohnsonCook : public HardeningLawBase
         virtual double GetYieldIncrement(MPMBase *,int,double,HardeningAlpha *,void *) const;
 	
 		// return mapping
-        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double,HardeningAlpha *a,void *) const;
+        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,
+											   double,double,HardeningAlpha *a,void *,int) const;
     
         // accessors
         virtual const char *GetHardeningLawName(void) const;

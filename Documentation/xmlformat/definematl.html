@@ -33,7 +33,7 @@
 <p>where <code>Type</code> is the material type (integer) which defines the type of material and <code>Name</code> is any user-defined description of the the material (&lt;200 characters and must be unique among defined materials if you reference them by name). The material properties for each type are defined by subordinate &lt;prop&gt; tags to set one property to <code>(value)</code>.
 </p>
 
-<h2>Referencing Materials</h2>
+<h2><a name="nameOrNum"></a>Referencing Materials</h2>
 
 
 <p><a name="usemats"></a>When materials are assigned to <a href="definefeamesh.html">FEA mesh elements</a>, <a href="definempm.html">MPM materials points</a>, <a href="cracks.html">MPM crack tips</a>, or in a few other commands, they can be referenced by number or by name:</p>
@@ -49,9 +49,9 @@
 
 <h2>Table of Materials.</h2>
 
-<p>The following tables list all available materials group by class of material. The columns on the right list the type of analyses that allow that material type (with an "X"). The 2D MPM column has three fsubcolumns or use of that material in plane stress (P&sigma;), plane strain (P&epsilon;), or axisymmetric (AS) calculations.  Clicking any material name will show a list of all properties that can be set by replacing "prop" in an subordinate element with the property name (case sensitive).</p>
+<p>The following tables list all available materials group by class of material. The columns on the right list the type of analyses that allow that material type (with an "X"). The 2D MPM column has three subcolumns or use of that material in plane stress (P&sigma;), plane strain (P&epsilon;), or axisymmetric (AS) calculations.  Clicking any material name will show a list of all properties that can be set by replacing "prop" in an subordinate element with the property name (case sensitive).</p>
 
-<h3>Linear Elastic Small Strain Materials</h3>
+<h3><a name="LESSM"></a>Linear Elastic Small Strain Materials</h3>
 
 <table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">
 <tr><th rowspan="2">Name</th><th rowspan="2">Type</th><th rowspan="2">Description</th><th rowspan="2">FEA</th><th colspan="3">2D MPM</th><th rowspan="2">3D MPM</th>
@@ -134,7 +134,7 @@ and rubber elastic materials as special cases.</td>
 
 </table>
 
-<h3>Elastic-Plastic Small Strain Materials</h3>
+<h3><a name="EPSSM"></a>Elastic-Plastic Small Strain Materials</h3>
 
 <table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">
 <tr><th rowspan="2">Name</th><th rowspan="2">Type</th><th rowspan="2">Description</th><th rowspan="2">FEA</th><th colspan="3">2D MPM</th><th rowspan="2">3D MPM</th>
@@ -282,6 +282,37 @@ and rubber elastic materials as special cases.</td>
 
 </table>
 
+<h3><a name="CLM"></a>Contact Law Materials</h3>
+
+<table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">
+<tr><th rowspan="2">Name</th><th rowspan="2">Type</th><th rowspan="2">Description</th><th rowspan="2">FEA</th><th colspan="3">2D MPM</th><th rowspan="2">3D MPM</th>
+</tr>
+<tr><th>P&sigma;</th><th>P&epsilon;</th><th>AS</th>
+</tr>
+
+<tr>
+<td><a href="#ignore"><code>IgnoreContact</code></a></td>
+<td>60</td>
+<td width="50%">Revert contact nodes to use a single velocity field</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td><a href="#coulomb"><code>CoulombFriction</code></a></td>
+<td>61</td>
+<td width="50%">Contact by Coulomb friction law</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td><a href="#linearint"><code>LinearInterface</code></a></td>
+<td>62</td>
+<td width="50%">Imperfect interface with linear elastic normal and shear tractions</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+</table>
+
 <!-- Material  Section -->
 
 <h2><a name="iso"></a>Linear Elastic, Isotropic (Type=1)</h2>
@@ -350,15 +381,21 @@ and rubber elastic materials as special cases.</td>
 
 <h2><a name="visc"></a>Linear Viscoelastic, Isotropic (Type=6)</h2>
 
-<p>This material is a small-strain, linear viscoelastic material with time-dependent shear modulus given by a sum or relaxation times and a time-independent bulk modulus. The input properties are:</p>
+<p>This material is a small-strain, linear viscoelastic material with time-dependent shear modulus given by a sum or relaxation times and a time-independent pressure-volume response. The pressure law can use small strain methods (with bulk modulus) or large-deformation <a href="#MGEOS">Mie-Gr&#252;neisen equation of state</a> (MGEOS). The input properties are:</p>
 
 <ul>
-<li>K - the time-independent bulk modulus (in <a href="units.html">pressure units</a>)</li>
+<li>pressureLaw - set to 0 to use small strain method (with provided K) or 1 to use MGEOS (with all its properties)</li>
+<li>K - the time-independent bulk modulus (in <a href="units.html">pressure units</a>) (when pressureLaw=0).</li>
+<li>C0 - the bulk wave speed in MGEOS (in <a href="units.html">alt velocity units</a>) (when pressureLaw=1).</li>
+<li>S1 - a parameter in MGEOS (dimensionless) (when pressureLaw=1).</li>
+<li>S2 - a parameter in MGEOS (dimensionless) (when pressureLaw=1).</li>
+<li>S3 - a parameter in MGEOS (dimensionless) (when pressureLaw=1).</li>
+<li>gamma0 - a parameter in MGEOS (dimensionless) (when pressureLaw=1).</li>
 <li>G0 - the steady-state (or long time) shear modulus (in <a href="units.html">pressure/length units</a>)</li>
-<li>alpha - the thermal expansion coefficient (in ppm/K)</li>
 <li>ntaus - the number of relaxation times in the shear modulus. This number must exactly match the number of &lt;Gk&gt; and &lt;tauk&gt; settings and come before any of those settings</li>
 <li>Gk - the shear modulus for the next relaxation time (in <a href="units.html">pressure units</a>)</li>
 <li>tauk - the next relaxation time (in <a href="units.html">time units</a>)</li>
+<li>alpha - the thermal expansion coefficient (in ppm/K) (ignored for MGEOS when pressureLaw=1).</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a>.</li>
 </ul>
 
@@ -367,7 +404,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <h3>History Data for Linear Viscoelastic, Isotropic Materials</h3>
 
-<p>This material tracks history for implementation of linear viscoelastic properties, but currently no history variables are available for archiving.</p>
+<p>This material tracks history for internal variables needed for implementation of linear viscoelastic properties, but currently those history variables are available for archiving. You can archive total volume change (J) and residual free expansion volume (Jres) in history variables 1 and 2 (Jres, however, is only tracked when using MGEOS).</p>
     
 <!-- Material  Section -->
 
@@ -378,7 +415,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <ul>
 <li>G1 or G2 - the Mooney-Rivlin shear energy depends on two shear moduli (in <a href="units.html">pressure units</a>). Their sum in the low-strain shear modulus. If G2=0 (which is its default), the material is a Neohookean material.</li>
 <li>K - the K modulus (in <a href="units.html">pressure units</a>), which is equal to the low-strain bulk modulus.</li>
-<li>E an nu - alternativelt enter E (in <a href="units.html">pressure units</a>) and nu. These are converted to K and G=G1+G2; you can pick G2 (if not zero) to get G1=G-G2</li>
+<li>E and nu - alternatively, enter E (in <a href="units.html">pressure units</a>) and nu. These are converted to K and G=G1+G2; you can pick G2 (if not zero) to get G1=G-G2</li>
 <li>UJOption - selects the dilational energy term U(J) and the possible integer values mean:<br />
 	&#160;&#160;&#160;&#160;0: U(J) = (K/2)((1/2)(J<sup>2</sup>-1) - ln J) (the default)<br />
 	&#160;&#160;&#160;&#160;1: U(J) = (K/2)(J-1)<sup>2</sup><br />
@@ -475,6 +512,8 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <li><code>&lt;SetConcentration/&gt;</code> - this empty tag means to create dynamic concentration boundary conditions (it requires SetDirection 0 to 7).</li>
 <li>SettingFunction, SettingFunction2, or SettingFunction3 - by providing <a href="function.html">user-defined functions</a> of time, position, and time step, the rigid particle velocity setting can vary. The functions should evaluate to the velocity (in <a href="units.html">velocity units</a>). For SetDirection 1 to 7 the functions must be given in order and apply to the set velocities in order. For SetDirection of 8, the three functions are for setting <code>x</code>, <code>y</code>, and <code>z</code> directions and zero to three can be used.</li>
 <li>ValueFunction - by entering <a href="function.html">user-defined functions</a> of time, time step, and position, the rigid particle temperature and concentration can vary. The function should evaluate to the temperature or concentration potential.</li>
+<li><code>mirrored</code> should be set to -1 or +1 to indicate that rigid particles with SetDirection = 1 to 7 are setting a velocity on the minimum edge (-1) or maximum edge (+1) of the object along the moving direction. This property can improve the performance of velocity boundary conditions as explained on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Rigid_Material#Mirrored_Velocity_Property">OSUPdocs wiki</a>. The default setting of 0 means to not use mirroring. Note that when <a href="mpmheader.html#extraprigid">ExtrapolateRigid</a> option is activated, this property is ignored.</li>
+
 </ul>
 
 <!-- Material  Section -->
@@ -542,7 +581,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
  &rho;<sub>0</sub>C<sub>0</sub><sup>2</sup>.
 </p>
 
-<p>This equation of state automatically handles thermal expansion (assumning a valid Cv was provided) and therefore you do not need to enter a thermal expansion coefficient.</p>
+<p>This equation of state automatically handles thermal expansion (assuming a valid Cv was provided) and therefore you do not need to enter a thermal expansion coefficient.</p>
 
 <h3>History Data for Mie-Gr&#252;neisen Equation of State Material</h3>
 
@@ -584,7 +623,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <h2><a name="heiso"></a>Isotropic, Hyperelastic-Plastic Material (Type=24)</h2>
 
-<p>The material is a large-deformation, isotropic, hyperelastic-plastic material. The elastic stresses use a Neohooken material maodel. The properties are:</p>
+<p>The material is a large-deformation, isotropic, hyperelastic-plastic material. The elastic stresses use a Neohookean material model. The properties are:</p>
 
 <ul>
 <li>Hardening - this property selects the <a href="hardeninglaws.html">hardening law</a>. It should be followed by entering all yielding properties required by the hardening law within the material's definition block.</li>
@@ -737,6 +776,48 @@ cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup
 
 <!-- Material  Section -->
 
+<a name="ignore"></a><h2>Ignore Conctact Law Material (Type=60)</h2>
+
+<p>This contact law causes nodes with contact to revert to a single velocity field. The simulation at such contact nodes will be identical to using single material mode. The reversion will be exact for nodes with 2 materials, but not exact for nodes with 3 or more materials.
+</p>
+
+<p>This contact law has no material properties.</p>
+
+<!-- Material  Section -->
+
+<a name="coulomb"></a><h2>Coulomb Friction Law Material (Type=61)</h2>
+
+<p>This law implements simple Coulomb friction law where sliding traction is proportional to the contacting nomral traction:
+</p>
+
+<blockquote>
+<code>S<sub>slide</sub> = µ N</code>
+</blockquote>
+
+<p>and µ is the dynamic coefficient of friction.</p>
+
+<ul>
+
+<li>coeff - enter dynamic coefficient of friction. If you enter a number less then zero, the contact will be stick contact when in contact but free movement when separated (default is 0).</li>
+<li>coeffStatic - enter optional static coefficient of friction. If entered, it must be greater than dynamic coefficient of friction. The sliding will start with static frictional force is exceeded, but then will slide using dynamic coefficient of friction (default: not set).</li>
+</ul>
+
+<!-- Material  Section -->
+
+<a name="linearint"></a><h2>Linear Imperfect Interface Law Material (Type=62)</h2>
+
+<p>This contact law implements a linear imperfect interface where normal tractions are D<sub>n</sub>*[u<sub>n</sub>] and shear tractions are D<sub>t</sub>*[u<sub>t</sub>] where D<sub>n</sub> and D<sub>t</sub> are interface parameters [u<sub>n</sub>] and [u<sub>t</sub>] are normal and shear displacement discontinutities at the interface. The normal stiffness, D<sub>n</sub>, can be different in contact (compression) or when separated (tension).
+</p>
+
+<ul>
+
+<li>Dn or  Dnt - enter imperfect interface parameter for normal direction in tension or enter -1 to revert to being a perfect interface (in <a href="units.html">pressure/length units</a>) (default is -1).</li>
+<li>Dnc - enter imperfect interface parameter for normal direction in compression or enter -1 to revert to being a perfect interface (in <a href="units.html">pressure/length units</a>) (default is to be equal to Dnt).</li>
+<li>Dt - enter imperfect interface parameter for tangential direction or enter -1 to revert to being a perfect interface (in <a href="units.html">pressure/length units</a>) (default is -1).</li>
+</ul>
+
+<!-- Material  Section -->
+
 <h2><a name="common"></a>Material Properties Common For All Material Types</h2>
 
 <p>There are some material properties that are common to all material types, although not all materials will use them all. The categories of common properties are:
@@ -757,12 +838,13 @@ cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup
 
 <ul>
 <li>rho - the density (in <a href="units.html">density units</a>)</li>
-<li>Cv - the constant strain heat capacity (in <a href="units.html">heat capacity units</a>). You do not need to enter a constant pressure heat capacity because material models calculate it from Cv and thermodynamic relations for the difference between Cp and Cv.</li>
+<li>Cv - the constant strain heat capacity (in <a href="units.html">heat capacity units</a>). You do not need to enter a constant pressure heat capacity because it is not needed for any calculatinons. When done correctly, simulations with C<sub>v</sub> alone will automatically display different effective heat capacities for constant volume or constant pressure conditions. This behavior is most pronounced for an <a href="#idealgas" target="_blank">ideal gas</a>.</li>
 <li>kCond - the thermal conductivity for isotropic materials (in <a href="units.html">conductivity units</a>) </li>
 <li>csat - the saturation concentration (weight fraction)</li>
 <li>beta - the concentration expansion coefficient for isotropic materials (in strain/(wt fraction))</li>
 <li>D - the diffusion constant for isotropic materials (in <a href="units.html">diffusion units</a>)</li>
-<li>largeRotation - to use (1) or not use (0) polar decomposition when evaluating rotations. This option is only allowed for linear elastic and elastic-plastic small strain materials and the default is 0. Option 1 uses polar decomposition to evaluate incremental rotation and uses that rotation to update strains and stresses. Option 0 use approximations of polar decomposition to rotate strain and stress updates (standard hypoelasticity). In addition, option 1 finds incremental deformation gradient using the selected number of <a href="mpmheader.html#MPMMethods"><code>&lt;DefGradTerms&gt;</code></a> while option 0 always uses one term.</li> 
+<li>largeRotation - to use (1) or not use (0) polar decomposition when evaluating rotations. This option is only allowed for <a href="#LESSM">linear elastic</a>, <a href="#EPSSM">elastic-plastic</a>, and <a href="#SSSM">softening</a> small strain materials and the default is 0. Option 1 uses polar decomposition to evaluate incremental rotation and uses that rotation to update strains and stresses. Option 0 use approximations of polar decomposition to rotate strain and stress updates (standard hypoelasticity). In addition, option 1 finds incremental deformation gradient using the selected number of <a href="mpmheader.html#MPMMethods"><code>&lt;DefGradTerms&gt;</code></a> while option 0 always uses one term.</li>
+<li><code>&lt;PDamping PIC='(fractionPIC)'&gt;(alphaNum)&lt;/Damping&gt;</code> - sets custom damping to apply only to particles of this material. If this command is used, <code>(alphaNum)</code> replaces global <a href="mpmheader.html#damping">particle damping</a> setting and must be a constant (function of time not allowed). If <code>PIC</code> attribute is used, it replaces the global <a href="mpmheader.html#damping">PIC damping</a> setting. To use custom PIC damping but global particle damping, use an empty command with the <code>PIC</code> attribute.</li>
 <li><code>&lt;color red='0.1' green='0.5' blue='0.3' alpha='1.0/&gt;</code>
  - sets the color of the material with red, green, blue, and alpha values between 0.0 and 1.0.</li>
 </ul>
@@ -801,7 +883,7 @@ cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup
 <p>These commands allow custom contact properties for each material pair in <a href="mpmheader.html#multi">multimaterial mode MPM</a>.</p>
 
 <ul>
-<li><code>&lt;Friction mat='(num)' Dt='(Dt)' Dn='(Dnt)' Dnc='(Dnc)'&gt;(frict)&lt;/Friction&gt;</code> - set custom material-material contact properties between current material and the material in the mat attribute. It is set as described in <a href="mpmheader.html#multi">Multimaterial Mode MPM</a> and overrides that setting with custom settings.</li>
+<li><code>&lt;Friction law='(law)' lawname='(lawname)' mat='(num)' matname='(name)'/&gt;</code> - set custom material-material contact properties  by choosing a <a href="definematl.html#CLM">contact law material</a> using <a href="definematl.html#nameOrNum">number or name</a> in <code>(law)</code> or <code>(lawname)</code>. This custom contact will be for contact between current material and the material specified using <a href="definematl.html#nameOrNum">number or name</a> in <code>(num)</code> or <code>(name)</code> </li>
 	
 <li>shareMatField - set to another material number (by number only) to share material velocity field with that material. Two (or more) materials sharing the same velocity field will move with perfect contact (<i>i.e.</i>, in a single velocity field) among themselves, but can interact with other materials in different velocity fields by contact or interface laws. Materials sharing velocity fields must be compatible (<i>e.g.</i>, all rigid or all nonrigid) and the material in <code>(matID)</code> must not be sharing it's field.</li>
 	
@@ -821,7 +903,7 @@ Q = &Delta;x*|D<sub>kk</sub>|*(A1*C + A2*&Delta;x*|D<sub>kk</sub>|)
 <li>avA1 - the A1 parameter in artificial viscosity (dimensionless, default 0.2)</li>
 <li>avA2 - the A2 parameter in artificial viscosity (dimensionless, default 2.0)</li>
 </ul>
-<p>These parameters only work in materials that support artifical viscosity; an error will result if used in other materials.</p>
+<p>These parameters only work in materials that support artificial viscosity; an error will result if used in other materials.</p>
 
 
 <p class="links">

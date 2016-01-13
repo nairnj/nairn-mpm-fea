@@ -11,6 +11,10 @@
 		6700560C163AFC6B00FFE145 /* HistoryArchive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6700560B163AFC6B00FFE145 /* HistoryArchive.cpp */; };
 		67083427171717FB007AD581 /* GhostNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67083425171717FB007AD581 /* GhostNode.cpp */; };
 		67083428171717FB007AD581 /* GhostNode.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67083426171717FB007AD581 /* GhostNode.hpp */; };
+		6709D7311C385AD1006C680C /* GridArchive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6709D72F1C385AD1006C680C /* GridArchive.cpp */; };
+		6709D7321C385AD1006C680C /* GridArchive.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6709D7301C385AD1006C680C /* GridArchive.hpp */; };
+		6709D7351C38BB87006C680C /* ExtrapolateRigidBCsTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6709D7331C38BB87006C680C /* ExtrapolateRigidBCsTask.cpp */; };
+		6709D7361C38BB87006C680C /* ExtrapolateRigidBCsTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6709D7341C38BB87006C680C /* ExtrapolateRigidBCsTask.hpp */; };
 		671514D115465E8B005F33A9 /* OvalController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671514D015465E8B005F33A9 /* OvalController.cpp */; };
 		671514D215465E8B005F33A9 /* OvalController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671514D015465E8B005F33A9 /* OvalController.cpp */; };
 		671514D415465EAD005F33A9 /* OvalController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671514D315465EAD005F33A9 /* OvalController.hpp */; };
@@ -61,6 +65,12 @@
 		67B215D511F96C0C007523EE /* MoveCracksTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B215D311F96C0C007523EE /* MoveCracksTask.cpp */; };
 		67B215F011F96EC7007523EE /* ResetElementsTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B215EE11F96EC7007523EE /* ResetElementsTask.hpp */; };
 		67B215F111F96EC7007523EE /* ResetElementsTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */; };
+		67B6B7EB1C31BF3A00CFA1EA /* ContactLaw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B6B7E51C31BF3A00CFA1EA /* ContactLaw.cpp */; };
+		67B6B7EC1C31BF3A00CFA1EA /* ContactLaw.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B6B7E61C31BF3A00CFA1EA /* ContactLaw.hpp */; };
+		67B6B7ED1C31BF3A00CFA1EA /* CoulombFriction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B6B7E71C31BF3A00CFA1EA /* CoulombFriction.cpp */; };
+		67B6B7EE1C31BF3A00CFA1EA /* CoulombFriction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B6B7E81C31BF3A00CFA1EA /* CoulombFriction.hpp */; };
+		67B6B7EF1C31BF3A00CFA1EA /* LinearInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B6B7E91C31BF3A00CFA1EA /* LinearInterface.cpp */; };
+		67B6B7F01C31BF3A00CFA1EA /* LinearInterface.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B6B7EA1C31BF3A00CFA1EA /* LinearInterface.hpp */; };
 		67B916D416AE15E600632385 /* HEIsotropic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B916D316AE15E600632385 /* HEIsotropic.cpp */; };
 		67BFA35511FB81B70083F95B /* InitializationTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67BFA35311FB81B70083F95B /* InitializationTask.hpp */; };
 		67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67BFA35411FB81B70083F95B /* InitializationTask.cpp */; };
@@ -438,6 +448,10 @@
 		6700560B163AFC6B00FFE145 /* HistoryArchive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HistoryArchive.cpp; sourceTree = "<group>"; };
 		67083425171717FB007AD581 /* GhostNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GhostNode.cpp; path = Patches/GhostNode.cpp; sourceTree = "<group>"; };
 		67083426171717FB007AD581 /* GhostNode.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = GhostNode.hpp; path = Patches/GhostNode.hpp; sourceTree = "<group>"; };
+		6709D72F1C385AD1006C680C /* GridArchive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GridArchive.cpp; sourceTree = "<group>"; };
+		6709D7301C385AD1006C680C /* GridArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = GridArchive.hpp; sourceTree = "<group>"; };
+		6709D7331C38BB87006C680C /* ExtrapolateRigidBCsTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExtrapolateRigidBCsTask.cpp; sourceTree = "<group>"; };
+		6709D7341C38BB87006C680C /* ExtrapolateRigidBCsTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ExtrapolateRigidBCsTask.hpp; sourceTree = "<group>"; };
 		671514D015465E8B005F33A9 /* OvalController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OvalController.cpp; sourceTree = "<group>"; };
 		671514D315465EAD005F33A9 /* OvalController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = OvalController.hpp; sourceTree = "<group>"; };
 		671514D61547035D005F33A9 /* PolygonController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PolygonController.cpp; sourceTree = "<group>"; };
@@ -481,6 +495,12 @@
 		67B215D311F96C0C007523EE /* MoveCracksTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MoveCracksTask.cpp; sourceTree = "<group>"; };
 		67B215EE11F96EC7007523EE /* ResetElementsTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ResetElementsTask.hpp; sourceTree = "<group>"; };
 		67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ResetElementsTask.cpp; sourceTree = "<group>"; };
+		67B6B7E51C31BF3A00CFA1EA /* ContactLaw.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ContactLaw.cpp; sourceTree = "<group>"; };
+		67B6B7E61C31BF3A00CFA1EA /* ContactLaw.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ContactLaw.hpp; sourceTree = "<group>"; };
+		67B6B7E71C31BF3A00CFA1EA /* CoulombFriction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoulombFriction.cpp; sourceTree = "<group>"; };
+		67B6B7E81C31BF3A00CFA1EA /* CoulombFriction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CoulombFriction.hpp; sourceTree = "<group>"; };
+		67B6B7E91C31BF3A00CFA1EA /* LinearInterface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LinearInterface.cpp; sourceTree = "<group>"; };
+		67B6B7EA1C31BF3A00CFA1EA /* LinearInterface.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LinearInterface.hpp; sourceTree = "<group>"; };
 		67B916D316AE15E600632385 /* HEIsotropic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HEIsotropic.cpp; path = Materials/HEIsotropic.cpp; sourceTree = "<group>"; };
 		67BFA35311FB81B70083F95B /* InitializationTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InitializationTask.hpp; sourceTree = "<group>"; };
 		67BFA35411FB81B70083F95B /* InitializationTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InitializationTask.cpp; sourceTree = "<group>"; };
@@ -853,6 +873,7 @@
 				A778E0D316A9CE76003D27FE /* Hyperelastic_Plastic */,
 				A778E0D116A8D9BB003D27FE /* Hardening_Laws */,
 				67D1F371157F932D0010691C /* Traction_Laws */,
+				67B6B7E41C31BEC800CFA1EA /* Contact_Laws */,
 				F5F7068C0326AB830163AF10 /* Elements */,
 				A7731E4705B44C7F00294E25 /* Nodes */,
 				A7B45CF31715D2FB003FDED6 /* Patches */,
@@ -877,6 +898,20 @@
 				A72A90C90CD2ADA5001DCFA8 /* ExtractMPM */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		67B6B7E41C31BEC800CFA1EA /* Contact_Laws */ = {
+			isa = PBXGroup;
+			children = (
+				67B6B7E51C31BF3A00CFA1EA /* ContactLaw.cpp */,
+				67B6B7E61C31BF3A00CFA1EA /* ContactLaw.hpp */,
+				67B6B7E71C31BF3A00CFA1EA /* CoulombFriction.cpp */,
+				67B6B7E81C31BF3A00CFA1EA /* CoulombFriction.hpp */,
+				67B6B7E91C31BF3A00CFA1EA /* LinearInterface.cpp */,
+				67B6B7EA1C31BF3A00CFA1EA /* LinearInterface.hpp */,
+			);
+			name = Contact_Laws;
+			path = Materials;
 			sourceTree = "<group>";
 		};
 		67D1F371157F932D0010691C /* Traction_Laws */ = {
@@ -1050,6 +1085,8 @@
 				A7C4D0BC05FD149800277573 /* DiffusionTask.cpp */,
 				A79115C30720554600B81ECA /* ConductionTask.hpp */,
 				A79115C40720554600B81ECA /* ConductionTask.cpp */,
+				6709D72F1C385AD1006C680C /* GridArchive.cpp */,
+				6709D7301C385AD1006C680C /* GridArchive.hpp */,
 				A750ED3C0EE9C10E003545A3 /* VTKArchive.hpp */,
 				A750ED3D0EE9C10E003545A3 /* VTKArchive.cpp */,
 				67005609163AFC3600FFE145 /* HistoryArchive.hpp */,
@@ -1421,6 +1458,8 @@
 				676D76AA1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp */,
 				67B213EE11F9149C007523EE /* MassAndMomentumTask.hpp */,
 				67B213EF11F9149C007523EE /* MassAndMomentumTask.cpp */,
+				6709D7341C38BB87006C680C /* ExtrapolateRigidBCsTask.hpp */,
+				6709D7331C38BB87006C680C /* ExtrapolateRigidBCsTask.cpp */,
 				67D1983E1B0ED97D00FD5726 /* ProjectRigidBCsTask.hpp */,
 				67D1983D1B0ED97D00FD5726 /* ProjectRigidBCsTask.cpp */,
 				67D198421B0EDA9100FD5726 /* PostExtrapolationTask.hpp */,
@@ -1669,6 +1708,11 @@
 				67D198441B0EDA9100FD5726 /* PostExtrapolationTask.hpp in Headers */,
 				67D198481B0EE17700FD5726 /* PostForcesTask.hpp in Headers */,
 				67D1984C1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.hpp in Headers */,
+				67B6B7EC1C31BF3A00CFA1EA /* ContactLaw.hpp in Headers */,
+				67B6B7EE1C31BF3A00CFA1EA /* CoulombFriction.hpp in Headers */,
+				67B6B7F01C31BF3A00CFA1EA /* LinearInterface.hpp in Headers */,
+				6709D7321C385AD1006C680C /* GridArchive.hpp in Headers */,
+				6709D7361C38BB87006C680C /* ExtrapolateRigidBCsTask.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2004,6 +2048,11 @@
 				67D198431B0EDA9100FD5726 /* PostExtrapolationTask.cpp in Sources */,
 				67D198471B0EE17700FD5726 /* PostForcesTask.cpp in Sources */,
 				67D1984B1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.cpp in Sources */,
+				67B6B7EB1C31BF3A00CFA1EA /* ContactLaw.cpp in Sources */,
+				67B6B7ED1C31BF3A00CFA1EA /* CoulombFriction.cpp in Sources */,
+				67B6B7EF1C31BF3A00CFA1EA /* LinearInterface.cpp in Sources */,
+				6709D7311C385AD1006C680C /* GridArchive.cpp in Sources */,
+				6709D7351C38BB87006C680C /* ExtrapolateRigidBCsTask.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

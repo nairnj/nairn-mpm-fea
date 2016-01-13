@@ -77,10 +77,11 @@ const char *SCGLHardening::VerifyAndLoadProperties(int np)
 	HardeningLawBase::VerifyAndLoadProperties(np);
     
 	// reduced maximum yield stress
-	yldMaxred = yieldMax/parent->rho;
+	double rho = parent->GetRho(NULL);
+	yldMaxred = yieldMax/rho;
     
     // reduced shear modulus pressure dependence
-    GPpred = GPp*parent->rho;
+    GPpred = GPp*rho;
 	
 	// base class never has an error
     return NULL;
@@ -114,7 +115,7 @@ void SCGLHardening::PrintYieldProperties(void) const
 int SCGLHardening::SizeOfHardeningProps(void) const { return sizeof(SCGLProperties); }
 
 // Get particle-state dependent properties (filled by Get Shear Ratio)
-void *SCGLHardening::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer)
+void *SCGLHardening::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer,int offset)
 {
 	SCGLProperties *p = (SCGLProperties *)altBuffer;
 	return p;
@@ -131,7 +132,7 @@ void SCGLHardening::DeleteCopyOfHardeningProps(void *properties,int np) const
 // Find ratio of current shear modulus to initial shear modulus including factor of J
 //  because dealing in Kirchoff stress
 // Store results needed later in hardenling law properties
-double SCGLHardening::GetShearRatio(MPMBase *mptr,double pressure,double J,void *properties) const
+double SCGLHardening::GetShearRatio(MPMBase *mptr,double pressure,double J,void *properties,int offset) const
 {
     double dTemp = mptr->pPreviousTemperature - thermal.reference;
     double neta = pow(1./J,ONETHIRD);

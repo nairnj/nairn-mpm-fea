@@ -75,8 +75,9 @@ const char *SLMaterial::VerifyAndLoadProperties(int np)
 	// check properties
 	if(np==PLANE_STRESS_MPM) return "The Steinberg-Lund hardening does not support plane stress calculations yet.";
     
-	YPred = YP/parent->rho;							// reduced stress units
-	C2red = C2/parent->rho;					// reduced stress units
+	double rho = parent->GetRho(NULL);
+	YPred = YP/rho;							// reduced stress units
+	C2red = C2/rho;					// reduced stress units
 	YTmin = YPred/PRECISION_FACTOR;					// below this, strain dependent yield stress is zero
 	YTprecision = YPred/PRECISION_FACTOR;			// precision as ratio to YPred
 	
@@ -117,10 +118,23 @@ void SLMaterial::PrintYieldProperties(void) const
 	cout << endl;
 }
 
+#pragma mark SLMaterial:History Data Methods
+
 // 0: The base class history variable is cumulative equivalent plastic strain
 //		(defined as dalpha = sqrt((2/3)||dep||))
 // 1: YT (unreduced in MPA), 2: plastic strain rate in sec^-1
 int SLMaterial::HistoryDoublesNeeded(void) const { return 3; }
+
+// this hardening law has three history variables
+double SLMaterial::GetHistory(int num,char *historyPtr) const
+{
+    double history=0.;
+	if(num==1 || num==2 || num==3)
+	{	double *cumStrain=(double *)historyPtr;
+		history=cumStrain[num-1];
+	}
+    return history;
+}
 
 #pragma mark SLMaterial:Methods
 
@@ -128,7 +142,7 @@ int SLMaterial::HistoryDoublesNeeded(void) const { return 3; }
 int SLMaterial::SizeOfHardeningProps(void) const { return sizeof(SLProperties); }
 
 // Get particle-state dependent properties (filled by Get Shear Ratio)
-void *SLMaterial::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer)
+void *SLMaterial::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer,int offset)
 {
 	SLProperties *p = (SLProperties *)altBuffer;
 	return p;
@@ -145,17 +159,17 @@ void SLMaterial::DeleteCopyOfHardeningProps(void *properties,int np) const
 // Then pass on to super class for pressure calculation
 // Also get shear modulus here since it is not needed until after this is called
 // Store results needed later in hardening law properties available
-double SLMaterial::GetShearRatio(MPMBase *mptr,double pressure,double J,void *properties) const
+double SLMaterial::GetShearRatio(MPMBase *mptr,double pressure,double J,void *properties,int offset) const
 {
 	// fetch just Gratio from parent
-	double Gratio = SCGLHardening::GetShearRatio(mptr,pressure,J,NULL);
+	double Gratio = SCGLHardening::GetShearRatio(mptr,pressure,J,NULL,offset);
 	if(properties==NULL) return Gratio;
 	
 	// thermal term in yield stress
 	SLProperties *p = (SLProperties *)properties;
 	p->Gratio = Gratio;
 	p->TwoUkkT = 2.*UkOverk/mptr->pPreviousTemperature;						// 2Uk/kT
-	double YTlast=mptr->GetHistoryDble(YT_HISTORY)*1.e6/parent->rho;
+	double YTlast=mptr->GetHistoryDble(YT_HISTORY,offset)*1.e6/parent->GetRho(mptr);
 	p->currentYTred=fmax(YTmin,YTlast);
 	p->epdotmin=GetEpdot(YTmin,p->TwoUkkT);								// rate at small fraction of YP
 	p->epdotmax=GetEpdot(YPred,p->TwoUkkT);								// rate to get YP
@@ -211,7 +225,8 @@ double SLMaterial::GetYield(MPMBase *mptr,int np,double delTime,HardeningAlpha *
 				YTi=YTred;
 			}
 			if(iter>=MAX_ITERATIONS)
-            {   cout << "#max iterations exceeded with " << (YTi*parent->rho/1.e6) << " and " << (YTred*parent->rho/1.e6)
+			{	double rho = parent->GetRho(mptr);
+                cout << "#max iterations exceeded with " << (YTi*rho/1.e6) << " and " << (YTred*rho/1.e6)
                         << " at epdot= " << epdot << endl;
             }
 		}
@@ -277,7 +292,7 @@ double SLMaterial::GetEpdot(double YT,double TwoUkkT) const
 // Solve numerically for lambda
 // Subclasses can override for analytical solution if possible
 double SLMaterial::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,
-								double psKred,double Ptrial,double delTime,HardeningAlpha *a,void *properties) const
+								double psKred,double Ptrial,double delTime,HardeningAlpha *a,void *properties,int offset) const
 {
 	if(np==PLANE_STRESS_MPM)
 	{	// not allowed
@@ -286,45 +301,46 @@ double SLMaterial::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Te
 	else
 	{	// solve - sqrt(2/3)GetYield(alpha+dalpha,dalpha) + strial - 2 GRed sqrt(3/2)dalpha  = 0
 		SLProperties *p = (SLProperties *)properties;
+		double rho = parent->GetRho(mptr);
 		
 		// test lower limit
 		a->dalpha = delTime*p->epdotmin;
-		a->alpint = mptr->GetHistoryDble() + a->dalpha;
+		a->alpint = mptr->GetHistoryDble(0,offset) + a->dalpha;
 		p->isConstantYT = true;
 		p->constantYT = YTmin;
 		double gmin = strial - 2.*Gred*a->dalpha/SQRT_TWOTHIRDS - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime,a,p);
 		if(gmin<0.)
 		{	// low strain rate answer between 0 and epdotmin
-			double lambdak = HardeningLawBase::SolveForLambda(mptr,np,strial,stk,Gred,psKred,1.,delTime,a,p);
+			double lambdak = HardeningLawBase::SolveForLambda(mptr,np,strial,stk,Gred,psKred,1.,delTime,a,p,offset);
 			//cout << "# low strain rate condition " << lambdak << " should be below " << delTime*epdotmin/SQRT_TWOTHIRDS << endl;
 			p->isConstantYT = false;
-			mptr->SetHistoryDble(YT_HISTORY,p->currentYTred*parent->rho*1.e-6);
-			mptr->SetHistoryDble(EPDOT_HISTORY,SQRT_TWOTHIRDS*lambdak/delTime);
+			mptr->SetHistoryDble(YT_HISTORY,p->currentYTred*rho*1.e-6,offset);
+			mptr->SetHistoryDble(EPDOT_HISTORY,SQRT_TWOTHIRDS*lambdak/delTime,offset);
 			return lambdak;
 		}
 		
 		// test upper limit
 		a->dalpha = delTime*p->epdotmax;
-		a->alpint = mptr->GetHistoryDble() + a->dalpha;
+		a->alpint = mptr->GetHistoryDble(0,offset) + a->dalpha;
 		p->constantYT=YPred;
 		double gmax =  strial - 2.*Gred*a->dalpha/SQRT_TWOTHIRDS - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime,a,p);
 		if(gmax>0.)
 		{	// high string rate answer for rate higher than epmax
-			double lambdak=HardeningLawBase::SolveForLambda(mptr,np,strial,stk,Gred,psKred,1.,delTime,a,p);
+			double lambdak=HardeningLawBase::SolveForLambda(mptr,np,strial,stk,Gred,psKred,1.,delTime,a,p,offset);
 			//cout << "# high strain rate condition " << lambdak << " should be above " << delTime*epdotmax/SQRT_TWOTHIRDS << endl;
 			p->isConstantYT = false;
-			mptr->SetHistoryDble(YT_HISTORY,p->currentYTred*parent->rho*1.e-6);
-			mptr->SetHistoryDble(EPDOT_HISTORY,SQRT_TWOTHIRDS*lambdak/delTime);
+			mptr->SetHistoryDble(YT_HISTORY,p->currentYTred*rho*1.e-6,offset);
+			mptr->SetHistoryDble(EPDOT_HISTORY,SQRT_TWOTHIRDS*lambdak/delTime,offset);
 			return lambdak;
 		}
 		p->isConstantYT=false;
 		
 		// Newton method in ln epdot space
-		p->currentYTred=fmax(YTmin,mptr->GetHistoryDble(YT_HISTORY)*1.e6/parent->rho);
+		p->currentYTred=fmax(YTmin,mptr->GetHistoryDble(YT_HISTORY,offset)*1.e6/rho);
 		double epdot=GetEpdot(p->currentYTred,p->TwoUkkT);
 		double logepdot = log(epdot);
 		a->dalpha = epdot*delTime;
-		a->alpint = mptr->GetHistoryDble() + a->dalpha;
+		a->alpint = mptr->GetHistoryDble(0,offset) + a->dalpha;
 		int step=1;
 		while(true)
 		{	// update iterative variables (alpha, dalpha)
@@ -335,14 +351,14 @@ double SLMaterial::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Te
 			
 			// check for convergence
 			a->dalpha = exp(logepdot)*delTime;
-			a->alpint = mptr->GetHistoryDble() + a->dalpha;
+			a->alpint = mptr->GetHistoryDble(0,offset) + a->dalpha;
 			if(step>20 || fabs(delLogepdot)<0.0001) break;
 			step++;
 		}
 	
 		// set history when done
-		mptr->SetHistoryDble(YT_HISTORY,p->currentYTred*parent->rho*1.e-6);
-		mptr->SetHistoryDble(EPDOT_HISTORY,a->dalpha/delTime);
+		mptr->SetHistoryDble(YT_HISTORY,p->currentYTred*rho*1.e-6,offset);
+		mptr->SetHistoryDble(EPDOT_HISTORY,a->dalpha/delTime,offset);
 		return a->dalpha/SQRT_TWOTHIRDS;
 		
 	}
@@ -350,24 +366,13 @@ double SLMaterial::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Te
 }
 
 // Elastic means zero strain rate o YT is zero (or YTmin)
-void SLMaterial::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime) const
-{	mptr->SetHistoryDble(YT_HISTORY,(double)0.0);
-	mptr->SetHistoryDble(EPDOT_HISTORY,(double)0.0);
+void SLMaterial::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime,int offset) const
+{	mptr->SetHistoryDble(YT_HISTORY,(double)0.0,offset);
+	mptr->SetHistoryDble(EPDOT_HISTORY,(double)0.0,offset);
 }
 
 #pragma mark SLMaterial::Accessors
 
 // hardening law name
 const char *SLMaterial::GetHardeningLawName(void) const { return "SL hardening"; }
-
-// this hardening law has three history variables
-double SLMaterial::GetHistory(int num,char *historyPtr) const
-{
-    double history=0.;
-	if(num==1 || num==2 || num==3)
-	{	double *cumStrain=(double *)historyPtr;
-		history=cumStrain[num-1];
-	}
-    return history;
-}
 

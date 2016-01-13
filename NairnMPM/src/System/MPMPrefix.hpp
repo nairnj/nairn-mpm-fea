@@ -25,10 +25,6 @@
 // Activate debugging messages that look for nan in results that should always be valid numbers
 //#define CHECK_NAN
 
-// uncomment to project rigid velocity fields to all crack velocity fields
-// Has no affect unless the simulation has cracks, is in multimaterial mode, AND has rigid contact particles
-#define COMBINE_RIGID_MATERIALS
-
 // C includes
 // Used to have <stdio.h>
 #include <cstdio>

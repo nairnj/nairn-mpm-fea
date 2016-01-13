@@ -71,12 +71,15 @@ class DDBHardening : public HardeningLawBase
         virtual char *InputMaterialProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintYieldProperties(void) const;
+	
+		// history data
+		virtual int HistoryDoublesNeeded(void) const;
 		virtual void InitPlasticHistoryData(double *) const;
-		
+		virtual double GetHistory(int,char *) const;
 		
 		// methods
 		virtual int SizeOfHardeningProps(void) const;
-        virtual void *GetCopyOfHardeningProps(MPMBase *,int,void *);
+        virtual void *GetCopyOfHardeningProps(MPMBase *,int,void *,int);
 		virtual void DeleteCopyOfHardeningProps(void *,int) const;
 		
 		
@@ -84,19 +87,14 @@ class DDBHardening : public HardeningLawBase
         virtual double GetYield(MPMBase *,int,double,HardeningAlpha *,void *) const;
         virtual double GetKPrime(MPMBase *,int,double,HardeningAlpha *,void *) const;
         virtual double GetK2Prime(MPMBase *,double,double,HardeningAlpha *,void *) const;
-		//virtual double GetYieldIncrement(MPMBase *,int,double,HardeningAlpha *,void *) const;
-		//virtual double GetShearRatio(MPMBase *,double,double,void *) const;
 
 		// Return Mapping
-		virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double,HardeningAlpha *,void *) const;
+		virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,
+											   double,double,HardeningAlpha *,void *,int) const;
 		
 		// History-dependent properties
-		virtual int HistoryDoublesNeeded(void) const; 
-		virtual void ElasticUpdateFinished(MPMBase *,int,double) const;
-		virtual void UpdatePlasticInternal(MPMBase *,int,HardeningAlpha *) const;
-		//virtual char *InitHistoryData(void);
-		virtual double GetHistory(int,char *) const;
-		
+		virtual void ElasticUpdateFinished(MPMBase *,int,double,int) const;
+		virtual void UpdatePlasticInternal(MPMBase *,int,HardeningAlpha *,int) const;
 		
 		// accessors
 		virtual const char *GetHardeningLawName(void) const;

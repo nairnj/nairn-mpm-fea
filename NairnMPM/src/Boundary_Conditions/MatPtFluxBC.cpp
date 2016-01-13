@@ -67,7 +67,7 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 	
 	if(style==SILENT)
 	{	TransportProperties t;
-		matptr->GetTransportProps(mpm[ptNum-1],fmobj->np,&t);
+		matptr->GetTransportProps(mpmptr,fmobj->np,&t);
 		Tensor *D = &(t.diffusionTensor);
         
         // D in mm^2/sec, Dc in 1/mm
@@ -84,7 +84,7 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 	}
 	else if(direction==EXTERNAL_FLUX)
 	{	// csatrho = rho0 V0 csat/V (units g/mm^3)
-		double csatrho = matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
+		double csatrho = mpmptr->GetRho()*mpmptr->GetConcSaturation()/mpmptr->GetRelativeVolume();
 		fluxMag.x = BCValue(bctime)/csatrho;
 	}
 	else
@@ -96,7 +96,7 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 		if(varTime>0.) currentValue=-currentValue;
 		
 		// csatrho = rho0 V0 csat/V (units g/mm^3)
-		double csatrho = matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
+		double csatrho = mpmptr->GetRho()*mpmptr->GetConcSaturation()/mpmptr->GetRelativeVolume();
 		fluxMag.x = currentValue/csatrho;
 	}
 	

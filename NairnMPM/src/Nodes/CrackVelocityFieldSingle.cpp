@@ -153,7 +153,7 @@ void CrackVelocityFieldSingle::AddKineticEnergyAndMass(double &kineticEnergy,dou
 }
 
 // get volume when only a single material (overridden when might be more)
-double CrackVelocityFieldSingle::GetVolumeNonrigid(bool requireCracks)
+double CrackVelocityFieldSingle::GetVolumeNonrigid(bool requireCracks) const
 {	return mvf[0]->numberPoints>0 ? mvf[0]->GetContactVolume() : 0. ;
 }
 

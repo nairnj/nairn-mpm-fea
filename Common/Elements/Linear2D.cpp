@@ -47,7 +47,7 @@ double Linear2D::GetVolume(void) const { return thickness*GetArea(); }
 	nd is pointer to 1-based array NodalPoints
 	Assumes nodes[NumberNodes()] = nodes[0]
 */
-short Linear2D::PtInElement(Vector &pt)
+short Linear2D::PtInElement(Vector &pt) const
 {
     int i,ns=NumberSides(),crossings=0;
     double d,x1,y1,x2,y2;

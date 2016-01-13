@@ -24,7 +24,9 @@ class CubicTraction : public TractionLaw
 		
 		// methods
 		virtual const char *VerifyAndLoadProperties(int);
-		char *InitHistoryData(void);
+	
+		// history data
+		char *InitHistoryData(char *);
 	
 		// const methods
 		virtual void PrintMechanicalProperties(void) const;

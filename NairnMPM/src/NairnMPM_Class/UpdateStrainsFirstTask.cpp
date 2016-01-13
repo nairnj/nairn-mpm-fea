@@ -75,7 +75,7 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 	CommonException *usfErr = NULL;
 	
     NodalPoint::GetGridVelocitiesForStrainUpdate();			// velocities needed for strain update
-    
+
 	// loop over nonrigid particles
 	// This works as parallel when material properties change with particle state because
 	//	all such materials should create a copy of material properties in the threads
@@ -90,7 +90,7 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 		try
 		{	// make sure have mechanical properties for this material and angle
             int tn = GetPatchNumber();
-			void *properties = matRef->GetCopyOfMechanicalProps(mptr,np,matBuffer[tn],altBuffer[tn]);
+			void *properties = matRef->GetCopyOfMechanicalProps(mptr,np,matBuffer[tn],altBuffer[tn],0);
 			
 			// finish on the particle
 			mptr->UpdateStrain(strainTime,secondPass,np,properties,matRef->GetField());
@@ -98,7 +98,7 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 		catch(CommonException err)
 		{	if(usfErr==NULL)
 			{
-#pragma omp critical
+#pragma omp critical (error)
 				usfErr = new CommonException(err);
 			}
 		}

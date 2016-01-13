@@ -29,7 +29,7 @@ class Quad2D : public ElementBase
         
         // prototypes
 		virtual int FaceNodes(void);
-        virtual short PtInElement(Vector &);
+        virtual short PtInElement(Vector &) const;
         virtual void SetThickness(double);
 	
 		// const methods

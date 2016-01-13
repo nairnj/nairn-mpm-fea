@@ -209,6 +209,7 @@ double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,doub
 	NodalPoint *ndi;
 	int cnum=theCrack->GetNumber();
 
+	// get element and shape functino to extrapolate to the node
 	Vector cspos = MakeVector(surfx[side-1], surfy[side-1], 0.);
 	const ElementBase *elref = theElements[surfInElem[side-1]];
 	elref->GetShapeFunctionsForCracks(&numnds,fn,nds,&cspos);
@@ -270,13 +271,6 @@ void CrackSegment::UpdateTractions(CrackHeader *theCrack)
 	// get tangential unit vector and length
 	double dl;
 	Vector t = GetTangential(&dl);
-	
-	// cutting assume vector along x axis, use length from above
-	if(fmobj->dflag[0]==4)
-	{	t.x=-1.;
-		t.y=0.;
-		t.z=0.;
-	}
 	
 	// get normal and tangential COD components
 	double codx=surfx[0]-surfx[1];			// above crack - below crack
@@ -516,7 +510,11 @@ void CrackSegment::StartCrackTipHeating(double growth,double thickness)
 {
 	MaterialBase *tipMat=theMaterials[tipMatnum-1];
 	double fractH = 1.0;								// fraction to heat (should be material property)
-	double adot = tipMat->WaveSpeed(FALSE,NULL);		// in mm/sec
+	
+	// Will get wave speed of material. It would be better to have current wave speed, but
+	// we don't have material point pointer to known and the crack tip will have particles
+	// in different states
+	double adot = tipMat->WaveSpeed(false,NULL);		// in mm/sec
 	
 	// set up rate and times (making sure proper number of steps)
 	int nsteps = (int)(growth/(adot*timestep));
@@ -572,7 +570,7 @@ void CrackSegment::FindCrackTipMaterial(int currentNum)
 	double *matWeight=(double *)malloc(sizeof(double)*numActiveMaterials);
 	for(i=0;i<numActiveMaterials;i++) matWeight[i] = 0.;
 	
-	// get shape functions
+	// get shape functions to extrapolate to the particle
 	cspos.x=x;
 	cspos.y=y;
 	iel=planeInElem;
@@ -605,7 +603,7 @@ void CrackSegment::FindCrackTipMaterial(int currentNum)
 // If it has, slide that surface along COD to crack plane
 // See JAN-OSU-4, pg 76 for algorithm. final equation on pg 82
 int CrackSegment::CheckSurfaces(void)
-{	
+{
 	// check top surface
 	if(prevSeg==NULL)
 	{	// first segment only

@@ -24,7 +24,7 @@ Interface2D::Interface2D(int eNum,int *eNode,int eMat,double eAng,double eThick)
 #pragma mark Interface2D: methods
 
 //	Point can not be in an interface elemenbt
-short Interface2D::PtInElement(Vector &pt) { return FALSE; }
+short Interface2D::PtInElement(Vector &pt) const { return FALSE; }
 
 /* Calculate Element forces, stresses, and strain energy
 */

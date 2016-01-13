@@ -26,6 +26,7 @@
 #include "NairnMPM_Class/InitializationTask.hpp"
 #include "NairnMPM_Class/InitVelocityFieldsTask.hpp"
 #include "NairnMPM_Class/ProjectRigidBCsTask.hpp"
+#include "NairnMPM_Class/ExtrapolateRigidBCsTask.hpp"
 #include "NairnMPM_Class/PostExtrapolationTask.hpp"
 #include "NairnMPM_Class/MassAndMomentumTask.hpp"
 #include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
@@ -67,7 +68,7 @@ int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
 NairnMPM::NairnMPM()
 {
 	version=11;						// main version
-	subversion=0;					// subversion (must be < 10)
+	subversion=1;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 
 	mpmApproach=USAVG_METHOD;		// mpm method
@@ -283,7 +284,7 @@ void NairnMPM::PreliminaryCalcs(void)
 				userCartesian = NOT_CARTESIAN;
 				break;
 			}
-			if(!userCartesian)
+			if(userCartesian == NOT_CARTESIAN)
 			{	// first element, set grid size (dz=0 in 2D) and set userCartesion flag
 				gridx=dx;
 				gridy=dy;
@@ -292,7 +293,7 @@ void NairnMPM::PreliminaryCalcs(void)
 			}
 			else if(userCartesian==SQUARE_GRID)
 			{	// on sebsequent elements, if size does not match current values, than elements differ
-                // in size. Set to variable grid and keep going. OK if all are still orthogonal
+                // in size. Set to variable grid but keep going to check if rest are orthogonal
 				if(!DbleEqual(gridx,dx) || !DbleEqual(gridy,dy) || !DbleEqual(gridz,dz))
 				{	if(IsThreeD())
 					{   gridz = 1.;
@@ -324,17 +325,21 @@ void NairnMPM::PreliminaryCalcs(void)
 		if(matid>=nmat)
 			throw CommonException("Material point with an undefined material type","NairnMPM::PreliminaryCalcs");
 		
-		// material point can't use traction law
-		if(theMaterials[matid]->isTractionLaw())
+		// material point can't use traction law or contact law
+		if(theMaterials[matid]->MaterialStyle()==TRACTION_MAT)
 			throw CommonException("Material point with traction-law material","NairnMPM::PreliminaryCalcs");
+		if(theMaterials[matid]->MaterialStyle()==CONTACT_MAT)
+			throw CommonException("Material point with contact-law material","NairnMPM::PreliminaryCalcs");
+		
+        // initialize history-dependent material data on this particle
+		// might need initialized history data so set it now, but nonrigid only
+		if(!theMaterials[matid]->Rigid())
+			mpm[p]->SetHistoryPtr(theMaterials[matid]->InitHistoryData(NULL,mpm[p]));
+		
+		// Set material field (always [0] and returns 1 in single material mode)
+		// Also verify allowsCracks - can only be true if multimaterial mode; if rigid must be rigid contact material
 		maxMaterialFields=theMaterials[matid]->SetField(maxMaterialFields,multiMaterialMode,matid,numActiveMaterials);
 		
-		// nothing left if rigid material is a BC rigid material
-		if(theMaterials[matid]->RigidBC())
-		{	if(firstRigidPt<0) firstRigidPt=p;
-			continue;
-		}
-	
 		// element and mp properties
 		if(IsThreeD())
 		{	volume=theElements[mpm[p]->ElemID()]->GetVolume();	// in mm^3
@@ -344,7 +349,7 @@ void NairnMPM::PreliminaryCalcs(void)
 			area=theElements[mpm[p]->ElemID()]->GetArea();		// in mm^2
 			volume=mpm[p]->thickness()*area;					// in mm^2
 		}
-		rho=theMaterials[matid]->rho;							// in g/mm^3
+		rho=theMaterials[matid]->GetRho(mpm[p]);							// in g/mm^3
         
         // assumes same number of points for all elements (but subclass can override)
         // for axisymmetri xp = rho*Ap*volume/(# per element)
@@ -352,7 +357,16 @@ void NairnMPM::PreliminaryCalcs(void)
 		
 		// done if rigid - mass will be in mm^3 and will be particle volume
 		if(theMaterials[matid]->Rigid())
-		{	hasRigidContactParticles=true;
+		{	// Trap rigid BC (used to be above element and mp properties,
+			//     but moved here to get volume)
+			if(theMaterials[matid]->RigidBC())
+			{	if(firstRigidPt<0) firstRigidPt=p;
+				continue;
+			}
+			
+			// rigid contact material in multimaterial mode
+			// Note: multimaterial mode implied here because otherwise fatal error when SetField() above
+			hasRigidContactParticles=true;
 			if(firstRigidPt<0) firstRigidPt=p;
 
             // CPDI domain data
@@ -367,12 +381,9 @@ void NairnMPM::PreliminaryCalcs(void)
         // zero external forces on this particle
 		ZeroVector(mpm[p]->GetPFext());
         
-        // initialize history-dependent material data on this particle
-        mpm[p]->SetHistoryPtr(theMaterials[matid]->InitHistoryData());
-		
 		// concentration potential
 		if(mpm[p]->pConcentration<0.)
-		{	double potential=-mpm[p]->pConcentration/theMaterials[matid]->concSaturation;
+		{	double potential=-mpm[p]->pConcentration/mpm[p]->GetConcSaturation();
 			if(potential>1.000001)
 				throw CommonException("Material point with concentration potential > 1","NairnMPM::PreliminaryCalcs");
 			if(potential>1.) potential=1.;
@@ -380,7 +391,7 @@ void NairnMPM::PreliminaryCalcs(void)
 		}
         
         // material dependent initialization
-        theMaterials[matid]->SetInitialParticleState(mpm[p],np);
+        theMaterials[matid]->SetInitialParticleState(mpm[p],np,0);
 		
         // check time step
         crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p]);			// in mm/sec
@@ -614,7 +625,7 @@ void NairnMPM::PreliminaryCalcs(void)
 		}
 		
 		// warnings
-		CrackHeader::warnNodeOnCrack=warnings.CreateWarning("unexpect crack side; possibly caused by node or particle on a crack",-1,5);
+		CrackHeader::warnNodeOnCrack=warnings.CreateWarning("unexpected crack side; possibly caused by node or particle on a crack",-1,5);
 		CrackHeader::warnThreeCracks=warnings.CreateWarning("node with three or more cracks",-1,5);
 	}
 	
@@ -630,6 +641,9 @@ void NairnMPM::PreliminaryCalcs(void)
 	
 	// finish isothermal ramp (now that have time step)
 	thermal.SetParameters(timestep);
+	
+	// finish warnings
+	warnings.CreateWarningList();
     
     // blank line
     cout << endl;
@@ -694,12 +708,18 @@ void NairnMPM::CreateTasks(void)
 		lastMPMTask=nextMPMTask;
 	}
 	
-	// MASS MATRIX AND MOMENTUM EXTRAPOLATION
+	// MASS AND MOMENTUM TASKS
+	if(nmpms>nmpmsRC && MaterialBase::extrapolateRigidBCs)
+	{	nextMPMTask=(MPMTask *)new ExtrapolateRigidBCsTask("Rigid BCs by Extrapolation");
+		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+		lastMPMTask=nextMPMTask;
+	}
+	
 	nextMPMTask=(MPMTask *)new MassAndMomentumTask("Extrapolate Mass and Momentum");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
 	
-	if(nmpms>nmpmsRC)
+	if(nmpms>nmpmsRC && !MaterialBase::extrapolateRigidBCs)
 	{	nextMPMTask=(MPMTask *)new ProjectRigidBCsTask("Rigid BCs by Projection");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 		lastMPMTask=nextMPMTask;
@@ -800,7 +820,7 @@ void NairnMPM::ValidateOptions(void)
 			throw CommonException("Traction and flux boundary conditions require use of a GIMP MPM method.","NairnMPM::ValidateOptions");
     }
     
-    // Imperfect interface requires cartensian grid
+    // Imperfect interface requires cartesian grid
 	if(contact.hasImperfectInterface)
 	{	if(!mpmgrid.IsStructuredEqualElementsGrid())
 		{	throw CommonException("Imperfect interfaces need a generated structured grid with equally sized elements",

@@ -17,6 +17,7 @@
 
 class MPMBase;
 class ParseController;
+class ContactLaw;
 
 class MPMReadHandler : public CommonReadHandler
 {
@@ -49,6 +50,7 @@ class MPMReadHandler : public CommonReadHandler
         //  Private data members
 		ParseController *velocityBCs,*concBCs,*tempBCs,*mpLoadCtrl,*mpTractionCtrl;
 		ParseController *mpConcFluxCtrl,*mpHeatFluxCtrl;
+		ContactLaw *currentContact;
         char *currentTask;
         
 		void grid(void);

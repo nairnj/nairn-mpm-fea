@@ -25,7 +25,7 @@ class Interface2D : public ElementBase
 		
         // prototypes
 		virtual bool BulkElement(void);
-        virtual short PtInElement(Vector &);
+        virtual short PtInElement(Vector &) const;
         virtual void SetThickness(double);  
 		virtual void Stiffness(int);
 		virtual void IncrementStiffnessElements(double,double *,double,double,double,double,double);

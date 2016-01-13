@@ -9,6 +9,8 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
+#include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
+#include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "System/UnitsController.hpp"
@@ -53,7 +55,8 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
     
     // zero energies
     plastEnergy=0.;
-	dispEnergy=0.;
+	prev_dTad=0.;
+	buffer_dTad=0.;
     workEnergy=0.;
     resEnergy=0.;
     heatEnergy=0.;
@@ -143,7 +146,8 @@ bool MPMBase::AllocateCPDIStructures(int gimpType,bool isThreeD)
     }
     
     // save face areas (or lengths in 2D)
-    if(firstTractionPt!=NULL) faceArea = new Vector;
+    if(firstTractionPt!=NULL || firstFluxPt!=NULL || firstHeatFluxPt!=NULL)
+		faceArea = new Vector;
     
     return TRUE;
         
@@ -238,7 +242,7 @@ int MPMBase::MatID(void) const { return matnum-1; }			// zero based material arr
 int MPMBase::ArchiveMatID(void) const { return matnum; }		// one based for archiving
 
 // element ID (convert to zero based)
-int MPMBase::ElemID(void) { return inElem-1; }					// zero based element array in data storage
+int MPMBase::ElemID(void) const { return inElem-1; }					// zero based element array in data storage
 void MPMBase::ChangeElemID(int newElem)
 {	inElem=newElem+1;                   // set using zero basis
 	IncrementElementCrossings();		// count crossing
@@ -258,8 +262,7 @@ void MPMBase::SetHasLeftTheGridBefore(bool setting) { elementCrossings = setting
 // get unscaled volume for use only in contact and imperfect interface calculations
 // return result in mm^3
 double MPMBase::GetUnscaledVolume(void)
-{	double rho=theMaterials[MatID()]->rho;					// in g/mm^3
-	return mp/rho;                                          // in mm^3
+{	return mp/GetRho();
 }
 
 // Get particle size as fraction of cell size in each direction
@@ -384,11 +387,26 @@ Matrix3 MPMBase::GetInitialRotation(void)
 // energies
 double MPMBase::GetPlastEnergy(void) { return plastEnergy; }
 void MPMBase::AddPlastEnergy(double energyInc) { plastEnergy+=energyInc; }
-double MPMBase::GetDispEnergy(void) { return dispEnergy; }
 
-// a material should never call this direction. It is only called in IncrementHeatEnergy.
-void MPMBase::AddDispEnergy(double energyInc) { dispEnergy+=energyInc; }
-void MPMBase::SetDispEnergy(double energy) { dispEnergy=energy; }
+// Get only in UpdateParticles task to add adiabiatic temperature rise to the particles
+// Buffer amount for next heat increment and clear it too
+double MPMBase::GetBufferClear_dTad(void)
+{	prev_dTad = buffer_dTad;
+	buffer_dTad = 0.;
+	return prev_dTad;
+}
+
+// Only called in IncrementHeatEnergy()
+double MPMBase::GetClearPrevious_dTad(void)
+{	double dTad = prev_dTad;
+	prev_dTad = 0.;
+	return dTad;
+}
+
+// Only called in IncrementHeatEnergy()
+// a material should never call this directly
+void MPMBase::Add_dTad(double dTInc) { buffer_dTad+=dTInc; }
+
 
 double MPMBase::GetWorkEnergy(void) { return workEnergy; }
 void MPMBase::SetWorkEnergy(double energyTot) { workEnergy=energyTot; }
@@ -427,7 +445,7 @@ Tensor *MPMBase::GetStrainTensor(void) { return &ep; }
 // all others should use ReadStressTensor() because that gives materials a chance to
 //  customize the way stresses are stored, such as to separate pressure and deviatoric stress
 Tensor *MPMBase::GetStressTensor(void) { return &sp; }
-Tensor MPMBase::ReadStressTensor(void) { return theMaterials[MatID()]->GetStress(&sp,pressure); }
+Tensor MPMBase::ReadStressTensor(void) { return theMaterials[MatID()]->GetStress(&sp,pressure,this); }
 void MPMBase::IncrementPressure(double dP) { pressure += dP; }
 void MPMBase::SetPressure(double P) { pressure = P; }
 double MPMBase::GetPressure(void) { return pressure; }
@@ -438,30 +456,32 @@ double MPMBase::GetPressure(void) { return pressure; }
 Tensor *MPMBase::GetAltStrainTensor(void) { return &eplast; }
 
 // history data
-char *MPMBase::GetHistoryPtr(void) { return matData; }
+char *MPMBase::GetHistoryPtr(int offset) { return matData+offset; }
 void MPMBase::SetHistoryPtr(char *createMatData)
 {	if(matData!=NULL) free(matData);
 	matData=createMatData;
 }
-double MPMBase::GetHistoryDble(void)
-{	// assumes matData starts with a double and gets that first one
-	double *h=(double *)matData;
-	return *h;
-}
-void MPMBase::SetHistoryDble(double history)
-{	// assumes matData starts with a double and sets that first one
-	double *h=(double *)matData;
-	*h=history;
-}
-double MPMBase::GetHistoryDble(int index)
-{	// assumes matData is array of doubles and gets one an index (0 based)
-	double *h=(double *)matData;
+double MPMBase::GetHistoryDble(int index,int offset)
+{	// assumes matData is array of doubles and gets one at index (0 based)
+	// offset allows relocatable history and only used my materials with child materials
+	double *h=(double *)(matData+offset);
 	return h[index];
 }
-void MPMBase::SetHistoryDble(int index,double history)
-{	// assumes matData is array of doubles and sets one an index (0 based)
-	double *h=(double *)matData;
+void MPMBase::SetHistoryDble(int index,double history,int offset)
+{	// assumes matData is array of doubles and sets one at index (0 based)
+	// offset allows relocatable history and only used my materials with child materials
+	double *h=(double *)(matData+offset);
 	h[index]=history;
+}
+
+// get density from the material
+double MPMBase::GetRho(void)
+{	return theMaterials[matnum-1]->GetRho(this);
+}
+
+// get density from the material
+double MPMBase::GetConcSaturation(void)
+{	return theMaterials[matnum-1]->GetConcSaturation(this);
 }
 
 // Decribe for debugging use or output on some errors
@@ -471,8 +491,8 @@ void MPMBase::Describe(void)
     cout << "#     vel=(" << vel.x << "," << vel.y << "," << vel.z << ") " << UnitsController::Label(CUVELOCITY_UNITS) << endl;
     Matrix3 pF = GetDeformationGradientMatrix();
     cout << "#       F=" << pF << ", |F|=" << pF.determinant() << endl;
-    double rho0=theMaterials[MatID()]->rho;
-    double rho = rho0*UnitsController::Scaling(1.e-6)/theMaterials[MatID()]->GetCurrentRelativeVolume(this);
+    double rho0=GetRho();
+    double rho = rho0*UnitsController::Scaling(1.e-6)/theMaterials[MatID()]->GetCurrentRelativeVolume(this,0);
     cout << "#       P= " << pressure*rho << " " << UnitsController::Label(PRESSURE_UNITS) << endl;
     cout << "# sigmaii=(" << sp.xx*rho << "," << sp.yy*rho << "," << sp.zz << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
     cout << "#   tauij=(" << sp.xy*rho << "," << sp.xz*rho << "," << sp.yz << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;

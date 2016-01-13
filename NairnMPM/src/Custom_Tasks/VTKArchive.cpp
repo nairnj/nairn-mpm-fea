@@ -34,12 +34,11 @@ int dummyArg;
 #pragma mark CREATION OF THE TASK
 
 // Constructors
-VTKArchive::VTKArchive()
+VTKArchive::VTKArchive() : GridArchive()
 {
-	customArchiveTime = -1.;          // input in ms, stored in sec
-	nextCustomArchiveTime = -1.;      // input in ms, stored in sec
 	bufferSize=0;
 	vtk=NULL;
+    intIndex=0;
 }
 
 // Return name of this task
@@ -179,17 +178,7 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
     {	q=VTK_MATERIAL;
 		thisBuffer=1;
     }
-	
-    else if(strcmp(pName,"archiveTime")==0)
-    {	input=DOUBLE_NUM;
-		return UnitsController::ScaledPtr((char *)&customArchiveTime, gScaling,1.e-3);
-    }
-	
-    else if(strcmp(pName,"firstArchiveTime")==0)
-    {	input=DOUBLE_NUM;
-		return UnitsController::ScaledPtr((char *)&nextCustomArchiveTime, gScaling,1.e-3);
-    }
-	
+    
 	// if found one, add to arrays
 	if(q>=0)
 	{	quantity.push_back(q);
@@ -204,11 +193,9 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
         return retPtr;
 	}
 	
-	// check remaining commands
-    return CustomTask::InputParam(pName,input,gScaling);
+	// check remaining commands (e.g. archive times)
+    return GridArchive::InputParam(pName,input,gScaling);
 }
-
-#pragma mark GENERIC TASK METHODS
 
 // called once at start of MPM analysis - initialize and print info
 CustomTask *VTKArchive::Initialize(void)
@@ -220,22 +207,7 @@ CustomTask *VTKArchive::Initialize(void)
 	if(!mpmgrid.IsStructuredEqualElementsGrid())
 		throw CommonException("VTKArchive task requires use of a generated grid with equal element sizes","VTKArchive::Initialize");
 	
-	// time interval
-	cout << "   Archive time: ";
-	if(customArchiveTime>=0.)
-	{	cout << customArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS);
-		if(nextCustomArchiveTime<0.)
-		{	nextCustomArchiveTime = 0.0;
-			cout << endl;
-		}
-		else
-		{	cout << ", starting at " << nextCustomArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
-		}
-	}
-	else
-		cout << "same as particle archives" << endl;
-	
-	// quantities
+	// display quantities to be archived
 	unsigned int q;
 	cout << "   Archiving: " ;
 	int len=14;
@@ -265,65 +237,37 @@ CustomTask *VTKArchive::Initialize(void)
 	}
 	cout << endl;
 	
-    return nextTask;
+	// parent class prints the archive time
+    return GridArchive::Initialize();
 }
 
-// called when MPM step is getting ready to do custom tasks
-CustomTask *VTKArchive::PrepareForStep(bool &needExtraps)
-{
-    // see if need to export on this time step
-	if(customArchiveTime>=0.)
-	{	if(mtime+timestep>=nextCustomArchiveTime)
-        {	doVTKExport = true;
-            nextCustomArchiveTime += customArchiveTime;
-        }
-        else
-            doVTKExport = false;
+#pragma mark GRID ARCHVING TASKS
+
+// It is called once (during PrepareForStep()) and doExport will be true or false is scheduled to archive.
+//	  A subclass can cancel or force archiving by changind doExport.
+// Return true or false if export will need extrapolations (but false if doExport is false)
+bool VTKArchive::CheckExportForExtrapolations(void)
+{	// task never picked something to export, cancel exports
+	if(quantity.size()==0)
+	{	doExport = false;
+		return false;
 	}
-    else if(mtime<0.5*timestep)
-        doVTKExport = true;
-	else
-		doVTKExport=archiver->WillArchive();
-
-	if(quantity.size()==0) doVTKExport = false;
-	getVTKExtraps = doVTKExport ? (bufferSize>0) : false;
-	if(getVTKExtraps) needExtraps = true;
-    return nextTask;
-}
-
-// Archive VTK file now
-CustomTask *VTKArchive::StepCalculation(void)
-{
-	if(doVTKExport)
-		archiver->ArchiveVTKFile(mtime+timestep,quantity,quantitySize,quantityName,qparam,vtk);
-    return nextTask;
-}
-
-// Called when custom tasks are all done on a step
-CustomTask *VTKArchive::FinishForStep(void)
-{	// free buffer if used
-	if(vtk!=NULL)
-	{	int i;
-		for(i=1;i<=nnodes;i++) free(vtk[i]);
-		free(vtk);
-		vtk=NULL;
-	}
-    return nextTask;
-}
-
-#pragma mark TASK EXTRAPOLATION METHODS
-
-// initialize for crack extrapolations
-CustomTask *VTKArchive::BeginExtrapolations(void)
-{
-	if(!getVTKExtraps) return nextTask;
 	
-	// create buffer for each nodalpoint
+	// only need to extrapolate if about to export and has a buffer
+	return doExport ? bufferSize>0 : false;
+}
+
+// Allocate buffers to store extrapolation results for each node
+void VTKArchive::AllocateExtrapolationBuffers(void)
+{
+	// create list of pointers to buffer for each nodal point
 	vtk=(double **)malloc((nnodes+1)*sizeof(double *));
+	
+	// on error, print message and turn off rest of this task
 	if(vtk==NULL)
 	{	cout << "# memory error preparing data for vtk export" << endl;
-		getVTKExtraps=FALSE;
-		return nextTask;
+		getExtrapolations = false;
+		return;;
 	}
 	
 	// create buffer for each node, on error print message and turn of extrapolations
@@ -335,21 +279,23 @@ CustomTask *VTKArchive::BeginExtrapolations(void)
 			for(j=1;j<i;j++) free(vtk[j]);
 			free(vtk);
 			cout << "# memory error preparing data for vtk export" << endl;
-			getVTKExtraps=FALSE;
-			return nextTask;
+			getExtrapolations = false;
+			return;
 		}
 		
 		// initialize all values to zero
 		for(j=0;j<bufferSize;j++) vtk[i][j]=0.;
 	}
-	
-    return nextTask;
 }
 
-// add particle data to a node
+// Extrapolate particle data for particle *mpnt to nodal point *ndmi
+// vfld and matfld are the crack velocity and material velocity field for this particle-node paiur
+// wt is extrapolation weight and equal to mp*Sip (or particle mass times the shape function)
+// isRigid will be true or false if material for this particle is a rigid contact particle
 CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,double wt,short isRigid)
 {
-	if(!getVTKExtraps || isRigid) return nextTask;
+    // have to skip rigid because nodal masses ignore rigid materials
+	if(!getExtrapolations || isRigid) return nextTask;
 	
 	unsigned int q;
 	double *vtkquant=vtk[ndmi->num];
@@ -362,8 +308,8 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
         {	case VTK_STRESS:
             case VTK_PRESSURE:
             case VTK_EQUIVSTRESS:
-                rho0=theMaterials[mpnt->MatID()]->rho;
-                rho = rho0/theMaterials[mpnt->MatID()]->GetCurrentRelativeVolume(mpnt);
+                rho0=theMaterials[mpnt->MatID()]->GetRho(mpnt);
+                rho = rho0/theMaterials[mpnt->MatID()]->GetCurrentRelativeVolume(mpnt,0);
                 theWt = wt*rho*UnitsController::Scaling(1.e-6);			// Legacy convert to MPa
                 sp = mpnt->ReadStressTensor();
 				switch(quantity[q])
@@ -539,7 +485,7 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
                 break;
                 
             case VTK_CONCENTRATION:
-                theWt=wt*theMaterials[mpnt->MatID()]->concSaturation;
+                theWt=wt*mpnt->GetConcSaturation();
                 *vtkquant+=theWt*mpnt->pConcentration;
                 vtkquant++;
                 break;
@@ -573,11 +519,9 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
     return nextTask;
 }
 
-// initialize for crack extrapolations
-CustomTask *VTKArchive::EndExtrapolations(void)
+// When extrapolations are done, do any remaining calculations. Here divids by nodal mass
+void VTKArchive::FinishExtrapolationCalculations(void)
 {
-	if(!getVTKExtraps) return nextTask;
-	
 	// divide all by nodal mass
 	int i,j;
     for(i=1;i<=nnodes;i++)
@@ -590,8 +534,19 @@ CustomTask *VTKArchive::EndExtrapolations(void)
 			vtkquant++;
 		}
 	}
+}
 
-    return nextTask;
+// Archive VTK file now and free up buffers
+void VTKArchive::ExportExtrapolationsToFiles(void)
+{	archiver->ArchiveVTKFile(mtime+timestep,quantity,quantitySize,quantityName,qparam,vtk);
+
+	// free buffer if used
+	if(vtk!=NULL)
+	{	int i;
+		for(i=1;i<=nnodes;i++) free(vtk[i]);
+		free(vtk);
+		vtk=NULL;
+	}
 }
 
 

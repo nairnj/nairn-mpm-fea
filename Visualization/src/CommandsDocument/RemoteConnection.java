@@ -2,7 +2,7 @@
  * RemoteConnection.java
  * NairnFEAMPMViz
  * 
- * Created by Matt Vierhdorfer, Nov 2014.
+ * Created by Matt Viehdorfer, Nov 2014.
  * 
  * REMOTE_ACCESS - this entire class
  */
@@ -31,12 +31,14 @@ public class RemoteConnection {
 	public Session session;
 	public Boolean sessionOpen;
 	private UserInfo ui;
+	private ConsolePane soutConsole;
 
-	public RemoteConnection(String user, String userPass,String host, int port) throws Exception
+	public RemoteConnection(String user, String userPass,String host, int port, ConsolePane sout) throws Exception
 	{	jsch = new JSch();
 		session = jsch.getSession(user, host, port);
 		generateUI();
 		getUserPass(user,host,userPass);
+		soutConsole = sout;
 	}
 
 	public boolean connect() throws Exception
@@ -53,7 +55,7 @@ public class RemoteConnection {
 		if (testConnection())
 			session.disconnect();
 		else
-			System.out.println("No open sessions to disconnect.");
+			soutConsole.appendLine("Error: No open sessions to disconnect.");
 	}
 
 	public void setStrictHostKeyChecking(boolean enable) {
@@ -61,7 +63,7 @@ public class RemoteConnection {
 			String result = enable ? "yes" : "no"; // since the api requires a string...
 			session.setConfig("StrictHostKeyChecking", result);
 		} catch (Exception e) {
-			System.out.println(e);
+			soutConsole.appendLine("Error: "+e);
 		}
 	}
 
@@ -69,7 +71,7 @@ public class RemoteConnection {
 		try {
 			jsch.setKnownHosts(hostsFile);
 		} catch (Exception e) {
-			System.out.println(e);
+			soutConsole.appendLine("Error: "+e);
 		}
 	}
 
@@ -84,7 +86,7 @@ public class RemoteConnection {
 			c.exit();
 			channel.disconnect();
 		} catch (Exception e) {
-			System.out.println(e);
+			soutConsole.appendLine("Error: "+e);
 		}
 	}
 
@@ -113,8 +115,8 @@ public class RemoteConnection {
 			inputStream.close();
 			c.exit();
 			channel.disconnect();
-		} catch (Exception ex) {
-			ex.printStackTrace();
+		} catch (Exception e) {
+			soutConsole.appendLine("Error: "+e);
 		}
 
 		return fileContents.toString();
@@ -191,13 +193,15 @@ public class RemoteConnection {
 		c.lcd(localDestinationDir);
 		
 		File tempFile = new File(remoteFilePath);	
-		c.get(remoteFilePath, localDestinationDir);		
+		//c.get(remoteFilePath, localDestinationDir, new ProgressModel());
+		SftpProgressMonitor monitor = new SystemOutProgressMonitor();
+		c.get(remoteFilePath, localDestinationDir, monitor, ChannelSftp.OVERWRITE);
 			
 		if(localDestinationDir.charAt(localDestinationDir.length()-1)!=File.separatorChar){
 			localDestinationDir += File.separator;
 		}
 		
-		String zipFile = localDestinationDir+tempFile.getName();
+		String zipFile = localDestinationDir+tempFile.getName();		
 		unzipDownloadedFile(zipFile);
 		removeFile(zipFile);
 
@@ -206,15 +210,29 @@ public class RemoteConnection {
 	}
 
 	public int execCommands(String commands, boolean showOutput) throws Exception
-	{	Channel channel = session.openChannel("exec");
+	{	
+		PrintStream stderr = System.err;
+		ByteArrayOutputStream allOutput = new ByteArrayOutputStream();
+		PrintStream err = new PrintStream(allOutput);	
+		System.setErr(err);
+			
+		Channel channel = session.openChannel("exec");
 		((ChannelExec) channel).setCommand(commands);
 		channel.setInputStream(null);
 		((ChannelExec) channel).setErrStream(System.err);
+		
 		InputStream in = channel.getInputStream();
 		channel.connect();
 		printCommandOutput(in, channel, showOutput);
 		int exitStatus = channel.getExitStatus();
 		channel.disconnect();
+		
+		if (allOutput.size() > 0) {
+			soutConsole.appendLine("Error executing remote command: ");
+			soutConsole.appendLine(allOutput.toString());
+		}
+		System.setErr(stderr);
+		
 		return exitStatus;
 	}
 	
@@ -288,14 +306,12 @@ public class RemoteConnection {
 		if (dir.isDirectory()) {
 			search(dir, fileName);
 		} else {
-			System.out.println(dir.getAbsoluteFile() + " is not a directory!");
+			soutConsole.appendLine("Error: " + dir.getAbsoluteFile() + " is not a directory");
 		}
 	}
 
 	private void search(File file, String fileName) {
 		if (file.isDirectory()) {
-			//System.out.println("Searching directory ... "+ file.getAbsoluteFile());
-
 			// do you have permission to read this directory?
 			if (file.canRead()) {
 				for (File temp : file.listFiles()) {
@@ -311,7 +327,7 @@ public class RemoteConnection {
 				}
 
 			} else {
-				System.out.println(file.getAbsoluteFile() + "Permission Denied");
+				soutConsole.appendLine("Error: "+ file.getAbsoluteFile() + "Permission Denied");
 			}
 		}
 	}
@@ -321,7 +337,7 @@ public class RemoteConnection {
 		try {
 		    delFile.delete();
 		} catch (Exception x) {
-		    System.out.println("Error deleting file: "+ filePath);
+		    soutConsole.appendLine("Error deleting file: "+ filePath);
 		} 
 	}
 
@@ -333,17 +349,19 @@ public class RemoteConnection {
 		{	while(in.available() > 0)
 			{	int i = in.read(tmp, 0, 1024);
 				if (i < 0) break;
-				if(showOutput) System.out.print(new String(tmp, 0, i));
+				if(showOutput) soutConsole.appendLine(new String(tmp, 0, i));
 			}
 			if (channel.isClosed())
 			{	if(showOutput)
-					System.out.println("exit-status: "+ channel.getExitStatus());
+					soutConsole.appendLine("exit-status: "+ channel.getExitStatus());
 				break;
 			}
 			try
 			{	Thread.sleep(1000);
 			}
-			catch (Exception ee) {}
+			catch (Exception e) {
+				soutConsole.appendLine("Error: "+e.getMessage());
+			}
 		}
 	}
 
@@ -394,7 +412,6 @@ public class RemoteConnection {
 		}
 	
 		String pass = new String(passwd.getPassword());
-		// System.err.println("You entered: " + password);
 		session.setPassword(pass);
 	}
 
@@ -443,4 +460,30 @@ public class RemoteConnection {
 		{
 		}
 	}
+	
+	public class SystemOutProgressMonitor implements SftpProgressMonitor
+	{
+	    public SystemOutProgressMonitor() {;}	    
+	    private long fileSize;
+	    private long downloaded;
+
+	    public void init(int op, java.lang.String src, java.lang.String dest, long max) 
+	    {  	fileSize = max;
+	    	downloaded = 0;
+	        soutConsole.appendLine("Downloading: "+src+" -> "+dest+" total: "+max);
+	        soutConsole.appendLine();			// This line gets replaced below
+	    }
+
+	    public boolean count(long bytes)
+	    {  	downloaded += bytes;
+	    	double pdone = 100.*(double)downloaded/(double)fileSize ;
+	    	soutConsole.replaceLastLine("... " + String.valueOf((int)pdone) + "%" );
+	        return(true);
+	    }
+
+	    public void end()
+	    {   soutConsole.replaceLastLine("... 100% done");
+	    }
+	}
+	    
 }

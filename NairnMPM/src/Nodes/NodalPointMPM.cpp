@@ -24,11 +24,12 @@
 #include "Nodes/MaterialInterfaceNode.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
-#include "Materials/MaterialBase.hpp"
+#include "Materials/RigidMaterial.hpp"
 #include "System/UnitsController.hpp"
 
 // class statics
 double NodalPoint::interfaceEnergy=0.;
+double NodalPoint::frictionWork=0.;
 
 #pragma mark INITIALIZATION
 
@@ -177,7 +178,11 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 						cvf[3]->AddNormals(&cfld[c2].norm,SECOND_CRACK);
 					}
 					else
-					{	// c2 crack is wrong or node may be on c2 crack, might be better to use [1] or [2]
+					{	// prepare warning comment
+						char comment[100];
+						sprintf(comment,"For crack number %d that had side %d",cfld[c2].crackNum,cvf[3]->location(SECOND_CRACK));
+
+						// c2 crack is wrong or node may be on c2 crack, might be better to use [1] or [2]
 						// (i.e., to change side of c2 to same side and try again with a single cracks
 						// move c1 to [0] crack info if needed
 						if(c1!=0)
@@ -188,11 +193,15 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 						cfld[1].loc = NO_CRACK;
 						
 						// warn
-						if(warnings.Issue(CrackHeader::warnNodeOnCrack,21)==GAVE_WARNING) Describe();
+						if(warnings.Issue(CrackHeader::warnNodeOnCrack,21,comment)==GAVE_WARNING) Describe();
 					}
 				}
 				else if(cfld[c2].loc==cvf[3]->location(SECOND_CRACK))
-				{	// c2 crack correct, but c1 is wrong or node may be on c1 crack, might be better to use [1] pr [2]
+				{	// prepare warning comment
+					char comment[100];
+					sprintf(comment,"For crack number %d that had side %d",cfld[c1].crackNum,cvf[3]->location(FIRST_CRACK));
+					
+					// c2 crack correct, but c1 is wrong or node may be on c1 crack, might be better to use [1] or [2]
 					// (i.e., change side of c1 to same side and try again with a single crack)
 					// switch c2 to [0] crack info
 					if(c2!=0)
@@ -203,7 +212,7 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 					cfld[1].loc = NO_CRACK;
 					
 					// warn
-					if(warnings.Issue(CrackHeader::warnNodeOnCrack,22)==GAVE_WARNING) Describe();
+					if(warnings.Issue(CrackHeader::warnNodeOnCrack,22,comment)==GAVE_WARNING) Describe();
 				}
 				else
 				{	// both cracks wrong, not sure what to do so just revert to [0] (and done)
@@ -213,7 +222,9 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 					cvf[0]->AddNormals(&cfld[1].norm,FIRST_CRACK);
 					
 					// warn
-					if(warnings.Issue(CrackHeader::warnNodeOnCrack,23)==GAVE_WARNING) Describe();
+					char comment[100];
+					sprintf(comment,"For crack numbers %d and %d",cfld[0].crackNum,cfld[1].crackNum);
+					if(warnings.Issue(CrackHeader::warnNodeOnCrack,23,comment)==GAVE_WARNING) Describe();
 				}
 			}
 		}
@@ -253,7 +264,9 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 
 						// Here means both above and below same crack for field [1], which can only happen if a
                         // node is on a crack
-                        if(warnings.Issue(CrackHeader::warnNodeOnCrack,11)==GAVE_WARNING) Describe();
+						char comment[100];
+						sprintf(comment,"For crack number %d that had side %d",cfld[0].crackNum,cvf[1]->location(FIRST_CRACK));
+                        if(warnings.Issue(CrackHeader::warnNodeOnCrack,11,comment)==GAVE_WARNING) Describe();
                     
                         // tell field [0] it has crack from field 1 (but info currently not used)
                         if(cvf[0]->location(FIRST_CRACK)==NO_CRACK)
@@ -290,7 +303,9 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 
 							// Here means both above and below crack for field [2], which can only happen if a
                             // node is on a crack
-                            if(warnings.Issue(CrackHeader::warnNodeOnCrack,12)==GAVE_WARNING) Describe();
+							char comment[100];
+							sprintf(comment,"For crack number %d that had side %d",cfld[0].crackNum,cvf[2]->location(FIRST_CRACK));
+                            if(warnings.Issue(CrackHeader::warnNodeOnCrack,12,comment)==GAVE_WARNING) Describe();
                                 
                             // tell field [0] it has crack from field 2 (but info currently not used)
                             if(cvf[0]->location(SECOND_CRACK)==NO_CRACK)
@@ -508,7 +523,64 @@ void NodalPoint::CalcTotalMassAndCount(void)
 	}
 }
 
-#ifdef COMBINE_RIGID_MATERIALS
+// In mass and momentum task
+// 1. Add momentum (if any set) (uses mvf[0]->pk and mvf[0]->disp)
+// 2. Add temperture and concentration (if either set)
+//			(uses gTemperature, fcond, gConcentration, fdiff temporariily)
+// 3. Track setting flags (uses numberPoints in field [0])
+// This only used when extrapolating rigid BCs before setting those BCs
+void NodalPoint::AddRigidBCInfo(MPMBase *mptr,double shape,int setFlags,Vector *rvel)
+{
+	// add momentum
+	double mp = mptr->mp;
+	double fnmp = shape*mp;
+	Vector wtvel;
+	
+	// momentum
+	if(setFlags&CONTROL_ANY_DIRECTION)
+	{	CopyScaleVector(&wtvel,rvel,fnmp);
+	}
+	
+	// controlled temperature
+	if(setFlags&CONTROL_TEMPERATURE)
+	{	gTemperature += fnmp*mptr->pTemperature;
+		fcond += fnmp;
+	}
+		
+	// controlled concentration
+	if(setFlags&CONTROL_CONCENTRATION)
+	{	gConcentration += fnmp*mptr->pConcentration;
+		fdiff += fnmp;
+	}
+	
+	// save flags and veocity
+	cvf[0]->AddRigidVelocityAndFlags(&wtvel,fnmp,setFlags);
+	
+}
+
+// Read rigid BC info and erase it too
+// This only used when extrapolating rigid BCs before setting those BCs
+int NodalPoint::ReadAndZeroRigidBCInfo(Vector *rvel,double *tempValue,double *concValue)
+{
+	// read flags and get velocities that are set
+	int setFlags = cvf[0]->ReadAndZeroRigidVelocity(rvel);
+	
+	// controlled temperature
+	if(setFlags&CONTROL_TEMPERATURE)
+	{	*tempValue = gTemperature/fcond;
+		gTemperature = 0.;
+		fcond = 0.;
+	}
+	
+	// controlled concentration
+	if(setFlags&CONTROL_CONCENTRATION)
+	{	*concValue = gConcentration/fdiff;
+		gConcentration = 0.;
+		fdiff = 0.;
+	}
+
+	return setFlags;
+}
 
 // When has rigid particles, multimaterial mode, and cracks, copy all rigid particles in
 //   field [0] to other fields
@@ -528,8 +600,6 @@ void NodalPoint::CopyRigidParticleField(void)
 		}
 	}
 }
-
-#endif
 
 #pragma mark TASK 3 METHODS
 
@@ -940,8 +1010,7 @@ void NodalPoint::AverageStrain(DispField *dest,DispField *src1,DispField *src2,d
 
 #pragma mark TASK 8 METHODS
 
-// Increment velocity and mass for crack surface
-// OR Increment momentum and mass for crack surface (if CRACK_SURFACE_BY_MOMENTUM_EXTRAP is defined)
+// Increment velocity and mass for crack surface (which is sum of fi shape functions)
 // return true or false if found non-empty velocity field to use
 bool NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Vector *delv,double *surfaceMass,CrackSegment *seg) const
 {
@@ -952,26 +1021,18 @@ bool NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Vec
 	if(vfld<0) return false;
 	if(!CrackVelocityField::ActiveNonrigidField(cvf[vfld])) return false;
 	
-#ifdef CRACK_SURFACE_BY_MOMENTUM_EXTRAP
-	// increment the momentum and mass (if has particles)
-	double fieldMass;
-	if(cvf[vfld]->IncrementDelvTask8(fi,delv,&fieldMass))
-	{	*surfaceMass += fi*fieldMass;
-		return true;
-	}
-#else
 	// increment the velocity and mass (if enough mass)
 	double fieldMass = GetNodalMass(true);
 	if(cvf[vfld]->IncrementDelvTask8(fi,delv,&fieldMass))
 	{	*surfaceMass += fi;
 		return true;
 	}
-#endif
+	
 	return false;
 }
 
-// Find velocity field to use when for crack surface particle at (x1,y1) to this node
-// The side is a side of crack crackNumber. Look for that crack inthe fields first, otherwise
+// Find velocity field to use when moving crack surface particle at (x1,y1) to this node
+// The side is a side of crack crackNumber. Look for that crack in the fields first, otherwise
 //		do a crack crossing calculation
 // SCWarning - may look at [2] and [3] - perhaps two sections - one for one crack and one for more
 short NodalPoint::GetFieldForSurfaceParticle(short side,int crackNumber,CrackSegment *seg) const
@@ -1596,7 +1657,6 @@ void NodalPoint::Describe(void) const
 
 // Total nodal mass. If requireCracks is false, then gets mass of all nonrigid materials, otherwise,
 //   it gets mas of materials that see cracks (as calculated in CalcTotalMassAndCount())
-// true uses: IncrementDelvSideTask8() (if CRACK_SURFACE_BY_MOMENTUM_EXTRAP is not defined)
 // false uses: ArchiveVTKFile() and VTKArchive::EndExtrapolations()
 double NodalPoint::GetNodalMass(bool requireCracks) const { return nodalMass; }
 

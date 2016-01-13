@@ -94,7 +94,7 @@ void MatPointAS::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void
 {
     // update particle strain and stress using its constitutive law
 	const MaterialBase *matRef = theMaterials[MatID()];
-    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res);
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res,0);
 }
 
 #pragma mark MatPoint2D::Accessors
@@ -122,9 +122,9 @@ void MatPointAS::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double 
 // (only used for crack contact, multimaterial contact, and transport tasks)
 // When volumeType is DEFORMED_AREA or DEFORMED_AREA_FOR_GRADIENT, get Area deformed particle area in r-z plane
 double MatPointAS::GetVolume(int volumeType)
-{	double rho=theMaterials[MatID()]->rho;					// in g/mm^3
+{	double rho=GetRho();							// in g/mm^3
 	if(volumeType==DEFORMED_VOLUME)
-		return GetRelativeVolume()*mp/rho;					// in mm^3
+		return GetRelativeVolume()*mp/rho;			// in mm^3
 	
 	// get deformed area in the r-z plane
 	// note that mp/rho = rho Ap0 rp0 / rho = Ap0 rp0
@@ -139,8 +139,8 @@ double MatPointAS::GetVolume(int volumeType)
 // Calculations will need to multiply by radial position to get local volume
 // Here thickness is the original radial position of the particle
 double MatPointAS::GetUnscaledVolume(void)
-{	double rho=theMaterials[MatID()]->rho;					// in g/mm^3
-	return mp/(rho*thickness());                            // in mm^3 per unit radial position
+{	double rho=GetRho();							// in g/mm^3
+	return mp/(rho*thickness());                    // in mm^3 per unit radial position
 }
 
 // To support CPDI find nodes in the particle domain, find their elements,

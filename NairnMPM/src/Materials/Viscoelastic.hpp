@@ -34,7 +34,9 @@ class Viscoelastic : public MaterialBase
         // innitialization methods
         virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
-		virtual char *InitHistoryData(void);
+	
+		// history data
+		virtual char *InitHistoryData(char *,MPMBase *);
 		virtual double GetHistory(int,char *) const;
 	
 		// const methods
@@ -42,12 +44,12 @@ class Viscoelastic : public MaterialBase
 		virtual void ValidateForUse(int) const;
     
 		// methods
-		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
         virtual double GetCpMinusCv(MPMBase *) const;
 #ifdef USE_KIRCHOFF_STRESS
-		virtual void UpdatePressure(MPMBase *,double,ResidualStrains *,double,double,double,double) const;
+		virtual void UpdatePressure(MPMBase *,double,ResidualStrains *,double,double,double,double,double &,double &) const;
 #else
-		virtual void UpdatePressure(MPMBase *,double,ResidualStrains *,double,const Matrix3 *,double) const;
+		virtual void UpdatePressure(MPMBase *,double,ResidualStrains *,double,const Matrix3 *,double,double &,double &) const;
 #endif
 		
 		// accessors
@@ -55,11 +57,11 @@ class Viscoelastic : public MaterialBase
         virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual const char *MaterialType() const;
 		virtual int MaterialTag() const;
-		virtual Tensor GetStress(Tensor *,double) const;
+		virtual Tensor GetStress(Tensor *,double,MPMBase *) const;
 		virtual bool SupportsArtificialViscosity(void) const;
-		virtual double CurrentWaveSpeed(bool,MPMBase *) const;
+		virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;
 #ifdef USE_KIRCHOFF_STRESS
-		virtual double GetCurrentRelativeVolume(MPMBase *mptr) const;
+		virtual double GetCurrentRelativeVolume(MPMBase *,int) const;
 #endif
 		
     private:

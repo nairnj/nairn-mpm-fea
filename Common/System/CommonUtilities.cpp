@@ -326,5 +326,176 @@ TensorAntisym *ZeroTensorAntisym(TensorAntisym *a)
 #endif
 
 
+/****************************************************************
+ *  Functions for an intersect of plane and  unit cube
+ ****************************************************************/
+// Returns a vector with coordinates of vertex
+Vector MakeCubeCorner(int vertex){
+	Vector corner;
+	switch(vertex){
+		case(0): 
+			corner.x = 0.5;
+			corner.y = 0.5;
+			corner.z = 0.5;			
+			break;
+		case(1): 			
+			corner.x = 0.5;
+			corner.y = -0.5;
+			corner.z = 0.5;			
+			break;
+		case(2): 
+			corner.x = 0.5;
+			corner.y = 0.5;
+			corner.z = -0.5;			
+			break;
+		case(3): 
+			corner.x = -0.5;
+			corner.y = 0.5;
+			corner.z = 0.5;			
+			break;
+		case(4): 
+			corner.x = -0.5;
+			corner.y = -0.5;
+			corner.z = 0.5;			
+			break;
+		case(5): 			
+			corner.x = 0.5;
+			corner.y = -0.5;
+			corner.z = -0.5;			
+			break;
+		case(6): 			
+			corner.x = -0.5;
+			corner.y = 0.5;
+			corner.z = -0.5;			
+			break;
+		case(7): 
+			corner.x = -0.5;
+			corner.y = -0.5;
+			corner.z = -0.5;			
+			break;
+	}
+	return corner;
+}
+// Do these edges intersect?
+// Inspired by paper: "A Vertex Program for Efficient Box-Plane Intersection"
+// by Christof Rezk Salama and Andreas Kolb, 2005
+bool IntersectEdges(int i,int j,Vector *Point,Vector *n)
+{
+// Vertices of edge ij
+Vector Vertex_i = MakeCubeCorner(i);  // vertex i
+Vector Edge_ij = MakeCubeCorner(j);   // vertex j
+Edge_ij.x -=Vertex_i.x;    // difference of coordinates
+Edge_ij.y -=Vertex_i.y;
+Edge_ij.z -=Vertex_i.z;
+// Start calculating lambda
+double lambda = -DotVectors(&Vertex_i,n);  // numerator of lambda
+double denom = DotVectors(&Edge_ij,n); // denominator of lambda
+
+// Don't divide by zero
+if(DbleEqual(denom,0.0))
+{
+	return false;  // colinear
+}
+
+// Calculate lambda
+lambda = lambda/denom;
+// if not in [0,1] then it doesn't intersect
+if(lambda>1.0 || lambda<0.0){
+	return false;  // doesn't intersect
+}
+// Find point
+Point->x = Vertex_i.x +lambda*Edge_ij.x;
+Point->y = Vertex_i.y +lambda*Edge_ij.y;
+Point->z = Vertex_i.z +lambda*Edge_ij.z;
+return true; // it does intersect
+}
+
+
+// get the area of  the  polygon
+double AreaOverVolume3D(Vector *norm,double dx,double dy,double dz)
+{
+	// define stuff
+	Vector Polygon[6];
+	double area =0.0;
+	int j,k,v;
+	bool intersect;
+	// Get the polygon from the intersection
+	// Also inspired by paper: "A Vertex Program for Efficient Box-Plane Intersection"
+
+	// Get the first point P0
+	v=0;
+	if(!IntersectEdges(0,1,&Polygon[v],norm)){
+		if(!IntersectEdges(1,4,&Polygon[v],norm)){
+			intersect = IntersectEdges(4,7,&Polygon[v],norm);
+			
+		}
+	}
+	v++;
+	// P1 Second point (possibily)
+	intersect = IntersectEdges(1,5,&Polygon[v],norm);
+	if(intersect) v++;  // if it does intersect go the next point
+
+	// Get P2
+	if(!IntersectEdges(0,2,&Polygon[v],norm)){
+		if(!IntersectEdges(2,5,&Polygon[v],norm)){
+			intersect = IntersectEdges(5,7,&Polygon[v],norm);
+		}
+	}
+	v++;
+
+	//Get P3 (if it is there)
+	intersect = IntersectEdges(2,6,&Polygon[v],norm);
+	if(intersect) v++;  // if it does intersect go the next point
+
+	// Get P4
+	if(!IntersectEdges(0,3,&Polygon[v],norm)){
+		if(!IntersectEdges(3,6,&Polygon[v],norm)){
+			intersect = IntersectEdges(6,7,&Polygon[v],norm);
+		}
+	}
+	v++;
+
+	//Get P5 (if it is there)
+	intersect = IntersectEdges(3,4,&Polygon[v],norm);
+	if(intersect) v++;  // if it does intersect go the next point
+	
+	// Find which coordinate project out
+	double nx = fabs(norm->x);
+	double ny = fabs(norm->y);
+	double nz = fabs(norm->z);
+	double norm_n = sqrt(nx*nx+ny*ny+nz*nz);
+	// Loop through and find area of polygon
+	if(nx>ny&&nx>nz){  // project out x
+		 // area of polygon projected onto z-y
+		for(int i =0;i<v;i++){
+			j = (i+1)%v;
+			k = (i+2)%v;
+			area += Polygon[j].y*(Polygon[k].z-Polygon[i].z);
+		}
+		area = fabs(area*norm_n/(2.0 * nx )); // correction factor for projection
+		area /= dx; // Convert from unit cube and divide by volume  
+	}else if(ny>nx&&ny>nz){// project out y
+		// area of polygon projected onto z-x
+		for(int i =0;i<v;i++){
+			j = (i+1)%v;
+			k = (i+2)%v;
+			area += Polygon[j].z*(Polygon[k].x-Polygon[i].x);
+		}
+		area = fabs(area*norm_n/(2.0 * ny )); // correction factor for projection
+		area /= dy; // Convert from unit cube and divide by volume 
+	}else{
+		// area of polygon projected onto x-y
+		for(int i =0;i<v;i++){
+			j = (i+1)%v;
+			k = (i+2)%v;
+			area += Polygon[j].x*(Polygon[k].y-Polygon[i].y);
+		}
+		area = fabs(area*norm_n/(2.0 * nz)); // correction factor for projection
+		area /= dz; // Convert from unit cube and divide by volume 
+	}
+	return area;
+
+}
+
 
 

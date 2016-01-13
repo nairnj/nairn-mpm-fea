@@ -23,7 +23,7 @@ class EightNodeIsoparamBrick : public ElementBase3D
         
         // prototypes
         virtual short ElementName(void);
-		short PtInElement(Vector &);
+		short PtInElement(Vector &) const;
 		virtual int Orthogonal(double *,double *,double *);
 	
 		// const methods

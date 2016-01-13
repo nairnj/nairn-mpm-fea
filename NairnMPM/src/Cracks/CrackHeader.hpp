@@ -72,11 +72,7 @@ class CrackHeader : public LinkedObject
         int NumberOfSegments(void);
 		void CrackTipHeating(void);
 		void SetFixedCrack(int);
-		void SetFriction(double);
-		void SetDn(double);
-		void SetDnc(double);
-		void SetDt(double);
-		void SetContact(double,double,double,double);
+		void SetContactLawID(int);
 		void Output(void);
 		void Describe(void);
 		bool NodeNearTip(NodalPoint *,double);
@@ -90,7 +86,7 @@ class CrackHeader : public LinkedObject
         CrackSegment *ContourCrossCrack(ContourPoint *,Vector *) const;
         CrackSegment *ContourCrossLeaf(CrackLeaf *,double,double,double,double,Vector *,int) const;
         bool SegmentsCross(CrackSegment *,double,double,double,double,Vector *,int) const;
-		double AdjustGrowForCrossing(Vector *,CrackSegment *);
+		double AdjustGrowForCrossing(Vector *,CrackSegment *,double,Vector *);
 		short CrackCrossOnce(double,double,double,double,CrackSegment **) const;
 		short CrackCrossLeafOnce(CrackLeaf *,double,double,double,double,CrackSegment **) const;
     
@@ -130,9 +126,8 @@ class CrackHeader : public LinkedObject
 
     private:
         int numberSegments;
-		int fixedCrack,number;
-		double crackFriction,crackDn,crackDnc,crackDt;
-		bool customContact,hasTractionLaws;
+		int fixedCrack,number,customContactLawID;
+		bool hasTractionLaws;
 		Vector initialDirection[2];
 		bool allowAlternate[2];
 		double thickness;						// 2D tractions and crack-tip heating

@@ -18,7 +18,7 @@ EndHeader
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"
 #analysis$="Plane Strain MPM"
-!Processors 4
+Processors 2
 XMLData "Header"
     <DevelFlag Number='3'>040101</DevelFlag>
 EndXMLData
@@ -30,7 +30,7 @@ XMLData MPMHeader
 EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method$="uGIMP"
+#method$="CPDI"
 
 ! pick strain update method usually "SZS" or "USAVG"
 #update$="USAVG"
@@ -67,11 +67,12 @@ if #matID$="PMMA"
   #Ebase=9*#Kbase*#Gbase/(3*#Kbase+#Gbase)
   #nuBase=(3*#Kbase-2*#Gbase)/(6*#Kbase+2*#Gbase)
   #aBase = #gamma0*#CV*1e6/(3*#C0*#C0)
+  #yldstrain=100
 endif
 
 ! Dimensions
 #cell=1
-#length=20			! length
+#length=40			! length
 #width=5			! width
 #thick=1			! thickness
 
@@ -87,8 +88,8 @@ endif
 
 ! test settings
 #gridStrain=50		! room in grid (ignored if #strain<0)
-#strain=5	        ! Maximum strain (%) (stress needed is estimated for force and tractions), or dT for thermal
-#relRate=.2		    ! Displacement rate as percent of wave speed of material
+#strain=40	        ! Maximum strain (%) (stress needed is estimated for force and tractions), or dT for thermal
+#relRate=1		    ! Displacement rate as percent of wave speed of material
 #factor=0.4		    ! time step factor
 
 ! Loading rate
@@ -101,9 +102,6 @@ endif
 #fbdamp=0
 #pfbdamp=0
 #fractionPIC=0
-XMLData "MPMHeader"
-    <!--<ExtrapolateRigid/>-->
-EndXMLData
 
 ! ------------ Calculations ---------------
 
@@ -111,7 +109,8 @@ EndXMLData
 Analysis #analysis$
 MPMMethod #update$,#method$
 PtsPerElement #ppe
-conduction "yes","isothermal"
+conduction "no","isothermal"
+!ExtrapolateRigid
 
 ! convert to contact
 if #loading$="contact"
@@ -161,7 +160,7 @@ TimeStep 1000,(1+#hold+#unload)*#time,#factor
 ArchiveTime (1+#hold+#unload)*#time/50
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
 ! plastic strain is Left Cauchy Green Strain, history 2 is J or volumetric strain (except some hardening laws)
-ToArchive plasticstrain,history1,history2,plasticenergy,temperature,heatenergy
+ToArchive plasticstrain,history1,history2,history3,plasticenergy,temperature,heatenergy
 Comment "Load time = "&#time&" ms"
 Comment "Hold time = "&#hold&" ms"
 
@@ -300,6 +299,9 @@ if #matID$="PMMA"
       Stop "Hardening = "&#hardID$&" not available for PMMA"
     endif
   Done
+  
+  CustomTask AdjustTimeStep
+  Parameter verbose,1
 endif
 
 ! guess kinetic energy and add feedback damping
@@ -368,6 +370,9 @@ GlobalArchive "Strain Energy",#matID$
 GlobalArchive "Kinetic Energy",#matID$
 GlobalArchive "Plastic Energy",#matID$
 GlobalArchive "Heat Energy",#matID$
+if #matID$="PMMA"
+  GlobalArchive "Internal Energy",#matID$
+endif
 if #loading$="contact"
   GlobalArchive "contactx"
   GlobalArchive "contacty"
@@ -630,3 +635,6 @@ CustomTask VTKArchive
 Parameter strainenergy
 Parameter heatenergy
 Parameter plasticenergy
+
+CustomTask AdjustTimeStep
+Parameter verbose,1

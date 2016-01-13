@@ -44,9 +44,10 @@ void UpdateParticlesTask::Execute(void)
     double particleAlpha = bodyFrc.GetParticleDamping(mtime);
 	double gridAlpha = bodyFrc.GetDamping(mtime);
 
-	// copy to local values (OSParticulas uses to implement material damping)
-	double localParticleAlpha = particleAlpha;
-	double localGridAlpha = gridAlpha;
+	//		nonPICGridAlpha = damping(t)
+	//		globalPIC       = alpha(PIC)/dt
+    double nonPICGridAlpha = bodyFrc.GetNonPICDamping(mtime);
+    double globalPIC = bodyFrc.GetPICDamping();
 
     // Update particle position, velocity, temp, and conc
 #pragma omp parallel for private(numnds,nds,fn,vgpnp1)
@@ -61,6 +62,11 @@ void UpdateParticlesTask::Execute(void)
 			// Update particle position and velocity
 			const MaterialBase *matRef=theMaterials[mpmptr->MatID()];
 			int matfld=matRef->GetField();
+            
+			// Allow material to override global settings
+            double localParticleAlpha = particleAlpha;
+            double localGridAlpha = gridAlpha;
+            matRef->GetMaterialDamping(localParticleAlpha,localGridAlpha,nonPICGridAlpha,globalPIC);
 			
 			Vector *acc=mpmptr->GetAcc();
 			ZeroVector(acc);
@@ -80,8 +86,13 @@ void UpdateParticlesTask::Execute(void)
 
 #ifdef CHECK_NAN
                 if(vgpnp1.x!=vgpnp1.x || vgpnp1.y!=vgpnp1.y || vgpnp1.z!=vgpnp1.z)
-                {   cout << "\n# UpdateParticlesTask::Execute: bad material velocity field for vfld = " << vfld << endl;
-                    ndptr->Describe();
+                {
+#pragma omp critical (output)
+					{	cout << "\n# UpdateParticlesTask::Execute: bad material velocity field for vfld = " << vfld;
+						PrintVector(" vgpn1 = ",&vgpnp1);
+						cout << endl;
+						ndptr->Describe();
+					}
                 }
 #endif
 				
@@ -115,21 +126,18 @@ void UpdateParticlesTask::Execute(void)
 			
 			// thermal ramp
 			thermal.UpdateParticleTemperature(&mpmptr->pTemperature,timestep);
-			
-			// energy coupling here if conduction not doing it
-			if(!ConductionTask::active)
-			{	if(ConductionTask::adiabatic)
-				{	double energy = mpmptr->GetDispEnergy();				// in nJ/g
-					double Cv = matRef->GetHeatCapacity(mpmptr);			// in nJ/(g-K)
-					mpmptr->pTemperature += energy/Cv;                      // in K
-				}
-				mpmptr->SetDispEnergy(0.);
+
+			// energy coupling here adds adiabtic temperature rise
+			if(ConductionTask::adiabatic)
+			{	double dTad = mpmptr->GetBufferClear_dTad();			// in K
+				mpmptr->pTemperature += dTad;                       // in K
 			}
+			
 		}
 		catch(CommonException err)
 		{	if(upErr==NULL)
 			{
-#pragma omp critical
+#pragma omp critical (error)
 				upErr = new CommonException(err);
 			}
 		}

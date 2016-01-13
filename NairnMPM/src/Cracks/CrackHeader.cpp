@@ -59,7 +59,7 @@ CrackHeader::CrackHeader()
     lastSeg=NULL;
     numberSegments=0;
 	fixedCrack=FALSE;
-	customContact=FALSE;
+	customContactLawID=-1;
 	hasTractionLaws=FALSE;
 	thickness=1.0;				// for crack tip heating and tractions in mm, will default to grid thickness if set
 	allowAlternate[0]=allowAlternate[1]=TRUE;
@@ -98,11 +98,11 @@ void CrackHeader::PreliminaryCrackCalcs(void)
 					throw CommonException("Crack segment with an undefined traction law material","CrackHeader::PreliminaryCrackCalcs");
 				if(fixedCrack)
 					throw CommonException("Fixed crack cannot have a traction law segment","CrackHeader::PreliminaryCrackCalcs");
-				if(!theMaterials[matid]->isTractionLaw())
+				if(theMaterials[matid]->MaterialStyle()!=TRACTION_MAT)
 					throw CommonException("Crack segment with material that is not a traction law","CrackHeader::PreliminaryCrackCalcs");
 				
 				// allow traction law to have history dependent data
-				scrk->SetHistoryData(theMaterials[matid]->InitHistoryData());
+				scrk->SetHistoryData(theMaterials[matid]->InitHistoryData(NULL));
 			}
 			
 			// next segment
@@ -119,8 +119,8 @@ void CrackHeader::PreliminaryCrackCalcs(void)
 		if(tipCrk->tipMatnum>0)
 		{	if(tipCrk->tipMatnum>nmat)
 				throw CommonException("Crack tip material is an undefined material","CrackHeader::PreliminaryCrackCalcs");
-			if(theMaterials[tipCrk->tipMatnum-1]->isTractionLaw())
-				throw CommonException("Crack tip material cannot be a traction law material","CrackHeader::PreliminaryCrackCalcs");
+			if(theMaterials[tipCrk->tipMatnum-1]->MaterialStyle()!=SOLID_MAT)
+				throw CommonException("Crack tip material must be a solid material","CrackHeader::PreliminaryCrackCalcs");
 		}
 		crkTipIdx++;
 	}
@@ -234,7 +234,7 @@ short CrackHeader::add(CrackSegment *cs,int whichTip)
     if(tmatnum>=0)
     {	hasTractionLaws=true;
         // history data if needed
-        cs->SetHistoryData(theMaterials[tmatnum]->InitHistoryData());
+        cs->SetHistoryData(theMaterials[tmatnum]->InitHistoryData(NULL));
     }
 	
     numberSegments++;
@@ -251,11 +251,8 @@ void CrackHeader::Output(void)
 	if(fixedCrack) cout << " (fixed)";
 	if(hasTractionLaws)
 	{	cout << " (has traction laws)";
-		// if has traction laws, must convert to frictionless
-		if(!DbleEqual(crackFriction,(double)0.))
-		{	customContact=TRUE;
-			crackFriction=0.;
-		}
+		// if has traction laws, must use custom fricion
+		customContactLawID = nmat;
 	}
 	cout << endl;
 	if(firstSeg->tipMatnum!=-1)
@@ -274,7 +271,7 @@ void CrackHeader::Output(void)
 	}
 	if(firstSeg->tipMatnum!=-1 || lastSeg->tipMatnum!=-1)
 		cout << endl;
-	contact.CrackOutput(customContact,crackFriction,crackDn,crackDnc,crackDt,number);
+	contact.CustomCrackContactOutput(customContactLawID,number);
 	
 	// save initial crack tip directions
 	CrackSegment *crkTip;
@@ -338,13 +335,7 @@ short CrackHeader::MoveCrack(void)
 	// move only surfaces
 	if(contact.GetMoveOnlySurfaces())
 	{	while(scrk != NULL)
-		{	// cutting to skip collapsed crack
-			if(fmobj->dflag[0]==4 && scrk->MatID()==-2)
-			{	scrk = scrk->nextSeg;
-				continue;
-			}
-			
-			if(!fixedCrack)
+		{	if(!fixedCrack)
 			{	// move to midpoint between upper and lower surface
 				scrk->MovePosition();
 				
@@ -354,11 +345,6 @@ short CrackHeader::MoveCrack(void)
 				// make sure surface are on correct side of the crack
 				if(contact.GetPreventPlaneCrosses())
 				{	if(!scrk->CheckSurfaces()) return false;
-				}
-				
-				// development flag to collapse wide open cracks during cutting
-				if(fmobj->dflag[0]==4)
-				{	if(!scrk->CollapseSurfaces()) return false;
 				}
 			}
 
@@ -377,14 +363,8 @@ short CrackHeader::MoveCrack(void)
 		
 		// loop over crack points
 		while(scrk != NULL)
-		{	// cutting to skip collapsed crack
-			if(fmobj->dflag[0]==4 && scrk->MatID()==-2)
-			{	scrk = scrk->nextSeg;
-				continue;
-			}
-			
-			if(!fixedCrack)
-			{	// get element and shape functinos
+		{	if(!fixedCrack)
+			{	// get element and shape functions to extrapolate to the particle
 				iel=scrk->planeInElem-1;			// now zero based
 				cpos.x=scrk->x;
 				cpos.y=scrk->y;
@@ -421,11 +401,6 @@ short CrackHeader::MoveCrack(void)
 					if(contact.GetPreventPlaneCrosses())
 					{	if(!scrk->CheckSurfaces()) return false;
 					}
-					
-					// development flag to collapse wide open cracks during cutting
-					if(fmobj->dflag[0]==4)
-					{	if(!scrk->CollapseSurfaces()) return false;
-					}
 				}
 				
 				else if(contact.GetPreventPlaneCrosses())
@@ -458,14 +433,8 @@ short CrackHeader::MoveCrack(short side)
     
     // loop over crack points
     while(scrk!=NULL)
-	{	// cutting to skip collapsed crack
-		if(fmobj->dflag[0]==4 && scrk->MatID()==-2)
-		{	scrk = scrk->nextSeg;
-			continue;
-		}
-
-		if(!fixedCrack)
-		{	// get element
+	{	if(!fixedCrack)
+		{	// get element and shape functions to extrapolate to the particle
 			iel = scrk->surfInElem[js]-1;			// now zero based
 			cpos.x = scrk->surfx[js];
 			cpos.y = scrk->surfy[js];
@@ -482,23 +451,25 @@ short CrackHeader::MoveCrack(short side)
 					nodeCounter++;
 			}
 
-			// if CRACK_SURFACE_BY_MOMENTUM_EXTRAP is defined
-			//     delv is Sum(fi pi) and surfaceMass = Sum(fi mi)
-			// otherwise
-			//     delv is Sum(fi vi) = Sum(fi pi/mi) and surfaceMass = Sum(fi)
+			// delv is Sum(fi vi) = Sum(fi pi/mi) and surfaceMass = Sum(fi)
 			// Both normalize to get velocity and multiply by dt to get displacement
-			if(nodeCounter>0) ScaleVector(&delv,timestep/surfaceMass);
+			if(nodeCounter>0 && surfaceMass>0.01)
+				ScaleVector(&delv,timestep/surfaceMass);
+			else
+				nodeCounter=0;
 			
 			// this method does not normalize shape functions
 			//ScaleVector(&delv,timestep);
-           
+			
 			// move it (if returns true, check location of other side for element move again because it moved too)
 			if(scrk->MoveSurfacePosition(side,delv.x,delv.y,(nodeCounter>0)))		// in mm
 			{	if(!scrk->FindElement(ABOVE_CRACK)) return false;
 			}
 			
 			// did surface move elements
-			if(!scrk->FindElement(side)) return false;
+			if(!scrk->FindElement(side))
+			{	return false;
+			}
 		}
             
         // on to next segement
@@ -1213,33 +1184,34 @@ void CrackHeader::JIntegral(void)
 
 				// integrate nonrigid particles
 				for(int p=0;p<nmpmsNR;p++)
-				{	xp=mpm[p]->pos.x;
-					yp=mpm[p]->pos.y;
+				{	MPMBase *mptr = mpm[p];
+					xp=mptr->pos.x;
+					yp=mptr->pos.y;
 					if(xp>=cxmin && xp<cxmax && yp>=cymin && yp<cymax)
 					{   // (xp,yp) in the contour
 						count++;
 						
 						// Mass density g/mm^3
-						rho=theMaterials[mpm[p]->MatID()]->rho;
+						rho=mptr->GetRho();
 						
 						// Accelerations mm/sec^2
-						Vector *acc=mpm[p]->GetAcc();
+						Vector *acc=mptr->GetAcc();
 						ax=acc->x;
 						ay=acc->y;
 						
 						// Displacement gradients (dimensionless)
-						Matrix3 gradU = mpm[p]->GetDisplacementGradientMatrix();
+						Matrix3 gradU = mptr->GetDisplacementGradientMatrix();
 						duxdx = gradU(0,0);
 						duydy = gradU(1,1);
 						duxdy = gradU(0,1);
 						duydx = gradU(1,0);
 						
 						// Velocities (mm/sec)
-						vx=mpm[p]->vel.x;
-						vy=mpm[p]->vel.y;
+						vx=mptr->vel.x;
+						vy=mptr->vel.y;
 						
 						// Velocity gradients (1/sec)
-						Tensor *velGrad=mpm[p]->GetVelGrad();
+						Tensor *velGrad=mptr->GetVelGrad();
 						dvxdx=velGrad->xx;
 						dvydy=velGrad->yy;
 						dvxdy=velGrad->xy;
@@ -1253,7 +1225,7 @@ void CrackHeader::JIntegral(void)
 						{	// in axisymmetrix z is theta direction, etheta = u/r. but w=0, az=vz=0
 							// Since w=0, no change to above terms, but have some static terms for Jx=Jr only
 							// Stress Units uN/mm^2 (mm^3/g)
-							Tensor sp = mpm[p]->ReadStressTensor();
+							Tensor sp = mptr->ReadStressTensor();
 							
 							// Units uN/mm^3
 							if(JContourType == AXISYM_BROBERG_J)
@@ -1262,7 +1234,7 @@ void CrackHeader::JIntegral(void)
 							}
 							else
 							{	// Bergkvist and Huong called J3D/(a dphi)
-								f2axisym += rho*(mpm[p]->GetWorkEnergy() - sp.zz*gradU(2,2))/crackr;
+								f2axisym += rho*(mptr->GetWorkEnergy() - sp.zz*gradU(2,2))/crackr;
 							}
 						}
 					}
@@ -1448,7 +1420,8 @@ void CrackHeader::CrackTipHeating(void)
     
     // loop over crack tips
     while(scrk!=NULL)
-	{	iel=scrk->planeInElem-1;		// now zero based
+	{	// get element and shape function to extrapolate to the node
+		iel=scrk->planeInElem-1;		// now zero based
 		cpos.x=scrk->x;
 		cpos.y=scrk->y;
 		theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos);
@@ -2121,7 +2094,7 @@ bool CrackHeader::SegmentsCross(CrackSegment *scrk1,double x1,double y1,double x
 // If current J contour crossed any cracks check those cracks for crossing
 // and if it crosses, stop the grow at that crack
 // Return relative change made in grow
-double CrackHeader::AdjustGrowForCrossing(Vector *grow,CrackSegment *crkTip)
+double CrackHeader::AdjustGrowForCrossing(Vector *grow,CrackSegment *crkTip,double cSize,Vector *tipDir)
 {
 	// exit if no in the contour
 	if(crossedCracks == NULL) return 1.0;
@@ -2129,10 +2102,12 @@ double CrackHeader::AdjustGrowForCrossing(Vector *grow,CrackSegment *crkTip)
 	// get growing line segment
 	double x1 = crkTip->x;
 	double y1 = crkTip->y;
-	double x2 = x1 + grow->x;
-	double y2 = y1 + grow->y;
 	
-	// loop over crosse cracks
+	// add 1/4 cell
+	double x2 = x1 + grow->x + 0.25*cSize*tipDir->x;
+	double y2 = y1 + grow->y + 0.25*cSize*tipDir->y;
+	
+	// loop over crossed cracks
 	double p = 1.0;
 	CrackSegment *crossSeg;
 	CrossedCrack *nextCross = (CrossedCrack *)crossedCracks->firstObject;
@@ -2148,8 +2123,10 @@ double CrackHeader::AdjustGrowForCrossing(Vector *grow,CrackSegment *crkTip)
 			// equate x and solve for s : s = (x1 - crossSeg->x + p*grow->x)/dxs
 			//    But, if dxs==0 then x1 + p*grow->x = crossSeg->x to give p = (crossSeg->x-x1)/grow->x
 			//		   if grow->x==0 too, parallel lines so do nothing
-			// equate y and solve for p : p*(grow->y*dxs - grow->x*dys) = (crossSeg->y - y1)*dxs + (x1 - crossSeg->x)*dys
-			//    But, if (grow->y*dxs - grow->x*dys)==0, parallel lines so do nothing
+			// substitute s into equated y's and solve for p
+			//	       p*(grow->y*dxs - grow->x*dys) = (crossSeg->y - y1)*dxs + (x1 - crossSeg->x)*dys
+			//         But, if (grow->y*dxs - grow->x*dys)==0, parallel lines so do nothing
+			//    But, if dxs=0 p already found above
 			double cp = grow->y*dxs - grow->x*dys;			// will be zero if lines are parallel
 			if(cp!=0.)
 			{	if(dxs==0.)
@@ -2170,8 +2147,8 @@ double CrackHeader::AdjustGrowForCrossing(Vector *grow,CrackSegment *crkTip)
 				}
 				double pmin = plen/glen<0.5 ? 0.5 : 0.0;
 				
-				// Adjust grow, but do not put put two small segments in a row
-				if(p>=pmin && p<=1.0)
+				// Adjust grow, but if previouis segment was not tool small
+				if(p>=pmin)
 				{	grow->x *= p;
 					grow->y *= p;
 					cout << "# Crack " << GetNumber() << " intersected crack " << nextCrack->GetNumber();
@@ -2227,35 +2204,8 @@ int CrackHeader::GetNumber(void) { return number; }
 // make it a fixed crack
 void CrackHeader::SetFixedCrack(int fixSetting) { fixedCrack=fixSetting; }
 
-// set custom friction coefficient and interface parameters
-void CrackHeader::SetFriction(double frict)
-{	customContact=TRUE;
-	crackFriction=frict;
-}
-void CrackHeader::SetDn(double Dn)
-{	customContact=TRUE;
-	crackDn=Dn;
-	if(crackFriction<10.) crackFriction=11.;
-}
-void CrackHeader::SetDnc(double Dnc)
-{	customContact=TRUE;
-	crackDnc=Dnc;
-	if(crackFriction<10.) crackFriction=11.;
-}
-void CrackHeader::SetDt(double Dt)
-{	customContact=TRUE;
-	crackDt=Dt;
-	if(crackFriction<10.) crackFriction=11.;
-}
-
 // set default values
-void CrackHeader::SetContact(double frict,double Dn,double Dnc,double Dt)
-{	customContact=FALSE;
-	crackFriction=frict;
-	crackDn=Dn;
-	crackDnc=Dnc;
-	crackDt=Dt;
-}
+void CrackHeader::SetContactLawID(int newID) { customContactLawID = newID; }
 
 // given whichTip find crack tip segment
 CrackSegment *CrackHeader::GetCrackTip(int whichTip)
@@ -2307,7 +2257,8 @@ void CrackHeader::SetAllowAlternate(int crkTipIdx,bool setting) { allowAlternate
 
 // describe velocity field
 void CrackHeader::Describe(void)
-{	cout << "# crack#=" << number << " thickness=" << thickness << " custom contact=" << customContact << " has traction=" << hasTractionLaws << endl;
+{	cout << "# crack#=" << number << " thickness=" << thickness << " custom contact mat="
+			<< customContactLawID << " has traction=" << hasTractionLaws << endl;
     cout << "#    from (" << firstSeg->x << "," << firstSeg->y << ") to (" << lastSeg->x << "," << lastSeg->y << "), length = " << Length() ;
     cout << ", segments = " << NumberOfSegments() << endl;
 }

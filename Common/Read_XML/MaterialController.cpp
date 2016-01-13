@@ -31,10 +31,17 @@
     #include "Materials/IdealGas.hpp"
     #include "Materials/TaitLiquid.hpp"
 	#include "Materials/HEMGEOSMaterial.hpp"
-    #include "Materials/Neohookean.hpp"
+	#include "Materials/Neohookean.hpp"
 	#include "Materials/ClampedNeohookean.hpp"
+	#include "Materials/ContactLaw.hpp"
+	#include "Materials/CoulombFriction.hpp"
+	#include "Materials/LinearInterface.hpp"
 #else
 	#include "Materials/ImperfectInterface.hpp"
+#endif
+
+#ifdef MPM_CODE
+extern CrackHeader *firstCrack;
 #endif
 
 MaterialController *matCtrl=NULL;
@@ -44,6 +51,9 @@ MaterialController *matCtrl=NULL;
 MaterialController::MaterialController(void) : ParseController()
 {
 	nameCtrl=new ParseController();
+#ifdef MPM_CODE
+	autoContactCtrl = new ParseController();
+#endif
 }
 
 MaterialController::~MaterialController()
@@ -56,6 +66,10 @@ MaterialController::~MaterialController()
 		delete prevMat;
 	}
 	delete nameCtrl;
+	
+#ifdef MPM_CODE
+	delete autoContactCtrl;
+#endif
 }
 
 #pragma mark MaterialController: Methods
@@ -141,6 +155,15 @@ int MaterialController::AddMaterial(int matID,char *matName)
 		case CLAMPEDNEOHOOKEAN:
 			newMaterial=new ClampedNeohookean(matName);
 			break;
+		case CONTACTLAW:
+			newMaterial=new ContactLaw(matName);
+			break;
+		case COULOMBFRICTIONLAW:
+			newMaterial=new CoulombFriction(matName);
+			break;
+		case LINEARINTERFACELAW:
+			newMaterial=new LinearInterface(matName);
+			break;
 #else
 		case INTERFACEPARAMS:
 			newMaterial=new ImperfectInterface(matName);
@@ -156,11 +179,22 @@ int MaterialController::AddMaterial(int matID,char *matName)
 // assemble into array used in the code
 const char *MaterialController::SetMaterialArray(void)
 {
-	theMaterials=(MaterialBase **)MakeObjectArray(0);
-	if(theMaterials==NULL) return "No materials were defined in the input file or a memory error.";
-	int i;
-	for(i=0;i<numObjects;i++) theMaterials[i] = NULL;
+	if(numObjects==0)
+		return "No materials were defined in the input file or a memory error.";
+
+	int numAlloc = numObjects;
+#ifdef MPM_CODE
+	numAlloc += autoContactCtrl->numObjects + 1;		// last for fritionless law on crack with traction laws
+	bool hasTractionLaws = false;
+#endif
+	theMaterials=(MaterialBase **)malloc(sizeof(LinkedObject *)*(numAlloc));
+	if(theMaterials==NULL) return "Memory error creating array of material types.";
 	
+	// fill with NULL
+	int i;
+	for(i=0;i<numAlloc;i++) theMaterials[i] = NULL;
+	
+	// first one (and it is not NULL)
 	MaterialBase *obj=(MaterialBase *)firstObject;
 
 	// filled with named materials first
@@ -178,6 +212,9 @@ const char *MaterialController::SetMaterialArray(void)
 					return errMsg;
 				}
 				theMaterials[matID-1]=obj;
+#ifdef MPM_CODE
+				if(obj->MaterialStyle()==TRACTION_MAT) hasTractionLaws = true;
+#endif
 			}
 			
 			// check next material
@@ -201,14 +238,35 @@ const char *MaterialController::SetMaterialArray(void)
 			theMaterials[nmat] = obj;
 			numUnreferenced++;
 			nmat++;
+#ifdef MPM_CODE
+			if(obj->MaterialStyle()==TRACTION_MAT) hasTractionLaws = true;
+#endif
 		}
 		obj=(MaterialBase *)obj->GetNextObject(); 
 	}
 	
-	// final number, but must matched sum of referenced and unreferenced
+	// final number, but must matche sum of referenced and unreferenced
 	nmat = numObjects;
 	if(nmat != nameCtrl->numObjects+numUnreferenced)
 		return "One or more materials was referenced but never defined.";
+
+#ifdef MPM_CODE
+	// cached contact laws created from old style input
+	ContactLaw *nextLaw = (ContactLaw *)autoContactCtrl->firstObject;
+	while(nextLaw!=NULL)
+	{	theMaterials[nmat] = nextLaw;
+		nmat++;
+		nextLaw = (ContactLaw *)nextLaw->GetNextObject();
+	}
+	
+	//  check for cracks with tractions
+	if(hasTractionLaws && firstCrack!=NULL)
+	{	char tempName[80];
+		strcpy(tempName,"Frictioness for Traction-Law Cracks (Auto)");
+		theMaterials[nmat] = new CoulombFriction(tempName);
+		nmat++;
+	}
+#endif
 	
 	return NULL;
 }
@@ -248,9 +306,39 @@ void MaterialController::SetTractionMat(int mat,int setIndex)
 }
 
 // when done with Friction command, create new material friction object
-void MaterialController::SetMaterialFriction(void)
-{	((MaterialBase *)lastObject)->SetFriction(friction,otherMatID,Dn,Dnc,Dt);
+void MaterialController::SetMaterialFriction(int lawID,int otherMatID)
+{	((MaterialBase *)lastObject)->SetFriction(lawID,otherMatID);
 }
+
+// Called when material that had PDamping command is done
+void MaterialController::SetMaterialDamping(void)
+{	((MaterialBase *)lastObject)->SetDamping(matPdamping,matFractionPIC);
+}
+
+// Implement fraction PIC by setting damping values
+// It is initialized to -1 on PDamping command, but always between 0 and 1 if has PIC attribute
+// also set matPdamping to large negative number
+void MaterialController::SetFractionPIC(void)
+{	matFractionPIC = -1.;
+	matPdamping = -1.1e12;
+}
+void MaterialController::SetFractionPIC(double fract)
+{	matFractionPIC = fract;
+	if(fract<0.)
+		matFractionPIC = 0.;
+	else if (fract>1.)
+		matFractionPIC = 1.;
+}
+
+// cache Contact law from old style input to be added later at end of material array
+int MaterialController::AddAutoContactLaw(ContactLaw *autoLaw)
+{	autoContactCtrl->AddObject(autoLaw);
+	return autoContactCtrl->numObjects;
+}
+
+// number of contact laws cached
+int MaterialController::NumAutoContactLaws(void) { return autoContactCtrl->numObjects; }
+
 
 #endif
 

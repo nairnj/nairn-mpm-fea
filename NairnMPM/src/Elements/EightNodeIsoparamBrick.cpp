@@ -87,7 +87,7 @@ void EightNodeIsoparamBrick::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
 }
 
 // see if point is in this element (assumes rectangular)
-short EightNodeIsoparamBrick::PtInElement(Vector &pt)
+short EightNodeIsoparamBrick::PtInElement(Vector &pt) const
 {	if(pt.x<xmin || pt.x>xmax) return FALSE;
 	if(pt.y<ymin || pt.y>ymax) return FALSE;
 	if(pt.z<zmin || pt.z>zmax) return FALSE;

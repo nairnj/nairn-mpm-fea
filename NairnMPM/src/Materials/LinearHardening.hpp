@@ -35,7 +35,8 @@ class LinearHardening : public HardeningLawBase
         virtual double GetK2Prime(MPMBase *,double,double,HardeningAlpha *,void *) const;
     
         // return mapping can have fast option
-        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double,HardeningAlpha *,void *) const;
+        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,
+											   double,double,HardeningAlpha *,void *,int) const;
     
         // accessors
         virtual const char *GetHardeningLawName(void) const;

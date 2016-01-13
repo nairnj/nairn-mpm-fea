@@ -15,6 +15,7 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "Materials/MaterialBase.hpp"
+#include "Materials/RigidMaterial.hpp"
 
 #pragma mark INITIALIZATION
 
@@ -106,6 +107,51 @@ void CrackVelocityField::AddMomentumTask1(int matfld,Vector *addPk,Vector *vel,i
 	
 	// count points in this crack velocity field during task 1
 	numberPoints += numPts;
+}
+
+// Called only in task 1 - add rigid velcity
+// Uses mvf[0]->pk, mvf[0]->disp, numberPoints
+// This only used when extrapolating rigid BCs
+void CrackVelocityField::AddRigidVelocityAndFlags(Vector *addPk,double fnmp,int setFlags)
+{
+	// save momentum if any direction is controlled
+	if(setFlags & CONTROL_ANY_DIRECTION)
+	{	AddVector(&mvf[0]->pk,addPk);
+	
+		// add separate mass for each velocity that is set
+		Vector *rmass = &mvf[0]->disp;
+		if(setFlags & CONTROL_X_DIRECTION) rmass->x += fnmp;
+		if(setFlags & CONTROL_Y_DIRECTION) rmass->y += fnmp;
+		if(setFlags & CONTROL_Z_DIRECTION) rmass->z += fnmp;
+	}
+	
+	// collect flags in nummberPoints
+	numberPoints |= setFlags;
+}
+
+// read and erase rigid BC info
+int CrackVelocityField::ReadAndZeroRigidVelocity(Vector *rvel)
+{
+	// if not used, return 0
+	if(numberPoints==0) return 0;
+	
+	// get flags and set any controlled velocities
+	int tempFlags = numberPoints;
+	if(tempFlags & CONTROL_ANY_DIRECTION)
+	{	Vector *rpk = &mvf[0]->pk;
+		Vector *rmass = &mvf[0]->disp;
+		if(tempFlags & CONTROL_X_DIRECTION) rvel->x = rpk->x/rmass->x;
+		if(tempFlags & CONTROL_Y_DIRECTION) rvel->y = rpk->y/rmass->y;
+		if(tempFlags & CONTROL_Z_DIRECTION) rvel->z = rpk->z/rmass->z;
+		
+		// zero used data
+		ZeroVector(rpk);
+		ZeroVector(rmass);
+	}
+	
+	// return and return set directions
+	numberPoints = 0;
+	return tempFlags;
 }
 
 // add to mass (task 1) and field was allocated (if needed) in AddCrackVelocityField()
@@ -208,29 +254,19 @@ void CrackVelocityField::DeleteStrainField(void)
 //   which is analgous to way it works for rigid material inside a crack
 short CrackVelocityField::IncrementDelvTask8(double fi,Vector *delV,double *fieldMass)
 {	
-#ifndef CRACK_SURFACE_BY_MOMENTUM_EXTRAP
 	// skip if no mass on this node
 	if(*fieldMass==0.) return false;
-#endif
 	
 	// get CM momentum
 	double totalMass;
 	bool hasParticles;
 	Vector totalPk = GetCMatMomentum(hasParticles,&totalMass);
 
-#ifdef CRACK_SURFACE_BY_MOMENTUM_EXTRAP
-	// skip no particles
-	if(!hasParticles) return false;
-    
-    // increment momentum extrapolation by Sip pi
-	AddScaledVector(delV,&totalPk,fi);
-#else
 	// skip no particles or low mass
 	if(!hasParticles || totalMass/(*fieldMass)<1.e-5) return false;
     
     // increment velocity extrapolation by Sip vi
 	AddScaledVector(delV,&totalPk,fi/totalMass);
-#endif
 	
 	// return mass
 	*fieldMass = totalMass;

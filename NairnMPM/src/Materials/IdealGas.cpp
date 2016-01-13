@@ -95,7 +95,7 @@ void IdealGas::PrintMechanicalProperties(void) const
 
 // If needed, a material can initialize particle state
 // For example, ideal gas initializes to base line pressure
-void IdealGas::SetInitialParticleState(MPMBase *mptr,int np) const
+void IdealGas::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 {
     // The initial state has particle mass mp = Vp * rho at T = thermal.reference
     // Imagine heating from T0 to T holding volume constant and find Kirchoff stress / rho0
@@ -110,7 +110,7 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np) const
     // Initial particle strains are zero (because J=1)
     
     // call super class for Cauchy Green strain
-    HyperElastic::SetInitialParticleState(mptr,np);
+    HyperElastic::SetInitialParticleState(mptr,np,offset);
 }
 
 #pragma mark IdealGas::Methods
@@ -122,7 +122,7 @@ double IdealGas::GetCpMinusCv(MPMBase *) const { return CpMinusCv; }
     Particle: strains, rotation strain, stresses, strain energy, angle
     du are (gradient rates X time increment) to give deformation gradient change
 */
-void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res,int historyOffset) const
 {
     // Update strains and rotations and Left Cauchy strain
     // get determinent of incremental deformation gradient
@@ -154,7 +154,8 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
     // the same energy is tracked as heat (although it will be zero if adiabatic)
     // and is dissipated (which will cause heating if adiabatic
     // Update is Cv dT - dU
-    IncrementHeatEnergy(mptr,res->dT,0.,dW);
+	double dTq0 = dW/GetHeatCapacity(mptr);
+    IncrementHeatEnergy(mptr,res->dT,dTq0,0.);
 }
 
 #pragma mark IdealGas::Accessors

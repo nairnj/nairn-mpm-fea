@@ -86,7 +86,7 @@ class MPMBase : public LinkedObject
 		// base only methods (make virtual if need to override)
 		int MatID(void) const;
 		int ArchiveMatID(void) const;
-		int ElemID(void);
+		int ElemID(void) const;
 		void ChangeElemID(int);
 		int ArchiveElemID(void);
 		void ReverseParticle(bool,bool);
@@ -137,9 +137,9 @@ class MPMBase : public LinkedObject
 		Tensor *GetVelGrad(void);
 		double GetPlastEnergy(void);
 		void AddPlastEnergy(double);
-		double GetDispEnergy(void);
-		void AddDispEnergy(double);
-		void SetDispEnergy(double);
+		double GetBufferClear_dTad(void);
+		double GetClearPrevious_dTad(void);
+		void Add_dTad(double);
 		double GetWorkEnergy(void);
 		void SetWorkEnergy(double);
 		void AddWorkEnergy(double);
@@ -163,13 +163,13 @@ class MPMBase : public LinkedObject
 		Tensor *GetStrainTensor(void);
  		Tensor *GetAltStrainTensor(void);
 		TensorAntisym *GetRotationStrainTensor(void);
-		char *GetHistoryPtr(void);
+		char *GetHistoryPtr(int);
 		void SetHistoryPtr(char *);
-		double GetHistoryDble(void);
-		void SetHistoryDble(double);
-		double GetHistoryDble(int);
-		void SetHistoryDble(int,double);
+		double GetHistoryDble(int,int);
+		void SetHistoryDble(int,double,int);
         void Describe(void);
+		double GetRho(void);
+		double GetConcSaturation(void);
     
 	protected:
 		// variables (changed in MPM time step)
@@ -185,7 +185,8 @@ class MPMBase : public LinkedObject
 		Tensor eplast;				// plastic strain tensor (init 0)
 		TensorAntisym wrot;			// rotation strain tensor (init 0)
 		double plastEnergy;			// total plastic energy
-		double dispEnergy;			// dissipated energy in current step
+		double prev_dTad;			// adiabatic temperature rise in previous step
+		double buffer_dTad;			// adiabatic temperature rise current step
 		double workEnergy;			// total work energy  sigma.de
         double heatEnergy;          // total heat flow on the particle
         double entropy;             // total entropy on the particle

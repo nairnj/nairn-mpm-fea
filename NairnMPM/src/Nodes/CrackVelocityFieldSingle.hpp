@@ -47,7 +47,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		// accessors
 		virtual double GetTotalMass(bool) const;
 		virtual void AddKineticEnergyAndMass(double &,double &);
-		virtual double GetVolumeNonrigid(bool);
+		virtual double GetVolumeNonrigid(bool) const;
 		virtual double GetVolumeTotal(NodalPoint *) const;
 		virtual Vector GetCMatMomentum(bool &,double *) const;
 		virtual Vector GetCMDisplacement(NodalPoint *,bool) const;

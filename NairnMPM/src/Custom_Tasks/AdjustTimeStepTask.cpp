@@ -96,8 +96,9 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     
     int p;
     short matid;
-    double crot,tst;
-    
+    double crot,tst,crot1;
+    bool Max_Velocity_Condition = false;
+	
     // get grid dimensions
     double dcell = mpmgrid.GetMinCellDimension();
     
@@ -106,14 +107,25 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     // reset globals
     timestep = 1.e15;
     propTime = 1.e15;
-    
-    // loop over nonrigid material points
+     // loop over nonrigid material points
     for(p=0;p<nmpmsNR;p++)
 	{	// material id
 		matid=mpm[p]->MatID();
         
-        // check time step using convergence condition
-        crot = theMaterials[matid]->CurrentWaveSpeed(fmobj->IsThreeD(),mpm[p]);
+        // check time step using convergence condition (wave speed of material)
+        crot = theMaterials[matid]->CurrentWaveSpeed(fmobj->IsThreeD(),mpm[p],0);
+		
+		// check to see if particle speed is above critical speed
+		crot1 = fabs(mpm[p]->vel.x)+fabs(mpm[p]->vel.y); 
+		if(fmobj->IsThreeD()) crot1 += fabs(mpm[p]->vel.z);
+		
+		// Pick highest speed
+		if(crot1>crot) {
+			crot=crot1;
+			Max_Velocity_Condition = true;
+		}
+		
+		// test time step
 		tst = fmobj->GetCFLCondition()*dcell/crot; 
         if(tst<timestep) timestep = tst;
         
@@ -133,9 +145,12 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     {   double ratio = timestep/lastReportedTimeStep;
         if(ratio < 0.95 || ratio>1.05)
 		{	if(timestep<lastReportedTimeStep)
-				cout << "# time step reduced to " << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
+				cout << "# time step reduced to " << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS);
 			else
-				cout << "# time step increased to " << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
+				cout << "# time step increased to " << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS);
+			if(Max_Velocity_Condition)
+				cout << " (some velocities exceed wave speed)";
+			cout << endl;
 		}
         lastReportedTimeStep = timestep;
     }

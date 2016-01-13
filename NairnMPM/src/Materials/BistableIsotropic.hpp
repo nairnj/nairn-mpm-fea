@@ -48,8 +48,11 @@ class BistableIsotropic : public IsotropicMat
 		// initialize
         virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
-		virtual char *InitHistoryData(void);
 		virtual const char *CurrentProperties(short,int);
+	
+		// history data
+		virtual char *InitHistoryData(char *,MPMBase *);
+		virtual double GetHistory(int,char *) const;
 	
 		// const methods
 		virtual void ValidateForUse(int) const;
@@ -57,7 +60,7 @@ class BistableIsotropic : public IsotropicMat
 		virtual void PrintTransportProperties(void) const;
         
         // override methods
-		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
 		virtual void LRConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 		virtual void SRConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
         virtual void GetTransportProps(MPMBase *,int,TransportProperties *) const;
@@ -67,7 +70,6 @@ class BistableIsotropic : public IsotropicMat
         virtual double MaximumDiffusion(void) const;
         virtual double MaximumDiffusivity(void) const;
 		virtual const char *MaterialType(void) const;
-		virtual double GetHistory(int,char *) const;
 		virtual int MaterialTag() const;
     
     private:

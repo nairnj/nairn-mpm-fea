@@ -56,23 +56,36 @@ void HillPlastic::PrintYieldProperties(void) const
     cout << endl;
 }
 
+#pragma mark HillPlastic:History Data Methods
+
 // history is cumulative strain
-char *HillPlastic::InitHistoryData(void)
+char *HillPlastic::InitHistoryData(char *pchr,MPMBase *mptr)
 {
-	double *p = CreateAndZeroDoubles(1);
+	double *p = CreateAndZeroDoubles(pchr,1);
 	return (char *)p;
+}
+
+// hardening history - equivalent plastic strain (absolute strain)
+double HillPlastic::GetHistory(int num,char *historyPtr) const
+{
+    double history=0.;
+	if(num==1)
+	{	double *h=(double *)historyPtr;
+		history=*h;
+	}
+    return history;
 }
 
 #pragma mark HillPlastic:Hardening Terms
 
 // Load current internal variables into local alpha variables
-void HillPlastic::UpdateTrialAlpha(MPMBase *mptr,int np,AnisoHardProperties *p) const
-{	p->aint = mptr->GetHistoryDble();
+void HillPlastic::UpdateTrialAlpha(MPMBase *mptr,int np,AnisoHardProperties *p,int offset) const
+{	p->aint = mptr->GetHistoryDble(0,offset);
 }
 
 // Update alpha: Here dalpha = alpha0 - lambdak h = alpha0 + lambdak*(-h)
-void HillPlastic::UpdateTrialAlpha(MPMBase *mptr,int np,double lambdak,AnisoHardProperties *p) const
-{	p->aint = mptr->GetHistoryDble() + lambdak*p->minush;
+void HillPlastic::UpdateTrialAlpha(MPMBase *mptr,int np,double lambdak,AnisoHardProperties *p,int offset) const
+{	p->aint = mptr->GetHistoryDble(0,offset) + lambdak*p->minush;
 }
 
 // Return yield stress for current conditions (p->aint for cum. plastic strain and dalpha/delTime for plastic strain rate)
@@ -90,8 +103,8 @@ double HillPlastic::GetDfAlphaDotH(MPMBase *mptr,int np,AnisoHardProperties *p) 
 }
 
 // transfer final alpha variables to the material point
-void HillPlastic::UpdatePlasticInternal(MPMBase *mptr,int np,AnisoHardProperties *p) const
-{	mptr->SetHistoryDble(p->aint);
+void HillPlastic::UpdatePlasticInternal(MPMBase *mptr,int np,AnisoHardProperties *p,int offset) const
+{	mptr->SetHistoryDble(0,p->aint,offset);
 }
 
 
@@ -102,15 +115,4 @@ int HillPlastic::MaterialTag(void) const { return HILLPLASTIC; }
 
 // return material type
 const char *HillPlastic::MaterialType(void) const { return "Elastic-Plastic Hill Material"; }
-
-// hardening history - equivalent plastic strain (absolute strain)
-double HillPlastic::GetHistory(int num,char *historyPtr) const
-{
-    double history=0.;
-	if(num==1)
-	{	double *h=(double *)historyPtr;
-		history=*h;
-	}
-    return history;
-}
 

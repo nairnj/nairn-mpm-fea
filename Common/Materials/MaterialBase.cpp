@@ -65,6 +65,10 @@ MaterialBase::MaterialBase(char *matName)
     artificialViscosity = false;
     avA1 = 0.2;
     avA2 = 2.0;
+	matPdamping=0;
+	matFractionPIC=0.;
+	matUsePDamping=false;
+	matUsePICDamping=false;
 #endif
 }
 
@@ -170,4 +174,7 @@ void MaterialBase::PrintProperty(const char *text,bool rightJustify)
     
 // return material type
 const char *MaterialBase::MaterialType(void) const { return "Unknown Material Type"; }
+
+// density (NULL is allowed as long as material not using child materials)
+double MaterialBase::GetRho(MPMBase *mptr) const { return rho; }
 

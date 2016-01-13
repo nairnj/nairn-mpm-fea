@@ -242,14 +242,20 @@ void Viscoelastic::ValidateForUse(int np) const
 	MaterialBase::ValidateForUse(np);
 }
 
+#pragma mark Viscoelastic::History Data Methods
+
 // create and return pointer to history variables
 // initialize all to zero
-char *Viscoelastic::InitHistoryData(void)
+char *Viscoelastic::InitHistoryData(char *pchr,MPMBase *mptr)
 {
 	// if none, only need particle history
 #ifdef USE_KIRCHOFF_STRESS
     if(ntaus==0)
-	{	char *p = new char[sizeof(double *)];
+	{	char *p;
+		if(pchr==NULL)
+			p = new char[sizeof(double *)];
+		else
+			p = pchr;
 		double **h = (double **)p;
 		mptrHistory=0;
 		h[mptrHistory] = new double[2];
@@ -260,7 +266,11 @@ char *Viscoelastic::InitHistoryData(void)
 #else
     if(ntaus==0)
 	{	if(pressureLaw==MGEOS_PRESSURE)
-		{	char *p = new char[sizeof(double *)];
+		{	char *p;
+			if(pchr==NULL)
+				p = new char[sizeof(double *)];
+			else
+				p = pchr;
 			double **h = (double **)p;
 			mptrHistory=0;
 			h[mptrHistory] = new double[2];
@@ -298,8 +308,8 @@ char *Viscoelastic::InitHistoryData(void)
     
     // for each allocate ntaus doubles
     //	h[ij_HISTORY][0] to h[ij_HISTORY][ntaus-1] can be read
-    //	in MPMConstitutiveLaw() by casting mptr->GetHistoryPtr() pointer as
-    //		double **h=(double **)(mptr->GetHistoryPtr())
+    //	in MPMConstitutiveLaw() by casting mptr->GetHistoryPtr(0) pointer as
+    //		double **h=(double **)(mptr->GetHistoryPtr(0))
     h[XX_HISTORY] = new double[ntaus];
     h[YY_HISTORY] = new double[ntaus];
     h[XY_HISTORY] = new double[ntaus];
@@ -368,7 +378,7 @@ double Viscoelastic::GetHistory(int num,char *historyPtr) const
 	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMETRIC_MPM, otherwise dvzz=0
 	This material tracks pressure and stores deviatoric stress only in particle stress tensor
  */
-void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res,int historyOffset) const
 {
 	// current previous deformation gradient and stretch
 	Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
@@ -398,21 +408,22 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		eres+=CME*res->dC;
 	
 	// update pressure
+	double dTq0 = 0.,dispEnergy = 0.;
 	double traceDe = detot.trace();
 	double delV = traceDe - 3.*eres;
 #ifdef USE_KIRCHOFF_STRESS
 	// tracking J
 	double detdF = dF.determinant();
-	double **h =(double **)(mptr->GetHistoryPtr());
+	double **h =(double **)(mptr->GetHistoryPtr(0));
 	double J = detdF*h[mptrHistory][MGJ_HISTORY];
 	h[mptrHistory][MGJ_HISTORY] = J;
-	UpdatePressure(mptr,delV,res,eres,detdF,J,delTime);
+	UpdatePressure(mptr,delV,res,eres,detdF,J,delTime,dTq0,dispEnergy);
 #else
-	UpdatePressure(mptr,delV,res,eres,&dF,delTime);
+	UpdatePressure(mptr,delV,res,eres,&dF,delTime,dTq0,dispEnergy);
 #endif
 	
 	// deviatoric strains increment in de
-	// Actually de is finding 2*(dev e) to avoid many multiples by two
+	// Actually de is finding 2*(dev e) to avoid many multiplies by two
 	Tensor de;
 	double dV = traceDe/3.;
 	de.xx = 2.*(detot(0,0) - dV);
@@ -436,9 +447,20 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		ed.yz = 2.*Vrot(1,2);
 	}
 	
-	// get internal variable increments and update them too
+	// increment particle deviatoric stresses - elastic part
+	double dsig[6];
+	dsig[XX] = Gered*de.xx;
+	dsig[YY] = Gered*de.yy;
+	dsig[ZZ] = Gered*de.zz;
+	dsig[XY] = Gered*de.xy;
+	if(np==THREED_MPM)
+	{	dsig[XZ] = Gered*de.xz;
+		dsig[YZ] = Gered*de.yz;
+	}
+	
+	// get internal variable increments, update them, add to incremental stress, and get dissipated energy6
 	Tensor dak;
-    double **ak =(double **)(mptr->GetHistoryPtr());
+    double **ak =(double **)(mptr->GetHistoryPtr(0));
 	int k;
     for(k=0;k<ntaus;k++)
     {   double tmp = exp(-delTime/tauk[k]);
@@ -454,36 +476,37 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		ak[ZZ_HISTORY][k] += dak.zz;
 		ak[XY_HISTORY][k] += dak.xy;
 		
-		if(np==THREED_MPM)
-		{	dak.xz = tmpm1*ak[XZ_HISTORY][k] + arg*(tmpp1*ed.xz + de.xz);
-			dak.yz = tmpm1*ak[YZ_HISTORY][k] + arg*(tmpp1*ed.yz + de.yz);
-			ak[XZ_HISTORY][k] += dak.xz;
-			ak[YZ_HISTORY][k] += dak.yz;
-		}
-    }
-	
-	// increment particle deviatoric stresses
-	double dsig[6];
-	dsig[XX] = Gered*de.xx;
-	dsig[YY] = Gered*de.yy;
-	dsig[ZZ] = Gered*de.zz;
-	dsig[XY] = Gered*de.xy;
-	if(np==THREED_MPM)
-	{	dsig[XZ] = Gered*de.xz;
-		dsig[YZ] = Gered*de.yz;
-	}
-    for(k=0;k<ntaus;k++)
-	{	dsig[XX] -= TwoGkred[k]*dak.xx;
+		// add to stress increments
+		dsig[XX] -= TwoGkred[k]*dak.xx;
 		dsig[YY] -= TwoGkred[k]*dak.yy;
 		dsig[ZZ] -= TwoGkred[k]*dak.zz;
 		dsig[XY] -= TwoGkred[k]*dak.xy;
+		
+		// dissipation
+		dispEnergy += TwoGkred[k]*(dak.xx*(0.5*(ed.xx+0.5*de.xx)-ak[XX_HISTORY][k]+0.5*dak.xx)
+								   + dak.yy*(0.5*(ed.yy+0.5*de.yy)-ak[YY_HISTORY][k]+0.5*dak.yy)
+								   + dak.zz*(0.5*(ed.zz+0.5*de.zz)-ak[ZZ_HISTORY][k]+0.5*dak.zz)
+								   + dak.xy*(0.5*(ed.xy+0.5*de.xy)-ak[XY_HISTORY][k]+0.5*dak.xy));
+		
+		// extra terms for 3D
 		if(np==THREED_MPM)
-		{	dsig[XZ] -= TwoGkred[k]*dak.xz;
+		{	// internal variables
+			dak.xz = tmpm1*ak[XZ_HISTORY][k] + arg*(tmpp1*ed.xz + de.xz);
+			dak.yz = tmpm1*ak[YZ_HISTORY][k] + arg*(tmpp1*ed.yz + de.yz);
+			ak[XZ_HISTORY][k] += dak.xz;
+			ak[YZ_HISTORY][k] += dak.yz;
+			
+			// stresses
+			dsig[XZ] -= TwoGkred[k]*dak.xz;
 			dsig[YZ] -= TwoGkred[k]*dak.yz;
+			
+			// dissipation
+			dispEnergy += TwoGkred[k]*(dak.xz*(0.5*(ed.xz+0.5*de.xz)-ak[XZ_HISTORY][k]+0.5*dak.xz)
+									   + dak.yz*(0.5*(ed.yz+0.5*de.yz)-ak[YZ_HISTORY][k]+0.5*dak.yz));
 		}
 	}
 	
-	// Increment of particle deviatoric stresses
+	// Update particle deviatoric stresses
 	Tensor *sp=mptr->GetStressTensor();
 	//Tensor st0 = *sp;
 	if(np==THREED_MPM)
@@ -535,24 +558,13 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
     mptr->AddWorkEnergyAndResidualEnergy(shearEnergy,0.);
 	
     // disispated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
-    double dispEnergy = 0.;
-    for(k=0;k<ntaus;k++)
-	{	dispEnergy += TwoGkred[k]*(dak.xx*(0.5*(ed.xx+0.5*de.xx)-ak[XX_HISTORY][k]+0.5*dak.xx)
-								   + dak.yy*(0.5*(ed.yy+0.5*de.yy)-ak[YY_HISTORY][k]+0.5*dak.yy)
-								   + dak.zz*(0.5*(ed.zz+0.5*de.zz)-ak[ZZ_HISTORY][k]+0.5*dak.zz)
-								   + dak.xy*(0.5*(ed.xy+0.5*de.xy)-ak[XY_HISTORY][k]+0.5*dak.xy));
-		if(np==THREED_MPM)
-		{	dispEnergy += TwoGkred[k]*(dak.xz*(0.5*(ed.xz+0.5*de.xz)-ak[XZ_HISTORY][k]+0.5*dak.xz)
-									   + dak.yz*(0.5*(ed.yz+0.5*de.yz)-ak[YZ_HISTORY][k]+0.5*dak.yz));
-		}
-	}
     mptr->AddPlastEnergy(dispEnergy);
     
     // heat energy is Cv dT - dPhi
     // The dPhi is subtracted here because it will show up in next
     //		time step within Cv dT (if adibatic heating occurs)
     // The Cv dT was done in update pressure
-    IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
+    IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
 }
 
 // This method handles the pressure equation of state. Its tasks are
@@ -560,13 +572,13 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 // 2. Update particle pressure
 // 3. Increment the particle energy
 #ifdef USE_KIRCHOFF_STRESS
-void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res,double eres,double detdF,double J,double delTime) const
+void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res,double eres,double detdF,double J,
+								  double delTime,double &dTq0,double &AVEnergy) const
 #else
-void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res,double eres,const Matrix3 *dF,double delTime) const
+void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res,double eres,const Matrix3 *dF,
+								  double delTime,double &dTq0,double &AVEnergy) const
 #endif
 {
-	double dTq0=0.,AVEnergy=0.;
-
 	if(pressureLaw==LINEAR_PRESSURE)
 	{	// pressure change
 #ifdef USE_KIRCHOFF_STRESS
@@ -585,7 +597,7 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 #else
 			QAVred = GetArtificalViscosity(delV/delTime,sqrt(Kered));
 #endif
-			if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
+			if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delV);
 		}
 		
 		// increment pressure
@@ -596,6 +608,9 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		// Work energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 		double avgP = mptr->GetPressure()-0.5*dP;
 		mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-3.*avgP*eres);
+		
+		// Isoentropic temperature rise = -(K alpha T)/(rho Cv) (dV/V)
+		dTq0 += -Kered*CTE*mptr->pPreviousTemperature*(delV+3*eres)/GetHeatCapacity(mptr);;
 	}
 	else
 	{	// J is total volume change - may need to reference to free-swelling volume if that works
@@ -603,7 +618,7 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		//		to stress-free state
 		
 		// history pointer
-		double **h =(double **)(mptr->GetHistoryPtr());
+		double **h =(double **)(mptr->GetHistoryPtr(0));
 		
 #ifndef USE_KIRCHOFF_STRESS
 		// tracking J
@@ -634,8 +649,11 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 			
 			// law not valid if denominator passes zero
 			if(denom<0)
-			{   cout << "# Excessive x = " << x << endl;
-				mptr->Describe();
+			{   
+#pragma omp critical (output)
+				{	cout << "# Excessive x = " << x << endl;
+					mptr->Describe();
+				}
 			}
 			
 			// current effective and reduced (by rho0) bulk modulus
@@ -650,7 +668,7 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 #endif
 			
 			// particle isentropic temperature increment
-			dTq0 = -J*gamma0*mptr->pPreviousTemperature*delVMG;
+			dTq0 += -J*gamma0*mptr->pPreviousTemperature*delVMG;
 		}
 		else
 		{   // In tension hyperelastic law P = - K0(J-1)
@@ -664,7 +682,7 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 			
 			// particle isentropic temperature increment
 			double Kratio = Jeff;
-			dTq0 = -J*Kratio*gamma0*mptr->pPreviousTemperature*delVMG;
+			dTq0 += -J*Kratio*gamma0*mptr->pPreviousTemperature*delVMG;
 		}
 		
 		// artifical viscosity
@@ -672,7 +690,7 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		double QAVred = 0.;
 		if(delVMG<0. && artificialViscosity)
 		{	QAVred = GetArtificalViscosity(delVMG/delTime,sqrt(Kred*J));
-			if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delVMG);
+			if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delVMG);
 		}
 		
 		// set final pressure
@@ -685,11 +703,6 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		mptr->AddWorkEnergyAndResidualEnergy(-avgP*delVMG,-avgP*delVres);
 		
 	}
-	
-	// heat energy is Cv (dT - dTq0) - dPhi - |QAVred*delV|
-	// Here do Cv (dT - dTq0) - |QAVred*delV| term and dPhi is done later
-	IncrementHeatEnergy(mptr,res->dT,dTq0,AVEnergy);
-	
 }
 
 // convert J to K using isotropic method
@@ -719,9 +732,8 @@ double Viscoelastic::WaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt((K
 
 // Copy stress to a read-only tensor variable
 // Subclass material can override, such as to combine pressure and deviatory stress into full stress
-Tensor Viscoelastic::GetStress(Tensor *sp,double pressure) const
-{
-	Tensor stress = *sp;
+Tensor Viscoelastic::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
+{	Tensor stress = *sp;
     stress.xx -= pressure;
     stress.yy -= pressure;
     stress.zz -= pressure;
@@ -733,7 +745,7 @@ bool Viscoelastic::SupportsArtificialViscosity(void) const { return true; }
 
 // Calculate current wave speed in mm/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
 // but K/rho = Kred*J and G/rho = Gred*J (in mm^2/sec^2)
-double Viscoelastic::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
+double Viscoelastic::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
 {
 	double KcurrRed = Kered;
 	
@@ -762,9 +774,8 @@ double Viscoelastic::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
 
 #ifdef USE_KIRCHOFF_STRESS
 // Get current relative volume change = J (which this material tracks)
-// All subclasses must track J in J_History (or override this method)
-double Viscoelastic::GetCurrentRelativeVolume(MPMBase *mptr) const
-{   double **h =(double **)mptr->GetHistoryPtr();
+double Viscoelastic::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const
+{   double **h =(double **)mptr->GetHistoryPtr(offset);
 	return h[mptrHistory][MGJ_HISTORY];
 }
 #endif

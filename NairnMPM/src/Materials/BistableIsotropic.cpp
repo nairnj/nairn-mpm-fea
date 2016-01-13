@@ -286,11 +286,16 @@ const char *BistableIsotropic::CurrentProperties(short newState,int np)
 	return err;
 }
 
+#pragma mark BistableIsotropic::History Data Methods
+
 // Single short to hold the current particle state
-char *BistableIsotropic::InitHistoryData(void)
-{
-    // allocate pointer to a single short
-    char *p=new char[sizeof(short)];
+char *BistableIsotropic::InitHistoryData(char *pchr,MPMBase *mptr)
+{	// allocate pointer to a single short
+    char *p;
+	if(pchr==NULL)
+		p = new char[sizeof(short)];
+	else
+		p = pchr;
 	
     short *h=(short *)p;
     *h=INITIAL_STATE;
@@ -298,12 +303,25 @@ char *BistableIsotropic::InitHistoryData(void)
     return p;
 }
 
+// archive material data for this material type when requested.
+double BistableIsotropic::GetHistory(int num,char *historyPtr) const
+{
+    double history=0.;
+    short *state;
+    
+    if(num==1)
+    {	state=(short *)historyPtr;
+        history=(double)*state;
+    }
+    return history;
+}
+
 #pragma mark BistableIsotropic::Methods
 
 // fill in transport tensors matrix if needed
 void BistableIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t) const
 {
-	short *state=(short *)(mptr->GetHistoryPtr());     // history pointer is short * with state
+	short *state=(short *)(mptr->GetHistoryPtr(0));     // history pointer is short * with state
 	*t = *state==INITIAL_STATE ? tr : tr2;
 }
 
@@ -312,7 +330,7 @@ void BistableIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperti
 	du are (gradient rates X time increment) to give deformation gradient change
 	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMETRIC_MPM, otherwise dvzz=0
  */
-void BistableIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+void BistableIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res,int historyOffset) const
 {	if(useLargeRotation)
 		LRConstitutiveLaw(mptr,du,delTime,np,properties,res);
 	else
@@ -325,7 +343,7 @@ void BistableIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 void BistableIsotropic::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
     // update in current state
-    short *state=(short *)(mptr->GetHistoryPtr()),transition=FALSE;
+    short *state=(short *)(mptr->GetHistoryPtr(0)),transition=FALSE;
 	const ElasticProperties *p = *state==INITIAL_STATE ? &pr : &pr2;
 	IsotropicMat::LRConstitutiveLaw(mptr,du,delTime,np,(void *)p,res);
 	
@@ -433,7 +451,7 @@ void BistableIsotropic::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTim
 void BistableIsotropic::SRConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res) const
 {
     // update in current state
-    short *state=(short *)(mptr->GetHistoryPtr()),transition=FALSE;
+    short *state=(short *)(mptr->GetHistoryPtr(0)),transition=FALSE;
 	const ElasticProperties *p = *state==INITIAL_STATE ? &pr : &pr2;
     IsotropicMat::SRConstitutiveLaw2D(mptr,dv,delTime,np,(void *)p,res);
 	
@@ -557,15 +575,3 @@ double BistableIsotropic::MaximumDiffusivity(void) const { return max(kCondd,kCo
 // return material type
 const char *BistableIsotropic::MaterialType(void) const { return "Bistable Isotropic"; }
 
-// archive material data for this material type when requested.
-double BistableIsotropic::GetHistory(int num,char *historyPtr) const
-{
-    double history=0.;
-    short *state;
-    
-    if(num==1)
-    {	state=(short *)historyPtr;
-        history=(double)*state;
-    }
-    return history;
-}

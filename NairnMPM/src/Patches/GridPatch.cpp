@@ -40,7 +40,7 @@ GridPatch::GridPatch(int xmin,int xmax,int ymin,int ymax,int zmin,int zmax)
 	
 	xn = x1-x0+1;		// number of elements in x direction (xn+1 nodes)
 	yn = y1-y0+1;		// number of elements in y direction (yn+1 nodes)
-	zn = z1-z0+1;		// number of elements in z direction (zn+1 nodes) (=0 if 3D)
+	zn = z1-z0+1;		// number of elements in z direction (zn+1 nodes) (=0 if 2D)
 	
 	// particle pointers
 	firstNR = NULL;
@@ -49,12 +49,22 @@ GridPatch::GridPatch(int xmin,int xmax,int ymin,int ymax,int zmin,int zmax)
 	
 	ghosts = NULL;
 	numGhosts=0;
+	
+	lastToMove = NULL;
 }
 
 // Create all ghost nodes
 bool GridPatch::CreateGhostNodes(void)
 {
 	int i,j,k;
+	
+	// 2D Patches:
+	//   Each patch owns at x0 and y0, but nodes at x1 and y1 belong to next patch (or are edge of the grid)
+	//   Need ghostRows on left and right and one at x1 for interior rows with interiorRow=(2*ghostRows+1) nodes
+	//   A full row of nodes counting ghost nodes as fullRow=(xn+1)+2*ghostRows=xn+interiorRow nodes
+	//   basePartial is zero based address of first interior row
+	//   baseTop is zero based address of first full row on the top (have ghostRows+1 of these rows
+	//   Total ghost nodes = (2*ghostRows+1)*fullRow+yn*interiorRow = interiorRow*(fullRow+yn)
 	
 	// partial counts
 	interiorRow = 2*ghostRows+1;					// midrow count (2D patch) AND # of bottom/base+top/apex rows
@@ -78,7 +88,7 @@ bool GridPatch::CreateGhostNodes(void)
         //cout << "... base interior " << baseInterior << ", base apex " << baseApex << endl;
 	}
 	ghosts = (GhostNode **)malloc(numGhosts*sizeof(GhostNode));
-	if(ghosts==NULL) return FALSE;
+	if(ghosts==NULL) return false;
 	//cout << "... gtot = " << numGhosts << endl;
 
 	if(zn<=0)
@@ -93,7 +103,7 @@ bool GridPatch::CreateGhostNodes(void)
 				col = x0+j;				// 0 based gid row
 				//cout << "...(" << g << "," << row << "," << col << ")" << endl;
 				ghosts[g] = new GhostNode(row,col,i>=0 && i<yn,j>=0 && j<xn);
-				if(ghosts[g]==NULL) return FALSE;
+				if(ghosts[g]==NULL) return false;
 				g++;
 			}
 		}
@@ -113,14 +123,14 @@ bool GridPatch::CreateGhostNodes(void)
 					col = x0+j;				// 0 based gid row
 					//cout << "...(" << g << "," << row << "," << col << "," << rank << ")" << endl;
 					ghosts[g] = new GhostNode(row,col,rank,i>=0 && i<yn,j>=0 && j<xn,k>=0 && k<zn);
-					if(ghosts[g]==NULL) return FALSE;
+					if(ghosts[g]==NULL) return false;
 					g++;
 				}
 			}
 		}
 	}
 
-	return TRUE;
+	return true;
 }
 
 #pragma mark GridPatch: Methods
@@ -177,6 +187,41 @@ void GridPatch::JKTaskReduction(void)
 void GridPatch::DeleteDisp(void)
 {   for(int i=0;i<numGhosts;i++)
         ghosts[i]->DeleteDisp();
+}
+
+// prepare particle to be moved to another patch
+bool GridPatch::AddMovingParticle(MPMBase *mptr,GridPatch *newPatch,MPMBase *prevMptr)
+{	// create data structure
+	MovingData *nextToMove = (MovingData *)malloc(sizeof(MovingData));
+	if(nextToMove == NULL) return false;
+	
+	// fill with data
+	nextToMove->movingMptr = mptr;
+	nextToMove->newPatch = (void *)newPatch;
+	nextToMove->previousMptr = prevMptr;
+	nextToMove->previousMoveData = (void *)lastToMove;
+	
+	// reset last to move and exit
+	lastToMove = nextToMove;
+	return true;
+}
+
+// If any scheduled to move, move them now and clear data in the process
+void GridPatch::MoveParticlesToNewPatches(void)
+{	// move if any need to be moved
+	while(lastToMove!=NULL)
+	{	// move it now
+		RemoveParticleAfter(lastToMove->movingMptr,lastToMove->previousMptr);
+		GridPatch *patch = (GridPatch *)lastToMove->newPatch;
+		patch->AddParticle(lastToMove->movingMptr);
+		
+		// find next one and delete old one
+		MovingData *nextToMove = (MovingData *)lastToMove->previousMoveData;
+		delete lastToMove;
+		
+		// on to next one
+		lastToMove = nextToMove;
+	}
 }
 
 // add particle to this patch - it is put at the beginning

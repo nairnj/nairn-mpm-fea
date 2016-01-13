@@ -923,6 +923,8 @@ void MPMReadHandler::MPMPts(void)
                         newMpt->SetPosition(&ppos[k]);
                         newMpt->SetOrigin(&ppos[k]);
                         newMpt->SetVelocity(&Vel);
+						
+						// custom angles
                         SetMptAnglesFromFunctions(numRotations,&ppos[k],newMpt);
                         mpCtrl->AddMaterialPoint(newMpt,pConc,pTempSet);
                     }

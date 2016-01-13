@@ -11,10 +11,12 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Materials/MaterialBase.hpp"
+#include "Materials/ContactLaw.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "System/UnitsController.hpp"
+#include "Exceptions/CommonException.hpp"
 
 // Single global contact law object
 CrackSurfaceContact contact;
@@ -26,20 +28,16 @@ extern double timestep;
 // Constructors
 CrackSurfaceContact::CrackSurfaceContact()
 {
-	ContactLaw=FRICTIONLESS;	// the law
-	friction=0.;				// crack contact friction
-	Dn=-1.;						// prefect in tension by default
-	Dnc=-101.e6;				// <-100e6 means not set and should be set same as Dn
-	Dt=-1.;						// perfect in shear by default
-	hasImperfectInterface=FALSE;	// flag for any imperfect interfaces
-	moveOnlySurfaces=TRUE;			// move surfaces, plane moves at midpoint of surfaces
-	preventPlaneCrosses=FALSE;		// if true, move surfaces that cross the crack plane back to the crack plane
-	materialFriction=0.;				// material contact friction
-	materialDn=-1.;						// prefect in tension by default
-	materialDnc=-101.e6;					// <-100e6 means not set and should be set same as Dn
-	materialDt=-1.;						// perfect in shear by default
+	crackContactLawID=-1;
+	
+	hasImperfectInterface=false;	// flag for any imperfect interfaces
+	moveOnlySurfaces=true;			// move surfaces, plane moves at midpoint of surfaces
+	preventPlaneCrosses=false;		// if true, move surfaces that cross the crack plane back to the crack plane
+	
+	materialContactLawID=-1;
+	
 	materialContactVmin=0.0;			// cutoff to kick in other contact checks
-	displacementCheck=TRUE;			// if implementing check on displacement or position (last thing)
+	displacementCheck=true;			// if implementing check on displacement or position (last thing)
 	materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;		// method to find normals in multimaterial contact
 	rigidGradientBias=1.;				// Use rigid gradient unless material volume gradient is this much higher (only normal method 2)
 }
@@ -47,38 +45,19 @@ CrackSurfaceContact::CrackSurfaceContact()
 // Print contact law settings for cracks and finalize variables
 void CrackSurfaceContact::Output(void)
 {
-	char hline[200];
+	// allocate memory for custom crack contact laws
+	char *p=new char[(numberOfCracks+1)*sizeof(ContactLaw *)];
+	crackContactLaw=(ContactLaw **)p;
 	
-	// Default contact law
-	if(friction<-10.)
-	{   ContactLaw=NOCONTACT;
-		sprintf(hline,"contacts ignored");
-	}
-	else if(friction<-.5)
-	{   ContactLaw=STICK;
-		sprintf(hline,"stick conditions");
-	}
-	else if(DbleEqual(friction,(double)0.))
-	{   ContactLaw=FRICTIONLESS;
-		sprintf(hline,"frictionless sliding");
-	}
-	else if(friction>10.)
-	{   ContactLaw=IMPERFECT_INTERFACE;
-		if(Dnc<-100.e6) Dnc=Dn;
-		const char *label = UnitsController::Label(INTERFACEPARAM_UNITS);
-		sprintf(hline,"imperfect interface\n     Dnt = %g %s, Dnc = %g %s, Dt = %g %s",
-				Dn*UnitsController::Scaling(1.e-6),label,
-				Dnc*UnitsController::Scaling(1.e-6),label,
-				Dt*UnitsController::Scaling(1.e-6),label);
-		hasImperfectInterface=TRUE;
-	}
-	else
-	{   ContactLaw=FRICTIONAL;
-		sprintf(hline,"frictional with coefficient of friction: %.6f",friction);
-	}
+	// Global material contact law (must be set,if not force to frictionless)
+	crackContactLawID = MaterialBase::GetContactLawNum(crackContactLawID);
+	if(crackContactLawID<0)
+		throw CommonException("Crack settings must select a default contact law","CrackSurfaceContact::Output");
+	crackContactLaw[0] = (ContactLaw *)theMaterials[crackContactLawID];
+	cout << "Default Contact Law: " << crackContactLaw[0]->name << " (number " << (crackContactLawID+1) << ")" << endl;
+	if(crackContactLaw[0]->IsImperfectInterface()) hasImperfectInterface=true;
 	
-	// print results
-	cout << "Default Contact: " << hline << endl;
+	// print other settings
 	cout << "Contact Detection: Normal cod < 0 AND normal dv < 0" << endl;
     mpmgrid.OutputContactByDisplacements();
 	if(GetMoveOnlySurfaces())
@@ -89,105 +68,40 @@ void CrackSurfaceContact::Output(void)
 		cout << "Crack Plane Crosses: surface particles moved back to the current plane" << endl;
 	else
 		cout << "Crack Plane Crosses: ignored" << endl;
-    
-	// allocate memory for custom crack contact laws
-	char *p=new char[(numberOfCracks+1)*sizeof(ContactDetails)];
-    
-    // this is the default contact law
-	CrackContactLaw=(ContactDetails *)p;
-	CrackContactLaw[0].law=ContactLaw;
-	CrackContactLaw[0].friction=friction;
-	CrackContactLaw[0].Dn=Dn;
-	CrackContactLaw[0].Dnc=Dnc;
-	CrackContactLaw[0].Dt=Dt;
 }
 
-// Print contact law settings and finalize variables
-void CrackSurfaceContact::CrackOutput(bool custom,double customFriction,double customDn,double customDnc,
-									  double customDt,int number)
+// Print contact law settings (if has one) and finalize crack law and set if has imperfect interface
+void CrackSurfaceContact::CustomCrackContactOutput(int &customCrackID,int number)
 {
-	if(!custom || (customFriction<10. && DbleEqual(friction,customFriction)) || 
-	   (friction>10. && customFriction>10. && DbleEqual(Dn,customDn) && DbleEqual(Dt,customDt) &&  DbleEqual(Dnc,customDnc)))
-	{	CrackContactLaw[number].law=ContactLaw;
-		CrackContactLaw[number].friction=friction;
-		CrackContactLaw[number].Dn=Dn;
-		CrackContactLaw[number].Dnc=Dnc;
-		CrackContactLaw[number].Dt=Dt;
+	// no custom law was set
+	if(customCrackID<0)
+	{	crackContactLaw[number] = crackContactLaw[0];
 		return;
 	}
 	
-	char hline[200];
-	
-	CrackContactLaw[number].friction=customFriction;
-	CrackContactLaw[number].Dn=customDn;
-	CrackContactLaw[number].Dnc=customDnc;
-	CrackContactLaw[number].Dt=customDt;
-	if(customFriction<-10.)
-	{   CrackContactLaw[number].law=NOCONTACT;
-		sprintf(hline,"contacts ignored");
-	}
-	else if(customFriction<-.5)
-	{   CrackContactLaw[number].law=STICK;
-		sprintf(hline,"stick conditions");
-	}
-	else if(customFriction>10.)
-	{   CrackContactLaw[number].law=IMPERFECT_INTERFACE;
-		if(customDnc<-100.e6) customDnc=customDn;
-		const char *label = UnitsController::Label(INTERFACEPARAM_UNITS);
-		sprintf(hline,"imperfect interface: Dn = %g %s, Dnc = %g %s, Dt = %g %s",
-				customDn*UnitsController::Scaling(1.e-6),label,
-				customDnc*UnitsController::Scaling(1.e-6),label,
-				customDt*UnitsController::Scaling(1.e-6),label);
-		hasImperfectInterface=TRUE;
-	}
-	else if(customFriction>0.)
-	{   CrackContactLaw[number].law=FRICTIONAL;
-		sprintf(hline,"frictional with coefficient of friction: %.6f",customFriction);
-	}
-	else
-	{   CrackContactLaw[number].law=FRICTIONLESS;
-		CrackContactLaw[number].friction=0.;		// to be sure
-		sprintf(hline,"frictionless sliding");
-	}
-	cout << "    Custom Contact: " << hline << endl;
+	// custom law
+	customCrackID = MaterialBase::GetContactLawNum(customCrackID);
+	if(customCrackID<0)
+		throw CommonException("Custom crack contact must select a default contact law","CrackSurfaceContact::Output");
+	crackContactLaw[number] = (ContactLaw *)theMaterials[customCrackID];
+	cout << "    Custom Contact Law: " << crackContactLaw[number]->name << " (number " << (customCrackID+1) << ")" << endl;
+	if(crackContactLaw[number]->IsImperfectInterface()) hasImperfectInterface=true;
 }
 
 // Print contact law settings for cracks and finalize variables
 void CrackSurfaceContact::MaterialOutput(void)
 {
-	char hline[200];
+	// Global material contact law (must be set,if not force to frictionless)
+	materialContactLawID = MaterialBase::GetContactLawNum(materialContactLawID);
+	if(materialContactLawID<0)
+		throw CommonException("Multimaterial mode must select a default contact law","CrackSurfaceContact::MaterialOutput");
+	materialContactLaw = (ContactLaw *)theMaterials[materialContactLawID];
+	cout << "Default Contact Law: " << materialContactLaw->name << " (number " << (materialContactLawID+1) << ")" << endl;
+	if(materialContactLaw->IsImperfectInterface()) hasImperfectInterface=true;
 	
-	// Global material contact
-	if(materialFriction<-10.)
-	{   materialContactLaw=NOCONTACT;
-		sprintf(hline,"contact nodes revert to center of mass velocity field");
-	}
-	else if(materialFriction<-.5)
-	{   materialContactLaw=STICK;
-		sprintf(hline,"stick conditions");
-	}
-	else if(DbleEqual(materialFriction,(double)0.))
-	{   materialContactLaw=FRICTIONLESS;
-		sprintf(hline,"frictionless sliding");
-	}
-	else if(materialFriction>10.)
-	{   materialContactLaw=IMPERFECT_INTERFACE;
-		if(materialDnc<-100.e6) materialDnc=materialDn;
-		const char *label = UnitsController::Label(INTERFACEPARAM_UNITS);
-		sprintf(hline,"imperfect interface\n     Dnt = %g %s, Dnc = %g %s, Dt = %g %s",
-				materialDn*UnitsController::Scaling(1.e-6),label,
-				materialDnc*UnitsController::Scaling(1.e-6),label,
-				materialDt*UnitsController::Scaling(1.e-6),label);
-	}
-	else
-	{   materialContactLaw=FRICTIONAL;
-		sprintf(hline,"frictional with coefficient of friction: %.6f",materialFriction);
-	}
-	
-	// print results
+	// print contact detection method
 	char join[3];
 	join[0]=0;
-	cout << "Default Contact: " << hline << endl;
 	cout << "Contact Detection: ";
 	if(materialContactVmin>0.)
 	{	cout << "(Vrel >= " << materialContactVmin << ")";
@@ -225,50 +139,21 @@ void CrackSurfaceContact::MaterialOutput(void)
 		case SPECIFIED_NORMAL:
 			cout << " use the specified normal of ";
 			PrintVector("",&contactNormal);
-			cout << endl;
 		default:
 			break;
 	}
 	cout << endl;
-    
-    // development flags for multimaterial contact
-    if(fmobj->dflag[0] > 0)
-    {   cout << "** Development flag for custom contact **" << endl;
-        switch(fmobj->dflag[0])
-		{	case 4:
-                cout << "   Special normals for cutting. Top of tool using ";
-                if(fmobj->dflag[1]>-90.)
-                    cout << "rake angle " << fmobj->dflag[1];
-                else
-                    cout << "calculated normals";
-                cout << ". Bottom of tool normal = (0,1)." << endl;
-                break;
-			case 5:
-				cout << "   Radial normal for spherical inclusion" <<endl;
-				break;
-            default:
-				cout << "   Unknown, or no longer implemented, custom contact option" << endl;
-                break;
-        }
-    }
-	
 }
 
 // prepare array for material contact details
 void CrackSurfaceContact::MaterialContactPairs(int maxFields)
 {
 	// fill all pairs with default material properties
-	mmContact=(ContactDetails **)malloc(maxFields*sizeof(ContactDetails *));
+	mmContactLaw=(ContactLaw ***)malloc(maxFields*sizeof(ContactLaw **));
 	int i,j;
 	for(i=0;i<maxFields-1;i++)
-	{	mmContact[i]=(ContactDetails *)malloc((maxFields-1-i)*sizeof(ContactDetails));
-		for(j=i+1;j<maxFields;j++)
-		{	mmContact[i][j-i-1].law=materialContactLaw;
-			mmContact[i][j-i-1].friction=materialFriction;
-			mmContact[i][j-i-1].Dn=materialDn;
-			mmContact[i][j-i-1].Dnc=materialDnc;
-			mmContact[i][j-i-1].Dt=materialDt;
-		}
+	{	mmContactLaw[i]=(ContactLaw **)malloc((maxFields-1-i)*sizeof(ContactLaw *));
+		for(j=i+1;j<maxFields;j++) mmContactLaw[i][j-i-1] = materialContactLaw;
 	}
 	
 	// check all active materials and change laws that were specified
@@ -282,14 +167,19 @@ void CrackSurfaceContact::MaterialContactPairs(int maxFields)
 			if(matj<0 || i==j) continue;				// skip if no field or same material
 			
 			// look from custom friction from mat i to mat j
-			ContactDetails *pairContact=theMaterials[i]->GetContactToMaterial(j+1);
-			if(pairContact==NULL) continue;
+			int pairContactID=theMaterials[i]->GetContactToMaterial(j+1);
+			if(pairContactID<0) continue;
+			pairContactID = MaterialBase::GetContactLawNum(pairContactID);
 			
 			// setting more than one shared material overwrite previous ones
 			if(mati<matj)
-				mmContact[mati][matj-mati-1]=*pairContact;
+			{	mmContactLaw[mati][matj-mati-1]=(ContactLaw *)theMaterials[pairContactID];
+				if(mmContactLaw[mati][matj-mati-1]->IsImperfectInterface()) hasImperfectInterface=true;
+			}
 			else
-				mmContact[matj][mati-matj-1]=*pairContact;
+			{	mmContactLaw[matj][mati-matj-1]=(ContactLaw *)theMaterials[pairContactID];
+				if(mmContactLaw[matj][mati-matj-1]->IsImperfectInterface()) hasImperfectInterface=true;
+			}
 		}
 	}
 }
@@ -297,10 +187,10 @@ void CrackSurfaceContact::MaterialContactPairs(int maxFields)
 #pragma mark CrackSurfaceContact: Contact Calculations
 
 // return TRUE if any contact being done
-short CrackSurfaceContact::HasContact(int number) { return (short)(CrackContactLaw[number].law!=NOCONTACT); }
+short CrackSurfaceContact::HasContact(int number) { return (short)(!crackContactLaw[number]->IgnoreContact()); }
 
 // return TRUE if imperfect interface
-short CrackSurfaceContact::IsImperfect(int number) { return (short)(CrackContactLaw[number].law==IMPERFECT_INTERFACE); }
+short CrackSurfaceContact::IsImperfect(int number) { return (short)(crackContactLaw[number]->IsImperfectInterface()); }
 
 /*	Calculate change in momentum when there is contact. Return true or false if an adjustment was calculated
 	If BC at the node, the delta momemtum should be zero in fixed direction
@@ -361,150 +251,73 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	}
 	
 	// if separated, then no contact unless possibly needed for an imperfect interface
-	if(*inContact==SEPARATED && CrackContactLaw[number].law!=IMPERFECT_INTERFACE) return false;
+	if(crackContactLaw[number]->ContactIsDone(*inContact==IN_CONTACT)) return false;
 	
-	// Now need to change momentum. For imperfect interface, may or may not need a change
-	Vector tang;
-	double dott,mu;
-	
-    switch(CrackContactLaw[number].law)
-    {	case STICK:
-            break;
+	// Now need to change momentum. For imperfect interface, change only for perfect directions
+	double mredDE;
+	if(crackContactLaw[number]->IsFrictionalContact())
+	{	bool getHeating = postUpdate && ConductionTask::crackContactHeating;
+		double mred = (massa*massb)/(massa+massb);
+		double contactArea = 1.;
+		if(crackContactLaw[number]->FrictionLawNeedsContactArea())
+		{	// Angled path correction (2D only)
+			double dist = mpmgrid.GetPerpendicularDistance(&norm, NULL, 0.);
 			
-        case FRICTIONLESS:
+			// Area correction method (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
+			double vola = cva->GetVolumeNonrigid(true),volb = cvb->GetVolumeNonrigid(true),voltot=vola+volb;
+			contactArea = sqrt(2.0*fmin(vola,volb)*voltot)/dist;
+			if(fmobj->IsAxisymmetric()) contactArea *= np->x;
+		}
+		if(!crackContactLaw[number]->GetFrictionalDeltaMomentum(delPa,&norm,dotn,&mredDE,mred,
+										getHeating,contactArea,*inContact==IN_CONTACT,deltime,NULL))
+		{	return false;
+		}
+		if(mredDE>0.)
+		{	double qrate = mredDE/mred;
+			NodalPoint::frictionWork += qrate;
+		
+			// As heat source need nJ/sec or multiply by 1/timestep
+			// Note that this is after transport rates are calculated (by true in last parameter)
+			conduction->AddFluxCondition(np,fabs(qrate/deltime),true);
+		}
+	}
+	else
+	{
+		// Contact handled here only perfect interface (Dt or Dn < 0)
+		// Imperfect interfaces are handled as forces later
+		if(crackContactLaw[number]->IsPerfectTangentialInterface())
+		{	if(!crackContactLaw[number]->IsPerfectNormalInterface(*inContact==IN_CONTACT))
+			{	// prefect in tangential, but imperfect in normal direction
+				// make stick in tangential direction only
+				AddScaledVector(delPa,&norm,-dotn);
+			}
+			// else perfect in both so return with the stick conditions already in delPa
+		}
+		else if(crackContactLaw[number]->IsPerfectNormalInterface(*inContact==IN_CONTACT))
+		{	// perfect in normal direction, but imperfect in tangential direction
+			// make stick in normal direction only
 			CopyScaleVector(delPa,&norm,dotn);
-            break;
-			
-        case FRICTIONAL:
-			CopyVector(&tang,delPa);
-			AddScaledVector(&tang,&norm,-dotn);
-			dott=sqrt(DotVectors2D(&tang,&tang));
-			if(!DbleEqual(dott,0.))
-			{	ScaleVector(&tang,1./dott);
-				dott=DotVectors2D(delPa,&tang);
-				if(dott<0.)
-				{	ScaleVector(&tang,-1.);
-					dott=-dott;
-				}
-				mu=-CrackContactLaw[number].friction;
-				if(dott>mu*dotn)
-				{	AddScaledVector(&norm,&tang,mu);
-					CopyScaleVector(delPa,&norm,dotn);
-                    
-                    // get frictional heating part - this is g mm^2/sec^2 = nJ
-                    // Note: only add frictional heating during momentum update (when frictional
-                    //   force is appropriate) and only if conduction is on.
-                    if(postUpdate && ConductionTask::crackContactHeating)
-                    {   if(np->NodeHasNonrigidParticles())
-                        {   Vector Ftdt;
-                            CopyScaleVector(&Ftdt,&tang,mu*dotn);
-                            double qrate = (massa+massb)*DotVectors2D(&Ftdt,delPa)/(massa*massb);
-                            
-                            // As heat source need nJ/sec or multiply by 1/timestep
-                            // Note that this is after transport rates are calculated (by true in last parameter)
-                            conduction->AddFluxCondition(np,fabs(qrate/deltime),true);
-                        }
-                    }
-				}
-			}
-            break;
-			
-		case IMPERFECT_INTERFACE:
-			// Contact handled here only perfect interface (Dt or Dn < 0)
-			// Imperfect interfaces are handled as forces later
-			if(CrackContactLaw[number].Dt<0)
-			{	if( (*inContact==SEPARATED && CrackContactLaw[number].Dn>=0.) ||
-				   (*inContact==IN_CONTACT && CrackContactLaw[number].Dnc>=0.) )
-				{	// prefect in tangential, but imperfect in normal direction
-					// make stick in tangential direction only
-					AddScaledVector(delPa,&norm,-dotn);
-				}
-				// else perfect in both so return with the stick conditions already in delPa
-			}
-			else if( (*inContact==SEPARATED && CrackContactLaw[number].Dn<0.) ||
-					(*inContact==IN_CONTACT && CrackContactLaw[number].Dnc<0.) )
-			{	// perfect in normal direction, but imperfect in tangential direction
-				// make stick in normal direction only
-				CopyScaleVector(delPa,&norm,dotn);
-			}
-			else
-			{	// no change in momentum, just imperfect interface forces later and nothing changed here
-				return false;
-			}
-			break;
-			
-        default:
-            break;
-    }
+		}
+		else
+		{	// no change in momentum, just imperfect interface forces later and nothing changed here
+			return false;
+		}
+		
+	}
 	
 	return true;
 }
 
-// find frictionaless tangnential slip change in momentum where on input
-//   delP is stick change in momentum
-//   norm is unnormalized normal into material (but sign is irrelevant)
-void CrackSurfaceContact::TangentialSlipDeltaP(Vector *delP,Vector *norm)
-{
-	// Find mass times changes in normal direction velocity
-	// mdelvn = - m ( v - v(ctr mass) ) . n = delP . n (now normalized)
-    double mdelvn=(delP->x*norm->x + delP->y*norm->y)/(norm->x*norm->x + norm->y*norm->y);
-	delP->x=mdelvn*norm->x;
-	delP->y=mdelvn*norm->y;
-}
-// find frictionless normal slip change in momentum where on input
-//   delP is stick change in momentum
-//   norm is unnormalized normal into material (but sign is irrelevant)
-void CrackSurfaceContact::NormalSlipDeltaP(Vector *delP,Vector *norm)
-{
-	// Find mass times changes in normal direction velocity
-	// mdelvt = - m ( v - v(ctr mass) ) . t = delP . t (now normalized)
-    double mdelvt=(delP->x*norm->y - delP->y*norm->x)/(norm->x*norm->x + norm->y*norm->y);
-	delP->x=mdelvt*norm->y;
-	delP->y=-mdelvt*norm->x;
-}
-
-// find frictional change in momentum where on input
-//   delP is stick change in momentum
-//   norm is unnormalized normal into material (but sign is irrelevant)
-void CrackSurfaceContact::FrictionalDeltaP(Vector *delP,Vector *norm,int number)
-{
-	// mdelvn = - m ( v - v(ctr mass) ) . n = delP . n (unnormalized)
-	double mdelvn=delP->x*norm->x + delP->y*norm->y;
-	
-	// mdelvt = - m ( v - v(ctr mass) ) . t = delP . t (unnormalized)
-    double mdelvt=delP->x*norm->y - delP->y*norm->x;
-	
-	// relative tangentical to normal stick forces is the ratio
-	double ratio=mdelvt/mdelvn;
-	double mu;
-	if(ratio<0.)
-	{	if(CrackContactLaw[number].friction<-ratio)
-			mu=-CrackContactLaw[number].friction;
-		else
-			return;			// return to use stick conditions
-	}
-	else
-	{	if(CrackContactLaw[number].friction<ratio)
-			mu=CrackContactLaw[number].friction;
-		else
-			return;			// return to use stick conditions
-	}
-	
-	// normalize and get the change
-	mdelvn/=(norm->x*norm->x + norm->y*norm->y);
-	delP->x=mdelvn*(norm->x + mu*norm->y);
-	delP->y=mdelvn*(norm->y - mu*norm->x);
-}
-	
 // Calculate forces at imperfect interfaces and both CrackVelocityFields are present and have particles
 // Return TRUE if imperfect interface or FALSE if not
 // Only for cracks as imperfect interfaces
-short CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,CrackVelocityField *cva,
+bool CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,CrackVelocityField *cva,
 				CrackVelocityField *cvb,Vector *unnorm,int number,double *rawEnergy,double nodalx)
 {
 	// no forces needed if really perfect, was handled by contact momentum change
-	if(CrackContactLaw[number].Dn<0. && CrackContactLaw[number].Dt<0. && CrackContactLaw[number].Dnc<0.)
-		return FALSE;
+	if(crackContactLaw[number]->IsPerfectTangentialInterface() && crackContactLaw[number]->IsPerfectNormalInterface())
+	{	return false;
+	}
 	
 	// displacement or position
 	Vector da,db;
@@ -521,7 +334,7 @@ short CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,
 	Vector norm = *unnorm;
 	ScaleVector(&norm,1./sqrt(norm.x*norm.x+norm.y*norm.y));
 			
-    // Angled path correction (special case because norm is not normalized (2D only)
+    // Angled path correction (2D only)
 	double dist = mpmgrid.GetPerpendicularDistance(&norm, NULL, 0.);
     
 	// Area correction method (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
@@ -531,65 +344,8 @@ short CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,
     // If axisymmetric, multiply by radial position (vola, volb above were areas)
     if(fmobj->IsAxisymmetric()) surfaceArea *= nodalx;
 	
-	double dn,dt,trn = 0.,trt = 0.;
-	
-	if(CrackContactLaw[number].Dn>=0. || CrackContactLaw[number].Dnc>=0.)
-	{	// normal displacement
-		dn = (db.x-da.x)*norm.x + (db.y-da.y)*norm.y;
-		if(!mpmgrid.GetContactByDisplacements())
-		{	// for efficiency used calculated dist
-			dn -= mpmgrid.positionCutoff*dist;
-		}
-		
-		// Normal traction in g/(mm sec^2) - but different separated or in contact
-		if(dn>0.)
-		{	// normal direction in tension
-			if(CrackContactLaw[number].Dn>=0.)
-				trn = CrackContactLaw[number].Dn*dn*surfaceArea;
-			else
-			{	// interface perfect in tension, if also perfect in shear can exit
-				if(CrackContactLaw[number].Dt<0.) return FALSE;
-				dn = 0.;
-			}
-		}
-		else
-		{	// normal direction in compression
-			if(CrackContactLaw[number].Dnc>=0.)
-				trn = CrackContactLaw[number].Dnc*dn*surfaceArea;
-			else
-			{	// interface perfect in compression, if also perfect in shear can exit
-				if(CrackContactLaw[number].Dt<0.) return FALSE;
-				dn = 0.;
-			}
-		}
-	}
-	else
-	{	// perfect in normal direction
-		dn = 0.;
-	}
-			
-	if(CrackContactLaw[number].Dt>=0.)
-	{	// transverse force
-		dt = (db.x-da.x)*norm.y - (db.y-da.y)*norm.x;
-		
-		// transverse traction in g/(mm sec^2)
-		trt = CrackContactLaw[number].Dt*dt*surfaceArea;
-	}
-	else
-	{	// perfect in normal direction
-		dt = 0.;
-	}
-			
-	// find trn n + trt t and finally normalize
-	fImp->x = trn*norm.x + trt*norm.y;
-	fImp->y = trn*norm.y - trt*norm.x;
-	
-	// total energy (not increment) is (1/2)(trn dnunnorm + trt dtunnorm)/(norm2*norm2) in g/sec^2
-	// Use norm2 because |norm| for trn and trt and |norm| for dnunnorm and dtunnorm
-	// units wiill be g/sec^2
-	*rawEnergy = (trn*dn + trt*dt)/2.;
-	
-	return TRUE;
+	// pass to imperfect interface law
+	return crackContactLaw[number]->GetCrackInterfaceForce(&da,&db,&norm,surfaceArea,dist,fImp,rawEnergy);
 }
 
 // return SEPARATED if not in contact or IN_CONTACT if now in contact
@@ -619,31 +375,9 @@ bool CrackSurfaceContact::GetPreventPlaneCrosses(void) const { return preventPla
 void CrackSurfaceContact::SetPreventPlaneCrosses(bool preventCross) { preventPlaneCrosses=preventCross; }
 
 // material contact law for field mati to field matj
-int CrackSurfaceContact::GetMaterialContactLaw(int mati,int matj)
+ContactLaw *CrackSurfaceContact::GetMaterialContactLaw(int mati,int matj)
 {	// index based on smaller of the two indices
-	return mati<matj ? mmContact[mati][matj-mati-1].law : mmContact[matj][mati-matj-1].law ;
-}
-
-// material coefficient of friction for field mati to field matj
-double CrackSurfaceContact::GetMaterialFriction(int mati,int matj)
-{	// index based on smaller of the two indices
-	return mati<matj ? mmContact[mati][matj-mati-1].friction : mmContact[matj][mati-matj-1].friction ;
-}
-
-void CrackSurfaceContact::GetMaterialInterface(int mati,int matj,double *Dn,double *Dnc,double *Dt)
-{   // index based on smaller of the two indices
-    int i,j;
-    if(mati < matj)
-    {   i = mati;
-        j = matj-mati-1;
-    }
-    else
-    {   i = matj;
-        j = mati-matj-1;
-    }
-    *Dn = mmContact[i][j].Dn;
-    *Dnc = mmContact[i][j].Dnc;
-    *Dt = mmContact[i][j].Dt;
+	return mati<matj ? mmContactLaw[mati][matj-mati-1] : mmContactLaw[matj][mati-matj-1] ;
 }
 
 // set contact normal when normal is specified

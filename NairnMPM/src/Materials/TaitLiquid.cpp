@@ -16,11 +16,15 @@
 #include "Read_XML/mathexpr.hpp"
 #include "System/UnitsController.hpp"
 
-// This model tracks on volume check. It does prevent particles degenerating into
+// This model tracks only volume change. It does prevent particles degenerating into
 // needles, but it is probably not correct thing to do for correct shape functions.
 // The better approach might be just to not plot the transformed particles
 // Note that CPDI will soon fail if particle become needles, but uGIMP can procees
 //#define NO_SHEAR_MODEL
+
+// This tracks full deformation, but B matrix is set to volume change only so B
+// is Diagonal with Bii = J^(2/3) axisymmetric and 3D or Bxx=Byy=J for plane strain
+#define ELASTIC_B_MODEL
 
 // global expression variables
 double TaitLiquid::xPos=0.;
@@ -112,7 +116,7 @@ void TaitLiquid::ValidateForUse(int np) const
 }
 
 // If needed, a material can initialize particle state
-void TaitLiquid::SetInitialParticleState(MPMBase *mptr,int np) const
+void TaitLiquid::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 {
 	// is a pressure being set?
 	if(function!=NULL)
@@ -128,7 +132,7 @@ void TaitLiquid::SetInitialParticleState(MPMBase *mptr,int np) const
 		// Find initial Jinit
 		// Note that an initial temperature will cause change in pressure
 		double Jinit = 1. - TAIT_C*log(1+Psp/(TAIT_C*Ksp));
-		mptr->SetHistoryDble(J_history,Jinit);
+		mptr->SetHistoryDble(J_History,Jinit,offset);
 
 		// set the particle pressure (which needs to be  Kirchoff pressure/rho0 = J P0/rho0)
 		mptr->SetPressure(Jinit*Psp);
@@ -139,24 +143,27 @@ void TaitLiquid::SetInitialParticleState(MPMBase *mptr,int np) const
 	}
     
     // call super class for Cauchy Green strain
-    HyperElastic::SetInitialParticleState(mptr,np);
+    HyperElastic::SetInitialParticleState(mptr,np,offset);
 }
 
-#pragma mark TaitLiquid:HistoryVariables
+#pragma mark TaitLiquid:History Data Methods
+
+// return number of bytes needed for history data
+int TaitLiquid::SizeOfHistoryData(void) const { return 2*sizeof(double); }
 
 // Particle J
-char *TaitLiquid::InitHistoryData(void)
-{	J_history = 0;
-	double *p = CreateAndZeroDoubles(J_history+1);
-	p[J_history]=1.;					// J
+char *TaitLiquid::InitHistoryData(char *pchr,MPMBase *mptr)
+{	double *p = CreateAndZeroDoubles(pchr,2);
+	p[J_History]=1.;					// J
+	p[J_History+1]=1.;					// Jres
 	return (char *)p;
 }
 
-// this material has one
+// this material has two
 double TaitLiquid::GetHistory(int num,char *historyPtr) const
 {
     double history=0.;
-	if(num>0 && num<=J_history+1)
+	if(num>0 && num<=2)
 	{	double *p=(double *)historyPtr;
 		history=p[num-1];
 	}
@@ -166,7 +173,8 @@ double TaitLiquid::GetHistory(int num,char *historyPtr) const
 #pragma mark TaitLiquid:Step Methods
 
 // Apply Constitutive law, check np to know what type
-void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,
+									ResidualStrains *res,int historyOffset) const
 {
 #ifdef NO_SHEAR_MODEL
     // get incremental deformation gradient
@@ -187,19 +195,49 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	
 	// new deformation matrix with volume change onle
     mptr->SetDeformationGradientMatrix(F);
+
+#else
+#ifdef ELASTIC_B_MODEL
+    // get incremental deformation gradient
+	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
+	double detdF = dF.determinant();
+	
+	// current deformation gradient
+	Matrix3 pF = mptr->GetDeformationGradientMatrix();
+	
+	// new deformation matrix
+	const Matrix3 F = dF*pF;
+    mptr->SetDeformationGradientMatrix(F);
 #else
 
 	// Update total deformation gradient, and calculate trial B
 	double detdF = IncrementDeformation(mptr,du,NULL,np);
 #endif
+#endif
     
     // Get new J and save result on the particle
-	double J = detdF * mptr->GetHistoryDble(J_history);
-    mptr->SetHistoryDble(J_history,J);
+	double J = detdF * mptr->GetHistoryDble(J_History,historyOffset);
+    mptr->SetHistoryDble(J_History,J,historyOffset);
+
+#ifdef ELASTIC_B_MODEL
+	// store pressure strain as elastic B
+    Tensor *pB = mptr->GetAltStrainTensor() ;
+    if(np==THREED_MPM || np==AXISYMMETRIC_MPM)
+	{	double J23 = pow(J,2./3.);
+		pB->xx = J23;
+		pB->yy = J23;
+		pB->zz = J23;
+	}
+	else
+	{	pB->xx = J;
+		pB->yy = J;
+	}
+#endif
     
     // account for residual stresses
-	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);
-	double Jres = resStretch*resStretch*resStretch;
+	double dJres = GetIncrementalResJ(mptr,res);
+	double Jres = dJres * mptr->GetHistoryDble(J_History+1,historyOffset);
+	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
     double Jeff = J/Jres;
 
     // new Kirchhoff pressure (over rho0) from Tait equation
@@ -213,7 +251,7 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     double workEnergy = -avgP*delV;
     
 	// incremental residual energy per unit mass
-	double delVres = 1. - 1./(dresStretch*dresStretch*dresStretch);
+	double delVres = 1. - 1./dJres;
 	double resEnergy = -avgP*delVres;
 	
     // viscosity term = 2 eta (0.5(grad v) + 0.5*(grad V)^T - (1/3) tr(grad v) I)
@@ -266,6 +304,26 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     IncrementHeatEnergy(mptr,res->dT,dTq0,shearWork);
 }
 
+// When becomes active update J, set B elastic, set pressure, and zero deviatorix stress
+void TaitLiquid::BeginActivePhase(MPMBase *mptr,int np,int historyOffset) const
+{	double J = mptr->GetRelativeVolume();
+	mptr->SetHistoryDble(J_History,J,historyOffset);
+#ifdef ELASTIC_B_MODEL
+	double Jres = mptr->GetHistoryDble(J_History+1,historyOffset);
+    double Jeff = J/Jres;
+	
+	// store pressure strain as elastic B
+	// no need here, will happen in next time step
+	
+    // new Kirchhoff pressure (over rho0) from Tait equation
+    double pressure = J*TAIT_C*Ksp*(exp((1.-Jeff)/TAIT_C)-1.);
+    mptr->SetPressure(pressure);
+	
+	// set deviatoric stress to zero
+	ZeroTensor(mptr->GetStressTensor());
+#endif
+}
+
 #pragma mark TaitLiquid::Accessors
 
 // return unique, short name for this material
@@ -280,9 +338,9 @@ double TaitLiquid::WaveSpeed(bool threeD,MPMBase *mptr) const
 }
 
 // Calculate current wave speed in L/sec for a deformed particle
-double TaitLiquid::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
+double TaitLiquid::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
 {
-    double J = mptr->GetRelativeVolume();
+    double J = mptr->GetHistoryDble(J_History,offset);;
 	double dTemp=mptr->pPreviousTemperature-thermal.reference;
 	double resStretch = CTE1*dTemp;
 	if(DiffusionTask::active)
@@ -295,7 +353,7 @@ double TaitLiquid::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
 }
 
 // Copy stress to a read-only tensor variable after combininng deviatoric and pressure
-Tensor TaitLiquid::GetStress(Tensor *sp,double pressure) const
+Tensor TaitLiquid::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
 {   Tensor stress = *sp;
     stress.xx -= pressure;
     stress.yy -= pressure;
@@ -304,8 +362,8 @@ Tensor TaitLiquid::GetStress(Tensor *sp,double pressure) const
 }
 
 // Get current relative volume change = J (which this material tracks)
-double TaitLiquid::GetCurrentRelativeVolume(MPMBase *mptr) const
-{   return mptr->GetHistoryDble(J_history);
+double TaitLiquid::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const
+{   return mptr->GetHistoryDble(J_History,offset);
 }
 
 // setting initial pressure function if needed

@@ -16,6 +16,8 @@
 #include "Exceptions/CommonException.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 
+// locations of the 8 corners relative to the center
+// when adding semi-side vectors
 static double r1s[8]={-1.,1.,1.,-1.,-1.,1.,1.,-1.};
 static double r2s[8]={-1.,-1.,1.,1.,-1.,-1.,1.,1.};
 static double r3s[8]={-1.,-1.,-1.,-1.,1.,1.,1.,1.};
@@ -88,10 +90,10 @@ void MatPoint3D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void
 {
     // update particle strain and stress using its constitutive law
 	const MaterialBase *matRef = theMaterials[MatID()];
-    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res);
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res,0);
 }
 
-// Move position (2D) (in mm) possibly with particle damping and accWt = dt/2
+// Move position (3D) (in mm) possibly with particle damping and accWt = dt/2
 // vstar is velocity extrapolated from grid to particle and end of time step with grid damping
 //        vstar = v(g->p)(n+1) - alpha_g(t)*v(g->p)(n)*dt
 // acc is acceleration with grid damping
@@ -110,7 +112,7 @@ void MatPoint3D::MovePosition(double delTime,Vector *vstar,double accWt,double p
     pos.z += dz;
 }
 
-// Move velocity (2D) (in mm/sec) possibly with particle damping
+// Move velocity (3D) (in mm/sec) possibly with particle damping
 // acc is acceleration with grid damping
 //        acc = a(g->p)(n) - alpha_g(t)*v(g->p)(n)
 // Update with addition of particle damping is
@@ -293,8 +295,8 @@ double MatPoint3D::GetRelativeVolume(void)
 // get dilated current volume using current deformation gradient
 // only used for crack contact, multimaterial contact, and transport tasks
 double MatPoint3D::GetVolume(int volumeType)
-{	double rho=theMaterials[MatID()]->rho;						// in g/mm^3
-	return GetRelativeVolume()*mp/rho;							// in mm^3
+{	double rho=GetRho();						// in g/mm^3
+	return GetRelativeVolume()*mp/rho;			// in mm^3
 }
 
 // Get vectors from particle to edge
@@ -320,7 +322,6 @@ void MatPoint3D::GetSemiSideVectors(Vector *r1,Vector *r2,Vector *r3) const
 	r3->x = pF[0][2]*psz.z;
 	r3->y = pF[1][2]*psz.z;
 	r3->z = pF[2][2]*psz.z;
-    
 }
 
 // Get undeformed size (only called by GIMP traction)
@@ -339,7 +340,7 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 {   
 	// get polygon vectors - these are from particle to edge
     //      and generalize semi width lp in 1D GIMP
-	Vector r1,r2,r3,c;
+	Vector c,r1,r2,r3;
     GetSemiSideVectors(&r1,&r2,&r3);
 	
     // Particle domain volume is 8 * volume of the parallelepiped defined by r1, r2, and r3

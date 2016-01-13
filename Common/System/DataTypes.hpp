@@ -67,16 +67,12 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 		double *matWeight;
 	} DispField;
 	
-	// contact law properties, nextFriction and matID only used for material contact
+	// contact law for material pair
 	typedef struct {
-		int law;
-		double friction;
-		double Dn;
-		double Dnc;
-		double Dt;
-		char *nextFriction;
+		int lawID;
 		int matID;
-	} ContactDetails;
+		char *nextFriction;
+	} ContactPair;
 
 	// for each node in CPDI domain give its element,
 	// its naturual coordinates, weighting factor

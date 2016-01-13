@@ -12,7 +12,6 @@
 	#include "Custom_Tasks/DiffusionTask.hpp"
 #endif
 #include "System/UnitsController.hpp"
-#include "System/UnitsController.hpp"
 
 #pragma mark Orthotropic::Constructors and Destructors
 

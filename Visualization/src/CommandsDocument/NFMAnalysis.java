@@ -204,7 +204,7 @@ public class NFMAnalysis  implements Runnable
 					outname += ".mpm";
 				else
 					outname += ".fea";
-				remotePath="RemoteOuput/"+outname;
+				remotePath="RemoteOutput/"+outname;
 			}
 			
 			// get output folder from previous output or working directory
@@ -268,14 +268,15 @@ public class NFMAnalysis  implements Runnable
 		if(tmpFile==null) return;
 			
 		// set commands and options
-		ArrayList<String> cmds=new ArrayList<String>(20);
+		ArrayList<String> bashcmds=new ArrayList<String>(20);
+		ArrayList<String> pbcmds=new ArrayList<String>(20);
 		
 		// start login bash shell
-		cmds.add(NFMVPrefs.prefs.get(NFMVPrefs.ShellKey,NFMVPrefs.ShellDef));
-		cmds.add("--login");			// only needed for windows
-		cmds.add("-c");
+		bashcmds.add(NFMVPrefs.prefs.get(NFMVPrefs.ShellKey,NFMVPrefs.ShellDef));
+		bashcmds.add("--login");
+		bashcmds.add("-c");
 		
-		// build shell command
+		// build shell command to run with bashcmds
 		StringBuffer shell=new StringBuffer();
 		
 		// Get command to do to the parent folder director
@@ -284,11 +285,11 @@ public class NFMAnalysis  implements Runnable
 			// cd to local file directory
 			shell.append("cd ");
 			String shellCD = outFile.getParent();
-			if (NairnFEAMPMViz.isWindowsOS())
+			if(NairnFEAMPMViz.isWindowsOS())
 			{	// shellCD=shellCD.replace('\\','/');
 				shellCD = PathToCygwin(shellCD);
 			}
-			if (shellCD.indexOf(' ') >= 0)
+			if(shellCD.indexOf(' ') >= 0)
 				shell.append("'" + shellCD + "'; ");
 			else
 				shell.append(shellCD + "; ");
@@ -299,25 +300,37 @@ public class NFMAnalysis  implements Runnable
 		{	//myCmd=myCmd.replace('\\','/');
 			myCmd=PathToCygwin(myCmd);
 		}
+		else
+		{	// as direct process builder command
+			pbcmds.add(myCmd);
+			if(runType==RUN_CHECK_MESH) pbcmds.add("-a");
+			if(doValidate) pbcmds.add("-v");
+			if(processors>1)
+			{	pbcmds.add("-np");
+				pbcmds.add(""+processors);
+			}
+		}
+		// command in a bash command
 		if(myCmd.indexOf(' ')>=0)
 			shell.append("'"+myCmd+"'");
 		else
 			shell.append(myCmd);
 					
-		// options (-a to abort after setup, -v to validate)
+		// options (-a to abort after setup, -v to validate, -np processors)
 		if(runType==RUN_CHECK_MESH) shell.append(" -a");
 		if(doValidate) shell.append(" -v");
+		if(processors>1) shell.append(" -np "+processors); 
 		
-		// processors
-		if(processors>1)
-			shell.append(" -np "+processors); 
-		
-		// inpiut file name
+		// input file name to shell command
 		String inName = tmpFile.getName();
 		if(inName.indexOf(' ')>=0)
 			shell.append(" '"+inName+"'");
 		else
 			shell.append(" "+inName);
+		
+		// and to direct file name command
+		if(!NairnFEAMPMViz.isWindowsOS())
+			pbcmds.add(inName);
 		
 		// Finish building commands then launch thread (see run() method)
 		openMesh=runType;
@@ -357,14 +370,19 @@ public class NFMAnalysis  implements Runnable
 				shell.append(" &");
 			}
 			
-			// print commands to console and add to commands
-			System.out.println(shell);
-			cmds.add(shell.toString());
+			// can shell command to the bash shell login
+			bashcmds.add(shell.toString());
 			
 			// create the process and set working directory
-			builder = new ProcessBuilder(cmds);
-			//Map<String, String> environ = builder.environment();
-			//builder.directory(myFile.getParentFile());
+			if(!NairnFEAMPMViz.isWindowsOS() && !doBackground)
+			{	builder = new ProcessBuilder(pbcmds);
+				builder.directory(outFile.getParentFile());
+				System.out.println(pbcmds);
+			}
+			else
+			{	builder = new ProcessBuilder(bashcmds);
+				System.out.println(bashcmds);
+			}
 			builder.redirectErrorStream(true);
 			
 			runThread=new Thread(this);
@@ -502,38 +520,40 @@ public class NFMAnalysis  implements Runnable
 				InputStream is = process.getInputStream();
 				InputStreamReader isr = new InputStreamReader(is);
 				BufferedReader br = new BufferedReader(isr);
-			
+				
 				soutConsole.clear();
 				String line;
 				while((line = br.readLine()) != null)
 				{	soutConsole.appendLine(line);
 					if(!running) break;
 				}
-			
-				// if done and no errors, save and open for visualization
+				
+				// get results code
+				int result=0;
 				if(running)
-				{	int result=1;
-					try
+				{	try
 					{	process.waitFor();
-						result=process.exitValue();
+						result = process.exitValue();
 					}
-					catch (InterruptedException ie) {}
-					if(result==0)
-					{	if(wasSubmitted)
-						{	JOptionPane.showMessageDialog(doc,"FEA or MPM job submitted"+soutConsole.processID());
-						}
-						else if(soutConsole.saveOutput(doc))
-						{	DocViewer newResults = doc.linkToResults();
-							if(newResults!=null && openMesh==RUN_CHECK_MESH && !newResults.resDoc.is3D())
-							{	newResults.checkMeshNow();
-							}
-						}
+					catch(InterruptedException e)
+					{	result = 1;
 					}
-					else
-						soutConsole.saveOutput(doc);		// save in case needed
 				}
-				else
-					soutConsole.saveOutput(doc);			// save in case needed
+				
+				// save and open for visualization
+				if(wasSubmitted)
+				{	JOptionPane.showMessageDialog(doc,"FEA or MPM job submitted"+soutConsole.processID());
+				}
+				else if(soutConsole.saveOutput(doc))
+				{	if(result==0)
+					{	DocViewer newResults = doc.linkToResults();
+						if(newResults!=null && openMesh==RUN_CHECK_MESH && !newResults.resDoc.is3D())
+						{	newResults.checkMeshNow();
+						}
+					}
+				}
+				
+				// close all
 				is.close();
 				process.destroy();
 			}
@@ -559,7 +579,7 @@ public class NFMAnalysis  implements Runnable
 				try
 				{	soutConsole.appendLine("Connecting to "+remoteServer);
 					String userPass = NFMVPrefs.prefs.get(NFMVPrefs.RemoteUserPassKey,NFMVPrefs.RemoteUserPassDef);
-					remoteConn = new RemoteConnection(remoteUser,userPass,remoteServer,22);
+					remoteConn = new RemoteConnection(remoteUser,userPass,remoteServer,22,soutConsole);
 					remoteConn.setStrictHostKeyChecking(false);
 				}
 				catch(JSchException je)
@@ -630,8 +650,9 @@ public class NFMAnalysis  implements Runnable
 				try
 				{	exitStatus = remoteConn.execCommands(command, false);
 					soutConsole.appendLine("         Calculations done: exit status = "+exitStatus);
-					if(exitStatus!=0)
-						soutConsole.appendLine("...check system console for error message");
+					// Matt Change - errors not reported in RemoteConnection
+					//if(exitStatus!=0)
+					//	soutConsole.appendLine("...check system console for error message");
 				}				
 				catch (Exception e)
 				{	throw new Exception("Remote execution failed: "+e.getLocalizedMessage());
@@ -674,7 +695,7 @@ public class NFMAnalysis  implements Runnable
 					// download zipped file (if saved)
 					if(exitStatus==0)
 					{	try
-						{	soutConsole.appendLine("Downloading results to "+outputFolder);
+						{	//soutConsole.appendLine("Downloading results to "+outputFolder);
 							remoteConn.downloadExtractZip(path+".zip",outputFolder);
 							saveOutput = outputFolder+File.separator+lastFolder+File.separator+remoteName;
 						}
@@ -760,10 +781,11 @@ public class NFMAnalysis  implements Runnable
 	{	if(runThread.isAlive())
 		{	running=false;
 			try
-			{	runThread.join();
+			{	// this waits until the thres is done
+				runThread.join();
 			}
 			catch(InterruptedException ie)
-			{
+			{	System.out.println("Failed to stop thread");
 			}
 		}
 	}
@@ -773,5 +795,4 @@ public class NFMAnalysis  implements Runnable
 	{	return cmds.indexOf("<MPMHeader>")>0;
 	}
 	
-
 }

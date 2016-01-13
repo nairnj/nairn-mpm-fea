@@ -122,7 +122,7 @@ const char *Mooney::VerifyAndLoadProperties(int np)
 		// bulk modulus, but allow membrane to be incompressible
 		if(nu<0.5)
 			Kbulk = Etens/(3.*(1-2.*nu));
-		else if(!isMembrane())
+		else if(MaterialStyle()!=MEMBRANE_MAT)
 			return "Mooney-Rivlin Hyperelastic Poisson's ratio for solid material must be less than 1/2";
 		else
 		{	Kbulk = 0.;	// which causes CP-Cv=0 as well
@@ -147,23 +147,27 @@ const char *Mooney::VerifyAndLoadProperties(int np)
 	return HyperElastic::VerifyAndLoadProperties(np);
 }
 
-#pragma mark Mooney::History Data
+#pragma mark Mooney::History Data Methods
+
+// return number of bytes needed for history data
+int Mooney::SizeOfHistoryData(void) const { return 2*sizeof(double); }
 
 // Store J, which is calculated incrementally, and available for archiving
-// initialize to 1
-char *Mooney::InitHistoryData(void)
-{
-	double *p = CreateAndZeroDoubles(1);
-	*p=1.;
+// Store Jres for residual stress calculations
+// initialize both to 1
+char *Mooney::InitHistoryData(char *pchr,MPMBase *mptr)
+{	double *p = CreateAndZeroDoubles(pchr,2);
+	p[0] = 1.;
+	p[1] = 1.;
 	return (char *)p;
 }
 
 // archive material data for this material type when requested.
 double Mooney::GetHistory(int num,char *historyPtr) const
 {   double history=0.;
-    if(num==1)
+    if(num>0 && num<=2)
     {	double *J=(double *)historyPtr;
-        history=*J;
+        history = J[num-1];
     }
     return history;
 }
@@ -178,7 +182,8 @@ double Mooney::GetHistory(int num,char *historyPtr) const
     This material tracks pressure and stores deviatoric stress only in particle stress
         tensor
 */
-void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,
+								ResidualStrains *res,int historyOffset) const
 {
 	// incremental energy, store initial stress
 	Tensor *sporig=mptr->GetStressTensor();
@@ -191,9 +196,9 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     Tensor *B = mptr->GetAltStrainTensor();
 	
     // account for residual stresses
-	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);
-	double resStretch2 = resStretch*resStretch;
-	double Jres = resStretch2*resStretch;
+	double dJres = GetIncrementalResJ(mptr,res);
+	double Jres = dJres*mptr->GetHistoryDble(J_History+1,historyOffset);
+	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
 
 	// Deformation gradients and Cauchy tensor differ in plane stress
 	if(np==PLANE_STRESS_MPM)
@@ -255,8 +260,8 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	}
     
     // Increment J and save it in history data
-    double J = detDf*mptr->GetHistoryDble();
-    mptr->SetHistoryDble(J);
+    double J = detDf*mptr->GetHistoryDble(J_History,historyOffset);
+    mptr->SetHistoryDble(J_History,J,historyOffset);
 	
 	// account for residual stresses
 	double Jeff = J/Jres;
@@ -265,8 +270,6 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	double p0=mptr->GetPressure();
 	double Kterm = J*GetVolumetricTerms(Jeff,Ksp);       // times J to get Kirchoff stress
 	
-	//Kterm /= Jres;		// this uses Jeff to get Kirchoff stress
-    
     // artifical viscosity
     double delV = 1. - 1./detDf;                        // total volume change
     double QAVred = 0.,AVEnergy=0.;
@@ -284,7 +287,7 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     double dilEnergy = -avgP*delV;
 	
 	// incremental residual energy
-	double delVres = 1. - 1./(dresStretch*dresStretch*dresStretch);
+	double delVres = 1. - 1./dJres;
 	double resEnergy = -avgP*delVres;
 	
     // Account for density change in specific stress
@@ -348,13 +351,10 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     
     // thermodynamics depends on whether or not this is a rubber
     if(rubber)
-    {   // just like ideal gas
-        IncrementHeatEnergy(mptr,res->dT,dTq0,dU+QAVred);
-    }
-    else
-    {   // elastic - no heating
-        IncrementHeatEnergy(mptr,res->dT,dTq0,QAVred);
-    }
+    {   // convert internal energy to temperature change
+		dTq0 += dU/GetHeatCapacity(mptr);
+	}
+	IncrementHeatEnergy(mptr,res->dT,dTq0,QAVred);
 }
 
 #pragma mark Mooney::Accessors
@@ -368,7 +368,7 @@ Vector Mooney::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 
 // Copy stress to a read-only tensor variable
 // Subclass material can override, such as to combine pressure and deviatory stress into full stress
-Tensor Mooney::GetStress(Tensor *sp,double pressure) const
+Tensor Mooney::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
 {   Tensor stress = *sp;
     stress.xx -= pressure;
     stress.yy -= pressure;
@@ -386,7 +386,7 @@ double Mooney::WaveSpeed(bool threeD,MPMBase *mptr) const
 }
 
 // Calculate shear wave speed in mm/sec (because G1 and G2 in mass/(L sec^2) and rho in mass/L^3)
-double Mooney::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt((G1+G2)/rho); }
+double Mooney::ShearWaveSpeed(bool threeD,MPMBase *mptr,int offset) const { return sqrt((G1+G2)/rho); }
 
 // return material type
 const char *Mooney::MaterialType(void) const { return "Mooney-Rivlin Hyperelastic"; }
@@ -396,8 +396,9 @@ bool Mooney::SupportsArtificialViscosity(void) const { return true; }
 
 // Get current relative volume change = J (which this material tracks)
 // All subclasses must track J in J_History (or override this method)
-double Mooney::GetCurrentRelativeVolume(MPMBase *mptr) const
-{   return mptr->GetHistoryDble(J_History);
+double Mooney::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const
+{   return mptr->GetHistoryDble(J_History,offset);
 }
+
 
 

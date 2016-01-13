@@ -23,6 +23,8 @@ HyperElastic::HyperElastic(char *matName) : MaterialBase(matName)
 	Kbulk = -1.;                                        // required (check >0 before starting)
     UofJOption = HALF_J_SQUARED_MINUS_1_MINUS_LN_J;     // default U(J) function
 	aI=0.;
+	
+	J_History=0;
 }
 
 // Read material properties
@@ -47,7 +49,7 @@ char *HyperElastic::InputMaterialProperty(char *xName,int &input,double &gScalin
 #pragma mark HyperElastic::Initialize
 
 // Set intial particle Left Cauchy strain tensor to identity
-void HyperElastic::SetInitialParticleState(MPMBase *mptr,int np) const
+void HyperElastic::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 {
     // get previous particle B
     Tensor *pB = mptr->GetAltStrainTensor();
@@ -55,7 +57,7 @@ void HyperElastic::SetInitialParticleState(MPMBase *mptr,int np) const
     ZeroTensor(pB);
     pB->xx = pB->yy = pB->zz = 1.;
 	
-	MaterialBase::SetInitialParticleState(mptr,np);
+	MaterialBase::SetInitialParticleState(mptr,np,offset);
 }
 
 // Constant properties used in constitutive law
@@ -76,6 +78,28 @@ const char *HyperElastic::VerifyAndLoadProperties(int np)
 }
 
 #pragma mark HyperElastic::Methods
+
+// get incremental residual volume change
+double HyperElastic::GetIncrementalResJ(MPMBase *mptr,ResidualStrains *res) const
+{	// account for residual stresses
+	double dJres = CTE1*res->dT;
+	if(DiffusionTask::active)
+		dJres += CME1*res->dC;
+    return exp(3.*dJres);
+}
+
+// When inactive, track residual strains
+void HyperElastic::TrackResidualStrain(MPMBase *mptr,double dJres,int historyOffset) const
+{	// account for residual stresses
+	double Jres = dJres*mptr->GetHistoryDble(J_History+1,historyOffset);
+	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
+}
+
+// When becomes active update J
+void HyperElastic::BeginActivePhase(MPMBase *mptr,int np,int historyOffset) const
+{	double J = mptr->GetRelativeVolume();
+	mptr->SetHistoryDble(J_History,J,historyOffset);
+}
 
 /*  Given matrix of incremental deformation dF = exp(dt*grad v), increment particle strain,
         rotation, and LeftCauchy Green strain (latter is assumed to be stored in the particle's
@@ -134,7 +158,7 @@ double HyperElastic::GetResidualStretch(MPMBase *mptr,double &dresStretch,Residu
 	if(DiffusionTask::active)
 	{	double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
 		resStretch += CME1*dConc;
-		dresStretch += CTE1*res->dC;
+		dresStretch += CME1*res->dC;
 	}
     dresStretch = exp(dresStretch);
 	return exp(resStretch);
@@ -143,7 +167,7 @@ double HyperElastic::GetResidualStretch(MPMBase *mptr,double &dresStretch,Residu
 // Get current relative volume change = J = det F = lam1 lam2 lam3
 // Need to have this call in material classes to allow small and large deformation material laws
 //  to handle it differently. It is used on archiving to convert Kirchoff Stress/rho0 to Cauchy stress
-double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr) const
+double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const
 {   return mptr->GetRelativeVolume();
 }
 

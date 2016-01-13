@@ -77,5 +77,5 @@ double TractionLaw::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; 
 const char *TractionLaw::MaterialType(void) const { return "Crack Traction Law"; }
 
 // check if traction law material
-bool TractionLaw::isTractionLaw(void) const { return TRUE; }
+int TractionLaw::MaterialStyle(void) const { return TRACTION_MAT; }
 

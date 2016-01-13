@@ -100,7 +100,7 @@ calculations <code>'min'</code> and <code>'max'</code> will be limits of useable
 <li>function - When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in <a href="units.html">alt time units</a>) and/or nodal coordinates (<code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, <code>Z</code>, <code>D</code>, and <code>T</code> in <a href="units.html">length units</a>). The function should evaluate to velocity (in <a href="units.html">velocity units</a>).
 </li>
 
-<li><code>id</code> - this attribute sets an <code>id</code> for the node that can be used to sum only forces on certain nodes when <a href="mpmheader.html#globalarchive">global archiving reaction forces</a>. It must be negative and should avoid IDs used boundary conditions created by <a href="definemesh.html#symmetry">symmetry planes</a>:
+<li><code>id</code> - this attribute sets an <code>id</code> for the node that can be used to sum only forces on certain nodes when <a href="mpmheader.html#globalarchive">global archiving reaction forces</a>. It must be negative and should avoid IDs used boundary conditions created by <a href="definemesh.html#symmetry">symmetry planes</a> or by rigid particles when <a href="mpmheader.html#extraprigid"><code>ExtrapolateRigid</code> command</a> is used, which are:
 <ul class="lev2args">
 <li>-10: plane a minimum x edge</li>
 <li>-11: plane a maximum x edge</li>
@@ -108,6 +108,7 @@ calculations <code>'min'</code> and <code>'max'</code> will be limits of useable
 <li>-21: plane a maximum y edge</li>
 <li>-30: plane a minimum z edge</li>
 <li>-31: plane a maximum z edge</li>
+<li>-40: boundary condition created by extrapolating rigid particles</li>
 </ul>
 </li>
 </ul>

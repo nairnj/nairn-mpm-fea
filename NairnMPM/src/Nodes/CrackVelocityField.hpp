@@ -61,6 +61,8 @@ class CrackVelocityField
         virtual void CopyMassAndMomentumLast(NodalPoint *);
         virtual void RezeroNodeTask6(double) = 0;
         void AddMomentumTask6(int,double,Vector *);
+		void AddRigidVelocityAndFlags(Vector *,double,int);
+		int ReadAndZeroRigidVelocity(Vector *);
 	
 		void AddFtotTask3(int,Vector *);
 		virtual void CopyGridForces(NodalPoint *);
@@ -108,7 +110,7 @@ class CrackVelocityField
 		MatVelocityField *GetMaterialVelocityField(int);
 		virtual double GetTotalMass(bool) const = 0;
 		virtual void AddKineticEnergyAndMass(double &,double &) = 0;
-		virtual double GetVolumeNonrigid(bool) = 0;
+		virtual double GetVolumeNonrigid(bool) const = 0;
 		virtual double GetVolumeTotal(NodalPoint *) const = 0;
 		virtual Vector GetCMatMomentum(bool &,double *) const = 0;
 		virtual Vector GetCMDisplacement(NodalPoint *,bool) const = 0;

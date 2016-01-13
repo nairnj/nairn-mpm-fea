@@ -113,17 +113,17 @@ double LinearHardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime,Hard
 
 // Linear law can do return mapping analytically, except for plane stress
 double LinearHardening::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,
-												double psKred,double Ptrial,double delTime,HardeningAlpha *a,void *p) const
+									double psKred,double Ptrial,double delTime,HardeningAlpha *a,void *p,int offset) const
 {
 	// plane stress is numerical
 	if(np==PLANE_STRESS_MPM)
     {   // The unbracketed one is faster and seems stable for this hardening law
-        return HardeningLawBase::SolveForLambda(mptr,np,strial,stk,Gred,psKred,Ptrial,delTime,a,p);
+        return HardeningLawBase::SolveForLambda(mptr,np,strial,stk,Gred,psKred,Ptrial,delTime,a,p,offset);
     }
     
 	// closed form for plane strain and 3D
 	double lambdak = (strial - SQRT_TWOTHIRDS*(yldred + Epred*a->alpint))/(2.*(Gred + Epred/3.));
-	UpdateTrialAlpha(mptr,np,lambdak,(double)1.,a);
+	UpdateTrialAlpha(mptr,np,lambdak,(double)1.,a,offset);
 	return lambdak;
 }
 

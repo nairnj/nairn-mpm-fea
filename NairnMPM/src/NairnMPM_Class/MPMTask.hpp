@@ -33,8 +33,9 @@ class MPMTask : public CommonTask
 		void TrackTimes(double,double);
 	
         // class methods
-        static int GetPatchNumber();
+        static int GetPatchNumber(void);
         static NodalPoint *GetNodePointer(int,int);
+		static bool GetNumberOfThreads(void);
     
 	protected:
 	
