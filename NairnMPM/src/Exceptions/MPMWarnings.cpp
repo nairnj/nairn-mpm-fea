@@ -93,7 +93,7 @@ void MPMWarnings::BeginStep(void)
 // but, only count once per step, and display message only on the first step this warning occurs
 // return SILENT_WARNING, GAVE_WARNING, or REACHED_MAX_WARNINGS
 // not thread safe due to push_back()
-int MPMWarnings::Issue(int warnKind,int theID) { Issue(warnKind,theID,NULL); }
+int MPMWarnings::Issue(int warnKind,int theID) { return Issue(warnKind,theID,NULL); }
 int MPMWarnings::Issue(int warnKind,int theID,char *comment)
 {	int warnResult=SILENT_WARNING;
 	

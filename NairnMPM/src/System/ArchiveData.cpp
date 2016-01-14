@@ -40,7 +40,7 @@ ArchiveData::ArchiveData()
 	
 	globalFile=NULL;		// path to global results file
 	threeD=FALSE;			// three D calculations
-    SetMPMOrder("mYYYYYNYYYNNNNNNNN");		// byte order + defaults + 16 items
+    SetMPMOrder("mYYYYYNYYYNNNNNNNNN");		// byte order + defaults + 17 items
     SetCrackOrder("mYNNN");					// byte order + defaults + 3 items
 	timeStamp=NULL;			// pointer to header
 	propgationCounter=0;					// counts crack propagation
@@ -307,7 +307,13 @@ void ArchiveData::CalcArchiveSize(void)
 		else
 			mpmRecSize+=sizeof(double);
 	}
-            
+    if(mpmOrder[ARCH_DamageNormal]=='Y')
+	{	if(threeD)
+			mpmRecSize+=3*sizeof(double);
+		else
+			mpmRecSize+=2*sizeof(double);
+	}
+    
     // check what will be there for crack segments
 	
 	/* ARCH_Defaults are
@@ -822,6 +828,25 @@ void ArchiveData::ArchiveResults(double atime)
 			}
 		}
 		
+		// Normal vector for damaged, softening materials
+        if(mpmOrder[ARCH_DamageNormal]=='Y')
+		{	Vector dnorm = theMaterials[mpm[p]->MatID()]->GetDamageNormal(mpm[p],threeD);
+			if(threeD)
+			{	*(double *)app=dnorm.x;
+				app+=sizeof(double);
+				*(double *)app=dnorm.y;
+				app+=sizeof(double);
+				*(double *)app=dnorm.z;
+				app+=sizeof(double);
+			}
+			else
+			{	*(double *)app=dnorm.x;
+				app+=sizeof(double);
+				*(double *)app=dnorm.y;
+				app+=sizeof(double);
+			}
+		}
+
         // padding
         if(mpmRecSize<recSize)
             app+=recSize-mpmRecSize;
@@ -944,6 +969,14 @@ void ArchiveData::ArchiveResults(double atime)
 				}
             }
 			
+			// softening material damage normal
+			if(mpmOrder[ARCH_DamageNormal]=='Y')
+			{	app+=Reverse(app,sizeof(double));
+				app+=Reverse(app,sizeof(double));
+ 				if(threeD)
+					app+=Reverse(app,sizeof(double));
+            }
+
 			// padding
             if(mpmRecSize<recSize)
                 app+=recSize-mpmRecSize;

@@ -754,6 +754,13 @@ double *MaterialBase::CreateAndZeroDoubles(char *pchr,int numDoubles) const
 	return p;
 }
 
+// Damage normal vector
+Vector MaterialBase::GetDamageNormal(MPMBase *mptr,bool threeD) const
+{	Vector dnorm;
+	ZeroVector(&dnorm);
+	return dnorm;
+}
+
 #pragma mark MaterialBase::Methods
 
 // All maternal classes must override to handle their constitutive law

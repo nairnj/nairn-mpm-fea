@@ -140,6 +140,7 @@ History variables are only meaningful for some <a href="definematl.html">materia
   <li>Byte 16: particle heat energy; the value will only be physically correct if all <a href="definematl.html">materials</a> specify their heat capacity</li>
   <li>Byte 17: number of times this particle crossed an element boundary since the last archive time.</li>
   <li>Byte 18: rotational strain; this strain must be archived for visualization tools to be able to plot &quot;transformed&quot; points (<i>i.e.</i>, to stretch and shear plotted points to match the material point deformation state). It is now automatically archived whenever byte 5 is 'Y' (which means full deformation gradient is archived)</li>
+  <li>Byte 19: vector normal to damage (only for softening materials).</li>
   </ul>
   
 The Default value is <code>iYNN...</code>  - <i>i.e.</i> one 'Y' and the rest 'N'
@@ -376,7 +377,7 @@ The Default value is <code>iYNNNN</code>.</dd>
 
 <pre>&lt;ExtrapolateRigid/&gt;</pre>
 
-<p>all <a href="definematl.html#rigid">rigid particles</a> that set boundary conditions for velocity, temperature, or concentration, will extrapolate to the grid and set boundary conditions on those extrapolated values instead of the rigid particle velocities. It is normally used when the rigid particle values vary with position, such as loading in shear.</p>
+<p>all <a href="definematl.html#rigid">rigid particles</a> that set boundary conditions for velocity, temperature, or concentration, will extrapolate to the grid first and then set boundary conditions on those extrapolated values instead of the rigid particle velocities. It is normally used when the rigid particle values vary with position, such as loading in shear.</p>
 
 <h2><a name="stressfreetemp"></a>Stress Free Temperature Comand</h2>
 
