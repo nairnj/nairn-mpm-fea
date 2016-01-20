@@ -517,7 +517,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 
 	// get record size
 	if(CalcArchiveSize(vernum)!=noErr)
-	{	cerr << "Input file format too old for this tool (missing current defaults)" << endl;
+	{	cerr << "Input file format too old for this tool (missing current defaults) or to new (unknown record size)" << endl;
 		return FileAccessErr;
 	}
     
@@ -1336,7 +1336,7 @@ void OutputDouble(double *data,int offset,char delim,bool mustReverse,ostream &o
 }
 
 
-// called when record is done. mpTrue for end of material point record of false for crack record
+// called when record is done. mpData true for end of material point record of false for crack record
 void OutputRecordEnd(ostream &os, bool mpData)
 {
 	switch(fileFormat)
@@ -1421,19 +1421,36 @@ int CalcArchiveSize(int vernum)
 {
     int i;
     
-    // pad if needed, and truncate if not recognized
+    // pad if needed, and truncate if unknowns are all 'N'
     if(strlen(mpmOrder)<2) strcpy(mpmOrder,"mY");
     if(strlen(mpmOrder)<ARCH_MAXMPMITEMS)
     {	for(i=strlen(mpmOrder);i<ARCH_MAXMPMITEMS;i++)
             mpmOrder[i]='N';
     }
+	else if(strlen(mpmOrder)>ARCH_MAXMPMITEMS)
+    {	// File might have more data, but OK if all unknowns are 'N'
+		for(i=ARCH_MAXMPMITEMS;i<strlen(mpmOrder);i++)
+		{	if(mpmOrder[i]!='N')
+				return FileAccessErr;
+		}
+    }
+	// cut of at known items
     mpmOrder[ARCH_MAXMPMITEMS]=0;
 	
+    // pad if needed, and truncate if unknowns are all 'N'
     if(strlen(crackOrder)<2) strcpy(crackOrder,"mY");
     if(strlen(crackOrder)<ARCH_MAXCRACKITEMS)
     {	for(i=strlen(crackOrder);i<ARCH_MAXCRACKITEMS;i++)
             crackOrder[i]='N';
     }
+	else if(strlen(crackOrder)>ARCH_MAXCRACKITEMS)
+    {	// File might have more data, but OK if all unknowns are 'N'
+		for(i=ARCH_MAXCRACKITEMS;i<strlen(crackOrder);i++)
+		{	if(crackOrder[i]!='N')
+				return FileAccessErr;
+		}
+    }
+	// cut of at known items
     crackOrder[ARCH_MAXCRACKITEMS]=0;
 	
 	// check it has defaults
@@ -1538,6 +1555,12 @@ int CalcArchiveSize(int vernum)
 			mpmRecSize+=3*sizeof(double);
 		else
 			mpmRecSize+=sizeof(double);
+	}
+    if(mpmOrder[ARCH_DamageNormal]=='Y')
+	{	if(threeD)
+			mpmRecSize+=3*sizeof(double);
+		else
+			mpmRecSize+=2*sizeof(double);
 	}
 		
     // check what will be there for crack segments

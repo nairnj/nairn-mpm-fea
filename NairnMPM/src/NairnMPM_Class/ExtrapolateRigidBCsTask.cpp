@@ -91,6 +91,11 @@ void ExtrapolateRigidBCsTask::Execute(void)
 		for(i=1;i<=numnds;i++)
 		{   // get node pointer and set values
 			int mi=elref->nodes[i-1];		// 1 based node
+			
+			// it might possible need a velocity field (does nothing in single material mode or if already there)
+			nd[mi]->AddMatVelocityField(0,0);
+			
+			// add BC info
 			nd[mi]->AddRigidBCInfo(mpmptr,fn[i],setFlags,&rvel);
 		}
 	}
