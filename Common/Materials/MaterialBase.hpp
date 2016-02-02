@@ -95,7 +95,7 @@ class MaterialBase : public LinkedObject
 		virtual char *InitHistoryData(char *,MPMBase *mptr);
 		virtual double GetHistory(int,char *) const;
 		double *CreateAndZeroDoubles(char *,int) const;
-		Vector GetDamageNormal(MPMBase *,bool) const;
+		virtual Vector GetDamageNormal(MPMBase *,bool) const;
 	
 		virtual void FillTransportProperties(TransportProperties *);
 		virtual void SetHardeningLaw(char *);
@@ -151,7 +151,7 @@ class MaterialBase : public LinkedObject
 		// accessors
 		virtual const char *MaterialType(void) const;
 		virtual int MaterialTag(void) const = 0;
-		virtual double GetRho(MPMBase *) const;
+		virtual double GetRho(void *) const;
 #ifdef MPM_CODE
         virtual double WaveSpeed(bool,MPMBase *) const = 0;
 		virtual double ShearWaveSpeed(bool,MPMBase *,int) const;
@@ -201,8 +201,8 @@ class MaterialBase : public LinkedObject
 		
 	protected:
 		double rho;
+		double concSaturation,betaI;	// not used in FEA, but needed for compiling
 #ifdef MPM_CODE
-		double concSaturation,betaI;
 		double heatCapacity;			// changed if depends on particle state
         bool artificialViscosity;       // true to false for artifical viscosity
         double avA1,avA2;               // artificial viscosity coefficients

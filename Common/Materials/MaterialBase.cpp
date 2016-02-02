@@ -176,5 +176,6 @@ void MaterialBase::PrintProperty(const char *text,bool rightJustify)
 const char *MaterialBase::MaterialType(void) const { return "Unknown Material Type"; }
 
 // density (NULL is allowed as long as material not using child materials)
-double MaterialBase::GetRho(MPMBase *mptr) const { return rho; }
+// in MPM use a MPMBase *, in FEA always use NULL
+double MaterialBase::GetRho(void *mptr) const { return rho; }
 
