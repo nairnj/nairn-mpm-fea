@@ -26,8 +26,8 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/CommonException.hpp"
 
-// uncomment to make this task parallel
-#define PARALLEL_RESET
+// uncomment to make this task parallel (not ready yet)
+//#define PARALLEL_RESET
 
 #pragma mark CONSTRUCTORS
 
