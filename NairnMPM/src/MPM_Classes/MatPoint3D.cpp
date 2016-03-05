@@ -259,7 +259,7 @@ void MatPoint3D::GetDeformationGradient(double F[][3]) const
 	F[2][1] = 0.5*(ep.yz + wrot.yz);
 }
 
-// Get R.sqrt(B).RT-I = V-I for elastic biot strain rotated into current particle orientation
+// Get sqrt(B)-I = V-I for elastic biot strain rotated into current particle orientation
 // Assume that elastic B matrix is in the alt strain tensor
 Matrix3 MatPoint3D::GetElasticBiotStrain(void)
 {	// Get Sqrt(B)
@@ -268,15 +268,7 @@ Matrix3 MatPoint3D::GetElasticBiotStrain(void)
 	Vector lam;
 	Matrix3 Q = Be.Eigenvectors(lam);
 	Matrix3 LamI = Matrix3(sqrt(lam.x),0.,0.,sqrt(lam.y),sqrt(lam.z));
-	Matrix3 U = LamI.RMRT(Q);
-	
-	// Get rotation matrix
-	Matrix3 F = GetDeformationGradientMatrix();
-	Matrix3 R;
-	Matrix3 Utot = F.RightDecompose(&R,NULL);
-	
-	// Rotate U to V, subtract I and return the result
-	Matrix3 V = U.RMRT(R);
+	Matrix3 V = LamI.RMRT(Q);
 	V(0,0) -= 1.;
 	V(1,1) -= 1.;
 	V(2,2) -= 1.;
