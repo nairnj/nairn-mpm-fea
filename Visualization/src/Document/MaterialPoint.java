@@ -908,13 +908,7 @@ public class MaterialPoint
 		Matrix3 biot = new Matrix3(Math.sqrt(lam[0]),0.,0.,Math.sqrt(lam[1]),Math.sqrt(lam[2]));
 		biot.RMRT(Q);
 		
-		// Get rotation matrix
-		Matrix3 F = getDeformationGradient(doc);
-		Matrix3 R = new Matrix3();
-		F.LeftDecompose(R);
-		
-		// Rotate U to V and subtract I
-		biot.RMRT(R);
+		// subtract I
 		biot.set(0,0,biot.get(0,0)-1.);
 		biot.set(1,1,biot.get(1,1)-1.);
 		biot.set(2,2,biot.get(2,2)-1.);

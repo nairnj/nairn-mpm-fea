@@ -29,8 +29,8 @@ while getopts ":wcmlu" opt; do
     w ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.9.1.jar" ;;
     c ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.9.1.jar" ;;
     m ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.9.1.jar ;;
-    l ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar: ;;
-    u ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar: ;;
+    l ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.9.1.jar ;;
+    u ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.9.1.jar ;;
     \?) echo $usage1
         echo $usage2
         exit 1 ;;
@@ -52,7 +52,7 @@ jar xf ../src/lib/JNPlot2D.jar
 jar xf ../src/lib/JNFramework.jar
 jar xf ../src/lib/jsch-0.1.51.jar
 jar xf ../src/lib/VectorGraphics2D-0.9.1.jar
-jar cvmf Manifest NairnFEAMPMViz.jar *.class geditcom -C Resources .
+jar cvmf Manifest NairnFEAMPMViz.jar *.class geditcom com de -C Resources .
 
 # delete compiled files (or comment out to retain them)
 rm -r Resources
@@ -60,4 +60,4 @@ rm *.class
 rm -r geditcom
 rm -r META-INF
 rm -r com
-em -r de
+rm -r de
