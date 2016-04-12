@@ -82,7 +82,7 @@ void ContactLaw::PrintContactLaw(void) const
 bool ContactLaw::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double *mredDE,double mred,
 											bool getHeating,double contactArea,bool inContact,double deltime,Vector *at) const
 {
-	// no change in base clase that handle single velocity field
+	return false;
 }
 
 // Contact handled here only for perfect interface parts (Dt or Dn < 0) by changing delPi

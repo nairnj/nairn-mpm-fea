@@ -351,6 +351,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,double delt
 			AdjustForSymmetry(ndptr, &delPi, false);
             AddScaledVector(&delPi,&Pc,massRatio);
             inContact = true;
+			comContact = true;
         }
         
         else
@@ -642,9 +643,11 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
         AddScaledVector(&delPi,&rvel,massi);
 		
         // if needed, determine if the surfaces are in contact
+		bool comContact = false;
         if(theContactLaw->IgnoreContact())
         {   // will use -mi(vi-vr) = - pi + mi*vr to match rigid particle velocity
             inContact = true;
+			comContact = true;
         }
         
         else
@@ -771,7 +774,10 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
             if(theContactLaw->ContactIsDone(inContact)) continue;
         }
 		
-		if(theContactLaw->IsFrictionalContact())
+		if(comContact)
+		{	// use delPi found above and no further change needed
+		}
+		else if(theContactLaw->IsFrictionalContact())
 		{	bool getHeating = (callType==UPDATE_MOMENTUM_CALL) && ConductionTask::matContactHeating;
 			if(contactArea<0. && theContactLaw->FrictionLawNeedsContactArea())
 			{	contactArea = GetContactArea(ndptr,voli,rigidVolume,&delta,&norm,&tangDel,&deln,&delt);
