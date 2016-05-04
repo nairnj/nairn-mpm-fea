@@ -41,7 +41,9 @@ TaitLiquid::TaitLiquid() {}
 // then fill in any new initialization.
 TaitLiquid::TaitLiquid(char *matName) : HyperElastic(matName)
 {
-    viscosity = -1.;
+	viscosity.clear();
+	logShearRate.clear();
+	numViscosity = 0;
 	function = NULL;
 }
 
@@ -54,10 +56,19 @@ char *TaitLiquid::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
 	// read properties for this material
     if(strcmp(xName,"viscosity")==0)
-    {	input=DOUBLE_NUM;
-		return UnitsController::ScaledPtr((char *)&viscosity,gScaling,1.e-3);
+    {	viscosity.push_back(0.);
+		numViscosity = viscosity.size();
+		input=DOUBLE_NUM;
+		return UnitsController::ScaledPtr((char *)&viscosity[numViscosity-1],gScaling,1.e-3);
     }
 	
+    else if(strcmp(xName,"logshearrate")==0)
+    {	logShearRate.push_back(0.);
+		int numRates = logShearRate.size();
+		input=DOUBLE_NUM;
+		return UnitsController::ScaledPtr((char *)&logShearRate[numRates-1],gScaling,1.);
+    }
+
 	else if(strcmp(xName,"InitialPressure")==0)
 	{	input=PRESSURE_FUNCTION_BLOCK;
 		return((char *)this);
@@ -72,12 +83,27 @@ char *TaitLiquid::InputMaterialProperty(char *xName,int &input,double &gScaling)
 const char *TaitLiquid::VerifyAndLoadProperties(int np)
 {
 	// make sure all were set
-    if(Kbulk <= 0. || viscosity<0.)
-		return "TaitLiquid material model needs positive K and zero or positive viscosity";
+    if(Kbulk <= 0. || numViscosity<1)
+		return "TaitLiquid material model needs positive K and at least one viscosity";
+	
+	// check number
+	if(numViscosity>1 && numViscosity!=logShearRate.size())
+		return "TaitLiquid material model needs same number of viscosities and log shear rates";
+	
+	// verify sorted
+	int i;
+	for(i=1;i<numViscosity;i++)
+	{	if(logShearRate[i]<logShearRate[i-1])
+			return "TaitLiquid entered shear rates must monotonically increase";
+	}
     
 	// Viscosity in Specific units using initial rho (times 2)
 	// Units mass/(L sec) L^3/mass = L^2/sec
-	TwoEtasp = 2.*viscosity/rho;
+	TwoEtasp = (double *)malloc(numViscosity*sizeof(double));
+	if(TwoEtasp == NULL)
+		return "TaitLiquid material out of memory";
+	for(i=0;i<numViscosity;i++)
+		TwoEtasp[i] = 2.*viscosity[i]/rho;
     
     // heating gamma0
     double alphaV = 3.e-6*aI;
@@ -92,11 +118,21 @@ void TaitLiquid::PrintMechanicalProperties(void) const
 {
 	// print properties
 	PrintProperty("K",Kbulk*UnitsController::Scaling(1.e-6),"");
-	PrintProperty("eta",viscosity*UnitsController::Scaling(1.e3),UnitsController::Label(VISCOSITY_UNITS));
+    PrintProperty("gam0",gamma0,"");
 	PrintProperty("a",aI,"");
     cout << endl;
-    PrintProperty("gam0",gamma0,"");
-    cout << endl;
+	
+	int i;
+	for(i=0;i<numViscosity;i++)
+	{	PrintProperty("eta",viscosity[i]*UnitsController::Scaling(1.e3),UnitsController::Label(VISCOSITY_UNITS));
+		if(numViscosity>1)
+		{	char hline[100];
+			sprintf(hline,"1/(%s)",UnitsController::Label(TIME_UNITS));
+			PrintProperty("log(rate)",logShearRate[i],hline);
+		}
+		cout << endl;
+	}
+	
     if(function!=NULL)
     {   char *expr=function->Expr('#');
         cout << "Initial Pressure  = " << expr << " " << UnitsController::Label(PRESSURE_UNITS) << " (";
@@ -149,13 +185,14 @@ void TaitLiquid::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 #pragma mark TaitLiquid:History Data Methods
 
 // return number of bytes needed for history data
-int TaitLiquid::SizeOfHistoryData(void) const { return 2*sizeof(double); }
+int TaitLiquid::SizeOfHistoryData(void) const { return 3*sizeof(double); }
 
 // Particle J
 char *TaitLiquid::InitHistoryData(char *pchr,MPMBase *mptr)
-{	double *p = CreateAndZeroDoubles(pchr,2);
+{	double *p = CreateAndZeroDoubles(pchr,3);
 	p[J_History]=1.;					// J
 	p[J_History+1]=1.;					// Jres
+	// J_History+2 is shear rate, initially zero
 	return (char *)p;
 }
 
@@ -163,7 +200,7 @@ char *TaitLiquid::InitHistoryData(char *pchr,MPMBase *mptr)
 double TaitLiquid::GetHistory(int num,char *historyPtr) const
 {
     double history=0.;
-	if(num>0 && num<=2)
+	if(num>0 && num<=3)
 	{	double *p=(double *)historyPtr;
 		history=p[num-1];
 	}
@@ -258,23 +295,55 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     // (i.e., divatoric part of the symmetric strain tensor, 2 is for conversion to engineering shear strain)
     Matrix3 shear;
     double c[3][3];
+	double shearRate;
     c[0][0] = (2.*du(0,0)-du(1,1)-du(2,2))/3.;
     c[1][1] = (2.*du(1,1)-du(0,0)-du(2,2))/3.;
     c[2][2] = (2.*du(2,2)-du(0,0)-du(1,1))/3.;
     c[0][1] = 0.5*(du(0,1)+du(1,0));
     c[1][0] = c[0][1];
+	shearRate = c[0][0]*c[0][0] + c[1][1]*c[1][1] + c[2][2]*c[2][2]
+	+ 2.*c[0][1]*c[0][1];
     if(np==THREED_MPM)
     {   c[0][2] = 0.5*(du(0,2)+du(2,0));
         c[2][0] = c[0][2];
         c[1][2] = 0.5*(du(1,2)+du(2,1));
         c[2][1] = c[1][2];
+		shearRate += 2.*(c[0][2]*c[0][2] + c[1][2]*c[1][2]);
         shear.set(c);
     }
     else
         shear.set(c[0][0],c[0][1],c[1][0],c[1][1],c[2][2]);
+	shearRate = sqrt(shearRate)/delTime;
+	
+	// Store shear rate
+	mptr->SetHistoryDble(J_History+2,shearRate,historyOffset);
+	
+	// Get effective visocisy
+	double twoetaspRate;
+	if(numViscosity==1)
+	{	twoetaspRate = TwoEtasp[0];
+	}
+	else
+	{	shearRate = log10(shearRate);
+		if(shearRate < logShearRate[0])
+			twoetaspRate = TwoEtasp[0];
+		else if(shearRate > logShearRate[numViscosity-1])
+			twoetaspRate = TwoEtasp[numViscosity-1];
+		else
+		{	// interpolate
+			for(int i=1;i<numViscosity;i++)
+			{	if(shearRate <= logShearRate[i])
+				{	// between i-1 and i
+					double fract = (logShearRate[i]-shearRate)/(logShearRate[i]-logShearRate[i-1]);
+					twoetaspRate = fract*TwoEtasp[i-1] + (1.-fract)*TwoEtasp[i];
+					break;
+				}
+			}
+		}
+	}
     
     // Get Kirchoff shear stress (over rho0)
-    shear.Scale(J*TwoEtasp/delTime);
+    shear.Scale(J*twoetaspRate/delTime);
     
     // update deviatoric stress
 	Tensor *sp=mptr->GetStressTensor();
@@ -287,10 +356,10 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
         sp->yz = shear(1,2);
     }
     
-    // shear work per unit mass = tau.du = tau.tau*delTime/TwoEtasp
+    // shear work per unit mass = tau.du = tau.tau*delTime/twoetaspRate
     double shearWork = sp->xx*sp->xx + sp->yy*sp->yy + sp->zz*sp->zz + 2.*sp->xy*sp->xy;
     if(np==THREED_MPM) shearWork += 2.*(sp->xz*sp->xz + sp->yz*sp->yz);
-    shearWork *= delTime/TwoEtasp;
+    shearWork *= delTime/twoetaspRate;
     mptr->AddWorkEnergyAndResidualEnergy(workEnergy+shearWork,resEnergy);
     
     // particle isentropic temperature increment dT/T = - J (K/K0) gamma0 Delta(V)/V

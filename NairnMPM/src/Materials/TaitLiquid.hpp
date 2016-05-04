@@ -53,9 +53,11 @@ class TaitLiquid : public HyperElastic
     
     protected:
 		// unique properties
-		double viscosity;
+		vector<double> viscosity;
+		vector<double> logShearRate;
+		int numViscosity;
 	
-        double TwoEtasp;
+        double *TwoEtasp;
 		double gamma0;
 		ROperation *function;
 		static double xPos,yPos,zPos;
