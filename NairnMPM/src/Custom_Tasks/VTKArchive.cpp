@@ -385,10 +385,10 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
                 vtkquant+=6;
                 break;
 				
-				// plastic strain (absolute in Legacy)
-				// New method small strain = archived plastic strain
-				// New method hyperelastic = Biot strain from F - Biot strain from elastic B in plastic strain
-				// Membrane = 0
+			// plastic strain (absolute in Legacy)
+			// New method small strain = archived plastic strain
+			// New method hyperelastic = Biot strain from F - Biot strain from elastic B in plastic strain
+			// Membrane = 0
             case VTK_PLASTICSTRAIN:
 				if(theMaterials[mpnt->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
 				{	// plastic strain is in the tensor already

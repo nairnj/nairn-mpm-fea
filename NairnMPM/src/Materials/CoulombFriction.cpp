@@ -60,8 +60,13 @@ const char *CoulombFriction::VerifyAndLoadProperties(int np)
 	else
 		frictionStyle = FRICTIONAL;
 	
-	if(frictionCoeffStatic>=0. && frictionCoeffStatic<frictionCoeff)
-		return "The static coefficient of friction cannot be lower than the sliding coefficient of friction";
+	// if>0, must be less than dynamic coefficient and convert to frictional is dynamic coeff is zero
+	if(frictionCoeffStatic>0.)
+	{	if(frictionCoeffStatic<frictionCoeff)
+			return "The static coefficient of friction cannot be lower than the sliding coefficient of friction";
+		if(frictionStyle == FRICTIONLESS)
+			frictionStyle = FRICTIONAL;
+	}
 	
 	// must call super class
 	return ContactLaw::VerifyAndLoadProperties(np);

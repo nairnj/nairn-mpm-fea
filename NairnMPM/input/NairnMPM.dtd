@@ -245,7 +245,8 @@
 <!-- Gravity analysis -->
 
 <!ELEMENT	Gravity
-			( BodyXForce?, BodyYForce?, BodyZForce?, GridBodyXForce?, GridBodyYForce?, GridBodyZForce? )>
+			( (BodyXForce?, BodyYForce?, BodyZForce?, GridBodyXForce?, GridBodyYForce?, GridBodyZForce?) |
+				(GridBodyXForce?, GridBodyYForce?, GridBodyZForce?, BodyXForce?, BodyYForce?, BodyZForce?))>
 
 <!-- Custom Tasks -->
 

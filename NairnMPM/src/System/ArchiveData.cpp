@@ -1084,7 +1084,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 	afile << "# vtk DataFile Version 4.2" << endl;
 	
 	// title (Legacy time units ms)
-	sprintf(fline,"step:%d time:%15.7e ms",fmobj->mstep,UnitsController::Scaling(1000.)*atime);
+	sprintf(fline,"step:%d time:%15.7e %s",fmobj->mstep,atime*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
     afile << fline << endl;
 	
 	// header
@@ -1118,7 +1118,6 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 	int i,offset=0;
 	unsigned int q;
 	double *vtkquant=NULL;
-	double scale=1.;
     
     // contact force special case
     int archiveStepInterval=1;
@@ -1228,17 +1227,14 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					break;
 				
 				case VTK_PLASTICSTRAIN:
-					scale=1.;
 				case VTK_STRESS:
-					if(quantity[q]==VTK_STRESS) scale = UnitsController::Scaling(1.e-6);
 				case VTK_STRAIN:
 				case VTK_TOTALSTRAIN:
-					if(quantity[q]==VTK_STRAIN || quantity[q]==VTK_TOTALSTRAIN) scale=1.;
 					// stress Legacy units MPa, strains are absolute
 					if(vtk==NULL) break;
-					afile << scale*vtkquant[offset] << " " << scale*vtkquant[offset+3] << " " << scale*vtkquant[offset+4] << endl;
-					afile << scale*vtkquant[offset+3] << " " << scale*vtkquant[offset+1] << " " << scale*vtkquant[offset+5] << endl;
-					afile << scale*vtkquant[offset+4] << " " << scale*vtkquant[offset+5] << " " << scale*vtkquant[offset+2] << endl;
+					afile << vtkquant[offset] << " " << vtkquant[offset+3] << " " << vtkquant[offset+4] << endl;
+					afile << vtkquant[offset+3] << " " << vtkquant[offset+1] << " " << vtkquant[offset+5] << endl;
+					afile << vtkquant[offset+4] << " " << vtkquant[offset+5] << " " << vtkquant[offset+2] << endl;
 					break;
 				
 				case VTK_DEFGRAD:
