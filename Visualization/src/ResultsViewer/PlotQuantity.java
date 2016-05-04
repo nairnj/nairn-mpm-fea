@@ -139,8 +139,8 @@ public class PlotQuantity extends PlotControl
 	static final int MESHNODEANGLE=1029;		// in expressions - ccw angle in radians from x axis
 	
 	// pop-up menus
-	public JComboBox quant=new JComboBox();
-	public JComboBox cmpnt=new JComboBox();
+	public JComboBox<PlotMenuItem> quant=new JComboBox<PlotMenuItem>();
+	public JComboBox<String> cmpnt=new JComboBox<String>();
 	private int checkMeshItem;
 	
 	// axes

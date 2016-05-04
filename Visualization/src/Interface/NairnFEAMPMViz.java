@@ -20,7 +20,7 @@ public class NairnFEAMPMViz extends JNApplication
 	//----------------------------------------------------------------------------
 	
 	public NairnFEAMPMViz()
-	{	super("NairnFEAMPMViz-OSP","Version 6.2.0",
+	{	super("NairnFEAMPMViz-OSP","Version 6.4.0",
 				"Java application for running and visualizing OSParticulas and NairnFEA calculations.");
 		NFMVPrefs.setWorkspace(chooser);
 		if(!finishLaunching(false))
@@ -156,12 +156,13 @@ public class NairnFEAMPMViz extends JNApplication
 		NFMVPrefs.initializePrefs();
 		
 		// select application options
-		setLookAndFeel(true);
+		// first is to use native LNF and second is menu bar for Mac
+		setLookAndFeel(true,true);
 		JNHelpWindow.setHelpResources("Resources/help.html",JNApplication.appNameReadable+" Help");
 		
 		// optional info strings
 		JNApplication.iconResource="Resources/AboutIcon.png";
-		JNApplication.copyright="Copyright 2004-2015, John A. Nairn, All Rights Reserved";
+		JNApplication.copyright="Copyright 2004-2016, John A. Nairn, All Rights Reserved";
 		JNApplication.author="Written and documented by John A. Nairn";
 		JNApplication.webSite="http://www.cof.orst.edu/cof/wse/faculty/Nairn/";
 		

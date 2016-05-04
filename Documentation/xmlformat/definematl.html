@@ -643,14 +643,14 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <ul>
 <li>K - the zero-pressure, bulk modulus (in <a href="units.html">pressure units</a>)</li>
-<li>viscosity - the liquid viscosity (in <a href="units.html">viscosity units</a>)</li>
+<li>viscosity - liquid viscosity at one shear rate (in <a href="units.html">viscosity units</a>)</li>
 <li>logshearrate - log of shear rate corresponding to a viscosity (in 1/<a href="units.html">time units</a>)</li>
 <li>alpha - the thermal expansion coefficient (in ppm/K)</li>
 <li>InitialPressure - set initial pressure to a <a href="function.html">user-defined function</a> of position that evaluates to a pressure (in <a href="units.html">pressure units</a>). When liquids are modeled in gravity, the function can set to &rho;gh, where h is height of liquid above the position (x, y, z).</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a>.</li>
 </ul>
 
-<p>If one <code>viscosity</code> is given and no <code>logshearrate</code>, the material has constant viscosity. If multiple <code>logshearrate</code> and <code>viscosity</code> commands are used, they define a liquid with viscosity that depends on shear rate. You must enter an equal number of <code>logshearrate</code> and <code>viscosity</code> commands with monotonically increasing shear rates. The liquid's viscosity will be interpolated within the provided points. Shear rates below the minimum or above the maximum provided shear rates will be equal to the viscosity at the minimum or maximum shear rate, respectively.</p> 
+<p>If one <code>viscosity</code> is given and no <code>logshearrate</code>, the material has constant viscosity. If multiple <code>logshearrate</code> and <code>viscosity</code> commands are used, each pair defines points for piecewise linear representation of viscosity as a function of log shear rate. You must enter an equal number of <code>logshearrate</code> and <code>viscosity</code> commands with monotonically increasing shear rates. The liquid's viscosity will be interpolated within the provided points. Shear rates below the minimum or above the maximum provided shear rates will be equal to the viscosity at the minimum or maximum shear rate, respectively.</p> 
 
 <h3>History Variables for Tait Liquid</h3>
 

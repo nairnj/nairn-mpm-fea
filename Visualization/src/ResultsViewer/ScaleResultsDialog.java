@@ -15,8 +15,8 @@ public class ScaleResultsDialog extends JNDialog
 	private static final long serialVersionUID = 1L;
 	
 	private JPanel values=new JPanel();
-	private JComboBox lengthUnits=null;
-	private JComboBox timeUnits=null;
+	private JComboBox<String> lengthUnits=null;
+	private JComboBox<String> timeUnits=null;
 	
 	// initialize
 	ScaleResultsDialog(DocViewer docCtrl)
@@ -27,14 +27,14 @@ public class ScaleResultsDialog extends JNDialog
 		values.setLayout(new GridLayout(2,2));
 		
 		values.add(new JLabel("Length Units:",JLabel.RIGHT));
-		String[] lengthOptions={"nm","µm","mm","cm","m","mils","in","ft"};
-		lengthUnits=new JComboBox(lengthOptions);
+		String[] lengthOptions={"nm","\u03BCm","mm","cm","m","mils","in","ft"};
+		lengthUnits=new JComboBox<String>(lengthOptions);
 		lengthUnits.setSelectedIndex(docCtrl.resDoc.units.lengthScaleIndex());
 		values.add(lengthUnits);
 		
 		values.add(new JLabel("Time Units:",JLabel.RIGHT));
-		String[] timeOptions={"µs","ms","sec"};
-		timeUnits=new JComboBox(timeOptions);
+		String[] timeOptions={"\u03BCs","ms","sec"};
+		timeUnits=new JComboBox<String>(timeOptions);
 		timeUnits.setSelectedIndex(docCtrl.resDoc.units.timeScaleIndex());
 		values.add(timeUnits);
 		

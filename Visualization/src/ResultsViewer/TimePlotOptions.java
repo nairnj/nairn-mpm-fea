@@ -22,7 +22,7 @@ public class TimePlotOptions extends PlotControl
 	private JRadioButton plotAll=new JRadioButton("Total All Materials");
 	private JRadioButton plot1Mat=new JRadioButton("Total Selected Material");
 	
-	private JComboBox xyContour=new JComboBox();
+	private JComboBox<PlotMenuItem> xyContour=new JComboBox<PlotMenuItem>();
 	private JTextField functionText=new JTextField("1");
 	private JLabel plusMinus=new JLabel("+/-");
 	private JTextField rangeText=new JTextField();

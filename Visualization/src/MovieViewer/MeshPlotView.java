@@ -10,6 +10,7 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.awt.font.*;
 import javax.swing.*;
+
 import java.awt.image.*;
 import geditcom.JNFramework.*;
 
@@ -35,7 +36,7 @@ public class MeshPlotView extends JPanel
 	private boolean showMatPts,showSquarePts,showCrackPlanes,showCrackSurfaces;
 	private boolean showMesh,showMeshBCs,showNodeNums,showElemNums,showMatPtNums;
 	private boolean showNodes,showDisplaced,transformPts,clipToParticles;
-	private double mpDiam=50.;
+	private double mpDiam=100.;
 	public boolean repainting=false;
 	private ResultsDocument resDoc;
 	private Graphics2D g2Loc;
@@ -284,26 +285,20 @@ public class MeshPlotView extends JPanel
 	
 	// draw material point and fill with plot color
 	public void drawMaterialPoint(Color theColor,MaterialPoint mpart)
-	{	double diam=0.01*mpDiam*resDoc.cellMinSide*scale;
-		double radiix=resDoc.xscale*diam/2.;
-		double radiiy=resDoc.yscale*diam/2.;
-		g2Loc.setColor(theColor);
-		g2Loc.fill(mpart.particleShape(resDoc,xpt,ypt,radiix,radiiy,showSquarePts,transformPts,mpDiam));
+	{	g2Loc.setColor(theColor);
+		g2Loc.fill(mpart.particleShape(resDoc,xpt,ypt,showSquarePts,transformPts,mpDiam,scale));
 	}
 	
 	// get material point (as draw) dimensions in plot units
 	// (multiply by scale to get in pixels)
-	public Point2D.Double getMpSize()
-	{	double diam=0.01*mpDiam*resDoc.cellMinSide;
-		return new Point2D.Double(resDoc.xscale*diam,resDoc.yscale*diam);
+	public Point2D.Double getMpSize(MaterialPoint mpt,ResultsDocument doc)
+	{	Vector3 pradius = mpt.getParticleRadius(doc);
+		return new Point2D.Double(0.01*mpDiam*pradius.x,0.01*mpDiam*pradius.y);
 	}
 	
 	// draw material point and fill with plot color
 	public void clipMaterialPoint(MaterialPoint mpart,GeneralPath theClip)
-	{	double diam=0.01*mpDiam*resDoc.cellMinSide*scale;
-		double radiix=resDoc.xscale*diam/2.;
-		double radiiy=resDoc.yscale*diam/2.;
-		theClip.append(mpart.particleShape(resDoc,xpt,ypt,radiix,radiiy,showSquarePts,transformPts,mpDiam),false);
+	{	theClip.append(mpart.particleShape(resDoc,xpt,ypt,showSquarePts,transformPts,mpDiam,scale),false);
 	}
 	
 	// transform shape to coordinates and fill in current color

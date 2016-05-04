@@ -29,14 +29,14 @@ public class MovieControls extends JPanel
 	private JButton rewindMov=new JButton();
 	private JButton playMov=new JButton();
 	public TimeSelector selectTime=null;
-	public JComboBox pquant=new JComboBox();
-	public JComboBox pcmpnt=new JComboBox();
+	public JComboBox<PlotMenuItem> pquant=new JComboBox<PlotMenuItem>();
+	public JComboBox<String> pcmpnt=new JComboBox<String>();
 	public boolean disableStartPlot=false;
 	
 	// particle size
 	private JLabel sizeSelected=new JLabel("PS: 100",JLabel.LEFT);
-	public JSlider mpmParticleSize=new JSlider(JSlider.HORIZONTAL,0,100,5);
-	int particleSize=50;
+	public JSlider mpmParticleSize=new JSlider(JSlider.HORIZONTAL,0,200,5);
+	int particleSize=100;
 
 	// axes
 	private String xchar="x";
@@ -114,7 +114,7 @@ public class MovieControls extends JPanel
 		hpos+=meshData.getWidth()+3;
 		
 		// quantity menu
-		JComboBox quant=gResDoc.docCtrl.controls.getQuantityMenu();
+		JComboBox<PlotMenuItem> quant=gResDoc.docCtrl.controls.getQuantityMenu();
 		int n=quant.getItemCount();
 		int i;
 		for(i=0;i<n;i++)
@@ -126,7 +126,7 @@ public class MovieControls extends JPanel
 		hpos+=pquant.getWidth()+3;
 		
 		// component menu
-		JComboBox cmpnt=gResDoc.docCtrl.controls.getComponentMenu();
+		JComboBox<String> cmpnt=gResDoc.docCtrl.controls.getComponentMenu();
 		n=cmpnt.getItemCount();
 		for(i=0;i<n;i++)
 		{	pcmpnt.addItem(cmpnt.getItemAt(i));
@@ -181,7 +181,7 @@ public class MovieControls extends JPanel
 			});
 			particleSize=(int)gResDoc.docCtrl.controls.getParticleSize();
 			mpmParticleSize.setValue(particleSize);
-			mpmParticleSize.setToolTipText("Scale particle size as percent of cell size (default is 50%)");
+			mpmParticleSize.setToolTipText("Scale particle size as percent of cell size (default is 100%)");
 		}
 
 	}
@@ -304,10 +304,10 @@ public class MovieControls extends JPanel
 	// synch quantity and component menu when replot
 	public void syncPlotQuantityMenus()
 	{	disableStartPlot=true;
-		JComboBox plotQuant=resDoc.docCtrl.controls.getQuantityMenu();
+		JComboBox<PlotMenuItem> plotQuant=resDoc.docCtrl.controls.getQuantityMenu();
 		if(plotQuant.getSelectedIndex()!=pquant.getSelectedIndex())
 			pquant.setSelectedIndex(plotQuant.getSelectedIndex());
-		JComboBox plotCmpnt=resDoc.docCtrl.controls.getComponentMenu();
+		JComboBox<String> plotCmpnt=resDoc.docCtrl.controls.getComponentMenu();
 		if(plotCmpnt.getSelectedIndex()!=pcmpnt.getSelectedIndex())
 			pcmpnt.setSelectedIndex(plotCmpnt.getSelectedIndex());
 		JSlider partSize=resDoc.docCtrl.controls.getParticleSizeSlider();

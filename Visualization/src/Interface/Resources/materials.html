@@ -532,6 +532,7 @@ and rubber elastic materials as special cases.</td>
 <li>S2 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
 <li>S3 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
 <li>gamma0 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
+<li>Kmax - maximum increase allowed in bulk modulus (by ratio and dimensionless) (OSParticulas only) (default is 20).</li>
 <li>G0 - the steady-state (or long time) shear modulus (in MPa)</li>
 <li>Gk - the shear modulus for the next relaxation time (in MPa)</li>
 <li>tauk - the next relaxation time (in sec)</li>
@@ -746,6 +747,7 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 <li>S2 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
 <li>S3 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
 <li>gamma0 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
+<li>Kmax - maximum increase allowed in bulk modulus (by ratio and dimensionless) (OSParticulas only) (default is 20).</li>
 <li>G - the shear modulus at zero pressure and the reference temperature (in MPa).</li>
 <li>Hardening - this property selects the <a href="#hardening">hardening law</a>. It should be followed by entering all yielding properties required by the hardening law within the material's definition block.</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a>. This material requires <a href="#common">heat capacity <code>Cv</code></a> and a <a href="commands.html#thermal"><code>StressFreeTemp</code></a> in K.</li>
@@ -781,7 +783,7 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 
 <h2><a name="heaniso"></a>Anisotropic, Elastic-Plastic, Hyperelastic Material (Type=21)</h2>
 
-<p>The material type is a large-strain, anisotropic, hyperelastic material for fabric processing. It is currently in development.</p>
+<p>The material type is a large-strain, anisotropic, hyperelastic material for fabric processing. It is currently in development (in OSParticulus only).</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
@@ -829,7 +831,8 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 
 <ul>
 <li>K - the zero-pressure, bulk modulus (in MPa)</li>
-<li>viscosity - the liquid viscosity (in cP)</li>
+<li>viscosity - liquid viscosity at one shear rate (in cP)</li>
+<li>logshearrate - log of shear rate corresponding to a viscosity (in 1/sec).</li>
 <li>alpha - the thermal expansion coefficient (in ppm/K)</li>
 <li>InitialPressure - set initial pressure to <a href="commands.html#function">user-defined function</a> of
 position that evaluates to a pressure in MPa.
@@ -838,10 +841,15 @@ where h is height of liquid above the position (x, y, z).</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
 
+<p>If one <code>viscosity</code> is given and no <code>logshearrate</code>, the material has constant viscosity. If multiple <code>logshearrate</code> and <code>viscosity</code> commands are used, each pair defines points for piecewise linear representation of viscosity as a function of log shear rate. You must enter an equal number of <code>logshearrate</code> and <code>viscosity</code> commands with monotonically increasing shear rates. The liquid's viscosity will be interpolated within the provided points. Shear rates below the minimum or above the maximum provided shear rates will be equal to the viscosity at the minimum or maximum shear rate, respectively.</p> 
+
 <h3>History Variables for Tait Liquid</h3>
 
+<p>The following history variables are stored:</p>
 <ol>
-<li>Stores the volumetric strain ratio J = V/V<sub>0</sub> (<i>i.e.</i>, the determinant of the deformation gradient).</li>
+<li>Volumetric strain ratio J = V/V<sub>0</sub> (<i>i.e.</i>, the determinant of the deformation gradient).</li>
+<li>Volumetric residual strain ratio J<sub>res</sub>.</li>
+<li>Shear rate.</li>
 </ol>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
@@ -1050,30 +1058,44 @@ It is ignored if it is negative (default is -1)</li>
 
 <a name="adhesive"></a><h2>Coulomb Friction with Adhesion Contact Law</h2>
 
-<p>This law implements Coulomb friction law with adhesion. If the surface are in contact,
+<p>This law implements Coulomb friction law with adhesion (in OSParticulus only). If the surface are in contact,
 the frictional sliding force is
 </p>
 
 <blockquote>
-<code>S<sub>slide</sub> = S<sub>a</sub> + µ N</code>
+<code>S<sub>slide</sub> = S<sub>a</sub> + (µ +k&Delta;v)N</code>
 </blockquote>
 
-<p>where S<sub>a</sub> is the tangential adhesion strength and µ is the dynamic coefficient of friction. If the surfaces are not in contact, the surface continue to stick as long as:</p>
+<p>where S<sub>a</sub> is the tangential adhesion strength and µ is the coefficient of friction, and k allows the dynamic coefficient of friction to depend linearly on sliding velocity. The µ term models transition from static to dynamic coefficient of friction by</p>
+
+<blockquote>
+<code>µ = (µ<sub>s</sub> vhalf + µ<sub>d</sub> v)/(vhalf + v)</code>
+</blockquote>
+
+<p>where <code>vhalf</code> is velocity for which coefficient of friction is half way from static coefficient of friction (µ<sub>s</sub>) to dynamic coefficient of friction (µ<sub>d</sub>). The default is <code>vhalf</code>=0, which corresponds to instantaneous drop from µ<sub>s</sub> to µ<sub>d</sub> at the onset of sliding.</p>
+
+<p>If the surfaces are not in contact, the surface continue to stick as long as:</p>
 
 <blockquote>
 <code>(S<sub>stick</sub>/S<sub>a</sub>)<sup>2</sup> + (N/N<sub>a</sub>)<sup>2</sup> < 1</code>
 </blockquote>
 
-<p>where N<sub>a</sub> is the normal adhesion strength. If this criterion is not met, the suraces move freely with zero tractions. The properties for this law are:</p>
+<p>where N<sub>a</sub> is the normal adhesion strength. If this criterion is not met (or if either Sa or Na are zero), the surfaces move freely with zero tractions. The properties for this law are:</p>
 
 <ul>
 <li><code>coeff</code> for the dynamic coefficient of friction (default is 0).</li>
 <li><code>coeffStatic</code> for the static coefficient of friction (default is -1).</li>
 <li><code>Sa</code> for tangential adhesion strength (in MPa) (default is 0).</li>
 <li><code>Na</code> for normal adhesion strength (in MPa) (default is 0).</li>
+<li>kmu - slope of coefficient of friction vs. velocity (in sec/mm) (default is 0).</li>
+<li>vhalf - velocity at which µ is half way from µ<sub>s</sub> to µ<sub>d</sub> (in mm/sec) (default is 0).</li>
 </ul>
 
-<p>If the optional static coefficient of friction is changed to a positive number, it must be greater than the dynamic coefficient. The sliding will begin when it sliding force overcomes the frictional force calculated from static coefficient, but thereafter will slide with force found using the dynamic coefficient of friction.</p>
+<p>If the optional static coefficient of friction is changed to a positive number,
+it must be greater than the dynamic coefficient. The sliding will begin when
+the sliding force overcomes the frictional force calculated
+from static coefficient and v=0, but thereafter will slide with force
+found using the velocity dependent dynamic coefficient of friction.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 

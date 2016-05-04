@@ -179,7 +179,7 @@ public class JNUnits
 		if(outputAltTimeScale>999.)
 			setGlobalTimeUnits("s");
 		else if(outputAltTimeScale<.1)
-			setGlobalTimeUnits("µs");
+			setGlobalTimeUnits("\u03BCs");			// microseconds
 		else
 			setGlobalTimeUnits("ms");
 	}
@@ -220,7 +220,7 @@ public class JNUnits
 				ccLengthScale = 1.e-6;
 				break;
 			case 1:
-				setLengthUnits("µm");
+				setLengthUnits("\u03BCm");					// micro meters
 				lengthScale = outputLengthScale*1.e3;
 				ccLengthScale = 1.e-3;
 				break;
@@ -266,7 +266,7 @@ public class JNUnits
 		massScaleIndex = newScale;
 		switch(newScale)
 		{	case 0:
-				setMassUnits("µg");
+				setMassUnits("\u03BCg");						// micrograms
 				massScale = outputMassScale*1.e6;
 				break;
 			case 1:
@@ -301,7 +301,7 @@ public class JNUnits
 		timeScaleIndex = newScale;
 		switch(newScale)
 		{	case 0:
-				setTimeUnits("µs");
+				setTimeUnits("\u03BCs");						// microseconds
 				timeScale = outputTimeScale*1000.;
 				altTimeScale = outputAltTimeScale*1000.;
 				break;
@@ -369,7 +369,7 @@ public class JNUnits
 				ccForceScale = 1.e-9;
 				break;
 			case 1:
-				setForceUnits("µN");
+				setForceUnits("\u03BCN");				// micro newtons
 				forceScale = outputForceScale*1.e6;
 				ccForceScale = 1.e-6;
 				break;
@@ -462,7 +462,7 @@ public class JNUnits
 				energyScale = outputEnergyScale*1.e9;
 				break;
 			case 1:
-				setEnergyUnits("µJ");
+				setEnergyUnits("\u03BCJ");					// micro joules
 				energyScale = outputEnergyScale*1.e6;
 				break;
 			case 2:
@@ -507,7 +507,7 @@ public class JNUnits
 				break;
 			case 2:
 			default:
-				setStrainUnits("µstr");
+				setStrainUnits("\u03BCstr");				// micro strain
 				strainScale = outputStrainScale*1.e4;
 				break;
 		}

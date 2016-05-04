@@ -33,7 +33,7 @@ public class LaunchRemoteCalc extends JNDialog
 	private JRadioButton overWrite = new JRadioButton("Overwrite");
 	private JRadioButton createUnique = new JRadioButton("Create Unique");
 	private JRadioButton clearParent = new JRadioButton("Clear Parent");
-	private JComboBox doDownload;
+	private JComboBox<String> doDownload;
 	
 	private String remoteFolder;
 	private String remoteFileName;
@@ -155,7 +155,7 @@ public class LaunchRemoteCalc extends JNDialog
 		
 		c.gridx=2;
 		String [] lines={"Download to this Folder","Do not Download","Home Directory on Server"};
-		doDownload=new JComboBox(lines);
+		doDownload=new JComboBox<String>(lines);
 		gridbag.setConstraints(doDownload,c);
 		doDownload.setSelectedIndex(initDown);
 		doDownload.setFocusable(false);

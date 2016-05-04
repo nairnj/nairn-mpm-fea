@@ -85,6 +85,7 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 <li><a href="#timeplot">MPM Time Plots</a></li>
 <li><a href="#meshplots">Mesh Plots of MPM or FEA Results</a></li>
 <li><a href="#mesh2Dplots">Plots Along Mesh Contours</a></li>
+<li><a href="#pcolors">Plot Colors</a></li>
 <li><a href="#viz3D">Visualizing 3D Simulations</a></li>
 </ul>
 </li>
@@ -419,15 +420,15 @@ that type of plot. See information on that plot type for details.
 to plot the results. The plot will appear in a new window.
 </li>
 
+<li>To <a href="#pcolors">customize plot colors</a>, use the "Colors" tab of the Preferences window.</li>
+
 <li>To get a new plot, select new options and click the &quot;Plot&quot; button again
 (which may have changed to &quot;Replot&quot; or &quot;Add Plot&quot;, depending on plot type
 and if the previous plot window is still open) or use the plotting menu command or icon.
 </li>
 
-<li>You can use the Preferences window to change colors used in the plots.</li>
-
 <li>The &quot;Scale Results...&quot; menu command can scale length and time units. It only
-affect the mesh, particle locations, velocities, and concentration gradients. Stress remain in
+affects the mesh, particle locations, velocities, and concentration gradients. Stresses remain in
 MPa, strains in %, and energies in J. When you select new units, all current plot window
 will close and have to be reopened to see the new units.</li>
 
@@ -556,24 +557,25 @@ the &quot;Add Plot&quot; button (or using the menu command or icon).
 <ul>
 <li>Double click on a plot object to inspect and change its properties. For example,
 you can change the plot color or style and any curve, change the limits and tick marks
-on either axis, or change the axis labels (more options will be available in the future).
+on either axis, or change the axis labels (more options will be available in the future). You can also open the inspector using the "Inspector" command int he "Edit" menu.
 </li>
 
-<li>The &quot;Save PDF Graphics...&quot; command in the &quot;File&quot; menu will
+<li>The &quot;Save Plot File...&quot; command in the &quot;File&quot; menu will
+export a <code>ppltj</code> file of the plot. This plot can be opened in a separate plotting application called PublishPlotJ where it can be editing, printed, exported to other forms, or data can be accessed. Contact developer of NairnFEAMPMViz for a copy of PublishPlotJ if you want to use this feature.
+</li>
+
+<li>The &quot;Export&rarr;JPG, BMP, or PNG Graphics...&quot; command in the &quot;File&quot; menu will
+export a bitmapped graphics file of the plot (the type exported is determined by the extension
+you proved when naming the save file; if no extension is provided, it will exported as a
+<code>png</code> file).
+</li>
+
+<li>The &quot;Export&rarr;PDF Graphics...&quot; command in the &quot;File&quot; menu will
 export a <code>pdf</code> file of the plot.
 </li>
 
-<li>The &quot;Save JPG, BMP, or PNG Graphics...&quot; command in the &quot;File&quot; menu will
-export a bitmapped graphics file of the plot (the type exported is determined by the extension
-you proved when naming the save file; if no extension is provided, it will exported as a
-<code>png</code> file.
-</li>
-
-<li>The &quot;Export PublishPlotJ or Table...&quot; command in the &quot;File&quot; menu will export either
-a file that can be read by PublishPlotJ (or PublishPlot on Mac) or  a file with a tab-delimited table of
-plot data. The type of expport is determined by the extension on the selected file name; use "ppltj" for a 
-PublishPlotJ file or anything else for a table export. The PublishPlotJ export will include all data
-and all plot annotations; a table export will have all data, but no annotations.
+<li>The &quot;Export&rarr;Table...&quot; command in the &quot;File&quot; menu will export a file with a tab-delimited table of
+plot data. The table can be read by any spread-sheet software.
 </li>
 
 <li>The &quot;Import...&quot; command in the &quot;File&quot; menu can import any tab-delimited
@@ -587,20 +589,20 @@ can be in additional columns. For example, any exported plot can be imported lat
 <li>The &quot;Print...&quot; command in the &quot;File&quot; menu will print the current plot.
 </li>
 
+<li>You can click on any plot data to select it. Once selected, you can cut, copy,
+paste, or delete the plot. A copied plot can be pasted into a different time plot window or into any
+text-editing application. The pasted text will be a tab-delimited table of the results.
+</li>
+
 <li>The &quot;Annotations&quot; submenu in the &quot;Edit&quot; menu will add various plot
-annotaions to the plot suach as labels, arrows, and shapes. Once added you can move them around
-the plot of click the end points to reorient and resize them. You can double click to open
+annotations to the plot suach as labels, arrows, and shapes. You can also add labels and annotations using the icons in the tool bar (click and hold on symbols icon to get a menur for selecting the type of annotation). Once annotations are added you can move them around
+the plot or click the end points to reorient and resize them. You can double click to open
 the plot inspector to change more properties of the annotations (and to change the text
 of plot labels).</li>
 
 <li>The &quot;Arrange&quot; submenu in the &quot;Edit&quot; menu lets you rearrange the
 order of plots and plot annotations (but note that plot symbols always plot in their own
 layer a top of all other objects.</li>
-
-<li>You can click on any plot data to select it. Once selected, you can cut, copy,
-paste, or delete the plot. A copied plot can be pasted into a different time plot window or into any
-text-editing application. The pasted text will be a tab-delimited table of the results.
-</li>
 
 <li>If you use copy command when no plot is selected, it will copy all data.
 The copied data can be pasted into another time plot window or into any
@@ -619,8 +621,10 @@ application that accepts dragged text. The dropped text will be tab-delimited ta
 plot window or any application that accepts dragged text.
 </ll>
 
+<li>As you move the mouse around the window, the x-y location in current plot coordinates will show in the tool bar.
+
 <li>You can resize the plot window to resize the plot. All features of the plot will
-scale as the window is resized.
+scale as the window is resized. The size of the plot will show in the tool bar. The number in parentheses is ratio of large to smaller dimension.
 </li>
 </ul>
 
@@ -739,6 +743,25 @@ new options (while the previous plot window is still open) and then clicking the
 <p>Once a mesh contour plot is open, there are numerous options
 (see <a href="#2Doptions">above</a> for details).
 </p>
+
+<p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>
+
+<h2><a name="pcolors"></a>Customizing Plot Colors<hr></h2>
+
+<p>You can use the "Colors" tab of the Preferences window to customize available color options in the plot. The current options are:</p>
+
+<ul>
+
+<li>Color Plot Spectrum: this section picks colors used for plot data and style of those colors.
+
+<ul>
+<li>Type: Pick color rainbow from low value to high value.</li>
+<li>Contours: Pick number of contours to use within the choosen rainbow, which will be total number of colors in the plot. If this value is 1, the colors will be continous resulting in smooth transitions in the plot with many colors.</li>
+<li>Subelements: For <a href="#meshplots">mesh plots</a> based on nodal data, each element is divided into n X n subelements and then nodal values are extrapolated to those elements and plotted. If n=1, each element gets an average value and a single color. As n increase, the plots get smoother, but also get slower.</li>
+</ul></li>
+
+<li>Plot Elements: this section has color wells to select colors used for various elements in the plot.</li>
+</ul>
 
 <p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>
 

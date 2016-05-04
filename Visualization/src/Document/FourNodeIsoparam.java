@@ -107,8 +107,8 @@ public class FourNodeIsoparam extends ElementBase
 		for(i=0;i<4;i++)
 			asr=asr+sfxn[i]*eNodes[i].x;
 			
-		/* Load J(-1)(1,1) ¶Ni/¶xi + J(-1)(1,2) ¶Ni/¶eta into xiDeriv[i]
-				J(-1)(2,1) ¶Ni/¶xi + J(-1)(2,2) ¶Ni/¶eta into etaDeriv[i]
+		/* Load J(-1)(1,1) dNi/dxi + J(-1)(1,2) dNi/deta into xiDeriv[i]
+				J(-1)(2,1) dNi/dxi + J(-1)(2,2) dNi/deta into etaDeriv[i]
 				Ni/r into asbe[i] */
 		for(i=0;i<4;i++)
 		{	temp1=xiDeriv[i];

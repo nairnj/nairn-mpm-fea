@@ -32,7 +32,8 @@ public class ReadArchive
 	static final int ARCH_HeatEnergy=15;
 	static final int ARCH_ElementCrossings=16;
 	static final int ARCH_RotStrain=17;
-	static final int ARCH_MAXMPMITEMS=18;
+	static final int ARCH_DamageNormal=18;
+	static final int ARCH_MAXMPMITEMS=19;
 
 	// Archiving options for crack segments
 	static final int ARCH_JIntegral=2;
@@ -250,6 +251,10 @@ public class ReadArchive
 		if(mpmOrder[ARCH_RotStrain]=='Y')
 		{	mpmRecSize+=sizeofDouble;
 			if(doc.is3D()) mpmRecSize+=2*sizeofDouble;
+		}
+		if(mpmOrder[ARCH_DamageNormal]=='Y')
+		{	mpmRecSize+=2*sizeofDouble;
+			if(doc.is3D()) mpmRecSize+=sizeofDouble;
 		}
 			   
 		// check what will be there for crack segments

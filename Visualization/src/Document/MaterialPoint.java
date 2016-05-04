@@ -36,7 +36,7 @@ public class MaterialPoint
 	public double[] eps;
 	public double[] eplast;
 	public double[] erot;
-	public double sizeX,sizeY,sizeZ;
+	public double[] dnorm;
 	
 	private double plotValue;
 	public Color plotColor;
@@ -52,7 +52,7 @@ public class MaterialPoint
 		eps=new double[6];
 		eplast=new double[6];
 		erot=new double[3];
-		sizeX = -1.;
+		dnorm=new double[3];
 	}
 	
 	//---------------------------------------------------------------------
@@ -73,16 +73,13 @@ public class MaterialPoint
 	
 	// return shape for the particle at current location
 	// (xpt,ypt) are pixel locations and (radiix,radiiy) are pixel sizes
-	public Shape particleShape(ResultsDocument resDoc,double xpt,double ypt,double radiix,double radiiy,
-								boolean showSquarePts,boolean transformPts,double mpDiam)
+	public Shape particleShape(ResultsDocument resDoc,double xpt,double ypt,boolean showSquarePts,
+								boolean transformPts,double mpDiam,double scale)
 	{	// depends on setting
+		Vector3 pradius = getParticleRadius(resDoc);
+		double radiix = 0.01*mpDiam*pradius.x*scale;
+		double radiiy = 0.01*mpDiam*pradius.y*scale;
 		
-		// adjust size
-		if(sizeX>0.)
-		{	radiix = radiix*sizeX/(0.01*mpDiam);
-			radiiy = radiiy*sizeY/(0.01*mpDiam);
-		}
-	    
 		if(showSquarePts)
 		{	if(transformPts)
 			{	// This works in Java 1.5
@@ -331,6 +328,21 @@ public class MaterialPoint
 		{	erot[0]=0.;		// assume initial angles were all zero
 			erot[1]=0.;
 			erot[2]=0.;
+		}
+		
+		// get damage normal
+		if(mpmOrder[ReadArchive.ARCH_DamageNormal]=='Y')
+		{	dnorm[0]=bb.getDouble();
+			dnorm[1]=bb.getDouble();
+			if(has3D)
+				dnorm[2]=bb.getDouble();
+			else
+				dnorm[2]=0.;
+		}
+		else
+		{	dnorm[0]=0.;		// assume initial angles were all zero
+			dnorm[1]=0.;
+			dnorm[2]=0.;
 		}
 	}
 	
@@ -804,13 +816,32 @@ public class MaterialPoint
 	// index to material type (zero based)
 	public int materialIndex() { return material-1; }
 	
-	// set dimensionless size for membrane particles
-	public void setDimensionlessSize(double sx,double sy,double sz)
-	{	sizeX = sx;
-		sizeY = sy;
-		sizeZ = sz;
+	// number
+	public void setNum(int ptNum) { num = ptNum; }
+	
+	// get particle radius from document
+	public Vector3 getParticleRadius(ResultsDocument doc)
+	{	return doc.pointDims.get(num-1);		
 	}
 	
+	// Get deformed volume
+	public double getDeformedVolume(ResultsDocument doc)
+	{	Matrix3 F = getDeformationGradient(doc);
+		double J = F.determinant();
+		
+		double undeformedVolume = 1.;
+		Vector3 particleRadius = getParticleRadius(doc);
+		if(doc.is3D())
+		{	undeformedVolume = particleRadius.x*particleRadius.x*particleRadius.z;
+		}
+		else
+		{	// volume per thickness (2D) or per radian (axisymmetric)
+			undeformedVolume = particleRadius.x*particleRadius.y;
+			if(doc.isAxisymmetric()) undeformedVolume *= x;
+		}
+		return J*undeformedVolume;
+	}
+
 	// get biot strain from total strain in biot matrix
 	public Matrix3 getBiotStrain(ResultsDocument doc)
 	{	Matrix3 F = getDeformationGradient(doc);
@@ -904,7 +935,7 @@ public class MaterialPoint
 		}
 		Matrix3 Q = B.Eigenvectors(lam);
 		
-		// put U = sqrt(B) in output matrix
+		// put V = sqrt(B) in output matrix
 		Matrix3 biot = new Matrix3(Math.sqrt(lam[0]),0.,0.,Math.sqrt(lam[1]),Math.sqrt(lam[2]));
 		biot.RMRT(Q);
 		

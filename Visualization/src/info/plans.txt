@@ -1,23 +1,10 @@
 -------------------------------------------------------------------
-NairnFEAMPMVizOSP - changes not migrated to NairnFEAMPMViz yet
+NairnFEAMPMVizOSP Plans
 -------------------------------------------------------------------
 
-¥ timeplot object property in scripting (only global and crack for now)
-
-¥ can abort scripts while running correctly
-
-¥ Can click to zoom on plot location
-
-¥ Particle size slider in movie plots (only if clipped for mesh plots)
-
-¥ 2D plots can add more annotation, arrange objects, and export PDF
-
-¥ Remove server execution and runRemote in scripting
-
--------------------------------------------------------------------
-NairnFEAMPMViz Plans
--------------------------------------------------------------------
-
+¥ Correctly abort running calculations in Windows. May have to wait until know how
+     to run without using cygwin
+     
 ¥ Remote execution
 	Background submits (use submit commands instead of run, and no download)
 		add exception until it is implemented
@@ -36,7 +23,6 @@ NairnFEAMPMViz Plans
 	Silent, heat flux, concentration flux, temperature, concentration
 	
 ¥ Preferences
-	Sub-element density in mesh plots
 	Spectra inversion and brightness
 	See NairnFEAMPM preferences for more
 	Support setup of multiple servers

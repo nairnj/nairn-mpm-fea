@@ -393,12 +393,12 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 	
 		else if(obj.getName().equals("PlotQuantityChanged"))
 		{	int ctrlPlotType=((DocViewer)document).controls.getPlotType();
-			JComboBox qmenu = (JComboBox)obj.getUserInfo();
+			JComboBox<?> qmenu = (JComboBox<?>)obj.getUserInfo();
 			if(qmenu==movieControls.pquant)
 			{	// changed in plot window, synch with results window
 				if(ctrlPlotType==getPlotType())
 				{	int newIndex=movieControls.pquant.getSelectedIndex();
-					JComboBox plotQuant=((DocViewer)document).controls.getQuantityMenu();
+					JComboBox<PlotMenuItem> plotQuant=((DocViewer)document).controls.getQuantityMenu();
 					if(plotQuant.getSelectedIndex()!=newIndex)
 						plotQuant.setSelectedIndex(newIndex);
 				}
@@ -409,7 +409,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 			{	// changed in plot window, synch with results window
 				if(ctrlPlotType==getPlotType())
 				{	int newIndex=movieControls.pcmpnt.getSelectedIndex();
-					JComboBox plotCmpnt=((DocViewer)document).controls.getComponentMenu();
+					JComboBox<String> plotCmpnt=((DocViewer)document).controls.getComponentMenu();
 					if(plotCmpnt.getSelectedIndex()!=newIndex)
 						plotCmpnt.setSelectedIndex(newIndex);
 				}

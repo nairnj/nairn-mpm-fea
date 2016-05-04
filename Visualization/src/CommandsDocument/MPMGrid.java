@@ -13,6 +13,7 @@ public class MPMGrid
 	private CmdViewer doc;
 	private int[] ncells;
 	private double[] ratios;
+	private int[] rstyle;
 	private double[] symmin;
 	private double[] symmax;
 	private boolean[] hasmin;
@@ -30,6 +31,7 @@ public class MPMGrid
 		doc = cmdDoc;
 		ncells = new int[3];
 		ratios = new double[3];
+		rstyle = new int[3];
 		symmin = new double[3];
 		symmax = new double[3];
 		hasmin = new boolean[3];
@@ -40,9 +42,12 @@ public class MPMGrid
 	{	ncells[0] = 0;
 		ncells[1] = 0;
 		ncells[2] = 0;
-		ratios[0] = 1.;
-		ratios[1] = 1.;
-		ratios[2] = 1.;
+		ratios[0] = -1.;
+		ratios[1] = -1.;
+		ratios[2] = -1.;
+		rstyle[0] = -1;
+		rstyle[1] = -1;
+		rstyle[2] = -1;
 		thickness = -1.;
 		hasmin[0] = false;
 		hasmin[1] = false;
@@ -69,13 +74,46 @@ public class MPMGrid
 	    
 	    // number of cells
 	    ncells[axis] = doc.readIntArg(args.get(1));
-	    ratios[axis] = 1.;
 	    
-	    // symmetry planes
+		// if #2 is "R-Style" then get tartan grid parameters
+		hasmin[axis] = false;
+		hasmax[axis] = false;;
+	    ratios[axis] = -1.;
+	    rstyle[axis] = -1;
+	    int argnum = 2;
 	    if(args.size()>2)
-	    {	double sym = doc.readDoubleArg(args.get(2));
+	    {	Object rarg = doc.readStringOrDoubleArg(args.get(2));
+			if(rarg.getClass().equals(String.class))
+			{	String theText = (String)rarg;
+				
+				if(!theText.toLowerCase().equals("r-style"))
+			    	throw new Exception("The second parameter is neither a number nor 'R-Style':\n"+args);
+					
+				// read next two if there, for Tartan R and style
+				if(args.size()<4)
+					throw new Exception("Entering 'R-Style' options but no R provided in next parameter:\n"+args);
+				ratios[axis] = doc.readDoubleArg(args.get(3));
+				if(ratios[axis]<1.)
+					throw new Exception("'R-Style' R value must be >=1:\n"+args);
+				
+				// optional style
+				if(args.size()>4)
+				{	HashMap<String,Integer> options = new HashMap<String,Integer>(10);
+					options.put("geometric", new Integer(0));
+					options.put("linear", new Integer(1));
+					rstyle[axis] = doc.readIntOption(args.get(4),options,"MPM update method");
+				}
+				
+				// symmetry block start
+				argnum = 5;
+			}
+		}
+
+		// symmetry planes
+	    if(args.size()>argnum)
+	    {	double sym = doc.readDoubleArg(args.get(argnum));
 	    	int symdir = -1;
-	    	if(args.size()>3) symdir = doc.readIntArg(args.get(3));
+	    	if(args.size()>argnum+1) symdir = doc.readIntArg(args.get(argnum+1));
 	    	if(symdir==-1)
 	    	{	hasmin[axis]=true;
 	    		symmin[axis]=sym;
@@ -86,8 +124,8 @@ public class MPMGrid
 	    	}
 	    	else
 	    		throw new Exception("'"+args.get(0)+"' has invalid symmetry direction:\n"+args);
-	    	if(args.size()>4)
-	    	{	sym = doc.readDoubleArg(args.get(4));
+	    	if(args.size()>argnum+2)
+	    	{	sym = doc.readDoubleArg(args.get(argnum+2));
 	    		if(symdir==-1)
 	    		{	hasmax[axis]=true;
 	    			symmax[axis]=sym;
@@ -177,19 +215,29 @@ public class MPMGrid
 		
 		// Horiz, Vert, Depth elements
 		xml.append("      <Horiz nx='"+ncells[0]+"'");
+		if(ratios[0]>0.) xml.append(" rx='"+ratios[0]+"'");
+		if(rstyle[0]>=0) xml.append(" style='"+rstyle[0]+"'");
 		if(hasmin[0]) xml.append(" symmin='"+symmin[0]+"'");
 		if(hasmax[0]) xml.append(" symmax='"+symmax[0]+"'");
 		xml.append("/>\n");
 		xml.append("      <Vert ny='"+ncells[1]+"'");
+		if(ratios[1]>0.) xml.append(" ry='"+ratios[1]+"'");
+		if(rstyle[1]>=0) xml.append(" style='"+rstyle[1]+"'");
 		if(hasmin[1]) xml.append(" symmin='"+symmin[1]+"'");
 		if(hasmax[1]) xml.append(" symmax='"+symmax[1]+"'");
 		xml.append("/>\n");
 		if(doc.isMPM3D())
 		{	xml.append("      <Depth nz='"+ncells[2]+"'");
+			if(ratios[2]>0.) xml.append(" rz='"+ratios[2]+"'");
+			if(rstyle[2]>=0) xml.append(" style='"+rstyle[2]+"'");
 			if(hasmin[2]) xml.append(" symmin='"+symmin[2]+"'");
 			if(hasmax[2]) xml.append(" symmax='"+symmax[2]+"'");
 			xml.append("/>\n");
 		}
+		
+		// check added xml
+		String more = doc.getXMLData("grid");
+		if(more != null) xml.append(more);
 		
 		// End Grid
 		xml.append("    </Grid>\n");

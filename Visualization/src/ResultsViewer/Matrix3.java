@@ -374,6 +374,16 @@ public class Matrix3
 	public boolean getIs2D() { return is2D; }
 	public void setIs2D(boolean setting) { is2D = setting; }
 	
+	// determinant
+	public double determinant()
+	{	if(is2D)
+		{	return m[2][2]*(m[0][0]*m[1][1]-m[1][0]*m[0][1]);
+		}
+		return m[0][0]*(m[1][1]*m[2][2]-m[2][1]*m[1][2])
+			-m[1][0]*(m[0][1]*m[2][2]-m[2][1]*m[0][2])
+			+m[2][0]*(m[0][1]*m[1][2]-m[1][1]*m[0][2]);
+	}
+
 	// ----------------------------------------------------------------------------
 	// Calculates the eigensystem of a real symmetric 2x2 matrix
 	//	    [ A  B ]

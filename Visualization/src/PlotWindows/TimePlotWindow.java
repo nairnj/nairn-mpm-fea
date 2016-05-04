@@ -148,7 +148,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 		// variables while decoding
 		byte[] version=new byte[4];
 		ByteBuffer bb;
-		MaterialPoint mpm=new MaterialPoint(ptNum+1);
+		MaterialPoint mpm=new MaterialPoint(ptNum);
 		
 		// format
 		char[] mpmOrder=new char[ReadArchive.ARCH_MAXMPMITEMS];
@@ -248,10 +248,12 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			// read each point
 			total=0.;
 			int numadded=0;
+			double totalVol = 0.;
 			for(p=0;p<nummpms;p++)
 			{	// read record in the file and convert to MaterialPoint class
 				bb.position(headerLength+p*resDoc.recSize);
 				mpm.readRecord(bb,mpmOrder,resDoc.units,resDoc.is3D());
+				mpm.setNum(p+1);
 			
 				// exit if crack or continue if do not want this material
 				if(mpm.material<0) break;
@@ -260,12 +262,22 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 						continue;
 				}
 				
-				// find particle property and add to total
-				total+=mpm.getForPlot(component,angle,resDoc);
+				// get total or get volume-weighted average
+				double pValue = mpm.getForPlot(component,angle,resDoc);
+				if(!average)
+				{	total += pValue;
+				}
+				else
+				{	double Vp = mpm.getDeformedVolume(resDoc);
+					total += Vp*pValue;
+					totalVol += Vp;
+				}
+				
 				numadded++;
 			}
 			
-			if(average && numadded>0) total/=(double)numadded;
+			// convert to average by dividing by total volume
+			if(average && numadded>0) total/=totalVol;
 			
 			// add total calculation to the  plot
 			x.add(new Double(resDoc.archiveTimes.get(i)));

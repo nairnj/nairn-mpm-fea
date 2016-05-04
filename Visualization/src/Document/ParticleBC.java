@@ -95,15 +95,15 @@ public class ParticleBC extends BoundaryCondition
 		double dx=0.;
 		double dy=0.;
 		if(face>0)
-		{	Point2D.Double mpcell = pv.getMpSize();
+		{	Point2D.Double mpcell = pv.getMpSize(mpt,doc);
 			if(face==1)
-				dy = -mpcell.getY()/2.;
+				dy = -mpcell.getY();
 			else if(face==2)
-				dx = mpcell.getX()/2.;
+				dx = mpcell.getX();
 			else if(face==3)
-				dy = mpcell.getY()/2.;
+				dy = mpcell.getY();
 			else if(face==4)
-				dx = -mpcell.getX()/2.;
+				dx = -mpcell.getX();
 		}
 		
 		// apply transformation

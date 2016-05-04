@@ -1449,6 +1449,8 @@ public class CmdViewer extends JNCmdTextDocument
 	        	loc = ReadArchive.ARCH_ElementCrossings;
 	        else if(archive.equals("rotstrain"))
 	        	loc = ReadArchive.ARCH_RotStrain;
+	        else if(archive.equals("damagenormal"))
+	        	loc = ReadArchive.ARCH_DamageNormal;
 	        
 	        if(loc<0 && cloc<0)
 	        	throw new Exception("'"+archive+"' is not a valid archiving option:\n"+args);
@@ -1505,13 +1507,13 @@ public class CmdViewer extends JNCmdTextDocument
 	{	
 		String section = "end";
 		if(args.size()>1)
-			section = readStringArg(args.get(1));
+			section = readStringArg(args.get(1)).toLowerCase();
 		
 		// grab text
 		String newXML = readVerbatim("endxmldata");
 		
 		// check for material section
-		if(section.equals("Material"))
+		if(section.equals("material"))
 		{	if(args.size()<3)
 				throw new Exception("XMLData command for a material needs to specify a material ID");
 			String matID = readStringArg(args.get(2));
@@ -1521,7 +1523,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		// check GridBCs block and intersperse
-		else if(section.equals("GridBCs"))
+		else if(section.equals("gridbcs"))
 		{	if(isFEA())
 				feaBCs.AddXML(newXML);
 			else
@@ -1530,7 +1532,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		// check MaterialPoints block and intersperse
-		else if(section.equals("MaterialPoints"))
+		else if(section.equals("materialpoints"))
 		{	if(isFEA())
 				regions.AddXML(newXML);
 			else
@@ -2359,7 +2361,7 @@ public class CmdViewer extends JNCmdTextDocument
 		xml.append("    </Description>\n");
 		xml.append("    <Analysis>"+np+"</Analysis>\n");
 		if(outFlags!=null) xml.append("    <Output>"+outFlags+"</Output>\n");
-		more = xmldata.get("Header");
+		more = xmldata.get("header");
 		if(more != null) xml.append(more);
 		xml.append("  </Header>\n\n");
 		
@@ -2369,7 +2371,7 @@ public class CmdViewer extends JNCmdTextDocument
 		{	xml.append("  <Mesh>\n"+areas.toXMLString());
 		
 			// check added xml
-			more = xmldata.get("Mesh");
+			more = xmldata.get("mesh");
 			if(more != null) xml.append(more);
 			
 			// done
@@ -2437,7 +2439,7 @@ public class CmdViewer extends JNCmdTextDocument
 				xml.append("    <StressFreeTemp>"+stressFreeTemp+"</StressFreeTemp>\n");
 			
 			// check added xml
-			more = xmldata.get("MPMHeader");
+			more = xmldata.get("mpmheader");
 			if(more != null) xml.append(more);
 			
 			// done
@@ -2453,7 +2455,7 @@ public class CmdViewer extends JNCmdTextDocument
 			xml.append(gridinfo.toXMLString());
 			
 			// check added xml
-			more = xmldata.get("Mesh");
+			more = xmldata.get("mesh");
 			if(more != null) xml.append(more);
 			
 			// done
@@ -2488,7 +2490,7 @@ public class CmdViewer extends JNCmdTextDocument
 		//-----------------------------------------------------------
 		if(isMPM())
 		{	String partXml = mpmParticleBCs.toXMLString();
-			more = xmldata.get("ParticleBCs");
+			more = xmldata.get("particlebcs");
 			if(partXml.length()>0 || more!=null)
 			{	xml.append("  <ParticleBCs>\n"+partXml);
 				if(more != null) xml.append(more);
@@ -2501,7 +2503,7 @@ public class CmdViewer extends JNCmdTextDocument
 		if(isFEA())
 		{	// FEA: Thermal
 			//-----------------------------------------------------------
-			more = xmldata.get("Thermal");
+			more = xmldata.get("thermal");
 			if(more!=null || feaTemp!=null || stressFreeTemp!=0.)
 			{	xml.append("  <Thermal>\n");
 				
@@ -2522,7 +2524,7 @@ public class CmdViewer extends JNCmdTextDocument
 		else
 		{	// MPM: Thermal
 			//-----------------------------------------------------------
-			more = xmldata.get("Thermal");
+			more = xmldata.get("thermal");
 			if(more!=null || conduction!=null || rampTime>-1.5)
 			{	xml.append("  <Thermal>\n");
 
@@ -2547,7 +2549,7 @@ public class CmdViewer extends JNCmdTextDocument
 			
 			// MPM: Gravity
 			//-----------------------------------------------------------
-			more = xmldata.get("Gravity");
+			more = xmldata.get("gravity");
 			if(more!=null || gravity!=null)
 			{	xml.append("  <Gravity>\n");
 
@@ -2561,7 +2563,7 @@ public class CmdViewer extends JNCmdTextDocument
 			
 			// MPM: CustomTasks
 			//-----------------------------------------------------------
-			more = xmldata.get("CustomTasks");
+			more = xmldata.get("customtasks");
 			if(customTasks.length()>0 || more!=null)
 			{	xml.append("  <CustomTasks>\n");
 			
@@ -2702,6 +2704,9 @@ public class CmdViewer extends JNCmdTextDocument
 		String svar = variablesStrs.get(varName);
 		return svar;
 	}
+	
+	// xml text to insert
+	public String getXMLData(String blockName) { return xmldata.get(blockName.toLowerCase()); }
 	
 	// export the output file
 	// return true is done or false if error or if cancelled

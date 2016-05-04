@@ -1095,5 +1095,13 @@ public class ElementBase
 		
 		return false;
 	}
+	
+	// subelement density
+	public static int getSubelementDensity() { return density; }
+	public static void setSubelementDensity()
+	{	int newNumber=NFMVPrefs.prefs.getInt(NFMVPrefs.NumSubelementsKey,NFMVPrefs.NumSubelementsDef);
+		if(newNumber>=1)
+			density=newNumber;
+	}
 
 }

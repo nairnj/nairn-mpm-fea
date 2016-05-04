@@ -81,6 +81,8 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	public static int SpectrumDef = 1;
 	public static String NumContoursKey = "NumberOfPlotContours";
 	public static int NumContoursDef = 0;
+	public static String NumSubelementsKey = "NumberOfSubelements";
+	public static int NumSubelementsDef = 4;
 
 	// plot colors
 	public static String backColorKey = "Background Color";
@@ -99,10 +101,11 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	private JTextField shellPath = new JTextField();
 	private JTextField workPath = new JTextField();
 	private JTextField numContours = new JTextField();
+	private JTextField numSubelements = new JTextField();
 	private JFileChooser chooser = new JFileChooser();
 
 	// prefs
-	private JComboBox spectrumBox;
+	private JComboBox<String> spectrumBox;
 
 	private JCheckBox validateMPM = new JCheckBox("Validate",NairnMPMValidateDef);
 	private JCheckBox validateFEA = new JCheckBox("Validate",NairnFEAValidateDef);
@@ -311,7 +314,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		String[] lines = { "Rainbow 1 (Purple to Red)",
 				"Rainbow 2 (Blue to Red)", "Rainbow 3 (Purple to Orange)",
 				"Grayscale (Black to White)", "Cool Diverging (Blue to Red)" };
-		spectrumBox = new JComboBox(lines);
+		spectrumBox = new JComboBox<String>(lines);
 		spectrumBox.setSelectedIndex(ColorPicker.getSpectrumType());
 		spectrumBox.addActionListener(this);
 		spectrumBox.setFocusable(false);
@@ -335,12 +338,32 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		numContours.setToolTipText("Enter 1 for continuous colors or >1 for number of discrete colors and hit return or enter");
 		numContours.addActionListener(this);
 		numContours.setActionCommand("change contours");
-		remoteUsername.addFocusListener(new PrefFocusListener(NumContoursKey));
+		numContours.addFocusListener(new PrefFocusListener(NumContoursKey));
 		c.insets = new Insets(6, 3, 1, 6); // tlbr
 		c.gridx = 1;
 		c.weightx = 1.0;
 		spectrumBag.setConstraints(numContours, c);
 		spectrumPan.add(numContours);
+
+		JLabel section2 = new JLabel("Subelements: ");
+		c.insets = new Insets(6, 6, 1, 0); // tlbr
+		c.gridx = 0;
+		c.weightx = 0.0;
+		spectrumBag.setConstraints(section2, c);
+		spectrumPan.add(section2);
+
+		numSubelements.setText("" + ElementBase.getSubelementDensity());
+		numSubelements.setEditable(true);
+		numSubelements.setColumns(5);
+		numSubelements.setToolTipText("Enter number of subelements (nXn) to use for mesh plots.");
+		numSubelements.addActionListener(this);
+		numSubelements.setActionCommand("change subelement density");
+		numSubelements.addFocusListener(new PrefFocusListener(NumSubelementsKey));
+		c.insets = new Insets(6, 3, 1, 6); // tlbr
+		c.gridx = 1;
+		c.weightx = 1.0;
+		spectrumBag.setConstraints(numSubelements, c);
+		spectrumPan.add(numSubelements);
 
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 0;
@@ -628,7 +651,22 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 			}
 		}
 
-		// REMOTE_ACCESS
+		else if(theCmd.equals("change subelement density"))
+		{	try
+			{	int newDensity=Integer.valueOf(numSubelements.getText());
+				if(newDensity<1) newDensity=1;
+				int oldNum=ElementBase.getSubelementDensity();
+				if(newDensity!=oldNum)
+				{	prefs.putInt(NumSubelementsKey,newDensity);
+					ElementBase.setSubelementDensity();
+				}
+			}
+			catch(Exception ie)
+			{	Toolkit.getDefaultToolkit().beep();
+			}
+		}
+
+	// REMOTE_ACCESS
 		else if (theCmd.equalsIgnoreCase("Username:"))
 		{	prefs.put(RemoteUserKey, remoteUsername.getText());
 		}
@@ -669,7 +707,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		}
 		
 		else
-		{	JComboBox cb = (JComboBox) e.getSource();
+		{	JComboBox<?> cb = (JComboBox<?>) e.getSource();
 			if(cb == spectrumBox)
 			{	int oldType = ColorPicker.getSpectrumType();
 				int newType = cb.getSelectedIndex();
@@ -697,6 +735,10 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 
 		// restore open docs
 		NFMVPrefs.setDefaultRestoreOpenDocs(true);
+		
+		// default settings
+		ColorPicker.setNumberOfContours();
+		ElementBase.setSubelementDensity();
 	}
 
 	// set a chooser to current work space
@@ -742,6 +784,20 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 					if(newContours!=oldNum)
 					{	prefs.putInt(NumContoursKey,newContours);
 						ColorPicker.setNumberOfContours();
+					}
+				}
+				catch(Exception ie)
+				{	Toolkit.getDefaultToolkit().beep();
+				}
+			}
+			else if(prefKey.equals(NumSubelementsKey))
+			{	try
+				{	int newDensity=Integer.valueOf(numSubelements.getText());
+					if(newDensity<1) newDensity=1;
+					int oldNum=ElementBase.getSubelementDensity();
+					if(newDensity!=oldNum)
+					{	prefs.putInt(NumSubelementsKey,newDensity);
+						ElementBase.setSubelementDensity();
 					}
 				}
 				catch(Exception ie)

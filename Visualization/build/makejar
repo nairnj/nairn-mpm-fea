@@ -7,30 +7,31 @@
 # compile with javac using
 #    makejar -w, makejar -m, or makejar -l
 # where use w for Windows (the default), m for Mac, or l for linux
-# (Mac and Linuc are same and can use -u of Unix as well)
+# (Mac and Linux are same and can use -u of Unix as well)
 # (Windows usually uses cygwin and can use -c as well)
 #
-# If javac and jar (version 1.5 or newer) are not in the default path,
-#   edit those lines to have the paths to the commands or add them
+# If javac and jar (version 1.7 or newer) are not in the default path,
+#   edit those lines to have the full paths to the commands or add them
 #   to the start of $PATH in your .bashrc log in file. It should
-#   be added to start in case older version of java is installed
+#   be added to start in case an older version of java is installed
 #   at another searched path.
 #
-# For carbon/hedera cluster at OSU, the commands should be set to
+# For hpc cluster at OSU, the commands should be set to
+# (needs to be updated before can use java on hpc)
 #      /usr/local/jdk1.5.0_06/bin/javac
 #      /usr/local/jdk1.5.0_06/bin/jar
 
 usage1="usage: makejar [-wml?]"
 usage2=".........w=Windows (default), m=Mac, l=Linux, ?=this message"
-clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.9.1.jar"
+clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.10.jar"
 
 while getopts ":wcmlu" opt; do
   case $opt in
-    w ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.9.1.jar" ;;
-    c ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.9.1.jar" ;;
-    m ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.9.1.jar ;;
-    l ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.9.1.jar ;;
-    u ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.9.1.jar ;;
+    w ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.10.jar" ;;
+    c ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.10.jar" ;;
+    m ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.10.jar ;;
+    l ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.10.jar ;;
+    u ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.10.jar ;;
     \?) echo $usage1
         echo $usage2
         exit 1 ;;
@@ -38,7 +39,7 @@ while getopts ":wcmlu" opt; do
 done
 
 # compile all classes in code folders
-javac -Xlint:none -d . -cp "$clspath" \
+javac -encoding "UTF-8" -Xlint:none -d . -cp "$clspath" \
 ../src/Document/*.java ../src/Interface/*.java ../src/CommandsDocument/*.java \
 ../src/MovieViewer/*.java ../src/PlotWindows/*.java ../src/ResultsViewer/*.java
 
@@ -51,7 +52,7 @@ cd ..
 jar xf ../src/lib/JNPlot2D.jar
 jar xf ../src/lib/JNFramework.jar
 jar xf ../src/lib/jsch-0.1.51.jar
-jar xf ../src/lib/VectorGraphics2D-0.9.1.jar
+jar xf ../src/lib/VectorGraphics2D-0.10.jar
 jar cvmf Manifest NairnFEAMPMViz.jar *.class geditcom com de -C Resources .
 
 # delete compiled files (or comment out to retain them)

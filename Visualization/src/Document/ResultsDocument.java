@@ -13,6 +13,7 @@ import java.io.*;
 import java.nio.*;
 
 import javax.swing.table.*;
+
 import java.util.*;
 
 public class ResultsDocument extends AbstractTableModel
@@ -47,13 +48,13 @@ public class ResultsDocument extends AbstractTableModel
 	public ArrayList<MaterialPoint> mpmPoints;
 	public ArrayList<CrackHeader> mpmCracks;
 	public ArrayList<MaterialBase> materials;
-	public ArrayList<Double> pointSizes;
+	public ArrayList<Vector3> pointDims;
 	public String archFormat,crackFormat;
 	public char[] feaArchFormat = {'N','N','N','N','N','N' };
 	public double xmin,xmax,ymin,ymax,zmin,zmax;			// mesh bounds
 	public double dxmin,dxmax,dymin,dymax;					// displaced mesh bounds
 	// cell dimension in any direction will be cellMinSide*iscale
-	public double cellMinSide,xscale=1.,yscale=1.,zscale=1;
+	public double cellMinSide,xscale=-1.,yscale=-1.,zscale=-1;
 	public int np;
 	public DocViewer docCtrl;
 	public int recSize;
@@ -81,7 +82,7 @@ public class ResultsDocument extends AbstractTableModel
 		archives=new ArrayList<File>(100);
 		archiveTimes=new ArrayList<Double>(100);
 		materials=new ArrayList<MaterialBase>(10);
-		pointSizes=new ArrayList<Double>(100);
+		pointDims=null;
 		currentArchive=-1;
 	}
 	
@@ -97,6 +98,7 @@ public class ResultsDocument extends AbstractTableModel
 		char strChar;
 		String [] words;
 		Scanner s,sline;
+		int numMps=1;
 		
 		//----------------------------------------------------------
 		// Header
@@ -497,11 +499,17 @@ public class ResultsDocument extends AbstractTableModel
 					if(beginIndex<0) break;
 					gridInfo=gridLine.substring(beginIndex+1,gridLine.length());
 				}
+				else if(gridLine.substring(0,10).equals("Number of "))
+				{	int beginIndex=gridLine.indexOf(":");
+					if(beginIndex<0) break;
+					String numStr = gridLine.substring(beginIndex+1,gridLine.length());
+					numMps = Integer.parseInt(numStr.trim());
+				}
 			}
 			s.close();
 			if(gridInfo!=null)
 			{	// read grid info and find relative cell sides
-				// mininimum side scale is 1 and other are relative to that side
+				// minimum side scale is 1 and other are relative to that side
 				sline=new Scanner(gridInfo);
 				sline.useDelimiter("[ :]");
 				sline.useLocale(Locale.US);
@@ -524,26 +532,31 @@ public class ResultsDocument extends AbstractTableModel
 					if(zscale<xscale && zscale<yscale)
 					{	xscale/=zscale;
 						yscale/=zscale;
+						cellMinSide = zscale;
 						zscale=1;
 					}
 					else if(yscale<xscale)
 					{	xscale/=yscale;
 						zscale/=yscale;
+						cellMinSide = yscale;
 						yscale=1.;
 					}
 					else
 					{	yscale/=xscale;
 						zscale/=xscale;
+						cellMinSide = xscale;
 						xscale=1.;
 					}
 				}
 				else
 				{	if(xscale>yscale)
 					{	xscale/=yscale;
+						cellMinSide = yscale;
 						yscale=1.;
 					}
 					else
 					{	yscale/=xscale;
+						cellMinSide = xscale;
 						xscale=1.;
 					}
 				}
@@ -661,6 +674,7 @@ public class ResultsDocument extends AbstractTableModel
 				archDir="";
 			setPath(file.getParentFile(),archDir);
 			String ptsPath = line.substring(0, line.length()-1)+"_PtSizes.txt";
+			String dimPath = line.substring(0, line.length()-1)+"_PtDims.txt";
 			sline.close();
 			
 			// archive format and check it
@@ -726,12 +740,13 @@ public class ResultsDocument extends AbstractTableModel
 			if(archiveTimes.size()<1)
 				throw new Exception("None of the archived results files could be found.");
 			
-			// read point sizes
-			File ptsFile = new File(file.getParentFile(),ptsPath);
-			if(ptsFile.exists())
+			// look for point dimensions (new code)
+			pointDims = new ArrayList<Vector3>(numMps);
+			File dimFile = new File(file.getParentFile(),dimPath);
+			if(dimFile.exists())
 			{	// read the file
-				FileReader fr=new FileReader(ptsFile);
-				char [] buffer=new char [(int)ptsFile.length()];
+				FileReader fr=new FileReader(dimFile);
+				char [] buffer=new char [(int)dimFile.length()];
 				fr.read(buffer);
 				String ptsSection=new String(buffer);
 				fr.close();
@@ -744,18 +759,69 @@ public class ResultsDocument extends AbstractTableModel
 					s.next();
 					s.next();
 					
+					double lscale = 0.5*units.lengthScale();		// 0.5 to get radius
+					double sx,sy,sz;
+					
 					while(s.hasNext())
 					{	Scanner pline=new Scanner(s.next());
 						pline.useLocale(Locale.US);
-						int pnum = pline.nextInt();
+						pline.nextInt();
 						// store point number, and x-y-z sizes
-						pointSizes.add(new Double((double)pnum+.1));
-						pointSizes.add(new Double(pline.nextDouble()));
-						pointSizes.add(new Double(pline.nextDouble()));
-						pointSizes.add(new Double(pline.nextDouble()));
+						sx = lscale*pline.nextDouble();
+						sy = lscale*pline.nextDouble();
+						sz = lscale*pline.nextDouble();
+						pointDims.add(new Vector3(sx,sy,sz));
 						pline.close();
 					}
 					s.close();
+				}
+			}
+			
+			// read point sizes (old code membranes only)
+			if(pointDims==null)
+			{	// store particle sizes (assumes a regular grid was found
+				double msx=(float)0.25*cellMinSide;			// radius of points when 2 per axis
+				double msy=msx,msz=msx;
+				if(xscale>0)
+				{	msx *= xscale;
+					msy *= yscale;
+					msz *= zscale;
+				}
+				for(int p=0;p<numMps;p++)
+					pointDims.add(new Vector3(msx,msy,msz));
+
+				// look for file for membrane particles
+				File ptsFile = new File(file.getParentFile(),ptsPath);
+				if(ptsFile.exists())
+				{	// read the file
+					FileReader fr=new FileReader(ptsFile);
+					char [] buffer=new char [(int)ptsFile.length()];
+					fr.read(buffer);
+					String ptsSection=new String(buffer);
+					fr.close();
+				
+					if(ptsSection.length()>10)
+					{	s=new Scanner(ptsSection );
+						s.useDelimiter("\\r\\n|\\n|\\r");
+						s.useLocale(Locale.US);
+						s.next();
+						s.next();
+						s.next();
+					
+						double sx,sy,sz;
+						while(s.hasNext())
+						{	Scanner pline=new Scanner(s.next());
+							pline.useLocale(Locale.US);
+							// store point number, and x-y-z sizes
+							int pnum=pline.nextInt();
+							sx = 2.*msx*pline.nextDouble();
+							sy = 2.*msy*pline.nextDouble();
+							sz = 2.*msz*pline.nextDouble();
+							pointDims.set(pnum-1, new Vector3(sx,sy,sz));
+							pline.close();
+						}
+						s.close();
+					}
 				}
 			}
 		}
@@ -944,19 +1010,6 @@ public class ResultsDocument extends AbstractTableModel
 		currentArchive=newArchive;
 		ReadArchive.load(this,archives.get(currentArchive));
 		
-		// add sizes
-		if(pointSizes.size()>3)
-		{	int offset=0;
-			while(offset<pointSizes.size())
-			{	int pnum = pointSizes.get(offset).intValue();
-				double sx = pointSizes.get(offset+1).doubleValue();
-				double sy = pointSizes.get(offset+2).doubleValue();
-				double sz = pointSizes.get(offset+3).doubleValue();
-				if(pnum>0 && pnum<=mpmPoints.size())
-					mpmPoints.get(pnum-1).setDimensionlessSize(sx,sy,sz);
-				offset+=4;
-			}
-		}
 	}
 	
 	// open archive by index and return its byte buffer
