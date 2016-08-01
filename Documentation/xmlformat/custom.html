@@ -119,10 +119,11 @@ When this task is triggered by critical crack length, the crack propagation will
 
 <dt><a name="AdjustTimeStep"></a>AdjustTimeStep</dt>
 
-<dd>This tasks allows the time step to change if the wave speed in any material changes (and the material class supports calculation of wave speed as a function of particle state). Its parameters are:
+<dd>This tasks allows the time step to change if the wave speed in any material changes (and the material class supports calculation of wave speed as a function of particle state) or if particle velocities get too high. Its parameters are:
 <ul>
 <li>adjustTime (time) - enter the time interval for checking the time step and adjusting it if needed (in <a href="units.html">alt time units</a>). This parameter is optional; if it is omitted, the time step adjustment is done each time particle data are archived.</li>
 <li>verbose (value) - if its integer value is not zero, it will print the new time step whenever it changes by more than 1%. If it is zero, the new time step is silently changed. The default it 0.</li>
+<li>velocityCFL (value) - pick an optional, different Courant-Friedrichs-Lewy factor to use for particle velocities. The default is to use the same as the <a href="mpmheader.html#MPMMethods">input Courant-Friedrichs-Lewy</a>.</li>
 </ul>
 </dd>
 

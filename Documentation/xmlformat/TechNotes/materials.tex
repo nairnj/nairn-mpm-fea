@@ -2036,7 +2036,7 @@ Finding the second derivatives, but for $W(I_1,J)$ only gives:
 Alternatively, look direction at Cauchy pressure and deviatoric stress due to increments in $J$ and $\tens B$ and $W(\overline{I_1},J)$:
 \begin{eqnarray}
     {\partial P\over \partial J} & = & - {\partial^2 W\over \partial J^2} \\
-    {\partial s_{kl}\over\partial B_{ij}} & = &  {\partial\over B_{ij}}
+    {\partial s_{kl}\over\partial B_{ij}} & = &  {\partial\over \partial B_{ij}}
     \left[{2\over J^{5/3}}{\partial W\over \partial \overline{I_1}}\left(B_{kl}-{1\over3}I_1\delta_{kl}\right)\right] \\
     & = & {2\over J^{5/3}}\Biggl[\left({\partial^2 W\over \partial B_{ij}\partial \overline{I_1}}
         -{5\over 3J}{\partial J\over \partial B_{ij}}{\partial W\over \partial \overline{I_1}}\right)\left(B_{kl}-{1\over3}I_1\delta_{kl}\right)
@@ -2213,14 +2213,41 @@ If implementing increment pressure law, the result is:
 
 \subsection{Tangent Shear Modulus}
 
-Assuming $G_2=0$, the tangent shear modulus including residual stresses is
+Assuming $G_2=0$, the deviatoric stress is
+\begin{equation}
+    \tens s = {\Jres G_1\over J^{5/3}}\left(\B - {I_1\over3}\I\right)
+\end{equation}
+and the tangent shear modulus including residual stresses is
 \begin{eqnarray}
     {\partial s_{kl}\over\partial B_{ij}} & = &  
     {\Jres G_1\over J^{5/3}}\left[
                   \left(\delta_{ki}\delta_{lj}-{1\over3}{\partial I_1\over\partial B_{ij}}\delta_{kl}\right)
-        -{5\over 3J}{\partial J\over \partial B_{ij}}\left(B_{kl}-{1\over3}I_1\delta_{kl}\right) \right]
+        -{5\over 3J}{\partial J\over \partial B_{ij}}\left(B_{kl}-{1\over3}I_1\delta_{kl}\right) \right] \\
+        & = &  
+    {\Jres G_1\over J^{5/3}}\left[
+                  \left(\delta_{ki}\delta_{lj}-{1\over3}\delta_{ij}\delta_{kl}\right)
+  -{5\over 6}(B_{ij})^{-1}\left(B_{kl}-{1\over3}I_1\delta_{kl}\right) \right]
 \end{eqnarray}
-
+This form follows by using $\det(\B )=J^2$ and tensor calculus result for derivative of a determinant of a symmetric tensor:
+\begin{equation}
+   {\partial J^2\over \partial B_{ij}} = J^2(B_{ij})^{-1} = 2J {\partial J\over B_{ij}}   \qquad{\rm or}\qquad {\partial J\over \partial B_{ij}} = {J\over 2}(B_{ij})^{-1}
+\end{equation}
+The normal and shear deviatoric stress increments are:
+\begin{eqnarray}
+    {\partial s_{kk}\over\partial B_{ij}} & = &  
+    {\Jres G_1\over 3J^{5/3}}\left[
+                 \left(3\delta_{ki}\delta_{kj}-\delta_{ij}\right)
+  -{5\over 6}(B_{ij})^{-1}\left(3B_{kk}-I_1\right) \right]  \\
+    {\partial s_{kl}\ (k\ne l)\over\partial B_{ij}} & = &  
+    {\Jres G_1\over J^{5/3}}\left[   \delta_{ki}\delta_{lj} -{5\over 6}(B_{ij})^{-1}\left(B_{kl}\right) \right] 
+\end{eqnarray}
+Explicitly, for example:
+\begin{eqnarray}
+       {3J^{5/3}\over \Jres G_1}{\partial s_{xx}\over\partial B_{ij}} & = & \left(\begin{array}{ccc} 2 & 0 & 0 \\ 0 & -1 & 0 \\ 0 & 0 & -1\end{array}\right)
+                                    - {5\over6}\B^{-1}(2B_{xx}-B_{yy} - B_{zz})  \\
+       {J^{5/3}\over \Jres G_1}{\partial s_{xy}\over\partial B_{ij}} & = & \left(\begin{array}{ccc} 0 & 1 & 0 \\ 0 & 0 & 0 \\ 0 & 0 & 0\end{array}\right)
+                                    - {5\over6}\B^{-1}B_{xy}
+ \end{eqnarray}
 \subsection{Plane Stress Mooney-Rivlin Membrane}
 
 Using the deformation state for \hyperref[MMT]{plane stress membrane} and defining $\lambda=\lambda_1)$ a Mooney-Rivlin material has the normal Cauchy stresses:

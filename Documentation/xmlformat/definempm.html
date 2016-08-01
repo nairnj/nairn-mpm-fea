@@ -71,7 +71,8 @@ optional <a href="mpmheader.html#units"><code>units</code> attribute</a>).</p>
 <ul>
 
 <li><pre class="list">&lt;Body mat='1' angle='0' thick='1' vx='1000' vy='0' conc='0' temp='0'&gt;
-  (<a href="#rotatezyx">Rotation comands</a>)
+  (<a href="#rotatezyx">Rotation commands</a>)
+  (<a href="#vel0xyz">Initial Velocty commands</a>)
   (<a href="#2DShapes">2D shape commands</a>)
   (<a href="#3DShapes">3D shapes commands</a>)
  &lt;/Body&gt;</pre>
@@ -127,6 +128,30 @@ These commands are to rotate the material axes in the current <code>&lt;Body&gt;
 
 <li><pre class="list">&lt;Unrotate/&gt;</pre>
 This command cancels the rotations in the current <code>&lt;Body&gt;</code> section. Each shape command in the body use the current rotation transformation. Interspersing this command with new rotations allows each shape to have its own transformations.</li>
+</ul>
+
+<h3><a name="vel0xyz"></a>Initial Velocity Commands</h3>
+
+<p>These commands let you assign initial velocity or angular momentum of particles using a <a href="function.html">user-defined function</a> and using different velocities for different shapes in the region. The commands are:</p>
+
+<ul>
+<li><pre class="list">&lt;vel0X&gt;20*x&lt;/vel0X&gt;,
+&lt;vel0Y&gt;50-2*y&lt;/vel0Y&gt;,
+&lt;vel0Z&gt;34&lt;/vel0Z&gt;</pre>
+These commands set initial velocity of the particles in the current region. If used, they override the values used in <code>vx</code>, <code>vy</code>, and <code>vz</code> attributes of the <a href="#regions"><code>&lt;Body&gt;</code> command</a>. The value is interpreted as a <a href="function.html">user-defined function</a> of particle position that evaluates to velocity in <a href="units.html">velocity units</a>. If multiple commands are used in a single region, the new function replaces the previous one for all subsequently created material points. A command with empty value reverts to zero initial velocity. 
+</li>
+
+<li><pre class="list">&lt;Lp0X&gt;20*x&lt;/Lp0X&gt;,
+&lt;Lp0Y&gt;50-2*y&lt;/Lp0Y&gt;,
+&lt;Lp0Z&gt;34&lt;/Lp0ZZ&gt;</pre>
+These commands set initial angular momentum of the particles in the current region. The value is interpreted as a <a href="function.html">user-defined function</a> of particle position that evaluates to angular momentum per unit mass in <a href="units.html">length<sup>2</sup>/time units</a>. If multiple commands are used in a single region, the new function replaces the previous one for all subsequently created material points. A command with empty value reverts to zero angular momentum. This initial setting only has an effect for simulations that <a href="mpmheader.html#trackspin">track particle spin</a>.<br>
+&nbsp;&nbsp;&nbsp;&nbsp; Note that this command is setting angular momentum and not angular velocity. The setting to get a particular angular velocity (&omega; radians per <a href="units.html">time units</a>) depends are particle locations and dimensions. For particles at typical starting positions, the angular momentum for given &omega; would be:
+<ul>
+<li>2D, 4 particles per cell: L<sub>p,z</sub> = (3/16)(dx<sup>2</sup> + dy<sup>2</sup>)&omega;</li>
+<li>2D, 1 particle per cell: L<sub>p,z</sub> = (1/4)(dx<sup>2</sup> + dy<sup>2</sup>)&omega;</li>
+</ul>
+where dx and dy are cell dimensions for the grid cell containing the particle. For 3D simulations, the equations are the same except may involve all three axes. The equation for each axis (e.g., L<sub>p,x</sub>) depends on cell dimensions in the other two directions (e.g., &Delta;y and &Delta;z). Simulations with more particles per cell would need to set different angular momenta for different particle locations, which is currently not possible. One alternative is to use an average value noting that the fraction in the above angular momenta will range from 1/8 to 1/4 depending on particle location.
+</li>
 </ul>
 
 

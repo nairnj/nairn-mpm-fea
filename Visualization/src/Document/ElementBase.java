@@ -507,6 +507,9 @@ public class ElementBase
 				return (doc.nodes.get(node[ndi])).sigxy;
 			case PlotQuantity.MESHSIGMAZ:
 				return (doc.nodes.get(node[ndi])).sigzz;
+			case PlotQuantity.MESHPRESSURE:
+				return -((doc.nodes.get(node[ndi])).sigxx+(doc.nodes.get(node[ndi])).sigyy
+								+(doc.nodes.get(node[ndi])).sigzz)/3.;
 				
 			case PlotQuantity.MESHDISPX:
 				return (doc.nodes.get(node[ndi])).dispx;

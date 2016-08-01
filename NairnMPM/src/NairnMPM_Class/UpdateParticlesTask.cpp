@@ -33,31 +33,31 @@ UpdateParticlesTask::UpdateParticlesTask(const char *name) : MPMTask(name)
 void UpdateParticlesTask::Execute(void)
 {
 	CommonException *upErr = NULL;
-	
-	int numnds,nds[maxShapeNodes];
+	int numnds,ndsArray[maxShapeNodes];
 	double fn[maxShapeNodes];
-	Vector vgpnp1;
     
     // Damping terms on the grid or on the particles
-    //      particleAlpha   =  alpha(PIC)/dt + pdamping(t)
-    //      gridAlpha       = -alpha(PIC)/dt + damping(t)
+    //      particleAlpha   =  (1-beta)/dt + pdamping(t)
+    //      gridAlpha       = -m*(1-beta)/dt + damping(t)
     double particleAlpha = bodyFrc.GetParticleDamping(mtime);
 	double gridAlpha = bodyFrc.GetDamping(mtime);
 
 	//		nonPICGridAlpha = damping(t)
-	//		globalPIC       = alpha(PIC)/dt
+	//		globalPIC       = (1-beta)/dt
     double nonPICGridAlpha = bodyFrc.GetNonPICDamping(mtime);
     double globalPIC = bodyFrc.GetPICDamping();
 
     // Update particle position, velocity, temp, and conc
-#pragma omp parallel for private(numnds,nds,fn,vgpnp1)
+#pragma omp parallel for private(numnds,ndsArray,fn)
     for(int p=0;p<nmpmsNR;p++)
 	{	MPMBase *mpmptr = mpm[p];
 		
 		try
 		{	// get shape functions
 			const ElementBase *elemRef = theElements[mpmptr->ElemID()];
-			elemRef->GetShapeFunctions(&numnds,fn,nds,mpmptr);
+			int *nds = ndsArray;
+			elemRef->GetShapeFunctions(fn,&nds,mpmptr);
+			numnds = nds[0];
 			
 			// Update particle position and velocity
 			const MaterialBase *matRef=theMaterials[mpmptr->MatID()];
@@ -68,28 +68,38 @@ void UpdateParticlesTask::Execute(void)
             double localGridAlpha = gridAlpha;
             matRef->GetMaterialDamping(localParticleAlpha,localGridAlpha,nonPICGridAlpha,globalPIC);
 			
-			Vector *acc=mpmptr->GetAcc();
-			ZeroVector(acc);
-			ZeroVector(&vgpnp1);
-			double rate[2];         // only two possible transport tasks
+			// data structure for extrapolations
+			GridToParticleExtrap *gp = new GridToParticleExtrap;
+			
+			// acceleration on the particle
+			gp->acc = mpmptr->GetAcc();
+			ZeroVector(gp->acc);
+			
+			// extrapolate nodal velocity from grid to particle
+			ZeroVector(&gp->vgpnp1);
+			
+			// only two possible transport tasks
+			double rate[2];
 			rate[0] = rate[1] = 0.;
 			int task;
 			TransportTask *nextTransport;
-            short vfld;
 			
 			// Loop over nodes
 			for(int i=1;i<=numnds;i++)
 			{	// increment velocity and acceleraton
 				const NodalPoint *ndptr = nd[nds[i]];
-                vfld = (short)mpmptr->vfld[i];
-				ndptr->IncrementDelvaTask5(vfld,matfld,fn[i],&vgpnp1,acc);
+                short vfld = (short)mpmptr->vfld[i];
+				
+				// increment
+				ndptr->IncrementDelvaTask5(vfld,matfld,fn[i],gp);
 
 #ifdef CHECK_NAN
-                if(vgpnp1.x!=vgpnp1.x || vgpnp1.y!=vgpnp1.y || vgpnp1.z!=vgpnp1.z)
+				// conditionally compiled check for nan velocities
+                if(gp->vgpnp1.x!=gp->vgpnp1.x || gp->vgpnp1.y!=gp->vgpnp1.y || gp->vgpnp1.z!=gp->vgpnp1.z)
                 {
 #pragma omp critical (output)
-					{	cout << "\n# UpdateParticlesTask::Execute: bad material velocity field for vfld = " << vfld;
-						PrintVector(" vgpn1 = ",&vgpnp1);
+					{	cout << "\n# UpdateParticlesTask::Execute: bad material velocity field for vfld=" << vfld << "matfld=" << matfld << " fn[i]=" << fn[i] << endl;;
+						PrintVector("#  Particle velocity vgpn1 = ",&gp->vgpnp1);
 						cout << endl;
 						ndptr->Describe();
 					}
@@ -102,21 +112,18 @@ void UpdateParticlesTask::Execute(void)
 				while(nextTransport!=NULL)
 					nextTransport=nextTransport->IncrementTransportRate(ndptr,fn[i],rate[task++]);
 			}
-			
-			// Find vgpn
-			Vector vgpn = vgpnp1;
-			AddScaledVector(&vgpn,acc,-timestep);
-            
-			// find effective grid acceleration and velocity
-			AddScaledVector(acc,&vgpn,-localGridAlpha);
-			AddScaledVector(&vgpnp1,&vgpn,-timestep*localGridAlpha);
+
+			// Find grid damping acceleration parts =  ag*Vgp(n) = ag*(Vgp(n+1) - Agp(n)*dt)
+			Vector accExtra = gp->vgpnp1;
+			AddScaledVector(&accExtra, gp->acc, -timestep);
+			ScaleVector(&accExtra,localGridAlpha);
 			
 			// update position, and must be before velocity update because updates need initial velocity
             // This section does second order update
-			mpmptr->MovePosition(timestep,&vgpnp1,0.5*timestep,localParticleAlpha);
-
+			mpmptr->MovePosition(timestep,&gp->vgpnp1,&accExtra,localParticleAlpha);
+			
 			// update velocity in mm/sec
-			mpmptr->MoveVelocity(timestep,localParticleAlpha);
+			mpmptr->MoveVelocity(timestep,&accExtra);
 			
 			// update transport values
 			nextTransport=transportTasks;
@@ -130,8 +137,11 @@ void UpdateParticlesTask::Execute(void)
 			// energy coupling here adds adiabtic temperature rise
 			if(ConductionTask::adiabatic)
 			{	double dTad = mpmptr->GetBufferClear_dTad();			// in K
-				mpmptr->pTemperature += dTad;                       // in K
+				mpmptr->pTemperature += dTad;							// in K
 			}
+			
+			// delete grid to particle extrap data
+			delete gp;
 			
 		}
 		catch(CommonException err)
@@ -148,6 +158,6 @@ void UpdateParticlesTask::Execute(void)
     
     // rigid materials move at their current velocity
     for(int p=nmpmsNR;p<nmpms;p++)
-    {	mpm[p]->MovePosition(timestep,&mpm[p]->vel,0.,0.);
+    {	mpm[p]->MovePosition(timestep);
     }
 }

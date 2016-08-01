@@ -242,9 +242,28 @@ public class MovieControls extends JPanel
 					pcmpnt.addItem(xchar);
 					pcmpnt.addItem(ychar);
 				}
-					pcmpnt.setEnabled(true);
+				pcmpnt.setEnabled(true);
 				break;
 			
+			case PlotQuantity.MPMSPINVELOCITYX:
+			case PlotQuantity.MPMSPINMOMENTUMX:
+				if(resDoc.is3D())
+				{	if(!pcmpnt.getItemAt(0).equals(xchar))
+					{	pcmpnt.removeAllItems();
+						pcmpnt.addItem(xchar);
+						pcmpnt.addItem(ychar);
+						pcmpnt.addItem(zchar);
+					}
+				}
+				else
+				{	if(!pcmpnt.getItemAt(0).equals(zchar))
+					{	pcmpnt.removeAllItems();
+						pcmpnt.addItem(zchar);
+					}
+				}
+				pcmpnt.setEnabled(true);
+				break;
+				
 			case PlotQuantity.MPMDCDX:
 				if(!pcmpnt.getItemAt(0).equals("dc/d"+xchar))
 				{	pcmpnt.removeAllItems();
@@ -294,6 +313,15 @@ public class MovieControls extends JPanel
 			case PlotQuantity.INTERFACETRACTION_N:
 				extra=pcmpnt.getSelectedIndex();
 				if(extra>=0) plotComponent+=extra;
+				break;
+			case PlotQuantity.MPMSPINVELOCITYX:
+			case PlotQuantity.MPMSPINMOMENTUMX:
+				if(resDoc.is3D())
+				{	extra=pcmpnt.getSelectedIndex();
+					if(extra>=0) plotComponent+=extra;
+				}
+				else
+					plotComponent+=2;	// only z in 2D
 				break;
 			default:
 				break;

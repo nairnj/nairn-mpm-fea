@@ -40,7 +40,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void AddGravityAndBodyForceTask3(Vector *);
 	
 		virtual void UpdateMomentaOnField(double);
-	
+
 		virtual void RezeroNodeTask6(double);
 	
 		virtual void MaterialContactOnCVF(NodalPoint *,double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
@@ -54,10 +54,10 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		// boundary conditions
         virtual void SetMomVel(Vector *);
         virtual void AddMomVel(Vector *,double);
-		virtual void ReflectMomVel(Vector *,CrackVelocityField *);
+		virtual void ReflectMomVel(Vector *,CrackVelocityField *,double);
         virtual void SetFtotDirection(Vector *,double,Vector *);
         virtual void AddFtotDirection(Vector *,double,double,Vector *);
-		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,Vector *);
+		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,double,Vector *);
 	
 		// accessors
 		virtual bool HasPointsNonrigid(void) const;

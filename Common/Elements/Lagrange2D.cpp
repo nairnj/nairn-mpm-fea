@@ -226,12 +226,13 @@ void Lagrange2D::FindExtent(void)
 	/* for speed in GetXiPos() calculations - if it a parallelogram
 	 Note: assumes element does not move. If it does, must recalculate these terms
 	 */
-	pgElement=TRUE;
+	pgElement=PGRAM_ELEMENT;
+	
 	// are edges parallel wrt x coordinate?
 	double xdel=fabs(nd[nodes[2]]->x-nd[nodes[1]]->x);
     double ydel=fabs(nd[nodes[3]]->x-nd[nodes[0]]->x);
 	if(!DbleEqual(xdel,ydel) && xdel>1.e-10 && ydel>1.e-10)
-	{	pgElement=FALSE;
+	{	pgElement=QUAD_ELEMENT;
 		return;
 	}
 
@@ -239,7 +240,7 @@ void Lagrange2D::FindExtent(void)
 	xdel=fabs(nd[nodes[2]]->y-nd[nodes[1]]->y);
 	ydel=fabs(nd[nodes[3]]->y-nd[nodes[0]]->y);
 	if(!DbleEqual(xdel,ydel) && xdel>1.e-10 && ydel>1.e-10)
-	{	pgElement=FALSE;
+	{	pgElement=QUAD_ELEMENT;
 		return;
 	}
 
@@ -248,23 +249,22 @@ void Lagrange2D::FindExtent(void)
 	for(i=0;i<3;i++)
 	{	if(!DbleEqual(2.*nd[nodes[i+4]]->x, nd[nodes[i]]->x+nd[nodes[i+1]]->x) ||
 				!DbleEqual(2.*nd[nodes[i+4]]->y, nd[nodes[i]]->y+nd[nodes[i+1]]->y))
-		{	pgElement=FALSE;
+		{	pgElement=QUAD_ELEMENT;
 			return;
 		}
 	}
 	if(!DbleEqual(2.*nd[nodes[7]]->x, nd[nodes[3]]->x+nd[nodes[0]]->x) ||
 		   !DbleEqual(2.*nd[nodes[7]]->y, nd[nodes[3]]->y+nd[nodes[0]]->y))
-	{	pgElement=FALSE;
+	{	pgElement=QUAD_ELEMENT;
 		return;
 	}
 		
 	// Is center node in the center?
 	if(!DbleEqual(2.*nd[nodes[8]]->x, nd[nodes[4]]->x+nd[nodes[6]]->x) ||
 	   !DbleEqual(2.*nd[nodes[8]]->y, nd[nodes[4]]->y+nd[nodes[6]]->y))
-	{	pgElement=FALSE;
+	{	pgElement=QUAD_ELEMENT;
 		return;
 	}
-	
 	
 	// precalculate useful terms
 	pgTerm[0]=nd[nodes[0]]->x+nd[nodes[1]]->x+nd[nodes[2]]->x+nd[nodes[3]]->x;
@@ -292,7 +292,7 @@ void Lagrange2D::FindExtent(void)
 void Lagrange2D::GetXiPos(Vector *pos,Vector *xipos) const
 {
 	// analytical solution for parallelograms
-	if(pgElement)
+	if(pgElement==PGRAM_ELEMENT)
 	{	double xdel=4.*pos->x-pgTerm[0];
 		double ydel=4.*pos->y-pgTerm[3];
 		xipos->x=(pgTerm[5]*xdel-pgTerm[2]*ydel);

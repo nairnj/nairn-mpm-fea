@@ -268,6 +268,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
                         newMpt->SetPosition(&mpos[k]);
                         newMpt->SetOrigin(&mpos[k]);
                         newMpt->SetVelocity(&nextLevel->vel);
+						newMpt->SetDimensionlessByPts(fmobj->ptsPerElement);
                         mpCtrl->AddMaterialPoint(newMpt,nextLevel->concentration,nextLevel->temperature);
                         
                         // is there an angle image?

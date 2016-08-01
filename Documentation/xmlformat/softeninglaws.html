@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Using Softening Laws</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>Using Softening Laws</h1>
+
+<p>Some materials allow the use of softening laws. The possible laws are described fully on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Softening_Laws">OSUPDocs Wiki</a>. This section briefly lists the properties. Softening law properties are assigned within a material definition that uses the law:</p>
+
+<pre>
+&lt;Material Type='50' Name='Isotropic Softening'&gt;
+         &#x22ee;
+     &lt;SofteningI&gt;(Law_Name or number)&lt;/SofteningI&gt;
+     (Law properties)
+&lt;/Material&gt;
+</pre>
+
+<p>where the <code>SofteningI</code> command selects a law (using the law name or number from the table below) and note that a softening material may have more than one softening law. The law selection is followed by commands to set any properties specific to that law. Available <a href="definematl.html#SSSM">softening materials</a> can use softening laws.</p>
+
+<p>The following table lists the available softening laws. All laws correspond to a monotonically decreasing function f(&delta;) with f(0) = 1 and f(&delta;<sub>max</sub>) = 0 where &delta;<sub>max</sub> is the maximum cracking strain. Click any one to see the law and the properties needed for that law.</p>
+
+<table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">
+<tr><th>Name</th><th>Number</th><th>Description</th>
+</tr>
+
+<tr>
+<td><a href="#linear"><code>Linear</code></a></td>
+<td>1</td>
+<td>Linear softening law</td>
+</tr>
+
+</table>
+
+<h2><a name="linear"></a>Linear Softening (number=1)</h2>
+
+<p>The linear softening law is f(&delta;) = 1 - &delta;/&delta;<sub>max</sub>. The input property is:</p>
+
+<ul>
+
+<li>Gc - the toughness of the material is this law's failure mode (in <a href="units.html">energy release units</a>). The default is very large number which means the material will not soften after initiation of damage.</li>
+</ul>
+
+<p>Note that you do not enter &delta;<sub>max</sub>. It is determined at run time because it is affected by particle volume, initiation stress, and crack orientation.</p>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+</html>

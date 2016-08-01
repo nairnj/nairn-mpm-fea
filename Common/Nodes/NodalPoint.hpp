@@ -78,14 +78,14 @@ class NodalPoint : public LinkedObject
         void CopyMassAndMomentumLast(NodalPoint *);
         void RezeroNodeTask6(double);
         void AddMomentumTask6(short,int,double,Vector *);
-	
+
 		void AddFtotTask3(short,int,Vector *);
 		void AddFtotSpreadTask3(short,Vector);
 		void AddTractionTask3(MPMBase *,short,int,Vector *);
 		void AddGravityAndBodyForceTask3(Vector *);
 		void CopyGridForces(NodalPoint *);
 		void UpdateMomentaOnNode(double);
-		void IncrementDelvaTask5(short,int,double,Vector *,Vector *) const;
+		void IncrementDelvaTask5(short,int,double,GridToParticleExtrap *) const;
 	
 		bool IncrementDelvSideTask8(short,int,double,Vector *,double *,CrackSegment *) const;
 		short GetFieldForSurfaceParticle(short,int,CrackSegment *) const;
@@ -131,10 +131,10 @@ class NodalPoint : public LinkedObject
         void GetMatVolumeGradient(int,Vector *) const;
         void SetMomVel(Vector *);
         void AddMomVel(Vector *,double);
-		void ReflectMomVel(Vector *,NodalPoint *);
+		void ReflectMomVel(Vector *,NodalPoint *,double);
         void SetFtotDirection(Vector *,double,Vector *);
         void AddFtotDirection(Vector *,double,double,Vector *);
-		void ReflectFtotDirection(Vector *,double,NodalPoint *,Vector *);
+		void ReflectFtotDirection(Vector *,double,NodalPoint *,double,Vector *);
 		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);
 		void CalcTotalMassAndCount(void);

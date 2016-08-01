@@ -51,7 +51,8 @@ class CommonAnalysis
 		static bool IsThreeD(int);
 		bool IsAxisymmetric(void);
 		static bool IsAxisymmetric(int);
-        void SetNumberOfProcessors(int);
+		virtual const char *MPMAugmentation(void);
+		void SetNumberOfProcessors(int);
 		int GetNumberOfProcessors(void);
 		int GetTotalNumberOfPatches(void);
 	

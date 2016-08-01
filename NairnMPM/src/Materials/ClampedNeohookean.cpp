@@ -102,7 +102,7 @@ void ClampedNeohookean::ValidateForUse(int np) const
 #pragma mark Neohookean::History Data Methods
 
 // return number of bytes needed for history data
-int ClampedNeohookean::SizeOfHistoryData(void) const { return 2*sizeof(double);; }
+int ClampedNeohookean::SizeOfHistoryData(void) const { return 2*sizeof(double); }
 
 // Store J, Jres, and Jp, which is calculated incrementally, and available for archiving and Jp
 // initialize all to 1

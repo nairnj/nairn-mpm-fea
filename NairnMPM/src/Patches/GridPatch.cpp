@@ -247,28 +247,53 @@ void GridPatch::AddParticle(MPMBase *mptr)
 // in block 0 to 2 (NR, RC, RBC)
 void GridPatch::RemoveParticleAfter(MPMBase *mptr,MPMBase *prevMptr)
 {
-	// material point after the one being removed
+	// material point after the one being removed (might be NULL)
 	MPMBase *nextMptr = (MPMBase *)mptr->GetNextObject();
 	
-	if(prevMptr!=NULL)
-	{	// removing one in the middle or at the end of linked list
-		prevMptr->SetNextObject(nextMptr);
-	}
-	else
-	{	// removing the first particle
-		const MaterialBase *matref = theMaterials[mptr->MatID()];		// material object for this particle
+	// removing the first particle, but have to verify it is still first
+	if(prevMptr==NULL)
+	{	const MaterialBase *matref = theMaterials[mptr->MatID()];		// material object for this particle
 		if(matref->RigidBC())
-			firstRBC = nextMptr;
+		{	if(mptr == firstRBC)
+			{	// still first, switch to next one as new first
+				firstRBC = nextMptr;
+				return;
+			}
+			prevMptr = firstRBC;
+		}
 		else if(matref->Rigid())
-			firstRC = nextMptr;
+		{	if(mptr == firstRC)
+			{	// still first, switch to next one as new first
+				firstRC = nextMptr;
+				return;
+			}
+			prevMptr = firstRC;
+		}
 		else
-			firstNR = nextMptr;
+		{	if(mptr == firstNR)
+			{	// still first, switch to next one as new first
+				firstNR = nextMptr;
+				return;
+			}
+			prevMptr = firstNR;
+		}
+		
+		// step to previous first particle to finds it new previous point
+		MPMBase *currentMptr = (MPMBase *)prevMptr->GetNextObject();
+		while(currentMptr != mptr)
+		{	prevMptr = currentMptr;
+			currentMptr = (MPMBase *)prevMptr->GetNextObject();
+		}
 	}
+	
+	// removing one in the middle or at the end of linked list
+	prevMptr->SetNextObject(nextMptr);
+
 }
 
 #pragma mark GridPatch: Accessors
 
-// return pointer to real or ghost node for 1=based node number num in the global grid
+// return pointer to real or ghost node for 1-based node number num in the global grid
 //	as appropriate for this patch
 NodalPoint *GridPatch::GetNodePointer(int num)
 {

@@ -33,7 +33,7 @@ MatPoint2D::MatPoint2D(int inElemNum,int theMatl,double angin,double thickin) : 
 // matRef is the material and properties have been loaded, matFld is the material field
 void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
 {
- 	int i,numnds,nds[maxShapeNodes];
+ 	int i,numnds,ndsArray[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	Vector vel;
     Matrix3 dv;
@@ -42,7 +42,9 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     
 	// find shape functions and derviatives
 	const ElementBase *elemRef = theElements[ElemID()];
-	elemRef->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,this);
+	int *nds = ndsArray;
+	elemRef->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,this);
+	numnds = nds[0];
     
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle and each node and the right material
@@ -88,33 +90,38 @@ void MatPoint2D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void
     matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res,0);
 }
 
-// Move position (2D) (in mm) possibly with particle damping and accWt = dt/2
-// vstar is velocity extrapolated from grid to particle and end of time step with grid damping
-//        vstar = v(g->p)(n+1) - alpha_g(t)*v(g->p)(n)*dt
-// acc is acceleration with grid damping
-//        acc = a(g->p)(n) - alpha_g(t)*v(g->p)(n)
-// Update with addition of particle damping is
-//        dx = (vstar - alpha_g(t)*vp(n)*dt)*dt - (1/2)(acc-alpha_g(t)*vp(n))*dt^2
-//           = (vstar - (dt/2)*(acc+alpha_g(t)*vp(n)))*dt
+// Move position (2D) (in mm)
+// First finish accExtra by adding ap*Vp(n)
+// Then Update using dx = (Vpg(n+1) - (dt/2)(Agp(n) + accExtra))*dt
 // Must be called BEFORE velocity update, because is needs vp(n) at start of timestep
-void MatPoint2D::MovePosition(double delTime,Vector *vstar,double accWt,double particleAlpha)
+void MatPoint2D::MovePosition(double delTime,Vector *vgpnp1,Vector *accExtra,double particleAlpha)
 {
-	double dx = delTime*(vstar->x - accWt*(acc.x + particleAlpha*vel.x));
-	double dy = delTime*(vstar->y - accWt*(acc.y + particleAlpha*vel.y));
-	pos.x += dx;
-    pos.y += dy;
+	// finish extra acceleration terms by adding ap*Vp(n)
+	accExtra->x += particleAlpha*vel.x;
+	accExtra->y += particleAlpha*vel.y;
+	
+	// position change
+	pos.x += delTime*(vgpnp1->x - 0.5*delTime*(acc.x + accExtra->x));
+    pos.y += delTime*(vgpnp1->y - 0.5*delTime*(acc.y + accExtra->y));
 }
 
-// Move velocity (2D) (in mm/sec) possibly with particle damping
-// acc is acceleration with grid damping
-//        acc = a(g->p)(n) - alpha_g(t)*v(g->p)(n)
-// Update with addition of particle damping is
-//        v = vp + (acc-alpha_g(t)*vp(n))*dt
-//          = vp*(1-alpha_g(t)*dt) + acc*dt
-void MatPoint2D::MoveVelocity(double delTime,double particleAlpha)
+// Move velocity (3D) (in mm/sec)
+// First get final acceleration on the particle
+//		accEff = acc - accExtra
+// Then update using Vp(n+1) = Vp(n) + accEff*dt
+void MatPoint2D::MoveVelocity(double delTime,Vector *accExtra)
 {
-	vel.x = vel.x*(1. - particleAlpha*delTime) + delTime*acc.x;
-    vel.y = vel.y*(1. - particleAlpha*delTime) + delTime*acc.y;
+	acc.x -= accExtra->x;
+	acc.y -= accExtra->y;
+	
+	vel.x += delTime*acc.x;
+    vel.y += delTime*acc.y;
+}
+
+// Move rigid particle by new current velocity
+void MatPoint2D::MovePosition(double delTime)
+{	pos.x += delTime*vel.x;
+    pos.y += delTime*vel.y;
 }
 
 // Scale velocity (2D) (in mm/sec) optionally with rigid materials
@@ -141,7 +148,7 @@ void MatPoint2D::SetPosition(Vector *pt)
 	pos.z=0.;
 }
 
-// set position (2D) (in mm/sec)
+// set velocity (2D) (in mm/sec)
 void MatPoint2D::SetVelocity(Vector *pt)
 {	vel.x=pt->x;
     vel.y=pt->y;
@@ -301,18 +308,20 @@ void MatPoint2D::GetSemiSideVectors(Vector *r1,Vector *r2,Vector *r3) const
 	
 	// get polygon vectors - these are from particle to edge
     //      and generalize semi width lp in 1D GIMP
-    Vector psz = mpmgrid.GetParticleSize();
+    Vector psz = GetParticleSize();
 	r1->x = pF[0][0]*psz.x;
 	r1->y = pF[1][0]*psz.x;
+	r1->z = 0.;
     
 	r2->x = pF[0][1]*psz.y;
 	r2->y = pF[1][1]*psz.y;
+	r2->z = 0.;
 }
 
 // Get undeformed size (only called by GIMP traction)
 // This uses mpmgrid so membrane particles must override
 void MatPoint2D::GetUndeformedSemiSides(double *r1x,double *r2y,double *r3z) const
-{   Vector psz = mpmgrid.GetParticleSize();
+{   Vector psz = GetParticleSize();
     *r1x = psz.x;
     *r2y = psz.y;
 }
@@ -333,26 +342,28 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
     double Ap = 4.*(r1.x*r2.y - r1.y*r2.x);
     
 	try
-	{	if(cpdiType == LINEAR_CPDI)
-		{	// nodes at four courves in ccw direction
+	{	CPDIDomain **cpdi = GetCPDIInfo();
+		
+		if(cpdiType == LINEAR_CPDI)
+		{	// nodes at four corners in ccw direction
 			c.x = pos.x-r1.x-r2.x;
 			c.y = pos.y-r1.y-r2.y;
-			cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+			cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 			theElements[cpdi[0]->inElem]->GetXiPos(&c,&cpdi[0]->ncpos);
 			
 			c.x = pos.x+r1.x-r2.x;
 			c.y = pos.y+r1.y-r2.y;
-			cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+			cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 			theElements[cpdi[1]->inElem]->GetXiPos(&c,&cpdi[1]->ncpos);
 
 			c.x = pos.x+r1.x+r2.x;
 			c.y = pos.y+r1.y+r2.y;
-			cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+			cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 			theElements[cpdi[2]->inElem]->GetXiPos(&c,&cpdi[2]->ncpos);
 			
 			c.x = pos.x-r1.x+r2.x;
 			c.y = pos.y-r1.y+r2.y;
-			cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+			cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 			theElements[cpdi[3]->inElem]->GetXiPos(&c,&cpdi[3]->ncpos);
 			
 			// gradient weighting values
@@ -368,46 +379,46 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 		}
 		
 		else
-		{	// nodes at four courves in ccw direction
+		{	// nodes at four corners in ccw direction
 			c.x = pos.x-r1.x-r2.x;
 			c.y = pos.y-r1.y-r2.y;
-			cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+			cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 			theElements[cpdi[0]->inElem]->GetXiPos(&c,&cpdi[0]->ncpos);
 			
 			c.x = pos.x+r1.x-r2.x;
 			c.y = pos.y+r1.y-r2.y;
-			cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+			cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 			theElements[cpdi[1]->inElem]->GetXiPos(&c,&cpdi[1]->ncpos);
 			
 			c.x = pos.x+r1.x+r2.x;
 			c.y = pos.y+r1.y+r2.y;
-			cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+			cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 			theElements[cpdi[2]->inElem]->GetXiPos(&c,&cpdi[2]->ncpos);
 			
 			c.x = pos.x-r1.x+r2.x;
 			c.y = pos.y-r1.y+r2.y;
-			cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+			cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 			theElements[cpdi[3]->inElem]->GetXiPos(&c,&cpdi[3]->ncpos);
 			
 			// nodes at four edges in ccw direction
 			c.x = pos.x-r2.x;
 			c.y = pos.y-r2.y;
-			cpdi[4]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+			cpdi[4]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 			theElements[cpdi[4]->inElem]->GetXiPos(&c,&cpdi[4]->ncpos);
 			
 			c.x = pos.x+r1.x;
 			c.y = pos.y+r1.y;
-			cpdi[5]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+			cpdi[5]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 			theElements[cpdi[5]->inElem]->GetXiPos(&c,&cpdi[5]->ncpos);
 			
 			c.x = pos.x+r2.x;
 			c.y = pos.y+r2.y;
-			cpdi[6]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+			cpdi[6]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 			theElements[cpdi[6]->inElem]->GetXiPos(&c,&cpdi[6]->ncpos);
 			
 			c.x = pos.x-r1.x;
 			c.y = pos.y-r1.y;
-			cpdi[7]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+			cpdi[7]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 			theElements[cpdi[7]->inElem]->GetXiPos(&c,&cpdi[7]->ncpos);
 			
 			// node on material point
@@ -511,10 +522,10 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         
         // get elements
         try
-        {	cElem[0] = mpmgrid.FindElementFromPoint(&c1)-1;
+        {	cElem[0] = mpmgrid.FindElementFromPoint(&c1,this)-1;
             theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
             
-            cElem[1] = mpmgrid.FindElementFromPoint(&c2)-1;
+            cElem[1] = mpmgrid.FindElementFromPoint(&c2,this)-1;
             theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
         }
         catch(CommonException err)
@@ -560,6 +571,7 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         }
         
         // copy for initial state at start of time step
+		CPDIDomain **cpdi = GetCPDIInfo();
         cElem[0] = cpdi[d1]->inElem;
         corners[0].x = cpdi[d1]->ncpos.x;
         corners[0].y = cpdi[d1]->ncpos.y;

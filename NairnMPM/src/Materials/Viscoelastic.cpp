@@ -14,6 +14,10 @@
 #include "Exceptions/CommonException.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "System/UnitsController.hpp"
+#include "Exceptions/MPMWarnings.hpp"
+
+// class statics
+int Viscoelastic::warnExcessiveX = -1;
 
 #pragma mark Viscoelastic::Constructors and Destructors
 
@@ -41,6 +45,7 @@ Viscoelastic::Viscoelastic(char *matName) : MaterialBase(matName)
 	S1=1.35;			// dimsionless
 	S2=0.;				// dimsionless
 	S3=0.;				// dimsionless
+	Kmax=20.;			// maxium relative increase allows in K
 }
 
 #pragma mark Viscoelastic::Initialization
@@ -71,7 +76,11 @@ void Viscoelastic::PrintMechanicalProperties(void) const
 		PrintProperty("aI",1.e6*CTE,"");
 		PrintProperty("T0",thermal.reference,"K");
 		cout <<  endl;
-
+		
+		// Kmax
+		PrintProperty("Kmax",Kmax," K0");
+		PrintProperty("Xmax",Xmax,"");
+		cout <<  endl;
 	}
 	PrintProperty("G0",G0*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("ntaus",(double)ntaus,"");
@@ -166,7 +175,11 @@ char *Viscoelastic::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&S3);
     }
 
-    
+    else if(strcmp(xName,"Kmax")==0)
+    {	input=DOUBLE_NUM;
+        return((char *)&Kmax);
+    }
+	    
     return(MaterialBase::InputMaterialProperty(xName,input,gScaling));
 }
 
@@ -219,6 +232,11 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 		// this material not coupled to moisture expansion
 		betaI = 0.;
 		CME = 0.;
+		
+		// warning
+		if(warnExcessiveX<0)
+			warnExcessiveX = warnings.CreateWarning("compressive strain has exceeded MGEOS law range in Viscoleastic material",-1,0);
+		Xmax = GetMGEOSXmax(gamma0,S1,S2,S3,Kmax);
 	}
 	
 	else
@@ -593,9 +611,9 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		if(delV<0. && artificialViscosity)
 		{	// Wants K/rho
 #ifdef USE_KIRCHOFF_STRESS
-			QAVred = GetArtificalViscosity(delV/delTime,sqrt(Kered*J));
+			QAVred = GetArtificalViscosity(delV/delTime,sqrt(Kered*J),mptr);
 #else
-			QAVred = GetArtificalViscosity(delV/delTime,sqrt(Kered));
+			QAVred = GetArtificalViscosity(delV/delTime,sqrt(Kered),mptr);
 #endif
 			if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delV);
 		}
@@ -643,21 +661,27 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		{	// new compression J(k+1) = 1-x(k+1)
 			double x = 1.-J;
 			
-			// compression law
-			// denominator = 1 - S1*x - S2*x^2 - S3*x^3
-			double denom = 1./(1. - x*(S1 + x*(S2 + x*S3)));
-			
-			// law not valid if denominator passes zero
-			if(denom<0)
-			{   
-#pragma omp critical (output)
-				{	cout << "# Excessive x = " << x << endl;
-					mptr->Describe();
-				}
+			if(x<=Xmax)
+			{	// compression law
+				// denominator = 1 - S1*x - S2*x^2 - S3*x^3
+				double denom = 1./(1. - x*(S1 + x*(S2 + x*S3)));
+				
+				// current effective and reduced (by rho0) bulk modulus
+				Kred = C0squared*(1.-0.5*gamma0*x)*denom*denom;
 			}
-			
-			// current effective and reduced (by rho0) bulk modulus
-			Kred = C0squared*(1.-0.5*gamma0*x)*denom*denom;
+			else
+			{	// law not valid if gets too high
+				if(warnings.Issue(warnExcessiveX,-1)==GAVE_WARNING)
+				{
+#pragma omp critical (output)
+					{	cout << "# Excessive x = " << x << " causing Kred to increase more than " << Kmax << " fold" << endl;
+						mptr -> Describe();
+					}
+				}
+				
+				// truncate effective and reduced (by rho0) bulk modulus
+				Kred = C0squared*Kmax;
+			}
 			
 			// Pressure from bulk modulus and an energy term
 			double e = mptr->GetInternalEnergy();
@@ -689,7 +713,7 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		// delVMG is total incremental volumetric strain = total Delta(V)/V
 		double QAVred = 0.;
 		if(delVMG<0. && artificialViscosity)
-		{	QAVred = GetArtificalViscosity(delVMG/delTime,sqrt(Kred*J));
+		{	QAVred = GetArtificalViscosity(delVMG/delTime,sqrt(Kred*J),mptr);
 			if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delVMG);
 		}
 		
@@ -756,13 +780,20 @@ double Viscoelastic::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) cons
 		// get K/rho0, but this ignores slope of energy term
 		double KcurrRed;
 		if(J<1.)
-		{   // compression law
-			// denominator = 1 - S1*x - S2*x^2 - S3*x^3
-			double x = 1. - J;
-			double denom = 1./(1. - x*(S1 + x*(S2 + x*S3)));
+		{   double x = 1. - J;
 			
-			// current effective and reduced (by rho0) bulk modulus
-			KcurrRed = C0squared*(1.-0.5*gamma0*x)*denom*denom;
+			if(x<Xmax)
+			{	// compression law
+				// denominator = 1 - S1*x - S2*x^2 - S3*x^3
+				double denom = 1./(1. - x*(S1 + x*(S2 + x*S3)));
+			
+				// current effective and reduced (by rho0) bulk modulus
+				KcurrRed = C0squared*(1.-0.5*gamma0*x)*denom*denom;
+			}
+			else
+			{	// truncate if law seems bad
+				KcurrRed = C0squared*Kmax;
+			}
 		}
 		
 		//KcurrRed *= J;          // converts to K/rho, but keep K/rho0 for hypoelastic material

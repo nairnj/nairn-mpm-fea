@@ -35,7 +35,7 @@ void InitializationTask::Execute(void)
 	
 	// Zero Mass Matrix and vectors
 	warnings.BeginStep();
-    
+	
 #pragma omp parallel
 	{
         // zero all nodal variables on real nodes
@@ -47,8 +47,7 @@ void InitializationTask::Execute(void)
         int pn = GetPatchNumber();
         patches[pn]->InitializeForTimeStep();
 
-		// particle calculations get xipos for particles and if doing CPDI
-        // precalculate CPDI info needed for subsequent shape functions
+		// particle calculations get CPDI or GIMP info for each nonrigid and rigid contact particle
 #pragma omp for nowait
 		for(int p=0;p<nmpmsRC;p++)
         {   MPMBase *mpmptr = mpm[p];                                       // pointer

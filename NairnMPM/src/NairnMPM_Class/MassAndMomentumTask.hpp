@@ -14,6 +14,7 @@
 #define _MASSANDMOMENTUMTASK_
 
 class BoundaryCondition;
+class MPMBase;
 
 #include "NairnMPM_Class/MPMTask.hpp"
 
@@ -26,6 +27,7 @@ class MassAndMomentumTask : public MPMTask
 	
 		// required methods
 		virtual void Execute(void);
+		int GetParticleFunctions(MPMBase *,int **,double *,double *,double *,double *);
 	
 	protected:
 };

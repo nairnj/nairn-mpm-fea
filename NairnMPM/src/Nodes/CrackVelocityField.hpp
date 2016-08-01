@@ -43,6 +43,7 @@ class CrackVelocityField
 		// constructors and destructors
         CrackVelocityField(int,short,int);
         virtual ~CrackVelocityField();
+		virtual MatVelocityField *CreateMatVelocityField(int);
 		virtual void Zero(short,int,bool);
 		virtual void ZeroMatFields() = 0;
 		virtual void AddMatVelocityField(int);
@@ -70,8 +71,7 @@ class CrackVelocityField
 		virtual void AddGravityAndBodyForceTask3(Vector *) = 0;
 	
 		virtual void UpdateMomentaOnField(double) = 0;
-	
-		void IncrementDelvaTask5(int,double,Vector *,Vector *) const;
+		virtual void IncrementDelvaTask5(int,double,GridToParticleExtrap *) const;
 	
 		void CreateStrainField(void);
 		void DeleteStrainField(void);
@@ -95,10 +95,10 @@ class CrackVelocityField
 		// boundary conditions
         virtual void SetMomVel(Vector *) = 0;
         virtual void AddMomVel(Vector *,double) = 0;
-		virtual void ReflectMomVel(Vector *,CrackVelocityField *) = 0;
+		virtual void ReflectMomVel(Vector *,CrackVelocityField *,double) = 0;
         virtual void SetFtotDirection(Vector *,double,Vector *) = 0;
         virtual void AddFtotDirection(Vector *,double,double,Vector *) = 0;
-		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,Vector *) = 0;
+		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,double,Vector *) = 0;
 	
 		// accessors
 		short location(int);

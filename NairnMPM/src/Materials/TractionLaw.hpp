@@ -29,6 +29,7 @@ class TractionLaw : public MaterialBase
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintTransportProperties(void) const;
 		virtual void ReportDebond(double,CrackSegment *,double,double);
+		virtual void CalculateTimeFunction();
 		
         // prototypes for traction law methods (subclasses must override)
 		virtual void CrackTractionLaw(CrackSegment *,double,double,double,double,double);

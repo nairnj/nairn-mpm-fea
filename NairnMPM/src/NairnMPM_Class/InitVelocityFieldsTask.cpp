@@ -40,8 +40,10 @@ void InitVelocityFieldsTask::Execute(void)
 	
 #pragma omp parallel
 	{
-		int nds[maxShapeNodes];
+#ifndef LOAD_GIMP_INFO
+		int ndsArray[maxShapeNodes];
 		double fn[maxShapeNodes];
+#endif
 		
 		int pn = GetPatchNumber();
 		
@@ -54,14 +56,21 @@ void InitVelocityFieldsTask::Execute(void)
 			{	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
 				const int matfld = matID->GetField();                           // material velocity field
 				
+#ifdef LOAD_GIMP_INFO
+				GIMPNodes *gimp = mpmptr->GetGIMPInfo();
+				int *nds = gimp->nds;
+				int numnds = nds[0];
+#else
 				// get nodes and shape function for material point p
 				const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
 				
 				// don't actually need shape functions, but need to screen out zero shape function
 				// like done in subsequent tasks, otherwise node numbers will not align correctly
 				// only thing used from return are numnds and nds
-				int numnds;
-				elref->GetShapeFunctions(&numnds,fn,nds,mpmptr);
+				int *nds = ndsArray;
+				elref->GetShapeFunctions(fn,&nds,mpmptr);
+				int numnds = nds[0];
+#endif
 				
 				// Only need to decipher crack velocity field if has cracks (firstCrack!=NULL)
 				//      and if this material allows cracks.
@@ -120,7 +129,7 @@ void InitVelocityFieldsTask::Execute(void)
 								}
 								catch(CommonException err)
 								{   if(initErr==NULL)
-										initErr = new CommonException(err);
+									initErr = new CommonException(err);
 								}
 							}
 						}
@@ -141,7 +150,7 @@ void InitVelocityFieldsTask::Execute(void)
 							}
 							catch(CommonException err)
 							{   if(initErr==NULL)
-									initErr = new CommonException(err);
+								initErr = new CommonException(err);
 							}
 						}
 						
@@ -160,6 +169,6 @@ void InitVelocityFieldsTask::Execute(void)
 	// copy crack and material fields on real nodes to ghost nodes
 	if(tp>1)
 	{   for(int pn=0;pn<tp;pn++)
-		patches[pn]->InitializationReduction();
+			patches[pn]->InitializationReduction();
 	}
 }

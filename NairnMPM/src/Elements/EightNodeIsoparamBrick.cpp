@@ -88,9 +88,9 @@ void EightNodeIsoparamBrick::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
 
 // see if point is in this element (assumes rectangular)
 short EightNodeIsoparamBrick::PtInElement(Vector &pt) const
-{	if(pt.x<xmin || pt.x>xmax) return FALSE;
-	if(pt.y<ymin || pt.y>ymax) return FALSE;
-	if(pt.z<zmin || pt.z>zmax) return FALSE;
+{	if(pt.x<xmin || pt.x>=xmax) return FALSE;
+	if(pt.y<ymin || pt.y>=ymax) return FALSE;
+	if(pt.z<zmin || pt.z>=zmax) return FALSE;
 	return TRUE;
 }
 
@@ -168,7 +168,7 @@ void EightNodeIsoparamBrick::GetXiPos(Vector *pos,Vector *xipos) const
 // Get GIMP nodes around an element #num, but only where shape functions are nonzero
 // assumed to be properly numbered regular 3D array
 // load nodes into nds[1]... and node ID (0-63) into ndIDs[0]...
-void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos,Vector &lp) const
+void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,unsigned char *ndIDs,Vector *xipos,Vector &lp) const
 {
 	// quadrant barriers assuming 8 particles
 	double q1x = -1.+lp.x, q2x = 1.-lp.x;
@@ -897,7 +897,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 // get GIMP shape functions and optionally derivatives wrt x and y
 // assumed to be properly numbered regular 3D array
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-63)
-void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
+void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,unsigned char *ndIDs,int getDeriv,double *sfxn,
 						double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
 	int i;

@@ -211,34 +211,43 @@ void FourNodeIsoparam::FindExtent(void)
 	/* for speed in GetXiPos() calculations - if it a parallelogram
 		Note: assumes element does not move. If it does, must recalculate these terms
 	*/
-	pgElement=TRUE;
+	pgElement=PGRAM_ELEMENT;
 	
 	// are edges parallel wrt x coordinate?
 	double xdel=fabs(nd[nodes[2]]->x-nd[nodes[1]]->x);
     double ydel=fabs(nd[nodes[3]]->x-nd[nodes[0]]->x);
-	if(!DbleEqual(xdel,ydel) && xdel>1.e-10 && ydel>1.e-10) pgElement=FALSE;
+	if(!DbleEqual(xdel,ydel) && xdel>1.e-10 && ydel>1.e-10)
+	{	pgElement=QUAD_ELEMENT;
+		return;
+	}
 	
-	if(pgElement)
-	{	// are edges parallel wrt y coordinate?
-		xdel=fabs(nd[nodes[2]]->y-nd[nodes[1]]->y);
-		ydel=fabs(nd[nodes[3]]->y-nd[nodes[0]]->y);
-		if(!DbleEqual(xdel,ydel) && xdel>1.e-10 && ydel>1.e-10) pgElement=FALSE;
+	// are edges parallel wrt y coordinate?
+	xdel=fabs(nd[nodes[2]]->y-nd[nodes[1]]->y);
+	ydel=fabs(nd[nodes[3]]->y-nd[nodes[0]]->y);
+	if(!DbleEqual(xdel,ydel) && xdel>1.e-10 && ydel>1.e-10)
+	{	pgElement=QUAD_ELEMENT;
+		return;
+	}
+	
+	// is it a rectangle with [0] on lower left
+	if(DbleEqual(nd[nodes[0]]->x,nd[nodes[3]]->x) && DbleEqual(nd[nodes[0]]->y,nd[nodes[1]]->y)
+		&& (nd[nodes[1]]->x>nd[nodes[0]]->x) && (nd[nodes[3]]->y>nd[nodes[0]]->y))
+	{	pgElement = RECT_ELEMENT;
+		return;
 	}
 
 	// precalculate useful terms
-	if(pgElement)
-	{	pgTerm[0]=nd[nodes[0]]->x+nd[nodes[1]]->x+nd[nodes[2]]->x+nd[nodes[3]]->x;
-		pgTerm[1]=nd[nodes[1]]->x+nd[nodes[2]]->x-nd[nodes[0]]->x-nd[nodes[3]]->x;
-		pgTerm[2]=nd[nodes[2]]->x+nd[nodes[3]]->x-nd[nodes[0]]->x-nd[nodes[1]]->x;
-		pgTerm[3]=nd[nodes[0]]->y+nd[nodes[1]]->y+nd[nodes[2]]->y+nd[nodes[3]]->y;
-		pgTerm[4]=nd[nodes[1]]->y+nd[nodes[2]]->y-nd[nodes[0]]->y-nd[nodes[3]]->y;
-		pgTerm[5]=nd[nodes[2]]->y+nd[nodes[3]]->y-nd[nodes[0]]->y-nd[nodes[1]]->y;
-		double det=pgTerm[1]*pgTerm[5]-pgTerm[2]*pgTerm[4];
-		pgTerm[1]/=det;
-		pgTerm[2]/=det;
-		pgTerm[4]/=det;
-		pgTerm[5]/=det;
-	}
+	pgTerm[0]=nd[nodes[0]]->x+nd[nodes[1]]->x+nd[nodes[2]]->x+nd[nodes[3]]->x;
+	pgTerm[1]=nd[nodes[1]]->x+nd[nodes[2]]->x-nd[nodes[0]]->x-nd[nodes[3]]->x;
+	pgTerm[2]=nd[nodes[2]]->x+nd[nodes[3]]->x-nd[nodes[0]]->x-nd[nodes[1]]->x;
+	pgTerm[3]=nd[nodes[0]]->y+nd[nodes[1]]->y+nd[nodes[2]]->y+nd[nodes[3]]->y;
+	pgTerm[4]=nd[nodes[1]]->y+nd[nodes[2]]->y-nd[nodes[0]]->y-nd[nodes[3]]->y;
+	pgTerm[5]=nd[nodes[2]]->y+nd[nodes[3]]->y-nd[nodes[0]]->y-nd[nodes[1]]->y;
+	double det=pgTerm[1]*pgTerm[5]-pgTerm[2]*pgTerm[4];
+	pgTerm[1]/=det;
+	pgTerm[2]/=det;
+	pgTerm[4]/=det;
+	pgTerm[5]/=det;
 }
 
 /* Find dimensionless coordinates analytically if possible
@@ -252,9 +261,13 @@ void FourNodeIsoparam::FindExtent(void)
 */
 void FourNodeIsoparam::GetXiPos(Vector *pos,Vector *xipos) const
 {
-	// analytical solution for parallelograms
-	if(pgElement)
-	{	double xdel=4.*pos->x-pgTerm[0];
+	if(pgElement==RECT_ELEMENT)
+	{	xipos->x=(2.*pos->x-xmin-xmax)/GetDeltaX();
+		xipos->y=(2.*pos->y-ymin-ymax)/GetDeltaY();
+	}
+	else if(pgElement==PGRAM_ELEMENT)
+	{	// analytical solution for parallelograms
+		double xdel=4.*pos->x-pgTerm[0];
 		double ydel=4.*pos->y-pgTerm[3];
 		xipos->x=(pgTerm[5]*xdel-pgTerm[2]*ydel);
 		xipos->y=(pgTerm[1]*ydel-pgTerm[4]*xdel);
@@ -266,7 +279,11 @@ void FourNodeIsoparam::GetXiPos(Vector *pos,Vector *xipos) const
 // Find Cartesion position from natural coordinates
 void FourNodeIsoparam::GetPosition(Vector *xipos,Vector *pos)
 {
-	if(pgElement)
+	if(pgElement==RECT_ELEMENT)
+	{	pos->x = 0.5*(xmin+xmax+GetDeltaX()*xipos->x);
+		pos->y = 0.5*(ymin+ymax+GetDeltaY()*xipos->y);
+	}
+	else if(pgElement==PGRAM_ELEMENT)
 	{	double xarg = 0.25*(xipos->x + pgTerm[5]*pgTerm[0] - pgTerm[2]*pgTerm[3]);
 		double yarg = 0.25*(xipos->y + pgTerm[1]*pgTerm[3] - pgTerm[4]*pgTerm[0]);
 		double denom = (pgTerm[1]*pgTerm[5] - pgTerm[2]*pgTerm[4]);
@@ -303,12 +320,25 @@ int FourNodeIsoparam::Orthogonal(double *dx,double *dy,double *dz)
 	return TRUE;
 }
 
+// Faster if rectangular element
+short FourNodeIsoparam::PtInElement(Vector &pt) const
+{
+	if(pgElement==RECT_ELEMENT)
+	{	if(pt.x<xmin || pt.x>=xmax) return false;
+		if(pt.y<ymin || pt.y>=ymax) return false;
+		return true;
+	}
+	
+	// pass to subclass
+	return Linear2D::PtInElement(pt);
+}
+
 #pragma mark FourNodeIsoparam::GIMP Methods
 
 // Get GIMP nodes around an element #num, but only where shape functions is non zero
 // assumed to be properly numbered regular array
 // load nodes into nds[1]... and node IDs (0-15) into ndIDs[0]...
-void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos,Vector &lp) const
+void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,unsigned char *ndIDs,Vector *xipos,Vector &lp) const
 {
 	// quadrant barriers assuming 4 particles
 	double q1x = -1.+lp.x, q2x = 1.-lp.x;
@@ -422,7 +452,7 @@ void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipo
 // get GIMP shape functions and optionally derivatives wrt x and y
 // assumed to be properly numbered regular array
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
-void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
+void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,unsigned char *ndIDs,int getDeriv,double *sfxn,
                                          double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
 	int i;
@@ -493,7 +523,7 @@ void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int ge
 // get GIMP shape functions and optionally derivatives wrt x and y
 // assumed to be properly numbered regular array
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
-void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
+void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *ndIDs,int getDeriv,double *sfxn,
 										 double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
 	int i,n;

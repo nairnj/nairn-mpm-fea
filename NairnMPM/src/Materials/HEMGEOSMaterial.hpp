@@ -21,6 +21,7 @@
 class HEMGEOSMaterial : public HEIsotropic
 {
 	public:
+		static int warnExcessiveX;
 		
 		// constructors and destructors
 		HEMGEOSMaterial();
@@ -49,6 +50,7 @@ class HEMGEOSMaterial : public HEIsotropic
 		// unique properties
 		double gamma0,C0,S1,S2,S3;
 		double C0squared;
+		double Kmax,Xmax;
 	
 };
 

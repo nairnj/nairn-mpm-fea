@@ -109,6 +109,7 @@ void ElementBase::GetXYZCentroid(Vector *center)
 }
 
 // depth - 3D element return z extent
+Vector ElementBase::GetDeltaBox(void) const { return MakeVector(xmax-xmin,ymax-ymin,GetThickness()); }
 double ElementBase::GetCenterX(void) const { return 0.5*(xmax+xmin); }
 double ElementBase::GetDeltaX(void) const { return xmax-xmin; }
 double ElementBase::GetDeltaY(void) const { return ymax-ymin; }
@@ -119,6 +120,18 @@ bool ElementBase::IntersectsBox(double xorig,double yorig,double xlength,double 
 	if(ymax<yorig) return false;
 	if(ymin>yorig+ylength) return false;
 	return true;
+}
+
+// 2D range (3D must override)
+void ElementBase::GetRange(int ax,double &amin,double &amax) const
+{	if(ax==0)
+	{	amin = xmin;
+		amax = xmax;
+	}
+	else
+	{	amin = ymin;
+		amax = ymax;
+	}
 }
 
 // number of sides in this element (override if differs)

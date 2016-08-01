@@ -87,13 +87,22 @@ void PressureLaw::PrintMechanicalProperties(void) const
 	}
 }
 
+// evaluate pressure at current time
+// (Don't call in parallel code due to function)
+void PressureLaw::CalculateTimeFunction(void)
+{	// in Legacy units, convert to ms, in consistent units just use the time
+	varTime = mtime*UnitsController::Scaling(1000.);
+	
+	// in Legacy, convert MPa to Pa, in consisten units use the function
+	stress1 = function->Val()*UnitsController::Scaling(1.e6);
+	
+}
+
 #pragma mark PressureLaw::Traction Law
 
 // Traction law - constant pressure on crack surface
 void PressureLaw::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,double dx,double dy,double area)
 {
-	double Tn;
-	
 	// no pressure if less then a specific critical COD
 	if(minCOD>=0. && nCod<=minCOD)
 	{	cs->tract.x = 0.;
@@ -101,20 +110,9 @@ void PressureLaw::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,doub
 		return;
 	}
 	
-	// constant pressure
-	if(function==NULL)
-		Tn = sc;
-	else
-	{	// in Legacy units, convert to ms, in consistent units just use the time
-		varTime = mtime*UnitsController::Scaling(1000.);
-		
-		// in Legacy, convert MPa to Pa, in consisten units use the function
-		Tn = function->Val()*UnitsController::Scaling(1.e6);
-	}
-	
 	// force is traction times area projected onto x-y plane
-	cs->tract.x = area*Tn*dy;
-	cs->tract.y = -area*Tn*dx;
+	cs->tract.x = area*stress1*dy;
+	cs->tract.y = -area*stress1*dx;
 }
 
 // return total energy (which is needed for path independent J) under traction law curve
@@ -132,18 +130,7 @@ double PressureLaw::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod
 	if(minCOD>=0. && nCod<=minCOD) return 0.;
 	
 	// constant pressure
-	double tstress;
-	if(function==NULL)
-		tstress = stress1;
-	else
-	{	// in Legacy units, convert to ms, in consistent units just use the time
-		varTime = mtime*UnitsController::Scaling(1000.);
-		
-		// in Legacy, convert MPa to Pa, in consisten units use the function
-		tstress = function->Val()*UnitsController::Scaling(1.e6);
-	}
-	
-	return tstress*nCod;
+	return stress1*nCod;
 }
 
 #pragma mark CubicTraction::Accessors

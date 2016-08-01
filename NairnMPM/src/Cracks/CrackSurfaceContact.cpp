@@ -240,7 +240,7 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		
 		// normal cod
 		double dnorm=(dispb.x-dispa.x)*norm.x + (dispb.y-dispa.y)*norm.y
-                        - mpmgrid.GetNormalCODAdjust(&norm,NULL,0);
+                        - mpmgrid.GetNormalCODAdjust(&norm,np);
 		if(postUpdate)
 		{	double dvel=(massa+massb)*dotn/(massa*massb);
 			dnorm+=dvel*deltime;
@@ -261,15 +261,29 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		double contactArea = 1.;
 		if(crackContactLaw[number]->FrictionLawNeedsContactArea())
 		{	// Angled path correction (2D only)
-			double dist = mpmgrid.GetPerpendicularDistance(&norm, NULL, 0.);
+			Vector dist = mpmgrid.GetPerpendicularDistance(&norm,np);
 			
 			// Area correction method (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
+			// dist weightings to allow for Tartan grid
 			double vola = cva->GetVolumeNonrigid(true),volb = cvb->GetVolumeNonrigid(true),voltot=vola+volb;
-			contactArea = sqrt(2.0*fmin(vola,volb)*voltot)/dist;
+			contactArea = sqrt(2.0*fmin(vola*dist.y,volb*dist.z)*voltot)/dist.x;
 			if(fmobj->IsAxisymmetric()) contactArea *= np->x;
 		}
+		
+		// second order heating needs acceleration term
+		// Find (ma Fb - mb Fa)/(ma+mb)
+		Vector at;
+		Vector *atPtr = NULL;
+		if(getHeating)
+		{	Vector Fb = cvb->GetCMatFtot();
+			Vector Fa = cva->GetCMatFtot();
+			CopyScaleVector(&at,&Fb,massa*mnode);
+			AddScaledVector(&at,&Fa,-massb*mnode);
+			atPtr = &at;
+		}
+		
 		if(!crackContactLaw[number]->GetFrictionalDeltaMomentum(delPa,&norm,dotn,&mredDE,mred,
-										getHeating,contactArea,*inContact==IN_CONTACT,deltime,NULL))
+										getHeating,contactArea,*inContact==IN_CONTACT,deltime,atPtr))
 		{	return false;
 		}
 		if(mredDE>0.)
@@ -335,27 +349,28 @@ bool CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,C
 	ScaleVector(&norm,1./sqrt(norm.x*norm.x+norm.y*norm.y));
 			
     // Angled path correction (2D only)
-	double dist = mpmgrid.GetPerpendicularDistance(&norm, NULL, 0.);
+	Vector dist = mpmgrid.GetPerpendicularDistance(&norm,np);
     
 	// Area correction method (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
+	// dist weightings to allow for Tartan grid
 	double vola = cva->GetVolumeNonrigid(true),volb = cvb->GetVolumeNonrigid(true),voltot=vola+volb;
-	double surfaceArea = sqrt(2.0*fmin(vola,volb)*voltot)/dist;
+	double surfaceArea = sqrt(2.0*fmin(vola*dist.y,volb*dist.z)*voltot)/dist.x;
 	
     // If axisymmetric, multiply by radial position (vola, volb above were areas)
     if(fmobj->IsAxisymmetric()) surfaceArea *= nodalx;
 	
 	// pass to imperfect interface law
-	return crackContactLaw[number]->GetCrackInterfaceForce(&da,&db,&norm,surfaceArea,dist,fImp,rawEnergy);
+	return crackContactLaw[number]->GetCrackInterfaceForce(&da,&db,&norm,surfaceArea,dist.x,fImp,rawEnergy);
 }
 
 // return SEPARATED if not in contact or IN_CONTACT if now in contact
 // displacement is from a to b (i.e. dispbma = db-da)
 // norm assummed to be normalized, dvel assumed found using normalized norm too
-short CrackSurfaceContact::MaterialContact(Vector *dispbma,Vector *norm,double dvel,bool postUpdate,double deltime)
+short CrackSurfaceContact::MaterialContact(Vector *dispbma,Vector *norm,double dvel,bool postUpdate,double deltime,NodalPoint *ndptr)
 {
 	// normal cod
 	double dnorm=(dispbma->x*norm->x + dispbma->y*norm->y + dispbma->z*norm->z)
-                    - mpmgrid.GetNormalCODAdjust(norm,NULL,0);
+                    - mpmgrid.GetNormalCODAdjust(norm,ndptr);
 	
 	// on post update, adjust by normal velocity difference
 	if(postUpdate) dnorm+=dvel*deltime;

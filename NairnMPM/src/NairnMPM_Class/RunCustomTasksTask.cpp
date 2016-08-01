@@ -28,7 +28,7 @@ RunCustomTasksTask::RunCustomTasksTask(const char *name) : MPMTask(name)
 // Run all custom tasks
 void RunCustomTasksTask::Execute(void)
 {
-	int matfld,numnds,nds[maxShapeNodes];
+	int matfld,numnds,ndsArray[maxShapeNodes];
 	const MaterialBase *matID;
 	double fnmp,fn[maxShapeNodes];
 	//double xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
@@ -50,7 +50,7 @@ void RunCustomTasksTask::Execute(void)
 		// if it was set to TRUE, trasfer to to global setting
 		if(taskNeedsExtrapolations) needExtrapolations=TRUE;
 	}
-	
+    
     /* Step 2: Extrapolate particle info to grid if needed for
 			any custom task
 	   This loop is not parallel. It should be avoided except by custom tasks
@@ -73,8 +73,9 @@ void RunCustomTasksTask::Execute(void)
 			
             // find shape functions and derviatives
 			const ElementBase *elref = theElements[mpmptr->ElemID()];
-			//elref->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,mpmptr);
-			elref->GetShapeFunctions(&numnds,fn,nds,mpmptr);
+			int *nds = ndsArray;
+			elref->GetShapeFunctions(fn,&nds,mpmptr);
+			numnds = nds[0];
             
 			// Add particle property to each node in the element
             for(int i=1;i<=numnds;i++)

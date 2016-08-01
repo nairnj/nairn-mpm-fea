@@ -205,7 +205,21 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             delete [] value;
         }
     }
+	
+    //-----------------------------------------------------------
+    // Read AreaOfInterest (x1,x2,nx each direction)
+    //-----------------------------------------------------------
+	else if(strcmp(xName,"AreaOfInterest")==0)
+	{	throw SAXException("<AreaOfInterest> command requires OSParticulas.");
+	}
 
+    //--------------------------------------------------------------
+    // Border element for tartan mesh (min, max each directino)
+    //--------------------------------------------------------------
+    else if(strcmp(xName,"Border")==0)
+	{	throw SAXException("<Border> command requires OSParticulas.");
+	}
+	
     //--------------------------------------------------------------
     // Read into body properties (materID, angle, thick, velocities)
     //--------------------------------------------------------------
@@ -267,6 +281,13 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         }
     }
 
+    //--------------------------------------------------------------
+    // Read into membrane properties (materID, thick, velocities)
+    //--------------------------------------------------------------
+    else if(strcmp(xName,"Membrane")==0)
+	{	throw SAXException("<Membrane> command requires OSParticulas");
+	}
+	
     //-----------------------------------------------------------
     // Read into geometry parameters for Body shape objects
     //-----------------------------------------------------------
@@ -302,7 +323,12 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		for(i=0;i<numRotations;i++) delete [] angleExpr[i];
 		rotationAxes[0]=0;
 	}
-		
+    
+    else if(strcmp(xName,"vel0X")==0 || strcmp(xName,"vel0Y")==0 || strcmp(xName,"vel0Z")==0
+			|| strcmp(xName,"Lp0X")==0 || strcmp(xName,"Lp0Y")==0 || strcmp(xName,"Lp0Z")==0)
+    {   throw SAXException("<vel0(XYZ)> and <Lp0(XYZ)> commands require OSParticulas");
+    }
+    
     //-----------------------------------------------------------
     // Read into geometry parameters for Body shape objects
     //-----------------------------------------------------------
@@ -361,6 +387,20 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			block=BODY_SHAPE;
 	}
 
+    //-----------------------------------------------------------
+    // Read into geometry parameters for Mambrane shape objects
+    //-----------------------------------------------------------
+    else if(strcmp(xName,"MemLine")==0)
+	{	throw SAXException("<MemLine> command requires OSParticulas");
+	}
+	
+    //-----------------------------------------------------------
+    // Read into geometry parameters for Mambrane shape objects
+    //-----------------------------------------------------------
+    else if(strcmp(xName,"MemPlane")==0)
+	{	throw SAXException("<MemPlane> command requires OSParticulas");
+	}
+    
     //-----------------------------------------------------------
     // Read into geometry parameters for crack segments
     //       Line (xmin,ymin,xmax,ymax)
@@ -444,6 +484,11 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			delete [] value;
 		}
 		theShape->FinishParameter();
+	}
+	
+	// Deform shapes in a BODY
+    else if(strcmp(xName,"Deform")==0)
+	{	throw SAXException("<Deform> command requires OSParticulas");
 	}
 	
 	// triclinic option
@@ -844,7 +889,7 @@ short MPMReadHandler::EndGenerator(char *xName)
 		angleExpr[rotationNum-1]=inputPtr;
 	}
 	
-    else if(strcmp(xName,"Hole")==0)
+	else if(strcmp(xName,"Hole")==0)
     	block=POINTSBLOCK;
     
     else if(strcmp(xName,"Polygon")==0)
@@ -922,6 +967,7 @@ void MPMReadHandler::MPMPts(void)
                             newMpt=new MatPoint2D(i,MatID,Angle,Thick);
                         newMpt->SetPosition(&ppos[k]);
                         newMpt->SetOrigin(&ppos[k]);
+ 						newMpt->SetDimensionlessByPts(fmobj->ptsPerElement);
                         newMpt->SetVelocity(&Vel);
 						
 						// custom angles
@@ -1061,7 +1107,7 @@ void MPMReadHandler::grid()
 	mymax=Ymax;
 	mzmin=Zmin;
 	mzmax=Zmax;
-		
+	
 	// allow for GIMP
 	if(ElementBase::useGimp != POINT_GIMP)
 	{	double cell=(Xmax-Xmin)/(double)Nhoriz;
@@ -1079,10 +1125,10 @@ void MPMReadHandler::grid()
 			Ndepth+=2;
 		}
 	}
-    
+	
 	double zparam,gridz = 0.;
 	if(DbleEqual(Rhoriz,1.) && DbleEqual(Rvert,1.) && (!fmobj->IsThreeD() || DbleEqual(Rdepth,1.)))
-    {   // Orthogonal, and all elements are the same size
+	{   // Orthogonal, and all elements are the same size
 		if(fmobj->IsThreeD())
 		{	zparam = Zmin;
 			gridz = (Zmax-Zmin)/(double)Ndepth;
@@ -1091,12 +1137,12 @@ void MPMReadHandler::grid()
 			zparam = 1.0;
 		else
 			zparam = Z2DThickness;
-        // actual type determined in the methof
+		// actual type determined in the methof
 		mpmgrid.SetCartesian(SQUARE_GRID,(Xmax-Xmin)/(double)Nhoriz,(Ymax-Ymin)/(double)Nvert,gridz);
 		mpmgrid.SetElements(Nhoriz,Nvert,Ndepth,Xmin,Ymin,zparam,Xmax,Ymax,Zmax);
 	}
 	else
-    {   // Orthogonal, but elements do not have equal sides in all dimensions
+	{   // Orthogonal, but elements do not have equal sides in all dimensions
 		int gridType = VARIABLE_RECTANGULAR_GRID;
 		if(fmobj->IsThreeD())
 		{	zparam = Zmin;
@@ -1109,34 +1155,34 @@ void MPMReadHandler::grid()
 			zparam = Z2DThickness;
 		mpmgrid.SetCartesian(gridType,0.,0.,gridz);
 		mpmgrid.SetElements(Nhoriz,Nvert,Ndepth,Xmin,Ymin,zparam,Xmax,Ymax,Zmax);
-    }
+	}
 	
-    // number of nodes and elements
+	// number of nodes and elements
 	if(fmobj->IsThreeD())
-    {	nnodes=(Nhoriz+1)*(Nvert+1)*(Ndepth+1);
+	{	nnodes=(Nhoriz+1)*(Nvert+1)*(Ndepth+1);
 		nelems=Nhoriz*Nvert*Ndepth;
 	}
 	else if(mpm2DElement==FOUR_NODE_ISO)
-    {	nnodes=(Nhoriz+1)*(Nvert+1);
+	{	nnodes=(Nhoriz+1)*(Nvert+1);
 		nelems=Nhoriz*Nvert;
 	}
 	else
 	{	// 9 node Lagranging and side nodes and internal nodes adding one per element in each direction
-    	nnodes=(Nhoriz+1+Nhoriz)*(Nvert+1+Nvert);
+		nnodes=(Nhoriz+1+Nhoriz)*(Nvert+1+Nvert);
 		nelems=Nhoriz*Nvert;
 	}
 	
-     // space for nodal points (1 based)
-    curPt=1;
-    nd=(NodalPoint **)malloc(sizeof(NodalPoint *)*(nnodes+1));
-    if(nd==NULL) throw SAXException("Out of memory allocating space for nodes.");
-
-    // space for elements (0 based)
-    curEl=0;
-    theElements=(ElementBase **)malloc(sizeof(ElementBase *)*nelems);
-    if(theElements==NULL) throw SAXException("Out of memory allocating space for elements.");
-
-    // create the elements
+	// space for nodal points (1 based)
+	curPt=1;
+	nd=(NodalPoint **)malloc(sizeof(NodalPoint *)*(nnodes+1));
+	if(nd==NULL) throw SAXException("Out of memory allocating space for nodes.");
+	
+	// space for elements (0 based)
+	curEl=0;
+	theElements=(ElementBase **)malloc(sizeof(ElementBase *)*nelems);
+	if(theElements==NULL) throw SAXException("Out of memory allocating space for elements.");
+	
+	// create the elements
 	if(fmobj->IsThreeD())
 	{	// create the nodes: vary x first, then y, last z
 		for(k=0;k<=Ndepth;k++)
@@ -1246,13 +1292,18 @@ void MPMReadHandler::CreateSymmetryBCs()
 	{	Xsym = 0.;				// only r=0 is allowed
 		xsymdir = -1;			// to left, but extra BCs not created
 		
+		// not needed if not in the grid
+		if(mpmgrid.xmin>0) return;
+
 		// verify grid passes through 0 or delta r if within 1.25 nodes of origin
+		/*
 		double nmin = mpmgrid.xmin/mpmgrid.GetCellXSize();
 		if(nmin<=1.25)
 		{	double ntest = int(fabs(nmin)+.1);			// int part as double (small number fo round off error)
 			if(!DbleEqual(ntest,fabs(nmin)))
 				throw SAXException("Axisymetric grid that includes r<1.25dr must have nodes at multiple of dr.");
 		}
+		*/
 	}
 	
 	// allow one plane in each direction
@@ -1278,7 +1329,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 {
 	// read grid parameters (min, max, and cell size in direction)
 	double gridmin,gridmax;
-	double gridsize = mpmgrid.GetParametersForBCs(axis,&gridmin,&gridmax);
+	double gridsize = mpmgrid.FindMeshLineForBCs(axis,&gridmin,&gridmax);
 	
 	// find symmetry node location relative to edge of the grid
 	// nmin = -cells from symmetry plane to the edge
@@ -1369,7 +1420,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
                     newVelBC->SetID(velID);
 				
 					// reflected node
-					newVelBC->SetReflectedNode(node - symdir);
+					newVelBC->SetReflectedNode(node - symdir,1.);
 					
 					// link at the end
 					lastVelocityBC->SetNextObject(newVelBC);
@@ -1412,7 +1463,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
                     newVelBC->SetID(velID);
 					
 					// reflected node
-					newVelBC->SetReflectedNode(node - symdir*mpmgrid.yplane);
+					newVelBC->SetReflectedNode(node - symdir*mpmgrid.yplane,1.);
 				
 					// link at the end
 					lastVelocityBC->SetNextObject(newVelBC);
@@ -1456,7 +1507,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
                 newVelBC->SetID(velID);
 				
 				// reflected node
-				newVelBC->SetReflectedNode(node - symdir*mpmgrid.zplane);
+				newVelBC->SetReflectedNode(node - symdir*mpmgrid.zplane,1.);
 				
 				// link at the end
 				lastVelocityBC->SetNextObject(newVelBC);
@@ -1467,9 +1518,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 			node++;
 		}
 	}
-
 }
-
 
 //------------------------------------------------------------------
 // If just created a GIMP grid, make all border elements as holes

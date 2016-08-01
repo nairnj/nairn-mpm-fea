@@ -40,7 +40,7 @@ MatPointAS::MatPointAS(int inElemNum,int theMatl,double angin,double thickin) : 
 // matRef is the material and properties have been loaded, matFld is the material field
 void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
 {
-	int i,numnds,nds[maxShapeNodes];
+	int i,numnds,ndsArray[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	Vector vel;
     Matrix3 dv;
@@ -49,7 +49,9 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     
 	// find shape functions and derviatives
 	const ElementBase *elemRef = theElements[ElemID()];
-	elemRef->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,this);
+	int *nds = ndsArray;
+	elemRef->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,this);
+	numnds = nds[0];
     
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle and each node and the right material
@@ -158,7 +160,7 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 	// truncate domain by shrinking if any have x < 0, but keep particle in the middle
 	if(pos.x-fabs(r1.x+r2.x)<0.)
 	{	// make pos.x-shrink*fabs(r1.x+r2.x) very small and positive
-		double shrink = (pos.x-mpmgrid.GetCellXSize()*1.e-10)/fabs(r1.x+r2.x);
+		double shrink = (pos.x-theElements[ElemID()]->GetDeltaX()*1.e-10)/fabs(r1.x+r2.x);
 		r1.x *= shrink;
 		r1.y *= shrink;
 		r2.x *= shrink;
@@ -170,25 +172,27 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
     double Ap = 4.*(r1.x*r2.y - r1.y*r2.x);
     
 	try
-	{	// nodes at four courves in ccw direction
+	{	CPDIDomain **cpdi = GetCPDIInfo();
+		
+		// nodes at four courves in ccw direction
 		c.x = pos.x-r1.x-r2.x;
 		c.y = pos.y-r1.y-r2.y;
-		cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 		theElements[cpdi[0]->inElem]->GetXiPos(&c,&cpdi[0]->ncpos);
 		
 		c.x = pos.x+r1.x-r2.x;
 		c.y = pos.y+r1.y-r2.y;
-		cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 		theElements[cpdi[1]->inElem]->GetXiPos(&c,&cpdi[1]->ncpos);
 		
 		c.x = pos.x+r1.x+r2.x;
 		c.y = pos.y+r1.y+r2.y;
-		cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 		theElements[cpdi[2]->inElem]->GetXiPos(&c,&cpdi[2]->ncpos);
 		
 		c.x = pos.x-r1.x+r2.x;
 		c.y = pos.y-r1.y+r2.y;
-		cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
 		theElements[cpdi[3]->inElem]->GetXiPos(&c,&cpdi[3]->ncpos);
 		
 		// shape weights
@@ -276,7 +280,7 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         // truncate by shrinking domain if any have x < 0, but keep particle in the middle
         if(pos.x-fabs(r1.x+r2.x)<0.)
         {	// make pos.x-shrink*fabs(r1.x+r2.x) very small and positive
-            double shrink = (pos.x-mpmgrid.GetCellXSize()*1.e-10)/fabs(r1.x+r2.x);
+            double shrink = (pos.x-theElements[ElemID()]->GetDeltaX()*1.e-10)/fabs(r1.x+r2.x);
             r1.x *= shrink;
             r1.y *= shrink;
             r2.x *= shrink;
@@ -334,10 +338,10 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 	
 	// get elements
 	try
-	{	cElem[0] = mpmgrid.FindElementFromPoint(&c1)-1;
+	{	cElem[0] = mpmgrid.FindElementFromPoint(&c1,this)-1;
 		theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
 		
-		cElem[1] = mpmgrid.FindElementFromPoint(&c2)-1;
+		cElem[1] = mpmgrid.FindElementFromPoint(&c2,this)-1;
 		theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
 	}
     catch(CommonException err)

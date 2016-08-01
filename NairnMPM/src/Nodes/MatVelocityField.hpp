@@ -52,7 +52,8 @@ class MatVelocityField
         void AddFtot(Vector *);
         void AddFtotScaled(Vector *,double);
         void UpdateMomentum(double);
-        void IncrementNodalVelAcc(double,Vector *,Vector *) const;
+		virtual void IncrementNodalVelAcc(double,GridToParticleExtrap *gp) const;
+	
         // only called if ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY is defined
         void AdjustForSymmetryBC(int);
 	
@@ -61,7 +62,7 @@ class MatVelocityField
 		void AddContactVolume(double);
 		void SetContactVolume(double);
 		double GetContactVolume(void) const;
-        void SetVelocity(Vector *);
+        void SetVelocity(Vector *);					// VEL1: not needed
         Vector GetVelocity(void);
         void SetMomentVelocityDirection(Vector *);
         void AddMomentVelocityDirection(Vector *,double);
@@ -78,7 +79,7 @@ class MatVelocityField
 		static bool ActiveRigidField(MatVelocityField *mvf);
 		static bool ActiveNonrigidField(MatVelocityField *mvf);
 	
-	private:
+	protected:
 		int flags;					// bitwise flags for some field properties
 		double volume;				// only for contact (cracks or multimaterial)
 

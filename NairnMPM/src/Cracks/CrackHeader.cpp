@@ -1176,11 +1176,13 @@ void CrackHeader::JIntegral(void)
 				if requested */
 			Jx2 = Jy2 = JxAS2 = 0.;
 			if(JTerms==2)
-			{   double rho,xp,yp,carea;
+			{   double xp,yp,carea;
 				double ax,ay,duxdx,duydx,duxdy,duydy;
 				double vx,vy,dvxdx,dvydy,dvxdy,dvydx;
 				double f2ForJx=0.,f2ForJy=0.,f2axisym=0.;
-				count=0;	// number of particles within J-integral contour
+				double rho0,Jp,mp;
+				double Vtot = 0.;	// volume of particles in the zone
+				double Atot = 0.;	// area of particle for axisummetric term
 
 				// integrate nonrigid particles
 				for(int p=0;p<nmpmsNR;p++)
@@ -1188,11 +1190,14 @@ void CrackHeader::JIntegral(void)
 					xp=mptr->pos.x;
 					yp=mptr->pos.y;
 					if(xp>=cxmin && xp<cxmax && yp>=cymin && yp<cymax)
-					{   // (xp,yp) in the contour
-						count++;
+					{	// material reference
+						const MaterialBase *matref = theMaterials[mptr->MatID()];
 						
-						// Mass density g/mm^3
-						rho=mptr->GetRho();
+						// get volume data and add to volume
+						rho0 = matref->GetRho(mptr);
+						Jp = matref->GetCurrentRelativeVolume(mptr,0);
+						mp = mptr->mp;
+						Vtot += Jp*mp/rho0;			// add particle volume
 						
 						// Accelerations mm/sec^2
 						Vector *acc=mptr->GetAcc();
@@ -1217,35 +1222,43 @@ void CrackHeader::JIntegral(void)
 						dvxdy=velGrad->xy;
 						dvydx=velGrad->zz;			// yx stored in zz
 						
-						// increment the integrands (g/mm^3)(mm/sec^2) = uN/mm^3 
-						f2ForJx += rho*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx));
-						f2ForJy += rho*((ax*duxdy+ay*duydy)-(vx*dvxdy+vy*dvydy));
+						// We want Vp*rho*() = mp*()
+						// increment the integrands g*(mm/sec^2) = uN
+						f2ForJx += mp*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx));
+						f2ForJy += mp*((ax*duxdy+ay*duydy)-(vx*dvxdy+vy*dvydy));
 						
+						// Add an area integral is axisymetric
 						if(fmobj->IsAxisymmetric())
-						{	// in axisymmetrix z is theta direction, etheta = u/r. but w=0, az=vz=0
+						{	// Theory has area integral so need new volume element and track separate area
+							double Ap = mptr->GetVolume(DEFORMED_AREA_FOR_GRADIENT);
+							Atot += Ap;
+							
+							// in axisymmetrix z is theta direction, etheta = u/r. but w=0, az=vz=0
 							// Since w=0, no change to above terms, but have some static terms for Jx=Jr only
 							// Stress Units uN/mm^2 (mm^3/g)
 							Tensor sp = mptr->ReadStressTensor();
 							
-							// Units uN/mm^3
+							// Units uN/mm = uN mm/mm^2
+							// add rho*() weighted by area or Ap*(rho0/Jp)*()
 							if(JContourType == AXISYM_BROBERG_J)
 							{	// See Broberg, Cracks and Fraction (1999), page 65
-								f2axisym += rho*(sp.xx*duxdx - sp.zz*gradU(2,2) + sp.xy*duydx)/xp;
+								f2axisym += (Ap*rho0/Jp)*(sp.xx*duxdx - sp.zz*gradU(2,2) + sp.xy*duydx)/xp;
 							}
 							else
 							{	// Bergkvist and Huong called J3D/(a dphi)
-								f2axisym += rho*(mptr->GetWorkEnergy() - sp.zz*gradU(2,2))/crackr;
+								f2axisym += (Ap*rho0/Jp)*(mptr->GetWorkEnergy() - sp.zz*gradU(2,2))/crackr;
 							}
 						}
 					}
 				}
 				
-				if(count==0)
+				if(Vtot<=0.)
 					throw "J Integral contour contains no particles";
-				carea = (cxmax-cxmin)*(cymax-cymin)/count;		// area per particle in mm
-				Jx2 = f2ForJx*carea;							// Jx2 in uN mm/mm^2 now
-				Jy2 = f2ForJy*carea;							// Jy2 in uN mm/mm^2 now
-				JxAS2 = f2axisym*carea;							// JxAS2 (for Jr in axisymmetric) in uN mm/mm^2
+				carea = (cxmax-cxmin)*(cymax-cymin);			// Contour area mm^2
+				Jx2 = f2ForJx*carea/Vtot;						// Jx2 in uN mm/mm^2 now
+				Jy2 = f2ForJy*carea/Vtot;						// Jy2 in uN mm/mm^2 now
+				if(fmobj->IsAxisymmetric())
+					JxAS2 = f2axisym*carea/Atot;				// JxAS2 (for Jr in axisymmetric) in uN mm/mm^2
 #ifdef CONTOUR_PARTS
 				cout << "#...(Jx2,Jy2,JxAS2)=(" << Jx2 << "," << Jy2 << "," << JxAS2 << ")" << endl;
 #endif
@@ -1332,7 +1345,7 @@ void CrackHeader::JIntegral(void)
 			}
 			else
 			{	cout << "# Crack No. " << number << ": "<< msg << endl;
-				cout << "# J calculation and propagation will stop" << endl;
+				cout << "# J calculation and propagation at tip " << crkTipIdx << " will stop" << endl;
 				tipCrk->tipMatnum=-1;
 				ZeroVector(&tipCrk->Jint);
 			}
@@ -1441,26 +1454,6 @@ void CrackHeader::CrackTipHeating(void)
 		// next segment
         scrk=scrk->nextSeg;
 	}
-}
-
-/* see if node is within tolerance (cell dimensions) of the crack tip
-	needs regular grid with equal elements (could revise when needed), otherwise returns false
-*/
-bool CrackHeader::NodeNearTip(NodalPoint *ndi,double tol)
-{
-	if(!mpmgrid.IsStructuredEqualElementsGrid()) return false;
-    Vector csz = mpmgrid.GetCellSize();
-    CrackSegment *scrk=firstSeg;
-	double dx = (ndi->x-scrk->x)/csz.x;
-	double dy = (ndi->y-scrk->y)/csz.y;
-	double dist = sqrt(dx*dx+dy*dy);
-	if(dist<tol) return true;
-    scrk=lastSeg;
-	dx = (ndi->x-scrk->x)/csz.x;
-	dy = (ndi->y-scrk->y)/csz.y;
-	dist = sqrt(dx*dx+dy*dy);
-	if(dist<tol) return true;
-	return false;
 }
 
 #pragma mark GLOBAL EXTENT CRACKS

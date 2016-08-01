@@ -388,17 +388,6 @@ void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shap
 	double mp = mptr->mp;
 	double fnmp = shape*mp;
 	Vector wtvel;
-    
-    // crash with KERN_INVALID_ADDRESS at 0x0000000000000000 might mean NULL field encountered
-    /*
-    if(cvf[vfld]==0)
-    {   cout << "\n NULL field for vfld=" << vfld << endl;
-        Describe();
-        mptr->Describe();
-        throw CommonException("NULL crack velocity field","NodalPoint::AddMassMomentum()");
-    }
-     */
-    
 	cvf[vfld]->AddMomentumTask1(matfld,CopyScaleVector(&wtvel,&mptr->vel,fnmp),&mptr->vel,numPts);
 	
 	// crack contact calculations
@@ -651,8 +640,8 @@ void NodalPoint::UpdateMomentaOnNode(double timestep)
 #pragma mark TASK 5 METHODS
 
 // Increment velocity and acceleration for this material point using one velocity field
-void NodalPoint::IncrementDelvaTask5(short vfld,int matfld,double fi,Vector *delv,Vector *dela) const
-{   cvf[vfld]->IncrementDelvaTask5(matfld,fi,delv,dela);
+void NodalPoint::IncrementDelvaTask5(short vfld,int matfld,double fi,GridToParticleExtrap *gp) const
+{	cvf[vfld]->IncrementDelvaTask5(matfld,fi,gp);
 }
 
 #pragma mark TASK 6 METHODS
@@ -1681,12 +1670,12 @@ void NodalPoint::AddMomVel(Vector *norm,double vel)
 }
 
 // Reflect one component of velocity and momentum from a node
-void NodalPoint::ReflectMomVel(Vector *norm,NodalPoint *ndptr)
+void NodalPoint::ReflectMomVel(Vector *norm,NodalPoint *ndptr,double reflectRatio)
 {
 	// only field zero, which assumes no cracks near the symmetry plane
 	if(CrackVelocityField::ActiveField(cvf[0]))
 	{	if(CrackVelocityField::ActiveField(ndptr->cvf[0]))
-			cvf[0]->ReflectMomVel(norm,ndptr->cvf[0]);
+			cvf[0]->ReflectMomVel(norm,ndptr->cvf[0],reflectRatio);
 	}
 }
 
@@ -1713,12 +1702,12 @@ void NodalPoint::AddFtotDirection(Vector *norm,double deltime,double vel,Vector 
 }
 
 // set one component of force such that updated momentum will match reflected node
-void NodalPoint::ReflectFtotDirection(Vector *norm,double deltime,NodalPoint *ndptr,Vector *freaction)
+void NodalPoint::ReflectFtotDirection(Vector *norm,double deltime,NodalPoint *ndptr,double reflectRatio,Vector *freaction)
 {
 	// only field zero, which assumes no cracks near the symmetry plane
 	if(CrackVelocityField::ActiveField(cvf[0]))
 	{	if(CrackVelocityField::ActiveField(ndptr->cvf[0]))
-			cvf[0]->ReflectFtotDirection(norm,deltime,ndptr->cvf[0],freaction);
+			cvf[0]->ReflectFtotDirection(norm,deltime,ndptr->cvf[0],reflectRatio,freaction);
 	}
 }
 

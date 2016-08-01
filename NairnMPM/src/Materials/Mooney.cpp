@@ -274,7 +274,7 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     double delV = 1. - 1./detDf;                        // total volume change
     double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
-	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(Ksp*J));
+	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(Ksp*J),mptr);
         if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
     }
     double Pfinal = -Kterm + QAVred;

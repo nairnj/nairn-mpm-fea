@@ -18,7 +18,7 @@ extern char rotationAxes[4];
 #endif
 
 // file type allowed in BMP command
-enum { BMP_INPUT_FILE=0 };
+enum { BMP_INPUT_FILE=0,FPG_INPUT_FILE };
 
 //-----------------------------------------------------------
 // Check for bmp element, return false if not

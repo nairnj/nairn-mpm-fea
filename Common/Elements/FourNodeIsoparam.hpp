@@ -37,12 +37,13 @@ class FourNodeIsoparam : public Linear2D
         virtual void FindExtent(void);
 		virtual int Orthogonal(double *,double *,double *);
 		virtual void GetPosition(Vector *xipos,Vector *);
+		virtual short PtInElement(Vector &) const;
 	
 		// const methods
         virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) const;
-		virtual void GetGimpNodes(int *,int *,int *,Vector *,Vector &) const;
-		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *,Vector &) const;
-        virtual void GimpShapeFunctionAS(Vector *,int,int *,int,double *,double *,double *,double *,Vector &) const;
+		virtual void GetGimpNodes(int *,int *,unsigned char *,Vector *,Vector &) const;
+		virtual void GimpShapeFunction(Vector *,int,unsigned char *,int,double *,double *,double *,double *,Vector &) const;
+        virtual void GimpShapeFunctionAS(Vector *,int,unsigned char *,int,double *,double *,double *,double *,Vector &) const;
 		virtual void GetXiPos(Vector *,Vector *) const;
 #endif
 

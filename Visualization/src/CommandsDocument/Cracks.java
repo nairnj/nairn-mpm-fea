@@ -310,7 +310,8 @@ public class Cracks
 		if(args.size()<2)
 			throw new Exception("'"+args.get(0)+"' command with too few arguments:\n"+args);
 		
-		propLength = "      <PropagateLength>"+doc.readDoubleArg(args.get(1))+"</PropagateLength>\n";
+		double pl = doc.readDoubleArg(args.get(1));
+		propLength = "      <PropagateLength>"+doc.formatDble(pl)+"</PropagateLength>\n";
 	}
 	
 	// CrackThickness #1
@@ -325,7 +326,8 @@ public class Cracks
 		if(args.size()<2)
 			throw new Exception("'"+args.get(0)+"' command with too few arguments:\n"+args);
 		
-		crackThickness = "    <Thickness>"+doc.readDoubleArg(args.get(1))+"</Thickness>\n";
+		double ct = doc.readDoubleArg(args.get(1));
+		crackThickness = "    <Thickness>"+doc.formatDble(ct)+"</Thickness>\n";
 	}
 	
 	// Propagaate (crit),<(dir)>,<(traction)>

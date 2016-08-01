@@ -845,7 +845,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 // called when start MP output - only needed for XML output
 int VTKLegacy(ostream &os,const char *mpmFile)
 {
-	os << "# vtk DataFile Version 4.2" << endl;
+	os << "# vtk DataFile Version 4.0" << endl;
 	if(headerName!=NULL)
 		os << headerName;
 	else
@@ -1561,6 +1561,18 @@ int CalcArchiveSize(int vernum)
 			mpmRecSize+=3*sizeof(double);
 		else
 			mpmRecSize+=2*sizeof(double);
+	}
+    if(mpmOrder[ARCH_SpinMomentum]=='Y')
+	{	if(threeD)
+			mpmRecSize+=3*sizeof(double);
+		else
+			mpmRecSize+=sizeof(double);
+	}
+    if(mpmOrder[ARCH_SpinVelocity]=='Y')
+	{	if(threeD)
+			mpmRecSize+=3*sizeof(double);
+		else
+			mpmRecSize+=sizeof(double);
 	}
 		
     // check what will be there for crack segments

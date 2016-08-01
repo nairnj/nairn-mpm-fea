@@ -6,6 +6,8 @@
  * Copyright (c) 2012 RSAC Software. All rights reserved.
  */
 
+import geditcom.JNFramework.JNEvaluator;
+
 import java.util.*;
 
 public class Regions
@@ -66,23 +68,40 @@ public class Regions
 		{	indent = "    ";
 		
 			// read two velocities
+			double velx=0.,vely=0.,velz=0.,thick=0.;
+			String vel0X=null,vel0Y=null,vel0Z=null;
 			if(args.size()<4)
 		    	throw new Exception("'Region' command missing two few arguments:\n"+args);
-			double velx = doc.readDoubleArg(args.get(2));
-			double vely = doc.readDoubleArg(args.get(3));
+			Object velFxn = doc.readStringOrDoubleArg(args.get(2));
+			if(velFxn.getClass().equals(Double.class))
+				velx = ((Double)velFxn).doubleValue();
+			else
+				vel0X = "      <vel0X>"+(String)velFxn+"</vel0X>\n";
+			velFxn = doc.readStringOrDoubleArg(args.get(3));
+			if(velFxn.getClass().equals(Double.class))
+				vely = ((Double)velFxn).doubleValue();
+			else
+				vel0Y = "      <vel0Y>"+(String)velFxn+"</vel0Y>\n";
 			
 		    // start tag
-		    xmlRegions.append("    <Body mat='"+matnum+"' vx='"+velx+"' vy='"+vely+"'");
+		    xmlRegions.append("    <Body mat='"+matnum+"' vx='"+doc.formatDble(velx)+"' vy='"+doc.formatDble(vely)+"'");
 		    
 			// thickness or velocity z
-		    double thick = 0.;
 			if(args.size()>4)
-			{	thick = doc.readDoubleArg(args.get(4));
+			{	if(doc.isMPM3D())
+				{	velFxn = doc.readStringOrDoubleArg(args.get(4));
+					if(velFxn.getClass().equals(Double.class))
+						velz = ((Double)velFxn).doubleValue();
+					else
+						vel0Z = "      <vel0Z>"+(String)velFxn+"</vel0Z>\n";
+				}
+				else
+					thick = doc.readDoubleArg(args.get(4));
 			}
 			if(doc.isMPM3D())
-				xmlRegions.append(" vz='"+thick+"'");
+				xmlRegions.append(" vz='"+doc.formatDble(velz)+"'");
 			else if(args.size()>4)
-				xmlRegions.append(" thick='"+thick+"'");
+				xmlRegions.append(" thick='"+doc.formatDble(thick)+"'");
 			
 			// extra pairs (angle, temp, conc)
 			int nextSize = 5;
@@ -98,12 +117,17 @@ public class Regions
 				double dvalue = doc.readDoubleArg(args.get(nextSize+1));
 				
 				// add it and increment
-				xmlRegions.append(" "+prop+"='"+dvalue+"'");
+				xmlRegions.append(" "+prop+"='"+doc.formatDble(dvalue)+"'");
 				nextSize += 2;
 			}
 			
 			// end region tag
 			xmlRegions.append(">\n");
+			
+			// initial velocities
+			if(vel0X!=null) xmlRegions.append(vel0X);
+			if(vel0Y!=null) xmlRegions.append(vel0Y);
+			if(vel0Z!=null) xmlRegions.append(vel0Z);
 		}
 		
 		else if(doc.isFEA())
@@ -115,7 +139,7 @@ public class Regions
 		    double thickness = doc.readDoubleArg(args.get(2));
 		    
 		    // start tag
-		    xmlRegions.append("  <Body mat='"+matnum+"' thick='"+thickness+"'");
+		    xmlRegions.append("  <Body mat='"+matnum+"' thick='"+doc.formatDble(thickness)+"'");
 			
 			// read angle
 		    if(args.size()>3)
@@ -173,8 +197,8 @@ public class Regions
 	    xmlRegions.append(indent+"<BMP name='"+filePath+"'");
 	    
 	    // optional attrributes
-	    if(width>-1.e8) xmlRegions.append(" width='"+width+"'");
-	    if(height>-1.e8) xmlRegions.append(" height='"+height+"'");
+	    if(width>-1.e8) xmlRegions.append(" width='"+doc.formatDble(width)+"'");
+	    if(height>-1.e8) xmlRegions.append(" height='"+doc.formatDble(height)+"'");
 	    if(anglesPath!=null)
 	    {	if(anglesPath.length()>0)
 	    		xmlRegions.append(" angles='"+anglesPath+"'");
@@ -261,8 +285,8 @@ public class Regions
 		double ymax = doc.readDoubleArg(args.get(4));
 		
 		// add it
-		xmlRegions.append(indent+"  <"+shape+" xmin='"+xmin+"' xmax='"+xmax+"'");
-		xmlRegions.append(" ymin='"+ymin+"' ymax='"+ymax+"'/>\n");
+		xmlRegions.append(indent+"  <"+shape+" xmin='"+doc.formatDble(xmin)+"' xmax='"+doc.formatDble(xmax)+"'");
+		xmlRegions.append(" ymin='"+doc.formatDble(ymin)+"' ymax='"+doc.formatDble(ymax)+"'/>\n");
 	}
 
 	// add point to polygon
@@ -295,7 +319,7 @@ public class Regions
 		double y = doc.readDoubleArg(args.get(2));
 		
 		// add it
-		xmlRegions.append(indent+"    <pt x='"+x+"' y='"+y+"'/>\n");
+		xmlRegions.append(indent+"    <pt x='"+doc.formatDble(x)+"' y='"+doc.formatDble(y)+"'/>\n");
 	}
 	
 	// Origin #1,#2,<#3>,<#4>
@@ -315,8 +339,8 @@ public class Regions
 	    if(args.size()>4) flip = doc.readStringArg(args.get(4)).toLowerCase();
 	    
 	    // add the command
-	    xmlRegions.append(indent+"  <Origin x='"+xo+"' y='"+yo+"'");
-	    if(doc.isMPM3D()) xmlRegions.append(" z='"+zo+"'");
+	    xmlRegions.append(indent+"  <Origin x='"+doc.formatDble(xo)+"' y='"+doc.formatDble(yo)+"'");
+	    if(doc.isMPM3D()) xmlRegions.append(" z='"+doc.formatDble(zo)+"'");
 	    if(flip!=null) xmlRegions.append(" flipped='"+flip+"'");
 	    xmlRegions.append("/>\n");
 	}
@@ -360,13 +384,13 @@ public class Regions
 				propNum += 2;
 				
 				if(prop.equals("thick"))
-					xmlRegions.append(indent+"    <Thickness>"+value+"</Thickness>\n");
+					xmlRegions.append(indent+"    <Thickness>"+doc.formatDble(value)+"</Thickness>\n");
 				else if(prop.equals("temp"))
-					xmlRegions.append(indent+"    <Temperature>"+value+"</Temperature>\n");
+					xmlRegions.append(indent+"    <Temperature>"+doc.formatDble(value)+"</Temperature>\n");
 				else if(prop.equals("angle"))
-					xmlRegions.append(indent+"    <Angle>"+value+"</Angle>\n");
+					xmlRegions.append(indent+"    <Angle>"+doc.formatDble(value)+"</Angle>\n");
 				else if(prop.equals("conc") && doc.isMPM())
-					xmlRegions.append(indent+"    <Concentration>"+value+"</Concentration>\n");
+					xmlRegions.append(indent+"    <Concentration>"+doc.formatDble(value)+"</Concentration>\n");
 				else if(prop.equals("vx") && doc.isMPM())
 				{	vx = value;
 					hasVx = true;
@@ -386,9 +410,9 @@ public class Regions
 			// velocity
 			if(hasVx || hasVy || hasVz)
 			{	xmlRegions.append(indent+"    <vel");
-				if(hasVx) xmlRegions.append(" x='"+vx+"'");
-				if(hasVy) xmlRegions.append(" y='"+vy+"'");
-				if(hasVz && doc.isMPM3D()) xmlRegions.append(" z='"+vz+"'");
+				if(hasVx) xmlRegions.append(" x='"+doc.formatDble(vx)+"'");
+				if(hasVy) xmlRegions.append(" y='"+doc.formatDble(vy)+"'");
+				if(hasVz && doc.isMPM3D()) xmlRegions.append(" z='"+doc.formatDble(vz)+"'");
 				xmlRegions.append("/>\n");
 			}
 			
@@ -404,7 +428,7 @@ public class Regions
 			
 			// the commmad
 			xmlRegions.append(indent+"  <Intensity imin='"+gray1+"' imax='"+gray2+"'");
-			xmlRegions.append(" minAngle='"+angle1+"' maxAngle='"+angle2+"'/>\n");
+			xmlRegions.append(" minAngle='"+doc.formatDble(angle1)+"' maxAngle='"+doc.formatDble(angle2)+"'/>\n");
 		}
 	}
 	
@@ -465,7 +489,7 @@ public class Regions
 	}
 	
 	// add shape for Box #1,#2,#3,#4,#5,#6 or Sphere
-	// Cylinder #1,#2,#3,#4,#5,#6,#7,#8
+	// Cylinder #1,#2,#3,#4,#5,#6,#7,<#8>  or Torus
 	public void AddBox(ArrayList<String> args,String shape) throws Exception
 	{	// times not allowed
 		if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
@@ -484,17 +508,44 @@ public class Regions
 		double zmax = doc.readDoubleArg(args.get(6));
 		
 		// add it
-		xmlRegions.append(indent+"  <"+shape+" xmin='"+xmin+"' xmax='"+xmax+"'");
-		xmlRegions.append(" ymin='"+ymin+"' ymax='"+ymax+"'");
-		xmlRegions.append(" zmin='"+zmin+"' zmax='"+zmax+"'");
-		if(shape.equals("Cylinder"))
+		xmlRegions.append(indent+"  <"+shape+" xmin='"+doc.formatDble(xmin)+"' xmax='"+doc.formatDble(xmax)+"'");
+		xmlRegions.append(" ymin='"+doc.formatDble(ymin)+"' ymax='"+doc.formatDble(ymax)+"'");
+		xmlRegions.append(" zmin='"+doc.formatDble(zmin)+"' zmax='"+doc.formatDble(zmax)+"'");
+		if(shape.equals("Cylinder") || shape.equals("Torus"))
 		{	if(args.size()<8)
 				throw new Exception("'"+shape+"' command has too few parameters: "+args);
-			xmlRegions.append(" axis='"+doc.readIntArg(args.get(7))+"'");
+			// axis
+			HashMap<String,Integer> options = new HashMap<String,Integer>(10);
+			options.put("x", new Integer(1));
+			options.put("y", new Integer(2));
+			options.put("z", new Integer(3));
+			int axis = doc.readIntOption(args.get(7),options,"shape axis");
+			xmlRegions.append(" axis='"+axis+"'");
 			if(args.size()>8)
-				xmlRegions.append(" radius='"+doc.readDoubleArg(args.get(8))+"'");
+				xmlRegions.append(" radius='"+doc.formatDble(doc.readDoubleArg(args.get(8)))+"'");
 		}
 		xmlRegions.append("/>\n");
+	}
+	
+	// AngularMom0 Lpz (if 2D) or AngularMom0 Lpx,Lpy,Lpz (if 3D)
+	public void AddAngularMom0(ArrayList<String> args) throws Exception
+	{	// 2D or 3D
+		if(args.size()<2)
+			throw new Exception("'AngulaMom0' command has too few parameters: "+args);
+		
+		String Lp;
+		Object LpFxn = doc.readStringOrDoubleArg(args.get(1));
+		if(doc.isMPM3D())
+		{	Lp = "      <Lp0X>"+LpFxn+"</Lp0X>\n";
+			if(args.size()>2)
+				Lp = Lp + "      <Lp0Y>"+doc.readStringOrDoubleArg(args.get(2))+"</Lp0Y>\n";
+			if(args.size()>3)
+				Lp = Lp + "      <Lp0Z>"+doc.readStringOrDoubleArg(args.get(3))+"</Lp0Z>\n";
+		}
+		else
+			Lp = "      <Lp0Z>"+LpFxn+"</Lp0Z>\n";
+		xmlRegions.append(Lp);
+
 	}
 	
 	// insert XML

@@ -545,7 +545,4 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 		default:
 			break;
 	}
-	
 }
-
-

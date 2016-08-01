@@ -28,6 +28,7 @@ NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTi
 {
     nodeNum = num;
 	reflectedNode = -1;
+	reflectRatio = 1.;
     mirrorSpacing = 0;                      // +1 shift higher nodes, -1 shift lower, 0 no mirroring
     angle1 = ang1;
     angle2 = ang2;
@@ -69,6 +70,14 @@ BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,d
 // just unset condition, because may want to reuse it, return next one to unset
 BoundaryCondition *NodalVelBC::UnsetDirection(void)
 {	nd[nodeNum]->UnsetFixedDirection(dir);		// x, y, or z (1,2,4) directions
+	/*
+	if(dir==X_DIRECTION)
+		nd[nodeNum]->UnsetFixedDirection(XSYMMETRYPLANE_DIRECTION);
+	else if(dir==Y_DIRECTION)
+		nd[nodeNum]->UnsetFixedDirection(YSYMMETRYPLANE_DIRECTION);
+	else if(dir==Z_DIRECTION)
+		nd[nodeNum]->UnsetFixedDirection(ZSYMMETRYPLANE_DIRECTION);
+	*/
 	return (BoundaryCondition *)GetNextObject();
 }
 
@@ -220,8 +229,8 @@ NodalVelBC *NodalVelBC::AddVelBC(double bctime)
 		}
 		else
 		{	// reflect one component at a symmetry plane
-            nd[i]->AddMomVel(&norm,2.*currentValue);
-			nd[i]->ReflectMomVel(&norm,nd[reflectedNode]);
+            nd[i]->AddMomVel(&norm,(1.+reflectRatio)*currentValue);
+			nd[i]->ReflectMomVel(&norm,nd[reflectedNode],reflectRatio);
 		}
 	}
     return (NodalVelBC *)GetNextObject();
@@ -251,6 +260,9 @@ NodalVelBC *NodalVelBC::SetMirroredVelBC(double bctime)
                         // found node to reflect
                         //cout << "#    node " << mirror << " from " << i << " through " << neighbor << endl;
                         reflectedNode = mirror;
+						
+						// the ratio is fabs(neighbod-i)/fabs(mirror-neighbor)
+						reflectRatio = 1.;			// no Tartan grid in NairnMPM
                     }
                 }
             }
@@ -283,8 +295,8 @@ NodalVelBC *NodalVelBC::SuperposeFtotDirection(double bctime)
 		}
 		else
 		{	// use reflected velocity
-            nd[i]->AddFtotDirection(&norm,timestep,2.*currentValue,&freaction);
-			nd[i]->ReflectFtotDirection(&norm,timestep,nd[reflectedNode],&freaction);
+            nd[i]->AddFtotDirection(&norm,timestep,(1.+reflectRatio)*currentValue,&freaction);
+			nd[i]->ReflectFtotDirection(&norm,timestep,nd[reflectedNode],reflectRatio,&freaction);
 		}
 	}
 	return (NodalVelBC *)GetNextObject();
@@ -299,10 +311,15 @@ NodalVelBC *NodalVelBC::AddReactionForce(Vector *totalReaction,int matchID)
 }
 
 // On symmetry plane set velocity to minus component of the reflected node
-void NodalVelBC::SetReflectedNode(int mirrored) { reflectedNode = mirrored; }
+void NodalVelBC::SetReflectedNode(int mirrored,double cellRatio)
+{	reflectedNode = mirrored;
+	reflectRatio = cellRatio;
+}
 
 // On rigid particle set spacing to mirrored node
-// Needs structured grid, but does not appear to need equal element sizes
+// Needs structured grid, but does not need equal element sizes
+// mirrorSpacing is node spacing in plane for this BCs node to be refected it needs:
+//	a. mirrorSpacing away is BC with same fixed direction and 2*mirrorSpacing away is free node in the object
 void NodalVelBC::SetMirrorSpacing(int mirrored)
 {
 	mirrorSpacing = 0;
@@ -356,7 +373,7 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
 {
     int i;
     NodalVelBC *nextBC;
-    
+	
 #ifdef ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
 	// adjust for symmetry plane option
 	nextBC=firstVelocityBC;
@@ -372,7 +389,7 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
 		nextBC = (NodalVelBC *)nextBC->GetNextObject();
 	}
 #endif
-	
+    
 	// convert time to ms, use time at beginning or end of time step
     // On first pass (when true), copy nodal momenta before anything changed
     //	(may make multiple copies, but that is OK)

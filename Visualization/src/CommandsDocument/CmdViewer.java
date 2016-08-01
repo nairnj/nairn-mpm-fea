@@ -43,6 +43,7 @@ public class CmdViewer extends JNCmdTextDocument
 	private String username;
 	private StringBuffer header;
 	private int np;
+	private boolean plusSpin;
 	private int processors=1;
 	private int lnameEl;
 	private HashMap<String,String> xmldata = null;
@@ -57,14 +58,17 @@ public class CmdViewer extends JNCmdTextDocument
 	public Cracks cracks = null;
 	private StringBuffer outFlags;
 	private int mpmMethod;
+	private boolean skipExtrap;
 	private String shapeMethod;
 	private String archiveRoot;
 	private String archiveTime;
 	private String timeStep;
 	private String maxTime;
+	private String cflFactor;
 	private String globalArchive;
 	private String damping;
 	private String pdamping;
+	private String xpic;
 	private String fbDamping;
 	private String pfbDamping;
 	private String leaveLimit;
@@ -249,7 +253,7 @@ public class CmdViewer extends JNCmdTextDocument
 		if(nfmAnalysis == null)
 			nfmAnalysis = new NFMAnalysis(this);
 		
-		// what if process is current running?
+		// what if process is currently running?
 		if(nfmAnalysis.isRunning())
 		{	JNApplication.appBeep();
 			String message="An FEA or MPM process is currently running.\nDo you want stop it and start a new process?";
@@ -268,7 +272,7 @@ public class CmdViewer extends JNCmdTextDocument
 		{	// interpret commands
 			useBackground = doBackground;
 			openMesh = runType;
-			// call in super class initiates command interpertation
+			// call in super class initiates command interpretation
 			super.runAnalysis();
 			
 			// when interpretation done, will launch the analysis in analysisFinished()
@@ -317,6 +321,7 @@ public class CmdViewer extends JNCmdTextDocument
 		username = null;
 		header = new StringBuffer("");
 		np = -1;
+		plusSpin = false;
 		lnameEl = NO_ELEMENT;
 		xmldata = new HashMap<String,String>(10);
 		entities = new HashMap<String,String>(10);
@@ -333,11 +338,13 @@ public class CmdViewer extends JNCmdTextDocument
 		mpmOrder = null;
 		crackOrder = null;
 		mpmMethod = 0;
+		skipExtrap=false;
 		shapeMethod = "uGIMP";
 		archiveRoot = "    <ArchiveRoot>Results/data.</ArchiveRoot>\n";
 		archiveTime = "";
 		timeStep = "    <TimeStep>1e15</TimeStep>\n";
 		maxTime = "";
+		cflFactor = "";
 		globalArchive="";
 		feaTemp = null;
 		stressFreeTemp = 0.;
@@ -346,6 +353,7 @@ public class CmdViewer extends JNCmdTextDocument
 		stopCommand = false;
 		damping = null;
 		pdamping = null;
+		xpic = null;
 		fbDamping = null;
 		pfbDamping = null;
 		leaveLimit = null;
@@ -378,7 +386,7 @@ public class CmdViewer extends JNCmdTextDocument
 	
 	// handle commands
 	public void doCommand(String theCmd,ArrayList<String> args) throws Exception
-	{	
+	{	//System.out.println(theCmd+":"+args);
 		// if script, switch to script commands
 		if(runningScript)
 		{	doScriptCommand(theCmd,args);
@@ -465,6 +473,9 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("maximumtime"))
 			doMaxTime(args);
+		
+		else if(theCmd.equals("cflfactor"))
+			doCFLFactor(args);
 		
 		else if(theCmd.equals("element"))
 			doElement(args);
@@ -647,6 +658,9 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("bmpregion"))
 			regions.StartBMPRegion(args);
 		
+		else if(theCmd.equals("angularmom0"))
+			regions.AddAngularMom0(args);
+		
 		else if(theCmd.equals("endregion"))
 			regions.EndRegion(args);
 		
@@ -670,6 +684,9 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("cylinder"))
 			regions.AddBox(args,"Cylinder");
+		
+		else if(theCmd.equals("torus"))
+			regions.AddBox(args,"Torus");
 		
 		else if(theCmd.equals("sphere"))
 			regions.AddBox(args,"Sphere");
@@ -1170,9 +1187,19 @@ public class CmdViewer extends JNCmdTextDocument
 		options.put("plane stress mpm", new Integer(PLANE_STRESS_MPM));
 		options.put("axisymmetric mpm", new Integer(AXI_SYM_MPM));
 		options.put("3d mpm", new Integer(THREED_MPM));
+		options.put("plane strain mpm+ps", new Integer(PLANE_STRAIN_MPM+100));
+		options.put("plane stress mpm+ps", new Integer(PLANE_STRESS_MPM+100));
+		options.put("axisymmetric mpm+ps", new Integer(AXI_SYM_MPM+100));
+		options.put("3d mpm+ps", new Integer(THREED_MPM+100));
 		
 		// read it
 		np = readIntOption(args.get(1),options,"Analysis type");
+		
+		// decode particle spin
+		if(np>100)
+		{	np-=100;
+			plusSpin = true;
+		}
 		
 		// optional element second
 		if(args.size()>2)
@@ -1181,7 +1208,11 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		else if(lnameEl==NO_ELEMENT)
         {   if(np>BEGIN_MPM_TYPES)
-            	lnameEl=ElementBase.FOUR_NODE_ISO;
+        	{	if(np==THREED_MPM)
+        			lnameEl=ElementBase.EIGHT_NODE_ISO_BRICK;
+         		else
+            		lnameEl=ElementBase.FOUR_NODE_ISO;
+        	}
         }
 	}
 	
@@ -1199,8 +1230,23 @@ public class CmdViewer extends JNCmdTextDocument
 		HashMap<String,Integer> options = new HashMap<String,Integer>(10);
 		options.put("usf", new Integer(0));
 		options.put("usavg", new Integer(2));
+		options.put("usavg+", new Integer(2));
+		options.put("usavg-", new Integer(2));
 		options.put("szs", new Integer(3));
-		mpmMethod = readIntOption(args.get(1),options,"MPM update method");
+		options.put("usl", new Integer(3));
+		options.put("usl+", new Integer(3));
+		options.put("usl-", new Integer(3));
+		String uoption = readStringArg(args.get(1));
+		mpmMethod = readIntOption(uoption,options,"MPM update method");
+		
+		// look for skipping extrapolations
+		int nu = uoption.length();
+		if(nu>1)
+		{	if(uoption.charAt(nu-1)=='-')
+				skipExtrap=true;
+			else
+				skipExtrap=false;
+		}
 		
 		// shape functions
 		if(args.size()>2)
@@ -1333,21 +1379,34 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		// archive time (in sec)
 		double aTime = readDoubleArg(args.get(1))*1.e-3;
-		timeStep = "    <TimeStep>"+aTime+"</TimeStep>\n";
+		timeStep = "    <TimeStep>"+formatDble(aTime)+"</TimeStep>\n";
 		
 		// max time (in sec)
 		if(args.size()>2)
 		{	aTime = readDoubleArg(args.get(2))*1.e-3;
-			maxTime = "    <MaxTime>"+aTime+"</MaxTime>\n";
+			maxTime = "    <MaxTime>"+formatDble(aTime)+"</MaxTime>\n";
 		}
 		
 		// Courant time
 		if(args.size()>3)
 		{	aTime = readDoubleArg(args.get(3));
-			timeStep = timeStep + "    <TimeFactor>"+aTime+"</TimeFactor>\n";
+			cflFactor = "    <TimeFactor>"+formatDble(aTime)+"</TimeFactor>\n";
 		}
 	}
 		
+	// CFLFactor #1
+	public void doCFLFactor(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'CFLFactor' has too few parameters:\n"+args);
+		
+		double aCFL = readDoubleArg(args.get(1));
+		cflFactor = "    <TimeFactor>"+formatDble(aCFL)+"</TimeFactor>\n";
+	}
+	
 	// TimeStep #1,#2,#3 (time step and optional max time and courant factor)
 	public void doMaxTime(ArrayList<String> args) throws Exception
 	{	// MPM Only
@@ -1451,6 +1510,10 @@ public class CmdViewer extends JNCmdTextDocument
 	        	loc = ReadArchive.ARCH_RotStrain;
 	        else if(archive.equals("damagenormal"))
 	        	loc = ReadArchive.ARCH_DamageNormal;
+	        else if(archive.equals("lp"))
+	        	loc = ReadArchive.ARCH_SpinMomentum;
+	        else if(archive.equals("wp"))
+	        	loc = ReadArchive.ARCH_SpinVelocity;
 	        
 	        if(loc<0 && cloc<0)
 	        	throw new Exception("'"+archive+"' is not a valid archiving option:\n"+args);
@@ -1660,7 +1723,7 @@ public class CmdViewer extends JNCmdTextDocument
 		rampStart = readDoubleArg(args.get(1));
 	}
 	
-	// Damping #1 (number or function),#2 (0 to 1 for PIC)
+	// Damping #1 (number or function),#2 (0 to 1 for PIC),#3 (>0 int for XPIC)
 	// also does PDamping command
 	public void doDamping(ArrayList<String> args,String dcmd) throws Exception
 	{	// MPM Only
@@ -1683,19 +1746,31 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		// PIC fraction (optional)
+		double pic = -1.;
 		if(args.size()>2)
-		{	double pic = readDoubleArg(args.get(2));
+		{	pic = readDoubleArg(args.get(2));
 			if(pic<0 || pic>1)
 				throw new Exception("PIC damping in '"+dcmd+"' must be from 0 to 1:\n"+args);
-			dampcmd = dampcmd+" PIC='"+pic+"'>"+damp+"</"+dcmd+">\n";
+			dampcmd = dampcmd+" PIC='"+pic+"'>"+formatDble(damp)+"</"+dcmd+">\n";
 		}
 		else
-			dampcmd = dampcmd+">"+damp+"</"+dcmd+">\n";
+			dampcmd = dampcmd+">"+formatDble(damp)+"</"+dcmd+">\n";
 		
 		if(dcmd.equals("Damping"))
 			damping = dampcmd;
 		else
 			pdamping = dampcmd;
+		
+		// XPIC (optional)
+		if(args.size()>3)
+		{	int xpicOrder = readIntArg(args.get(3));
+			if(xpicOrder<1)
+				throw new Exception("XPIC order in '"+dcmd+"' must be integer > 0:\n"+args);
+			xpic = "    <XPIC order='"+xpicOrder+"'/>\n";
+		}
+		
+		// but delete if no PIC
+		if(pic<=0.) xpic = null;
 	}
 	
 	// MultimaterialMode Vmin,Dcheck,Normals,RigidBias
@@ -1757,7 +1832,7 @@ public class CmdViewer extends JNCmdTextDocument
 			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
 		double cp = readDoubleArg(args.get(1));
-		ContactPosition = "      <ContactPosition>"+cp+"</ContactPosition>\n";
+		ContactPosition = "      <ContactPosition>"+formatDble(cp)+"</ContactPosition>\n";
 	}
 	
 	// ContactMM (LawID),<material ID (only as material prop)>
@@ -1839,12 +1914,12 @@ public class CmdViewer extends JNCmdTextDocument
 			if(matnum<=0)
 				throw new Exception("'"+args.get(0)+"' as material property has unknown material ID:\n"+args);
 			
-			String cmd = "    <Friction mat='"+matnum+"'>"+frict+"</Friction>\n";
+			String cmd = "    <Friction mat='"+matnum+"'>"+formatDble(frict)+"</Friction>\n";
 			return cmd;
 		}
 		
 		// Friction for cracks or multimaterial mode
-		String cmd = "      <Friction>"+frict+"</Friction>\n";
+		String cmd = "      <Friction>"+formatDble(frict)+"</Friction>\n";
 		if(MMMode==1)
 			FrictionMM = cmd;
 		else if(MMMode==0)
@@ -1927,12 +2002,12 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		String fb;
 		if(target==null)
-			fb = "    <"+dfbcmd+">"+damp+"</"+dfbcmd+">\n";
+			fb = "    <"+dfbcmd+">"+formatDble(damp)+"</"+dfbcmd+">\n";
 		else if(maxdamp<0.)
-			fb = "    <"+dfbcmd+" target='"+target+"'>"+damp+"</"+dfbcmd+">\n";
+			fb = "    <"+dfbcmd+" target='"+target+"'>"+formatDble(damp)+"</"+dfbcmd+">\n";
 		else
-		{	fb = "    <"+dfbcmd+" target='"+target+"' max='"+maxdamp+
-								"'>"+damp+"</"+dfbcmd+">\n";
+		{	fb = "    <"+dfbcmd+" target='"+target+"' max='"+formatDble(maxdamp)+
+								"'>"+formatDble(damp)+"</"+dfbcmd+">\n";
 		}
 		
 		if(dfbcmd.equals("FeedbackDamping"))
@@ -2150,8 +2225,8 @@ public class CmdViewer extends JNCmdTextDocument
 		if(args.size()>1)
 		{	Object gxarg = readStringOrDoubleArg(args.get(1));
 			if(gxarg.getClass().equals(Double.class))
-			{	double gx = 1000.*((Double)gxarg).doubleValue();
-				gravity = "    <BodyXForce>"+gx+"</BodyXForce>\n";
+			{	double gx = ((Double)gxarg).doubleValue();
+				gravity = "    <BodyXForce>"+formatDble(gx)+"</BodyXForce>\n";
 			}
 			else
 				gravity = "    <GridBodyXForce>"+(String)gxarg+"</GridBodyXForce>\n";
@@ -2163,8 +2238,8 @@ public class CmdViewer extends JNCmdTextDocument
 		if(args.size()>2)
 		{	Object gyarg = readStringOrDoubleArg(args.get(2));
 			if(gyarg.getClass().equals(Double.class))
-			{	double gy = 1000.*((Double)gyarg).doubleValue();
-				gravity = gravity + "    <BodyYForce>"+gy+"</BodyYForce>\n";
+			{	double gy = ((Double)gyarg).doubleValue();
+				gravity = gravity + "    <BodyYForce>"+formatDble(gy)+"</BodyYForce>\n";
 			}
 			else
 				gravity = gravity + "    <GridBodyYForce>"+(String)gyarg+"</GridBodyYForce>\n";
@@ -2176,8 +2251,8 @@ public class CmdViewer extends JNCmdTextDocument
 		if(args.size()>3)
 		{	Object gzarg = readStringOrDoubleArg(args.get(3));
 			if(gzarg.getClass().equals(Double.class))
-			{	double gz = 1000.*((Double)gzarg).doubleValue();
-				gravity = gravity + "    <BodyZForce>"+gz+"</BodyZForce>\n";
+			{	double gz = ((Double)gzarg).doubleValue();
+				gravity = gravity + "    <BodyZForce>"+formatDble(gz)+"</BodyZForce>\n";
 			}
 			else
 				gravity = gravity + "    <GridBodyZForce>"+(String)gzarg+"</GridBodyZForce>\n";
@@ -2390,9 +2465,12 @@ public class CmdViewer extends JNCmdTextDocument
 			
 			// MPM method and GIMP
 			xml.append("    <MPMMethod>"+mpmMethod+"</MPMMethod>\n");
+			if(skipExtrap) xml.append("    <SkipPostExtrapolation/>\n");
 			xml.append("    <GIMP type='"+shapeMethod+"'/>\n");
+			if(plusSpin) xml.append("    <TrackParticleSpin/>\n");
 			if(ptsPerElement!=null) xml.append(ptsPerElement);
 			xml.append(timeStep);
+			xml.append(cflFactor);
 			xml.append(maxTime);
 			xml.append(archiveRoot);
 			xml.append(archiveTime);
@@ -2408,6 +2486,7 @@ public class CmdViewer extends JNCmdTextDocument
 			// damping, leave limit, diffusion
 			if(damping!=null) xml.append(damping);
 			if(pdamping!=null) xml.append(pdamping);
+			if(xpic!=null) xml.append(xpic);
 			if(fbDamping!=null) xml.append(fbDamping);
 			if(pfbDamping!=null) xml.append(pfbDamping);
 			if(extrapolateRigid!=null) xml.append(extrapolateRigid);
@@ -2436,7 +2515,7 @@ public class CmdViewer extends JNCmdTextDocument
 			
 			// stress free temperature
 			if(stressFreeTemp!=0.)
-				xml.append("    <StressFreeTemp>"+stressFreeTemp+"</StressFreeTemp>\n");
+				xml.append("    <StressFreeTemp>"+formatDble(stressFreeTemp)+"</StressFreeTemp>\n");
 			
 			// check added xml
 			more = xmldata.get("mpmheader");
@@ -2511,7 +2590,7 @@ public class CmdViewer extends JNCmdTextDocument
 					xml.append("    <Temperature>"+feaTemp+"</Temperature>\n");
 				
 				if(stressFreeTemp!=0.)
-					xml.append("    <StressFreeTemp>"+stressFreeTemp+"</StressFreeTemp>\n");
+					xml.append("    <StressFreeTemp>"+formatDble(stressFreeTemp)+"</StressFreeTemp>\n");
 				
 				// check added xml
 				if(more != null) xml.append(more);
@@ -2534,9 +2613,9 @@ public class CmdViewer extends JNCmdTextDocument
 				// <Isothermal time="(time)" start="(start time)">(diff)</Isothermal>
 				if(rampTime>-1.5)
 				{	xml.append("    <Isothermal");
-					if(rampTime>0.) xml.append(" time='"+rampTime+"'");
-					if(rampStart>0.) xml.append(" start='"+rampStart+"'");
-					xml.append(">"+rampDiff+"</Isothermal>\n");
+					if(rampTime>0.) xml.append(" time='"+formatDble(rampTime)+"'");
+					if(rampStart>0.) xml.append(" start='"+formatDble(rampStart)+"'");
+					xml.append(">"+formatDble(rampDiff)+"</Isothermal>\n");
 				}
 					
 			
@@ -2645,7 +2724,7 @@ public class CmdViewer extends JNCmdTextDocument
 		throw new Exception("Some unknown command is only allowed in MPM calculations.");
 	}
 	
-	// return Double object or look for entity
+	// return String of Double, String of entity, or Integer object
 	public Object readNumberOrEntityArg(String text,boolean isInt,double scaleNum) throws Exception
 	{	Object arg = readStringOrDoubleArg(text);
 		if(arg.getClass().equals(Double.class))
@@ -2653,11 +2732,10 @@ public class CmdViewer extends JNCmdTextDocument
 			{	Integer intarg = new Integer(((Double)arg).intValue()*((int)scaleNum));
 				return intarg;
 			}
-			else if(scaleNum!=1.)
-			{	Double newarg = new Double(((Double)arg).doubleValue()*scaleNum);
-				return newarg;
-			}
-			return arg;
+			
+			//Double newarg = new Double(((Double)arg).doubleValue()*scaleNum);
+			double newValue = ((Double)arg).doubleValue();
+			return formatDble(newValue*scaleNum);
 		}
 		
 		// Strip & and ; if there
@@ -2669,6 +2747,22 @@ public class CmdViewer extends JNCmdTextDocument
 		if(entities.get(ent)==null)
 			throw new Exception("The argument '"+text+"'\nis neither a number nor a valid entity");
 		return "&"+ent+";";
+	}
+	
+	// format double and remove trailing zeros from number string (unless has e)
+	public String formatDble(double dval)
+	{
+		String dstr = String.format("%g", dval);
+		if(dstr.indexOf('e')>0 || dstr.indexOf('E')>0) return dstr;
+		
+		// remove trailing zeros
+		int lastChar = dstr.length()-1;
+		while(lastChar>0 && dstr.charAt(lastChar)=='0') lastChar--;
+		
+		// remove decimal point
+		if(dstr.charAt(lastChar)=='.') lastChar--;
+		
+		return dstr.substring(0, lastChar+1);
 	}
 	
 	// override to check commands or analysis running

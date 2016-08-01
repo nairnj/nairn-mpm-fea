@@ -37,6 +37,8 @@ class NairnMPM : public CommonAnalysis
 		int warnParticleLeftGrid;		// warning ID
 		bool multiMaterialMode;			// TRUE to use separate velocity fields for each material
 		bool hasRigidContactParticles;	// TRUE if some particles in multimaterial mode or rigid (direction=8)
+		bool skipPostExtrapolation;		// Skip post update extrapolation
+		bool plusParticleSpin;			// MPM+PS mode
 		
         //  Constructors and Destructor
 		NairnMPM();
@@ -64,6 +66,7 @@ class NairnMPM : public CommonAnalysis
         void SetCFLCondition(double);
         double GetCFLCondition(void);
         double GetPropagationCFLCondition(void);
+		virtual const char *MPMAugmentation(void);
 	
     protected:
         double FractCellTime;			// fraction of cell crossed at wave speed (<1)

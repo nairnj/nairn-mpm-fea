@@ -85,6 +85,13 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 		double ws;
 	} CPDIDomain;
 
+	// for each particle store list of nodes for GIMP
+	// numnds in nds[0], rest 1 based, IDs zero based in ndIDs
+	typedef struct {
+		int *nds;
+		unsigned char *ndIDs;
+	} GIMPNodes;
+
 	// Transport Properties
 	// conductivity is divided by rho (in g/mm^3)
 	typedef struct {
@@ -97,6 +104,11 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 		double dT;
 		double dC;
 	} ResidualStrains;
+
+	typedef struct {
+		Vector *acc;
+		Vector vgpnp1;
+	} GridToParticleExtrap;
 
 #else
 	// tensor (2D and axisymmetric and plane strain)
@@ -148,6 +160,7 @@ Vector *AddVector(Vector *,const Vector *);
 Vector *SubVector(Vector *,const Vector *);
 Vector *AddScaledVector(Vector *,const Vector *,const double);
 Vector *CrossProduct(Vector *,const Vector *,const Vector *);
+double CrossProduct2D(const Vector *,const Vector *);
 double DotVectors(const Vector *,const Vector *);
 double DotVectors2D(const Vector *,const Vector *);
 void PrintVector(const char *,const Vector *);

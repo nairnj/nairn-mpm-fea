@@ -162,7 +162,7 @@ bool LinearInterface::GetInterfaceForcesForNode(Vector *norm,Vector *fImp,double
 // da and db are displacements above and below the crack, and norm is normal vector (normalized)
 // surfaceArea is contact surface area
 // Output is force is fImp and renerge in rawEnergy
-bool LinearInterface::GetCrackInterfaceForce(Vector *da,Vector *db,Vector *norm,double surfaceArea,double dist,
+bool LinearInterface::GetCrackInterfaceForce(Vector *da,Vector *db,Vector *norm,double surfaceArea,double hperp,
 												Vector *fImp,double *rawEnergy) const
 {
 	double dn,dt,trn = 0.,trt = 0.;
@@ -172,7 +172,7 @@ bool LinearInterface::GetCrackInterfaceForce(Vector *da,Vector *db,Vector *norm,
 		dn = (db->x-da->x)*norm->x + (db->y-da->y)*norm->y;
 		if(!mpmgrid.GetContactByDisplacements())
 		{	// for efficiency used calculated dist
-			dn -= mpmgrid.positionCutoff*dist;
+			dn -= mpmgrid.positionCutoff*hperp;
 		}
 		
 		// Normal traction in g/(mm sec^2) - but different separated or in contact

@@ -16,6 +16,7 @@
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Elements/ElementBase.hpp"
+#include "Nodes/NodalPoint.hpp"
 #include <algorithm>
 
 // global class for grid information
@@ -60,8 +61,6 @@ void MeshInfo::Output(int pointsPerCell,bool isAxisym)
                 cout << fline;
             }
             cout << endl;
-            
-            SetParticleLength(pointsPerCell);
             
             if(isAxisym)
                 sprintf(fline,"Origin at R: %g Z: %g",xmin,ymin);
@@ -313,53 +312,59 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 	neighbor[i]=0;
 }
 
-// For structured with equal element sizes only, find element from location and return result (1-based element number)
-// Call code must be sure it is structured grid with equal element sizes
-int MeshInfo::FindElementFromPoint(Vector *pt)
+// For structured, find element from location and return result (1-based element number)
+// Calling code must be sure it is structured grid
+// NairnMPM requires equal element sizes,but OSParticulas allows Tartan grid
+int MeshInfo::FindElementFromPoint(Vector *pt,MPMBase *mptr)
 {
-    int theElem;
+    int theElem,col,row,zrow;
     
-    int col = (int)((pt->x-xmin)/grid.x);		// zero-based column # from 0 to horiz-1
-	if(col<0 || col>=horiz)
-	{	if(pt->x == xmin+horiz*grid.x)
-			col = horiz-1;
-		else
-        {   char msg[100];
-            sprintf(msg,"column for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
-			throw CommonException(msg,"");
-        }
-	}
-    
-    int row = (int)((pt->y-ymin)/grid.y);        // zero-based row # from 0 to vert-1
-	if(row<0 || row>=vert)
-	{	if(pt->y == ymin+vert*grid.y)
-			row = vert-1;
-		else
-        {   char msg[100];
-            sprintf(msg,"row for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
-            throw CommonException(msg,"");
-        }
-	}
-    
-    // 3D
-    if(grid.z > 0.)
-    {   int zrow = (int)((pt->z-zmin)/grid.z);   // zero-based row # from 0 to depth-1
-		if(zrow<0 || zrow>=depth)
-		{	if(pt->z == zmin+depth*grid.z)
-				zrow = depth-1;
+	if(equalElementSizes)
+    {	col = (int)((pt->x-xmin)/grid.x);		// zero-based column # from 0 to horiz-1
+		if(col<0 || col>=horiz)
+		{	if(pt->x == xmin+horiz*grid.x)
+				col = horiz-1;
 			else
-            {   char msg[100];
-                sprintf(msg,"rank for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
-                throw CommonException(msg,"");
-            }
+			{   char msg[100];
+				sprintf(msg,"column for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
+				throw CommonException(msg,"");
+			}
 		}
-        theElem = horiz*(zrow*vert + row) + col + 1;
-    }
     
-    // 2D
-    else
-    {   theElem = row*horiz + col + 1;
-    }
+		row = (int)((pt->y-ymin)/grid.y);        // zero-based row # from 0 to vert-1
+		if(row<0 || row>=vert)
+		{	if(pt->y == ymin+vert*grid.y)
+				row = vert-1;
+			else
+			{   char msg[100];
+				sprintf(msg,"row for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
+				throw CommonException(msg,"");
+			}
+		}
+    
+		// 3D
+		if(grid.z > 0.)
+		{   zrow = (int)((pt->z-zmin)/grid.z);   // zero-based row # from 0 to depth-1
+			if(zrow<0 || zrow>=depth)
+			{	if(pt->z == zmin+depth*grid.z)
+					zrow = depth-1;
+				else
+				{   char msg[100];
+					sprintf(msg,"rank for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
+					throw CommonException(msg,"");
+				}
+			}
+			theElem = horiz*(zrow*vert + row) + col + 1;
+		}
+    
+		// 2D
+		else
+		{   theElem = row*horiz + col + 1;
+		}
+	}
+	
+	else
+		throw CommonException("Invalid attempt to find element from point in unstructured grid","");
     
     // return result
     return theElem;
@@ -544,7 +549,7 @@ GridPatch **MeshInfo::CreateOnePatch(int np)
 #pragma mark MeshInfo:Accessors
 
 // get some info needed for symmetry BCs
-double MeshInfo::GetParametersForBCs(int axis,double *gmin,double *gmax)
+double MeshInfo::FindMeshLineForBCs(int axis,double *gmin,double *gmax)
 {
 	if(axis==X_DIRECTION)
 	{	*gmin = xmin;
@@ -592,26 +597,36 @@ int MeshInfo::GetPatchForElement(int iel)
 
 // set grid style (zcell=0 if 2D grid)
 // Options:
-//	  style=false (NOT_CARTESIAN) means not aligned with x,y,z axes
-//		just set cartesian to NOT_CARTESIAN and equalElementSizes to false
+//	  style=NOT_CARTESIAN means not aligned with x,y,z axes
+//		just set cartesian to NOT_CARTESIAN (or _3D) and equalElementSizes to false
 //    style=VARIABLE_ORTHOGONAL_GRID
-//      3D grid with unequal element sizes, set equalElementSizes to false
 //	  style=VARIABLE_RECTANGULAR_GRID
-//		2D grid with unequal element sizes, set equalElementSizes to false
+//      3D or 2D grid with unequal element sizes, set equalElementSizes to false
+//		grid.x=grid.y=0 and grid.z=
 //    style=SQUARE_GRID on input means all elements the same size as subsets, but adjust as follows
 //      SQUARE_GRID = 2D and dx = dy
 //      CUBIC_GRID = 3D and dx = dy = dz
 //      RECTANGULAR_GRID = 2D and dx != dy
 //      ORTHOGONAL_GRID = 3D and one of dx, dy, dz != others
-//      set grid.i and diag.i for all these cases
 //		set equalElementSizes to true
 void MeshInfo::SetCartesian(int style,double xcell,double ycell,double zcell)
 {
+	grid.x=xcell;
+	grid.y=ycell;
+	grid.z=zcell;
 	cartesian=style;
 	equalElementSizes = false;
+	
+	// if variable, then done
     if(style == VARIABLE_ORTHOGONAL_GRID || style == VARIABLE_RECTANGULAR_GRID)
-    {   grid.z = zcell;
+    {   return;
     }
+	
+	// if not cartensian, set 2D or 2D
+	else if(style==NOT_CARTESIAN)
+	{	if(fmobj->IsThreeD())
+			cartesian = NOT_CARTESIAN_3D;
+	}
     
 	else if(style>0)
 	{	grid.x=xcell;
@@ -630,11 +645,7 @@ void MeshInfo::SetCartesian(int style,double xcell,double ycell,double zcell)
 		else
 			cartesian=ORTHOGONAL_GRID;      // 3D, xcell != ycell, zcell not checked
 		
-        // find normal vector on diagonal of the cell (currently not used)
-		double diaglen=sqrt(grid.x*grid.x+grid.y*grid.y+grid.z*grid.z);
-		diag.x=grid.x/diaglen;
-		diag.y=grid.y/diaglen;
-        diag.z=grid.z/diaglen;
+		// equal element sizes
 		equalElementSizes = true;
 	}
 }
@@ -669,39 +680,6 @@ void MeshInfo::SetElements(int h,int v,int d,double x,double y,double z,double x
 		cellVolume=grid.x*grid.y*zmin;
         avgCellSize=(grid.x+grid.y)/2.;
 	}
-}
-
-// set grid length (as radius) per particle - requires cartesian grid, but need not be structured
-void MeshInfo::SetParticleLength(int pointsPerCell)
-{
-	// surface length per particle on edge
-	switch(pointsPerCell)
-	{	case 1:
-			lp = 1.0;
-			break;
-        case 9:
-        case 27:
-            // 9 is always 2D and 27 is always 3D
-            lp = 1./3.;
-            break;
-        case 16:
-            lp = 0.25;
-            break;
-        case 25:
-            lp = 0.20;
-            break;
-		case 4:
-		case 8:
-		default:
-			// 4 is always 2D and 8 is always 3D
-			lp = 0.5;
-			break;
-	}
-	
-    // semi particle size in dimensioned uits
-    part.x = lp*grid.x/2.;
-	part.y = lp*grid.y/2.;
-	part.z = lp*grid.z/2.;
 }
 
 // return cartesian setting
@@ -769,11 +747,11 @@ void MeshInfo::GetGridPoints(int *ptx,int *pty,int *ptz)
 
 // cell volume in mm^3
 // Feature that calls this method must require the problem to have a structured <Grid>
-double MeshInfo::GetCellVolume(void) { return cellVolume; }
+double MeshInfo::GetCellVolume(NodalPoint *ndptr) { return cellVolume; }
 
 // cell size in mm
 // Feature that calls this method must require the problem to have a structured <Grid>
-double MeshInfo::GetAverageCellSize(void) { return avgCellSize; }
+double MeshInfo::GetAverageCellSize(MPMBase *mptr) { return avgCellSize; }
 
 // grid thickness (or -1. if not structured grid). For 3D returns z extent
 // but not used in 3D
@@ -790,21 +768,25 @@ double MeshInfo::GetDefaultThickness()
 }
 
 // find cutoff distance for contact
-double MeshInfo::GetNormalCODAdjust(Vector *norm,Vector *tangDel,double delt)
+double MeshInfo::GetNormalCODAdjust(Vector *norm,NodalPoint *ndptr)
 {
     // none if contact is by displacements
     if(contactByDisplacements) return 0.;
     
     // otherwise position cuttoff from fraction of perpendicular distance
-    return positionCutoff * GetPerpendicularDistance(norm,tangDel,delt);
+	// Use z to account for Tartan grid
+	Vector dist = GetPerpendicularDistance(norm,ndptr);
+    return positionCutoff * dist.x;
 }
 
 // find hperp distance used in contact calculations in interface force calculations
 // Vector tangDel and magnitude delt only needed for 3D calculations. If not known
 // or has zero magnitude, it will use normal vector method instead
-double MeshInfo::GetPerpendicularDistance(Vector *norm,Vector *tangDel,double delt)
+Vector MeshInfo::GetPerpendicularDistance(Vector *norm,NodalPoint *ndptr)
 {
-    double dist = grid.x;
+	// magnitude of hperp and hperp before and after the node
+	// correct for equal elements and cubic or square grids
+	Vector dist = MakeVector(grid.x, 1., 1.);
     
     // Angled path correction method 1: hperp  is distance to ellipsoid through cell corners
     //    defined by tangent vector. In 3D, also multiply by distance to ellipsoid along
@@ -814,72 +796,37 @@ double MeshInfo::GetPerpendicularDistance(Vector *norm,Vector *tangDel,double de
     // See JANOSU-6-60 and JANOSU-6-74 and method #1 in paper
     if(Is3DGrid())
     {   if(cartesian!=CUBIC_GRID)
-        {   if(tangDel==NULL || DbleEqual(delt,0.))
-            {   // rather then try to pick a tangent, use normal only
-				// or use method #2 in paper and below
-				double a=norm->x/mpmgrid.grid.x;
-				double b=norm->y/mpmgrid.grid.y;
-				double c=norm->z/mpmgrid.grid.z;
-				dist = 1./sqrt(a*a + b*b + c*c);
-            }
-			else
-			{	Vector t2;
-				t2.x = norm->y*tangDel->z - norm->z*tangDel->y;
-				t2.y = norm->z*tangDel->x - norm->x*tangDel->z;
-				t2.z = norm->x*tangDel->y - norm->y*tangDel->x;
-				double a1 = tangDel->x/grid.x;
-				double b1 = tangDel->y/grid.y;
-				double c1 = tangDel->z/grid.z;
-				double a2 = t2.x/grid.x;
-				double b2 = t2.y/grid.y;
-				double c2 = t2.z/grid.z;
-				dist = grid.x*grid.y*grid.z*sqrt((a1*a1 + b1*b1 + c1*c1)*(a2*a2 + b2*b2 + c2*c2));
+		{	// get two tangents
+			Vector t1,t2;
+			if(norm->z>norm->x && norm->z>norm->y)
+			{	// z is largest
+				t1 = MakeVector(0.,-norm->z,norm->y);
 			}
-        }
+			else
+			{	// x  or yis largest)
+				t1 = MakeVector(-norm->y,norm->x,0.);
+			}
+			
+			// second tangent from t1 X norm
+			t2.x = norm->y*t1.z - norm->z*t1.y;
+			t2.y = norm->z*t1.x - norm->x*t1.z;
+			t2.z = norm->x*t1.y - norm->y*t1.x;
+			
+			double a1 = t1.x/grid.x;
+			double b1 = t1.y/grid.y;
+			double c1 = t1.z/grid.z;
+			double a2 = t2.x/grid.x;
+			double b2 = t2.y/grid.y;
+			double c2 = t2.z/grid.z;
+			dist.x = grid.x*grid.y*grid.z*sqrt((a1*a1 + b1*b1 + c1*c1)*(a2*a2 + b2*b2 + c2*c2));
+		}
     }
     else if(cartesian!=SQUARE_GRID)
     {   double a=grid.x*norm->x;
         double b=grid.y*norm->y;
-        dist = sqrt(a*a + b*b);
+        dist.x = sqrt(a*a + b*b);
     }
 
-    // Angled path correction method 2: distance to ellipsoid along normal
-    //      defined as hperp
-    // See JANOSU-6-76 and method #2 is paper
-	/*
-    double a=norm->x/mpmgrid.grid.x;
-    double b=norm->y/mpmgrid.grid.y;
-    if(mpmgrid.Is3DGrid())
-    {   double c=norm->z/mpmgrid.grid.z;
-        dist = 1./sqrt(a*a + b*b + c*c);
-    }
-    else
-        dist = 1./sqrt(a*a + b*b);
-	*/
-
-    // Angled path correction method 3 (in imperfect interface by cracks paper):
-    //   Find perpendicular distance which gets smaller as interface tilts
-    //   thus the effective surface area increases
-    // See JANOSU-6-23 to 49 and method #3 in paper
-	/*
-    double a=fabs(mpmgrid.grid.x*norm->x);
-    double b=fabs(mpmgrid.grid.y*norm->y);
-    if(mpmgrid.Is3DGrid())
-    {   // 3D has two cases
-        double c=fabs(mpmgrid.grid.z*norm->z);
-        dist = fmax(a,fmax(b,c));
-        if(2.*dist < a+b+c)
-        {   // need alternate formula in this case (i.e., Max(a,b,c) < sum of other two)
-            dist = (1./4.)*(2./a + 2./b + 2/c - a/(b*c) - b/(a*c) - c/(a*b));
-            dist = 1./dist;
-        }
-    }
-    else
-    {   // 2D just take maximum
-        dist = fmax(a,b);
-    }
-	*/
-	
     return dist;
 }
 	
@@ -887,20 +834,8 @@ double MeshInfo::GetPerpendicularDistance(Vector *norm,Vector *tangDel,double de
 bool MeshInfo::GetContactByDisplacements(void) { return contactByDisplacements; }
 void MeshInfo::SetContactByDisplacements(bool newContact) { contactByDisplacements=newContact; }
 
-// Cell size for grid with constant element size only (not checked here)
+// Cell size for grid with constant element size only
 Vector MeshInfo::GetCellSize(void) { return grid; }
-double MeshInfo::GetCellXSize(void) { return grid.x; }
-double MeshInfo::GetCellYSize(void) { return grid.y; }
-double MeshInfo::GetCellZSize(void) { return grid.z; }
-
-// Particle size for grid with constant element size only
-Vector MeshInfo::GetParticleSize(void) { return part; }
-double MeshInfo::GetParticleXSize(void) { return part.x; }
-double MeshInfo::GetParticleYSize(void) { return part.y; }
-double MeshInfo::GetParticleZSize(void) { return part.z; }
-
-// particle semi length in natural coordinates
-double MeshInfo::GetParticleSemiLength(void) { return lp; }
 
 
 

@@ -87,7 +87,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     char *aName,*value;
     char quantityName[100];
     unsigned int i,numAttr;
-	
+    
     //-------------------------------------------------------
     // <MPMHeader> section
     if(strcmp(xName,"MPMHeader")==0)
@@ -318,7 +318,12 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             delete [] value;
         }
     }
-    
+
+	// XPIC option - get order (1=PIC, 2 is XPIC, <1 invalid)
+    else if(strcmp(xName,"XPIC")==0)
+	{	throw SAXException("The XPIC feature is not available in NairnMPM. It requires OSParticulas.");
+    }
+
     else if(strcmp(xName,"Diffusion")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
 		DiffusionTask::active=TRUE;
@@ -338,7 +343,16 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		MaterialBase::extrapolateRigidBCs = true;
 	}
 
-    else if(strcmp(xName,"GIMP")==0)
+ 	else if(strcmp(xName,"SkipPostExtrapolation")==0)
+	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+		fmobj->skipPostExtrapolation = true;
+	}
+	
+	else if(strcmp(xName,"TrackParticleSpin")==0)
+	{	throw SAXException("Particle spin feature is not available in NairnMPM. It requires OSParticulas.");
+	}
+	
+	else if(strcmp(xName,"GIMP")==0)
     {   // no attribute or empty implies uGIMP (backward compatibility) or look for key words
 		ValidateCommand(xName,MPMHEADER,ANY_DIM);
 		ElementBase::useGimp = UNIFORM_GIMP;
@@ -766,6 +780,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	numAttr=attrs.getLength();
 		char mpmat[200];
 		mpmat[0]=0;
+		Vector lp = MakeVector(0.5, 0.5, 0.5);
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             sscanf(value,"%lf",&dval);
@@ -794,8 +809,14 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			}
             else if(strcmp(aName,"temp")==0)
                 pTempInitial=dval;
-            else
+            else if(strcmp(aName,"angle")==0)
                 angle=dval;
+            else if(strcmp(aName,"lpx")==0)
+                lp.x = dval;
+			else if(strcmp(aName,"lpy")==0)
+                lp.y = dval;
+            else if(strcmp(aName,"lpz")==0)
+                lp.z = dval;
             delete [] aName;
             delete [] value;
         }
@@ -805,14 +826,20 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         
         // create object for 3D or 2D analysis
 		if(fmobj->IsThreeD())
-		{	mpCtrl->AddMaterialPoint(new MatPoint3D(elemNum,matl,angle),pConcentration,pTempInitial);
+		{	MatPoint3D *newMpt=new MatPoint3D(elemNum,matl,angle);
+			mpCtrl->AddMaterialPoint(newMpt,pConcentration,pTempInitial);
+			newMpt->SetDimensionlessSize(&lp);
 		}
 		else if(fmobj->IsAxisymmetric())
 		{	// thickness set to x position in pt command by SetPtOrVel() when it calls SetOrigin()
-			mpCtrl->AddMaterialPoint(new MatPointAS(elemNum,matl,angle,1.),pConcentration,pTempInitial);
+			MatPointAS *newMpt=new MatPointAS(elemNum,matl,angle,1.);
+			mpCtrl->AddMaterialPoint(newMpt,pConcentration,pTempInitial);
+			newMpt->SetDimensionlessSize(&lp);
 		}
 		else
-		{	mpCtrl->AddMaterialPoint(new MatPoint2D(elemNum,matl,angle,thick),pConcentration,pTempInitial);
+		{	MatPoint2D *newMpt=new MatPoint2D(elemNum,matl,angle,thick);
+			mpCtrl->AddMaterialPoint(newMpt,pConcentration,pTempInitial);
+			newMpt->SetDimensionlessSize(&lp);
 		}
     }
  
@@ -1117,6 +1144,11 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,THERMAL,ANY_DIM);
 		ConductionTask::AVHeating = false;
 	}
+	
+	else if(strcmp(xName,"ContactHeatFlow")==0)
+	{	throw SAXException("Contact heat flow spin feature is not available in NairnMPM. It requires OSParticulas.");
+	}
+	
     //-------------------------------------------------------
     // <Gravity> section
 	

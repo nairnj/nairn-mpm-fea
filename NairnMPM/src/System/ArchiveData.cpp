@@ -40,7 +40,7 @@ ArchiveData::ArchiveData()
 	
 	globalFile=NULL;		// path to global results file
 	threeD=FALSE;			// three D calculations
-    SetMPMOrder("mYYYYYNYYYNNNNNNNNN");		// byte order + defaults + 17 items
+    SetMPMOrder("mYYYYYNYYYNNNNNNNNNNNN");		// byte order + 21 items
     SetCrackOrder("mYNNN");					// byte order + defaults + 3 items
 	timeStamp=NULL;			// pointer to header
 	propgationCounter=0;					// counts crack propagation
@@ -313,6 +313,18 @@ void ArchiveData::CalcArchiveSize(void)
 		else
 			mpmRecSize+=2*sizeof(double);
 	}
+    if(mpmOrder[ARCH_SpinMomentum]=='Y')
+	{	if(threeD)
+			mpmRecSize+=3*sizeof(double);
+		else
+			mpmRecSize+=sizeof(double);
+	}
+    if(mpmOrder[ARCH_SpinVelocity]=='Y')
+	{	if(threeD)
+			mpmRecSize+=3*sizeof(double);
+		else
+			mpmRecSize+=sizeof(double);
+	}
     
     // check what will be there for crack segments
 	
@@ -456,6 +468,35 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
     while(nextBC!=NULL)
 		nextBC=nextBC->PrintBC(cout);
     cout << endl;
+}
+
+// Particle sizes - file has actual sizes in current dimensions (e.g. mm)
+// Full particle size (i.e. "diameter")
+void ArchiveData::ArchivePointDimensions(void)
+{	char fname[500];
+	ofstream outfile;
+	sprintf(fname,"%s%s_PtDims.txt",outputDir,archiveRoot);
+	outfile.open(fname);
+	
+	if(outfile)
+	{	outfile << "Particle dimensions" << endl;
+		outfile << "  Pt#      dX      dY      dZ" << endl;
+		outfile << "--------------------------------" << endl;
+		
+		int p;
+		Vector lp;
+		char nline[200];
+		
+		if(mpmgrid.IsStructuredEqualElementsGrid())
+		{	Vector grid = mpmgrid.GetCellSize();
+			for(p=0;p<nmpms;p++)
+			{	mpm[p]->GetDimensionlessSize(lp);
+				sprintf(nline,"%7d %g %g %g",p+1,lp.x*grid.x,lp.y*grid.y,lp.z*grid.z);
+				outfile << nline << endl;
+			}
+		}
+		outfile.close();
+	}
 }
 
 // Archive the results if it is time
@@ -763,8 +804,8 @@ void ArchiveData::ArchiveResults(double atime)
 		// ------- concentration and gradients convert to wt fraction units using csat for this material
         if(mpmOrder[ARCH_Concentration]=='Y')
 		{	double csat=mpm[p]->GetConcSaturation();
-		
-           *(double *)app=mpm[p]->pConcentration*csat;
+			
+			*(double *)app=mpm[p]->pConcentration*csat;
             app+=sizeof(double);
 			
 			if(mpm[p]->pDiffusion!=NULL)
@@ -791,7 +832,7 @@ void ArchiveData::ArchiveResults(double atime)
 					app+=sizeof(double);
 				}
 			}
-       }
+		}
 		
         // ------- total heat energy (Legacy units J)
         // energies in material point based on energy per unit mass
@@ -847,6 +888,42 @@ void ArchiveData::ArchiveResults(double atime)
 			}
 		}
 
+		// Particle spin momentum (Legacy Units J-sec)
+		if(mpmOrder[ARCH_SpinMomentum]=='Y')
+		{	Vector Lp = MakeVector(0.,0.,0.);
+			double Lscale = 1.;
+			if(threeD)
+			{	*(double *)app=Lscale*Lp.x;
+				app+=sizeof(double);
+				*(double *)app=Lscale*Lp.y;
+				app+=sizeof(double);
+				*(double *)app=Lscale*Lp.z;
+				app+=sizeof(double);
+			}
+			else
+			{	*(double *)app=Lscale*Lp.z;
+				app+=sizeof(double);
+			}
+		}
+		
+		// Particle spin velocity (Legacy units 1/sec)
+		if(mpmOrder[ARCH_SpinVelocity]=='Y')
+		{	// angular velocity
+			Vector wp = MakeVector(0.,0.,0.);
+			if(threeD)
+			{	*(double *)app=wp.x;
+				app+=sizeof(double);
+				*(double *)app=wp.y;
+				app+=sizeof(double);
+				*(double *)app=wp.z;
+				app+=sizeof(double);
+			}
+			else
+			{	*(double *)app=wp.z;
+				app+=sizeof(double);
+			}
+		}
+		
         // padding
         if(mpmRecSize<recSize)
             app+=recSize-mpmRecSize;
@@ -977,6 +1054,24 @@ void ArchiveData::ArchiveResults(double atime)
 					app+=Reverse(app,sizeof(double));
             }
 
+			// particle angular momentum
+			if(mpmOrder[ARCH_SpinMomentum]=='Y')
+			{	app+=Reverse(app,sizeof(double));
+ 				if(threeD)
+				{	app+=Reverse(app,sizeof(double));
+					app+=Reverse(app,sizeof(double));
+				}
+            }
+			
+			// particle angular velocity
+			if(mpmOrder[ARCH_SpinMomentum]=='Y')
+			{	app+=Reverse(app,sizeof(double));
+ 				if(threeD)
+				{	app+=Reverse(app,sizeof(double));
+					app+=Reverse(app,sizeof(double));
+				}
+            }
+			
 			// padding
             if(mpmRecSize<recSize)
                 app+=recSize-mpmRecSize;
@@ -1081,7 +1176,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
         FileError("Cannot open a vtk archive file",fname,"ArchiveData::ArchiveVTKFile");
 	
     // required header line
-	afile << "# vtk DataFile Version 4.2" << endl;
+	afile << "# vtk DataFile Version 4.0" << endl;
 	
 	// title (Legacy time units ms)
 	sprintf(fline,"step:%d time:%15.7e %s",fmobj->mstep,atime*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
@@ -1089,36 +1184,41 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 	
 	// header
 	afile << "ASCII" << endl;
-	afile << "DATASET STRUCTURED_POINTS" << endl;
-	
 	int ptx,pty,ptz;
 	mpmgrid.GetGridPoints(&ptx,&pty,&ptz);
-	afile << "DIMENSIONS " << ptx << " " << pty;
-	if(fmobj->IsThreeD())
-		afile << " " << ptz << endl;
-	else
-		afile << " 1" << endl;
 	
-	afile << "ORIGIN " << mpmgrid.xmin << " " << mpmgrid.ymin;
-	if(fmobj->IsThreeD())
-		afile << " " << mpmgrid.zmin << endl;
-	else
-		afile << " 0" << endl;
+	if(mpmgrid.IsStructuredEqualElementsGrid())
+	{	// regular grid ewith equal element sizes
+		afile << "DATASET STRUCTURED_POINTS" << endl;
+		
+		afile << "DIMENSIONS " << ptx << " " << pty;
+		if(fmobj->IsThreeD())
+			afile << " " << ptz << endl;
+		else
+			afile << " 1" << endl;
+		
+		afile << "ORIGIN " << mpmgrid.xmin << " " << mpmgrid.ymin;
+		if(fmobj->IsThreeD())
+			afile << " " << mpmgrid.zmin << endl;
+		else
+			afile << " 0" << endl;
+		
+		Vector csz = mpmgrid.GetCellSize();
+		afile << "SPACING "  << csz.x << " " << csz.y;
+		if(fmobj->IsThreeD())
+			afile << " " << csz.z << endl;
+		else
+			afile << " " << csz.x << endl;
+	}
 	
-    Vector csz = mpmgrid.GetCellSize();
-	afile << "SPACING "  << csz.x << " " << csz.y;
-	if(fmobj->IsThreeD())
-		afile << " " << csz.z << endl;
-	else
-		afile << " " << csz.x << endl;
-	
+	// the data
 	afile << "POINT_DATA " << nnodes << endl;
 	
 	// export selected data
 	int i,offset=0;
 	unsigned int q;
 	double *vtkquant=NULL;
-    
+	
     // contact force special case
     int archiveStepInterval=1;
     if(GetDoingArchiveContact())
@@ -1165,7 +1265,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 		{	if(vtk!=NULL) vtkquant=vtk[i];
 			switch(quantity[q])
 			{	case VTK_MASS:
-					// mass (Legacy units g(
+					// mass (Legacy units g)
 					afile << nd[i]->GetNodalMass(false) << endl;
 					break;
                 

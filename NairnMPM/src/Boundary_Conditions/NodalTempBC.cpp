@@ -74,15 +74,15 @@ void NodalTempBC::SuperposeQReaction(double qflow) { qreaction += qflow; }
 // if matchID==0 include it, otherwise include only if matchID equals bcID
 NodalTempBC *NodalTempBC::AddHeatReaction(double *totalReaction,int matchID)
 {	if(bcID==matchID || matchID==0)
-	*totalReaction += qreaction;
+		*totalReaction += qreaction;
 	return (NodalTempBC *)GetNextObject();
 }
 
 /**********************************************************
- Sum all reaction heat forces for all temperature BCs
- If ID is not zero, only includes those with matching ID
- Result is in nJ when in Legacy units
- */
+	Sum all reaction heat forces for all temperature BCs
+	If ID is not zero, only includes those with matching ID
+	Result is in nJ when in Legacy units
+*/
 double NodalTempBC::TotalHeatReaction(int matchID)
 {
 	double reactionTotal = 0.;
@@ -94,6 +94,4 @@ double NodalTempBC::TotalHeatReaction(int matchID)
 	
 	return reactionTotal;
 }
-
-
 

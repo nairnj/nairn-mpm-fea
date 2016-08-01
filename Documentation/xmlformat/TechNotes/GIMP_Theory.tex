@@ -217,7 +217,7 @@ If damping is based on grid velocity, then the nodal momentum update changes to 
 where ``*'' indicates a term that is revised to include damping,
 where $\alpha_g(t)$ is the grid damping constant (with units 1/sec) that applies to all nodes (\emph{i.e.}, independent of $\vec x_i$), but may evolve in time (such as a kinetic energy thermostat). See below for how to deal with position-dependent damping.
 
-Particle methods have historically tried to methods for updating particle velocity --- a FLIP update that increments particle velocity using accelerations extrapolated to the grid and a PIC update that extrapolates velocity directly to the particle. Combining the grid damping above with a second particle damping constant, $\alpha_p(t)$, these two updates become:
+Particle methods have historically tried two methods for updating particle velocity --- a FLIP update that increments particle velocity using accelerations extrapolated to the grid and a PIC update that extrapolates velocity directly to the particle. Combining the grid damping above with a second particle damping constant, $\alpha_p(t)$, these two updates become:
 \begin{eqnarray}
       \vec{v}_{p,FLIP}^{(n+1)}  & = & \vec{v}_p^{(n)} + \vec{a}_{g\to p}^{**(n)} \Delta t   \\
       \vec{v}_{p,PIC}^{(n+1)}  & = &  \vec v_{g\to p}^{(n)} + \vec{a}_{g\to p}^{**(n)} \Delta t 
@@ -279,11 +279,13 @@ where the new ``PIC Damping'' term is
 \begin{equation}
        \alpha_{PIC}(\beta) = {1-\beta\over \Delta t}
 \end{equation}
-It is called PIC damping, because in the absence of other damping terms ($\alpha_g'=\alpha_p'=0$), the still-damped velocity update becomes
-\begin{equation}
-   \vec{v}_{p}^{(n+1)} = \vec{v}_p^{(n)}  - (1-\beta)\bigl(\vec v_p^{(n)}-\vec v_{g\to p}^{(n)}\bigr)
+It is called PIC damping, because in the absence of other damping terms ($\alpha_g'=\alpha_p'=0$), the still-damped position and velocity updates become:
+\begin{eqnarray}
+   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} +\left(\vec v_{g\to p}^{(n+1)} - {1-\beta \over 2}\bigl(\vec v_p^{(n)}-\vec v_{g\to p}^{(n)}\bigr) \right)\Delta t
+          - {1 \over 2}\vec{a}_{g\to p}^{(n)} (\Delta t)^2  \\
+   \vec{v}_{p}^{(n+1)} & = & \vec{v}_p^{(n)}  - (1-\beta)\bigl(\vec v_p^{(n)}-\vec v_{g\to p}^{(n)}\bigr)
          + \vec{a}_{g\to p}^{(n)}\Delta t 
-\end{equation}
+\end{eqnarray}
 If $\beta=1$, the update is an undamped FLIP update. If $\beta=0$, the update is an undamped, PIC update. Thus $\beta$ can be interpreted as the fraction FLIP in the velocity update. But the above analysis was formally all a FLIP analysis. A better interpretation is that $\beta$ adds an new form of artificial damping that is proportional to the inversion error between the particle velocity and the grid velocity extrapolated to the particle ($\vec v_p^{(n)}-\vec v_{g\to p}^{(n)}$). The net damping effect will be to damp out this error.
 
 \subsubsection{Some Implementation Details}

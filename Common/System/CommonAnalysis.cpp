@@ -125,19 +125,19 @@ void CommonAnalysis::StartResultsOutput(void)
             break;
         
     	case PLANE_STRAIN_MPM:
-            cout << "2D Plane Strain MPM Analysis\n";
+            cout << "2D Plane Strain MPM" << MPMAugmentation() << " Analysis\n";
             break;
         
         case PLANE_STRESS_MPM:
-            cout << "2D Plane Stress MPM Analysis\n";
+            cout << "2D Plane Stress MPM" << MPMAugmentation() << " Analysis\n";
             break;
         
         case THREED_MPM:
-            cout << "3D MPM Analysis\n";
+            cout << "3D MPM" << MPMAugmentation() << " Analysis\n";
             break;
 		
 		case AXISYMMETRIC_MPM:
-            cout << "Axisymmetric MPM Analysis\n";
+            cout << "Axisymmetric MPM" << MPMAugmentation() << " Analysis\n";
             break;
         
         default:
@@ -332,6 +332,9 @@ bool CommonAnalysis::IsThreeD(int otherNp) { return otherNp==THREED_MPM; }
 // is it axisynmmetric (FEA or MPM)
 bool CommonAnalysis::IsAxisymmetric(void) { return np==AXI_SYM || np==AXISYMMETRIC_MPM; }
 bool CommonAnalysis::IsAxisymmetric(int otherNp) { return otherNp==AXI_SYM || otherNp==AXISYMMETRIC_MPM; }
+
+// string about MPM additions (when printing out analysis type
+const char *CommonAnalysis::MPMAugmentation(void) { return ""; }
 
 // set number of processes (0 for serial code)
 void CommonAnalysis::SetNumberOfProcessors(int npr) { numProcs = npr; }

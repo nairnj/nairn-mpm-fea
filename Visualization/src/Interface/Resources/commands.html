@@ -318,17 +318,22 @@ This command is the same as the <code>Lines</code> command except it splits <cod
 <p>These main header commands define the type of analysis (FEA or MPM), enter comments about the calculations, and control FEA output. The commands to pick analysis type are:</p>
 
 <ul>
-<li><code>Analysis (type)</code><br>
-Define type of analysis to be done; <code>(type)</code> can be following strings (or numbers):
+<li><code><a name="trackspin"></a>Analysis (type)</code><br>
+Define type of analysis to be done; <code>(type)</code> can be following strings:
 <ul>
-<li>&quot;Plane Strain FEA&quot; (or 0)</li>
-<li>&quot;Plain Stress FEA&quot; (or 1)</li>
-<li>&quot;Axisymmetric FEA&quot; (or 2)</li>
-<li>&quot;Plane Strain MPM&quot; (or 10)</li>
-<li>&quot;Plain Stress FEA&quot; (or 11)</li>
-<li>&quot;Axisymmetric MPM&quot; (or 12)</li>
+<li>&quot;Plane Strain FEA&quot;</li>
+<li>&quot;Plain Stress FEA&quot;</li>
+<li>&quot;Axisymmetric FEA&quot;</li>
+<li>&quot;Plane Strain MPM&quot;</li>
+<li>&quot;Plain Stress FEA&quot;</li>
+<li>&quot;Axisymmetric MPM&quot;</li>
 <li>&quot;3D MPM&quot;</li>
+<li>&quot;Plane Strain MPM+PS&quot;</li>
+<li>&quot;Plain Stress FEA+PS&quot;</li>
+<li>&quot;Axisymmetric MPM+PS&quot;</li>
+<li>&quot;3D MPM+PS&quot;</li>
 </ul>
+The "+PS" options implement MPM with tracking of particle spin and they require use of <a href="http://osupdocs.forestry.oregonstate.edu/index.php/OSParticulas">OSParticulas</a>.
 </li>
 <li><code>Processors (num)</code><br>
 Select number of processors (1 or more) for running parallel code (requires parallel versions
@@ -454,9 +459,11 @@ The scale setting gives power of 10 scaling from SI units for length or m, mass 
 
 <ul>
 <li><code>MPMMethod (update),&lt;(method)&gt;</code><br>
-Select MPM methods for the calculations. <code>(update)</code> is the update method and it can be USF (or 0), USAVG (or 2) or SZS (or 3). <code>(method)</code> is the shape functions method and it can be uGIMP (or GIMP), lCPDI (or CPDI), qCPDI, or Classic (or Dirac).</li>
+Select MPM methods for the calculations. <code>(update)</code> is the update method and it can be USF, USAVG (same as USAVG+) or USL (same as USL+ or SZS), or USAVG-, or USL-. <code>(method)</code> is the shape functions method and it can be uGIMP (or GIMP), lCPDI (or CPDI), qCPDI, or Classic (or Dirac).</li>
 <li><code>TimeStep (step),&lt;(max)&gt;,&lt;(factor)&gt;</code><br>
-Set MPM time step parameters. <code>(step)</code> is the time step in ms (choose a high number to have the code pick time step based on material properties). Optional <code>(max)</code> is the maximum time to stop the calculations in ms (which can also be set in the <a href="#maximumtime">MaximumTime command</a>). Optional <code>(factor)</code> is the Courant-Levy safety factor for the code to adjust the time step (the default is 0.5; it should be less then 1 and often needs to be less than 0.5).</li>
+Set MPM time step parameters. <code>(step)</code> is the time step in ms (choose a high number to have the code pick time step based on material properties). Optional <code>(max)</code> is the maximum time to stop the calculations in ms (which can also be set in the <a href="#maximumtime">MaximumTime command</a>). Optional <code>(factor)</code> is the Courant-Friedrichs-Levy safety factor for the code to adjust the time step (which can also be set in the <a href="#cflfactor">CFLFactor command</a>).</li>
+<li><a name="cflfactor"></a><code>CFLFactor (factor)</code><br>
+Set the Courant-Friedrichs-Levy safety factor for the code to adjust the time step (the default is 0.5; it should be less then 1 and often needs to be less than 0.5).</li>
 <li><a name="maximumtime"></a><code>MaximumTime (max)</code><br>
 Set time the MPM calculations will stop in ms.</li>
 <li><code>PtsPerElement (axis)</code>
@@ -492,6 +499,8 @@ whenever strain is archived (which means full deformation gradient is archived)<
 <li>workenergy - cumulative &sigma;.d&epsilon;</li>
 <li>heatenergy</li>
 <li>plasticenergy</li>
+<li><code>lp</code> - angular momentum due to particle spin (zero unless <a href="#trackspin">particle spin</a> is activated)</li>
+<li><code>wp</code> - angular velocity due to particle spin (zero unless <a href="#trackspin">particle spin</a> is activated).</li>
 <li>temperature</li>
 <li>concentration (which includes concentration gradients)</li>
 <li>jintegral - at crack tips</li>
@@ -533,6 +542,11 @@ Global results are average values over the particles. Specify global result to b
 	<li><code>Fij</code> (where <code>i</code> and <code>j</code> are <code>R</code> or <code>Z</code>) - any component of the total axisymmetric deformation gradient (absolute, synonyms for the <code>x</code> or <code>y</code>) versions.</li>
 	<li><code>velx</code>, <code>vely</code>, or <code>velz</code> - average component of velocity in mm/sec</li>
 	<li><code>velR</code> or <code>velZ</code> - average component of axisymmetric velocity in mm/sec (synonyms for <code>velx</code> or <code>vely</code>)</li>
+	<li><code>px</code>, <code>py</code>, or <code>pz</code> - average component of momentum (in N-sec)</li>
+	<li><code>pR</code> or <code>pR</code> - average component of axisymmetric momentum (in N-sec) (synonyms for <code>px</code> or <code>py</code>)</li>
+	<li><code>Lx</code>, <code>Ly</code>, or <code>Lz</code> - average component of angular momentum (in J-sec) (note that only Lz is non-zero in 2D or axisymmetric calculations).</li>
+	<li><code>Lpx</code>, <code>Lpy</code>, or <code>Lpz</code> - average component of particle spin angular momentum (in J-sec) (note that only Lpz is non-zero in 2D or axisymmetric calculations and the simulation must be <a href="#trackspin">tracking particle spin</a> for any compononent to be non zero).</li>
+	<li><code>wpx</code>, <code>wpy</code>, or <code>wpz</code> - average component of particle spin velocity (in 1/sec) (note that only wpz is non-zero in 2D or axisymmetric calculations and the simulation must be <a href="#trackspin">tracking particle spin</a> for any compononent to be non zero).</li>
 	<li><code>dispx</code>, <code>dispy</code>, or <code>dispz</code> - average component of displacement in mm</li>
 	<li><code>dispR</code> or <code>dispZ</code> - average component of axisymmetric displacement in mm (synonyms for <code>dispx</code> or <code>dispy</code>)</li>
 	<li><code>contactx</code>, <code>contacty</code>, or <code>contactz</code> - component of the total contact force on the grid for <a href="#mmmode">multimaterial mode</a> simulations when they include <a href="materials.html#rigid">rigid materials</a> that have <code>direction=8</code>. It is a sum of all contact forces for the rigid material on the object in Newtons.</li>
@@ -568,19 +582,26 @@ equivalent to the small strain tensor.
 Specify time interval for archiving global results, <code>(time)</code> is the global archiving time in ms. If not specified, global archiving is done at the <a href="#atime">standard archiving time</a>.</li>
 </ul>
 
-<h3><a name="mhother"></a>Damping and Other Options</h3>
+<h3><a name="mhdamp"></a>Damping Commands</h3>
+
+<p>All damping options are explained in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Damping_Options">OUSPDocs wiki</a>. They are activated with these commands.</p>
 
 <ul>
-<li><code>Damping (alphag),&lt;(PIC)&gt;</code><br>
-<code>PDamping (alphap),&lt;(PIC)&gt;</code><br>
+<li><code>Damping (alphag),&lt;(PIC)&gt;</code>,&lt;(XPICOrder)&gt;</code><br>
+<code>PDamping (alphap),&lt;(PIC)&gt;</code>,&lt;(XPICOrder)&gt;</code><br>
 Select factors for damping based on grid velocity (<code>Damping</code>) or on particle velocities (<code>PDamping</code>); <code>(alphag)</code> and <code>(alphap)</code> can be a numeric value or a
-<a href="#function">user-defined function</a> of time (in units of 1/sec). The optional <code>PIC</code> argument sets the fraction PIC for the particle updates (from 0 to 1 with default 0); only one fraction PIC is allowed and it can be set in either damping command.</li>
+<a href="#function">user-defined function</a> of time (in units of 1/sec). The optional <code>PIC</code> argument sets the fraction PIC for the particle updates (from 0 to 1 with default 0). The optional <code>XPICOrder</code> argument sets XPIC order to use for PIC damping (integer 1 or higher with default 1). Only one pair of fraction PIC and XPIC order is is allowed and it can be set in either damping command.</li>
 <li><code>FeedbackDamping (gaing),&lt;(Tkg)&gt;,&lt;(maxAlphag)&gt;</code><br>
 <code>PFeedbackDamping (gainp),&lt;(Tkp)&gt;,&lt;(maxAlphap)&gt;</code><br>
 Select options for alternative damping of MPM particle velocities. The two commands base the damping on grid velocity (<code>FeedbackDamping</code>) or on particle velocities (<code>PFeedbackDamping</code>). The two commands have independent settings. The  <code>(gaing)</code> (or p) is feedback coefficient in units of 1/mm<sup>2</sup>. The optional <code>(Tkg)</code> (or p) is target kinetic energy (it can be
 <a href="#function">user-defined function</a>) in micro joules. The optional
 <code>(maxAlphag)</code> (or p) is maximum damping factor in units 1/sec (default is to have no maximum).
 </li>
+</ul>
+
+<h3><a name="mhother"></a>Other Options</h3>
+
+<ul>
 <li><code>ExtrapolateRigid &lt;(option)&gt;</code><br>
 When this option is activated (with <code>(option)</code>="yes" or omitted), all <a href="materials.html#rigid">rigid material</a> particles that set boundary conditions for velocity, temperature, or concentration, will extrapolate to the grid first and then set boundary conditions on those extrapolated values instead of the rigid particle velocity, temperature, or concentration. It is normally used when the rigid particle values vary with position, such as loading in shear.</li>
 <li><code>LeaveLimit (allow)</code><br>
@@ -640,11 +661,12 @@ Define type of element to use in the MPM background grid. Currently (type) can o
 
 <ul>
 <li><a name="regionmpm"></a><code>Region (mat),(velx),(vely),(velzOrThick),&lt;(prop,value)&gt;<br>
+&nbsp;&nbsp;(optional <a href="#angularmom0">AngularMom0</a> commands)<br>
 &nbsp;&nbsp;(series of shape function, see this section below)<br>
 &nbsp;&nbsp;(optional <a href="#rotatempm">Rotate</a> commands)<br>
 EndRegion</code><br>
 Define a region for creating material points. <code>(mat)</code> is material ID. (<code>velx,velz</code>) are velocities in x and y
-direction  (in mm/sec). For 2D, <code>(velzOrThick)</code> is thickness in mm, but for 3D it is velocity in z direction (in mm/sec). The optional
+direction  (in mm/sec). For 2D, <code>(velzOrThick)</code> is thickness in mm, but for 3D it is velocity in z direction (in mm/sec). The velocities can be numerical values or <a href="#function">user-defined functions</a> of particle position. The optional
 <code>(prop,value)</code> pairs to set some initial property of the materials. The <code>(prop)</code> options are "angle" (for material rotation about z axis in degrees), "temp" (for temperature in K), and "conc" (for particle concentration potential).</li>
 
 <li><a name="holempm"></a><code>Hole<br>
@@ -674,13 +696,24 @@ Define spherical volume within the cubical volume  defined by <code>(xmin)</code
 <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
 
 <li><code>Cylinder (xmin),(xmax),(ymin),(ymax),(zmin),(zmax),(axis),&lt;(radius)&gt;</code><br>
-Define cylindrical volume within the cubical volume  defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, <code>(ymax)</code>, <code>(zmin)</code>, and <code>(zmax)</code> along axis <code>(axis)</code> (1, 2, or 3) for the current
-<a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block. Optional <code>(radius)</code> converts to cone with relative radius (-1 to 1) at the top (if >0)
+Define cylindrical volume within the cubical volume  defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, <code>(ymax)</code>, <code>(zmin)</code>, and <code>(zmax)</code> along axis <code>(axis)</code> (1, 2, 3, x, y, or z) for the current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block. Optional <code>(radius)</code> converts to cone with relative radius (-1 to 1) at the top (if >0)
 or at the bottom (if &lt; 0).</li>
+
+<li><code>Torus (xmin),(xmax),(ymin),(ymax),(zmin),(zmax),(axis),&lt;(radius)&gt;</code><br>
+Define toriodal volume within  dimensions defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, <code>(ymax)</code>, <code>(zmin)</code>, and <code>(zmax)</code> along axis <code>(axis)</code> (1, 2, 3, x, y, or z) for the current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block. The (axis) specifies the normal direction to the plane of the torus. The bounds for the directions in the plane of the torus (e.g., x and y bounds when axis is z) define an ellipsoid (or circle if the bounds have the same separation) that runs through the center of the torodial ring. The bounds in the direction of the axis define top and bottom for the cross-section of the torodial ring. The cross section will be a circle with radius given by half the distance between the top and bottom. To have an eliptical cross section, you can specify optional parameter (radius) to define the radius of the cross section in the plane of the torus (while top and bottom give radius of the cross section in the axis direction).</li>
 
 <li><a name="rotatempm"></a><code>Rotate (axis),(angle),&lt;(axis),(angle)&gt;,...</code><br>
 To rotate, in order, about each axis <code>(axis)</code> (x,y,z,1,2,or 3) by each angle <code>(angle)</code> (can be function) for materials in the current <a href="#regionmpm">region</a>. The <code>(axis)</code> can alternatively be "reset" to remove all previous rotations in the current
 <a href="#regionmpm">region</a>. Up to three rations in 3D calculations can either be entered in one command or in a series of commands.</li>
+
+<li><a name="angularmom0"></a><code>AngularMom0 (Lp0z)</code> (in 2D)<br>
+<code>AngularMom0 (Lp0x),(Lp0y),(Lp0z)</code> (in 3D)<br>
+To set the initial angular momentum per unit mass in mm<sup>2</sup>/sec of all particles in the current <a href="#regionmpm">region</a>, including particles created in shape commands <i>before</i> the <code>AngularMom0</code> command. The values can be numeric or <a href="#function">user-defined functions</a> of particle position. This command is setting angular momentum and not angular velocity. The setting to get a particular angular velocity (&omega; radians per sec) for particles at typical starting positions would be:
+<ul>
+<li>2D, 4 particles per cell: L<sub>p,z</sub> = (3/16)(dx<sup>2</sup> + dy<sup>2</sup>)&omega;
+<li>2D, 1 particle per cell: L<sub>p,z</sub> = (1/4)(dx<sup>2</sup> + dy<sup>2</sup>)&omega;
+</ul>
+where dx and dy are cell dimensions for the grid cell containing the particle. For 3D simulations, the equations for each axis are the same except each one depends on cell dimensions in the other two directions (e.g., L<sub>p,x</sub> depends on dy and dz).</li>
 
 </ul>
 
@@ -1261,9 +1294,9 @@ When both directions are periodic, a "Shear" value imposes average shear strain.
 
 <li><code>Gravity &lt;(ax)&gt;,&lt;(ay)&gt;,&lt;(az)&gt;</code><br>
 Apply body forces to all particles for simulations within a constant gravitational field
-where <code>(ax)</code>, <code>(ay)</code>, and <code>(az)</code> are the accelerations due to gravity (in m/sec<sup>2</sup>) in the x, y, and z
-directions, respectively (<code>(ax)</code> and <code>(ay)</code> are for R and Z directions in axisymmetric calculations). If any parameters or omitted, they are set to default values of (0,-9.8,0). If no Gravity command is used, there is no gravity.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Any of the parameters can alternatively be a <a href="#function">user-defined function</a> of x, y, and z (in mm) and t (in ms) to give position and/or time dependent body forces. When using a function, the functions should evaluate to acceleration in mm/sec<sup>2</sup> (instead of the m/sec<sup>2</sup> used for numerical settings).</li>
+where <code>(ax)</code>, <code>(ay)</code>, and <code>(az)</code> are the accelerations due to gravity (in mm/sec<sup>2</sup>) in the x, y, and z
+directions, respectively (<code>(ax)</code> and <code>(ay)</code> are for R and Z directions in axisymmetric calculations). If any parameters or omitted, they are set to default values of (0,-9806.65,0). If no Gravity command is used, there is no gravity.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Any of the parameters can alternatively be a <a href="#function">user-defined function</a> of x, y, and z (in mm) and t (in ms) to give position and/or time dependent body forces (in mm/sec<sup>2</sup>).</li>
 
 </ul>
 

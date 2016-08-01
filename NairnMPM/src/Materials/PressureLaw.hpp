@@ -28,6 +28,7 @@ class PressureLaw : public TractionLaw
 		virtual char *InputMaterialProperty(char *,int &,double &);
 		void SetStressFunction(char *);
 		virtual void PrintMechanicalProperties(void) const;
+		virtual void CalculateTimeFunction();
 	
 		// the traction law
 		virtual void CrackTractionLaw(CrackSegment *,double,double,double,double,double);
@@ -38,7 +39,6 @@ class PressureLaw : public TractionLaw
 		virtual int MaterialTag() const;
 	
 	protected:
-		double sc;
 		ROperation *function;
 		static double varTime;
 		double minCOD;

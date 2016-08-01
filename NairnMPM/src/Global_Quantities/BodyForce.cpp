@@ -86,6 +86,7 @@ void BodyForce::Activate(void)
 
 // Get gravity (constant body force) and grid based functions (in mm/sec^2)
 // Multiplied by mass when added to the material velocity field
+// (Don't call in parallel code)
 void BodyForce::GetGridBodyForce(Vector *theFrc,NodalPoint *ndptr,double utime)
 {
 	// constant body force
@@ -161,6 +162,7 @@ void BodyForce::SetGridBodyForceFunction(char *bcFunction,int input)
 #pragma mark BodyForce:Grid and Particle Damping
 
 // Get sum of damping and feedback damping to apply to the grid
+// (Don't call from parallel code due to function)
 double BodyForce::GetDamping(double utime)
 {
     double totalDamping;
@@ -205,6 +207,7 @@ double BodyForce::GetParticleDamping(double utime)
 }
 
 // Get grid damping without the PIC term
+// (Don't call from parallel code due to function in GetDamping())
 double BodyForce::GetNonPICDamping(double utime)
 {
     bool hold = usePICDamping;

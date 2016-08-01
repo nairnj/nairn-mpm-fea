@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5209AD5E1D4690CE002EDC42 /* SetRigidContactVelTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5209AD5C1D4690CE002EDC42 /* SetRigidContactVelTask.cpp */; };
+		5209AD5F1D4690CE002EDC42 /* SetRigidContactVelTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 5209AD5D1D4690CE002EDC42 /* SetRigidContactVelTask.hpp */; };
 		6700560A163AFC3600FFE145 /* HistoryArchive.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67005609163AFC3600FFE145 /* HistoryArchive.hpp */; };
 		6700560C163AFC6B00FFE145 /* HistoryArchive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6700560B163AFC6B00FFE145 /* HistoryArchive.cpp */; };
 		67083427171717FB007AD581 /* GhostNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67083425171717FB007AD581 /* GhostNode.cpp */; };
@@ -444,6 +446,8 @@
 
 /* Begin PBXFileReference section */
 		08FB7796FE84155DC02AAC07 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; tabWidth = 4; };
+		5209AD5C1D4690CE002EDC42 /* SetRigidContactVelTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SetRigidContactVelTask.cpp; sourceTree = "<group>"; };
+		5209AD5D1D4690CE002EDC42 /* SetRigidContactVelTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SetRigidContactVelTask.hpp; sourceTree = "<group>"; };
 		67005609163AFC3600FFE145 /* HistoryArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HistoryArchive.hpp; sourceTree = "<group>"; };
 		6700560B163AFC6B00FFE145 /* HistoryArchive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HistoryArchive.cpp; sourceTree = "<group>"; };
 		67083425171717FB007AD581 /* GhostNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GhostNode.cpp; path = Patches/GhostNode.cpp; sourceTree = "<group>"; };
@@ -1456,6 +1460,8 @@
 				67BFA35411FB81B70083F95B /* InitializationTask.cpp */,
 				676D76AB1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp */,
 				676D76AA1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp */,
+				5209AD5D1D4690CE002EDC42 /* SetRigidContactVelTask.hpp */,
+				5209AD5C1D4690CE002EDC42 /* SetRigidContactVelTask.cpp */,
 				67B213EE11F9149C007523EE /* MassAndMomentumTask.hpp */,
 				67B213EF11F9149C007523EE /* MassAndMomentumTask.cpp */,
 				6709D7341C38BB87006C680C /* ExtrapolateRigidBCsTask.hpp */,
@@ -1702,6 +1708,7 @@
 				A7D66177196322E300757628 /* Neohookean.hpp in Headers */,
 				6727B3D119E19853006D93EC /* CrossedCrack.hpp in Headers */,
 				6797CABD1A89ABC5009C96FD /* ClampedNeohookean.hpp in Headers */,
+				5209AD5F1D4690CE002EDC42 /* SetRigidContactVelTask.hpp in Headers */,
 				676D76AD1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp in Headers */,
 				6736CBF31AB74C5B0009A663 /* UnitsController.hpp in Headers */,
 				67D198401B0ED97D00FD5726 /* ProjectRigidBCsTask.hpp in Headers */,
@@ -1912,6 +1919,7 @@
 				A766704A05862EB600F56460 /* MatPtLoadBC.cpp in Sources */,
 				A766704B05862EB600F56460 /* MPMBase.cpp in Sources */,
 				A766704C05862EB600F56460 /* MatPoint2D.cpp in Sources */,
+				5209AD5E1D4690CE002EDC42 /* SetRigidContactVelTask.cpp in Sources */,
 				A766704D05862EB600F56460 /* ArchiveData.cpp in Sources */,
 				A766704E05862EB600F56460 /* CommonException.cpp in Sources */,
 				A766704F05862EB600F56460 /* CrackHeader.cpp in Sources */,

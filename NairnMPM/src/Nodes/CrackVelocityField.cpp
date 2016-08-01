@@ -37,7 +37,7 @@ CrackVelocityField::CrackVelocityField(int num,short theLoc,int cnum)
 	// in single material mode, always create the one material velocity field
 	// (and it is never rigid and never ignores cracks for flags is zero
 	if(maxMaterialFields==1)
-	{	mvf[0]=new MatVelocityField(0);
+	{	mvf[0] = CreateMatVelocityField(0);
 		if(mvf[0]==NULL) throw CommonException("Memory error allocating material velocity field.",
 											   "CrackVelocityField::CrackVelocityField");
 	}
@@ -54,6 +54,12 @@ CrackVelocityField::~CrackVelocityField()
 {	
 	free(mvf);
 	DeleteStrainField();
+}
+
+// Create the type of material velocity field that is needed
+MatVelocityField *CrackVelocityField::CreateMatVelocityField(int fieldFlags)
+{
+	return new MatVelocityField(fieldFlags);
 }
 
 #pragma mark TASK 0 METHODS
@@ -176,9 +182,10 @@ void CrackVelocityField::AddMomentumTask6(int matfld,double wt,Vector *vel)
 {	// momentum
 	AddScaledVector(&mvf[matfld]->pk,vel,wt);		// in g mm/sec
     
+	// VEL1 no longer saving single particle node velocity
     // save velocity if only one point on this node
-    if(numberPoints==1)
-        mvf[matfld]->SetVelocity(vel);
+    //if(numberPoints==1)
+    //    mvf[matfld]->SetVelocity(vel);
 }
 
 // Copy mass and momentum from ghost to real node
@@ -199,8 +206,8 @@ void CrackVelocityField::CopyGridForces(NodalPoint *real)
 #pragma mark TASK 5 METHODS
 
 // Increment velocity and acceleration for this material point using one velocity field which must be there
-void CrackVelocityField::IncrementDelvaTask5(int matfld,double fi,Vector *delv,Vector *dela) const
-{   mvf[matfld]->IncrementNodalVelAcc(fi,delv,dela);
+void CrackVelocityField::IncrementDelvaTask5(int matfld,double fi,GridToParticleExtrap *gp) const
+{   mvf[matfld]->IncrementNodalVelAcc(fi,gp);
 }
 
 #pragma mark TASK 6 METHODS

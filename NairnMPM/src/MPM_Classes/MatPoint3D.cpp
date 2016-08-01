@@ -41,7 +41,7 @@ MatPoint3D::MatPoint3D(int inElemNum,int theMatl,double angin) : MPMBase(inElemN
 // matRef is the material and properties have been loaded, matFld is the material field
 void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
 {
-	int i,numnds,nds[maxShapeNodes];
+	int i,numnds,ndsArray[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	Vector vel;
     Matrix3 dv;
@@ -50,7 +50,9 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     
 	// find shape functions and derviatives
 	const ElementBase *elemRef = theElements[ElemID()];
-	elemRef->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,this);
+	int *nds = ndsArray;
+	elemRef->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,this);
+	numnds = nds[0];
     
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle with each node
@@ -93,36 +95,43 @@ void MatPoint3D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void
     matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res,0);
 }
 
-// Move position (3D) (in mm) possibly with particle damping and accWt = dt/2
-// vstar is velocity extrapolated from grid to particle and end of time step with grid damping
-//        vstar = v(g->p)(n+1) - alpha_g(t)*v(g->p)(n)*dt
-// acc is acceleration with grid damping
-//        acc = a(g->p)(n) - alpha_g(t)*v(g->p)(n)
-// Update with addition of particle damping is
-//        dx = (vstar - alpha_g(t)*vp(n)*dt)*dt - (1/2)(acc-alpha_g(t)*vp(n))*dt^2
-//           = (vstar - (dt/2)*(acc+alpha_g(t)*vp(n)))*dt
+// Move position (3D) (in mm)
+// First finish accExtra by adding ap*Vp(n)
+// Then Update using dx = (Vpg(n+1) - (dt/2)(Agp(n) + accExtra))*dt
 // Must be called BEFORE velocity update, because is needs vp(n) at start of timestep
-void MatPoint3D::MovePosition(double delTime,Vector *vstar,double accWt,double particleAlpha)
-{	
-	double dx = delTime*(vstar->x - accWt*(acc.x + particleAlpha*vel.x));
-	double dy = delTime*(vstar->y - accWt*(acc.y + particleAlpha*vel.y));
-	double dz = delTime*(vstar->z - accWt*(acc.z + particleAlpha*vel.z));
-	pos.x += dx;
-    pos.y += dy;
-    pos.z += dz;
+void MatPoint3D::MovePosition(double delTime,Vector *vgpnp1,Vector *accExtra,double particleAlpha)
+{
+	// finish extra acceleration terms by adding ap Vp(n)
+	accExtra->x += particleAlpha*vel.x;
+	accExtra->y += particleAlpha*vel.y;
+	accExtra->z += particleAlpha*vel.z;
+	
+	// position change
+	pos.x += delTime*(vgpnp1->x - 0.5*delTime*(acc.x + accExtra->x));
+    pos.y += delTime*(vgpnp1->y - 0.5*delTime*(acc.y + accExtra->y));
+    pos.z += delTime*(vgpnp1->z - 0.5*delTime*(acc.z + accExtra->z));
 }
 
-// Move velocity (3D) (in mm/sec) possibly with particle damping
-// acc is acceleration with grid damping
-//        acc = a(g->p)(n) - alpha_g(t)*v(g->p)(n)
-// Update with addition of particle damping is
-//        v = vp + (acc-alpha_g(t)*vp(n))*dt
-//          = vp*(1-alpha_g(t)*dt) + acc*dt
-void MatPoint3D::MoveVelocity(double delTime,double particleAlpha)
+// Move velocity (3D) (in mm/sec)
+// First get final acceleration on the particle
+//		accEff = acc - accExtra
+// Then update using Vp(n+1) = Vp(n) + accEff*dt
+void MatPoint3D::MoveVelocity(double delTime,Vector *accExtra)
 {
-	vel.x = vel.x*(1. - particleAlpha*delTime) + delTime*acc.x;
-    vel.y = vel.y*(1. - particleAlpha*delTime) + delTime*acc.y;
-    vel.z = vel.z*(1. - particleAlpha*delTime) + delTime*acc.z;
+	acc.x -= accExtra->x;
+	acc.y -= accExtra->y;
+	acc.z -= accExtra->z;
+	
+	vel.x += delTime*acc.x;
+    vel.y += delTime*acc.y;
+    vel.z += delTime*acc.z;
+}
+
+// Move rigid particle by new current velocity
+void MatPoint3D::MovePosition(double delTime)
+{	pos.x += delTime*vel.x;
+    pos.y += delTime*vel.y;
+	pos.z += delTime*vel.z;
 }
 
 // Scale velocity (3D) (in mm/sec) optionally with rigid materials
@@ -147,6 +156,15 @@ void MatPoint3D::SetVelocity(Vector *v) { vel=*v; }
 
 // no thickness
 double MatPoint3D::thickness() { return -1.; }
+
+// particle semi size in actual units
+Vector MatPoint3D::GetParticleSize(void) const
+{	Vector part = theElements[ElemID()]->GetDeltaBox();
+	part.x *= 0.5*mpm_lp.x;
+	part.y *= 0.5*mpm_lp.y;
+	part.z *= 0.5*mpm_lp.z;
+	return part;
+}
 
 // calculate internal force as -mp sigma.deriv
 // add external force (times a shape function)
@@ -302,7 +320,7 @@ void MatPoint3D::GetSemiSideVectors(Vector *r1,Vector *r2,Vector *r3) const
 	
 	// get polygon vectors - these are from particle to edge
     //      and generalize semi width lp in 1D GIMP
-    Vector psz = mpmgrid.GetParticleSize();
+    Vector psz = GetParticleSize();
 	r1->x = pF[0][0]*psz.x;
 	r1->y = pF[1][0]*psz.x;
 	r1->z = pF[2][0]*psz.x;
@@ -319,7 +337,7 @@ void MatPoint3D::GetSemiSideVectors(Vector *r1,Vector *r2,Vector *r3) const
 // Get undeformed size (only called by GIMP traction)
 // This uses mpmgrid so membrane particles must override
 void MatPoint3D::GetUndeformedSemiSides(double *r1x,double *r2y,double *r3z) const
-{   Vector psz = mpmgrid.GetParticleSize();
+{   Vector psz = GetParticleSize();
     *r1x = psz.x;
     *r2y = psz.y;
     *r3z = psz.z;
@@ -345,12 +363,14 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 	// always LINEAR_CPDI
     
 	try
-	{	// find all 8 corner nodes
+	{	CPDIDomain **cpdi = GetCPDIInfo();
+		
+		// find all 8 corner nodes
         for(int i=0;i<8;i++)
         {   c.x = pos.x + r1s[i]*r1.x + r2s[i]*r2.x + r3s[i]*r3.x;
             c.y = pos.y + r1s[i]*r1.y + r2s[i]*r2.y + r3s[i]*r3.y;
             c.z = pos.z + r1s[i]*r1.z + r2s[i]*r2.z + r3s[i]*r3.z;
-            cpdi[i]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+            cpdi[i]->inElem = mpmgrid.FindElementFromPoint(&c,this)-1;
             theElements[cpdi[i]->inElem]->GetXiPos(&c,&cpdi[i]->ncpos);
         }
 
@@ -491,16 +511,16 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         
         // get elements
         try
-        {	cElem[0] = mpmgrid.FindElementFromPoint(&c1)-1;
+        {	cElem[0] = mpmgrid.FindElementFromPoint(&c1,this)-1;
             theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
             
-            cElem[1] = mpmgrid.FindElementFromPoint(&c2)-1;
+            cElem[1] = mpmgrid.FindElementFromPoint(&c2,this)-1;
             theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
 			
-            cElem[2] = mpmgrid.FindElementFromPoint(&c3)-1;
+            cElem[2] = mpmgrid.FindElementFromPoint(&c3,this)-1;
             theElements[cElem[2]]->GetXiPos(&c3,&corners[2]);
 			
-            cElem[3] = mpmgrid.FindElementFromPoint(&c4)-1;
+            cElem[3] = mpmgrid.FindElementFromPoint(&c4,this)-1;
             theElements[cElem[3]]->GetXiPos(&c4,&corners[3]);
         }
         catch(CommonException err)
@@ -575,6 +595,7 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         }
         
         // copy for initial state at start of time step
+		CPDIDomain **cpdi = GetCPDIInfo();
         cElem[0] = cpdi[d1]->inElem;
 		CopyVector(&corners[0], &cpdi[d1]->ncpos);
         cElem[1] = cpdi[d2]->inElem;

@@ -15,7 +15,6 @@
 
 #ifdef MPM_CODE
 class MPMBase;
-
 #endif
 
 // element types
@@ -27,6 +26,11 @@ class MPMBase;
 #define QUAD_INTERFACE 6
 #define EIGHT_NODE_ISO_BRICK 7
 #define NINE_NODE_LAGRANGE 8
+
+// linear element shapes
+#define QUAD_ELEMENT 0
+#define PGRAM_ELEMENT 1
+#define RECT_ELEMENT 2
 
 // other constants
 #define TOLERANCE_RATIO 0.1
@@ -86,9 +90,9 @@ class ElementBase : public LinkedObject
 #ifdef MPM_CODE
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) const = 0;
 	
-		virtual void GetGimpNodes(int *,int *,int *,Vector *,Vector &) const;
-		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *,Vector &) const;
-		virtual void GimpShapeFunctionAS(Vector *,int,int *,int,double *,double *,double *,double *,Vector &) const;
+		virtual void GetGimpNodes(int *,int *,unsigned char *,Vector *,Vector &) const;
+		virtual void GimpShapeFunction(Vector *,int,unsigned char *,int,double *,double *,double *,double *,Vector &) const;
+		virtual void GimpShapeFunctionAS(Vector *,int,unsigned char *,int,double *,double *,double *,double *,Vector &) const;
 #endif
 									
         // prototypes of methods defined in ElementBase class (but may override)
@@ -101,12 +105,14 @@ class ElementBase : public LinkedObject
 		virtual void FindCentroid(Vector *);
 	
 		// const methods
+		virtual Vector GetDeltaBox(void) const;
 		virtual double GetCenterX(void) const;
 		virtual double GetDeltaX(void) const;
 		virtual double GetDeltaY(void) const;
 		virtual double GetDeltaZ(void) const;
 		virtual double GetThickness(void) const;
 		virtual int NumberSides(void) const;
+		virtual void GetRange(int,double &,double &) const;
 
 #ifdef MPM_CODE
 		virtual bool OnTheEdge(void);
@@ -122,8 +128,8 @@ class ElementBase : public LinkedObject
 	
 		// const methods
 		virtual void GetShapeFunctionData(MPMBase *) const;
-		virtual void GetShapeFunctions(int *,double *,int *,MPMBase *) const;
-		virtual void GetShapeGradients(int *,double *,int *,double *,double *,double *,MPMBase *) const;
+		virtual void GetShapeFunctions(double *,int **,MPMBase *) const;
+		virtual void GetShapeGradients(double *,int **,double *,double *,double *,MPMBase *) const;
 		virtual void GetShapeFunctionsForCracks(int *,double *,int *,Vector *) const;
 		virtual void GridShapeFunctions(int *,int *,Vector *,double *) const;
 		virtual void GimpCompact(int *,int *,double *,double *,double *,double *) const;
@@ -163,7 +169,7 @@ class ElementBase : public LinkedObject
 
 	protected:
 #ifdef MPM_CODE
-		bool pgElement;					// is it a parallelogram element?
+		unsigned char pgElement;		// is it a parallelogram (1), rectangular (2), of general (0) element?
 		double pgTerm[6];				// precalculated terms for GetXiPos() speed
 #else
         double angle;					// FEA material angle

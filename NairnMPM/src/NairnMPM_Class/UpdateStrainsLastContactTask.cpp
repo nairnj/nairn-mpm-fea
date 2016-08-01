@@ -29,7 +29,7 @@
 
 #pragma mark CONSTRUCTORS
 
-UpdateStrainsLastContactTask::UpdateStrainsLastContactTask(const char *name) : MPMTask(name)
+UpdateStrainsLastContactTask::UpdateStrainsLastContactTask(const char *name) : MassAndMomentumTask(name)
 {
 }
 
@@ -40,54 +40,47 @@ void UpdateStrainsLastContactTask::Execute(void)
 {
 	CommonException *uslErr = NULL;
 	
-	int nds[maxShapeNodes];
+	int ndsArray[maxShapeNodes];
 	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
-#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
+#pragma omp parallel private(ndsArray,fn,xDeriv,yDeriv,zDeriv)
 	{
 		// in case 2D planar
 		for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
 		
-		try
-		{
 #pragma omp for
-			// zero again (which finds new positions for contact rigid particle data on the nodes)
-			for(int i=1;i<=nnodes;i++)
-				nd[i]->RezeroNodeTask6(timestep);
+		// zero again (which finds new positions for contact rigid particle data on the nodes)
+		for(int i=1;i<=nnodes;i++)
+			nd[i]->RezeroNodeTask6(timestep);
+		
+		// zero ghost nodes on this patch
+		int pn = GetPatchNumber();
+		patches[pn]->RezeroNodeTask6(timestep);
+		
+		try
+		{	short vfld;
+			NodalPoint *ndptr;
+			int i,numnds,matfld,*nds;
 			
-			// zero ghost nodes on this patch
-			int pn = GetPatchNumber();
-			patches[pn]->RezeroNodeTask6(timestep);
-			
-			// loop over non-rigid particles only - this parallel part changes only particle p
-			// mass, momenta, etc are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
+			// loop over non-rigid particles only
 			MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
 			while(mpmptr!=NULL)
-			{   const MaterialBase *matref = theMaterials[mpmptr->MatID()];
-				int matfld = matref->GetField();
+			{	// get shape functions and mat field
+				nds = ndsArray;
+				matfld = GetParticleFunctions(mpmptr,&nds,fn,xDeriv,yDeriv,zDeriv);
+				numnds = nds[0];
 				
-				// find shape functions (why ever need gradients?)
-				const ElementBase *elref = theElements[mpmptr->ElemID()];
-				int numnds;
-				if(fmobj->multiMaterialMode)
-				{   // Need gradients for volume gradient
-					elref->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,mpmptr);
-				}
-				else
-					elref->GetShapeFunctions(&numnds,fn,nds,mpmptr);
-				
-				short vfld;
-				NodalPoint *ndptr;
-				for(int i=1;i<=numnds;i++)
+				// Add particle property to each node in the element
+				for(i=1;i<=numnds;i++)
 				{   // get node pointer
 					ndptr = GetNodePointer(pn,nds[i]);
 					
-					// add mass and momentum this task
-					vfld = (short)mpmptr->vfld[i];
+					// add mass and momentum (and maybe contact stuff) to this node
+					vfld = mpmptr->vfld[i];
 					ndptr->AddMassMomentumLast(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
 				}
 				
-				// next non-rigid material point
+				// next material point
 				mpmptr = (MPMBase *)mpmptr->GetNextObject();
 			}
 		}

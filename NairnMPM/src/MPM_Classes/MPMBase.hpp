@@ -22,6 +22,10 @@
 #define GRAD_THIRD 6
 enum { gGRADx=0,gGRADy,gGRADz };
 
+// define to load nodes and node IDs in initialization rather than on the fly each
+// time they are needed (to remove also remove GIMPNodes in DataTypes)
+//#define LOAD_GIMP_INFO
+
 class MaterialBase;
 
 class MPMBase : public LinkedObject
@@ -46,7 +50,8 @@ class MPMBase : public LinkedObject
 		void AllocateDiffusion(bool);
 		void AllocateTemperature(void);
 		void AllocateJStructures(void);
-        bool AllocateCPDIStructures(int,bool);
+        bool AllocateCPDIorGIMPStructures(int,bool);
+		bool AllocateGIMPStructures(int,bool);
     
         // virtual methods
         virtual double thickness(void) = 0;
@@ -55,8 +60,9 @@ class MPMBase : public LinkedObject
         virtual void SetVelocity(Vector *) = 0;
 		virtual void UpdateStrain(double,int,int,void *,int) = 0;
 		virtual void GetFintPlusFext(Vector *,double,double,double,double) = 0;
-        virtual void MovePosition(double,Vector *,double,double) = 0;
-        virtual void MoveVelocity(double,double) = 0;
+		virtual void MovePosition(double,Vector *,Vector *,double) = 0;
+		virtual void MoveVelocity(double,Vector *) = 0;
+		virtual void MovePosition(double) = 0;
 		virtual void SetVelocitySpeed(double) = 0;
 		virtual void AddTemperatureGradient(int);
 		virtual void AddTemperatureGradient(int,Vector *) = 0;
@@ -77,7 +83,14 @@ class MPMBase : public LinkedObject
 		virtual void GetUndeformedSemiSides(double *,double *,double *) const = 0;
 		virtual void GetCPDINodesAndWeights(int) = 0;
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *) = 0;
+		virtual void SetDimensionlessSize(Vector *);
+		virtual void SetDimensionlessByPts(int);
         virtual void GetDimensionlessSize(Vector &) const;
+		virtual void GetInitialSize(Vector &) const;
+		virtual Vector GetParticleSize(void) const;
+		virtual double GetParticleXSize(void) const;
+		virtual double GetParticleYSize(void) const;
+		virtual double GetParticleZSize(void) const;
 
         // defined virtual methods
 		virtual double GetUnscaledVolume(void);
@@ -87,7 +100,7 @@ class MPMBase : public LinkedObject
 		int MatID(void) const;
 		int ArchiveMatID(void) const;
 		int ElemID(void) const;
-		void ChangeElemID(int);
+		void ChangeElemID(int,bool);
 		int ArchiveElemID(void);
 		void ReverseParticle(bool,bool);
 		void StopParticle(void);
@@ -126,13 +139,16 @@ class MPMBase : public LinkedObject
 		virtual Matrix3 GetInitialRotation(void);
 		void IncrementRotationStrain(double);
 		void IncrementRotationStrain(double,double,double);
-		virtual void InitializeMass(double,double);
+		virtual void InitializeMass(double,double,bool);
 		void SetConcentration(double,double);
 		void SetTemperature(double,double);
         void SetVelocityGradient(double,double,double,double,int);
 		Vector *GetPFext(void);
 		Vector *GetNcpos(void);
 		CPDIDomain **GetCPDIInfo(void);
+#ifdef LOAD_GIMP_INFO
+		GIMPNodes *GetGIMPInfo(void);
+#endif
 		Vector *GetAcc(void);
 		Tensor *GetVelGrad(void);
 		double GetPlastEnergy(void);
@@ -173,9 +189,10 @@ class MPMBase : public LinkedObject
     
 	protected:
 		// variables (changed in MPM time step)
+		Vector mpm_lp;				// Dimensionless size relative to current element (radius in -1 to 1 natural coordinates)
 		Vector pFext;				// external force
 		Vector ncpos;				// natural coordinates position
-		CPDIDomain **cpdi;          // Should makle pointer and allocate only what is needed
+		char *cpdi_or_gimp;          // Should make pointer and allocate only what is needed
         Vector *faceArea;           // make pointer then needed
 		Vector acc;					// acceleration (hold velocity of rigid particle in hold phase)
 		Tensor *velGrad;			// used for J Integral only on non-rigid particles only

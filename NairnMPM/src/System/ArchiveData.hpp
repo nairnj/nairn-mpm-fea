@@ -26,7 +26,8 @@ enum { ARCH_Velocity=2,ARCH_Stress,ARCH_Strain,ARCH_PlasticStrain,
             ARCH_OldOrigPosition,ARCH_WorkEnergy,ARCH_DeltaTemp,ARCH_PlasticEnergy,
             ARCH_ver2Empty, ARCH_ShearComponents, ARCH_StrainEnergy,
             ARCH_History, ARCH_Concentration,ARCH_HeatEnergy,ARCH_ElementCrossings,
-            ARCH_RotStrain, ARCH_DamageNormal, ARCH_MAXMPMITEMS };
+            ARCH_RotStrain, ARCH_DamageNormal,ARCH_SpinMomentum,ARCH_SpinVelocity,
+			ARCH_MAXMPMITEMS };
 
 // Archiving options for crack segments
 enum { ARCH_JIntegral=2,ARCH_StressIntensity,ARCH_BalanceResults,ARCH_MAXCRACKITEMS };
@@ -50,6 +51,7 @@ class ArchiveData : public CommonArchiveData
 		
 		// methods
 		void ArchiveVelocityBCs(BoundaryCondition *);
+		void ArchivePointDimensions(void);
 		bool MakeArchiveFolder(void);
 		bool BeginArchives(bool,int);
 		void ArchiveResults(double);

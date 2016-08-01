@@ -311,12 +311,14 @@ void MaterialBase::PrintCommonProperties(void) const
 	if(matUsePDamping)
 	{	cout << "Particle damping: " << matPdamping << " /sec";
         if(matUsePICDamping)
-			cout << ", PIC damping fraction: " << matFractionPIC << endl;
-		else
-			cout << endl;
+		{	cout << ", PIC damping fraction: " << matFractionPIC;
+		}
+		cout << endl;
 	}
 	else if(matUsePICDamping)
-		cout << "Particle PIC damping fraction: " << matFractionPIC << endl;
+	{	cout << "Particle PIC damping fraction: " << matFractionPIC;
+		cout << endl;
+	}
 	
 	// optional color
 	if(red>=0.)
@@ -645,23 +647,32 @@ void MaterialBase::SetDamping(double matDamping,double matPIC)
 
 // Change damping if this material request it
 // On input, particleAlpha and gridAlpha should be the global settings
-// if material has particle damping and PIC, change to
-//      particleAlpha   =  matPIC/dt + matPdamping(t)
-//      gridAlpha       = -matPIC/dt + damping(t)
-// if material has only particle damping, change to
-//      particleAlpha   =  alpha(PIC)/dt + matPdamping(t)
+// if material has particle damping
+//	 AND PIC, change to
+//      particleAlpha   = matPIC/dt + matPdamping(t)
+//      gridAlpha       = -m*matPIC/dt + damping(t)
+//		localXPIC		= m*matPIC/dt
+//   NOT PIC, change to
+//      particleAlpha   = globalPIC + matPdamping(t)
+//		localXPIC		= m*globalPIC
 // if material has only particle PICdamping, change to
-//      particleAlpha    =  matPIC/dt + pdamping(t) = matPIC/dt + (particleAlpha - alpha(PIC)/dt)
-//      gridAlpha       = -matPIC/dt + damping(t)
-void MaterialBase::GetMaterialDamping(double &particleAlpha,double &gridAlpha,double nonPICGridAlpha,double globalPIC) const
-{	// has either type
+//      particleAlpha   = matPIC/dt + pdamping(t) = matPIC/dt + (particleAlpha - globalPIC)
+//      gridAlpha       = -m*matPIC/dt + damping(t)
+//		localXPIC		= m*matPIC/dt
+// if material has no damping return
+//		localXPIC		= m*globalPIC
+double MaterialBase::GetMaterialDamping(double &particleAlpha,double &gridAlpha,double nonPICGridAlpha,double globalPIC) const
+{
+	double localXPIC = 0.;
+	
+	// has either type
 	if(matUsePDamping)
 	{	if(matUsePICDamping)
 		{	particleAlpha = matFractionPIC/timestep + matPdamping;
 			gridAlpha = -matFractionPIC/timestep + nonPICGridAlpha;
 		}
 		else
-		{	particleAlpha = globalPIC + matPdamping;
+		{   particleAlpha = globalPIC + matPdamping;
 		}
 	}
 	
@@ -670,6 +681,8 @@ void MaterialBase::GetMaterialDamping(double &particleAlpha,double &gridAlpha,do
 	{	particleAlpha += matFractionPIC/timestep - globalPIC;
 		gridAlpha = -matFractionPIC/timestep + nonPICGridAlpha;
 	}
+	
+	return localXPIC;
 }
 
 // Look for contact to a given material and return contact law ID
@@ -711,6 +724,53 @@ int MaterialBase::GetContactLawNum(int readID)
 		clmat--;
 	}
 	return -1;
+}
+
+// Find the compression needed for bulk modulus to increase Kmax fold
+double MaterialBase::GetMGEOSXmax(double gamma0,double S1,double S2,double S3,double &Kmax)
+{
+	// increase until passes kmax or become negative
+	double xl = 0.,xr = 0.;
+	double step = 0.05,denom,kr,kl=1.;
+	while(true)
+	{	xr += step;
+		denom = 1./(1. - xr*(S1 + xr*(S2 + xr*S3)));
+		
+		// if less then zero, went too far
+		if(denom<=0.)
+		{	xr -= step;
+			step /= 2.;
+			continue;
+		}
+		
+		// check ratio
+		kr = (1.-0.5*gamma0*xr)*denom*denom;
+		if(kr>Kmax) break;
+		
+		// did it pass a maximum
+		if(kr<kl)
+		{	Kmax = kl;
+			return xl;
+		}
+		
+		// update and continue
+		kl = kr;
+		xl = xr;
+	}
+	
+	// bisect to improve
+	double xmid;
+	for(int i=0;i<15;i++)
+	{	xmid = (xl+xr)/2.;
+		denom = 1./(1. - xmid*(S1 + xmid*(S2 + xmid*S3)));
+		kr = (1.-0.5*gamma0*xmid)*denom*denom;
+		if(kr<Kmax)
+			xl = xmid;
+		else
+			xr = xmid;
+	}
+	
+	return xmid;
 }
 
 #pragma mark MaterialBase::History Data Methods
@@ -787,7 +847,7 @@ void MaterialBase::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t
 
 // Get Cv heat capacity
 // Implemented in case heat capacity changes with particle state
-// Units nJ/(g-K)
+// Legacy Units nJ/(g-K)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
 
 // For Cp heat capacity in nJ/(g-K)
@@ -1492,12 +1552,12 @@ Tensor MaterialBase::GetStress(Tensor *sp,double pressure,MPMBase *) const
 
 // Calculate artficial damping where Dkk is the relative volume change rate = (V(k+1)-V(k))/(V(k+1)dt)
 // and c is the current wave speed in mm/sec
-double MaterialBase::GetArtificalViscosity(double Dkk,double c) const
+double MaterialBase::GetArtificalViscosity(double Dkk,double c,MPMBase *mptr) const
 {
     double avred = 0.;
     if(Dkk<0 && artificialViscosity)
     {   double divuij = fabs(Dkk);                                  // T^-1
-        double dcell = mpmgrid.GetAverageCellSize();                // L
+        double dcell = mpmgrid.GetAverageCellSize(mptr);                // L
         avred = dcell*divuij*(avA1*c + avA2*dcell*divuij);			// L^2/T^2 = F L/M = Pressure/rho = Kirchoff Pressure/rho0
     }
     return avred;
@@ -1512,5 +1572,3 @@ int MaterialBase::AltStrainContains(void) const { return NOTHING; }
 
 // concentraion saturation (mptr cannot be NULL)
 double MaterialBase::GetConcSaturation(MPMBase *mptr) const { return concSaturation; }
-
-

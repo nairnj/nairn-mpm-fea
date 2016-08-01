@@ -27,6 +27,9 @@
   (<a href="#cracks">Crack Settings</a>)
   (<a href="#diffusion">Activate Diffusion Calculations</a>)
   (<a href="#damping">Damping Options</a>)
+  (<a href="#xpic">XPIC Method</a>)
+  &lt;<a href="#trackspin"><code>TrackParticleSpin</code></a>/&gt;
+  &lt;<a href="#skippost"><code>SkipPostExtrapolation</code></a>/&gt;
   &lt;<a href="#extraprigid"><code>ExtrapolateRigid</code></a>/&gt;
   &lt;<a href="#stressfreetemp"><code>StressFreeTemp</code></a>&gt;300&lt;/StressFreeTemp&gt;
   &lt;<a href="#leave"><code>LeaveLimit</code></a>&gt;10000&lt;/LeaveLimit&gt;
@@ -52,8 +55,10 @@
 <ul class="lev2args">
 <li>0 - <code>USF</code> or update first</li>
 <li>2 - <code>USAVG</code> or update first and last. This option is the default option.</li>
-<li>3 - <code>SZS</code> or modified method to update last</li>
-</ul></li>
+<li>3 - <code>USL</code> or update last</li>
+</ul>
+By default the USAVG and USL do a second extrapolation to the grid after updating momentum on the grid. This second extrapolation can be skipped by using the <a href="#skippost"><code>SkipPostExtrapolation</code></a> command.
+</li>
 
 <li><code>(MPM method)</code> - the MPM method used for finding shape functions. The options are:
 <ul class="lev2args">
@@ -141,6 +146,8 @@ History variables are only meaningful for some <a href="definematl.html">materia
   <li>Byte 17: number of times this particle crossed an element boundary since the last archive time.</li>
   <li>Byte 18: rotational strain; this strain must be archived for visualization tools to be able to plot &quot;transformed&quot; points (<i>i.e.</i>, to stretch and shear plotted points to match the material point deformation state). It is now automatically archived whenever byte 5 is 'Y' (which means full deformation gradient is archived)</li>
   <li>Byte 19: vector normal to damage (only for softening materials).</li>
+  <li>Byte 20: angular momentum due to particle spin (zero unless <a href="#trackspin">particle spin</a> is activated)</li>
+  <li>Byte 21: angular velocity due to particle spin (zero unless <a href="#trackspin">particle spin</a> is activated).</li>
   </ul>
   
 The Default value is <code>iYNN...</code>  - <i>i.e.</i> one 'Y' and the rest 'N'
@@ -185,6 +192,11 @@ The Default value is <code>iYNNNN</code>.</dd>
 	<li><code>Fij</code> (where <code>i</code> and <code>j</code> are <code>R</code> or <code>Z</code>) - any component of the total axisymmetric deformation gradient (absolute, synonyms for the <code>x</code> or <code>y</code>) versions.</li>
 	<li><code>velx</code>, <code>vely</code>, or <code>velz</code> - average component of velocity (in <a href="units.html">velocity units</a>)</li>
 	<li><code>velR</code> or <code>velZ</code> - average component of axisymmetric velocity (in <a href="units.html">velocity units</a>) (synonyms for <code>velx</code> or <code>vely</code>)</li>
+	<li><code>px</code>, <code>py</code>, or <code>pz</code> - average component of momentum (in <a href="units.html">force-time units</a>)</li>
+	<li><code>pR</code> or <code>pR</code> - average component of axisymmetric momentum (in <a href="units.html">force-time units</a>) (synonyms for <code>px</code> or <code>py</code>)</li>
+	<li><code>Lx</code>, <code>Ly</code>, or <code>Lz</code> - average component of angular momentum (in <a href="units.html">energy-time units</a>) (note that only Lz is non-zero in 2D or axisymmetric calculations).</li>
+	<li><code>Lpx</code>, <code>Lpy</code>, or <code>Lpz</code> - average component of particle spin angular momentum (in <a href="units.html">energy-time units</a>) (note that only Lpz is non-zero in 2D or axisymmetric calculations and the simulation must be <a href="#trackspin">tracking particle spin</a> for any compononent to be non zero).</li>
+	<li><code>wpx</code>, <code>wpy</code>, or <code>wpz</code> - average component of particle spin velocity (in <a href="units.html">1/time units</a>) (note that only wpz is non-zero in 2D or axisymmetric calculations and the simulation must be <a href="#trackspin">tracking particle spin</a> for any compononent to be non zero).</li>
 	<li><code>dispx</code>, <code>dispy</code>, or <code>dispz</code> - average component of displacement (in <a href="units.html">length units</a>)</li>
 	<li><code>dispR</code> or <code>dispZ</code> - average component of axisymmetric displacement (in <a href="units.html">length units</a>) (synonyms for <code>dispx</code> or <code>dispy</code>)</li>
 	<li><code>contactx</code>, <code>contacty</code>, or <code>contactz</code> - component of the total contact force on the grid for <a href="#multi">multimaterial mode</a> simulations when they include <a href="definematl.html#rigid">rigid materials</a> that have <code>SetDirection=8</code>. It is a sum of all contact forces for the rigid material on the object (in <a href="units.html">force units</a>).</li>
@@ -351,7 +363,7 @@ The Default value is <code>iYNNNN</code>.</dd>
 
 <h2><a name="damping"></a>Damping Options</h2>
 
-<p>The three damping options are explained in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Damping_Options">OUSPDocs wiki</a>. They are activated with the commands:
+<p>All damping options are explained in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Damping_Options">OUSPDocs wiki</a>. They are activated with the commands:</p>
 
 <pre>&lt;Damping function='(alphaVsT)' PIC='(fractionPIC)'&gt;(alphaNum)&lt;/Damping&gt;
 &lt;FeedbackDamping target='(Tk)' max='(maxAlpha)'&gt;(gain)&lt;/FeedbackDamping&gt;
@@ -370,6 +382,31 @@ The Default value is <code>iYNNNN</code>.</dd>
 </ul>
     
 <p>The <code>PIC</code> attribute on the <code>Damping</code> command activates PIC via damping. The <code>(fractionPIC)</code> must from 0 to 1.</p>
+
+<h2><a name="xpic"></a>XPIC Method</h2>
+
+<p>The XPIC method is explained in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Damping_Options">OUSPDocs wiki</a>. XPIC simulations are activated with:</p>
+
+<pre>&lt;XPIC order='(m)'/&gt;</pre>
+
+<p>where <code>(m)</code> is the order for the XPIC method. This command is ignored unless a <a href="#damping">damping option</a> has activated PIC methods by setting <code>(fractionPIC)</code> to a non-zero value. A value of m=1 is standard PIC while m&gt;1 is extended PIC (or XPIC). In many problems, XPIC can improve on PIC by reducing its energy dissipation (<i>i.e.</i>, over damping) properties. Each higher value of <code>(m)</code> adds two extra extrapolations that reduces efficiency. It must be an integer and values less then 1 are set to 1. The default value is 1 (which is ordinary PIC).
+</p>
+
+<h2><a name="trackspin"></a>Track Particle Spin Comand</h2>
+
+<p>If this command is used:</p>
+
+<pre>&lt;TrackParticleSpin/&gt;</pre>
+
+<p>the simulation will use the MPM+PS mode that tracks angular momentum on the particles. This command only works if the current binary was compiled with the <code>ADD_PARTICLE_SPIN</code> constant defined in <code>MPMPrefix.hpp</code>.</p>
+
+<h2><a name="skippost"></a>Skip Post Extrapolation</h2>
+
+<p>If this command is used:</p>
+
+<pre>&lt;SkipPostExtrapolation/&gt;</pre>
+
+<p>the USAVG and USL <a href="#MPMMethods">strain update methods</a> will skip the second extrapolation done when updating strains after the momentum update. The default is to do the second extrapolation. Skipping the second extrapolation is always faster and often gives better results, but simulations in multimaterial mode or with cracks may require the second extrapolation for best results.</p>
 
 <h2><a name="extraprigid"></a>Extrapolate Rigid BC Comand</h2>
 

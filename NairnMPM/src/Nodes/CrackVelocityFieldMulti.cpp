@@ -57,7 +57,7 @@ void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 	{	if(rmvf[i]==NULL) continue;
         
 		if(mvf[i]==NULL)
-		{	mvf[i]=new MatVelocityField(rmvf[i]->GetFlags());
+		{	mvf[i] = CreateMatVelocityField(rmvf[i]->GetFlags());
 			if(mvf[i]==NULL) throw CommonException("Memory error allocating material velocity field.",
 											   "CrackVelocityFieldMulti::MatchMatVelocityFields");
 		}
@@ -74,7 +74,7 @@ void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 // throws CommonException() on memory error
 void CrackVelocityFieldMulti::AddMatVelocityField(int matfld)
 {	if(mvf[matfld]==NULL)
-	{   mvf[matfld]=new MatVelocityField(MaterialBase::GetMVFFlags(matfld));
+	{   mvf[matfld] = CreateMatVelocityField(MaterialBase::GetMVFFlags(matfld));
         if(mvf[matfld]==NULL)
         {   throw CommonException("Memory error allocating material velocity field.",
 												"CrackVelocityFieldMulti::AddMatVelocityField");
@@ -244,6 +244,7 @@ void CrackVelocityFieldMulti::UpdateMomentaOnField(double timestep)
 	Input parameters:
 		mvf[]->mass,pk,volumeGrad,disp (if contact by displacements)
 
+	VEL1 no longer needs to change vk in single particle node
 	Output changes are only allowed on this node (to be thread safe for parallel)
 		changes on mvf[]: pk, vk (if one particle), ftot (if postUpdate is TRUE)
  
@@ -360,7 +361,9 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,double delt
             
 			// 1. check nodal volume (this is turned off by setting the materialContactVmin to zero)
 			//    (warning: 2D must set grid thickness if it is not 1)
-			if(totalVolume/mpmgrid.GetCellVolume()<contact.materialContactVmin) break;
+			if(contact.materialContactVmin>0.)
+			{	if(totalVolume/mpmgrid.GetCellVolume(ndptr)<contact.materialContactVmin) break;
+			}
 		
 			// 2. ignore very small mass nodes - may not be needed
 			if(massRatio<1.e-6 || massRatio>0.999999) continue;
@@ -454,7 +457,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,double delt
 					double dvel = dotn/mred;
                     
 					// 5. check for contact
-					if(contact.MaterialContact(&delta,&norm,dvel,postUpdate,deltime)==SEPARATED) break;
+					if(contact.MaterialContact(&delta,&norm,dvel,postUpdate,deltime,ndptr)==SEPARATED) break;
                 }
                 
                 // passed all tests
@@ -490,13 +493,19 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,double delt
 											 &delta,&norm,&tangDel,&deln,&delt);
 			}
 			
-			// Find (ma Fb - mb Fa)/Mc = (ma Fc - Mc Fa)/Mc for 2nd order heating
-			Vector at = GetCMatFtot();
-			ScaleVector(&at, massi);
-			AddScaledVector(&at, mvf[i]->GetFtotPtr(), -Mc);
-			ScaleVector(&at,1./Mc);
+			// second order heating needs acceleration too
+			// Find (ma Fb - mb Fa)/Mc = (ma Fc - Mc Fa)/Mc
+			Vector at;
+			Vector *atPtr = NULL;
+			if(getHeating)
+			{	at = GetCMatFtot();
+				ScaleVector(&at, massi);
+				AddScaledVector(&at, mvf[i]->GetFtotPtr(), -Mc);
+				ScaleVector(&at,1./Mc);
+				atPtr = &at;
+			}
 			
-			if(!theContactLaw->GetFrictionalDeltaMomentum(&delPi,&norm,dotn,&mredDE,mred,getHeating,contactArea,inContact,deltime,&at))
+			if(!theContactLaw->GetFrictionalDeltaMomentum(&delPi,&norm,dotn,&mredDE,mred,getHeating,contactArea,inContact,deltime,atPtr))
 			{	if(numberMaterials==2 && contact.materialNormalMethod!=EACH_MATERIALS_MASS_GRADIENT) break;
 				continue;
 			}
@@ -613,10 +622,12 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 	
 	// rigid material with position-dependent velocities may have mixed velocities
 	Vector rvel;
-	if(mvf[rigidFld]->numberPoints==1)
-        rvel = mvf[rigidFld]->GetVelocity();
-	else
-		CopyScaleVector(&rvel, &mvf[rigidFld]->pk, 1./actualRigidVolume);
+	CopyScaleVector(&rvel, &mvf[rigidFld]->pk, 1./actualRigidVolume);
+	// VEL1 special case for single particle node
+	//if(mvf[rigidFld]->numberPoints==1)
+    //    rvel = mvf[rigidFld]->GetVelocity();
+	//else
+	//	CopyScaleVector(&rvel, &mvf[rigidFld]->pk, 1./actualRigidVolume);
 	AdjustForSymmetry(ndptr,&rvel,false);
 	
 	// loop over each material (skipping the one rigid material)
@@ -655,7 +666,9 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
             
             // 1. check nodal volume (this is turned off by setting the materialContactVmin to zero)
             //    (warning: 2D must set grid thickness if it is not 1)
-            if(GetVolumeTotal(ndptr)/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
+			if(contact.materialContactVmin>0.)
+            {	if(GetVolumeTotal(ndptr)/mpmgrid.GetCellVolume(ndptr)<contact.materialContactVmin) continue;
+			}
             
             // 2. ignore very small interactions
             double volRatio=voli/(rigidVolume+GetVolumeNonrigid(false));
@@ -755,7 +768,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
                     double dvel = dotn/massi;
                 
                     // check for contact
-                    if(contact.MaterialContact(&delta,&norm,dvel,postUpdate,deltime)==SEPARATED) break;
+                    if(contact.MaterialContact(&delta,&norm,dvel,postUpdate,deltime,ndptr)==SEPARATED) break;
                 }
                 
                 // passed all tests
@@ -775,19 +788,24 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
         }
 		
 		if(comContact)
-		{	// use delPi found above and no further change needed
+		{	// use delPi that was found above
 		}
-		else if(theContactLaw->IsFrictionalContact())
+ 		else if(theContactLaw->IsFrictionalContact())
 		{	bool getHeating = (callType==UPDATE_MOMENTUM_CALL) && ConductionTask::matContactHeating;
 			if(contactArea<0. && theContactLaw->FrictionLawNeedsContactArea())
 			{	contactArea = GetContactArea(ndptr,voli,rigidVolume,&delta,&norm,&tangDel,&deln,&delt);
 			}
 			
-			// Find -fi,a for second order heating
-			Vector at = mvf[i]->GetFtot();
-			ScaleVector(&at, -1.);
+			// Second order heating needs to find -fi,a
+			Vector at;
+			Vector *atPtr = NULL;
+			if(getHeating)
+			{	at = mvf[i]->GetFtot();
+				ScaleVector(&at, -1.);
+				atPtr = &at;
+			}
 			
-			if(!theContactLaw->GetFrictionalDeltaMomentum(&delPi,&norm,dotn,&mredDE,massi,getHeating,contactArea,inContact,deltime,&at))
+			if(!theContactLaw->GetFrictionalDeltaMomentum(&delPi,&norm,dotn,&mredDE,massi,getHeating,contactArea,inContact,deltime,atPtr))
 				continue;
 		}
 		else
@@ -855,42 +873,38 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 double CrackVelocityFieldMulti::GetContactArea(NodalPoint *ndptr,double voli,double volb,Vector *delta,
 											   Vector *norm,Vector *tangDel,double *delnout,double *deltout) const
 {
-	// Get raw surface area, it is divided by hperp in GetInterfaceForceForNode()
-	// Scale voltot=voli+volb to voltot*sqrt(2*vmin/voltot) = sqrt(2*vmin*vtot)
-	// multiple by position for axisymmetric
-	double rawSurfaceArea = sqrt(2.*fmin(voli,volb)*(voli+volb));
-	if(fmobj->IsAxisymmetric()) rawSurfaceArea *= ndptr->x;			// times position if axisym
-	
 	// perpendicular distance to correct contact area and contact by positions
-    double dist;
+    Vector dist;
     
     // normal displacement (norm is normalized) = delta . norm, subtract adjustment when using position
 	// which have been precalculated
     double deln = DotVectors(delta,norm);
 	
-    // tangential vector in tangDel
+    // tangential vector in tangDel (might be zero vector if delta || to n
     CopyVector(tangDel,delta);
     AddScaledVector(tangDel,norm,-deln);				// delta - deln (n) = dott (t)
     double delt=sqrt(DotVectors(tangDel,tangDel));
     if(!DbleEqual(delt,0.)) ScaleVector(tangDel,1/delt);
 	
 	// if using displacements, find dist  with tangDel
-	if(mpmgrid.GetContactByDisplacements())
-	{	dist = mpmgrid.GetPerpendicularDistance(norm, tangDel, delt);
+	dist = mpmgrid.GetPerpendicularDistance(norm,ndptr);
+	if(!mpmgrid.GetContactByDisplacements())
+	{	// Use z to account for Tartan grid
+        deln -= mpmgrid.positionCutoff*dist.x;
 	}
 	
-	else
-	{	// Cannot use tangDEl here, which means 3D non regular will be less accurate
-		// But, all regular and all 2D will be correct without tang
-		// Future Goal: get hperp without needing tang for general 3D case
-		// (for efficiency, call hperp method separately)
-		dist = mpmgrid.GetPerpendicularDistance(norm, NULL, 0.);
-        deln -= mpmgrid.positionCutoff*dist;
-	}
- 	
+	// output componente
 	*delnout = deln;
 	*deltout = delt;
-	return rawSurfaceArea/dist;
+	
+	// Get raw surface area, it is divided by hperp to get contact area
+	// Scale voltot=voli+volb to voltot*sqrt(2*vmin/voltot) = sqrt(2*vmin*vtot)
+	// dist weightings to allow for Tartan grid
+	// multiple by position for axisymmetric
+	double surfaceArea = sqrt(2.*fmin(voli*dist.y,volb*dist.z)*(voli+volb))/dist.x;
+	if(fmobj->IsAxisymmetric()) surfaceArea *= ndptr->x;			// times position if axisym
+	
+	return surfaceArea;
 }
 
 // scale displacements to get delta = (Mc/(Mc-mi))*dispc - (Mc/(Mc-mi))*(mvf[i]->disp/mi)
@@ -980,13 +994,13 @@ void CrackVelocityFieldMulti::AddMomVel(Vector *norm,double vel)
 }
 
 // Reflect one component of velocity and momentum from a node
-void CrackVelocityFieldMulti::ReflectMomVel(Vector *norm,CrackVelocityField *rcvf)
+void CrackVelocityFieldMulti::ReflectMomVel(Vector *norm,CrackVelocityField *rcvf,double reflectRatio)
 {	int i;
 	MatVelocityField **rmvf = rcvf->GetMaterialVelocityFields();
     for(i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	if(MatVelocityField::ActiveNonrigidField(rmvf[i]))
-			{	double rvel = -DotVectors(norm,&rmvf[i]->pk)/rmvf[i]->mass;
+			{	double rvel = -reflectRatio*DotVectors(norm,&rmvf[i]->pk)/rmvf[i]->mass;
 				mvf[i]->AddMomentVelocityDirection(norm,rvel);
 			}
 		}
@@ -1014,12 +1028,12 @@ void CrackVelocityFieldMulti::AddFtotDirection(Vector *norm,double deltime,doubl
 }
 
 // add one component of force such that updated momentum will be mass*velocity
-void CrackVelocityFieldMulti::ReflectFtotDirection(Vector *norm,double deltime,CrackVelocityField *rcvf,Vector *freaction)
+void CrackVelocityFieldMulti::ReflectFtotDirection(Vector *norm,double deltime,CrackVelocityField *rcvf,double reflectRatio,Vector *freaction)
 {	MatVelocityField **rmvf = rcvf->GetMaterialVelocityFields();
     for(int i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	if(MatVelocityField::ActiveNonrigidField(rmvf[i]))
-			{	double rvel = -DotVectors(norm,&rmvf[i]->pk)/rmvf[i]->mass;
+			{	double rvel = -reflectRatio*DotVectors(norm,&rmvf[i]->pk)/rmvf[i]->mass;
 				mvf[i]->AddFtotDirection(norm,deltime,rvel,freaction);
 			}
 		}
@@ -1152,7 +1166,7 @@ Vector CrackVelocityFieldMulti::GetCMatFtot(void)
 	return fk;
 }
 
-// add contact force on rigid material to the input vector
+// add contact force on all rigid materials to the input vector
 void CrackVelocityFieldMulti::SumAndClearRigidContactForces(Vector *fcontact,bool clearForces,double scale,Vector *ftotal)
 {
 	// if none, nothing to do

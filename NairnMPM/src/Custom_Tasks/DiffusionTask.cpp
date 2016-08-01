@@ -137,21 +137,22 @@ void DiffusionTask::ImposeValueBCs(double stepTime)
 TransportTask *DiffusionTask::GetGradients(double stepTime)
 {
     CommonException *transErr = NULL;
-	int nds[maxShapeNodes];
+	int ndsArray[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
     
 	// in case 2D planar
     for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
 	
 	// Find gradients on the nonrigid particles
-#pragma omp parallel for private(nds,fn,xDeriv,yDeriv) firstprivate(zDeriv)
+#pragma omp parallel for private(ndsArray,fn,xDeriv,yDeriv) firstprivate(zDeriv)
     for(int p=0;p<nmpmsNR;p++)
 	{	try
         {   // find shape functions and derviatives
             MPMBase *mptr = mpm[p];
             const ElementBase *elref = theElements[mptr->ElemID()];
-            int i,numnds;
-            elref->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,mptr);
+			int *nds = ndsArray;
+            elref->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,mptr);
+            int i,numnds = nds[0];
             
             // Find gradients from current concentrations
             mptr->AddConcentrationGradient();			// zero gradient on the particle

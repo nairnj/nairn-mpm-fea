@@ -64,7 +64,8 @@ void MatVelocityField::Zero(void)
 void MatVelocityField::AddMomentumTask1(Vector *addPk,Vector *vel,int numPts)
 {	AddVector(&pk,addPk);
 	numberPoints += numPts;
-	if(numberPoints==1) vk=*vel;
+	// VEL1 : vel not needed as not tracked on tracked on single particle node
+	//if(numberPoints==1) vk=*vel;
 }
 
 // copy mass and momentum from ghost to real node
@@ -74,11 +75,13 @@ void MatVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld,int matfld)
 	if(numberPoints==0) return;
 	
 	// momentum
-	if(numberPoints==1)
-		real->AddMomentumTask1((short)vfld,matfld,mass,&vk,1);
-	else
-		real->AddMomentumTask1((short)vfld,matfld,1.,&pk,numberPoints);
-			
+	real->AddMomentumTask1((short)vfld,matfld,1.,&pk,numberPoints);
+	// VEL1: no longer need special case for single particlenode
+	//if(numberPoints==1)
+	//	real->AddMomentumTask1((short)vfld,matfld,mass,&vk,1);
+	//else
+	//	real->AddMomentumTask1((short)vfld,matfld,1.,&pk,numberPoints);
+	
 	// if cracks and/or multimaterial mode
 	if(firstCrack!=NULL || fmobj->multiMaterialMode)
 	{	real->AddDisplacement((short)vfld,matfld,1.,&disp);
@@ -107,10 +110,12 @@ void MatVelocityField::CopyMassAndMomentumLast(NodalPoint *real,int vfld,int mat
 	if(numberPoints==0 || IsRigidField()) return;
 	
 	// momentum
-	if(numberPoints==1)
-		real->AddMomentumTask6((short)vfld,matfld,mass,&vk);
-	else
-		real->AddMomentumTask6((short)vfld,matfld,1.,&pk);
+	real->AddMomentumTask6((short)vfld,matfld,1.,&pk);
+	// VEL1 no longer tracking single particle node velocity
+	//if(numberPoints==1)
+	//	real->AddMomentumTask6((short)vfld,matfld,mass,&vk);
+	//else
+	//	real->AddMomentumTask6((short)vfld,matfld,1.,&pk);
     
 	// if cracks and multimaterial mode
 	if(firstCrack!=NULL || fmobj->multiMaterialMode)
@@ -139,7 +144,8 @@ void MatVelocityField::CopyGridForces(NodalPoint *real,int vfld,int matfld)
 // Momentum is g-mm/sec
 void MatVelocityField::ChangeMatMomentum(Vector *delP,bool postUpdate,double deltime)
 {	AddVector(&pk,delP);
-	if(numberPoints==1) CopyScaleVector(&vk,&pk,1./mass);
+	// VEL1 change velocity too is a single particle node
+	//if(numberPoints==1) CopyScaleVector(&vk,&pk,1./mass);
 	if(postUpdate) AddScaledVector(&ftot, delP, 1./deltime);
 }
 
@@ -158,7 +164,9 @@ void MatVelocityField::AddContactForce(Vector *delP)
 // Note: do not call for rigid fields in multimaterial mode
 void MatVelocityField::CalcVelocityForStrainUpdate(void)
 {	// only 1 point or rigid contact material is stored already, 0 will have zero velocity
-	if(numberPoints<=1 || mass==0.) return;
+	// VEL1 no calc is single particle node
+	//if(numberPoints<=1 || mass==0.) return;
+	if(numberPoints==0 || mass==0.) return;
 	CopyScaleVector(&vk,&pk,1./mass);
 }
 
@@ -190,15 +198,15 @@ void MatVelocityField::UpdateMomentum(double timestep)
 
 // on strain updates, increment nodal velocity and acceleration
 // fi is shape function
-void MatVelocityField::IncrementNodalVelAcc(double fi,Vector *delv,Vector *dela) const
+void MatVelocityField::IncrementNodalVelAcc(double fi,GridToParticleExtrap *gp) const
 {
     double mnode = fi/mass;					// Ni/mass
-	delv->x += pk.x*mnode;					// velocity += p/mass
-	delv->y += pk.y*mnode;
-	delv->z += pk.z*mnode;
-	dela->x += ftot.x*mnode;				// acceleration += f/mass
-	dela->y += ftot.y*mnode;
-	dela->z += ftot.z*mnode;
+	gp->vgpnp1.x += pk.x*mnode;				// velocity += p/mass
+	gp->vgpnp1.y += pk.y*mnode;
+	gp->vgpnp1.z += pk.z*mnode;
+	gp->acc->x += ftot.x*mnode;				// acceleration += f/mass
+	gp->acc->y += ftot.y*mnode;
+	gp->acc->z += ftot.z*mnode;
 }
 
 #pragma mark ACCESSORS
@@ -207,7 +215,8 @@ void MatVelocityField::IncrementNodalVelAcc(double fi,Vector *delv,Vector *dela)
 void MatVelocityField::Describe(int fldnum) const
 {
 	cout << "#      " << fldnum << ". Material Field: n="<<  numberPoints << " mass=" << mass ;
-    cout << " p=(" << pk.x << "," << pk.y << "," << pk.z << ")" << endl;
+    cout << " p=(" << pk.x << "," << pk.y << "," << pk.z << ")";
+    cout << " ftot=(" << ftot.x << "," << ftot.y << "," << ftot.z << ")" << endl;
 }
 
 // volume for contact calculations
@@ -216,6 +225,7 @@ void MatVelocityField::SetContactVolume(double vol) { volume = vol; }
 double MatVelocityField::GetContactVolume(void) const { return volume; }
 
 // velocity
+// VEL1 no longer set
 void MatVelocityField::SetVelocity(Vector *vel) { vk = *vel; }
 Vector MatVelocityField::GetVelocity(void) { return vk; }
 

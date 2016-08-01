@@ -26,6 +26,7 @@ enum {LINEAR_PRESSURE=0,MGEOS_PRESSURE};
 class Viscoelastic : public MaterialBase
 {
     public:
+		static int warnExcessiveX;
 	
         // constructors and destructors
         Viscoelastic();
@@ -78,6 +79,7 @@ class Viscoelastic : public MaterialBase
 		// MG-EOS properties
 		double gamma0,C0,S1,S2,S3;
 		double C0squared;
+		double Kmax,Xmax;
 		int mptrHistory;
 };
 

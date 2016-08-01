@@ -75,7 +75,6 @@ class CrackHeader : public LinkedObject
 		void SetContactLawID(int);
 		void Output(void);
 		void Describe(void);
-		bool NodeNearTip(NodalPoint *,double);
 
         bool CreateHierarchy(void);
         void MoveHierarchy(void);

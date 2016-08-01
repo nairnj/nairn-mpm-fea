@@ -21,7 +21,7 @@ CoulombFriction::CoulombFriction() {}
 CoulombFriction::CoulombFriction(char *matName) : ContactLaw(matName)
 {
 	frictionCoeff = 0.0;			// <0 is stick
-	frictionCoeffStatic = -1.;		// ignored if negative or if > frictionCoeff or if frictionCoeff < 0
+	frictionCoeffStatic = -1.;		// ignored if negative or if frictionCoeff < 0
 }
 
 #pragma mark CoulombFriction::Initialization
@@ -164,21 +164,18 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
             // Note: only add frictional heating during momentum update (when friction
             //   force is appropriate) and only if frictional contact heat is enabled.
             if(getHeating)
-			{	if(at!=NULL)
-				{	double Vs = SslideAcDt*(dott-SslideAcDt);
-					AddScaledVector(at, delPi, -1./deltime);
-					double AsDt = SslideAcDt*DotVectors(at,&tang)*deltime;
-					if(AsDt>Vs)
-					{	//*mredDE = Vs*(Vs/AsDt-1.)+0.5*AsDt;
-						*mredDE = 0.5*Vs*Vs/AsDt;
-					}
-					else
-						*mredDE = Vs - 0.5*AsDt;
-				}
+			{	// at must be provided when getHeating is true
+				// Vs alone is first order heating (i.e., *mredDE = Vs is first order method)
+				double Vs = SslideAcDt*(dott-SslideAcDt);
+				AddScaledVector(at, delPi, -1./deltime);
+				double AsDt = SslideAcDt*DotVectors(at,&tang)*deltime;
+				if(AsDt>Vs)
+					*mredDE = 0.5*Vs*Vs/AsDt;
 				else
-					*mredDE = SslideAcDt*(dott-SslideAcDt);
-           }
+					*mredDE = Vs - 0.5*AsDt;
+			}
 		}
+
     }
 	
 	// still in contact
@@ -195,10 +192,12 @@ double CoulombFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double Ac,d
 	// check static coefficient
 	if(frictionCoeffStatic>0.)
 	{	double Sstatic = frictionCoeffStatic*NAcDt;
-		if(SStickAcDt<Sstatic) return Sstatic;			// it will stick
+		//if(SStickAcDt<=Sstatic) cout << "# static stick " << SStickAcDt << "," << Sstatic << "," << mtime << endl;
+		if(SStickAcDt<=Sstatic) return Sstatic;			// it will stick
 	}
 	
 	// S = mu N so S Ac dt = mu N Ac dt
+	//if(SStickAcDt<=frictionCoeff*NAcDt) cout << "# dynamic stick " << SStickAcDt << "," << frictionCoeff*NAcDt << "," << mtime << endl;
 	return frictionCoeff*NAcDt;
 }
 

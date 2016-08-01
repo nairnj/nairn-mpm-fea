@@ -38,36 +38,65 @@ ElementBase::~ElementBase()
 #pragma mark ElementBase: Shape and Gradient calls for MPM
 
 
-/* Find dimensionless position first of particle or find
-	CPDI info. This is called during initialization of each time step.
-  In CPDI, rigid particles still use GIMP, so find their dimensionless position too
-  throws CommonException() if CPDI particle corner has left the grid
+/*
+ Find GIMP information or find CPDI info (one or the other, never both)
+ Not called for rigid BC particles because do not use shape functions unless extrapolated
+	and then use simple ones (non-GIMP)
+ throws CommonException() if CPDI particle corner has left the grid
 */
 void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
 {
     switch(useGimp)
-    {   case POINT_GIMP:
+    {
+#ifdef LOAD_GIMP_INFO
+		case POINT_GIMP:
+			GetXiPos(&mpmptr->pos,mpmptr->GetNcpos());
+			break;
+			
         case UNIFORM_GIMP:
         case UNIFORM_GIMP_AS:
-            GetXiPos(&mpmptr->pos,mpmptr->GetNcpos());
+		{	// during initialization, find dimenless positiong, and nodes for non-zero shape function
+			Vector *xipos = mpmptr->GetNcpos();
+            GetXiPos(&mpmptr->pos,xipos);
+			Vector lp;
+            mpmptr->GetDimensionlessSize(lp);
+			GIMPNodes *gimp = mpmptr->GetGIMPInfo();
+            GetGimpNodes(gimp->nds,gimp->nds,gimp->ndIDs,xipos,lp);
+			double fn[maxShapeNodes];
+            GimpShapeFunction(xipos,gimp->nds[0],gimp->ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
+			
+			// compact the nodes and ndIDs
+			int local=NumberNodes();
+			int found=local;
+			for(int i=local+1;i<=gimp->nds[0];i++)
+			{	if(fn[i]<=0.0) continue;
+				gimp->ndIDs[found] = gimp->ndIDs[i-1];
+				found++;
+				gimp->nds[found]=gimp->nds[i];
+				fn[found]=fn[i];
+			}
+			gimp->nds[0]=found;
             break;
-            
+		}
+			
+#else
+		case POINT_GIMP:
+        case UNIFORM_GIMP:
+        case UNIFORM_GIMP_AS:
+			GetXiPos(&mpmptr->pos,mpmptr->GetNcpos());
+			break;
+			
+#endif
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
-            if(theMaterials[mpmptr->MatID()]->Rigid())
-                GetXiPos(&mpmptr->pos,mpmptr->GetNcpos());
 			mpmptr->GetCPDINodesAndWeights(useGimp);
             break;
     }
 }
 
-/* Find dimensionless position first, then get shape functions
-	Load number of nodes into numnds
-	Load dimensionless position into xipos vector (for later use be return calls)
-	Load node numbers into nds[1]...
-	Load shape functions into fn[1]...
-	See GetShapeFunctions() if need to change
+/* Find shape functions for crack particle using point GIMP method
+	Finds nodes, dimensionless position, and then calls simple function
   NOTE: This is only called by crack update and do not need to save xipos.
 */
 #define CRACK_POINT
@@ -79,8 +108,10 @@ void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vec
 	GetXiPos(pos,&xipos);
 	ShapeFunction(&xipos,FALSE,&fn[1],NULL,NULL,NULL);
 #else
+	This section no longer current. If switch to using it again, revise with method in following two routines
+	/*
 	Vector xipos,lp;
-	int ndIDs[maxShapeNodes];
+	unsigned char ndIDs[maxShapeNodes];
 	
     switch(useGimp)
     {   case POINT_GIMP:
@@ -95,7 +126,7 @@ void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vec
 			// since no material point, CPDI uses GIMP method
         case UNIFORM_GIMP:
             GetXiPos(pos,&xipos);
-            lp.x = mpmgrid.GetParticleSemiLength();
+            lp.x = mpmgrid.GetParticleSemiLength();		// no longer there
             lp.y = lp.x;
             lp.z = lp.x;
             GetGimpNodes(numnds,nds,ndIDs,&xipos,lp);
@@ -107,7 +138,7 @@ void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vec
 			// since no material point, CPDI uses GIMP method
         case UNIFORM_GIMP_AS:
             GetXiPos(pos,&xipos);
-            lp.x = mpmgrid.GetParticleSemiLength();
+            lp.x = mpmgrid.GetParticleSemiLength();		// no longer there
             lp.y = lp.x;
             lp.z = lp.x;
             GetGimpNodes(numnds,nds,ndIDs,&xipos,lp);
@@ -115,153 +146,173 @@ void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vec
             GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
             break;
      }
+	 */
 #endif
 }
 
-/* Just get nodes and shape functions
-	Load number of nodes into numnds
-	Load node numbers into nds[1]...
-	Load shape functions into fn[1]...
-	See other GetShapeFunctions() if need to change
+/*
+ Return list of nodes (possible change array with address in ndsHandle)
+	and the shape functions
+ Load node numbers into nds[1]...
+ Load shape functions into fn[1]...
+ WARNING: This should neverbe called for Rigid BC particles
  NOTE: This is called at various places in the time step when shape functions are needed. It should
 	recalculate the ones found at the begnning of the time step using precalculated xipos
     or CPDI info, which are found in initialization
  throws CommonException() if too many CPDI nodes
 */
-void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,MPMBase *mpmptr) const
+void ElementBase::GetShapeFunctions(double *fn,int **ndsHandle,MPMBase *mpmptr) const
 {
     Vector lp;
+	int *nds = *ndsHandle;
     
     switch(useGimp)
     {   case POINT_GIMP:
-        	// load coordinates if not already done
-            GetNodes(numnds,nds);
-            ShapeFunction(mpmptr->GetNcpos(),FALSE,&fn[1],NULL,NULL,NULL);
+			// load coordinates if not already done
+            GetNodes(&nds[0],nds);
+            ShapeFunction(mpmptr->GetNcpos(),false,&fn[1],NULL,NULL,NULL);
             break;
-            
+
+#ifdef LOAD_GIMP_INFO
         case UNIFORM_GIMP:
         {	// GIMP analysis
-            int ndIDs[maxShapeNodes];
             Vector *xipos = mpmptr->GetNcpos();
             mpmptr->GetDimensionlessSize(lp);
-            GetGimpNodes(numnds,nds,ndIDs,xipos,lp);
-            GimpShapeFunction(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
-            GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
+			GIMPNodes *gimp = mpmptr->GetGIMPInfo();
+            GimpShapeFunction(xipos,gimp->nds[0],gimp->ndIDs,false,&fn[1],NULL,NULL,NULL,lp);
+			*ndsHandle = gimp->nds;
             break;
         }
             
         case UNIFORM_GIMP_AS:
         {	// GIMP analysis
-            int ndIDs[maxShapeNodes];
             Vector *xipos = mpmptr->GetNcpos();
             mpmptr->GetDimensionlessSize(lp);
-            GetGimpNodes(numnds,nds,ndIDs,xipos,lp);
-            GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
-            GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
+			GIMPNodes *gimp = mpmptr->GetGIMPInfo();
+            GimpShapeFunctionAS(xipos,gimp->nds[0],gimp->ndIDs,false,&fn[1],NULL,NULL,NULL,lp);
+			*ndsHandle = gimp->nds;
             break;
         }
             
+#else
+        case UNIFORM_GIMP:
+        {	// GIMP analysis
+            unsigned char ndIDs[maxShapeNodes];
+            Vector *xipos = mpmptr->GetNcpos();
+            mpmptr->GetDimensionlessSize(lp);
+            GetGimpNodes(&nds[0],nds,ndIDs,xipos,lp);
+            GimpShapeFunction(xipos,nds[0],ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
+            GimpCompact(&nds[0],nds,fn,NULL,NULL,NULL);
+            break;
+        }
+            
+        case UNIFORM_GIMP_AS:
+        {	// GIMP analysis
+            unsigned char ndIDs[maxShapeNodes];
+            Vector *xipos = mpmptr->GetNcpos();
+            mpmptr->GetDimensionlessSize(lp);
+			GetGimpNodes(&nds[0],nds,ndIDs,xipos,lp);
+            GimpShapeFunctionAS(xipos,nds[0],ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
+            GimpCompact(&nds[0],nds,fn,NULL,NULL,NULL);
+			break;
+        }
+            
+#endif
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
-        {   if(theMaterials[mpmptr->MatID()]->Rigid())
-            {	// GIMP analysis
-                int ndIDs[maxShapeNodes];
-                Vector *xipos = mpmptr->GetNcpos();
-                mpmptr->GetDimensionlessSize(lp);
-                GetGimpNodes(numnds,nds,ndIDs,xipos,lp);
-                if(fmobj->IsAxisymmetric())
-                    GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
-                else
-                    GimpShapeFunction(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
-                GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
-            }
-            else
-            {   *numnds = GetCPDIFunctions(nds,fn,NULL,NULL,NULL,mpmptr);
-            }
+            nds[0] = GetCPDIFunctions(nds,fn,NULL,NULL,NULL,mpmptr);
             break;
-		}
     }
 }
 
-/* Do several element things at once
-    Load number of nodes into numnds
-    Load node numbers into nds[1]...
-    Load shape functions into fn[1]...
-    Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
-        For axisymmetric load zDeriv with shape function / particle radial position
-        Input zDeriv must not be NULL
-    Input: pointer to material point dimensionless position
-   NOTE: This is called at various places in the time step when gradients are needed. It should
-    recalculate the ones found at the beginning of the time step using the precalculated xipos
-    or CPDI info, which are found in the initialization task
-   throws CommonException() if too many CPDI nodes
+/* 
+ Return list of nodes (possibly change array with address in ndsHandle)
+	and the shape functions and their gradients
+ Load node numbers into nds[1]...
+ Load shape functions into fn[1]...
+ Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
+ WARNING: This should never be called for Rigid BC particles
+ NOTE: This is called at various places in the time step when shape functions are needed. It should
+	recalculate the ones found at the begnning of the time step using precalculated xipos
+	or CPDI info, which are found in initialization
+ throws CommonException() if too many CPDI nodes
 */
-void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,
+void ElementBase::GetShapeGradients(double *fn,int **ndsHandle,
                                     double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr) const
 {
     Vector lp;
+	int *nds = *ndsHandle;
     
     switch(useGimp)
     {   case POINT_GIMP:
-        	// load nodal numbers
-            GetNodes(numnds,nds);
+			// load nodal numbers
+            GetNodes(&nds[0],nds);
             
             // special case for regular mesh
             if(mpmgrid.GetCartesian()>0)
-                ShapeFunction(mpmptr->GetNcpos(),TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+                ShapeFunction(mpmptr->GetNcpos(),true,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
             else
             {	// Load element coordinates
                 Vector ce[MaxElNd];
                 double fnh[MaxElNd];
-                GetCoordinates(ce,*numnds,nds);
+                GetCoordinates(ce,nds[0],nds);
                 
                 // find shape functions and derviatives
                 ShapeFunction(mpmptr->GetNcpos(),BMATRIX,&fn[1],&xDeriv[1],&yDeriv[1],&ce[1],NULL,NULL,&fnh[1]);
             }
             break;
             
+#ifdef LOAD_GIMP_INFO
         case UNIFORM_GIMP:
-        {	// uGIMP analysis
-            int ndIDs[maxShapeNodes];
+        {	// GIMP analysis
             Vector *xipos = mpmptr->GetNcpos();
             mpmptr->GetDimensionlessSize(lp);
-            GetGimpNodes(numnds,nds,ndIDs,xipos,lp);
-            GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
-            GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+			GIMPNodes *gimp = mpmptr->GetGIMPInfo();
+			GimpShapeFunction(xipos,gimp->nds[0],gimp->ndIDs,true,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
+			*ndsHandle = gimp->nds;
+            break;
+        }
+            
+        case UNIFORM_GIMP_AS:
+        {	// GIMP analysis
+            Vector *xipos = mpmptr->GetNcpos();
+            mpmptr->GetDimensionlessSize(lp);
+			GIMPNodes *gimp = mpmptr->GetGIMPInfo();
+            GimpShapeFunctionAS(xipos,gimp->nds[0],gimp->ndIDs,true,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
+			*ndsHandle = gimp->nds;
+            break;
+        }
+            
+#else
+        case UNIFORM_GIMP:
+        {	// uGIMP analysis
+            unsigned char ndIDs[maxShapeNodes];
+            Vector *xipos = mpmptr->GetNcpos();
+            mpmptr->GetDimensionlessSize(lp);
+            GetGimpNodes(&nds[0],nds,ndIDs,xipos,lp);
+            GimpShapeFunction(xipos,nds[0],ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
+            GimpCompact(&nds[0],nds,fn,xDeriv,yDeriv,zDeriv);
             break;
         }
             
         case UNIFORM_GIMP_AS:
         {	// uGIMP analysis
-            int ndIDs[maxShapeNodes];
+            unsigned char ndIDs[maxShapeNodes];
             Vector *xipos = mpmptr->GetNcpos();
             mpmptr->GetDimensionlessSize(lp);
-            GetGimpNodes(numnds,nds,ndIDs,xipos,lp);
-            GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
-            GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+            GetGimpNodes(&nds[0],nds,ndIDs,xipos,lp);
+            GimpShapeFunctionAS(xipos,nds[0],ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
+            GimpCompact(&nds[0],nds,fn,xDeriv,yDeriv,zDeriv);
             break;
         }
             
+#endif
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
 		case QUADRATIC_CPDI:
-        {   if(theMaterials[mpmptr->MatID()]->Rigid())
-			{	int ndIDs[maxShapeNodes];
-                Vector *xipos = mpmptr->GetNcpos();
-                mpmptr->GetDimensionlessSize(lp);
-                GetGimpNodes(numnds,nds,ndIDs,xipos,lp);
-                if(fmobj->IsAxisymmetric())
-                    GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
-                else
-					GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
-				GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
-            }
-            else
-            {   *numnds = GetCPDIFunctions(nds,fn,xDeriv,yDeriv,zDeriv,mpmptr);
-            }
+            nds[0] = GetCPDIFunctions(nds,fn,xDeriv,yDeriv,zDeriv,mpmptr);
             break;
-		}
     }
 }
 
@@ -480,7 +531,7 @@ void ElementBase::MPMPoints(short numPerElement,Vector *mpos) const
 // assumed to be properly numbered regular array
 // load nodes into nds[1]... and node IDs (0-15) into ndIDs[0]...
 // Elements that support GIMP must override
-void ElementBase::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos,Vector &lp) const
+void ElementBase::GetGimpNodes(int *numnds,int *nds,unsigned char  *ndIDs,Vector *xipos,Vector &lp) const
 {
 }
 
@@ -488,7 +539,7 @@ void ElementBase::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos,Vec
 // assumed to be properly numbered regular array
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
 // Elements that support GIMP must override
-void ElementBase::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
+void ElementBase::GimpShapeFunction(Vector *xi,int numnds,unsigned char *ndIDs,int getDeriv,double *sfxn,
 										 double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
 }
@@ -497,7 +548,7 @@ void ElementBase::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeri
 // assumed to be properly numbered regular array
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
 // Only that elements that support axisymmetric GIMP must override
-void ElementBase::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
+void ElementBase::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *ndIDs,int getDeriv,double *sfxn,
 									double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
 }
@@ -551,7 +602,7 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 	{	// get straight grid shape functions
 		ElementBase *elem = theElements[cpdi[i]->inElem];
 		elem->GetNodes(&numnds,nds);
-		elem->ShapeFunction(&cpdi[i]->ncpos,FALSE,&fn[1],NULL,NULL,NULL);
+		elem->ShapeFunction(&cpdi[i]->ncpos,false,&fn[1],NULL,NULL,NULL);
 		
 		// loop over shape grid shape functions and collect in arrays
 		for(j=1;j<=numnds;j++)
@@ -622,7 +673,8 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 	fn[0] = 1.;
 	for(i=0;i<ncnds;i++)
 	{   if(cnodes[i] == nds[count])
-		{   fn[count] += wsSi[i];
+		{	// note that code never entered until all are initialized below
+			fn[count] += wsSi[i];
 			if(xDeriv!=NULL)
 			{	xDeriv[count] += wgSi[i].x;
 				yDeriv[count] += wgSi[i].y;
@@ -631,7 +683,7 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 		}
 		else
 		{	if(fn[count]>1.e-10)
-			{	count++;		// keep only if shape is nonzero
+			{	count++;		// keep previous one only if shape ends up nonzero (otherwise previous one is removed as too small)
 				if(count>=maxShapeNodes)
                 {	cout << "# Found " << count-1 << " nodes; need room for remaining nodes:" << endl;
                     for(j=i;j<ncnds;j++)
@@ -649,7 +701,10 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 			}
 		}
 	}
+	
+	// remove last one if it was too small
 	if(fn[count]<=1.e-10) count--;
+	
 	return count;
 }
 

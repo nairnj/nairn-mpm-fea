@@ -126,6 +126,13 @@ and rubber elastic materials as special cases.</td>
 </tr>
 
 <tr>
+<td><a href="#heaniso"><code>AnisoMembrane</code></a></td>
+<td>21</td>
+<td width="50%">Anisotropic, hyperelastic, membrane material (in development).</td>
+<td align="center"></td><td align="center"></td><td align="center"></td><td align="center"></td><td align="center">X</td>
+</tr>
+
+<tr>
 <td><a href="#tait"><code>TaitLiquid</code></a></td>
 <td>22</td>
 <td width="50%">Newtonian liquid with Tait equation for pressure as hyperelastic material.</td>
@@ -153,6 +160,23 @@ and rubber elastic materials as special cases.</td>
 <td><a href="#hill"><code>HillPlastic</code></a></td>
 <td>15</td>
 <td width="50%">Elastic-plastic, orthotropic material with a Hill yield criterion and hardening</td>
+<td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+</table>
+
+<h3><a name="SSSM"></a>Softening Small Strain Materials</h3>
+
+<table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">
+<tr><th rowspan="2">Name</th><th rowspan="2">Type</th><th rowspan="2">Description</th><th rowspan="2">FEA</th><th colspan="3">2D MPM</th><th rowspan="2">3D MPM</th>
+</tr>
+<tr><th>P&sigma;</th><th>P&epsilon;</th><th>AS</th>
+</tr>
+
+<tr>
+<td><a href="#isosoft"><code>IsoSoftening</code></a></td>
+<td>50</td>
+<td width="50%">Small-strain isotropic material with anisotropic damage mechanics using mode I and mode I softening laws.</td>
 <td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
@@ -201,6 +225,23 @@ and rubber elastic materials as special cases.</td>
 <td><a href="#visc"><code>Viscoelastic</code></a></td>
 <td>6</td>
 <td width="50%">Linear viscoelastic material with sum of relaxation times</td>
+<td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+</table>
+
+<h3>Phase Transition Materials</h3>
+
+<table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">
+<tr><th rowspan="2">Name</th><th rowspan="2">Type</th><th rowspan="2">Description</th><th rowspan="2">FEA</th><th colspan="3">2D MPM</th><th rowspan="2">3D MPM</th>
+</tr>
+<tr><th>P&sigma;</th><th>P&epsilon;</th><th>AS</th>
+</tr>
+
+<tr>
+<td><a href="#PTmat"><code>PhaseTransition</code></a></td>
+<td>6</td>
+<td width="50%">First order phase transition between two materials</td>
 <td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
@@ -305,6 +346,13 @@ and rubber elastic materials as special cases.</td>
 </tr>
 
 <tr>
+<td><a href="#adhesive"><code>AdhesionFriction</code></a></td>
+<td>63</td>
+<td width="50%">Contact by Coulomb friction law with adhesion</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
 <td><a href="#linearint"><code>LinearInterface</code></a></td>
 <td>62</td>
 <td width="50%">Imperfect interface with linear elastic normal and shear tractions</td>
@@ -391,6 +439,7 @@ and rubber elastic materials as special cases.</td>
 <li>S2 - a parameter in MGEOS (dimensionless) (when pressureLaw=1).</li>
 <li>S3 - a parameter in MGEOS (dimensionless) (when pressureLaw=1).</li>
 <li>gamma0 - a parameter in MGEOS (dimensionless) (when pressureLaw=1).</li>
+<li>Kmax - maximum increase allowed in bulk modulus (by ratio and dimensionless) (default is 20)./</li>
 <li>G0 - the steady-state (or long time) shear modulus (in <a href="units.html">pressure/length units</a>)</li>
 <li>ntaus - the number of relaxation times in the shear modulus. This number must exactly match the number of &lt;Gk&gt; and &lt;tauk&gt; settings and come before any of those settings</li>
 <li>Gk - the shear modulus for the next relaxation time (in <a href="units.html">pressure units</a>)</li>
@@ -560,6 +609,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <li>S2 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
 <li>S3 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
 <li>gamma0 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
+<li>Kmax - maximum increase allowed in bulk modulus (by ratio and dimensionless) (default is 20)./</li>
 <li>G - the shear modulus at zero pressure and the reference temperature (in <a href="units.html">alt velocity units</a>).</li>
 <li>Hardening - this property selects the <a href="hardeninglaws.html">hardening law</a>. It should be followed by entering all yielding properties required by the hardening law within the material's definition block.</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a>. This material requires <a href="#common">heat capacity <code>Cv</code></a> and a <a href="mpmheader.html#stressfreetemp"><code>StressFreeTemp</code></a> in K.</li>
@@ -605,6 +655,12 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 	<li>The plastic volumetric ratio or J<sub>P</sub> = J/J<sub>E</sub> where J<sub>E</sub> is determinant of the elastic deformation gradient)</li>
 </ol>
 	
+<!-- Material  Section -->
+
+<h2><a name="heaniso"></a>Anisotropic, Elastic-Plastic, Hyperelastic Material (Type=21)</h2>
+
+<p>The material type is a large-strain, anisotropic, hyperelastic material for fabric processing. It is currently in development.</p>
+
 <!-- Material  Section -->
 
 <h2><a name="idealgas"></a>Ideal Gas, as a Hyperelastic Material (Type=22)</h2>
@@ -660,6 +716,50 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <li>Volumetric residual strain ratio J<sub>res</sub>.</li>
 <li>Shear rate.</li>
 </ol>
+
+<!-- Material  Section -->
+
+<h2><a name="isosoft"></a>Isotropic, Small-Strain Material with Anisotropic Damage (Type=50)</h2>
+
+<p>The material is an isotropic, small strain material. Once damage initiates (using any available initiation law), the material develops a crack and propagates damage using anisotropic damage mechanics. The damage process is controlled by any available softening laws. The properties are:</p>
+
+<ul>
+<li>Initiation - this property selects the <a href="initiationlaws.html">damage initiation law</a>. It should be followed by entering all properties required by the damage initiation law within the material's definition block. The default is <a href="initiationlaws.html#maxPS">maximum principle stresses law</a>.</li>
+<li>SofteningI - this property selects the mode I <a href="softeninglaws.html">softening law</a>. It should be followed by entering all properties required by the softening law within the material's definition block. Each property should be prefaced with "I-". For example, to enter mode I law toughness for "Gc", enter it ias "I-Gc". The default is <a href="softeninglaws.html#linear">linear softening law</a>.</li>
+<li>SofteningII - this property is same as "SofteningI" except it selects the mode II <a href="softeninglaws.html">softening law</a> and properties for this law should be prefaced with "II-".</li>
+<li>(other) - see <a href="#iso">Isotropic</a> material for all properties of the underlying small-strain, isotropic material, except this softening material requires use of <a href="#cmn1"><code>largeRotation</code> property</a> set to 1.</li>
+</ul>
+
+<p>The particle plastic strain will archive the total cracking strain in the global axis system. The plastic energy will archive the total amount of energy released by damage to the particle.</p>
+
+<h3>History Data for Isotropic, Small-Strain Materials with Anisotropic Damage</h3>
+
+<ol>
+<li>The maximum crack opening strain</li>
+<li>The maximum crack shear strain</li>
+<li>cos(&alpha;) in 2D or &alpha; in 3D for normal to the crack plane</li>
+<li>sin(&alpha;) in 2D or &beta; in 3D for normal to the crack plane</li>
+<li>0 in 2D or &gamma; in 3D for normal to the crack plane</li>
+<li>0, 1, or 2 to indicate undamaged, damage propagation, or post failure (decohesion) state of the particle.</li>
+<li>A scaling factor used internally to scale softening law response depending on particle volume, crack plane orientation, and initiation stress.</li>
+</ol>
+
+<p>History variables 3-5 are storing Euler angles &alpha;, &beta;, and &gamma; (in radians) for a Z-Y-Z rotation scheme; only &alpha; is needed for 2D and it is stored as cos(&alpha;) and sin(&alpha;) instead of as angles.</p>
+
+<!-- Material  Section -->
+
+<h2><a name="PTmat"></a>First Order Phase Transition Material (Type=30)</h2>
+
+<p>The material models a phase transtition between a solid phase and a liquid phase. It is currently only in OSParticulas. The properties are:</p>
+
+<ul>
+<li>SolidPhase - set solid phase material by material ID.</li>
+<li>LiquidPhase - set liquid phase material by material ID.</li>
+<li>Tmelt - the mean melting point (K).</li>
+<li>Tsigma - standard deviation for random partcle melting temperatures (K)
+<li>DeltaT - the half width of the melting transition around particle melting temperature (K).</li>
+<li>Hfusion - the heat of fusion for the transition (J/kg).</li>
+</ul>
 
 <!-- Material  Section -->
 
@@ -807,6 +907,43 @@ cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup
 <li>coeff - enter dynamic coefficient of friction. If you enter a number less then zero, the contact will be stick contact when in contact but free movement when separated (default is 0).</li>
 <li>coeffStatic - enter optional static coefficient of friction. If entered, it must be greater than dynamic coefficient of friction. The sliding will start with static frictional force is exceeded, but then will slide using dynamic coefficient of friction (default: not set).</li>
 </ul>
+
+<a name="adhesive"></a><h2>Coulomb Friction with Adhesion Contact Law</h2>
+
+<p>This law implements Coulomb friction law with adhesion. If the surface are in contact,
+the frictional sliding force is
+</p>
+
+<blockquote>
+<code>S<sub>slide</sub> = S<sub>a</sub> + (µ +k&Delta;v)N</code>
+</blockquote>
+
+<p>where S<sub>a</sub> is the tangential adhesion strength and µ is the coefficient of friction, and k allows the dynamic coefficient of friction to depend linearly on sliding velocity. The µ term models transition from static to dynamic coefficient of friction by</p>
+
+<blockquote>
+<code>µ = (µ<sub>s</sub> vhalf + µ<sub>d</sub> v)/(vhalf + v)</code>
+</blockquote>
+
+<p>where <code>vhalf</code> is velocity for which coefficient of friction is half way from static coefficient of friction (µ<sub>s</sub>) to dynamic coefficient of friction (µ<sub>d</sub>). The default is <code>vhalf</code>=0, which corresponds to instantaneous drop from µ<sub>s</sub> to µ<sub>d</sub> at the onset of sliding.</p>
+
+<p>If the surfaces are not in contact, the surface continue to stick as long as:</p>
+
+<blockquote>
+<code>(S<sub>stick</sub>/S<sub>a</sub>)<sup>2</sup> + (N/N<sub>a</sub>)<sup>2</sup> < 1</code>
+</blockquote>
+
+<p>where N<sub>a</sub> is the normal adhesion strength. If this criterion is not met (or if either Sa or Na are zero), the surfaces move freely with zero tractions. The properties for this law are:</p>
+
+<ul>
+<li>coeff - the dynamic coefficient of friction (default is 0).</li>
+<li>coeffStatic - the static coefficient of friction (default is -1).</li>
+<li>Sa - tangential adhesion strength (in <a href="units.html">pressure units</a>) (default is 0).</li>
+<li>Na - normal adhesion strength (in <a href="units.html">pressure units</a>) (default is 0).</li>
+<li>kmu - slope of coefficient of friction vs. velocity (in <a href="units.html">1/velocity units</a>) (default is 0).</li>
+<li>vhalf - velocity at which µ is half way from µ<sub>s</sub> to µ<sub>d</sub> (in <a href="units.html">velocity units</a>) (default is 0).</li>
+</ul>
+
+<p>If the optional static coefficient of friction is changed to a positive number, it must be greater than the dynamic coefficient. The sliding will begin when it sliding force overcomes the frictional force calculated from static coefficient, but thereafter will slide with force found using the velocity dependent dynamic coefficient of friction.</p>
 
 <!-- Material  Section -->
 

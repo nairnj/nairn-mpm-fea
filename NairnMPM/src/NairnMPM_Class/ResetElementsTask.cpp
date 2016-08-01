@@ -26,8 +26,8 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/CommonException.hpp"
 
-// uncomment to make this task parallel (not ready yet)
-//#define PARALLEL_RESET
+// uncomment to make this task parallel
+#define PARALLEL_RESET
 
 #pragma mark CONSTRUCTORS
 
@@ -216,20 +216,20 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
 	{	return LEFT_GRID_NAN;
 	}
 	
-    // check current element
-    if(theElements[mpt->ElemID()]->PtInElement(mpt->pos))
-	{	// it has not changed elements
-		return SAME_ELEMENT;
-	}
-    
     // calculate if all elements are the same size
     if(mpmgrid.IsStructuredEqualElementsGrid())
-    {   try
-        {   // calculate from coordinates
-            int j = mpmgrid.FindElementFromPoint(&mpt->pos)-1;
+	{	// check current element
+		if(theElements[mpt->ElemID()]->PtInElement(mpt->pos))
+		{	// it has not changed elements
+			return SAME_ELEMENT;
+		}
+    
+		// calculate from coordinates
+		try
+        {   int j = mpmgrid.FindElementFromPoint(&mpt->pos,mpt)-1;		// elem ID (0 based)
             if(theElements[j]->OnTheEdge()) return LEFT_GRID;
 			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
-            mpt->ChangeElemID(j);
+            mpt->ChangeElemID(j,false);
             return NEW_ELEMENT;
         }
         catch(...)
@@ -237,31 +237,32 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
         }
     }
     
-    // if allow structured, but variable elements, then search neighbors next
+    // if structured, but variable elements, then search neighbors, or binary search
     else if(mpmgrid.IsStructuredGrid())
-    {   int i=0,j,elemNeighbors[27];
-        theElements[mpt->ElemID()]->GetListOfNeighbors(elemNeighbors);
-        while(elemNeighbors[i]!=0)
-        {	j=elemNeighbors[i]-1;
-            if(theElements[j]->PtInElement(mpt->pos))
-            {	if(theElements[j]->OnTheEdge()) return LEFT_GRID;
-                if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
-                mpt->ChangeElemID(j);
-                return NEW_ELEMENT;
-            }
-            i++;
-        }
-    }
+	{	try
+		{   int j = mpmgrid.FindElementFromPoint(&mpt->pos,mpt)-1;		// elem ID (0 based)
+			if(theElements[j]->OnTheEdge()) return LEFT_GRID;
+			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
+			mpt->ChangeElemID(j,true);
+			return NEW_ELEMENT;
+		}
+		catch(...)
+		{   return LEFT_GRID;
+		}
+	}
 	
     // for unstructured grid, have to check all elements
-    for(int i=0;i<nelems;i++)
-    {	if(theElements[i]->PtInElement(mpt->pos))
-        {	if(theElements[i]->OnTheEdge()) return LEFT_GRID;
-            if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
-            mpt->ChangeElemID(i);
-            return NEW_ELEMENT;
-        }
-    }
+	else
+	{	for(int i=0;i<nelems;i++)
+		{	ElementBase *newRef = theElements[i];
+			if(newRef->PtInElement(mpt->pos))
+			{	if(newRef->OnTheEdge()) return LEFT_GRID;
+				if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
+				mpt->ChangeElemID(i,true);
+				return NEW_ELEMENT;
+			}
+		}
+	}
     
     return LEFT_GRID;
 }

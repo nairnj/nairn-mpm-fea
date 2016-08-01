@@ -260,16 +260,17 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
        
         // work energy per unit mass (U/(rho0 V0)) and we are using
         // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
-        mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*du(0,0)
-                                   + (st0.yy+sp->yy)*du(1,1)
-                                   + (st0.zz+sp->zz)*du(2,2)
-                                   + (st0.xy+sp->xy)*(du(1,0)+du(0,1))));
+		double workEnergy = 0.5*((st0.xx+sp->xx)*du(0,0)
+								  + (st0.yy+sp->yy)*du(1,1)
+								  + (st0.zz+sp->zz)*du(2,2)
+								  + (st0.xy+sp->xy)*(du(1,0)+du(0,1)));
         if(np==THREED_MPM)
 		{	sp->xz = J*stk.xz;
 			sp->yz = J*stk.yz;
 			mptr->AddWorkEnergy(0.5*((st0.yz+sp->yz)*(du(2,1)+du(1,2))
                                        + (st0.xz+sp->xz)*(du(2,0)+du(0,2))));
         }
+        mptr->AddWorkEnergy(workEnergy);
 		
 		// residual energy or sigma.deres - it is zero here for isotropic material
 		// because deviatoric stress is traceless and deres has zero shear terms
@@ -385,7 +386,7 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,doub
 	double delV = 1. - 1./detdF;
     double QAVred = 0.;
     if(delV<0. && artificialViscosity)
-	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(p->Kred*J));
+	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(p->Kred*J),mptr);
         if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delV);
     }
     double Pfinal = -Kterm + QAVred;

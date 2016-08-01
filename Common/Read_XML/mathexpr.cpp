@@ -82,14 +82,14 @@ Changes by John Nairn, April 2007
 
 #pragma mark USAGE UTILITILES
 
-// if change this number, change number of NULLs in open[] to 1 less
-#define MAX_FUNCTIONS 9
+// if change this number, change number of NULLs in opex[] to 1 less
+#define MAX_FUNCTIONS 12
 
 double xvalue,yvalue,zvalue,dvalue,thetavalue;
 int numVars = 8;
 PRVar vararray[8];
 PROperation op=NULL;
-PROperation opex[8]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+PROperation opex[11]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 
 // create function of x,y,z (or R=x and Z=y in axisymmetric) or D and T for polar coordinates from x and y
 // and dt (used in rigid velocities)

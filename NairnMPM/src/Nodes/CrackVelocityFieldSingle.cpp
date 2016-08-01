@@ -68,7 +68,7 @@ void CrackVelocityFieldSingle::UpdateMomentaOnField(double timestep)
 #pragma mark TASK 6 METHODS
 
 // zero momentum and displacement at a node for new calculations
-void CrackVelocityFieldSingle::RezeroNodeTask6(double)
+void CrackVelocityFieldSingle::RezeroNodeTask6(double delTime)
 {	if(mvf[0]->numberPoints>0)
 	{	ZeroVector(&mvf[0]->pk);
 		ZeroVector(&mvf[0]->disp);
@@ -99,11 +99,11 @@ void CrackVelocityFieldSingle::AddMomVel(Vector *norm,double vel)
 }
 
 // Reflect one component of velocity and momentum from a node
-void CrackVelocityFieldSingle::ReflectMomVel(Vector *norm,CrackVelocityField *rcvf)
+void CrackVelocityFieldSingle::ReflectMomVel(Vector *norm,CrackVelocityField *rcvf,double reflectRatio)
 {	if(mvf[0]->numberPoints>0)
 	{	MatVelocityField **rmvf = rcvf->GetMaterialVelocityFields();
 		if(rmvf[0]->numberPoints>0)
-		{	double rvel = -DotVectors(norm,&rmvf[0]->pk)/rmvf[0]->mass;
+		{	double rvel = -reflectRatio*DotVectors(norm,&rmvf[0]->pk)/rmvf[0]->mass;
 			mvf[0]->AddMomentVelocityDirection(norm,rvel);
 		}
 	}
@@ -123,11 +123,11 @@ void CrackVelocityFieldSingle::AddFtotDirection(Vector *norm,double deltime,doub
 }
 
 // add one component of force such that updated momentum will be mass*velocity
-void CrackVelocityFieldSingle::ReflectFtotDirection(Vector *norm,double deltime,CrackVelocityField *rcvf,Vector *freaction)
+void CrackVelocityFieldSingle::ReflectFtotDirection(Vector *norm,double deltime,CrackVelocityField *rcvf,double reflectRatio,Vector *freaction)
 {	if(mvf[0]->numberPoints>0)
 	{	MatVelocityField **rmvf = rcvf->GetMaterialVelocityFields();
 		if(rmvf[0]->numberPoints>0)
-		{	double rvel = -DotVectors(norm,&rmvf[0]->pk)/rmvf[0]->mass;
+		{	double rvel = -reflectRatio*DotVectors(norm,&rmvf[0]->pk)/rmvf[0]->mass;
 			mvf[0]->AddFtotDirection(norm,deltime,rvel,freaction);
 		}
 	}

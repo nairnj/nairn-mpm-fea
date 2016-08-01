@@ -14,6 +14,7 @@
 #include "Materials/MaterialBase.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "System/UnitsController.hpp"
+#include "Elements/ElementBase.hpp"
 
 // globals
 MPMBase **mpm;		// list of material points
@@ -75,9 +76,9 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	// temperature (degrees) and gradient (degrees/mm)
 	SetTemperature(0.,0.);
 	pTemp=NULL;
-    
-    // CPDI data
-    cpdi = NULL;
+
+    // CPDI and GIMP data
+    cpdi_or_gimp = NULL;
     faceArea = NULL;
 
     // PS - when point created, velocity and position and ext force should be set too
@@ -109,21 +110,28 @@ void MPMBase::AllocateJStructures(void)
 {	velGrad=new Tensor;
 }
 
-// allocate structures when needed for particle domains
-bool MPMBase::AllocateCPDIStructures(int gimpType,bool isThreeD)
+// allocate structures when needed for particle CPDI or GIMP domains
+bool MPMBase::AllocateCPDIorGIMPStructures(int gimpType,bool isThreeD)
 {
     int cpdiSize=0;
     
+	// If CPDU find size of CPDI datastructuress, other pass on to GIMP structur allocation
     if(gimpType==LINEAR_CPDI || gimpType==LINEAR_CPDI_AS)
         cpdiSize = isThreeD ? 8 : 4 ;
     else if(gimpType==QUADRATIC_CPDI)
         cpdiSize = 9;
     else
-        return TRUE;
+	{
+#ifdef LOAD_GIMP_INFO
+        return AllocateGIMPStructures(gimpType,isThreeD);
+#else
+		return true;
+#endif
+	}
     
     // create memory for cpdiSize pointers
-    cpdi = (CPDIDomain **)malloc(sizeof(LinkedObject *)*(cpdiSize));
-    if(cpdi == NULL) return FALSE;
+    CPDIDomain **cpdi = (CPDIDomain **)malloc(sizeof(LinkedObject *)*(cpdiSize));
+    if(cpdi == NULL) return false;
 	
     // create each one
     int i;
@@ -148,10 +156,40 @@ bool MPMBase::AllocateCPDIStructures(int gimpType,bool isThreeD)
     // save face areas (or lengths in 2D)
     if(firstTractionPt!=NULL || firstFluxPt!=NULL || firstHeatFluxPt!=NULL)
 		faceArea = new Vector;
+	
+	// load to generic variable
+	cpdi_or_gimp = (char *)cpdi;
     
-    return TRUE;
-        
+    return true;
 }
+
+#ifdef LOAD_GIMP_INFO
+// allocate structures when needed for particle domains (CPDI or GIMP)
+bool MPMBase::AllocateGIMPStructures(int gimpType,bool isThreeD)
+{
+	// not needed for point GIMP
+	if(gimpType==POINT_GIMP) return true;
+	
+	// maximum nodes
+	int maxnds = isThreeD ? 27 : 9 ;
+	
+	// gimp info
+	GIMPNodes *gimp = new GIMPNodes;
+    if(gimp == NULL) return false;
+	
+	// arrays
+	gimp->nds = (int *)malloc((maxnds+1)*sizeof(int));
+	if(gimp->nds == NULL) return false;
+	
+	gimp->ndIDs = (unsigned char *)malloc(maxnds*sizeof(unsigned char));
+	if(gimp->ndIDs == NULL) return false;
+
+	// load to generic variable
+	cpdi_or_gimp = (char *)gimp;
+    
+	return true;
+}
+#endif
 
 // Destructor (and it is virtual)
 MPMBase::~MPMBase() { }
@@ -187,7 +225,8 @@ void MPMBase::StopParticle(void)
 #pragma mark MPMBase::Accessors
 
 // set mass in PreliminaryCalcs, but only if input file did not set it first
-void MPMBase::InitializeMass(double rho,double volPerParticle)
+// When tracking spin, make sure particle momentum is initialized
+void MPMBase::InitializeMass(double rho,double volPerParticle,bool trackSpin)
 {	if(mp<0.) mp = rho*volPerParticle;
 }
 
@@ -243,7 +282,7 @@ int MPMBase::ArchiveMatID(void) const { return matnum; }		// one based for archi
 
 // element ID (convert to zero based)
 int MPMBase::ElemID(void) const { return inElem-1; }					// zero based element array in data storage
-void MPMBase::ChangeElemID(int newElem)
+void MPMBase::ChangeElemID(int newElem,bool adjust)
 {	inElem=newElem+1;                   // set using zero basis
 	IncrementElementCrossings();		// count crossing
 }
@@ -265,13 +304,56 @@ double MPMBase::GetUnscaledVolume(void)
 {	return mp/GetRho();
 }
 
+// Get membrane particle size as fraction of cell size in each direction
+// Called to archive membrane geometry
+void MPMBase::GetInitialSize(Vector &lp) const { lp = mpm_lp; }
+
+// Set particle size as fraction of cell size in each direction in current element
+// It is radius in -1 to 1 natural coordinates
+void MPMBase::SetDimensionlessSize(Vector *lp) { mpm_lp = *lp; }
+void MPMBase::SetDimensionlessByPts(int pointsPerCell)
+{	double lp;
+    
+	// surface length per particle on edge
+	switch(pointsPerCell)
+	{	case 1:
+			lp = 1.0;
+			break;
+        case 9:
+        case 27:
+            // 9 is always 2D and 27 is always 3D
+            lp = 1./3.;
+            break;
+        case 16:
+            lp = 0.25;
+            break;
+        case 25:
+            lp = 0.20;
+            break;
+		case 4:
+		case 8:
+		default:
+			// 4 is always 2D and 8 is always 3D
+			lp = 0.5;
+			break;
+	}
+	mpm_lp = MakeVector(lp,lp,lp);
+}
+
 // Get particle size as fraction of cell size in each direction
 // Called by GIMP shape function code
-void MPMBase::GetDimensionlessSize(Vector &lp) const
-{	lp.x = mpmgrid.GetParticleSemiLength();
-    lp.y = lp.x;
-    lp.z = lp.x;
+void MPMBase::GetDimensionlessSize(Vector &lp) const { lp = mpm_lp; }
+
+// Particle semi-size in actual units (3D overrides to add z component)
+Vector MPMBase::GetParticleSize(void) const
+{	Vector part = theElements[inElem-1]->GetDeltaBox();
+	part.x *= 0.5*mpm_lp.x;
+	part.y *= 0.5*mpm_lp.y;
+	return part;
 }
+double MPMBase::GetParticleXSize(void) const { return 0.5*mpm_lp.x*theElements[inElem-1]->GetDeltaX(); }
+double MPMBase::GetParticleYSize(void) const { return 0.5*mpm_lp.y*theElements[inElem-1]->GetDeltaY(); }
+double MPMBase::GetParticleZSize(void) const { return 0.5*mpm_lp.z*theElements[inElem-1]->GetDeltaZ(); }
 
 // get rotation angle for 2D calculations
 // Use polar decomposition to get sin(theta) and cos(theta) for ccw rotation
@@ -436,7 +518,10 @@ double MPMBase::GetInternalEnergy(void) { return workEnergy + heatEnergy; }
 // pointers to variables
 Vector *MPMBase::GetPFext(void) { return &pFext; }
 Vector *MPMBase::GetNcpos(void) { return &ncpos; }
-CPDIDomain **MPMBase::GetCPDIInfo(void) { return cpdi; }
+CPDIDomain **MPMBase::GetCPDIInfo(void) { return (CPDIDomain **)cpdi_or_gimp; }
+#ifdef LOAD_GIMP_INFO
+GIMPNodes *MPMBase::GetGIMPInfo(void) { return (GIMPNodes *)cpdi_or_gimp; }
+#endif
 Vector *MPMBase::GetAcc(void) { return &acc; }
 Tensor *MPMBase::GetVelGrad(void) { return velGrad; }
 Tensor *MPMBase::GetStrainTensor(void) { return &ep; }
@@ -494,8 +579,8 @@ void MPMBase::Describe(void)
     double rho0=GetRho();
     double rho = rho0*UnitsController::Scaling(1.e-6)/theMaterials[MatID()]->GetCurrentRelativeVolume(this,0);
     cout << "#       P= " << pressure*rho << " " << UnitsController::Label(PRESSURE_UNITS) << endl;
-    cout << "# sigmaii=(" << sp.xx*rho << "," << sp.yy*rho << "," << sp.zz << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
-    cout << "#   tauij=(" << sp.xy*rho << "," << sp.xz*rho << "," << sp.yz << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
+    cout << "# sigmaii=(" << sp.xx*rho << "," << sp.yy*rho << "," << sp.zz*rho << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
+    cout << "#   tauij=(" << sp.xy*rho << "," << sp.xz*rho << "," << sp.yz*rho << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
 	cout << "#       T= " << pTemperature << " prev T=" << pPreviousTemperature << endl;
 }
 

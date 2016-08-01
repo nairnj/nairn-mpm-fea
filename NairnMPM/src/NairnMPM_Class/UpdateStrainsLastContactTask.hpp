@@ -13,9 +13,9 @@
 
 #define _UPDATESTRAINSLASTCONTACTTASK_
 
-#include "NairnMPM_Class/MPMTask.hpp"
+#include "NairnMPM_Class/MassAndMomentumTask.hpp"
 
-class UpdateStrainsLastContactTask : public MPMTask
+class UpdateStrainsLastContactTask : public MassAndMomentumTask
 {
 	public:
 	

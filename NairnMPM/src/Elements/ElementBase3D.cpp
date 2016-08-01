@@ -61,6 +61,21 @@ bool ElementBase3D::IntersectsBox(double xorig,double yorig,double xlength,doubl
 	if(zslice>zmax) return false;
 	return ElementBase::IntersectsBox(xorig,yorig,xlength,ylength,zslice);
 }
+// 3D range (overides 2D in base)
+void ElementBase3D::GetRange(int ax,double &amin,double &amax) const
+{	if(ax==0)
+	{	amin = xmin;
+		amax = xmax;
+	}
+	else if(ax==1)
+	{	amin = ymin;
+		amax = ymax;
+	}
+	else
+	{	amin = zmin;
+		amax = zmax;
+	}
+}
 
 // check if this GIMP element is on the edge of the grid
 // assumes a generated 3D structured grid

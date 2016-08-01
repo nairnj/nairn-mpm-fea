@@ -45,7 +45,7 @@ class NodalVelBC : public BoundaryCondition
         int ConvertToDirectionBits(int);
         void SetNormalVector(void);
         int ConvertToInputDof(void);
-		void SetReflectedNode(int);
+		void SetReflectedNode(int,double);
 		void SetMirrorSpacing(int);
 	
 		// class methods
@@ -60,6 +60,7 @@ class NodalVelBC : public BoundaryCondition
 		Vector freaction;
         int mirrorSpacing;
 		int reflectedNode;
+		double reflectRatio;
 };
 
 // variables (changed in MPM time step)

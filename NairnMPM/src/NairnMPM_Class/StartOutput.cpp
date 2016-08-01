@@ -52,9 +52,12 @@ void NairnMPM::PrintAnalysisType(void)
             break;
         case USAVG_METHOD:
             cout << "USAVG";
-            break;
         case SZS_METHOD:
-            cout << "SZS";
+            if(mpmApproach==SZS_METHOD) cout << "USL";
+			if(fmobj->skipPostExtrapolation)
+				cout << " (-2nd extrap)";
+			else
+				cout << " (+2nd extrap)";
             break;
         default:
             throw CommonException("Invalid MPM analysis method provided.","NairnMPM::PrintAnalysisType");

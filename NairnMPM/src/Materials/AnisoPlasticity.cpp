@@ -1147,7 +1147,7 @@ void AnisoPlasticity::SRConstitutiveLaw3D(MPMBase *mptr,Matrix3 du,double delTim
     
 	// Step 6: Solve for lambda
 	double lambda = SolveForLambdaAP(mptr,np,ftrial,&stk,p);
-    
+	
     // Step 7: Plastic strain increments on particle
     double dexxp=lambda*p->dfds.xx;
     double deyyp=lambda*p->dfds.yy;
@@ -1349,46 +1349,6 @@ void AnisoPlasticity::GetDfDsigma(Tensor *st0,int np,AnisoPlasticProperties *p) 
 // Ouptut is lambdak, final df, final alpha
 double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tensor *strial,AnisoPlasticProperties *p) const
 {
-	if(fmobj->dflag[7]!=0)
-	{	// solve here
-		Matrix3 *Rtot = mptr->GetRtotPtr();
-		// Get 6X6 rotation matrix
-		double R[6][6];
-		Rtot->GetRStrain(R);
-		
-		// Now find A' = Re A Re^T
-		double Am[6][6],Ap[6][6];
-		Am[0][0] = gTerm+hTerm;
-		Am[0][1] = -hTerm;
-		Am[0][2] = -gTerm;
-		Am[1][0] = -hTerm;
-		Am[1][1] = fTerm+hTerm;
-		Am[1][2] = -fTerm;
-		Am[2][0] = -gTerm;
-		Am[2][1] = -fTerm;
-		Am[2][2] = fTerm+gTerm;
-		Am[3][3] = tyyzred2;
-		Am[4][4] = tyxzred2;
-		Am[5][5] = tyxyred2;
-		
-		// find Re A Re^T exploiting known zeros in Am
-		int i,j,k,k3,l;
-		for(i=0;i<6;i++)
-		{	for(j=i;j<6;j++)
-			{	double cterm = 0.;
-				for(k=0;k<3;k++)
-				{	k3 = k+3;
-					cterm += R[i][k3]*R[j][k3]*Am[k3][k3];
-					for(l=0;l<3;l++)
-						cterm += R[i][k]*R[j][l]*Am[k][l];
-				}
-				Ap[i][j] = cterm;
-			}
-		}
-
-		return 0.;
-	}
-	
 	int step;
 	double lambda1,lambda2,f1,f2;
 	

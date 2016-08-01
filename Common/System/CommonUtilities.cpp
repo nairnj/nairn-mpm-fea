@@ -176,6 +176,11 @@ Vector *CrossProduct(Vector *cp,const Vector *a,const Vector *b)
 	return cp;
 }
 
+// Z component of vector cross product of two vectors ion x-y plane
+double CrossProduct2D(const Vector *a,const Vector *b)
+{	return a->x*b->y - b->x*a->y ;
+}
+
 // Print vector to cout when debugging
 void PrintVector(const char *label,const Vector *v)
 {	if(strlen(label)>0) cout << label;

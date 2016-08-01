@@ -15,12 +15,13 @@
 
 class GridPatch;
 class NodalPoint;
+class MPMBase;
 
 // grid type - all 3D ones above the marker, all known grid types > 0
 // Square, Rect, Cubic, and orthogonal all have equal element sizes
 // Variable means rectangular (2D) or orthogonal (3D), but variable element sizes
 enum {	UNKNOWN_GRID=-1,NOT_CARTESIAN=0,SQUARE_GRID,RECTANGULAR_GRID,VARIABLE_RECTANGULAR_GRID,
-			BEGIN_3D_GRIDS,CUBIC_GRID,ORTHOGONAL_GRID,VARIABLE_ORTHOGONAL_GRID };
+			BEGIN_3D_GRIDS,CUBIC_GRID,ORTHOGONAL_GRID,VARIABLE_ORTHOGONAL_GRID,NOT_CARTESIAN_3D };
 
 class MeshInfo
 {
@@ -61,23 +62,14 @@ class MeshInfo
 		double GetThickness(void);                          // 2D only
     
         // use of these implies equal element sizes
-		int FindElementFromPoint(Vector *);
-        double GetAverageCellSize(void);
-        void SetParticleLength(int);
-        double GetParametersForBCs(int axis,double *,double *);
-        double GetCellVolume(void);
-        double GetPerpendicularDistance(Vector *,Vector *,double);
-		double GetNormalCODAdjust(Vector *,Vector *,double);
+		int FindElementFromPoint(Vector *,MPMBase *);
+        double GetAverageCellSize(MPMBase *);
+        double FindMeshLineForBCs(int axis,double *,double *);
+        double GetCellVolume(NodalPoint *ndptr);
+        Vector GetPerpendicularDistance(Vector *,NodalPoint *);
+		double GetNormalCODAdjust(Vector *,NodalPoint *);
         Vector GetCellSize(void);
-        double GetCellXSize(void);
-		double GetCellYSize(void);
-		double GetCellZSize(void);
-        Vector GetParticleSize(void);
-        double GetParticleXSize(void);
-        double GetParticleYSize(void);
-        double GetParticleZSize(void);
-        double GetParticleSemiLength(void);
-		
+ 		
 	private:
 		int cartesian;					// non-zero (NOT_CARTESIAN=0) is a regular grid
 		bool equalElementSizes;			// true is all elements the same size

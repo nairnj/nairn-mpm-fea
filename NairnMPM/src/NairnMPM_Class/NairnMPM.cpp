@@ -28,6 +28,7 @@
 #include "NairnMPM_Class/ProjectRigidBCsTask.hpp"
 #include "NairnMPM_Class/ExtrapolateRigidBCsTask.hpp"
 #include "NairnMPM_Class/PostExtrapolationTask.hpp"
+#include "NairnMPM_Class/SetRigidContactVelTask.hpp"
 #include "NairnMPM_Class/MassAndMomentumTask.hpp"
 #include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
 #include "NairnMPM_Class/GridForcesTask.hpp"
@@ -68,7 +69,7 @@ int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
 NairnMPM::NairnMPM()
 {
 	version=11;						// main version
-	subversion=1;					// subversion (must be < 10)
+	subversion=2;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 
 	mpmApproach=USAVG_METHOD;		// mpm method
@@ -84,6 +85,8 @@ NairnMPM::NairnMPM()
 	warnParticleLeftGrid=-1;		// abort when this many leave the grid
 	multiMaterialMode=false;		// multi-material mode
 	hasRigidContactParticles=false;	// rigid contact particles in multimaterial mode
+	skipPostExtrapolation=false;	// optionally do not extrapolate for post update strain updates
+	plusParticleSpin=false;			// add particle spin feature
 	
 	// initialize objects
 	archiver=new ArchiveData();		// archiving object
@@ -268,12 +271,17 @@ void NairnMPM::PreliminaryCalcs(void)
     short matid;
     double area,volume,rho,crot,tst,tmin=1e15;
     char fline[200];
-    
+	
     // are both the system and the particles isolated?
     if(!ConductionTask::active && ConductionTask::IsSystemIsolated())
     {   MaterialBase::isolatedSystemAndParticles = TRUE;
     }
     
+	// only allows grids created with the Grid command
+	// (note: next two section never occur uless support turned back on)
+	if(mpmgrid.GetCartesian()==UNKNOWN_GRID)
+		throw CommonException("Support for iunstructured grids is currently not available","NairnMPM::PreliminaryCalcs");
+	
 	// Loop over elements, if needed, to determine type of grid
 	if(mpmgrid.GetCartesian()==UNKNOWN_GRID)
 	{	int userCartesian = NOT_CARTESIAN;
@@ -304,9 +312,16 @@ void NairnMPM::PreliminaryCalcs(void)
                 }
 			}
 		}
+		
+		// unstructer grid - set type, but elements not set so meshInfo will not know many things
+		// and horiz will lbe <=0 
 		mpmgrid.SetCartesian(userCartesian,gridx,gridy,gridz);
 	}
-    
+	
+	// only allows orthogonal grids
+	if(mpmgrid.GetCartesian()<=0 || mpmgrid.GetCartesian()==NOT_CARTESIAN_3D)
+		throw CommonException("Support for non-cartesian grids is currently not available","NairnMPM::PreliminaryCalcs");
+
     // CPDI factors if needed
     ElementBase::InitializeCPDI(IsThreeD());
 	
@@ -318,6 +333,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	maxMaterialFields = 0;
 	numActiveMaterials = 0;
     nmpmsNR = 0;
+	bool hasRigidContactParticles = false;			// this become local variable in this mode, when off it is class variable
 	int firstRigidPt = -1;
     for(p=0;p<nmpms;p++)
 	{	// verify material is defined and set its field number (if in multimaterial mode)
@@ -352,8 +368,8 @@ void NairnMPM::PreliminaryCalcs(void)
 		rho=theMaterials[matid]->GetRho(mpm[p]);							// in g/mm^3
         
         // assumes same number of points for all elements (but subclass can override)
-        // for axisymmetri xp = rho*Ap*volume/(# per element)
-		mpm[p]->InitializeMass(rho,volume/((double)ptsPerElement));			// in g
+        // for axisymmetric xp = rho*Ap*volume/(# per element)
+		mpm[p]->InitializeMass(rho,volume/((double)ptsPerElement),plusParticleSpin);			// in g
 		
 		// done if rigid - mass will be in mm^3 and will be particle volume
 		if(theMaterials[matid]->Rigid())
@@ -369,9 +385,10 @@ void NairnMPM::PreliminaryCalcs(void)
 			hasRigidContactParticles=true;
 			if(firstRigidPt<0) firstRigidPt=p;
 
-            // CPDI domain data
-            if(!mpm[p]->AllocateCPDIStructures(ElementBase::useGimp,IsThreeD()))
-                throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
+			// CPDI or GIMP domain data only for rigid contact particles (non-rigid done below)
+			if(!mpm[p]->AllocateCPDIorGIMPStructures(ElementBase::useGimp,IsThreeD()))
+				throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
+				
 			continue;
 		}
         
@@ -410,8 +427,8 @@ void NairnMPM::PreliminaryCalcs(void)
 			nextTransport=nextTransport->TransportTimeStep(matid,dcell,&tmin);
 		}
         
-        // CPDI domain data
-        if(!mpm[p]->AllocateCPDIStructures(ElementBase::useGimp,IsThreeD()))
+        // CPDI orGIMP domain data for nonrigid particles
+        if(!mpm[p]->AllocateCPDIorGIMPStructures(ElementBase::useGimp,IsThreeD()))
             throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
 		
 	}
@@ -595,6 +612,9 @@ void NairnMPM::PreliminaryCalcs(void)
 			nextBC=nextBC->PrintBC(cout);
 		cout << endl;
 	}
+	
+	// non-standard particle sizes
+	archiver->ArchivePointDimensions();
 
     // Print particle information and other preliminary calc results
     PrintSection("FULL MASS MATRIX");
@@ -644,7 +664,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	
 	// finish warnings
 	warnings.CreateWarningList();
-    
+	
     // blank line
     cout << endl;
 }
@@ -709,8 +729,17 @@ void NairnMPM::CreateTasks(void)
 	}
 	
 	// MASS AND MOMENTUM TASKS
+	
+	// if rigid BCs by extrapolation, extrapolate now
 	if(nmpms>nmpmsRC && MaterialBase::extrapolateRigidBCs)
 	{	nextMPMTask=(MPMTask *)new ExtrapolateRigidBCsTask("Rigid BCs by Extrapolation");
+		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+		lastMPMTask=nextMPMTask;
+	}
+	
+	// if rigid contact, add task to set their velocities
+	if(nmpmsRC > nmpmsNR)
+	{	nextMPMTask=(MPMTask *)new SetRigidContactVelTask("Set Rigid Contact Velocities");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 		lastMPMTask=nextMPMTask;
 	}
@@ -719,6 +748,7 @@ void NairnMPM::CreateTasks(void)
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
 	
+	// if rigid BCs by extrapolation, project to BCs
 	if(nmpms>nmpmsRC && !MaterialBase::extrapolateRigidBCs)
 	{	nextMPMTask=(MPMTask *)new ProjectRigidBCsTask("Rigid BCs by Projection");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
@@ -756,14 +786,15 @@ void NairnMPM::CreateTasks(void)
 	lastMPMTask=nextMPMTask;
 	
 	// UPDATE STRAINS LAST AND USAVG
+	// Energy calcs suggest the contact method, which re-extrapolates, should always be used
 	if(mpmApproach==SZS_METHOD || mpmApproach==USAVG_METHOD)
-	{	if(firstCrack!=NULL || fmobj->multiMaterialMode)
-		{	nextMPMTask=(MPMTask *)new UpdateStrainsLastContactTask("Update Strains Last with Contact");
+	{	if(fmobj->skipPostExtrapolation)
+		{	nextMPMTask=(MPMTask *)new UpdateStrainsLastTask("Update Strains Last");
 			lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 			lastMPMTask=nextMPMTask;
 		}
 		else
-		{	nextMPMTask=(MPMTask *)new UpdateStrainsLastTask("Update Strains Last");
+		{	nextMPMTask=(MPMTask *)new UpdateStrainsLastContactTask("Update Strains Last with Extrapolation");
 			lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 			lastMPMTask=nextMPMTask;
 		}
@@ -800,7 +831,13 @@ void NairnMPM::ReorderPtBCs(MatPtLoadBC *firstBC,int p1,int p2)
 // Called just before time steps start
 // Can insert code here to black runs with invalid options
 void NairnMPM::ValidateOptions(void)
-{	
+{
+	// Disable non-structured or variable element grid sizes
+	if(!mpmgrid.IsStructuredEqualElementsGrid())
+	{	throw CommonException("Non-structured grids or grids with unequal element sizes are currently disabled in NairnMPM because they are not verified for all features.",
+							  "NairnMPM::ValidateOptions");
+	}
+	
     // GIMP and CPDI require regular
     //  and qCPDI not allowed in 3D
 	if(ElementBase::useGimp != POINT_GIMP)
@@ -815,9 +852,11 @@ void NairnMPM::ValidateOptions(void)
         }
 	}
     else
-    {   // in Classic MPM or POINT_GIMP, cannot use traction BCs
+    {   // in Classic MPM or POINT_GIMP, cannot use traction BCs or +PS
         if(firstTractionPt!=NULL || firstFluxPt!=NULL || firstHeatFluxPt!=NULL)
 			throw CommonException("Traction and flux boundary conditions require use of a GIMP MPM method.","NairnMPM::ValidateOptions");
+		if(plusParticleSpin)
+			throw CommonException("MPM+PS requires GIMP or CPDI","NairnMPM::ValidateOptions");
     }
     
     // Imperfect interface requires cartesian grid
@@ -951,4 +990,6 @@ double *NairnMPM::GetCFLPtr(void) { return &FractCellTime; }
 // Get Courant-Friedrichs-Levy condition factor for convergence for propagation calculations
 double NairnMPM::GetPropagationCFLCondition(void) { return PropFractCellTime; }
 
+// string about MPM additions (when printing out analysis type
+const char *NairnMPM::MPMAugmentation(void) { return plusParticleSpin ? " +PS" : ""; }
 

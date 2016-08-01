@@ -8,6 +8,8 @@
 
 import java.util.*;
 
+import geditcom.JNFramework.JNUtilities;
+
 public class Materials
 {
 	private HashMap<String,Integer> matIDs;
@@ -165,7 +167,7 @@ public class Materials
 				if(matPIC>=0.)
 					xmldata.append(" PIC='"+matPIC+"'");
 				if(matDamping>-1.e12)
-					xmldata.append(">"+matDamping+"</PDamping>\n");
+					xmldata.append(">"+doc.formatDble(matDamping)+"</PDamping>\n");
 				else
 					xmldata.append("/>\n");
 			}
@@ -458,12 +460,14 @@ public class Materials
 			return;
 		}
 		else if(prop.toLowerCase().equals("tauk"))
-		{	taukGk.append("    <tauk>"+doc.readDoubleArg(args.get(1))+"</tauk>\n");
+		{	double tk = doc.readDoubleArg(args.get(1));
+			taukGk.append("    <tauk>"+doc.formatDble(tk)+"</tauk>\n");
 			ntaus++;
 			return;
 		}
 		else if(prop.toLowerCase().equals("gk"))
-		{	taukGk.append("    <Gk>"+doc.readDoubleArg(args.get(1))+"</Gk>\n");
+		{	double gk = doc.readDoubleArg(args.get(1));
+			taukGk.append("    <Gk>"+doc.formatDble(gk)+"</Gk>\n");
 			nGs++;
 			return;
 		}
@@ -477,7 +481,8 @@ public class Materials
 		}
 		
 		// now add it (if not done already)
-		xmldata.append("    <"+prop+">"+doc.readDoubleArg(args.get(1))+"</"+prop+">\n");
+		double mprop = doc.readDoubleArg(args.get(1));
+		xmldata.append("    <"+prop+">"+doc.formatDble(mprop)+"</"+prop+">\n");
 	}
 	
 	//----------------------------------------------------------------------------

@@ -108,6 +108,17 @@ public class PlotQuantity extends PlotControl
 	static final int MPMEPSTOTXZ=94;
 	static final int MPMEPSTOTYZ=95;
 	
+	static final int MPMEQUIVSTRESS=105;
+	static final int MPMEQUIVSTRAIN=106;
+	static final int MPMPRESSURE=107;
+
+	static final int MPMSPINMOMENTUMX=110;
+	static final int MPMSPINMOMENTUMY=111;
+	static final int MPMSPINMOMENTUMZ=112;
+	static final int MPMSPINVELOCITYX=113;
+	static final int MPMSPINVELOCITYY=114;
+	static final int MPMSPINVELOCITYZ=115;
+	
 	static final int MESHONLY=1001;
 	static final int MESHSIGMAX=1002;
 	static final int MESHSIGMAY=1003;
@@ -137,6 +148,7 @@ public class PlotQuantity extends PlotControl
 	static final int MESHANGLE=1027;
 	static final int MESHNODEDISTANCE=1028;		// in expressions - x^2+y^2 
 	static final int MESHNODEANGLE=1029;		// in expressions - ccw angle in radians from x axis
+	static final int MESHPRESSURE=1032;
 	
 	// pop-up menus
 	public JComboBox<PlotMenuItem> quant=new JComboBox<PlotMenuItem>();
@@ -217,17 +229,22 @@ public class PlotQuantity extends PlotControl
 			{	byte [] arch=docCtrl.resDoc.archFormat.getBytes();
 				
 				if(arch[ReadArchive.ARCH_Stress]=='Y')
-					quant.addItem(new PlotMenuItem("Stress",MPMSIGMAX));
+				{	quant.addItem(new PlotMenuItem("Stress",MPMSIGMAX));
+					quant.addItem(new PlotMenuItem("Pressure",MPMPRESSURE));
+					quant.addItem(new PlotMenuItem("Equiv. Stress",MPMEQUIVSTRESS));
+				}
 				if(arch[ReadArchive.ARCH_Strain]=='Y')
 				{	if(arch[ReadArchive.ARCH_PlasticStrain]=='Y')
 					{	// need both to support all materials
 						quant.addItem(new PlotMenuItem("Total Strain",MPMEPSTOTX));
 						quant.addItem(new PlotMenuItem("Elastic Strain",MPMEPSX));
 						quant.addItem(new PlotMenuItem("Plastic Strain",MPMPLEPSX));
+						quant.addItem(new PlotMenuItem("Equiv. Strain",MPMEQUIVSTRAIN));
 					}
 					else if(docCtrl.resDoc.units.getNewUnitsVersion())
-					{	// new verson only needs strain to get total strain
+					{	// new version only needs strain to get total strain
 						quant.addItem(new PlotMenuItem("Total Strain",MPMEPSTOTX));
+						quant.addItem(new PlotMenuItem("Equiv. Strain",MPMEQUIVSTRAIN));
 					}
 				}
 					
@@ -250,6 +267,10 @@ public class PlotQuantity extends PlotControl
 					
 				if(arch[ReadArchive.ARCH_Velocity]=='Y')
 					quant.addItem(new PlotMenuItem("Velocity",MPMVELX));
+				if(arch[ReadArchive.ARCH_SpinVelocity]=='Y')
+					quant.addItem(new PlotMenuItem("Angular Velocity",MPMSPINVELOCITYX));
+				if(arch[ReadArchive.ARCH_SpinMomentum]=='Y')
+					quant.addItem(new PlotMenuItem("Angular Momentum",MPMSPINMOMENTUMX));
 				quant.addItem(new PlotMenuItem("Displacement",MPMDISPX));
 				checkMeshItem=quant.getItemCount();
 				quant.addItem(new PlotMenuItem("Material",MPMPOS));
@@ -331,7 +352,9 @@ public class PlotQuantity extends PlotControl
 				checkMeshItem=quant.getItemCount();
 				quant.addItem(new PlotMenuItem("Mesh Only",MESHONLY));
 				if(arch[ReadArchive.ARCH_FEAAvgStress]=='Y')
-					quant.addItem(new PlotMenuItem("Stress",MESHSIGMAX));
+				{	quant.addItem(new PlotMenuItem("Stress",MESHSIGMAX));
+					quant.addItem(new PlotMenuItem("Pressure",MESHPRESSURE));
+				}
 				if(arch[ReadArchive.ARCH_FEAElemStress]=='Y')
 					quant.addItem(new PlotMenuItem("Element Stress",MESHELEMSIGMAX));
 				if(arch[ReadArchive.ARCH_FEADisplacements]=='Y')
@@ -397,6 +420,17 @@ public class PlotQuantity extends PlotControl
 				if(docCtrl.resDoc.is3D())
 				{	cmpnt.addItem(zchar);
 				}
+				cmpnt.setEnabled(true);
+				break;
+				
+			case MPMSPINVELOCITYX:
+			case MPMSPINMOMENTUMX:
+				cmpnt.removeAllItems();
+				if(docCtrl.resDoc.is3D())
+				{	cmpnt.addItem(xchar);
+					cmpnt.addItem(ychar);
+				}
+				cmpnt.addItem(zchar);
 				cmpnt.setEnabled(true);
 				break;
 				
@@ -469,6 +503,15 @@ public class PlotQuantity extends PlotControl
 				extra=cmpnt.getSelectedIndex();
 				if(extra>=0) plotComponent+=extra;
 				break;
+			case PlotQuantity.MPMSPINVELOCITYX:
+			case PlotQuantity.MPMSPINMOMENTUMX:
+				if(docCtrl.resDoc.is3D())
+				{	extra=cmpnt.getSelectedIndex();
+					if(extra>=0) plotComponent+=extra;
+				}
+				else
+					plotComponent+=2;	// only z in 2D
+				break;
 			default:
 				break;
 		}
@@ -494,6 +537,9 @@ public class PlotQuantity extends PlotControl
 			case MESHELEMSIGMAY:
 			case MESHELEMSIGMAXY:
 			case MESHELEMSIGMAZ:
+			case MPMPRESSURE:
+			case MPMEQUIVSTRESS:
+			case MESHPRESSURE:
 				return "Stress ("+units.stressUnits()+")";
 		
 			// Strains
@@ -519,6 +565,7 @@ public class PlotQuantity extends PlotControl
 			case MESHSTRAINY:
 			case MESHSTRAINXY:
 			case MESHSTRAINZ:
+			case MPMEQUIVSTRAIN:
 				return "Strain ("+units.strainUnits()+")";
 			
 			// Energy
@@ -546,6 +593,18 @@ public class PlotQuantity extends PlotControl
 			case MPMVELY:
 			case MPMVELZ:
 				return "Velocity ("+units.velocityUnits()+")";
+				
+			// Spin velocity
+			case MPMSPINVELOCITYX:
+			case MPMSPINVELOCITYY:
+			case MPMSPINVELOCITYZ:
+				return "Ang. Velocity (1/"+units.timeUnits()+")";
+			
+			// Spin momentum
+			case MPMSPINMOMENTUMX:
+			case MPMSPINMOMENTUMY:
+			case MPMSPINMOMENTUMZ:
+				return "Ang. Momentum ("+units.energyUnits()+"-"+units.timeUnits()+")";
 			
 			// Displacements
 			case MPMDISPX:
@@ -729,6 +788,18 @@ public class PlotQuantity extends PlotControl
 			case MPMVELZ:
 				return units.velocityUnits();
 			
+			// Spin velocity
+			case MPMSPINVELOCITYX:
+			case MPMSPINVELOCITYY:
+			case MPMSPINVELOCITYZ:
+				return "1/"+units.timeUnits();
+			
+			// Spin momentum
+			case MPMSPINMOMENTUMX:
+			case MPMSPINMOMENTUMY:
+			case MPMSPINMOMENTUMZ:
+				return units.energyUnits()+"-"+units.timeUnits();
+				
 			// Displacements
 			case MPMDISPX:
 			case MPMDISPY:
@@ -822,6 +893,13 @@ public class PlotQuantity extends PlotControl
 				
 			case MPMSIGMAYZ:
 				return "Stress "+yc+zc;
+			
+			case MPMPRESSURE:
+			case MESHPRESSURE:
+				return "Pressure";
+			
+			case MPMEQUIVSTRESS:
+				return "Equiv Stress";
 				
 			case MPMEPSX:
 			case MPMEPSTOTX:
@@ -851,6 +929,9 @@ public class PlotQuantity extends PlotControl
 			case MPMEPSTOTYZ:
 				return "Strain "+yc+zc;
 
+			case MPMEQUIVSTRAIN:
+				return "Equiv Strain";
+				
 			case MPMPLEPSX:
 				return "Plastic Strain "+xc+xc;
 				
@@ -917,6 +998,24 @@ public class PlotQuantity extends PlotControl
 			
 			case MPMVELZ:
 				return "Velocity "+zc;
+			
+			case MPMSPINVELOCITYX:
+				return "Ang. Velocity "+xc;
+			
+			case MPMSPINVELOCITYY:
+				return "Ang. Velocity "+yc;
+			
+			case MPMSPINVELOCITYZ:
+				return "Ang. Velocity "+zc;
+			
+			case MPMSPINMOMENTUMX:
+				return "Ang. Momentum "+xc;
+			
+			case MPMSPINMOMENTUMY:
+				return "Ang. Momentum "+yc;
+			
+			case MPMSPINMOMENTUMZ:
+				return "Ang. Momentum "+zc;
 			
 			case MPMVELVEC:
 				return "Velocity";

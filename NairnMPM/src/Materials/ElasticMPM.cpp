@@ -430,3 +430,9 @@ void Elastic::HypoIncrementDeformation(MPMBase *mptr,Matrix3 du) const
     mptr->SetDeformationGradientMatrix(F);
 }
 
+// For softening materials find area that the plane with given normal vector makes with
+// box define by the particle volume. Return that area divided by particle volume
+double Elastic::GetAcOverVp(int np,MPMBase *mptr,Vector *norm) const
+{
+}
+

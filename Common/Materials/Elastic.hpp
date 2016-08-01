@@ -51,6 +51,7 @@ class Elastic : public MaterialBase
 		virtual void SRConstitutiveLaw2D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 		virtual void SRConstitutiveLaw3D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 		virtual ElasticProperties *GetElasticPropertiesPointer(void *) const;
+		virtual double GetAcOverVp(int,MPMBase *,Vector *) const;
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif

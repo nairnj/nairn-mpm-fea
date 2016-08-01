@@ -205,33 +205,33 @@ public class MPMGrid
 		
 		// Grid element
 		StringBuffer xml = new StringBuffer("    <Grid");
-		xml.append(" xmin='"+xmin+"' xmax='"+xmax+"'");
-		xml.append(" ymin='"+ymin+"' ymax='"+ymax+"'");
+		xml.append(" xmin='"+doc.formatDble(xmin)+"' xmax='"+doc.formatDble(xmax)+"'");
+		xml.append(" ymin='"+doc.formatDble(ymin)+"' ymax='"+doc.formatDble(ymax)+"'");
 		if(doc.isMPM3D())
-			xml.append(" zmin='"+zmin+"' zmax='"+zmax+"'");
+			xml.append(" zmin='"+doc.formatDble(zmin)+"' zmax='"+doc.formatDble(zmax)+"'");
 		else if(thickness>0.)
-			xml.append(" thickness='"+thickness+"'");
+			xml.append(" thickness='"+doc.formatDble(thickness)+"'");
 		xml.append(">\n");
 		
 		// Horiz, Vert, Depth elements
 		xml.append("      <Horiz nx='"+ncells[0]+"'");
 		if(ratios[0]>0.) xml.append(" rx='"+ratios[0]+"'");
 		if(rstyle[0]>=0) xml.append(" style='"+rstyle[0]+"'");
-		if(hasmin[0]) xml.append(" symmin='"+symmin[0]+"'");
-		if(hasmax[0]) xml.append(" symmax='"+symmax[0]+"'");
+		if(hasmin[0]) xml.append(" symmin='"+doc.formatDble(symmin[0])+"'");
+		if(hasmax[0]) xml.append(" symmax='"+doc.formatDble(symmax[0])+"'");
 		xml.append("/>\n");
 		xml.append("      <Vert ny='"+ncells[1]+"'");
 		if(ratios[1]>0.) xml.append(" ry='"+ratios[1]+"'");
 		if(rstyle[1]>=0) xml.append(" style='"+rstyle[1]+"'");
-		if(hasmin[1]) xml.append(" symmin='"+symmin[1]+"'");
-		if(hasmax[1]) xml.append(" symmax='"+symmax[1]+"'");
+		if(hasmin[1]) xml.append(" symmin='"+doc.formatDble(symmin[1])+"'");
+		if(hasmax[1]) xml.append(" symmax='"+doc.formatDble(symmax[1])+"'");
 		xml.append("/>\n");
 		if(doc.isMPM3D())
 		{	xml.append("      <Depth nz='"+ncells[2]+"'");
 			if(ratios[2]>0.) xml.append(" rz='"+ratios[2]+"'");
 			if(rstyle[2]>=0) xml.append(" style='"+rstyle[2]+"'");
-			if(hasmin[2]) xml.append(" symmin='"+symmin[2]+"'");
-			if(hasmax[2]) xml.append(" symmax='"+symmax[2]+"'");
+			if(hasmin[2]) xml.append(" symmin='"+doc.formatDble(symmin[2])+"'");
+			if(hasmax[2]) xml.append(" symmax='"+doc.formatDble(symmax[2])+"'");
 			xml.append("/>\n");
 		}
 		

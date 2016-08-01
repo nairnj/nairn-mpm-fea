@@ -166,11 +166,12 @@ class MaterialBase : public LinkedObject
 		virtual void SetFriction(int,int);
 		virtual int GetContactToMaterial(int);
 		virtual void ContactOutput(int);
-        virtual double GetArtificalViscosity(double,double) const;
+        virtual double GetArtificalViscosity(double,double,MPMBase *) const;
 		virtual bool SupportsArtificialViscosity(void) const;
 		virtual int GetShareMatField(void) const;
 		virtual int AltStrainContains(void) const;
 		virtual double GetConcSaturation(MPMBase *) const;
+		virtual double GetMGEOSXmax(double,double,double,double,double &);
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif
@@ -185,7 +186,7 @@ class MaterialBase : public LinkedObject
 	
 		// material damping
 		virtual void SetDamping(double,double);
-		virtual void GetMaterialDamping(double &,double &,double,double) const;
+		virtual double GetMaterialDamping(double &,double &,double,double) const;
 #endif
 	
 		// class methods

@@ -152,6 +152,7 @@ void TaitLiquid::ValidateForUse(int np) const
 }
 
 // If needed, a material can initialize particle state
+// (Don't call from parallel code due to function)
 void TaitLiquid::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 {
 	// is a pressure being set?
@@ -291,29 +292,29 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	double delVres = 1. - 1./dJres;
 	double resEnergy = -avgP*delVres;
 	
-	// viscosity term = 2 eta (0.5(grad v) + 0.5*(grad V)^T - (1/3) tr(grad v) I) = 2 eta dev(grad v)
-	// (i.e., deviatoric part of the symmetric strain tensor, 2 is for conversion to engineering shear strain)
+    // viscosity term = 2 eta (0.5(grad v) + 0.5*(grad V)^T - (1/3) tr(grad v) I) = 2 eta dev(grad v)
+    // (i.e., deviatoric part of the symmetric strain tensor, 2 is for conversion to engineering shear strain)
 	// simple shear rate = |2 dev(grad v)|
-	Matrix3 shear;
-	double c[3][3];
+    Matrix3 shear;
+    double c[3][3];
 	double shearRate;
-	c[0][0] = (2.*du(0,0)-du(1,1)-du(2,2))/3.;
-	c[1][1] = (2.*du(1,1)-du(0,0)-du(2,2))/3.;
-	c[2][2] = (2.*du(2,2)-du(0,0)-du(1,1))/3.;
-	c[0][1] = 0.5*(du(0,1)+du(1,0));
-	c[1][0] = c[0][1];
+    c[0][0] = (2.*du(0,0)-du(1,1)-du(2,2))/3.;
+    c[1][1] = (2.*du(1,1)-du(0,0)-du(2,2))/3.;
+    c[2][2] = (2.*du(2,2)-du(0,0)-du(1,1))/3.;
+    c[0][1] = 0.5*(du(0,1)+du(1,0));
+    c[1][0] = c[0][1];
 	shearRate = c[0][0]*c[0][0] + c[1][1]*c[1][1] + c[2][2]*c[2][2]
 	+ 2.*c[0][1]*c[0][1];
-	if(np==THREED_MPM)
-	{   c[0][2] = 0.5*(du(0,2)+du(2,0));
-		c[2][0] = c[0][2];
-		c[1][2] = 0.5*(du(1,2)+du(2,1));
-		c[2][1] = c[1][2];
+    if(np==THREED_MPM)
+    {   c[0][2] = 0.5*(du(0,2)+du(2,0));
+        c[2][0] = c[0][2];
+        c[1][2] = 0.5*(du(1,2)+du(2,1));
+        c[2][1] = c[1][2];
 		shearRate += 2.*(c[0][2]*c[0][2] + c[1][2]*c[1][2]);
-		shear.set(c);
-	}
-	else
-		shear.set(c[0][0],c[0][1],c[1][0],c[1][1],c[2][2]);
+        shear.set(c);
+    }
+    else
+        shear.set(c[0][0],c[0][1],c[1][0],c[1][1],c[2][2]);
 	shearRate = 2.*sqrt(shearRate)/delTime;
 	
 	// Store shear rate

@@ -84,28 +84,29 @@ MatPtLoadBC *MatPtLoadBC::AddMPLoad(double bctime)
 			 pFext->z+=BCValue(bctime);
 	}
 	else
-	{	double mp=mpm[ptNum-1]->mp;												// in g
-		int matnum=mpm[ptNum-1]->MatID();
+	{	MPMBase *mptr = mpm[ptNum-1];
+		double mp=mptr->mp;												// in g
+		int matnum=mptr->MatID();
 		double cd=theMaterials[matnum]->CurrentWaveSpeed(FALSE,mpm[ptNum-1],0);	// in mm/sec (2D or isotropic only)
 		double cs=theMaterials[matnum]->ShearWaveSpeed(FALSE,mpm[ptNum-1],0);		// in mm/sec
-		Vector pVel=mpm[ptNum-1]->vel;
-		Vector *pFext=mpm[ptNum-1]->GetPFext();
+		Vector pVel=mptr->vel;
+		Vector *pFext=mptr->GetPFext();
 		
 		// get forces in g-mm/sec^2
 		if(direction==X_DIRECTION)
-		{	pFext->x-=mp*cd*pVel.x/(2.*mpmgrid.GetParticleXSize());
-			pFext->y-=mp*cs*pVel.y/(2.*mpmgrid.GetParticleXSize());
-			pFext->z-=mp*cs*pVel.z/(2.*mpmgrid.GetParticleXSize());
+		{	pFext->x-=mp*cd*pVel.x/(2.*mptr->GetParticleXSize());
+			pFext->y-=mp*cs*pVel.y/(2.*mptr->GetParticleXSize());
+			pFext->z-=mp*cs*pVel.z/(2.*mptr->GetParticleXSize());
 		}
 		else if(direction==Y_DIRECTION)
-		{	pFext->x-=mp*cs*pVel.x/(2.*mpmgrid.GetParticleYSize());
-			pFext->y-=mp*cd*pVel.y/(2.*mpmgrid.GetParticleYSize());
-			pFext->z-=mp*cs*pVel.z/(2.*mpmgrid.GetParticleYSize());
+		{	pFext->x-=mp*cs*pVel.x/(2.*mptr->GetParticleYSize());
+			pFext->y-=mp*cd*pVel.y/(2.*mptr->GetParticleYSize());
+			pFext->z-=mp*cs*pVel.z/(2.*mptr->GetParticleYSize());
 		}
 		else
-		{	pFext->x-=mp*cs*pVel.x/(2.*mpmgrid.GetParticleZSize());
-			pFext->y-=mp*cs*pVel.y/(2.*mpmgrid.GetParticleZSize());
-			pFext->z-=mp*cd*pVel.z/(2.*mpmgrid.GetParticleZSize());
+		{	pFext->x-=mp*cs*pVel.x/(2.*mptr->GetParticleZSize());
+			pFext->y-=mp*cs*pVel.y/(2.*mptr->GetParticleZSize());
+			pFext->z-=mp*cd*pVel.z/(2.*mptr->GetParticleZSize());
 		}
 	}
 		

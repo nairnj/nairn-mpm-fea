@@ -32,8 +32,9 @@ class MatPoint3D : public MPMBase
 		virtual void UpdateStrain(double,int,int,void *,int);
 		virtual void PerformConstitutiveLaw(Matrix3,double,int,void *,ResidualStrains *);
 		virtual void GetFintPlusFext(Vector *,double,double,double,double);
-		virtual void MovePosition(double,Vector *,double,double);
-		virtual void MoveVelocity(double,double);
+		virtual void MovePosition(double,Vector *,Vector *,double);
+		virtual void MoveVelocity(double,Vector *);
+		virtual void MovePosition(double);
 		virtual void SetVelocitySpeed(double);
 		virtual void AddTemperatureGradient(int,Vector *);
 		virtual double FCond(int,double,double,double,TransportProperties *);
@@ -43,12 +44,13 @@ class MatPoint3D : public MPMBase
 		virtual Matrix3 GetDeformationGradientMatrix(void) const;
 		virtual void SetDeformationGradientMatrix(Matrix3);
 		virtual Matrix3 GetDisplacementGradientMatrix(void) const;
-		virtual Matrix3 GetElasticLeftCauchyMatrix(void);
+        virtual Matrix3 GetElasticLeftCauchyMatrix(void);
         virtual void GetDeformationGradient(double F[][3]) const;
         virtual double GetRelativeVolume(void);
 		virtual double GetVolume(int);
-		virtual void GetSemiSideVectors(Vector *,Vector *,Vector *) const;
-		virtual void GetUndeformedSemiSides(double *,double *,double *) const;
+        virtual void GetSemiSideVectors(Vector *,Vector *,Vector *) const;
+        virtual void GetUndeformedSemiSides(double *,double *,double *) const;
+		virtual Vector GetParticleSize(void) const;
 		virtual void GetCPDINodesAndWeights(int);
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *);
 		virtual Matrix3 GetInitialRotation(void);

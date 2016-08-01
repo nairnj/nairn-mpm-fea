@@ -37,6 +37,8 @@ public class MaterialPoint
 	public double[] eplast;
 	public double[] erot;
 	public double[] dnorm;
+	public double[] Lp;
+	public double[] wp;
 	
 	private double plotValue;
 	public Color plotColor;
@@ -53,6 +55,8 @@ public class MaterialPoint
 		eplast=new double[6];
 		erot=new double[3];
 		dnorm=new double[3];
+		Lp=new double[3];
+		wp=new double[3];
 	}
 	
 	//---------------------------------------------------------------------
@@ -344,6 +348,46 @@ public class MaterialPoint
 			dnorm[1]=0.;
 			dnorm[2]=0.;
 		}
+		
+		// get spin momentum
+		if(mpmOrder[ReadArchive.ARCH_SpinMomentum]=='Y')
+		{	double Lscale = units.energyScale()*units.timeScale();
+			if(has3D)
+			{	Lp[0]=bb.getDouble()*Lscale;
+				Lp[1]=bb.getDouble()*Lscale;
+				Lp[2]=bb.getDouble()*Lscale;
+			}
+			else
+			{	Lp[0]=0.;
+				Lp[1]=0.;
+				Lp[2]=bb.getDouble()*Lscale;
+			}
+		}
+		else
+		{	Lp[0]=0.;		// assume initial angles were all zero
+			Lp[1]=0.;
+			Lp[2]=0.;
+		}
+
+		// get spin momentum
+		if(mpmOrder[ReadArchive.ARCH_SpinVelocity]=='Y')
+		{	double Lscale = 1./units.timeScale();
+			if(has3D)
+			{	wp[0]=bb.getDouble()*Lscale;
+				wp[1]=bb.getDouble()*Lscale;
+				wp[2]=bb.getDouble()*Lscale;
+			}
+			else
+			{	wp[0]=0.;
+				wp[1]=0.;
+				wp[2]=bb.getDouble()*Lscale;
+			}
+		}
+		else
+		{	wp[0]=0.;		// assume initial angles were all zero
+			wp[1]=0.;
+			wp[2]=0.;
+		}
 	}
 	
 	//---------------------------------------------------------------------
@@ -415,6 +459,28 @@ public class MaterialPoint
 				theValue=sigma[YZID];
 				break;
 		
+	        case PlotQuantity.MPMEQUIVSTRESS:
+	        {   double sxx = sigma[XXID];
+	            double syy = sigma[YYID];
+	            double szz = sigma[ZZID];
+	            double sxy = sigma[XYID];
+	            double sxz = sigma[XZID];
+	            double syz = sigma[YZID];
+	            theValue = Math.pow(sxx-syy,2.) + Math.pow(syy-szz,2.) + Math.pow(sxx-szz,2.);
+	            theValue += 6.*(sxy*sxy + sxz*sxz + syz*syz);
+	            theValue = Math.sqrt(0.5*theValue);
+	            break;
+	        }
+	    
+	 			// equivalent or vonmises stress = sqrt(3 J2)
+	        case PlotQuantity.MPMPRESSURE:
+	        {   double sxx = sigma[XXID];
+	            double syy = sigma[YYID];
+	            double szz = sigma[ZZID];
+				theValue = -(sxx+syy+szz)/3.;
+	            break;
+	        }
+	        
 			// Strains
 			case PlotQuantity.MPMEPSX:
 			case PlotQuantity.MPMEPSY:
@@ -606,6 +672,21 @@ public class MaterialPoint
 				break;
 			}
 				
+	        // equivalent strain (total strain only)
+	        case PlotQuantity.MPMEQUIVSTRAIN:
+			{	Matrix3 biot = getBiotStrain(doc);
+				double tre = (biot.get(0,0)+biot.get(1,1)+biot.get(2,2))/3.;
+	            double exx = biot.get(0,0) - tre;
+	            double eyy = biot.get(1,1) - tre;
+	            double ezz = biot.get(2,2) - tre;
+	            double exy = biot.get(0,1);
+	            double exz = biot.get(0,2);
+	            double eyz = biot.get(1,2);
+	            theValue = exx*exx + eyy*eyy * ezz*ezz + 2.0*(exy*exy + exz*exz + eyz*eyz);
+	            theValue = Math.sqrt(2.*theValue/3.)*doc.units.strainScale();
+	            break;
+	        }
+			
 			// Energy (totals are getting this point only)
 			case PlotQuantity.MPMTOTENERGY:
 			case PlotQuantity.MPMENERGY:
@@ -723,6 +804,26 @@ public class MaterialPoint
 			case PlotQuantity.MPMTOTELEMENTCROSSINGS:
 			case PlotQuantity.MPMELEMENTCROSSINGS:
 				theValue=(double)elementCrossings;
+				break;
+				
+			case PlotQuantity.MPMSPINVELOCITYX:
+				theValue=wp[0];
+				break;
+			case PlotQuantity.MPMSPINVELOCITYY:
+				theValue=wp[1];
+				break;
+			case PlotQuantity.MPMSPINVELOCITYZ:
+				theValue=wp[2];
+				break;
+				
+			case PlotQuantity.MPMSPINMOMENTUMX:
+				theValue=Lp[0];
+				break;
+			case PlotQuantity.MPMSPINMOMENTUMY:
+				theValue=Lp[1];
+				break;
+			case PlotQuantity.MPMSPINMOMENTUMZ:
+				theValue=Lp[2];
 				break;
 				
 			// Unknown

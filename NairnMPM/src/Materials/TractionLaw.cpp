@@ -54,6 +54,10 @@ void TractionLaw::ReportDebond(double dtime,CrackSegment *cs,double fractionI,do
 			<< Gtotal*UnitsController::Scaling(0.001) << endl;
 }
 
+// evaluate pressure at current time
+// (Don't call in parallel code due to function)
+void TractionLaw::CalculateTimeFunction(void) {}
+
 #pragma mark TractionLaw::Traction Law
 
 // Traction law - find traction force as traction pressure*area

@@ -74,11 +74,13 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 		
 	// get crack velocity fields, if they are needed
 	int numnds;
-    int snds[maxShapeNodes];
+    int sndsArray[maxShapeNodes],*snds;
 	if(firstCrack!=NULL)
 	{	const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
 		double fn[maxShapeNodes];
-		elref->GetShapeFunctions(&numnds,fn,snds,mpmptr);
+		snds = sndsArray;
+		elref->GetShapeFunctions(fn,&snds,mpmptr);
+		numnds = snds[0];
 	}
 		
     // add force to each node
