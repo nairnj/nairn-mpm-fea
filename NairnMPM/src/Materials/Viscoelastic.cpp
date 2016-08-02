@@ -332,7 +332,7 @@ char *Viscoelastic::InitHistoryData(char *pchr,MPMBase *mptr)
     h[YY_HISTORY] = new double[ntaus];
     h[XY_HISTORY] = new double[ntaus];
 	h[ZZ_HISTORY] = new double[ntaus];
-	if(blocks==6)
+	if(fmobj->IsThreeD())
 	{	h[XZ_HISTORY] = new double[ntaus];
 		h[YZ_HISTORY] = new double[ntaus];
 	}		
@@ -344,7 +344,7 @@ char *Viscoelastic::InitHistoryData(char *pchr,MPMBase *mptr)
         h[YY_HISTORY][k] = 0.;
         h[XY_HISTORY][k] = 0.;
 		h[ZZ_HISTORY][k] = 0.;
-		if(blocks==6)
+		if(fmobj->IsThreeD())
 		{	h[XZ_HISTORY][k] = 0.;
 			h[YZ_HISTORY][k] = 0.;
 		}
