@@ -106,7 +106,7 @@ public class MovieControls extends JPanel
 		
 		// data panel
 		MeshPlotData meshData=new MeshPlotData(movieCtrl.getPlotView(),gResDoc);
-		meshData.setSize(new Dimension(200,HEIGHT));
+		meshData.setSize(new Dimension(225,HEIGHT));
 		meshData.setLocation(hpos,0);
 		meshData.setBackground(Color.lightGray);
 		add(meshData);
@@ -138,6 +138,7 @@ public class MovieControls extends JPanel
 		
 		// select quantity
 		pquant.setSelectedIndex(quant.getSelectedIndex());
+		setComponentMenu();
 		pcmpnt.setSelectedIndex(cmpnt.getSelectedIndex());
 		
 		// when quantity changes, update component menu, update parent controls, redraw plot

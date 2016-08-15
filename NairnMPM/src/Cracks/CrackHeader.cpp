@@ -359,7 +359,7 @@ short CrackHeader::MoveCrack(void)
 		double fn[maxShapeNodes],shapeNorm;
 		int j,nodeCounter;
 		Vector delv,cpos,vcm;
-		int nds[maxShapeNodes],numnds;
+		int nds[maxShapeNodes];
 		
 		// loop over crack points
 		while(scrk != NULL)
@@ -368,7 +368,8 @@ short CrackHeader::MoveCrack(void)
 				iel=scrk->planeInElem-1;			// now zero based
 				cpos.x=scrk->x;
 				cpos.y=scrk->y;
-				theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos);
+				theElements[iel]->GetShapeFunctionsForCracks(fn,nds,&cpos);
+				int numnds = nds[0];
 				
 				// initialize
 				ZeroVector(&delv);
@@ -428,7 +429,7 @@ short CrackHeader::MoveCrack(short side)
     int iel;
     double fn[maxShapeNodes],surfaceMass;
     short js=side-1,nodeCounter,j;
-	int numnds,nds[maxShapeNodes];
+	int nds[maxShapeNodes];
     Vector delv,cpos;
     
     // loop over crack points
@@ -438,7 +439,8 @@ short CrackHeader::MoveCrack(short side)
 			iel = scrk->surfInElem[js]-1;			// now zero based
 			cpos.x = scrk->surfx[js];
 			cpos.y = scrk->surfy[js];
-			theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos);
+			theElements[iel]->GetShapeFunctionsForCracks(fn,nds,&cpos);
+			int numnds = nds[0];
             
 			// initialize
 			ZeroVector(&delv);
@@ -1426,7 +1428,7 @@ void CrackHeader::CrackTipHeating(void)
 	int iel;
 	double fn[maxShapeNodes];
 	Vector cpos;
-	int numnds,i,nds[maxShapeNodes];
+	int i,nds[maxShapeNodes];
     
 	// exit if no segments
     if(scrk==NULL) return;
@@ -1437,7 +1439,8 @@ void CrackHeader::CrackTipHeating(void)
 		iel=scrk->planeInElem-1;		// now zero based
 		cpos.x=scrk->x;
 		cpos.y=scrk->y;
-		theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos);
+		theElements[iel]->GetShapeFunctionsForCracks(fn,nds,&cpos);
+		int numnds = nds[0];
 	
 		// normalize shape functions
 		double fnorm = 0.;

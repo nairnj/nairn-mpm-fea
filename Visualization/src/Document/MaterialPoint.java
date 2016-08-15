@@ -687,33 +687,62 @@ public class MaterialPoint
 	            break;
 	        }
 			
-			// Energy (totals are getting this point only)
-			case PlotQuantity.MPMTOTENERGY:
-			case PlotQuantity.MPMENERGY:
-			case PlotQuantity.MPMTOTSTRENERGY:
+			// Energy Densnity (totals are getting this point only)
 			case PlotQuantity.MPMSTRENERGY:
+				theValue=strainEnergy;
+				theValue /= getDeformedVolume(doc);			// convert to density
+				break;
+			case PlotQuantity.MPMENERGY:
 				// stress in MPa, strain in %, mass in g, rho in g/cm^3 -> Joules
 				theValue=strainEnergy;
-				if(component==PlotQuantity.MPMSTRENERGY || component==PlotQuantity.MPMTOTSTRENERGY) break;
-			case PlotQuantity.MPMTOTKINENERGY:
 			case PlotQuantity.MPMKINENERGY:
-				if(component==PlotQuantity.MPMKINENERGY || component==PlotQuantity.MPMTOTKINENERGY) theValue=0.;
-				theValue+=0.5*mass*(velx*velx+vely*vely)*doc.units.calcVelocityScale();
+			{	if(component==PlotQuantity.MPMKINENERGY) theValue=0.;
+				MaterialBase matl=doc.materials.get(materialIndex());
+				if(!matl.isRigid())
+					theValue+=0.5*mass*(velx*velx+vely*vely)*doc.units.calcVelocityScale();
+				theValue /= getDeformedVolume(doc);			// convert to density
 				break;
+			}
 			
+			// Energy for this point only
+			case PlotQuantity.MPMTOTSTRENERGY:
+				theValue=strainEnergy;
+				break;
+			case PlotQuantity.MPMTOTENERGY:
+				theValue=strainEnergy;
+			case PlotQuantity.MPMTOTKINENERGY:
+			{	if(component==PlotQuantity.MPMTOTKINENERGY) theValue=0.;
+				MaterialBase matl=doc.materials.get(materialIndex());
+				if(!matl.isRigid())
+					theValue+=0.5*mass*(velx*velx+vely*vely)*doc.units.calcVelocityScale();
+				break;
+			}
+				
 			case PlotQuantity.MPMTOTWORKENERGY:
+				theValue=workEnergy;
+				break;
+
 			case PlotQuantity.MPMWORKENERGY:
 				theValue=workEnergy;
+				theValue /= getDeformedVolume(doc);			// convert to density
 				break;
 			
 			case PlotQuantity.MPMTOTPLASTICENERGY:
+				theValue=plastEnergy;
+				break;
+
 			case PlotQuantity.MPMPLASTICENERGY:
 				theValue=plastEnergy;
+				theValue /= getDeformedVolume(doc);			// convert to density
 				break;
 			
 			case PlotQuantity.MPMTOTHEATENERGY:
+				theValue=heatEnergy;
+				break;
+
 			case PlotQuantity.MPMHEATENERGY:
 				theValue=heatEnergy;
+				theValue /= getDeformedVolume(doc);			// convert to density
 				break;
 			
 			case PlotQuantity.MPMTEMPERATURE:
@@ -798,8 +827,15 @@ public class MaterialPoint
 				break;
 			
 			case PlotQuantity.MPMMASS:
-				theValue=mass;
+			{	MaterialBase matl=doc.materials.get(materialIndex());
+				if(matl.isRigid())
+					theValue = 0.;
+				else
+				{	theValue=mass;
+					theValue /= getDeformedVolume(doc);			// convert to density
+				}
 				break;
+			}
 			
 			case PlotQuantity.MPMTOTELEMENTCROSSINGS:
 			case PlotQuantity.MPMELEMENTCROSSINGS:
@@ -933,12 +969,15 @@ public class MaterialPoint
 		double undeformedVolume = 1.;
 		Vector3 particleRadius = getParticleRadius(doc);
 		if(doc.is3D())
-		{	undeformedVolume = particleRadius.x*particleRadius.x*particleRadius.z;
+		{	undeformedVolume = 8.*particleRadius.x*particleRadius.x*particleRadius.z;
+		}
+		else if(doc.isAxisymmetric())
+		{	// volume  per radian (axisymmetric)
+			undeformedVolume = 4.*particleRadius.x*particleRadius.y*x;
 		}
 		else
-		{	// volume per thickness (2D) or per radian (axisymmetric)
-			undeformedVolume = particleRadius.x*particleRadius.y;
-			if(doc.isAxisymmetric()) undeformedVolume *= x;
+		{	// volume 2D
+			undeformedVolume = 4.*particleRadius.x*particleRadius.y*thickness;
 		}
 		return J*undeformedVolume;
 	}

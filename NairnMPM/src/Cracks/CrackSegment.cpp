@@ -14,6 +14,7 @@
 #include "System/ArchiveData.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "System/UnitsController.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 
 extern char *app;
 
@@ -49,7 +50,6 @@ CrackSegment::CrackSegment(double xend,double yend,int tip,int matid)
 // find current element (1 based) or return 0 if no element
 int CrackSegment::FindElement(void)
 {
-    int i;
 	Vector cpt;
 	cpt.x=x;
 	cpt.y=y;
@@ -60,23 +60,22 @@ int CrackSegment::FindElement(void)
     {	if(theElements[planeInElem-1]->PtInElement(cpt))
             return planeInElem;
     }
-    
-    // check others
-    planeInElem=0;
-    for(i=0;i<nelems;i++)
-    {	if(theElements[i]->PtInElement(cpt))
-        {   planeInElem=i+1;
-			if(theElements[i]->OnTheEdge()) planeInElem=0;
-            break;
-        }
-    }
+	
+	// use grid code
+	try
+	{	planeInElem = mpmgrid.FindElementFromPoint(&cpt,NULL);
+	}
+	catch (...)
+	{	planeInElem = 0;
+	}
+	
     return planeInElem;
 }
 
 // find current element (1 based) or return 0 if no element for crack surface
 int CrackSegment::FindElement(short side)
 {
-    int i,j=side-1;
+    int j=side-1;
 	Vector cpt;
 	cpt.x=surfx[j];
 	cpt.y=surfy[j];
@@ -88,16 +87,15 @@ int CrackSegment::FindElement(short side)
             return surfInElem[j];
     }
 	
-    // check others
-    surfInElem[j]=0;
-    for(i=0;i<nelems;i++)
-    {	if(theElements[i]->PtInElement(cpt))
-        {   surfInElem[j]=i+1;
-			if(theElements[i]->OnTheEdge()) surfInElem[j]=0;
-            break;
-        }
-    }
-    return surfInElem[j];
+	// use grid code
+	try
+	{	surfInElem[j] = mpmgrid.FindElementFromPoint(&cpt,NULL);
+	}
+	catch (...)
+	{	surfInElem[j] = 0;
+	}
+	
+	return surfInElem[j];
 }
 
 // Reset crack plane position from surfaces (2D) (in mm)
@@ -202,7 +200,7 @@ void CrackSegment::AddTractionForceSeg(CrackHeader *theCrack)
 // add forces to material velocity fields on one side of the crack
 double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,double sign)
 {
-	int numnds,nds[maxShapeNodes];
+	int nds[maxShapeNodes];
     double fn[maxShapeNodes];
     short vfld;
 	double fnorm = 0.;
@@ -210,9 +208,13 @@ double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,doub
 	int cnum=theCrack->GetNumber();
 
 	// get element and shape functino to extrapolate to the node
-	Vector cspos = MakeVector(surfx[side-1], surfy[side-1], 0.);
-	const ElementBase *elref = theElements[surfInElem[side-1]];
-	elref->GetShapeFunctionsForCracks(&numnds,fn,nds,&cspos);
+	int js = side-1;
+	int iel = surfInElem[js]-1;
+	Vector cspos;
+	cspos.x = surfx[js];
+	cspos.y = surfy[js];
+	theElements[iel]->GetShapeFunctionsForCracks(fn,nds,&cspos);
+	int numnds = nds[0];
 	
 	// loop over all nodes seen by this crack surface particle
 	for(int i=1;i<=numnds;i++)
@@ -563,7 +565,7 @@ void CrackSegment::FindCrackTipMaterial(int currentNum)
 	if(theMaterials[currentNum-1]->KeepsCrackTip()) return;
 	
 	Vector cspos;
-	int i,iel,numnds,nds[maxShapeNodes];
+	int i,iel,nds[maxShapeNodes];
     double fn[maxShapeNodes];
 	
 	// array to collect weights
@@ -571,10 +573,11 @@ void CrackSegment::FindCrackTipMaterial(int currentNum)
 	for(i=0;i<numActiveMaterials;i++) matWeight[i] = 0.;
 	
 	// get shape functions to extrapolate to the particle
+	iel=planeInElem-1;
 	cspos.x=x;
 	cspos.y=y;
-	iel=planeInElem;
-	theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cspos);
+	theElements[iel]->GetShapeFunctionsForCracks(fn,nds,&cspos);
+	int numnds = nds[0];
 	
 	// extrapolate to particle
 	for(i=1;i<=numnds;i++)

@@ -25,7 +25,7 @@
 			| GlobalArchiveTime | ExtrapolateRigid )*>
 
 <!ELEMENT	Cracks
-			( Friction | Propagate | AltPropagate | JContour | MovePlane | ContactPosition | PropagateLength )*>
+			( Friction | Propagate | AltPropagate | JContour | MovePlane | ContactPosition | PropagateLength | CrackParticleSize )*>
 			
 <!ELEMENT	MultiMaterialMode
 			( Friction | ContactPosition )*>
@@ -297,6 +297,7 @@
 			prevent (yes|YES|Yes|no|No|NO) #IMPLIED
 			type (cm|CM|Cm|avg|Avg|AVG) #IMPLIED>
 <!ELEMENT	ContactPosition (#PCDATA)>
+<!ELEMENT	CrackParticleSize (#PCDATA)>
 <!ELEMENT	PropagateLength (#PCDATA)>
 <!ELEMENT	JContour EMPTY>
 <!ATTLIST	JContour

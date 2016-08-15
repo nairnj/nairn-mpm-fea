@@ -31,6 +31,9 @@ MeshInfo::MeshInfo(void)
 	contactByDisplacements=TRUE;	// contact by displacements
 	positionCutoff=0.8;             // element fraction when contact by positions
 	cellMinSize=-1.;				// calculated when needed
+#ifdef CRACK_GIMP
+	crackParticleSize=0.;			// crack particle size for GIMP shape functions
+#endif
 }
 
 #pragma mark MeshInfo:Methods
@@ -468,7 +471,7 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
             }
         }
     }
-    
+	
     // get patch sizes
 	xPatchSize = max(int(horiz/xpnum+.5),1);
 	yPatchSize = max(int(vert/ypnum+.5),1);

@@ -275,7 +275,7 @@ public class PlotQuantity extends PlotControl
 				checkMeshItem=quant.getItemCount();
 				quant.addItem(new PlotMenuItem("Material",MPMPOS));
 				quant.addItem(new PlotMenuItem("Material Angle",MPMANGLEZ));
-				quant.addItem(new PlotMenuItem("Mass",MPMMASS));
+				quant.addItem(new PlotMenuItem("Density",MPMMASS));
 				if(arch[ReadArchive.ARCH_DeltaTemp]=='Y')
 					quant.addItem(new PlotMenuItem("Temperature",MPMTEMPERATURE));
 					
@@ -568,13 +568,16 @@ public class PlotQuantity extends PlotControl
 			case MPMEQUIVSTRAIN:
 				return "Strain ("+units.strainUnits()+")";
 			
-			// Energy
+			// Energy Density
 			case MPMENERGY:
 			case MPMSTRENERGY:
 			case MPMKINENERGY:
 			case MPMWORKENERGY:
 			case MPMPLASTICENERGY:
 			case MPMHEATENERGY:
+				return "Energy Density ("+units.energyUnits()+"/"+units.lengthUnits()+"^3)";
+
+			// Energy
 			case MPMTOTSTRENERGY:
 			case MPMTOTKINENERGY:
 			case MPMTOTENERGY:
@@ -692,7 +695,7 @@ public class PlotQuantity extends PlotControl
 				return "Fraction";
 			
 			case MPMMASS:
-				return "Mass ("+units.massUnits()+")";
+				return "Density ("+units.massUnits()+"/"+units.lengthUnits()+"^3)";
 			
 			case MPMARCHIVETIME:
 				return "Time ("+units.timeUnits()+")";
@@ -762,13 +765,16 @@ public class PlotQuantity extends PlotControl
 			case MESHDUDY:
 				return units.strainUnits();
 			
-			// Energy
+			// Energy Density
 			case MPMENERGY:
 			case MPMSTRENERGY:
 			case MPMKINENERGY:
 			case MPMWORKENERGY:
 			case MPMPLASTICENERGY:
 			case MPMHEATENERGY:
+				return units.energyUnits()+"/"+units.lengthUnits()+"^3";
+				
+			// Energy
 			case MPMTOTSTRENERGY:
 			case MPMTOTKINENERGY:
 			case MPMTOTENERGY:
@@ -839,7 +845,7 @@ public class PlotQuantity extends PlotControl
 				return units.forceUnits();
 			
 			case MPMMASS:
-				return units.massUnits();
+				return units.massUnits()+"/"+units.lengthUnits()+"^3";
 			
 			case MPMARCHIVETIME:
 				return units.timeUnits();
@@ -954,20 +960,22 @@ public class PlotQuantity extends PlotControl
 				return "Energy";
 
 			case MPMSTRENERGY:
+				return "Strain Energy Density";
+				
 			case MESHSTRAINENERGY:
 				return "Strain Energy";
 
 			case MPMKINENERGY:
-				return "KineticEnergy";
+				return "Kinetic Energy Density";
 
 			case MPMWORKENERGY:
-				return "Work Energy";
+				return "Work Energy Density";
 
 			case MPMPLASTICENERGY:
-				return "Plastic Energy";
+				return "Plastic Energy Density";
 
 			case MPMHEATENERGY:
-				return "Heat Energy";
+				return "Heat Energy Density";
 
 			case MPMTOTSTRENERGY:
 				return "Total Strain Energy";
@@ -1129,7 +1137,7 @@ public class PlotQuantity extends PlotControl
 				return "Interface Tangential Traction";
 				
 			case MPMMASS:
-				return "Mass";
+				return "Density";
 			
 			case MPMARCHIVETIME:
 				return "Time";

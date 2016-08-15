@@ -13,6 +13,12 @@
 
 #define _MESHINFO_
 
+// When not defined, use Classic shape functions for cracks (the default)
+// When defined, use GIMP shape function based on crackParticleSize (default is zero
+//		which is equivalent to classic, but maybe slightly slower)
+// <CrackParticleSize> can be set in <Cracks> element and is undocumented feature
+//#define CRACK_GIMP
+
 class GridPatch;
 class NodalPoint;
 class MPMBase;
@@ -31,7 +37,10 @@ class MeshInfo
 		double xmax,ymax,zmax;			// maximums (if from a grid)
         double positionCutoff;          // cut off for normal contact when using positiong instead of displacements
 		int xplane,yplane,zplane;		// node spacings in each plane
-		
+#ifdef CRACK_GIMP
+		double crackParticleSize;		// crack particle size for crack shape functions
+#endif
+	
 		// constructors
 		MeshInfo(void);
 		
@@ -69,10 +78,10 @@ class MeshInfo
         Vector GetPerpendicularDistance(Vector *,NodalPoint *);
 		double GetNormalCODAdjust(Vector *,NodalPoint *);
         Vector GetCellSize(void);
- 		
+			
 	private:
 		int cartesian;					// non-zero (NOT_CARTESIAN=0) is a regular grid
-		bool equalElementSizes;			// true is all elements the same size
+		bool equalElementSizes;			// true if all elements the same size
 		int totalElems;					// total number of elements
 		int horiz,vert,depth;			// number of elements in that direction (if from a grid)
 		double cellVolume;				// cell volume

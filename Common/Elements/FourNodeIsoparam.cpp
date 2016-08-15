@@ -467,22 +467,22 @@ void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,unsigned char *nd
 	{	xp = fabs(xi->x - gxii[ndIDs[i]]);			// first quadrant (xp, yp)>=0
 		yp = fabs(xi->y - geti[ndIDs[i]]);
 		
-		if(xp<=lp.x)
+		if(xp<lp.x)
 			Svpx = ((4.-lp.x)*lp.x-xp*xp)/(4.*lp.x);	// if lp=0.5: -(4.*xp*xp-7.)/8.;
 		else if(xp<=q1x)
 			Svpx = (2.-xp)/2.;
-		else if(xp<=q2x)
+		else if(xp<q2x)
 		{	argx = (q2x-xp)/(4.*lp.x);               // if lp=0.5: (5.-2.*xp)/4
 			Svpx = 2.*lp.x*argx*argx;				// if lp=0.5: argx*argx
 		}
 		else
 			Svpx=0.;
 		
-		if(yp<=lp.y)
+		if(yp<lp.y)
 			Svpy = ((4.-lp.y)*lp.y-yp*yp)/(4.*lp.y);	// if lp=0.5: -(4.*yp*yp-7.)/8.;
 		else if(yp<=q1y)
 			Svpy = (2.-yp)/2.;
-		else if(yp<=q2y)
+		else if(yp<q2y)
 		{	argy = (q2y-yp)/(4.*lp.y);               // if lp=0.5: (5.-2.*yp)/4
 			Svpy = 2.*lp.y*argy*argy;				// if lp=0.5: (5.-2.*yp)^2/16
 		}
@@ -496,20 +496,20 @@ void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,unsigned char *nd
 		{	xsign = xi->x>gxii[ndIDs[i]] ? 1. : -1.;
 			ysign = xi->y>geti[ndIDs[i]] ? 1. : -1.;
 
- 			if(xp<=lp.x)
+ 			if(xp<lp.x)
 				dSvpx = -xp/(2.*lp.x);			// if lp=0.5: -xp
 			else if(xp<=q1x)
 				dSvpx = -0.5;
-			else if(xp<=q2x)
+			else if(xp<q2x)
 				dSvpx = -argx;
 			else
 				dSvpx = 0.;
  			
- 			if(yp<=lp.y)
+ 			if(yp<lp.y)
 				dSvpy = -yp/(2.*lp.y);			// if lp=0.5: -xp
 			else if(yp<=q1y)
 				dSvpy = -0.5;
-			else if(yp<=q2y)
+			else if(yp<q2y)
 				dSvpy = -argy;
 			else
 				dSvpy = 0.;
@@ -557,7 +557,7 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *
 
 		// X direction with truncation
         // When n==0, xp>0 and when n==1, xp>-2
-		if(xp<-q3x || nr<-0.01)
+		if(xp<=-q3x || nr<-0.01)
 			Svpx = 0.;
 		else if(xp<-q2x)
 		{	if(n==1)
@@ -569,7 +569,7 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *
 				//Svpx = argx*argx*(-1.+6.*nr+2.*xp)/(3.*(2.*nr+xp));
 			}
 		}
-		else if(xp<-lp.x)
+		else if(xp<=-lp.x)
 			Svpx = (2.+xp)/2. + lp.x*lp.x/(6.*(2.*nr+xp));		// if lp=0.5: (2.+xp)/2 + 1./(24.*(2.*nr+xp));
 		else if(xp<lp.x)
 		{	if(n==0)
@@ -580,7 +580,7 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *
 				// Svpx = -(-9.*xp+4.*xp*xp*xp+3.*nr*(-7.+4.*xp*xp))/(12.*(2.*nr+xp));
 			}
 		}
-		else if(xp<q2x)
+		else if(xp<=q2x)
 			Svpx = (2.-xp)/2. - lp.x*lp.x/(6.*(2.*nr+xp));		// if lp=0.5: (2.-xp)/2. - 1./(24.*(2.*nr+xp));
 		else if(xp<q3x)
 		{	argx = (q3x-xp)/(4.*lp.x);
@@ -592,11 +592,11 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *
 			Svpx = 0.;
         
         // Y direction like planar GIMP
-		if(yp<=lp.y)
+		if(yp<lp.y)
 			Svpy = ((4.-lp.y)*lp.y-yp*yp)/(4.*lp.y);		// if lp=0.5: (7-4.*yp*yp)/8.;
 		else if(yp<=q2y)
 			Svpy = (2.-yp)/2.;
-		else if(yp<=q3y)
+		else if(yp<q3y)
 		{	argy = (q3y-yp)/(4.*lp.y);                   // if lp=0.5: (5.-2.*yp)/4
 			Svpy = 2.*lp.y*argy*argy;					// if lp=0.5: (5.-2.*yp)^2/16
 		}
@@ -609,9 +609,9 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *
 		if(getDeriv)
 		{	ysign = xi->y>geti[ndIDs[i]] ? 1. : -1.;
 			
-			// Y part with truncation optinos
+			// Y part with truncation options
             // When n==0, xp>0 and when n==1, xp>-2
-			if(xp<-q3x || nr<-0.01)
+			if(xp<=-q3x || nr<-0.01)
 				dSvpx = 0.;
 			else if(xp<-q2x)
 			{	if(n==1)
@@ -622,7 +622,7 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *
 					//			or (5.+2.*xp)*(-3.+8.*nr+2.*xp)/(16.*(2.*nr+xp));
 				}
 			}
-			else if(xp<-lp.x)
+			else if(xp<=-lp.x)
 				dSvpx = 0.5;
 			else if(xp<lp.x)
 			{	if(n==0)
@@ -632,7 +632,7 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *
                     // if lp=0.5: -xp - (1.-4.*xp*xp)/(8.*(2.*nr+xp));
                 }
 			}
-			else if(xp<q2x)
+			else if(xp<=q2x)
 				dSvpx = -0.5;                       // note that xp>0 always (no need to check)
 			else if(xp<q3x)
 			{	dSvpx = -(q3x-xp)*(1. + (q2x-xp)/(2.*(2.*nr+xp)))/(4*lp.x);
@@ -642,11 +642,11 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *
 			else
 				dSvpx=0.;
 
-			if(yp<=lp.y)
+			if(yp<lp.y)
 				dSvpy = -yp/(2.*lp.y);			// if lp=0.5: -yp
 			else if(yp<=q2y)
 				dSvpy = -0.5;
-			else if(yp<=q3y)
+			else if(yp<q3y)
 				dSvpy = -argy;
 			else
 				dSvpy = 0.;
@@ -655,7 +655,7 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *
 			yDeriv[i] = ysign*Svpx*dSvpy*2.0/dy;
 
 			// Note: when n=0, xp>0 and when n=1, xp>-2 (no need to check)
-			if(xp<-q3x || nr<-0.01)
+			if(xp<=-q3x || nr<-0.01)
 				pTr = 0.;
 			else if(xp<-q2x)
 			{	if(n==1)
@@ -665,7 +665,7 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *
 					pTr = 2.*lp.x*argx*argx/(2.*nr+xp);		// if lp=0.5: (5.+2.*xp)^2/(16.*(2.*nr+xp))
 				}
 			}
-			else if(xp<-lp.x)
+			else if(xp<=-lp.x)
                 pTr = (2.+xp)/(2.*(2.*nr+xp));              // which is 0.5 for n==1
 			else if(xp<lp.x)
 			{	if(n==0)
@@ -673,7 +673,7 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *
 				else
 					pTr = ((4.-lp.x)*lp.x-xp*xp)/(4.*lp.x*(2.*nr+xp));	// if lp=0.5: (7-4.*yp*yp)/(8.*(2.*nr+xp));
 			}
-			else if(xp<q2x)
+			else if(xp<=q2x)
 				pTr = (2.-xp)/(2.*(2.*nr+xp));
 			else if(xp<q3x)
 			{	argx = (q3x-xp)/(4.*lp.x);						// if lp=0.5: (5.-2.*yp)/4

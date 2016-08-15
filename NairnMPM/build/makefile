@@ -772,7 +772,7 @@ CrackHeader.o : $(CrackHeader).cpp $(dprefix) $(MaterialBase).hpp $(NairnMPM).hp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackHeader).cpp
 CrackLeaf.o : $(CrackLeaf).cpp $(dprefix) $(CrackLeaf).hpp $(CrackHeader).hpp $(CrackSegment).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackLeaf).cpp
-CrackSegment.o : $(CrackSegment).cpp $(dprefix) $(CrackSegment).hpp $(MaterialBase).hpp $(ArchiveData).hpp \
+CrackSegment.o : $(CrackSegment).cpp $(dprefix) $(CrackSegment).hpp $(MaterialBase).hpp $(ArchiveData).hpp $(MeshInfo).hpp \
 			$(ElementBase).hpp $(NairnMPM).hpp $(CommonArchiveData).hpp $(CrackHeader).hpp $(NodalPoint).hpp \
 			$(TractionLaw).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackSegment).cpp

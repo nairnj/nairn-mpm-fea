@@ -640,6 +640,18 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         inputPtr=(char *)&mpmgrid.positionCutoff;
     }
 	
+	else if(strcmp(xName,"CrackParticleSize")==0)
+	{
+#ifdef CRACK_GIMP
+		if(block!=CRACKHEADER)
+			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
+		input=DOUBLE_NUM;
+		inputPtr=(char *)&mpmgrid.crackParticleSize;
+#else
+		throw SAXException("You must recompile with CRACK_GIMP defined to use CrackParticleSize feature.");
+#endif
+	}
+	
     else if(strcmp(xName,"JContour")==0)
 	{	ValidateCommand(xName,CRACKHEADER,MUST_BE_2D);
     	numAttr=attrs.getLength();

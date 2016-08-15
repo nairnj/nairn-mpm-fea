@@ -69,7 +69,7 @@ int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
 NairnMPM::NairnMPM()
 {
 	version=11;						// main version
-	subversion=2;					// subversion (must be < 10)
+	subversion=3;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 
 	mpmApproach=USAVG_METHOD;		// mpm method
@@ -917,10 +917,12 @@ void NairnMPM::ValidateOptions(void)
 		}
 	}
 	
-#ifdef _OPENMP
+	// The input commands have options to enter arbitray elements and nodes for an unstructured grid, but code
+	// does nut current work with that style so it is isabled here. To use unstructure grid need at least:
+	// 1. FindElementFromPoint() would need to search all elements
+	// 2. Parallel patching would need rewriting
 	if(!mpmgrid.IsStructuredGrid())
-		throw CommonException("Multicore parallel code needs a generated structured grid","NairnMPM::ValidateOptions");
-#endif
+		throw CommonException("This code currently requies use of a generated structured grid","NairnMPM::ValidateOptions");
 	
 	// check each material type (but only if it is used it at least one material point)
 	int i;

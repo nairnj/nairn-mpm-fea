@@ -216,55 +216,23 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
 	{	return LEFT_GRID_NAN;
 	}
 	
-    // calculate if all elements are the same size
-    if(mpmgrid.IsStructuredEqualElementsGrid())
-	{	// check current element
-		if(theElements[mpt->ElemID()]->PtInElement(mpt->pos))
-		{	// it has not changed elements
-			return SAME_ELEMENT;
-		}
-    
-		// calculate from coordinates
-		try
-        {   int j = mpmgrid.FindElementFromPoint(&mpt->pos,mpt)-1;		// elem ID (0 based)
-            if(theElements[j]->OnTheEdge()) return LEFT_GRID;
-			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
-            mpt->ChangeElemID(j,false);
-            return NEW_ELEMENT;
-        }
-        catch(...)
-        {   return LEFT_GRID;
-        }
-    }
-    
-    // if structured, but variable elements, then search neighbors, or binary search
-    else if(mpmgrid.IsStructuredGrid())
-	{	try
-		{   int j = mpmgrid.FindElementFromPoint(&mpt->pos,mpt)-1;		// elem ID (0 based)
-			if(theElements[j]->OnTheEdge()) return LEFT_GRID;
-			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
-			mpt->ChangeElemID(j,true);
-			return NEW_ELEMENT;
-		}
-		catch(...)
-		{   return LEFT_GRID;
-		}
-	}
-	
-    // for unstructured grid, have to check all elements
-	else
-	{	for(int i=0;i<nelems;i++)
-		{	ElementBase *newRef = theElements[i];
-			if(newRef->PtInElement(mpt->pos))
-			{	if(newRef->OnTheEdge()) return LEFT_GRID;
-				if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
-				mpt->ChangeElemID(i,true);
-				return NEW_ELEMENT;
-			}
-		}
+	// check current element
+	if(theElements[mpt->ElemID()]->PtInElement(mpt->pos))
+	{	// it has not changed elements
+		return SAME_ELEMENT;
 	}
     
-    return LEFT_GRID;
+	// calculate from coordinates
+	try
+	{   int j = mpmgrid.FindElementFromPoint(&mpt->pos,mpt)-1;		// elem ID (0 based)
+		if(theElements[j]->OnTheEdge()) return LEFT_GRID;
+		if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
+		mpt->ChangeElemID(j,!mpmgrid.IsStructuredEqualElementsGrid());
+		return NEW_ELEMENT;
+	}
+	catch(...)
+	{   return LEFT_GRID;
+	}
 }
 	
 // Push particle back to its previous element

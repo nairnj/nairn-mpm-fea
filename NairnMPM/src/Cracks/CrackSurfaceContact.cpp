@@ -68,6 +68,14 @@ void CrackSurfaceContact::Output(void)
 		cout << "Crack Plane Crosses: surface particles moved back to the current plane" << endl;
 	else
 		cout << "Crack Plane Crosses: ignored" << endl;
+	
+#ifdef CRACK_GIMP
+	if(mpmgrid.crackParticleSize<0.)
+		mpmgrid.crackParticleSize = 0.;
+	else if(mpmgrid.crackParticleSize>1.)
+		mpmgrid.crackParticleSize = 1.;
+	cout << "Crack particle size for shape functions: " << mpmgrid.crackParticleSize << endl;
+#endif
 }
 
 // Print contact law settings (if has one) and finalize crack law and set if has imperfect interface

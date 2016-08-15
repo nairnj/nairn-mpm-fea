@@ -914,33 +914,33 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,unsigned ch
 		yp=fabs(xi->y-geti[ndIDs[i]]);
 		zp=fabs(xi->z-gzti[ndIDs[i]]);
 		
-		if(xp<=lp.x)
+		if(xp<lp.x)
 			Svpx = ((4.-lp.x)*lp.x-xp*xp)/(4.*lp.x);	// if lp=0.5: -(4.*xp*xp-7.)/8.;
 		else if(xp<=q1x)
 			Svpx = (2.-xp)/2.;
-		else if(xp<=q2x)
+		else if(xp<q2x)
 		{	argx = (q2x-xp)/(4.*lp.x);			// if lp=0.5: (5.-2.*xp)/4
 			Svpx = 2.*lp.x*argx*argx;				// if lp=0.5: (5.-2.*xp)^2/16
 		}
 		else
 			Svpx=0.;
 			
-		if(yp<=lp.y)
+		if(yp<lp.y)
 			Svpy = ((4.-lp.y)*lp.y-yp*yp)/(4.*lp.y);	// if lp=0.5: -(4.*yp*yp-7.)/8.;
 		else if(yp<=q1y)
 			Svpy = (2.-yp)/2.;
-		else if(yp<=q2y)
+		else if(yp<q2y)
 		{	argy = (q2y-yp)/(4.*lp.y);			// if lp=0.5: (5.-2.*yp)/4
 			Svpy = 2.*lp.y*argy*argy;				// if lp=0.5: (5.-2.*yp)^2/16
 		}
 		else
 			Svpy=0.;
 
-		if(zp<=lp.z)
+		if(zp<lp.z)
 			Svpz = ((4.-lp.z)*lp.z-zp*zp)/(4.*lp.z);	// if lp=0.5: -(4.*zp*zp-7.)/8.;
 		else if(zp<=q1z)
 			Svpz = (2.-zp)/2.;
-		else if(zp<=q2z)
+		else if(zp<q2z)
 		{	argz = (q2z-zp)/(4.*lp.z);			// if lp=0.5: (5.-2.*zp)/4
 			Svpz = 2.*lp.z*argz*argz;				// if lp=0.5: (5.-2.*zp)^2/16
 		}
@@ -955,29 +955,29 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,unsigned ch
 			ysign = xi->y>geti[ndIDs[i]] ? 1. : -1.;
 			zsign = xi->z>gzti[ndIDs[i]] ? 1. : -1.;
 
-			if(xp<=lp.x)
+			if(xp<lp.x)
 				dSvpx = -xp/(2.*lp.x);			// if lp=0.5: -xp
 			else if(xp<=q1x)
 				dSvpx = -0.5;
-			else if(xp<=q2x)
+			else if(xp<q2x)
 				dSvpx = -argx;
 			else
 				dSvpx = 0.;
 				
-			if(yp<=lp.y)
+			if(yp<lp.y)
 				dSvpy = -yp/(2.*lp.y);			// if lp=0.5: -yp
 			else if(yp<=q1y)
 				dSvpy = -0.5;
-			else if(yp<=q2y)
+			else if(yp<q2y)
 				dSvpy = -argy;
 			else
 				dSvpy = 0.;
 
-			if(zp<=lp.z)
+			if(zp<lp.z)
 				dSvpz = -zp/(2.*lp.z);			// if lp=0.5: -zp;
 			else if(zp<=q1z)
 				dSvpz = -0.5;
-			else if(zp<=q2z)
+			else if(zp<q2z)
 				dSvpz = -argz;
 			else
 				dSvpz = 0.;

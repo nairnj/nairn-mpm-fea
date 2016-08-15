@@ -98,55 +98,52 @@ void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
 /* Find shape functions for crack particle using point GIMP method
 	Finds nodes, dimensionless position, and then calls simple function
   NOTE: This is only called by crack update and do not need to save xipos.
+  NOTE: crackParticleSize=0 should be classic, could special case it if
+	see numerical issues
 */
-#define CRACK_POINT
-void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vector *pos) const
+void ElementBase::GetShapeFunctionsForCracks(double *fn,int *nds,Vector *pos) const
 {
-#ifdef CRACK_POINT
+	// Get position
 	Vector xipos;
-	GetNodes(numnds,nds);
 	GetXiPos(pos,&xipos);
-	ShapeFunction(&xipos,FALSE,&fn[1],NULL,NULL,NULL);
-#else
-	This section no longer current. If switch to using it again, revise with method in following two routines
-	/*
-	Vector xipos,lp;
-	unsigned char ndIDs[maxShapeNodes];
-	
-    switch(useGimp)
+
+#ifdef CRACK_GIMP
+	switch(useGimp)
     {   case POINT_GIMP:
-        	// Load element noodes, dimensionless position, and shape functinos
-            GetNodes(numnds,nds);
-            GetXiPos(pos,&xipos);
-            ShapeFunction(&xipos,FALSE,&fn[1],NULL,NULL,NULL);
-            break;
-            
+			// Load element noodes, dimensionless position, and shape functions
+			GetNodes(&nds[0],nds);
+			ShapeFunction(&xipos,false,&fn[1],NULL,NULL,NULL);
+			break;
+			
         case LINEAR_CPDI:
         case QUADRATIC_CPDI:
 			// since no material point, CPDI uses GIMP method
         case UNIFORM_GIMP:
-            GetXiPos(pos,&xipos);
-            lp.x = mpmgrid.GetParticleSemiLength();		// no longer there
-            lp.y = lp.x;
-            lp.z = lp.x;
-            GetGimpNodes(numnds,nds,ndIDs,&xipos,lp);
-            GimpShapeFunction(&xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
-            GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
-            break;
-            
+		{	// GIMP analysis
+			unsigned char ndIDs[maxShapeNodes];
+			Vector lp = MakeVector(mpmgrid.crackParticleSize,mpmgrid.crackParticleSize,mpmgrid.crackParticleSize);
+			GetGimpNodes(&nds[0],nds,ndIDs,&xipos,lp);
+			GimpShapeFunction(&xipos,nds[0],ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
+			GimpCompact(&nds[0],nds,fn,NULL,NULL,NULL);
+			break;
+		}
+			
 		case LINEAR_CPDI_AS:
 			// since no material point, CPDI uses GIMP method
         case UNIFORM_GIMP_AS:
-            GetXiPos(pos,&xipos);
-            lp.x = mpmgrid.GetParticleSemiLength();		// no longer there
-            lp.y = lp.x;
-            lp.z = lp.x;
-            GetGimpNodes(numnds,nds,ndIDs,&xipos,lp);
-            GimpShapeFunctionAS(&xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
-            GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
-            break;
+		{	// GIMP analysis
+			unsigned char ndIDs[maxShapeNodes];
+			Vector lp = MakeVector(mpmgrid.crackParticleSize,mpmgrid.crackParticleSize,mpmgrid.crackParticleSize);
+			GetGimpNodes(&nds[0],nds,ndIDs,&xipos,lp);
+			GimpShapeFunctionAS(&xipos,nds[0],ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
+			GimpCompact(&nds[0],nds,fn,NULL,NULL,NULL);
+			break;
+		}
      }
-	 */
+#else
+	// Load element noodes, dimensionless position, and shape functions
+	GetNodes(&nds[0],nds);
+	ShapeFunction(&xipos,false,&fn[1],NULL,NULL,NULL);
 #endif
 }
 
@@ -155,7 +152,7 @@ void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vec
 	and the shape functions
  Load node numbers into nds[1]...
  Load shape functions into fn[1]...
- WARNING: This should neverbe called for Rigid BC particles
+ WARNING: This should never be called for Rigid BC particles
  NOTE: This is called at various places in the time step when shape functions are needed. It should
 	recalculate the ones found at the begnning of the time step using precalculated xipos
     or CPDI info, which are found in initialization
