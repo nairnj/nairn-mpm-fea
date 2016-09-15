@@ -1068,11 +1068,8 @@ Turn on thermal conductivity calculations and define heat source options with (c
 </ul>
 </li>
 
-<li><code>ThermalRamp (deltaT),&lt;(time)&gt;</code><br>
-Ramp up an isothermal temperature difference of <code>(deltaT)</code> over a specified <code>(time)</code> (in ms).</li>
-
-<li><code>RampStart (begin)</code><br>
-Set the start time to <code>(begin)</code> (in ms) for application of a thermal ramp.</li>
+<li><code>ThermalRamp</code><br>
+A <a href="#CustomThermalRamp">ThermalRamp custom task</a> can be used to ramp temperature difference applied to particles.</li>
 
 <li><code>StressFreeTemp (temp)</code><br>
 Set the stress free temperature to (temp) (in K).</li>
@@ -1416,6 +1413,17 @@ When this task is triggered by critical crack length, the crack propagation will
 <ul>
 <li>adjustTime (time) - enter the time interval for checking the time step and adjusting it if needed (in ms). This parameter is optional; if it is omitted, the time step adjustment is done each time particle data are archived.</li>
 <li>verbose (value) - if its integer value is not zero, it will print the new time step whenever it changes by more than 1%. If it is zero, the new time step is silently changed. The default it 0.</li>
+</ul>
+</dd>
+
+<dt><a name="CustomThermalRamp"></a>ThermalRamp</dt>
+
+<dd>This tasks ramps a temperature difference applied to all particles. A simulation can combine multiple thermal ramps for various styles of applying a temperature difference. Its parameters are:
+<ul>
+<li>DeltaT (deltaT) - enter final temperature difference (in degrees).</li>
+<li>time (time) - enter the time of the thermal ramp (in ms). This parameter is optional; if omitted, the thermal ramp occurs in a single time step.</li>
+<li>start (start) - enter the time to start the thermal ramp (in ms). This parameter is optional; if omitted, the thermal ramp starts at time zero. It ends at time (start)+(time)</li>
+<li>sigmoidal (style) - enter 0 or 1 for a linear or sigmoidal thermal ramp. This parameter is optional; if omitted, the ramp is linear.</li>
 </ul>
 </dd>
 

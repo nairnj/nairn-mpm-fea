@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
 <html>
 
@@ -27,7 +27,6 @@
   &lt;ContactHeating/&gt;
   &lt;EnergyCoupling/&gt;
   &lt;NoAVHeating/&gt;
-  &lt;Isothermal time="5" start="2"&gt;-200&lt;/Isothermal&gt;
 &lt;/Thermal&gt;
 </pre>
 
@@ -49,14 +48,12 @@ This tag will activate conversion of the work of frictional sliding between mate
 <li><pre class="list">&lt;CrackContactHeating/&gt;</pre>
 This tag will activate conversion of the work of frictional sliding between crack surfaces into heat.</li>
 
-
 <li><pre class="list">&lt;EnergyCoupling/&gt;</pre>
 This tag will cause energy dissipated by a material's constitutive low to be converted to a heat source that will increase temperature. In other words, the particles will be locally adiabatic. This option can be used with or without conduction. If this option is omitted, the simulation will be locally isothermal.
 </li>
 
-<li><pre class="list">&lt;Isothermal time="5" start="2"&gt;-200&lt;/Isothermal&gt;</pre>
-This tag specifies the constant temperature difference (<i>vs.</i> stress free temperature) to apply to each particle in degree K. The optional <code>time</code> attribute allows the simulation to ramp the temperature difference from zero to the difference supplied in the <code>&lt;Isothermal&gt;</code> value over any time span. The optional <code>start</code> attribute allows the ramp to start at any time (time are in <a href="units.html">alt time units</a>).
-</li>
+<li><pre class="list">&lt;NoAVHeating/&gt;</pre>
+This tag will turn off conversion of artificial viscosity in to heat energy tha can change particle temperature.</li>
 
 </ul>
 

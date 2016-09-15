@@ -127,7 +127,19 @@ When this task is triggered by critical crack length, the crack propagation will
 </ul>
 </dd>
 
+<dt><a name="CustomThermalRamp"></a>ThermalRamp</dt>
+
+<dd>This tasks ramps a temperature difference applied to all particles. A simulation can combine multiple thermal ramps for various styles of applying a temperature difference. Its parameters are:
+<ul>
+<li>DeltaT (deltaT) - enter final temperature difference (in degrees).</li>
+<li>time (time) - enter the time of the thermal ramp (in <a href="units.html">alt time units</a>). This parameter is optional; if omitted, the thermal ramp occurs in a single time step.</li>
+<li>start (start) - enter the time to start the thermal ramp (in <a href="units.html">alt time units</a>). This parameter is optional; if omitted, the thermal ramp starts at time zero. It ends at time (start)+(time)</li>
+<li>sigmoidal (style) - enter 0 or 1 for a linear or sigmoidal thermal ramp. This parameter is optional; if omitted, the ramp is linear.</li>
+</ul>
+</dd>
+
 </dl>
+
 
 
 <p class="links">

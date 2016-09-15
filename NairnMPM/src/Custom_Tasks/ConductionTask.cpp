@@ -53,6 +53,7 @@
 
 // flag to activate
 bool ConductionTask::active=false;
+bool ConductionTask::activeRamp=false;
 
 // flags only allowed when conduction is active
 bool ConductionTask::crackTipHeating=false;
@@ -377,6 +378,7 @@ bool ConductionTask::IsSystemIsolated(void)
 {
     // if has ramp, then is it not isolated
     if(thermal.Active()) return FALSE;
+	if(activeRamp) return FALSE;
     
     // if no conduction then is isolated
     if(!active) return TRUE;

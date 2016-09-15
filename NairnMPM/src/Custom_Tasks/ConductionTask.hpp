@@ -22,7 +22,7 @@ class CrackSegment;
 class ConductionTask : public TransportTask
 {
     public:
-		static bool active,crackTipHeating,adiabatic,AVHeating;
+		static bool active,activeRamp,crackTipHeating,adiabatic,AVHeating;
 		static bool crackContactHeating,matContactHeating;
 		
         // standard methods

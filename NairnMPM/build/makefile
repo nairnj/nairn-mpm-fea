@@ -164,6 +164,7 @@ CrackVelocityFieldSingle = $(src)/Nodes/CrackVelocityFieldSingle
 CrossedCrack = $(src)/Cracks/CrossedCrack
 CubicTraction = $(src)/Materials/CubicTraction
 CustomTask = $(src)/Custom_Tasks/CustomTask
+CustomThermalRamp = $(src)/Custom_Tasks/CustomThermalRamp
 DDBHardening = $(src)/Materials/DDBHardening
 DiffusionTask = $(src)/Custom_Tasks/DiffusionTask
 EightNodeIsoparamBrick = $(src)/Elements/EightNodeIsoparamBrick
@@ -313,6 +314,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # CrackVelocityFieldMulti.hpp : CrackVelocityField.hpp MatVelocityField.hpp
 # CrackVelocityFieldSingle.hpp : CrackVelocityField.hpp MatVelocityField.hpp
 # CubicTraction.hpp : MaterialBase.hpp TractionLaw.hpp
+# CustomThermalRamp.hpp : CustomTask.hpp
 # DDDHardening.hpp: HardeningLawBase.hpp, MaterialBase.hpp
 # DiffusionTask.hpp : TransportTask.hpp
 # EightNodeIsoparamBrick.hpp : ElementBase3D.hpp (ElementBase.hpp)
@@ -440,7 +442,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		CrackController.o MPMWarnings.o BodyForce.o GlobalQuantity.o BoundaryCondition.o DDBHardening.o CrossedCrack.o \
 		ThermalRamp.o MPMBase.o MatPoint2D.o MatPointAS.o CrackHeader.o CrackSegment.o CrackLeaf.o ContourPoint.o \
 		CrackSurfaceContact.o CrackNode.o MaterialInterfaceNode.o MaterialBaseMPM.o Viscoelastic.o JohnsonCook.o \
-		Mooney.o HEIsotropic.o BistableIsotropic.o RigidMaterial.o HardeningLawBase.o LinearHardening.o \
+		Mooney.o HEIsotropic.o BistableIsotropic.o RigidMaterial.o HardeningLawBase.o LinearHardening.o CustomThermalRamp.o \
 		MatPtLoadBC.o MatPtTractionBC.o MatPtFluxBC.o NodalVelBC.o NodalConcBC.o NodalTempBC.o MoreMPMElementBase.o \
 		NodalPointMPM.o CustomTask.o CalcJKTask.o PropagateTask.o ReverseLoad.o IdealGas.o NonlinearHardening.o \
 		DiffusionTask.o ConductionTask.o MeshInfo.o TransportTask.o ElementBase3D.o SCGLHardening.o TaitLiquid.o \
@@ -700,7 +702,7 @@ MPMReadHandler.o : $(MPMReadHandler).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveDat
 			$(PolygonController).hpp $(ShapeController).hpp $(SphereController).hpp $(ShellController).hpp $(RigidMaterial).hpp \
 			$(VTKArchive).hpp $(HistoryArchive).hpp $(CarnotCycle).hpp $(MatPtHeatFluxBC).hpp $(GridArchive).hpp \
 			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp $(PropagateTask).hpp $(PolyhedronController).hpp \
-            $(MatPointAS).hpp $(PressureLaw).hpp $(TaitLiquid).hpp $(ContactLaw).hpp
+            $(MatPointAS).hpp $(PressureLaw).hpp $(TaitLiquid).hpp $(ContactLaw).hpp $(CustomThermalRamp).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MPMReadHandler).cpp
 Generators.o : $(Generators).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hpp $(CommonReadHandler).hpp $(MaterialBase).hpp \
 			$(MPMBase).hpp $(ElementBase).hpp $(MatPoint2D).hpp $(NodalConcBC).hpp $(NodalTempBC).hpp $(NodalVelBC).hpp \
@@ -977,6 +979,8 @@ CarnotCycle.o : $(CarnotCycle).cpp $(dprefix) $(CarnotCycle).hpp $(CustomTask).h
 			$(CommonException).hpp $(MaterialBase).hpp $(MPMBase).hpp $(CustomTask).hpp \
 			$(ConductionTask).hpp $(MaterialBase).hpp $(BodyForce).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CarnotCycle).cpp
+CustomThermalRamp.o : $(CustomThermalRamp).cpp $(dprefix) $(CustomThermalRamp).hpp $(NairnMPM).hpp $(MPMBase).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CustomThermalRamp).cpp
 
 # MPM: Elements
 MoreMPMElementBase.o : $(MoreMPMElementBase).cpp $(dprefix) $(ElementBase).hpp $(NodalPoint).hpp $(MPMBase).hpp $(NairnMPM).hpp \

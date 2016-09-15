@@ -49,6 +49,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "System/UnitsController.hpp"
 #include "Materials/ContactLaw.hpp"
+#include "Custom_Tasks/CustomThermalRamp.hpp"
 
 // Element types
 #include "Elements/FourNodeIsoparam.hpp"
@@ -1250,6 +1251,11 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
                 {   nextTask=(CustomTask *)(new CarnotCycle());
                     if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
                 }
+				else if(strcmp(value,"ThermalRamp")==0)
+				{   nextTask=(CustomTask *)(new CustomThermalRamp());
+					if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
+					ConductionTask::activeRamp = true;
+				}
                 else
                     throw SAXException("Unknown custom task requested for scheduling.");
                 delete [] value;

@@ -40,6 +40,8 @@
 		67582CCF1ACCD5880087EA12 /* MoreIsotropicMat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67582CCD1ACCD5880087EA12 /* MoreIsotropicMat.cpp */; };
 		676D76AC1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 676D76AA1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp */; };
 		676D76AD1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 676D76AB1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp */; };
+		678B7B301D8A76C0001D0AB4 /* CustomThermalRamp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 678B7B2E1D8A76C0001D0AB4 /* CustomThermalRamp.cpp */; };
+		678B7B311D8A76C0001D0AB4 /* CustomThermalRamp.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 678B7B2F1D8A76C0001D0AB4 /* CustomThermalRamp.hpp */; };
 		6797CABC1A89ABC5009C96FD /* ClampedNeohookean.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6797CABA1A89ABC5009C96FD /* ClampedNeohookean.cpp */; };
 		6797CABD1A89ABC5009C96FD /* ClampedNeohookean.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6797CABB1A89ABC5009C96FD /* ClampedNeohookean.hpp */; };
 		67A90CC1170F75C40028554A /* svninfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A738C0CC170E192800E4D675 /* svninfo.cpp */; };
@@ -475,6 +477,8 @@
 		67582CCD1ACCD5880087EA12 /* MoreIsotropicMat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MoreIsotropicMat.cpp; sourceTree = "<group>"; };
 		676D76AA1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InitVelocityFieldsTask.cpp; sourceTree = "<group>"; };
 		676D76AB1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InitVelocityFieldsTask.hpp; sourceTree = "<group>"; };
+		678B7B2E1D8A76C0001D0AB4 /* CustomThermalRamp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CustomThermalRamp.cpp; sourceTree = "<group>"; };
+		678B7B2F1D8A76C0001D0AB4 /* CustomThermalRamp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CustomThermalRamp.hpp; sourceTree = "<group>"; };
 		6797CABA1A89ABC5009C96FD /* ClampedNeohookean.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ClampedNeohookean.cpp; path = Materials/ClampedNeohookean.cpp; sourceTree = "<group>"; };
 		6797CABB1A89ABC5009C96FD /* ClampedNeohookean.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = ClampedNeohookean.hpp; path = Materials/ClampedNeohookean.hpp; sourceTree = "<group>"; };
 		67B213B411F90404007523EE /* CommonTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CommonTask.hpp; sourceTree = "<group>"; };
@@ -1097,6 +1101,8 @@
 				6700560B163AFC6B00FFE145 /* HistoryArchive.cpp */,
 				A734D4FB1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp */,
 				A734D4F91610D8C700B9A4B7 /* AdjustTimeStepTask.cpp */,
+				678B7B2F1D8A76C0001D0AB4 /* CustomThermalRamp.hpp */,
+				678B7B2E1D8A76C0001D0AB4 /* CustomThermalRamp.cpp */,
 				673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */,
 				673EC9B416C9EB71007FFEB5 /* CarnotCycle.cpp */,
 			);
@@ -1720,6 +1726,7 @@
 				67B6B7F01C31BF3A00CFA1EA /* LinearInterface.hpp in Headers */,
 				6709D7321C385AD1006C680C /* GridArchive.hpp in Headers */,
 				6709D7361C38BB87006C680C /* ExtrapolateRigidBCsTask.hpp in Headers */,
+				678B7B311D8A76C0001D0AB4 /* CustomThermalRamp.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2061,6 +2068,7 @@
 				67B6B7EF1C31BF3A00CFA1EA /* LinearInterface.cpp in Sources */,
 				6709D7311C385AD1006C680C /* GridArchive.cpp in Sources */,
 				6709D7351C38BB87006C680C /* ExtrapolateRigidBCsTask.cpp in Sources */,
+				678B7B301D8A76C0001D0AB4 /* CustomThermalRamp.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2166,7 +2174,7 @@
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_PREFIX_HEADER = ../../NairnMPM/src/System/MPMPrefix.hpp;
-				GCC_VERSION = 4.9;
+				GCC_VERSION = 4.8;
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				HEADER_SEARCH_PATHS = (
@@ -2222,7 +2230,7 @@
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
 				CODE_SIGN_IDENTITY = "";
 				ENABLE_OPENMP_SUPPORT = YES;
-				GCC_VERSION = 4.9;
+				GCC_VERSION = 4.8;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_LDFLAGS = "-fopenmp";
