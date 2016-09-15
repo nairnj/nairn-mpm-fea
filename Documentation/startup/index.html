@@ -37,7 +37,7 @@ make SYSTEM=(system)
 <p>Compiling on any other Linux/Unix system should be straightforward, with the most difficult step usually being installing and linking to the <a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code></a> library. The key steps needed for successful compilation:</p>
 
 <ol>
-<li>Use a compatible <code>C++</code> compiler. The code has been tested up to <code>gcc 4.8</code> and a relatively new version is recommended (newer than <code>gcc 4.2</code>) if you are compiling for parallel execution. It is possible other compilers will need minor changes for compilation.</li>
+<li>Use a compatible <code>C++</code> compiler. The code has been tested up to <code>gcc 4.9</code> and a relatively new version is recommended (<code>gcc 4.8</code> or newer) if you are compiling for parallel execution. It is possible other compilers will need minor changes for compilation.</li>
 
 <li>Compiling of <code>NairnMPM</code> or <code>NairnFEA</code> needs access to all the <code>xerces</code> header files. These are provided in the <code>xerces</code> source code download. Even if your system has the xerces binary installed, it may not have the header files. You can get them by  <a href="http://xml.apache.org/dist/xerces-c/stable/">downloading the xerces source code</a>, even though you will not need to build it.</li>
 

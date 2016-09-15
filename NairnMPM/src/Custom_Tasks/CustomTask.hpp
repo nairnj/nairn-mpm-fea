@@ -41,7 +41,8 @@ class CustomTask
 		virtual CustomTask *NodalExtrapolation(NodalPoint *,MPMBase *,short,int,double,short);
 		virtual CustomTask *EndExtrapolations(void);
     
-    private:
+    protected:
+		int ignoreArgument;			// return point for valid parameters with no arguments
 };
 
 // globals

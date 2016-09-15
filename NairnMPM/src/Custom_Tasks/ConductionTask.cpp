@@ -377,7 +377,6 @@ void ConductionTask::ThermodynamicsOutput(void)
 bool ConductionTask::IsSystemIsolated(void)
 {
     // if has ramp, then is it not isolated
-    if(thermal.Active()) return FALSE;
 	if(activeRamp) return FALSE;
     
     // if no conduction then is isolated

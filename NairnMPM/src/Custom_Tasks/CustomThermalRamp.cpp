@@ -10,8 +10,15 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "System/UnitsController.hpp"
+#include "Read_XML/mathexpr.hpp"
 
 extern double timestep;
+
+double CustomThermalRamp::varTime=0.;
+double CustomThermalRamp::varXValue=0.;
+double CustomThermalRamp::varYValue=0.;
+double CustomThermalRamp::varZValue=0.;
+PRVar rampVarArray[5] = { NULL, NULL, NULL, NULL };
 
 #pragma mark Constructors and Destructors
 
@@ -22,6 +29,7 @@ CustomThermalRamp::CustomThermalRamp()
 	rampStart = 0.;
 	isoDeltaT = 0.;
 	sigmoidal = 0;
+	scaleFxn = NULL;
 }
 
 // Return name of this task
@@ -51,8 +59,48 @@ char *CustomThermalRamp::InputParam(char *pName,int &input,double &gScaling)
 		return (char *)&sigmoidal;
 	}
 	
+	else
+	{	char* check4function = strstr(pName,"scale");
+		if(check4function==&pName[0])
+		{	char *expr = new char[strlen(pName)];
+			if(strlen(pName)<7)
+				strcpy(expr,"");
+			else
+				strcpy(expr,&pName[6]);
+			SetTextParameter(expr); // actually sets function
+			delete [] expr;
+			input=INT_NUM;
+			return (char *)&ignoreArgument;
+		}
+	}
+	
 	// check remaining commands
 	return CustomTask::InputParam(pName,input,gScaling);
+}
+
+// Actually sets load function
+// throws std::bad_alloc, SAXException()
+void CustomThermalRamp::SetTextParameter(char *fxn)
+{
+	if(scaleFxn!=NULL)
+		ThrowSAXException("Duplicate ramp scale function was entered");
+	if(fxn==NULL)
+		ThrowSAXException("Ramp scale function is missing");
+	if(strlen(fxn)==0)
+		ThrowSAXException("Ramp scale function is missing");
+	
+	// create variable
+	if(rampVarArray[0]==NULL)
+	{	rampVarArray[0]=new RVar("t",&varTime);
+		rampVarArray[1]=new RVar("x",&varXValue);
+		rampVarArray[2]=new RVar("y",&varYValue);
+		rampVarArray[3]=new RVar("z",&varZValue);
+	}
+	
+	// create function
+	scaleFxn = new ROperation(fxn,4,rampVarArray);
+	if(scaleFxn->HasError())
+		ThrowSAXException("Ramp scale function is not valid");
 }
 
 #pragma mark GENERIC TASK METHODS
@@ -87,6 +135,11 @@ CustomTask *CustomThermalRamp::Initialize(void)
 	cout << "      (which covers " << nsteps << " time steps)" << endl;
 	if(sigmoidal)
 		cout << "      (use sigmoidal ramp)" << endl;
+	if(scaleFxn!=NULL)
+	{	char *expr = scaleFxn->Expr('#');
+		cout << "   Scaling function =  " << expr << endl;
+		delete [] expr;
+	}
 	
 	return nextTask;
 }
@@ -124,10 +177,17 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 	double deltaT = newDeltaT - currentDeltaT;
 	currentDeltaT = newDeltaT;
 	
-	// loop over nonrigid material points
+	// loop over nonrigid material points and update temperature
 	for(int p=0;p<nmpmsNR;p++)
-	{	// update temperature
-		mpm[p]->pTemperature += deltaT;
+	{	if(scaleFxn==NULL)
+			mpm[p]->pTemperature += deltaT;
+		else
+		{	varTime = mtime*UnitsController::Scaling(1000.);
+			varXValue = mpm[p]->pos.x;
+			varYValue = mpm[p]->pos.y;
+			varZValue = mpm[p]->pos.y;
+			mpm[p]->pTemperature += deltaT*scaleFxn->Val();
+		}
 	}
 	
 	return nextTask;

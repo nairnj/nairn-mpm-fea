@@ -40,8 +40,6 @@
 
 #pragma mark INITIALIZE
 
-int ignoreArg;
-
 // Constructors
 ReverseLoad::ReverseLoad()
 {
@@ -99,7 +97,7 @@ char *ReverseLoad::InputParam(char *pName,int &input,double &gScaling)
 		{	strcpy(quant,&pName[7]);
 			quantity = GlobalQuantity::DecodeGlobalQuantity(quant,&subcode);
 			input=INT_NUM;
-			return (char *)&ignoreArg;
+			return (char *)&ignoreArgument;
 		}
     }
 	
@@ -109,6 +107,7 @@ char *ReverseLoad::InputParam(char *pName,int &input,double &gScaling)
 #pragma mark GENERIC TASK METHODS
 
 // at beginning of analysis
+// throws CommonException()
 CustomTask *ReverseLoad::Initialize(void)
 {
 	// is it for a global quantity?
@@ -212,7 +211,7 @@ CustomTask *ReverseLoad::Initialize(void)
 }
 
 // Called when custom tasks are all done on a step
-// throw CommonException() to end simulation
+// throws CommonException() to end simulation
 CustomTask *ReverseLoad::FinishForStep(void)
 {
     // change to true trigger or on end of holding phase

@@ -74,8 +74,4 @@ void InitializationTask::Execute(void)
 	// remove contact conditions
 	CrackNode::RemoveCrackNodes();
 	MaterialInterfaceNode::RemoveInterfaceNodes();
-	
-    // turn off isothermal ramp when done and ramp step initialization
-	thermal.CheckDone(mtime);
-	
 }	

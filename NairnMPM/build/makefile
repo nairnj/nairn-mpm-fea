@@ -979,7 +979,7 @@ CarnotCycle.o : $(CarnotCycle).cpp $(dprefix) $(CarnotCycle).hpp $(CustomTask).h
 			$(CommonException).hpp $(MaterialBase).hpp $(MPMBase).hpp $(CustomTask).hpp \
 			$(ConductionTask).hpp $(MaterialBase).hpp $(BodyForce).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CarnotCycle).cpp
-CustomThermalRamp.o : $(CustomThermalRamp).cpp $(dprefix) $(CustomThermalRamp).hpp $(NairnMPM).hpp $(MPMBase).hpp
+CustomThermalRamp.o : $(CustomThermalRamp).cpp $(dprefix) $(CustomThermalRamp).hpp $(NairnMPM).hpp $(MPMBase).hpp $(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CustomThermalRamp).cpp
 
 # MPM: Elements

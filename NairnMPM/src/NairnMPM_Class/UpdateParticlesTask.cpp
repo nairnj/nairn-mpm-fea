@@ -131,9 +131,6 @@ void UpdateParticlesTask::Execute(void)
 			while(nextTransport!=NULL)
 				nextTransport=nextTransport->MoveTransportValue(mpmptr,timestep,rate[task++]);
 			
-			// thermal ramp
-			thermal.UpdateParticleTemperature(&mpmptr->pTemperature,timestep);
-
 			// energy coupling here adds adiabtic temperature rise
 			if(ConductionTask::adiabatic)
 			{	double dTad = mpmptr->GetBufferClear_dTad();			// in K

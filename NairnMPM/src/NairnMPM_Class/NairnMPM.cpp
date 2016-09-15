@@ -659,9 +659,6 @@ void NairnMPM::PreliminaryCalcs(void)
 	// nodal point calculations
 	NodalPoint::PreliminaryCalcs();
 	
-	// finish isothermal ramp (now that have time step)
-	thermal.SetParameters(timestep);
-	
 	// finish warnings
 	warnings.CreateWarningList();
 	

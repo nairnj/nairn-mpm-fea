@@ -14,6 +14,7 @@
 #define _THERMALRAMPTASK_
 
 #include "Custom_Tasks/CustomTask.hpp"
+class ROperation;
 
 class CustomThermalRamp : public CustomTask
 {
@@ -25,6 +26,7 @@ class CustomThermalRamp : public CustomTask
 		// standard methods
 		virtual const char *TaskName(void);
 		virtual char *InputParam(char *,int &,double &);
+		virtual void SetTextParameter(char *);
 		virtual CustomTask *Initialize(void);
 	
 		virtual CustomTask *PrepareForStep(bool &);
@@ -38,6 +40,8 @@ class CustomThermalRamp : public CustomTask
 		double currentDeltaT;	// track Delta T to allow variable time steps
 		bool doRamp;			// flag to adjust temperature this time step
 		int sigmoidal;			// Use sigmoidal shape
+		ROperation *scaleFxn;
+		static double varTime,varXValue,varYValue,varZValue;
 };
 
 #endif

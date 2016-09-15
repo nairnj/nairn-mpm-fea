@@ -1100,27 +1100,9 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     // <Thermal> section
 	
 	// thermal ramp
-    else if(strcmp(xName,"Isothermal")==0)
-	{	ValidateCommand(xName,THERMAL,ANY_DIM);
-		thermal.Activate();
-    	input=DOUBLE_NUM;
-        inputPtr=(char *)&thermal.isoDeltaT;
-		numAttr=attrs.getLength();
-		for(i=0;i<numAttr;i++)
-		{	aName=XMLString::transcode(attrs.getLocalName(i));
-			value=XMLString::transcode(attrs.getValue(i));
-			if(strcmp(aName,"time")==0)
-			{	sscanf(value,"%lf",&thermal.isoRampTime);
-				thermal.isoRampTime *= UnitsController::Scaling(1.e-3);			// Legacy to seconds
-			}
-			else if(strcmp(aName,"start")==0)
-			{	sscanf(value,"%lf",&thermal.rampStart);
-				thermal.rampStart *= UnitsController::Scaling(1.e-3);			// Legacy to seconds
-			}
-			delete [] aName;
-			delete [] value;
-		}
-    }
+	else if(strcmp(xName,"Isothermal")==0)
+	{	throw SAXException("The <Isothermal> command has been replaced by the ThermalRamp custom task.");
+	}
     
 	// Turn on conduction analysis
     else if(strcmp(xName,"Conduction")==0)

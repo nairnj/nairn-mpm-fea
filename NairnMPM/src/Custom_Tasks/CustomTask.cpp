@@ -24,14 +24,16 @@ const char *CustomTask::TaskName(void) { return "Unnamed Custom Task"; }
 
 // Read task parameter - if pName is valid, set input for type
 //    and return pointer to the class variable
+// On error, cout a message and return NULL or throw SAXException()
 char *CustomTask::InputParam(char *pName,int &input,double &gScaling) { return NULL; }
 
 // If pointer in InputParam is set to TEXT_PARAMETER, this method is called
 //      immediately after with the text of the parameter
 // If value not accepted, pass on to parent CustomTask (which throws an exception)
 //      or throw custom exception
+// throws SAXException()
 void CustomTask::SetTextParameter(char *value)
-{
+{	
 	ThrowSAXException("The text parameter with value '%s' is not valid for current custom task",value);
 }
 
