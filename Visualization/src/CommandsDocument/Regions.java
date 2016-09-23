@@ -216,7 +216,7 @@ public class Regions
 			throw new Exception("'EndRegion' command when not in a Region or BMPRegion:\n"+args);
 		
 		if(inRegion==BMPREGION_BLOCK)
-		{	xmlRegions.append(indent+"</BMP>\n\n");
+		{	xmlRegions.append(indent+"</BMP>\n");
 		}
 		else
 		{	// active polygon
@@ -226,7 +226,7 @@ public class Regions
 			}
 		
 			// end the body
-			xmlRegions.append(indent+"</Body>\n\n");
+			xmlRegions.append(indent+"</Body>\n");
 		}
 		inRegion = 0;
 	}

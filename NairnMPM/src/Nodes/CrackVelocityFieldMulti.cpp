@@ -51,15 +51,13 @@ void CrackVelocityFieldMulti::ZeroMatFields(void)
 }
 
 // match material velocity fields on ghost node to those on a real node
-// throws CommonException() on memory error
+// throws std::bad_alloc
 void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 {	for(int i=0;i<maxMaterialFields;i++)
 	{	if(rmvf[i]==NULL) continue;
         
 		if(mvf[i]==NULL)
 		{	mvf[i] = CreateMatVelocityField(rmvf[i]->GetFlags());
-			if(mvf[i]==NULL) throw CommonException("Memory error allocating material velocity field.",
-											   "CrackVelocityFieldMulti::MatchMatVelocityFields");
 		}
 		
 		mvf[i]->Zero();
@@ -71,14 +69,10 @@ void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 #pragma mark TASK 1 AND 6 METHODS
 
 // Called in intitation to preallocate material velocituy fields
-// throws CommonException() on memory error
+// throws std::bad_alloc
 void CrackVelocityFieldMulti::AddMatVelocityField(int matfld)
 {	if(mvf[matfld]==NULL)
 	{   mvf[matfld] = CreateMatVelocityField(MaterialBase::GetMVFFlags(matfld));
-        if(mvf[matfld]==NULL)
-        {   throw CommonException("Memory error allocating material velocity field.",
-												"CrackVelocityFieldMulti::AddMatVelocityField");
-        }
 	}
 }
 
@@ -252,7 +246,7 @@ void CrackVelocityFieldMulti::UpdateMomentaOnField(double timestep)
 	On first call in time step, first and last on pointers to MaterialInterfaceNode * because those
 		objects are created for later interface calculations
 	postUpdate is TRUE when called between momentum update and particle update and otherwise is false
-	throws CommonException() if memory error making interface node
+	throws std::bad_alloc
 */
 void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,double deltime,int callType,
 												   MaterialInterfaceNode **first,MaterialInterfaceNode **last)
@@ -537,10 +531,6 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,double delt
 				
 				// create node to add internal force later, if needed set first one
 				*last = new MaterialInterfaceNode(ndptr,fieldNum,i,iother,&fImp,rawEnergy,*last);
-				if(*last == NULL)
-				{	throw CommonException("Memory error allocating storage for a material interface node.",
-										  "CrackVelocityFieldMulti::MaterialContactOnCVF");
-				}
 				if(*first==NULL) *first=*last;
 				
 				// has energy at least once
@@ -586,7 +576,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,double delt
 // Called in multimaterial mode to check contact at nodes with multiple materials and here
 // means exactly one is a rigid material
 //	(no rigid materials handled in MaterialContactOnCVF(), two rigid materials is an error)
-// throws CommonException() if memory error making interface node
+// throws std::bad_alloc
 void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiRigid,NodalPoint *ndptr,double deltime,int callType,
 												   MaterialInterfaceNode **first,MaterialInterfaceNode **last)
 {
@@ -834,10 +824,6 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 			if(createNode && first!=NULL)
 			{	// create node to add internal force later, if needed set first one
 				*last = new MaterialInterfaceNode(ndptr,fieldNum,i,-1,&fImp,rawEnergy,*last);
-				if(*last==NULL)
-				{	throw CommonException("Memory error allocating storage for a material interface node.",
-										  "CrackVelocityFieldMulti::RigidMaterialContactOnCVF");
-				}
 				if(*first==NULL) *first = *last;
 			}
 		}

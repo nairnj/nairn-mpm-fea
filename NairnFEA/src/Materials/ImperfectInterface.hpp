@@ -31,7 +31,6 @@ class ImperfectInterface : public MaterialBase
         virtual void PrintMechanicalProperties(void) const;
 		
 		// accessors
-		virtual int MaterialTag(void) const;
 		virtual const char *MaterialType(void) const;
 
     private:

@@ -103,8 +103,30 @@ void RunCustomTasksTask::Execute(void)
         nextTask=nextTask->StepCalculation();
 	
     // Step 4: Call tasks in case any need to clean up
-    nextTask=theTasks;
-    while(nextTask!=NULL)
-    	nextTask=nextTask->FinishForStep();
+    CustomTask *thisTask=theTasks;
+	CustomTask *prevTask=NULL;
+    while(thisTask!=NULL)
+	{	bool removeTask = false;
+    	nextTask = thisTask->FinishForStep(removeTask);
+		if(removeTask)
+		{	// redirect previous task to nextTask, thus skipping thisTask
+			if(prevTask==NULL)
+			{	// removing the first task, so next task will now be the first
+				theTasks = nextTask;
+			}
+			else
+			{	// point previous task to next task, thus skipping this task
+				((CustomTask *)prevTask)->nextTask = nextTask;
+			}
+			// now delete it (prevTask stays the same)
+			delete thisTask;
+		}
+		else
+		{	// this is now the previous one
+			prevTask = thisTask;
+		}
+		// on to next task
+		thisTask = nextTask;
+	}
 	
 }

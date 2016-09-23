@@ -65,6 +65,7 @@ enum { LINE_SHAPE=0,CIRCLE_SHAPE };		// shape for generating crack segments, Lip
 // Function prototypes
 void swap(double&,double&,double&,double&,double&,double&);
 
+// throws std::bad_alloc, SAXException()
 short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 {
     char *aName,*value;
@@ -864,6 +865,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 
 //-----------------------------------------------------------
 // Subroutine to set block on element end
+// throws SAXException()
 //-----------------------------------------------------------
 short MPMReadHandler::EndGenerator(char *xName)
 {
@@ -924,8 +926,9 @@ short MPMReadHandler::EndGenerator(char *xName)
 }
 
 //-----------------------------------------------------------
-// Subroutine for creating mpm object (mpm)
+// Subroutine for creating mpm objects (mpm)
 // Uses current theShape and various globals
+// throws std::bad_alloc, SAXException()
 //-----------------------------------------------------------
 void MPMReadHandler::MPMPts(void)
 {
@@ -1010,6 +1013,7 @@ void MPMReadHandler::SetGIMPBorderAsHoles(void)
 
 //-----------------------------------------------------------
 // Subroutine for creating crack segments
+// throws std::bad_alloc, SAXException()
 //-----------------------------------------------------------
 void MPMReadHandler::MPMCracks(int crackShape,int resolution,double start_angle,double end_angle,int startTip,int endTip)
 {
@@ -1174,12 +1178,12 @@ void MPMReadHandler::grid()
 	
 	// space for nodal points (1 based)
 	curPt=1;
-	nd=(NodalPoint **)malloc(sizeof(NodalPoint *)*(nnodes+1));
+	nd = new (std::nothrow) NodalPoint *[nnodes+1];
 	if(nd==NULL) throw SAXException("Out of memory allocating space for nodes.");
 	
 	// space for elements (0 based)
 	curEl=0;
-	theElements=(ElementBase **)malloc(sizeof(ElementBase *)*nelems);
+	theElements = new (std::nothrow) ElementBase *[nelems];
 	if(theElements==NULL) throw SAXException("Out of memory allocating space for elements.");
 	
 	// create the elements
@@ -1324,6 +1328,7 @@ void MPMReadHandler::CreateSymmetryBCs()
 //-----------------------------------------------------------
 // Create symmetry BCs at minimum side of an axis
 // For axisymmetric these are at r=0
+// throws std::bad_alloc, SAXException()
 //-----------------------------------------------------------
 void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,int velID)
 {
@@ -1522,6 +1527,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 
 //------------------------------------------------------------------
 // If just created a GIMP grid, make all border elements as holes
+// throws SAXException()
 //------------------------------------------------------------------
 void SetMptAnglesFromFunctions(int numRotations,Vector *mpos,MPMBase *newMpt)
 {
@@ -1692,6 +1698,7 @@ void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,do
 //------------------------------------------------------------
 // swap Xmin and Xmax, Ymin and Ymax if Xmin>Xmax or Ymin>Ymax
 // if 3D, do same for Zmin and Zmax
+// throws SAXException()
 //-------------------------------------------------------------
 void swap(double& Xmin, double& Xmax, double& Ymin, double& Ymax, double& Zmin, double& Zmax)
 {  

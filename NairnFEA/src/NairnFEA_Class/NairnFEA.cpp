@@ -28,6 +28,7 @@ int gelbnd(double **,int,int,double *,double *,int);
 	NairnFEA: Constructors and Destructor
 ********************************************************************************/
 
+// throws std::bad_alloc
 NairnFEA::NairnFEA()
 {
 	version=5;					// NairnFEA version number
@@ -68,7 +69,7 @@ void NairnFEA::StartAnalysis(bool abort)
 
 /*********************************************************************
     NairnFEA: Main entry to read file and decode into objects
-	On exception, throw CommonException() or char * exception
+	throws CommonException(), unsigned char *
 *********************************************************************/
 
 void NairnFEA::FEAAnalysis()
@@ -246,6 +247,8 @@ void NairnFEA::ForcesOnEdges(void)
                     but memory beyond edge is there and zeroed)
 	For col i, second index 1 to nband and first from i down to i-nband+1
 				(note second index may go negative near top of matrix)
+ 
+	throws CommonException()
 ***********************************************************************************/
 
 void NairnFEA::BuildStiffnessMatrix(void)

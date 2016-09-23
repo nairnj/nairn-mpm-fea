@@ -50,6 +50,7 @@ short MPMReadHandler::BMPFileInput(char *xName,const Attributes& attrs)
 
 //-----------------------------------------------------------
 // Subroutine to translate BMP file into material point
+// throws std::bad_alloc, SAXException()
 //-----------------------------------------------------------
 void MPMReadHandler::TranslateBMPFiles(void)
 {

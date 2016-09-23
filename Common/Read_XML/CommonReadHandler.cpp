@@ -21,6 +21,7 @@
 
 /********************************************************************************
 	CommonReadHandler: Constructors and Destructor
+	throws std::bad_alloc
 ********************************************************************************/
 
 CommonReadHandler::CommonReadHandler()
@@ -33,6 +34,7 @@ CommonReadHandler::CommonReadHandler()
     mxmax=mymax=mzmax=-1.;
 };
 
+// throws SAXException()
 CommonReadHandler::~CommonReadHandler()
 {
 	// set material array
@@ -44,6 +46,7 @@ CommonReadHandler::~CommonReadHandler()
 
 /********************************************************************************
 	CommonReadHandler: Methods
+	throws std::bad_alloc, SAXException()
 ********************************************************************************/
 
 // Start a new element
@@ -246,6 +249,7 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 }
 
 // End an element
+// throws SAXException()
 void CommonReadHandler::endElement(const XMLCh *const uri,const XMLCh *const localname,const XMLCh *const qname)
 {
     char *xName=XMLString::transcode(localname);
@@ -291,6 +295,7 @@ void CommonReadHandler::endElement(const XMLCh *const uri,const XMLCh *const loc
 }
 
 // Decode block of characters if input!=NO_INPUT
+// throws SAXException()
 void CommonReadHandler::characters(const XMLCh* const chars,const XMLSize_t length)
 {
     if(input==NO_INPUT) return;
@@ -433,31 +438,41 @@ double CommonReadHandler::ReadUnits(const Attributes& attrs,int type)
 ********************************************************************************/
 
 // throw error message "msg (comment)"
+// throws SAXException()
 void CommonReadHandler::ThrowCatErrorMessage(const char *msg,const char *comment)
 {  
-	char *errMsg=new char[strlen(msg)+strlen(comment)+5];
-	strcpy(errMsg,msg);
-	strcat(errMsg," (");
-	strcat(errMsg,comment);
-	strcat(errMsg,").");
-	throw SAXException(errMsg);
+	char *errMsg=new (nothrow) char[strlen(msg)+strlen(comment)+5];
+	if(errMsg != NULL)
+	{	strcpy(errMsg,msg);
+		strcat(errMsg," (");
+		strcat(errMsg,comment);
+		strcat(errMsg,").");
+		throw SAXException(errMsg);
+	}
+	else
+		throw SAXException(msg);
 }
 
 // throw error message "msg extra (comment)" and extra and/or comment may be empty
+// throws SAXException()
 void CommonReadHandler::ThrowCompoundErrorMessage(const char *msg,const char *extra,const char *comment)
 {  
 	int msgLen=strlen(msg)+1;
 	if(strlen(extra)>0) msgLen+=strlen(extra)+1;
-	char *errMsg=new char[msgLen];
-	strcpy(errMsg,msg);
-	if(strlen(extra)>0)
-	{	strcat(errMsg," ");
-		strcat(errMsg,extra);
+	char *errMsg=new (nothrow) char[msgLen];
+	if(errMsg != NULL)
+	{	strcpy(errMsg,msg);
+		if(strlen(extra)>0)
+		{	strcat(errMsg," ");
+			strcat(errMsg,extra);
+		}
+		if(strlen(comment)>0)
+			ThrowCatErrorMessage(errMsg,comment);
+		else
+			throw SAXException(errMsg);
 	}
-	if(strlen(comment)>0)
-		ThrowCatErrorMessage(errMsg,comment);
 	else
-		throw SAXException(errMsg);
+		throw SAXException(msg);
 }
 
 // error if not correct dimension

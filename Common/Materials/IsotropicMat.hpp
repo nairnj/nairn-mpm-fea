@@ -41,14 +41,13 @@ class IsotropicMat : public Elastic
 		
 		// accessors
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag() const;
 #ifdef MPM_CODE
 		virtual double WaveSpeed(bool,MPMBase *) const;
         virtual double ShearWaveSpeed(bool,MPMBase *,int) const;
 #endif
 
     protected:
-		double E,nu,G,aI;
+		double E,nu,G,aI,gamma0;
         char read[ISO_PROPS];
 };
 

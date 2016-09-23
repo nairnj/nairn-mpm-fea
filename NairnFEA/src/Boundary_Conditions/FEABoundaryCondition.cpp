@@ -58,6 +58,8 @@ LinkedObject *FEABoundaryCondition::DecrementNodeNum(int removedNode,LinkedObjec
 		
 #pragma mark FEABoundaryCondition: Accessors
 
+// set the value
+// throws std::bad_alloc, SAXException()
 void FEABoundaryCondition::SetValue(double numValue,char *bcFunction)
 {
 	// take number if no value

@@ -35,7 +35,6 @@ class WoodMaterial : public HillPlastic
 	
 		// accessors
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag() const;
 		
 	protected:
 	double tempC1,tempC2;

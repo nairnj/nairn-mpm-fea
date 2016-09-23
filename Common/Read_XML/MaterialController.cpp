@@ -48,6 +48,7 @@ MaterialController *matCtrl=NULL;
 
 #pragma mark ParseController: Constructors and Destructor
 
+// throws std::bad_alloc
 MaterialController::MaterialController(void) : ParseController()
 {
 	nameCtrl=new ParseController();
@@ -79,7 +80,8 @@ MaterialController::~MaterialController()
 	header above and add a case below to create a new material when the matID
 	calls for the new type. All other issues on implementing the material
 	should be possible in the new material class alone, without modifying
-	an other core code.
+	any other core code.
+	throws std::bad_alloc
 */
 int MaterialController::AddMaterial(int matID,char *matName)
 {
@@ -177,6 +179,7 @@ int MaterialController::AddMaterial(int matID,char *matName)
 }
 
 // assemble into array used in the code
+// throws std::bad_alloc
 const char *MaterialController::SetMaterialArray(void)
 {
 	if(numObjects==0)
@@ -187,7 +190,7 @@ const char *MaterialController::SetMaterialArray(void)
 	numAlloc += autoContactCtrl->numObjects + 1;		// last for fritionless law on crack with traction laws
 	bool hasTractionLaws = false;
 #endif
-	theMaterials=(MaterialBase **)malloc(sizeof(LinkedObject *)*(numAlloc));
+	theMaterials = new (nothrow) MaterialBase *[numAlloc];
 	if(theMaterials==NULL) return "Memory error creating array of material types.";
 	
 	// fill with NULL
@@ -343,6 +346,7 @@ int MaterialController::NumAutoContactLaws(void) { return autoContactCtrl->numOb
 #endif
 
 // get MatID for given name, but if name not defined, add a new one to the list
+// throws std::bad_alloc
 int MaterialController::GetIDFromNewName(char *matname)
 {
 	// get name and exit if done

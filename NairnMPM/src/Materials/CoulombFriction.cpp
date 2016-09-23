@@ -206,9 +206,6 @@ double CoulombFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double Ac,d
 // return unique, short name for this material
 const char *CoulombFriction::MaterialType(void) const { return "Coulomb Friction"; }
 
-// Return the material tag
-int CoulombFriction::MaterialTag(void) const { return COULOMBFRICTIONLAW; }
-
 // Set coefficient of friction
 void CoulombFriction::SetFrictionCoeff(double newCoeff) { frictionCoeff = newCoeff; }
 

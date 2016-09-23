@@ -34,7 +34,7 @@ class CustomTask
 		// run the task
         virtual CustomTask *PrepareForStep(bool &);
         virtual CustomTask *StepCalculation(void);
-		virtual CustomTask *FinishForStep(void);
+		virtual CustomTask *FinishForStep(bool &);
 	
 		// for particle to node extrapolations
 		virtual CustomTask *BeginExtrapolations(void);

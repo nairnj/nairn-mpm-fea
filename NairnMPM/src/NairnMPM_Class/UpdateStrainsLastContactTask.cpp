@@ -36,6 +36,7 @@ UpdateStrainsLastContactTask::UpdateStrainsLastContactTask(const char *name) : M
 #pragma mark REQUIRED METHODS
 
 // Get total grid point forces (except external forces)
+// throws CommonException()
 void UpdateStrainsLastContactTask::Execute(void)
 {
 	CommonException *uslErr = NULL;
@@ -84,11 +85,25 @@ void UpdateStrainsLastContactTask::Execute(void)
 				mpmptr = (MPMBase *)mpmptr->GetNextObject();
 			}
 		}
-		catch(CommonException err)
+		catch(CommonException& err)
 		{	if(uslErr==NULL)
 			{
 #pragma omp critical (error)
 				uslErr = new CommonException(err);
+			}
+		}
+		catch(std::bad_alloc& ba)
+		{	if(uslErr==NULL)
+			{
+#pragma omp critical (error)
+				uslErr = new CommonException("Memory error","UpdateStrainsLastContactTask::Execute");
+			}
+		}
+		catch(...)
+		{	if(uslErr==NULL)
+			{
+#pragma omp critical (error)
+				uslErr = new CommonException("Unexpected error","UpdateStrainsLastContactTask::Execute");
 			}
 		}
 	}

@@ -79,6 +79,7 @@ CrackHeader::~CrackHeader()
 }
 
 // preliminary calculations (throw CommonException on problem)
+// throws CommonException()
 void CrackHeader::PreliminaryCrackCalcs(void)
 {
     // it does not make sense unless there are two segments (and at least one line)
@@ -155,9 +156,9 @@ short CrackHeader::add(CrackSegment *cs)
     lastSeg=cs;
     numberSegments++;
 	
-    // determine planeInElem,surfInElem[i] for the new tip
-    cs->surfInElem[0]=cs->surfInElem[1]=cs->FindElement();
-	if(cs->planeInElem==0) return FALSE;
+    // determine element for new crack particles
+    cs->FindInitialElement();
+	if(cs->planeElemID()<0) return FALSE;
 	
 	// has it put traction laws on this crack
 	if(cs->MatID()>=0) hasTractionLaws=TRUE;
@@ -182,10 +183,10 @@ short CrackHeader::add(CrackSegment *cs,int whichTip)
     if(cs==NULL) return FALSE;		// not created
 	
 	// find the element first (problem if not in the mesh)
-    cs->surfInElem[0]=cs->surfInElem[1]=cs->FindElement();
+    cs->FindInitialElement();
 	
 	// if it is not in the mesh, remove the segment and stop propagation
-	if(cs->planeInElem==0)
+	if(cs->planeElemID()<0)
 	{	if(whichTip==END_OF_CRACK)
 			lastSeg->tipMatnum=-1;
         else
@@ -290,6 +291,7 @@ void CrackHeader::Output(void)
 #pragma mark CrackHeader: Methods
 
 // archive crack to file
+// throws CommonException()
 void CrackHeader::Archive(ofstream &afile)
 {
     int i=0;
@@ -298,7 +300,7 @@ void CrackHeader::Archive(ofstream &afile)
     // create space for this crack
 	int recSize=archiver->GetRecordSize();
     long blen=recSize;
-	char *aptr=(char *)malloc(blen);
+	char *aptr = new (std::nothrow) char[blen];
     if(aptr==NULL)
         throw CommonException("Memory error writing crack data.","CrackHeader::Archive");
     
@@ -315,7 +317,7 @@ void CrackHeader::Archive(ofstream &afile)
         i++;
     }
     
-    free(aptr);    
+	delete [] aptr;
  }
 
 // Signed area of a triangle
@@ -365,7 +367,7 @@ short CrackHeader::MoveCrack(void)
 		while(scrk != NULL)
 		{	if(!fixedCrack)
 			{	// get element and shape functions to extrapolate to the particle
-				iel=scrk->planeInElem-1;			// now zero based
+				iel=scrk->planeElemID();
 				cpos.x=scrk->x;
 				cpos.y=scrk->y;
 				theElements[iel]->GetShapeFunctionsForCracks(fn,nds,&cpos);
@@ -436,7 +438,7 @@ short CrackHeader::MoveCrack(short side)
     while(scrk!=NULL)
 	{	if(!fixedCrack)
 		{	// get element and shape functions to extrapolate to the particle
-			iel = scrk->surfInElem[js]-1;			// now zero based
+			iel = scrk->surfaceElemID(side);			// now zero based
 			cpos.x = scrk->surfx[js];
 			cpos.y = scrk->surfy[js];
 			theElements[iel]->GetShapeFunctionsForCracks(fn,nds,&cpos);
@@ -864,7 +866,7 @@ void CrackHeader::JIntegral(void)
 			/* Task 2: find ccw nodal points JGridSize from crack tip nodal point
 				Find orientation of each line segment
 			*/
-			gridElem=tipCrk->planeInElem-1;
+			gridElem=tipCrk->planeElemID();
 			gridNode=theElements[gridElem]->NearestNode(tipCrk->x,tipCrk->y,&nextNearest);
 			if(secondTry) gridNode=nextNearest;
 			
@@ -1342,7 +1344,7 @@ void CrackHeader::JIntegral(void)
 		catch(const char *msg)
 		{	// throwing "" signals to try again with the next nearest node
 			if(strlen(msg)==0)
-			{	secondTry=TRUE;
+			{	secondTry = true;
                 // contour is released below before trying again
 			}
 			else
@@ -1352,8 +1354,11 @@ void CrackHeader::JIntegral(void)
 				ZeroVector(&tipCrk->Jint);
 			}
 		}
+		catch(std::bad_alloc& ba)
+		{	throw "Memory error in CrackHeader::JIntegral()";
+		}
 		catch( ... )
-		{	throw "Unknown exception in CrackHeader::JIntegral() method";
+		{	throw "Unknown exception in CrackHeader::JIntegral()";
 		}
         
         /* Task 7: Release allocated objects
@@ -1392,9 +1397,9 @@ void CrackHeader::PrintContour(ContourPoint *crackPt,ContourPoint *crossContourP
 	}
 }
 
-/* The crack should propage to (xnew,ynew)
-    whichTip= 0 or 1 for start or end of crack
-*/
+// The crack should propage to (xnew,ynew)
+//	whichTip= 0 or 1 for start or end of crack
+// throws std::bad_alloc
 CrackSegment *CrackHeader::Propagate(Vector &grow,int whichTip,int tractionMat)
 {
     int tipMatID;
@@ -1436,7 +1441,7 @@ void CrackHeader::CrackTipHeating(void)
     // loop over crack tips
     while(scrk!=NULL)
 	{	// get element and shape function to extrapolate to the node
-		iel=scrk->planeInElem-1;		// now zero based
+		iel=scrk->planeElemID();
 		cpos.x=scrk->x;
 		cpos.y=scrk->y;
 		theElements[iel]->GetShapeFunctionsForCracks(fn,nds,&cpos);
@@ -1838,6 +1843,8 @@ short CrackHeader::CrackCrossLeafOnce(CrackLeaf *leaf,double x1,double y1,double
 // 1. All cracks require 1 segment (or 2 points) to create a hierarchy. The code causes a fatal
 //	  error if try to create crack with on one crack particle. The error occurs because this
 //    method returns false
+//
+// throws std::bad_alloc
 bool CrackHeader::CreateHierarchy(void)
 {
     // all cracks have at least 2 points (and 1 segment)
@@ -1939,6 +1946,7 @@ void CrackHeader::MoveHierarchy(void)
 
 // When crack propagates, a new segement (here cs) is added at the start (if cs==firstSeg) or at
 // then end (if cs==lastSeg). The crack hierarchy needs to accomodate the new crack segment
+// throws std::bad_alloc
 void CrackHeader::ExtendHierarchy(CrackSegment *cs)
 {
     // add segment at the beginning of the crack

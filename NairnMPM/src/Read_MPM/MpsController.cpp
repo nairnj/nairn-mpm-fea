@@ -55,8 +55,10 @@ void MpsController::SetPtMass(double pmass)
 // assemble into array used in the code
 int MpsController::SetMPArray(void)
 {
-	mpm=(MPMBase **)MakeObjectArray(0);
-	if(mpm==NULL) return FALSE;
+	// make 0-based array of material points
+	if(numObjects==0) return false;
+	mpm = new (std::nothrow) MPMBase *[numObjects];
+	if(mpm==NULL) return false;
 	
 	// fill the array
 	MPMBase *obj=(MPMBase *)firstObject;
@@ -66,5 +68,5 @@ int MpsController::SetMPArray(void)
 		nmpms++;
 		obj=(MPMBase *)obj->GetNextObject();
 	}
-	return TRUE;
+	return true;
 }

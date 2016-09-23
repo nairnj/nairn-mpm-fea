@@ -31,13 +31,6 @@ bool ParseController::AddObject(LinkedObject *obj)
 	return TRUE;
 }
 
-// create array to hold all objects when index of first one is baseIndex
-void *ParseController::MakeObjectArray(int baseIndex)
-{
-	if(numObjects==0) return NULL;
-	return malloc(sizeof(LinkedObject *)*(numObjects+baseIndex));
-}
-
 // last object is also th e current object when reading XMP file
 LinkedObject *ParseController::currentObject(void) { return lastObject; }
 

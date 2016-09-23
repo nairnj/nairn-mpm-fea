@@ -2214,9 +2214,9 @@
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
-				MACOSX_DEPLOYMENT_TARGET = "";
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = "-fopenmp";
 				PRODUCT_NAME = NairnFEA;
 				SECTORDER_FLAGS = "";
 				VALID_ARCHS = "i386 x86_64";

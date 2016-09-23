@@ -63,6 +63,7 @@ int Path::AddKeypoint(char *keyName)
 }
 
 // assign edge boundary conditions to a path
+// throws std::bad_alloc
 void Path::AddEdgeBCsToPath(int dir,int nloads,double *stress)
 {
 	int i,j;

@@ -47,13 +47,13 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     Matrix3 dv;
 	
 	// don't need to zero zDeriv because always set in 3D elements
-    
+	
 	// find shape functions and derviatives
 	const ElementBase *elemRef = theElements[ElemID()];
 	int *nds = ndsArray;
 	elemRef->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,this);
 	numnds = nds[0];
-    
+	
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle with each node
     for(i=1;i<=numnds;i++)
@@ -401,7 +401,7 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 		cpdi[7]->wg.y = (r1.z*r2.x - r1.x*r2.z - r1.z*r3.x - r2.z*r3.x + r1.x*r3.z + r2.x*r3.z)*Vp;
 		cpdi[7]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y + r1.y*r3.x + r2.y*r3.x - r1.x*r3.y - r2.x*r3.y)*Vp;
 	}
-    catch(CommonException err)
+    catch(CommonException& err)
     {   char msg[200];
         sprintf(msg,"A CPDI particle domain node has left the grid: %s",err.Message());
         throw CommonException(msg,"MatPoint3D::GetCPDINodesAndWeights");
@@ -523,7 +523,7 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
             cElem[3] = mpmgrid.FindElementFromPoint(&c4,this)-1;
             theElements[cElem[3]]->GetXiPos(&c4,&corners[3]);
         }
-        catch(CommonException err)
+        catch(CommonException& err)
         {   char msg[200];
             sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
             throw CommonException(msg,"MatPoint3D::GetTractionInfo");

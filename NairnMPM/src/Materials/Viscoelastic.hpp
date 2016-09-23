@@ -57,7 +57,6 @@ class Viscoelastic : public MaterialBase
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
         virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual const char *MaterialType() const;
-		virtual int MaterialTag() const;
 		virtual Tensor GetStress(Tensor *,double,MPMBase *) const;
 		virtual bool SupportsArtificialViscosity(void) const;
 		virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;

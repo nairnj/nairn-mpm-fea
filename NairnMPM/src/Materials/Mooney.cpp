@@ -378,10 +378,7 @@ Tensor Mooney::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
     return stress;
 }
 
-// Return the material tag
-int Mooney::MaterialTag(void) const { return MOONEYRIVLIN; }
-
-// Calculate wave speed in L/sec (because K and G in mass/(L sec^2) and rho in mass/L^3)
+/// Calculate wave speed in L/sec (because K and G in mass/(L sec^2) and rho in mass/L^3)
 // Uses sqrt((K +4G/3)/rho) which is dilational wave speed at low strain G = G1+G2
 double Mooney::WaveSpeed(bool threeD,MPMBase *mptr) const
 {	return sqrt((Kbulk+4.*(G1+G2)/3.)/rho);

@@ -64,7 +64,6 @@ class RigidMaterial : public MaterialBase
 		virtual bool Rigid(void) const;			// override base class to return true
 		virtual short RigidBC(void) const;		// override base class to return true if appropriate
 		virtual short RigidContact(void) const;	// override base class to return true if appropriate
-		virtual int MaterialTag() const;
 		
 	protected:
 		ROperation *function;

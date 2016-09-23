@@ -22,6 +22,7 @@ class CustomThermalRamp : public CustomTask
 	
 		// constructors and destructors
 		CustomThermalRamp();
+		virtual ~CustomThermalRamp();
 	
 		// standard methods
 		virtual const char *TaskName(void);
@@ -31,6 +32,7 @@ class CustomThermalRamp : public CustomTask
 	
 		virtual CustomTask *PrepareForStep(bool &);
 		virtual CustomTask *StepCalculation(void);
+		virtual CustomTask *FinishForStep(bool &);
 	
 	private:
 		double isoDeltaT;		// final temperature change

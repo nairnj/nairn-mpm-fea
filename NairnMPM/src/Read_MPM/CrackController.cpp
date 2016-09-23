@@ -40,8 +40,10 @@ bool CrackController::FinishCrack(void)
 // assemble into array used in the code
 int CrackController::SetCracksArray(void)
 {
-	crackList=(CrackHeader **)MakeObjectArray(0);
-	if(crackList==NULL) return FALSE;
+	// make 0-based array of cracks
+	if(numObjects==0) return false;
+	crackList = new (std::nothrow) CrackHeader *[numObjects];
+	if(crackList==NULL) return false;
 	
 	// fill the array
 	CrackHeader *obj = (CrackHeader *)firstObject;
@@ -51,5 +53,7 @@ int CrackController::SetCracksArray(void)
 		numberOfCracks++;
 		obj=(CrackHeader *)obj->GetNextObject();
 	}
- 	return TRUE;
+ 	return true;
 }
+
+

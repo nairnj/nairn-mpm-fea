@@ -39,7 +39,6 @@ class CohesiveZone : public TractionLaw
 		// accessors
 		virtual const char *SetTractionLaw(double &,double &,double &,double &,double &);
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag() const;
 		
 	protected:
 		double kI1,kII1;

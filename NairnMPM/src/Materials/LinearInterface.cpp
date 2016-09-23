@@ -231,9 +231,6 @@ bool LinearInterface::GetCrackInterfaceForce(Vector *da,Vector *db,Vector *norm,
 // return unique, short name for this material
 const char *LinearInterface::MaterialType(void) const { return "Linear Imperfect Interface"; }
 
-// Return the material tag
-int LinearInterface::MaterialTag(void) const { return LINEARINTERFACELAW; }
-
 // Set all three parameters
 void LinearInterface::SetParameters(double newDn,double newDnc,double newDnt)
 {	Dnt = newDn;

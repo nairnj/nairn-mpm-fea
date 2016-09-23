@@ -29,6 +29,7 @@ MPMBase::MPMBase()
 {
 }
 
+// throws std::bad_alloc
 MPMBase::MPMBase(int elem,int theMatl,double angin)
 {
     int i;
@@ -42,7 +43,7 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
     
 	// space to hold velocity fields
 	// these only change if there are cracks
-	vfld = (char *)malloc(maxShapeNodes*sizeof(char));
+	vfld = new char[maxShapeNodes];
     for(i=1;i<maxShapeNodes;i++)
         vfld[i]=NO_CRACK;
 	
@@ -91,7 +92,8 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	Rtot = NULL;
 }
 
-// allocation diffusion data if need in this calculations
+// allocation diffusion data if needed in this calculations
+// throws std::bad_alloc
 void MPMBase::AllocateTemperature(void)
 {	int size = 3;
 	pTemp = new double[size];
@@ -99,6 +101,7 @@ void MPMBase::AllocateTemperature(void)
 }
 
 // allocation diffusion data if need in this calculations
+// throws std::bad_alloc
 void MPMBase::AllocateDiffusion(bool contactSolventFlow)
 {	int size = 3;
 	pDiffusion = new double[size];
@@ -106,11 +109,13 @@ void MPMBase::AllocateDiffusion(bool contactSolventFlow)
 }
 
 // allocation velGrad tensor data if need in this calculations (non rigid only)
+// throws std::bad_alloc
 void MPMBase::AllocateJStructures(void)
 {	velGrad=new Tensor;
 }
 
 // allocate structures when needed for particle CPDI or GIMP domains
+// throws std::bad_alloc
 bool MPMBase::AllocateCPDIorGIMPStructures(int gimpType,bool isThreeD)
 {
     int cpdiSize=0;
@@ -130,7 +135,7 @@ bool MPMBase::AllocateCPDIorGIMPStructures(int gimpType,bool isThreeD)
 	}
     
     // create memory for cpdiSize pointers
-    CPDIDomain **cpdi = (CPDIDomain **)malloc(sizeof(LinkedObject *)*(cpdiSize));
+    CPDIDomain **cpdi = new (nothrow) CPDIDomain *[cpdiSize];
     if(cpdi == NULL) return false;
 	
     // create each one
@@ -165,6 +170,7 @@ bool MPMBase::AllocateCPDIorGIMPStructures(int gimpType,bool isThreeD)
 
 #ifdef LOAD_GIMP_INFO
 // allocate structures when needed for particle domains (CPDI or GIMP)
+// throws std::bad_alloc
 bool MPMBase::AllocateGIMPStructures(int gimpType,bool isThreeD)
 {
 	// not needed for point GIMP
@@ -178,10 +184,10 @@ bool MPMBase::AllocateGIMPStructures(int gimpType,bool isThreeD)
     if(gimp == NULL) return false;
 	
 	// arrays
-	gimp->nds = (int *)malloc((maxnds+1)*sizeof(int));
+	gimp->nds = new (nothrow) int[maxnds+1];
 	if(gimp->nds == NULL) return false;
 	
-	gimp->ndIDs = (unsigned char *)malloc(maxnds*sizeof(unsigned char));
+	gimp->ndIDs = new (nothrow) unsigned char[maxnds];
 	if(gimp->ndIDs == NULL) return false;
 
 	// load to generic variable
@@ -226,6 +232,7 @@ void MPMBase::StopParticle(void)
 
 // set mass in PreliminaryCalcs, but only if input file did not set it first
 // When tracking spin, make sure particle momentum is initialized
+// throws std::bad_alloc
 void MPMBase::InitializeMass(double rho,double volPerParticle,bool trackSpin)
 {	if(mp<0.) mp = rho*volPerParticle;
 }
@@ -380,6 +387,8 @@ double MPMBase::Get2DSinCos(double *sintheta,double *costheta)
 //    properties and then stored for later use by anisotropic plasti or transport properties
 Matrix3 *MPMBase::GetRtotPtr(void) { return Rtot; }
 void MPMBase::SetRtot(Matrix3 newR) { Rtot->set(newR); }
+
+// throws std::bad_alloc
 void MPMBase::InitRtot(Matrix3 newR)
 {	if(Rtot==NULL) Rtot = new Matrix3();
 	Rtot->set(newR);
@@ -543,7 +552,7 @@ Tensor *MPMBase::GetAltStrainTensor(void) { return &eplast; }
 // history data
 char *MPMBase::GetHistoryPtr(int offset) { return matData+offset; }
 void MPMBase::SetHistoryPtr(char *createMatData)
-{	if(matData!=NULL) free(matData);
+{	if(matData!=NULL) delete [] matData;
 	matData=createMatData;
 }
 double MPMBase::GetHistoryDble(int index,int offset)

@@ -26,6 +26,7 @@ MPMWarnings::MPMWarnings()
 // add a warning message
 // abortStep = maximum allowed before calculations stopped, use -1 to never stop
 // maxIDs = if warning occurs several places with different IDs, this is maximum ID that is used
+// throws std::bad_alloc
 int MPMWarnings::CreateWarning(const char *message,int abortStep,int maxIDs)
 {
 	// do not duplicate previous warning
@@ -51,7 +52,7 @@ int MPMWarnings::CreateWarning(const char *message,int abortStep,int maxIDs)
 	if(maxIDs<=0)
 		newWarning->issuedIDs = NULL;
 	else
-	{	newWarning->issuedIDs = (int *)malloc((maxIDs+1)*sizeof(int));
+	{	newWarning->issuedIDs = new int[maxIDs+1];
 		newWarning->issuedIDs[0] = 0;
 	}
 	newWarning->prevWarning = (void *)lastWarning;
@@ -68,7 +69,7 @@ void MPMWarnings::CreateWarningList(void)
 	if(numWarnings==0) return;
 	
 	// memory
-	warningSet = (WarningsData **)malloc(sizeof(WarningsData *)*numWarnings);
+	warningSet = new WarningsData *[numWarnings];
 	
 	WarningsData *nextWarning = lastWarning;
 	int i = numWarnings-1;

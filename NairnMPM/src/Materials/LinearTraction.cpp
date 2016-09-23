@@ -88,7 +88,4 @@ double LinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,double t
 // return material type
 const char *LinearTraction::MaterialType(void) const { return "Linear Elastic Traction"; }
 
-// Return the material tag
-int LinearTraction::MaterialTag(void) const { return LINEARTRACTIONMATERIAL; }
-
 

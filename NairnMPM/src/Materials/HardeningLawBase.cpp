@@ -298,6 +298,7 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
     Return lamNeg for f<0 (higher lambda) and lamPos where f>0 (lower lambda)
     Note: psKred and Pfinal only needed for plane stress, otherwise ignored
     Hyperelastic can adjust Gred to be mubar = Gred*Ielbar
+	throws CommonException()
 */
 void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,double psKred,double Pfinal,
                                        double delTime,double *lamNeg,double *lamPos,

@@ -41,26 +41,24 @@ NodalPoint::~NodalPoint()
         {   if(cvf[i]!=NULL)
 				delete cvf[i];
 		}
-		free(cvf);
+		delete [] cvf;
 	}
 }
 
 // Called by PreliminaryCalcs() just before the MPM analysis starts
 // Can allocate things that were not known while reading the XML file
+// throws std::bad_alloc
 void NodalPoint::PrepareForFields()
 {
 	// need maxCrackFields Crack Velocity fields
     //    (1 if no cracks or MAX_FIELDS_FOR_CRACKS/MAX_FIELDS_FOR_ONE_CRACK if any cracks)
-	cvf=(CrackVelocityField **)malloc(sizeof(CrackVelocityField *)*maxCrackFields);
-	if(cvf==NULL) throw CommonException("Memory error allocating crack velocity field pointers.",
-										"NodalPoint::PrepareForFields");
+	cvf = new CrackVelocityField *[maxCrackFields];
 
 	// cvf[0] is always created, others created as needed and left in place once needed
 	cvf[0]=CrackVelocityField::CreateCrackVelocityField(0,0,0);
-	if(cvf[0]==NULL) throw CommonException("Memory error allocating crack velocity field 0.",
-										   "NodalPoint::PrepareForFields");
-	int i;
-	for(i=1;i<maxCrackFields;i++) cvf[i]=NULL;
+	
+	// set rest to NULL
+	for(int i=1;i<maxCrackFields;i++) cvf[i]=NULL;
 }
 
 
@@ -85,8 +83,8 @@ void NodalPoint::InitializeForTimeStep(void)
 
 // When there are cracks, call this method to allocate crack and material velocity fields
 // that are needed on this time step. Called once in initialization task
-// throws CommonException() on meory error
 // SCWarning - may look at [2] and [3]
+// throws std::bad_alloc
 short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 {
 	// find and return velocity field, allocate memory if needed
@@ -98,10 +96,7 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 	{	if(!CrackVelocityField::ActiveCrackField(cvf[3]))
 		{	// a new field - put [0] into first crack and [1] into second crack (number and orientation)
 			if(cvf[3]==NULL)
-			{	cvf[3]=CrackVelocityField::CreateCrackVelocityField(3,cfld[0].loc,cfld[0].crackNum);
-				if(cvf[3]==NULL)
-                    throw CommonException("Memory error allocating crack velocity field #3","NodalPoint::AddCrackVelocityField");
-			}
+				cvf[3]=CrackVelocityField::CreateCrackVelocityField(3,cfld[0].loc,cfld[0].crackNum);
 			else
 				cvf[3]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
 			cvf[3]->SetLocationAndCrack(cfld[1].loc,cfld[1].crackNum,SECOND_CRACK);
@@ -242,10 +237,7 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 				// if cvf[1] is empty, then use it now
 				if(!CrackVelocityField::ActiveCrackField(cvf[1]))
                 {   if(cvf[1]==NULL)
-                    {	cvf[1]=CrackVelocityField::CreateCrackVelocityField(1,cfld[0].loc,cfld[0].crackNum);
-                        if(cvf[1]==NULL) 
-                            throw CommonException("Memory error allocating crack velocity field #1","NodalPoint::AddCrackVelocityField"); 
-                    }
+                    	cvf[1]=CrackVelocityField::CreateCrackVelocityField(1,cfld[0].loc,cfld[0].crackNum);
                     else
                         cvf[1]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
 					vfld=1;
@@ -281,10 +273,7 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 				{	// if [2] is empty, then use it now
 					if(!CrackVelocityField::ActiveCrackField(cvf[2]))
 					{   if(cvf[2]==NULL)
-                        {	cvf[2]=CrackVelocityField::CreateCrackVelocityField(2,cfld[0].loc,cfld[0].crackNum);
-                            if(cvf[2]==NULL)
-                                throw CommonException("Memory error allocating crack velocity field #2","NodalPoint::AddCrackVelocityField"); 
-                        }
+                        	cvf[2]=CrackVelocityField::CreateCrackVelocityField(2,cfld[0].loc,cfld[0].crackNum);
                         else
                             cvf[2]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
 						vfld=2;
@@ -339,6 +328,7 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 
 // When there are cracks or multimedia, call this method to allocate material velocity fields
 // that are needed on this time step. Called onlyb in initialization task
+// throws std::bad_alloc
 void NodalPoint::AddMatVelocityField(short vfld,int matfld)
 {	cvf[vfld]->AddMatVelocityField(matfld);
 }
@@ -356,6 +346,7 @@ void NodalPoint::CopyFieldInitialization(NodalPoint *ghost)
 // Create fields on this node that match the supplied fields
 // When some materials ignore cracks, they will only be in field [0]. The material fields for
 //    them in other crack fields will not be on the ghost nodes
+// throws std::bad_alloc
 void NodalPoint::UseTheseFields(CrackVelocityField **rcvf)
 {	
 	for(int i=0;i<maxCrackFields;i++)
@@ -364,8 +355,6 @@ void NodalPoint::UseTheseFields(CrackVelocityField **rcvf)
 		if(cvf[i]==NULL)
 		{	// create one in ghost node if not there already
 			cvf[i] = CrackVelocityField::CreateCrackVelocityField(i,0,0);
-			if(cvf[i]==NULL) throw CommonException("Memory error allocating crack velocity field 3.",
-												   "NodalPoint::UseTheseFields");
 		}
 		
 		// make these match
@@ -593,6 +582,7 @@ void NodalPoint::CopyRigidParticleField(void)
 #pragma mark TASK 3 METHODS
 
 // Add to internal force
+// throws CommonException()
 void NodalPoint::AddFtotTask3(short vfld,int matfld,Vector *f)
 {	if(cvf[vfld]==NULL) throw CommonException("NULL crack velocity field in grid forces test","NodalPoint::AddFtotTask3");
 	cvf[vfld]->AddFtotTask3(matfld,f);
@@ -910,14 +900,13 @@ void NodalPoint::CalcStrainField(void)
 // Symbolically gets [0] = (1-fract)*n1[0] + fract*n2[i]
 //                   [1] = (1-fract)*n1[i] + fract*n2[0]
 // where [i] is [1] or [2] for field on opposite side of crack crackNum
+// throws std::bad_alloc
 void NodalPoint::Interpolate(NodalPoint *n1,NodalPoint *n2,double fract,int crackNum)
 {
 	// need strain field in first crack velocity field and entire second
 	// crack velocity field for this phantom node (it may be zero)
 	cvf[0]->CreateStrainField();
-	cvf[1]=CrackVelocityField::CreateCrackVelocityField(1,BELOW_CRACK,crackNum);
-	if(cvf[1]==NULL) throw CommonException("Memory error allocating crack velocity field 1.",
-										   "NodalPoint::Interpolate");
+	cvf[1] = CrackVelocityField::CreateCrackVelocityField(1,BELOW_CRACK,crackNum);
 	cvf[1]->CreateStrainField();
 	
 	// fetch [0] from node 1 and [1] or [2] from node 2
@@ -1308,7 +1297,7 @@ void NodalPoint::AddGetContactForce(bool clearForces,Vector *forces,double stepS
 // On first call in time step, first and last on pointers to MaterialInterfaceNode * because those
 //		objects are created for later interface calculations
 // postUpdate is TRUE when called between momentum update and particle update and otherwise is FALSE
-// throws CommonException() on memory error or rigid material problem
+// throws std::bad_alloc
 void NodalPoint::MaterialContactOnNode(double deltime,int callType,MaterialInterfaceNode **first,MaterialInterfaceNode **last)
 {
 	// check each crack velocity field on this node
@@ -1366,6 +1355,7 @@ void NodalPoint::MaterialInterfaceForce(MaterialInterfaceNode *mmnode)
 //      a crack node for any nodes that need to do crack contact
 // poastUpdate is only TRUE when called in the momentum update (and the expectation is that
 //      the forces at that time are the contact forces and used for friction)
+// throws std::bad_alloc
 void NodalPoint::CrackContact(bool postUpdate,double deltime,CrackNode **first,CrackNode **last)
 {	// Nothing to do if not near a crack contact surface: Possible fields are
 	//  1. Those with no contacts: [0], [1], [3], [0]&[3], [1]&[2]
@@ -1385,8 +1375,6 @@ void NodalPoint::CrackContact(bool postUpdate,double deltime,CrackNode **first,C
 	// store references to this node for future use
 	if(first!=NULL)
 	{	*last = new CrackNode(this,*last);
-		if(*last==NULL) throw CommonException("Memory error allocating storage for a crack node.",
-															   "NodalPoint::CrackContact");
 		if(*first==NULL) *first = *last;
 	}
 	

@@ -153,6 +153,7 @@ void ProjectRigidBCsTask::UnsetRigidBCs(BoundaryCondition **firstBC,BoundaryCond
 }
 
 // Set boundary conditions determined by moving rigid paticles
+// throws std::bad_alloc
 void ProjectRigidBCsTask::SetRigidBCs(int mi,int matid0,int type,double value,double angle,int mirrored,
 									  BoundaryCondition **firstBC,BoundaryCondition **lastBC,
 									  BoundaryCondition **firstRigidBC,BoundaryCondition **reuseRigidBC)
@@ -173,8 +174,6 @@ void ProjectRigidBCsTask::SetRigidBCs(int mi,int matid0,int type,double value,do
 			else
             {   int newType = type==Z_DIRECTION ? Z_DIRECTION_INPUT : type ;
 				newBC=(BoundaryCondition *)(new NodalVelBC(mi,newType,CONSTANT_VALUE,value,(double)0.,(double)0.,(double)0.));
-				if(newBC==NULL) throw CommonException("Memory error allocating rigid particle boundary condition.",
-													  "NairnMPM::SetRigidBCs");
 			}
 			((NodalVelBC *)newBC)->SetMirrorSpacing(mirrored);
 			break;
@@ -183,20 +182,14 @@ void ProjectRigidBCsTask::SetRigidBCs(int mi,int matid0,int type,double value,do
 			if(*reuseRigidBC!=NULL)
 				newBC=(*reuseRigidBC)->SetRigidProperties(mi,type,CONSTANT_VALUE,value);
 			else
-			{	newBC=(BoundaryCondition *)(new NodalTempBC(mi,CONSTANT_VALUE,value,(double)0.));
-				if(newBC==NULL) throw CommonException("Memory error allocating rigid particle boundary condition.",
-													  "NairnMPM::SetRigidBCs");
-			}
+				newBC=(BoundaryCondition *)(new NodalTempBC(mi,CONSTANT_VALUE,value,(double)0.));
 			break;
 			
 		case CONC_DIRECTION:
 			if(*reuseRigidBC!=NULL)
 				newBC=(*reuseRigidBC)->SetRigidProperties(mi,type,CONSTANT_VALUE,value);
 			else
-			{	newBC=(BoundaryCondition *)(new NodalConcBC(mi,CONSTANT_VALUE,value,(double)0.));
-				if(newBC==NULL) throw CommonException("Memory error allocating rigid particle boundary condition.",
-													  "NairnMPM::SetRigidBCs");
-			}
+				newBC=(BoundaryCondition *)(new NodalConcBC(mi,CONSTANT_VALUE,value,(double)0.));
 			break;
 			
 		default:

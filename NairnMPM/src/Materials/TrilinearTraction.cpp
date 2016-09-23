@@ -320,9 +320,6 @@ double TrilinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,doubl
 // return material type
 const char *TrilinearTraction::MaterialType(void) const { return "Trilinear Cohesive Zone"; }
 
-// Return the material tag
-int TrilinearTraction::MaterialTag(void) const { return TRILINEARTRACTIONMATERIAL; }
-
 //	Calculate properties used in analyses - here triangular law
 //		k1 is slope up (F/L^3)
 //		u1 is displacement at s1 peak stress (relative to u3 or 0 to 1)

@@ -36,6 +36,7 @@ PostExtrapolationTask::PostExtrapolationTask(const char *name) : MPMTask(name)
 
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
+// throws CommonException()
 void PostExtrapolationTask::Execute(void)
 {
 	CommonException *massErr = NULL;
@@ -75,11 +76,18 @@ void PostExtrapolationTask::Execute(void)
 				while(nextTransport!=NULL)
 					nextTransport = nextTransport->GetNodalValue(ndptr);
 			}
-			catch(CommonException err)
+			catch(std::bad_alloc& ba)
 			{	if(massErr==NULL)
 				{
 #pragma omp critical (error)
-					massErr = new CommonException(err);
+					massErr = new CommonException("Memory error","PostExtrapolationTask::Execute");
+				}
+			}
+			catch(...)
+			{	if(massErr==NULL)
+				{
+#pragma omp critical (error)
+					massErr = new CommonException("Unexpected error","PostExtrapolationTask::Execute");
 				}
 			}
 		}
@@ -106,7 +114,7 @@ void PostExtrapolationTask::Execute(void)
 	if(massErr!=NULL) throw *massErr;
     
 #pragma mark ... IMPOSE BOUNDARY CONDITIONS
-    
+	
 	// Impose transport BCs and extrapolate gradients to the particles
 	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)

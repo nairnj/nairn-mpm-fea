@@ -39,7 +39,8 @@ CommonTask::~CommonTask()
 
 #pragma mark ACCESSORS
 
-// description
+// Set task name
+// throws std::bad_alloc
 void CommonTask::SetTaskName(const char *descrip)
 {	if(taskName!=NULL) delete [] taskName;
 	if(descrip==NULL)

@@ -600,6 +600,7 @@ void ElementBase::QuadEdgeLoad(int nd1,int nd2,int nd3,int ndir,double *fload,do
 			x'(s) = Sum(k, Nk'(s) x(k))  and  y'(s) = Sum(k, Nk'(s) y(k))
 		For axisymmetric calculations get force per radian by replacing t by
 			t -> (2 pi r(s))/(2 pi) = Sum(k, Nk(s) r(k))
+	throws CommonException()
 */
 void ElementBase::CalcEdgeLoads(double *re,int iedge,int ndir,double *fload,int np)
 {

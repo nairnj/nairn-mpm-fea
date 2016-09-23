@@ -19,6 +19,7 @@ CommonException::CommonException()
 // new CommonException(CommonException err) is implied by compiler
 
 // Constructors - inCode without the  "()" because it is added in Display
+// throws std::bad_alloc
 CommonException::CommonException(const char *errMsg,const char *inCode)
 {
     msg=new char[strlen(errMsg)+1];

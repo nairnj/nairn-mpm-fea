@@ -36,6 +36,7 @@ UpdateMomentaTask::UpdateMomentaTask(const char *name) : MPMTask(name)
 #pragma mark REQUIRED METHODS
 
 // Update grid momenta and transport rates
+// throws CommonException()
 void UpdateMomentaTask::Execute(void)
 {
 	CommonException *umErr = NULL;
@@ -56,11 +57,18 @@ void UpdateMomentaTask::Execute(void)
 		{	try
 			{	ndptr->MaterialContactOnNode(timestep,UPDATE_MOMENTUM_CALL,NULL,NULL);
 			}
-			catch(CommonException err)
+			catch(std::bad_alloc& ba)
 			{	if(umErr==NULL)
 				{
 #pragma omp critical (error)
-					umErr = new CommonException(err);
+					umErr = new CommonException("Memory error","UpdateMomentaTask::Execute");
+				}
+			}
+			catch(...)
+			{	if(umErr==NULL)
+				{
+#pragma omp critical (error)
+					umErr = new CommonException("Unexpected error","UpdateMomentaTask::Execute");
 				}
 			}
 		}

@@ -156,6 +156,7 @@ void ConductionTask::ImposeValueBCs(double stepTime)
 }
 
 // Task 1b - get gradients in Vp * cp on particles
+// throws CommonException()
 TransportTask *ConductionTask::GetGradients(double stepTime)
 {
     CommonException *transErr = NULL;
@@ -184,7 +185,7 @@ TransportTask *ConductionTask::GetGradients(double stepTime)
             }
 			
  		}
-        catch(CommonException err)
+        catch(CommonException& err)
         {   if(transErr!=NULL)
             {
 #pragma omp critical (error)

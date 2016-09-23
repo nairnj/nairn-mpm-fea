@@ -150,7 +150,6 @@ class MaterialBase : public LinkedObject
 
 		// accessors
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag(void) const = 0;
 		virtual double GetRho(void *) const;
 #ifdef MPM_CODE
         virtual double WaveSpeed(bool,MPMBase *) const = 0;

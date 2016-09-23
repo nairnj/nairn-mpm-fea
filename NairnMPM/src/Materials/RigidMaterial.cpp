@@ -303,6 +303,7 @@ char *RigidMaterial::InputMaterialProperty(char *xName,int &input,double &gScali
 }
 
 // Rigid material uses field only set to be contact material and in multimaterial mode
+// throws CommonException()
 int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid,int &activeNum)
 {	// not used if rigid bpundary condition
 	if(setDirection!=RIGID_MULTIMATERIAL_MODE)
@@ -325,9 +326,6 @@ int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid,int &acti
 // never called
 double RigidMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; }
 
-// Return the material tag
-int RigidMaterial::MaterialTag(void) const { return RIGIDMATERIAL; }
-
 // return material type
 const char *RigidMaterial::MaterialType(void) const { return "Rigid Material"; }
 
@@ -347,6 +345,7 @@ bool RigidMaterial::RigidConcentration(void) const { return setConcentration; }
 int RigidMaterial::SetDirection(void) const { return setDirection; }
 
 // get value function (temperature and concentration use only)
+// (Don't call from parallel code due to function)
 bool RigidMaterial::GetValueSetting(double *setting,double theTime,Vector *pos) const
 {	if(Vfunction==NULL) return false;
 	varTime = theTime*UnitsController::Scaling(1.e3);
@@ -382,6 +381,7 @@ bool RigidMaterial::IsConstantVelocity(void)
 
 // get vector from one to three functions and the directions being set in hasDir
 // If no directions set or no functions in place return false
+// (Don't call from parallel code due to function)
 bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vector *pos) const
 {
     // false if nothing is set
@@ -470,6 +470,7 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
 }
 
 // setting function if needed
+// throws std::bad_alloc, SAXException()
 void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 {
 	// NULL or empty is an error

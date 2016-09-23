@@ -53,8 +53,5 @@ char *ImperfectInterface::InputMaterialProperty(char *xName,int &input,double &g
 
 #pragma mark ImperfectInterface::Accessors
 
-// Return the material tag
-int ImperfectInterface::MaterialTag(void) const { return INTERFACEPARAMS; }
-
 // return material type
 const char *ImperfectInterface::MaterialType(void) const { return "Interface parameters"; }

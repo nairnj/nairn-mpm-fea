@@ -360,6 +360,7 @@
 <!ELEMENT	StressFreeTemp (#PCDATA)>
 <!ELEMENT	LeaveLimit (#PCDATA)>
 <!ELEMENT	ExtrapolateRigid EMPTY>
+<!ELEMENT	SkipPostExtrapolation EMPTY>
 <!ELEMENT	GIMP EMPTY>
 <!ATTLIST	GIMP
 			type (Dirac|uGIMP|lCPDI|qCPDI) #IMPLIED>

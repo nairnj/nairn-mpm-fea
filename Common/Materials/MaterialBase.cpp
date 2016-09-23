@@ -29,6 +29,7 @@ int nmat=0;								// number of materials
 MaterialBase::MaterialBase() {}
 
 // Constructors
+// throws std::bad_alloc
 MaterialBase::MaterialBase(char *matName)
 {
 	name=new char[strlen(matName)+1];

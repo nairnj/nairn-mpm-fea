@@ -23,6 +23,7 @@
 HEIsotropic::HEIsotropic() {}
 
 // Constructors
+// throws std::bad_alloc
 HEIsotropic::HEIsotropic(char *matName) : HyperElastic(matName)
 {
    	G1 = -1.;			// required
@@ -77,11 +78,16 @@ const char *HEIsotropic::VerifyAndLoadProperties(int np)
 	// G in specific units using initial rho (F/L^2 L^3/mass)
  	G1sp = G1/rho;
 	
+    // heating gamma0 (dimensionless)
+    double alphaV = 3.e-6*aI;
+    gammaI = Kbulk*alphaV/(rho*heatCapacity);
+	
 	// must call super class
 	return HyperElastic::VerifyAndLoadProperties(np);
 }
 
 // plane stress not allowed in viscoelasticity
+// throws CommonException()
 void HEIsotropic::ValidateForUse(int np) const
 {	if(np==PLANE_STRESS_MPM)
     {	throw CommonException("HEIsotropic materials cannot be used in plane stress MPM yet",
@@ -267,8 +273,8 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
         if(np==THREED_MPM)
 		{	sp->xz = J*stk.xz;
 			sp->yz = J*stk.yz;
-			mptr->AddWorkEnergy(0.5*((st0.yz+sp->yz)*(du(2,1)+du(1,2))
-                                       + (st0.xz+sp->xz)*(du(2,0)+du(0,2))));
+			workEnergy += 0.5*((st0.yz+sp->yz)*(du(2,1)+du(1,2))
+                                       + (st0.xz+sp->xz)*(du(2,0)+du(0,2)));
         }
         mptr->AddWorkEnergy(workEnergy);
 		
@@ -399,6 +405,24 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,doub
     double avgP = 0.5*(P0+Pfinal);
 	double delVres = 1. - 1./detdFres;
     mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-avgP*delVres);
+	
+	// elastic particle isentropic temperature increment
+	double Kratio;				// = rho_0 K/(rho K_0)
+	switch(UofJOption)
+	{   case J_MINUS_1_SQUARED:
+			Kratio = Jeff;
+			break;
+			
+		case LN_J_SQUARED:
+			Kratio = (1-log(Jeff))/(Jeff*Jeff);
+			break;
+			
+		case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
+		default:
+			Kratio = 0.5*(Jeff + 1./Jeff);
+			break;
+	}
+	dTq0 = -J*Kratio*gammaI*mptr->pPreviousTemperature*delV;
 }
 
 // get trial deviatoric stress tensor based on trial B
@@ -483,9 +507,6 @@ Tensor HEIsotropic::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
     stress.zz -= pressure;
     return stress;
 }
-
-// Return the material tag
-int HEIsotropic::MaterialTag(void) const { return HEISOTROPIC; }
 
 // return unique, short name for this material
 const char *HEIsotropic::MaterialType(void) const { return "Hyperelastic Isotropic"; }

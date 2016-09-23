@@ -95,6 +95,7 @@ PROperation opex[11]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 // and dt (used in rigid velocities)
 // deletes input string and replaced with formatted expression
 // called should DeleteFunction() when done using it
+// throws std::bad_alloc
 bool CreateFunction(char *&eqn)
 {
 	// create variables
@@ -205,6 +206,7 @@ double FunctionValue(int i,double x,double y,double z,double xorig,double yorig,
 #pragma mark STRING UTILITIES
 
 // return substring from charcter i1 to i2 (inclusive) of s in new string
+// throws std::bad_alloc
 char* MidStr(const char *s,int i1,int i2)
 {
 	if(i1<0 || i2>=(int)strlen(s) || i1>i2)
@@ -220,6 +222,7 @@ char* MidStr(const char *s,int i1,int i2)
 }
 
 // copy string and return pointer to new one
+// throws std::bad_alloc
 char* CopyStr(const char *s)
 {	char *s1=new char[strlen(s)+1];
 	char *s12=s1;
@@ -229,6 +232,7 @@ char* CopyStr(const char *s)
 }
 
 // Insert character at position n in string s
+// throws std::bad_alloc
 void InsStr(char*&s,int n,char c)
 {	if(n<0||n>(int)strlen(s)) return;
 	char *s1=new char[strlen(s)+2];
@@ -262,6 +266,7 @@ signed char CompStr(const char *s,int n,const char *s2)
 }
 
 // Delete character n in string s and replace it with new string
+// throws std::bad_alloc
 void DelStr(char*&s,int n)
 {	char *s1=new char[strlen(s)];
 	int i;
@@ -291,6 +296,7 @@ RVar::~RVar()
 
 #pragma mark Function Class
 
+// throws std::bad_alloc
 RFunction::RFunction()
 {
 	type=-1;
@@ -303,6 +309,7 @@ RFunction::RFunction()
 	buf=NULL;
 }
 
+// throws std::bad_alloc
 RFunction::RFunction(double ((*pfuncvalp)(double)))
 {
 	type=0;
@@ -315,6 +322,7 @@ RFunction::RFunction(double ((*pfuncvalp)(double)))
 	buf=NULL;
 }
 
+// throws std::bad_alloc
 RFunction::RFunction(const RFunction& rfunc)
 {
 	if(this==&rfunc) return;
@@ -335,6 +343,7 @@ RFunction::RFunction(const RFunction& rfunc)
 	}
 }
 
+// throws std::bad_alloc
 RFunction::RFunction(const ROperation& opp,RVar* pvarp):op(opp)
 {
 	type=1;
@@ -346,6 +355,7 @@ RFunction::RFunction(const ROperation& opp,RVar* pvarp):op(opp)
 	buf=new double[1];
 }
 
+// throws std::bad_alloc
 RFunction::RFunction(const ROperation& opp, int nvarsp,RVar**ppvarp):op(opp)
 {
 	type=1;
@@ -371,6 +381,7 @@ RFunction::~RFunction()
 	if(buf!=NULL) delete [] buf;
 }
 
+// throws std::bad_alloc
 RFunction& RFunction::operator=(const RFunction& rfunc)
 {
 	if(this==&rfunc) return *this;
@@ -447,6 +458,7 @@ ROperation::~ROperation()
 {	Destroy();
 }
 
+// throws std::bad_alloc
 ROperation::ROperation(const ROperation&ROp)
 {	op=ROp.op;
 	pvar=ROp.pvar;
@@ -469,6 +481,7 @@ ROperation::ROperation(const ROperation&ROp)
 	BuildCode();
 }
 
+// throws std::bad_alloc
 ROperation::ROperation(double x)
 {	if(x==ErrVal)
 	{	op=ErrOp;
@@ -515,6 +528,7 @@ ROperation::ROperation(const RVar&varp)
 	BuildCode();
 }
 
+// throws std::bad_alloc
 ROperation& ROperation::operator=(const ROperation& ROp)
 {	if(this==&ROp) return *this;
 	Destroy();
@@ -576,6 +590,7 @@ ROperation ROperation::operator+() const
 {	return *this;
 }
 
+// throws std::bad_alloc
 ROperation ROperation::operator-() const
 {	if(op==Num)return -ValC;
 	ROperation resultat;
@@ -588,6 +603,7 @@ ROperation ROperation::operator-() const
 	return resultat;
 }
 
+// throws std::bad_alloc
 ROperation operator,(const ROperation& op1,const ROperation& op2)
 {	ROperation resultat;
 	resultat.op=Juxt;
@@ -596,6 +612,7 @@ ROperation operator,(const ROperation& op1,const ROperation& op2)
 	return resultat;
 }
 
+// throws std::bad_alloc
 ROperation operator+(const ROperation& op1,const ROperation& op2)
 {
 	if(op1.op==Num&&op2.op==Num) return op1.ValC+op2.ValC;
@@ -610,6 +627,7 @@ ROperation operator+(const ROperation& op1,const ROperation& op2)
 	return resultat;
 }
 
+// throws std::bad_alloc
 ROperation operator-(const ROperation& op1,const ROperation& op2)
 {
 	if(op1.op==Num&&op2.op==Num) return op1.ValC-op2.ValC;
@@ -624,6 +642,7 @@ ROperation operator-(const ROperation& op1,const ROperation& op2)
 	return resultat;
 }
 
+// throws std::bad_alloc
 ROperation operator*(const ROperation& op1,const ROperation& op2)
 {
 	if(op1.op==Num&&op2.op==Num) return op1.ValC*op2.ValC;
@@ -639,6 +658,7 @@ ROperation operator*(const ROperation& op1,const ROperation& op2)
 	return resultat;
 }
 
+// throws std::bad_alloc
 ROperation operator/(const ROperation& op1,const ROperation& op2)
 {
 	if(op1.op==Num&&op2.op==Num) return (op2.ValC?op1.ValC/op2.ValC:ErrVal);
@@ -654,6 +674,7 @@ ROperation operator/(const ROperation& op1,const ROperation& op2)
 	return resultat;
 }
 
+// throws std::bad_alloc
 ROperation operator^(const ROperation& op1,const ROperation& op2)
 {
 	if(op1==0.) return 0.;
@@ -664,8 +685,9 @@ ROperation operator^(const ROperation& op1,const ROperation& op2)
 	resultat.mmb1=new ROperation(op1);
 	resultat.mmb2=new ROperation(op2);
 	return resultat;
-}               
-                
+}
+
+// throws std::bad_alloc
 ROperation sqrt(const ROperation& op)
 {	ROperation rop;
 	rop.op=Sqrt;
@@ -673,6 +695,7 @@ ROperation sqrt(const ROperation& op)
 	return rop;
 }
 
+// throws std::bad_alloc
 ROperation abs(const ROperation& op)
 {	ROperation rop;
 	rop.op=Abs;
@@ -680,6 +703,7 @@ ROperation abs(const ROperation& op)
 	return rop;
 }
 
+// throws std::bad_alloc
 ROperation floor(const ROperation& op)
 {	ROperation rop;
 	rop.op=IntFun;
@@ -687,6 +711,7 @@ ROperation floor(const ROperation& op)
 	return rop;
 }
 
+// throws std::bad_alloc
 ROperation sin(const ROperation& op)
 {	ROperation rop;
 	rop.op=Sin;
@@ -694,6 +719,7 @@ ROperation sin(const ROperation& op)
 	return rop;
 }
 
+// throws std::bad_alloc
 ROperation cos(const ROperation& op)
 {	ROperation rop;
 	rop.op=Cos;
@@ -701,6 +727,8 @@ ROperation cos(const ROperation& op)
 	return rop;
 
 }
+
+// throws std::bad_alloc
 ROperation tan(const ROperation& op)
 {	ROperation rop;
 	rop.op=Tg;
@@ -708,6 +736,7 @@ ROperation tan(const ROperation& op)
 	return rop;
 }
 
+// throws std::bad_alloc
 ROperation log(const ROperation& op)
 {	ROperation rop;
 	rop.op=Ln;
@@ -715,6 +744,7 @@ ROperation log(const ROperation& op)
 	return rop;
 }
 
+// throws std::bad_alloc
 ROperation log10(const ROperation& op)
 {	ROperation rop;
 	rop.op=Log;
@@ -722,6 +752,7 @@ ROperation log10(const ROperation& op)
 	return rop;
 }
 
+// throws std::bad_alloc
 ROperation exp(const ROperation& op)
 {	ROperation rop;
 	rop.op=Exp;
@@ -729,6 +760,7 @@ ROperation exp(const ROperation& op)
 	return rop;
 }
 
+// throws std::bad_alloc
 ROperation acos(const ROperation& op)
 {	ROperation rop;
 	rop.op=Acos;
@@ -736,6 +768,7 @@ ROperation acos(const ROperation& op)
 	return rop;
 }
 
+// throws std::bad_alloc
 ROperation asin(const ROperation& op)
 {	ROperation rop;
 	rop.op=Asin;
@@ -743,6 +776,7 @@ ROperation asin(const ROperation& op)
 	return rop;
 }
 
+// throws std::bad_alloc
 ROperation atan(const ROperation& op)
 {	ROperation rop;
 	rop.op=Atan;
@@ -758,6 +792,7 @@ ROperation ApplyOperator(int n,ROperation**pops,ROperation (*func)(const ROperat
 	return (*func)(*pops[0],ApplyOperator(n-1,pops+1,func));
 }
 
+// throws std::bad_alloc
 ROperation RFunction::operator()(const ROperation& op)
 {
 	ROperation op2;
@@ -873,6 +908,7 @@ int SearchOperator(char *s,ROperator op)
 }
 
 // Remove leading and trailing blanks and/or leading and trailing brackets
+// throws std::bad_alloc
 void SimplifyStr(char*&s)
 {
 	if(!strlen(s)) return;
@@ -1036,6 +1072,7 @@ void IsolateNumbers(char*&s,int nvar,RVar**ppvar,int nfunc,RFunction**ppfunc)//D
 	InsStr(s,i,')');
 }
 
+// throws std::bad_alloc
 ROperation::ROperation(char*sp,int nvar,PRVar*ppvarp,int nfuncp,PRFunction*ppfuncp)
 {
 	ValC=ErrVal;
@@ -1529,6 +1566,7 @@ int ROperation::NMembers() const //Number of members for an operation like a,b,c
 		return 1+mmb2->NMembers();
 }
 
+// throws std::bad_alloc
 ROperation ROperation::Substitute(const RVar& var,const ROperation& rop) const // Replaces variable var with expression rop
 {
 	if(!ContainVar(var)) return *this;
@@ -1550,6 +1588,7 @@ ROperation ROperation::Substitute(const RVar& var,const ROperation& rop) const /
 	return r;
 }
 
+// throws std::bad_alloc
 char* ValToStr(double x)
 {
 	char *s=new char[30];
@@ -1563,6 +1602,7 @@ char* ValToStr(double x)
 // Format expression without any embedded spaces
 // varPrefix=='#' to format into my string library expression format
 //		otherwise format as mathexpr compatible format
+// throws std::bad_alloc
 char* ROperation::Expr(char varPrefix) const
 {
 	char *s=NULL,*s1=NULL,*s2=NULL;
@@ -1947,6 +1987,7 @@ double ROperation::Val() const
 	return *p3;
 }
 
+// throws std::bad_alloc
 void BCDouble(pfoncld*&pf,pfoncld*pf1,pfoncld*pf2,
 			double**&pv,double**pv1,double**pv2,
 			double*&pp,double*pp1,double*pp2,
@@ -1979,6 +2020,7 @@ void BCDouble(pfoncld*&pf,pfoncld*pf1,pfoncld*pf2,
 	*prf3=NULL;//delete[]prf1,prf2;
 }
 
+// throws std::bad_alloc
 void BCSimple(pfoncld*&pf,pfoncld*pf1,double**&pv,double**pv1,
 				double*&pp,double*pp1,RFunction**&prf,RFunction**prf1,pfoncld f)
 {
@@ -2006,6 +2048,7 @@ void BCSimple(pfoncld*&pf,pfoncld*pf1,double**&pv,double**pv1,
 	*prf3=NULL;	//delete[]prf1;
 }
 
+// throws std::bad_alloc
 void BCFun(pfoncld*&pf,pfoncld*pf1,double**&pv,double**pv1,
 			double*&pp,double*pp1,RFunction**&prf,RFunction**prf1,PRFunction rf)
 {
@@ -2031,6 +2074,7 @@ void BCFun(pfoncld*&pf,pfoncld*pf1,double**&pv,double**pv1,
 	*prf3++=rf;*prf3=NULL;//delete[]pf1;
 }
 
+// throws std::bad_alloc
 void ROperation::BuildCode()
 {
 	//  if(mmb1!=NULL)mmb1->BuildCode();if(mmb2!=NULL)mmb2->BuildCode();

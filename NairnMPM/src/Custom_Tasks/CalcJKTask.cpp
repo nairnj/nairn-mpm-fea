@@ -84,7 +84,7 @@ CustomTask *CalcJKTask::PrepareForStep(bool &needExtraps)
 }
 
 // Called when custom tasks are all done on a step
-CustomTask *CalcJKTask::FinishForStep(void)
+CustomTask *CalcJKTask::FinishForStep(bool &removeMe)
 {
     // skip if not done
     if(!getJKThisStep) return nextTask;

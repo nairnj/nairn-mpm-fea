@@ -92,13 +92,15 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 		fluxMag.x = BCValue(bctime);
 	}
 	else
-    {   // coupled surface flux
-		// time variable (t) is replaced by particle temperature
-		varTime = mpmptr->pPreviousTemperature;
-		GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
-		
-		// Legacy scaling of W/m^2 to nW/mm^2
-		fluxMag.x = scale*function->Val();
+    {	// coupled surface flux
+		if(bctime>=GetBCFirstTime())
+		{	// time variable (t) is replaced by particle temperature
+			varTime = mpmptr->pPreviousTemperature;
+			GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
+			
+			// Legacy scaling of W/m^2 to nW/mm^2
+			fluxMag.x = scale*function->Val();
+		}
 	}
 	
 	// get corners and direction from material point

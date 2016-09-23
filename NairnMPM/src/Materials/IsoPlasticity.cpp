@@ -23,6 +23,7 @@
 IsoPlasticity::IsoPlasticity() {}
 
 // Constructors
+// throws std::bad_alloc
 IsoPlasticity::IsoPlasticity(char *matName) : IsotropicMat(matName)
 {
     plasticLaw = new LinearHardening(this);
@@ -907,11 +908,21 @@ void IsoPlasticity::UpdatePressure(MPMBase *mptr,double delV,int np,PlasticPrope
     double dP = -p->Kred*delV;
     mptr->IncrementPressure(dP);
     
-    // work energy is dU = -P dV + s.de(total)
+	// get total dV
+	double dVoverV;
+	if(np==PLANE_STRESS_MPM)
+		dVoverV = delV + 2.*p->psRed*eres;
+	else
+		dVoverV = delV + 3.*eres;
+	
+    // work energy is dU = -P dVtot + s.de(total)
 	// Here do hydrostatic term
     // Work energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
     double avgP = mptr->GetPressure()-0.5*dP;
     mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-3.*avgP*eres);
+	
+	// Isoentropic temperature rise = -(K 3 alpha T)/(rho Cv) (dV/V) = - gamma0 T (dV/V)
+	dTq0 = -gamma0*mptr->pPreviousTemperature*dVoverV;
 }
 
 // Get magnitude of the deviatoric stress tensor when input is a deviatoric stress
@@ -994,9 +1005,6 @@ Tensor IsoPlasticity::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
     stress.zz -= pressure;
     return stress;
 }
-
-// Return the material tag
-int IsoPlasticity::MaterialTag(void) const { return ISOPLASTICITY; }
 
 // return unique, short name for this material
 const char *IsoPlasticity::MaterialType(void) const { return "Isotropic Elastic-Plastic"; }

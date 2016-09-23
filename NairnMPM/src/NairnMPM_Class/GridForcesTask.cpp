@@ -41,6 +41,7 @@ GridForcesTask::GridForcesTask(const char *name) : MPMTask(name)
 #pragma mark REQUIRED METHODS
 
 // Get total grid point forces (except external forces)
+// throws CommonException()
 void GridForcesTask::Execute(void)
 {
 	CommonException *forceErr = NULL;
@@ -113,11 +114,25 @@ void GridForcesTask::Execute(void)
 				mpmptr = (MPMBase *)mpmptr->GetNextObject();
 			}
 		}
-		catch(CommonException err)
+		catch(CommonException& err)
 		{	if(forceErr==NULL)
 			{
 #pragma omp critical (error)
 				forceErr = new CommonException(err);
+			}
+		}
+		catch(std::bad_alloc& ba)
+		{	if(forceErr==NULL)
+			{
+#pragma omp critical (error)
+				forceErr = new CommonException("Memory error","GridForcesTask::Execute");
+			}
+		}
+		catch(...)
+		{	if(forceErr==NULL)
+			{
+#pragma omp critical (error)
+				forceErr = new CommonException("Unexpected error","GridForcesTask::Execute");
 			}
 		}
 	}

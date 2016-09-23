@@ -55,7 +55,7 @@ CustomTask *CustomTask::PrepareForStep(bool &doNodalExtraps)
 CustomTask *CustomTask::StepCalculation(void) { return nextTask; }
 
 // Called when custom tasks are all done on a step
-CustomTask *CustomTask::FinishForStep(void) { return nextTask; }
+CustomTask *CustomTask::FinishForStep(bool &removeMe) { return nextTask; }
 
 #pragma mark TASK EXTRAPOLATION METHODS
 

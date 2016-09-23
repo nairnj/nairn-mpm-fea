@@ -47,6 +47,7 @@ const char *VTKArchive::TaskName(void) { return "Archive grid results to VTK fil
 // Read task parameter - if pName is valid, set input for type
 //    and return pointer to the class variable
 // not thread safe due to push_back()
+// throws std::bad_alloc
 char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 {
 	int q=-1,thisBuffer=0,pindex=-1;
@@ -198,11 +199,12 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 }
 
 // called once at start of MPM analysis - initialize and print info
+// throws CommonException()
 CustomTask *VTKArchive::Initialize(void)
 {
     cout << "Archive grid results to VTK files." << endl;
 	
-    // Probably a VTK option to deal with structured but variable element sizes
+    // VTK has an option to deal with structured but variable element sizes
     // Add when needed
 	if(!mpmgrid.IsStructuredEqualElementsGrid())
 		throw CommonException("VTKArchive task requires use of a generated grid with equal element sizes","VTKArchive::Initialize");
@@ -261,7 +263,7 @@ bool VTKArchive::CheckExportForExtrapolations(void)
 void VTKArchive::AllocateExtrapolationBuffers(void)
 {
 	// create list of pointers to buffer for each nodal point
-	vtk=(double **)malloc((nnodes+1)*sizeof(double *));
+	vtk = new (nothrow) double *[nnodes+1];
 	
 	// on error, print message and turn off rest of this task
 	if(vtk==NULL)
@@ -273,11 +275,11 @@ void VTKArchive::AllocateExtrapolationBuffers(void)
 	// create buffer for each node, on error print message and turn of extrapolations
 	int i,j;
 	for(i=1;i<=nnodes;i++)
-	{	vtk[i]=(double *)malloc(bufferSize*sizeof(double));
+	{	vtk[i] = new (nothrow) double[bufferSize];
 		if(vtk[i]==NULL)
 		{	// free previous buffers and main list
-			for(j=1;j<i;j++) free(vtk[j]);
-			free(vtk);
+			for(j=1;j<i;j++) delete [] vtk[j];
+			delete [] vtk;
 			cout << "# memory error preparing data for vtk export" << endl;
 			getExtrapolations = false;
 			return;
@@ -543,8 +545,8 @@ void VTKArchive::ExportExtrapolationsToFiles(void)
 	// free buffer if used
 	if(vtk!=NULL)
 	{	int i;
-		for(i=1;i<=nnodes;i++) free(vtk[i]);
-		free(vtk);
+		for(i=1;i<=nnodes;i++) delete [] vtk[i];
+		delete [] vtk;
 		vtk=NULL;
 	}
 }

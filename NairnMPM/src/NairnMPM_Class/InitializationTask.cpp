@@ -29,6 +29,7 @@ InitializationTask::InitializationTask(const char *name) : MPMTask(name)
 
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
+// throws CommonException()
 void InitializationTask::Execute(void)
 {
 	CommonException *initErr = NULL;
@@ -55,11 +56,18 @@ void InitializationTask::Execute(void)
 			try
 			{	elref->GetShapeFunctionData(mpmptr);
 			}
-			catch(CommonException err)
+			catch(CommonException& err)
 			{	if(initErr==NULL)
 				{
 #pragma omp critical (error)
 					initErr = new CommonException(err);
+				}
+			}
+			catch(...)
+			{	if(initErr==NULL)
+				{
+#pragma omp critical (error)
+					initErr = new CommonException("Unexpected error","InitializationTask::Execute");
 				}
 			}
 		}

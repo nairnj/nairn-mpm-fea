@@ -219,16 +219,17 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 			return "A required material property is missing";
     }
     KT=0.5/((1.-nuT)/ET - 2.*nuA*nuA/EA);
+	nuAp = ET*nuA/EA;
 
     // set properties
 	const char *err;
-    if(MaterialTag()==TRANSISO1)
-    {	err=SetAnalysisProps(np,ET,ET,EA,nuT,ET*nuA/EA,ET*nuA/EA,
+    if(AxialDirection()==AXIAL_Z)
+    {	err=SetAnalysisProps(np,ET,ET,EA,nuT,nuAp,nuAp,
 					GT,GA,GA,1.e-6*aT,1.e-6*aT,1.e-6*aA,
 					betaT*concSaturation,betaT*concSaturation,betaA*concSaturation);
     }
     else
-    {	err=SetAnalysisProps(np,ET,EA,ET,ET*nuA/EA,nuT,nuA,
+    {	err=SetAnalysisProps(np,ET,EA,ET,nuAp,nuT,nuA,
 					GA,GA,GT,1.e-6*aT,1.e-6*aA,1.e-6*aT,
 					betaT*concSaturation,betaA*concSaturation,betaT*concSaturation);
     }
@@ -279,7 +280,7 @@ int TransIsotropic::SizeOfMechanicalProperties(int &altBufferSize) const
 void *TransIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer,int offset) const
 {
 	// if large rotation mode (in material axes) or if isotropic in 2D plane, use initial properties
-	if(useLargeRotation || (MaterialTag()==TRANSISO1 && np!=THREED_MPM))
+	if(useLargeRotation || (AxialDirection()==AXIAL_Z && np!=THREED_MPM))
 		return (void *)&pr;
 	
 	// create new elastic properties
@@ -541,7 +542,7 @@ void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecif
 // Here fills in isotropic properties, materials with different anisotropic properties should override
 void TransIsotropic::FillTransportProperties(TransportProperties *t)
 {
-	if(MaterialTag()==TRANSISO1)
+	if(AxialDirection()==AXIAL_Z)
 	{	t->diffusionTensor.xx = diffT;
 		t->diffusionTensor.yy = diffT;
 		t->kCondTensor.xx = kCondT;
@@ -569,7 +570,7 @@ void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties 
 {	
 	if(np!=THREED_MPM)
 	{	// if isotropic in 2D plane, use initial properties
-		if(MaterialTag()==TRANSISO1)
+		if(AxialDirection()==AXIAL_Z)
 		{	*t = tr;
 			return;
 		}
@@ -620,15 +621,15 @@ void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties 
 
 #pragma mark TransIsotropic::Accessors
 
-// Return the material tag
-int TransIsotropic::MaterialTag(void) const { return tiType; }
+// Return base axial direction
+int TransIsotropic::AxialDirection(void) const { return tiType==TRANSISO1 ? AXIAL_Z : AXIAL_Y; };
 
 // return material type
 const char *TransIsotropic::MaterialType(void) const
-{	if(MaterialTag()==TRANSISO1)
-        return "Tranversely isotropic (A axis normal to x-y plane)";
+{	if(AxialDirection()==AXIAL_Z)
+        return "Tranversely isotropic (unrotated A axis along z axis)";
     else
-        return "Tranversely isotropic (A axis in x-y plane)";
+        return "Tranversely isotropic (unrotated A axis along y axis)";
 }
 
 #ifdef MPM_CODE
@@ -642,7 +643,7 @@ const char *TransIsotropic::MaterialType(void) const
 */
 double TransIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 {
-    if(MaterialTag()==TRANSISO1 && !threeD)
+    if(AxialDirection()==AXIAL_Z && !threeD)
         return sqrt((KT+GT)/rho);
     else
         return sqrt(fmax(GA,fmax(KT+GT,EA+4.*KT*nuA*nuA))/rho);
@@ -656,8 +657,8 @@ double TransIsotropic::MaximumDiffusion(void) const { return max(diffA,diffT); }
 double TransIsotropic::MaximumDiffusivity(void) const { return max(kCondA,kCondT)/heatCapacity; }
 
 // diffusion and conductivity in the z direction
-double TransIsotropic::GetDiffZ(void) const { return MaterialTag()==TRANSISO1 ? diffA : diffT; }
-double TransIsotropic::GetKcondZ(void) const { return MaterialTag()==TRANSISO1 ? kCondA : kCondT; }
+double TransIsotropic::GetDiffZ(void) const { return AxialDirection()==AXIAL_Z ? diffA : diffT; }
+double TransIsotropic::GetKcondZ(void) const { return AxialDirection()==AXIAL_Z ? kCondA : kCondT; }
 
 #endif
 

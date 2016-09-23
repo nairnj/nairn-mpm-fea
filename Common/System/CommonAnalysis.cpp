@@ -50,6 +50,7 @@ CommonAnalysis::~CommonAnalysis()
 #pragma mark CommonAnalysis: methods
 
 // start results file before proceeding to analysis
+// throws CommonException()
 void CommonAnalysis::StartResultsOutput(void)
 {
     //--------------------------------------------------
@@ -228,6 +229,11 @@ int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
         return XercesInitErr;
     }
 	
+	catch(std::bad_alloc& ba)
+	{	cerr << "\nMemory error initializing Xerces" << endl;
+		return XercesInitErr;
+	}
+	
     catch( ... )
     {	cerr << "\nUnexpected error initializing Xerces" << endl;
 		return XercesInitErr;
@@ -258,16 +264,19 @@ int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
     catch(const XMLException& toCatch)
 	{	char *message = XMLString::transcode(toCatch.getMessage());
         cerr << "\nParcing error: " << message << endl;
-		//XMLString::release(&message); // commented out because inferno (and maybe others) can't take it
         return ReadFileErr;
     }
     
     catch(const SAXException& err)
 	{	char *message = XMLString::transcode(err.getMessage());
     	cerr << "\nInput file error: " << message << endl;
-		//XMLString::release(&message); // commented out because inferno (and maybe others) can't take it
         return ReadFileErr;
     }
+	
+	catch(std::bad_alloc& ba)
+	{	cerr << "\nMemory error: " << ba.what() << endl;
+		return ReadFileErr;
+	}
 	
 	catch(const char *errMsg)
 	{	cerr << errMsg << endl;
@@ -316,7 +325,8 @@ bool CommonAnalysis::GetValidate(void) { return validate; }
 void CommonAnalysis::SetReverseBytes(bool setting) { reverseBytes=setting; }
 bool CommonAnalysis::GetReverseBytes(void) { return reverseBytes; }
 
-// description
+// set description
+// throws std::bad_alloc
 void CommonAnalysis::SetDescription(const char *descrip)
 {	if(description!=NULL) delete [] description;
     description=new char[strlen(descrip)+1];
@@ -343,12 +353,13 @@ int CommonAnalysis::GetTotalNumberOfPatches(void) { return numProcs>1 ? numProcs
 
 #pragma mark Methods to keep Xerces contact in fewer files
 
-// throw an SAXException
+// throws SAXException()
 void ThrowSAXException(const char *msg)
 {	throw SAXException(msg);
 }
 
 // throw an SAXException with format string and one string variable
+// throws SAXException()
 void ThrowSAXException(const char *frmt,const char *msg)
 {	char eline[500];
 	sprintf(eline,frmt,msg);

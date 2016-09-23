@@ -24,6 +24,7 @@
 #pragma mark INITIALIZATION
 
 // Constructors
+// throws std::bad_alloc
 MatVelocityField::MatVelocityField(int setFlags)
 {	if(fmobj->multiMaterialMode)
 		volumeGrad=new Vector;

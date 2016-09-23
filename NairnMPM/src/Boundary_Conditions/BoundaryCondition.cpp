@@ -119,6 +119,7 @@ int BoundaryCondition::GetNodeNum(double bctime)
 int BoundaryCondition::GetNodeNum(void) { return nodeNum; }
 
 // set function if needed
+// throws std::bad_alloc, SAXException()
 void BoundaryCondition::SetFunction(char *bcFunction)
 {
 	if(style!=FUNCTION_VALUE) return;
@@ -148,6 +149,7 @@ void BoundaryCondition::SetFunction(char *bcFunction)
 }
 
 // new string for the function (caller should delete it)
+// throws std::bad_alloc
 char *BoundaryCondition::GetFunctionString(void)
 {	if(function!=NULL) return function->Expr('#');
 	char *unknown=new char[2];

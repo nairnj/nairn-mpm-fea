@@ -101,6 +101,7 @@ void Viscoelastic::PrintMechanicalProperties(void) const
 }
     
 // Read material properties
+// throws std::bad_alloc, SAXException()
 char *Viscoelastic::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
@@ -184,6 +185,7 @@ char *Viscoelastic::InputMaterialProperty(char *xName,int &input,double &gScalin
 }
 
 // verify settings and some initial calculations
+// throws std::bad_alloc
 const char *Viscoelastic::VerifyAndLoadProperties(int np)
 {
 	// check properties
@@ -243,13 +245,14 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 		return "Invalid option for the pressure law";
 	
     // for Cp-Cv (units nJ/(g-K^2))
-    Ka2sp = Kered*CTE*CTE;
+    Ka2sp = 9.*Kered*CTE*CTE;
 	
 	// call super class
 	return MaterialBase::VerifyAndLoadProperties(np);
 }
 
 // plane stress not allowed in viscoelasticity
+// throws CommonException()
 void Viscoelastic::ValidateForUse(int np) const
 {	if(np==PLANE_STRESS_MPM)
 	{	throw CommonException("Viscoelastic materials are not allowed in plane stress calculations",
@@ -264,6 +267,7 @@ void Viscoelastic::ValidateForUse(int np) const
 
 // create and return pointer to history variables
 // initialize all to zero
+// throws std::bad_alloc
 char *Viscoelastic::InitHistoryData(char *pchr,MPMBase *mptr)
 {
 	// if none, only need particle history
@@ -627,8 +631,8 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		double avgP = mptr->GetPressure()-0.5*dP;
 		mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-3.*avgP*eres);
 		
-		// Isoentropic temperature rise = -(K alpha T)/(rho Cv) (dV/V)
-		dTq0 += -Kered*CTE*mptr->pPreviousTemperature*(delV+3*eres)/GetHeatCapacity(mptr);;
+		// Isoentropic temperature rise = -(K 3 alpha T)/(rho Cv) (dV/V)
+		dTq0 += -3.*Kered*CTE*mptr->pPreviousTemperature*(delV+3*eres)/GetHeatCapacity(mptr);;
 	}
 	else
 	{	// J is total volume change - may need to reference to free-swelling volume if that works
@@ -746,9 +750,6 @@ double Viscoelastic::GetCpMinusCv(MPMBase *mptr) const
 
 // return material type
 const char *Viscoelastic::MaterialType(void) const { return "Viscoelastic"; }
-
-// Return the material tag
-int Viscoelastic::MaterialTag(void) const { return VISCOELASTIC; }
 
 // Calculate wave speed in mm/sec
 // Uses sqrt((K +4Ge/3)/rho) which is probably the maximum wave speed possible

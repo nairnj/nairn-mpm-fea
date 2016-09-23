@@ -110,9 +110,6 @@ void HillPlastic::UpdatePlasticInternal(MPMBase *mptr,int np,AnisoHardProperties
 
 #pragma mark HillPlastic:Accessors
 
-// Return the material tag
-int HillPlastic::MaterialTag(void) const { return HILLPLASTIC; }
-
 // return material type
 const char *HillPlastic::MaterialType(void) const { return "Elastic-Plastic Hill Material"; }
 

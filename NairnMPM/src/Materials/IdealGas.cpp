@@ -70,6 +70,7 @@ const char *IdealGas::VerifyAndLoadProperties(int np)
 }
 
 // if analysis not allowed, throw an exception
+// throws CommonException()
 void IdealGas::ValidateForUse(int np) const
 {	if(np==PLANE_STRESS_MPM)
 	{	throw CommonException("IdealGas material cannot do 2D plane stress analysis",
@@ -162,9 +163,6 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
 
 // return material type
 const char *IdealGas::MaterialType(void) const { return "Ideal Gas (Hyperelastic)"; }
-
-// Return the material tag
-int IdealGas::MaterialTag(void) const { return IDEALGASMATERIAL; }
 
 // Calculate current wave speed in L/sec.
 double IdealGas::WaveSpeed(bool threeD,MPMBase *mptr) const

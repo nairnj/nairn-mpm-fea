@@ -77,6 +77,7 @@ FEAReadHandler::~FEAReadHandler()
 
 // Custom FEA element start
 // not thread safe due to push_back()
+// throws std::bad_alloc, SAXException()
 bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 {   
     char *value,*aName;
@@ -795,6 +796,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 }
 
 // End an element
+// throws std::bad_alloc, SAXException()
 void FEAReadHandler::myEndElement(char *xName)
 {   
 	if(strcmp(xName,"GridBCs")==0)
@@ -853,6 +855,7 @@ void FEAReadHandler::myEndElement(char *xName)
 }
 
 // Decode block of characters for FEA input
+// throws std::bad_alloc, SAXException()
 void FEAReadHandler::myCharacters(char *xData,const unsigned int length)
 {
     switch(input)
@@ -923,6 +926,7 @@ typedef struct {
 	int cons[MAX_CONNECTIVITY];
 } ConnectRec;
 
+// throws std::bad_alloc, SAXException()
 void FEAReadHandler::ResequenceNodes(void)
 {
 	int i,j,k,l,numnds;
@@ -934,9 +938,6 @@ void FEAReadHandler::ResequenceNodes(void)
 	bool *levelFlags=new bool[nnodes];			// flags to remember nodes in level
 	bool *mapFlags=new bool[nnodes];			// bits to remember nodes that have already been mapped
 	int *nodeMap=new int[nnodes];				// map of resequenced nodes
-	if(nList==NULL || theLevel==NULL || lastLevel==NULL || levelFlags==NULL
-				|| mapFlags==NULL || nodeMap==NULL)
-		throw SAXException("Out of memory resequencing the nodes.");
 	
 	for(i=0;i<nnodes;i++)
 	{	nList[i].degree=0;			// zero the degrees
@@ -1068,7 +1069,7 @@ void FEAReadHandler::ResequenceNodes(void)
 	delete [] nodeMap;
 	
 	// remap nodes
-	free(nd);
+	delete [] nd;
 	theNodes->SetNodeArray(revMap);
 
 	// map nodes in all data structures
@@ -1094,8 +1095,9 @@ void FEAReadHandler::ResequenceNodes(void)
 	delete [] revMap;
 }
 
-//Find periodics nodes if requested
+// Find periodics nodes if requested
 // not thread safe due to push_back()
+// throws std::bad_alloc, SAXException()
 void FEAReadHandler::FindPeriodicNodes(void)
 {
 	vector< int > xPeriodicNodes;	// pairs of nodes periodic in x
@@ -1478,6 +1480,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 /********************************************************************************
 	 Remove empty elements (material=0) amnd their nodes
 	 Also verify other elements have valid material type
+	throws SAXException()
 ********************************************************************************/
 
 void FEAReadHandler::RemoveEmptyElements(void)

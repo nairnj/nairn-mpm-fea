@@ -44,7 +44,7 @@ NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTi
 
 // Destructor (and it is virtual)
 NodalVelBC::~NodalVelBC()
-{	if(pk!=NULL) delete pk;
+{	if(pk!=NULL) delete [] pk;
 }
 
 // Reuse Rigid properties
@@ -83,6 +83,7 @@ BoundaryCondition *NodalVelBC::UnsetDirection(void)
 
 // convert input dof to dir as bits x=1, y=2, z=4
 // input options as 1,2,3,12,13,23,123 and changes to bitwise settings
+// throws CommonException()
 int NodalVelBC::ConvertToDirectionBits(int dof)
 {
     switch(dof)
@@ -108,6 +109,7 @@ int NodalVelBC::ConvertToDirectionBits(int dof)
 
 // initialize mormal vector depending on direction bits
 // dir is 1 to 7 (3 axis bits can be set)
+// throws CommonException()
 void NodalVelBC::SetNormalVector(void)
 {
     switch(dir)
@@ -178,18 +180,16 @@ BoundaryCondition *NodalVelBC::PrintBC(ostream &os)
 	return (BoundaryCondition *)GetNextObject();
 }
 
-// save nodal momentum and velocity (but only once)
+// save nodal momentum and std::bad_allocCommonException()
 NodalVelBC *NodalVelBC::CopyNodalVelocities(NodalPoint *nd)
 {
 	// create vector to hold options
 	if(pk==NULL)
-	{	pk=(Vector *)malloc(sizeof(Vector)*maxMaterialFields*maxCrackFields);
-		if(pk==NULL) throw CommonException("Memory error allocating vectors to copy boundary condition nodal values.",
-										   "NodalVelBC::CopyNodalVelocities");
-	}
-	int i;
+		pk = new Vector[maxMaterialFields*maxCrackFields];
+	
+	// save momenta
 	int offset=0;
-	for(i=0;i<maxCrackFields;i++)
+	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveNonrigidField(nd->cvf[i]))
 			offset=nd->cvf[i]->CopyFieldMomenta(pk,offset);
 	}

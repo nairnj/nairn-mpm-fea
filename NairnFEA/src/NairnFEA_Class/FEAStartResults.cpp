@@ -32,6 +32,7 @@ void NairnFEA::PrintAnalysisTitle(void)
 void NairnFEA::PrintAnalysisType(void) {}
     
 // finish start of FEA results file
+// throws std::bad_alloc, CommonException()
 void NairnFEA::MyStartResultsOutput(void)
 {
     char hline[200];

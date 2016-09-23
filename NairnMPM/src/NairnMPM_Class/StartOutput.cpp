@@ -39,6 +39,7 @@ void NairnMPM::PrintAnalysisTitle(void)
 }
 
 // print analysis type
+// throws CommonException()
 void NairnMPM::PrintAnalysisType(void)
 {
 	// new section
@@ -85,6 +86,7 @@ void NairnMPM::PrintAnalysisType(void)
 }
 
 // rest of MPM information
+// throws CommonException()
 void NairnMPM::MyStartResultsOutput(void)
 {
     //---------------------------------------------------

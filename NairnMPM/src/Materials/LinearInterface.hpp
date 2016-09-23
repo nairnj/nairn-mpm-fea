@@ -35,7 +35,6 @@ class LinearInterface : public ContactLaw
 
 		// accessors
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag() const;
 		void SetParameters(double,double,double);
 		virtual bool IgnoreContact(void) const;
 		virtual bool IsImperfectInterface(void) const;

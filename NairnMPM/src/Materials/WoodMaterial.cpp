@@ -87,9 +87,6 @@ void *WoodMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffe
 
 #pragma mark WoodMaterial::Accessors
 
-// Return the material tag
-int WoodMaterial::MaterialTag(void) const { return WOODMATERIAL; }
-
 // return unique, short name for this material
 const char *WoodMaterial::MaterialType(void) const { return "Wood Material"; }
 

@@ -26,6 +26,7 @@ NodalPoint::NodalPoint(int nodeNum)
 #ifdef MPM_CODE
 
 // create ghost node that is a copy of source node
+// throws std::bad_alloc
 NodalPoint::NodalPoint(NodalPoint *real)
 {
 	num = real->num;

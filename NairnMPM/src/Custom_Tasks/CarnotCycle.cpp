@@ -63,6 +63,7 @@ char *CarnotCycle::InputParam(char *pName,int &input,double &gScaling)
 #pragma mark GENERIC TASK METHODS
 
 // called once at start of MPM analysis - initialize and print info
+// throws CommonException()
 CustomTask *CarnotCycle::Initialize(void)
 {
     cout << "Carnot Cyle Simulation." << endl;
@@ -92,6 +93,7 @@ CustomTask *CarnotCycle::Initialize(void)
 }
 
 // Adjust time step now
+// throws CommonException()
 CustomTask *CarnotCycle::StepCalculation(void)
 {
     

@@ -66,10 +66,11 @@ int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
 #pragma mark CONSTRUCTORS
 
 // Constructor
+// throws std::bad_alloc
 NairnMPM::NairnMPM()
 {
 	version=11;						// main version
-	subversion=3;					// subversion (must be < 10)
+	subversion=4;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 
 	mpmApproach=USAVG_METHOD;		// mpm method
@@ -95,6 +96,7 @@ NairnMPM::NairnMPM()
 #pragma mark METHODS
 
 // start analysis
+// throws std::bad_alloc
 void NairnMPM::StartAnalysis(bool abort)
 {
 	// Active Transport Tasks
@@ -161,7 +163,7 @@ void NairnMPM::MPMAnalysis(bool abort)
 			archiver->ArchiveResults(mtime);
         }
 	}
-	catch(CommonException term)
+	catch(CommonException& term)
 	{	// calculation stopped, but still report results
 		mtime+=timestep;
 		archiver->ForceArchiving();
@@ -263,6 +265,8 @@ void NairnMPM::MPMStep(void)
 	2. Loop over elements
 	3. Print information about particles
 	4. Initialize thermal calculations
+ 
+	throws CommonException()
 **********************************************************/
 
 void NairnMPM::PreliminaryCalcs(void)
@@ -667,6 +671,7 @@ void NairnMPM::PreliminaryCalcs(void)
 }
 
 // create all the tasks needed for current simulation
+// throws std::bad_alloc
 void NairnMPM::CreateTasks(void)
 {
     CustomTask *nextTask;
@@ -827,6 +832,7 @@ void NairnMPM::ReorderPtBCs(MatPtLoadBC *firstBC,int p1,int p2)
 
 // Called just before time steps start
 // Can insert code here to black runs with invalid options
+// throws CommonException()
 void NairnMPM::ValidateOptions(void)
 {
 	// Disable non-structured or variable element grid sizes

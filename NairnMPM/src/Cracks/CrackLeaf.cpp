@@ -135,7 +135,8 @@ void CrackLeaf::ShiftLeft(CrackSegment *scrk1)
 }
 
 // Add segment to this leaf. If one cannot be added, create and return a new leaf
-// If it can be added, return NULL
+// If it can be added, add and return NULL
+// throws std::bad_alloc
 CrackLeaf *CrackLeaf::AddSegment(CrackSegment *scrk2)
 {
     if(child2==NULL)
@@ -148,7 +149,8 @@ CrackLeaf *CrackLeaf::AddSegment(CrackSegment *scrk2)
 }
 
 // Add leaf to this leaf. If one cannot be added, create and return a new leaf
-// If it can be added, return NULL
+// If it can be added, add and return NULL
+// throws std::bad_alloc
 CrackLeaf *CrackLeaf::AddLeaf(CrackLeaf *leaf2)
 {
     if(child2==NULL)

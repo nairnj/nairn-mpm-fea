@@ -106,7 +106,7 @@ CustomTask *PropagateTask::StepCalculation(void)
 				}
 				if(shouldGo==GROWNOW)
                 {   theResult=GROWNOW;
-                    tipElem=crkTip->planeInElem-1;
+                    tipElem=crkTip->planeElemID();
                     if(fabs(tipDir.x)>fabs(tipDir.y))
                         cSize=theElements[tipElem]->xmax-theElements[tipElem]->xmin;
                     else

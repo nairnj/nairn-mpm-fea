@@ -30,6 +30,7 @@ UpdateParticlesTask::UpdateParticlesTask(const char *name) : MPMTask(name)
 #pragma mark REQUIRED METHODS
 
 // Update particle position, velocity, temp, and conc
+// throws CommonException()
 void UpdateParticlesTask::Execute(void)
 {
 	CommonException *upErr = NULL;
@@ -141,11 +142,25 @@ void UpdateParticlesTask::Execute(void)
 			delete gp;
 			
 		}
-		catch(CommonException err)
+		catch(CommonException& err)
 		{	if(upErr==NULL)
 			{
 #pragma omp critical (error)
 				upErr = new CommonException(err);
+			}
+		}
+		catch(std::bad_alloc& ba)
+		{	if(upErr==NULL)
+			{
+#pragma omp critical (error)
+				upErr = new CommonException("Memory error","UpdateParticlesTask::Execute");
+			}
+		}
+		catch(...)
+		{	if(upErr==NULL)
+			{
+#pragma omp critical (error)
+				upErr = new CommonException("Unexpected error","UpdateParticlesTask::Execute");
 			}
 		}
     }

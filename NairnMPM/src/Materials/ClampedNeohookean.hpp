@@ -47,7 +47,6 @@ class ClampedNeohookean : public Neohookean
 	
 		// accessors
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag() const;
 		virtual bool SupportsArtificialViscosity(void) const;
 		virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;
 	

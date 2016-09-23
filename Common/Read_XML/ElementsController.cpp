@@ -51,8 +51,10 @@ void ElementsController::AddElement(ElementBase *newElem)
 // set array of elements when done
 int ElementsController::SetElementArray(void)
 {
-	theElements=(ElementBase **)MakeObjectArray(0);
-	if(theElements==NULL) return FALSE;
+	// make 0-based array of elements
+	if(numObjects==0) return false;
+	theElements = new (std::nothrow) ElementBase *[numObjects];
+	if(theElements==NULL) return false;
 	
 	// fill the array (zero based)
 	ElementBase *anElem=(ElementBase *)firstObject;
@@ -65,7 +67,7 @@ int ElementsController::SetElementArray(void)
 	}
 	
 	// done
-	return TRUE;
+	return true;
 }
 
 // create specfic element from node list in character string
@@ -89,63 +91,67 @@ int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,d
 	// create elements
 	ElementBase *newElem=NULL;
 
-	switch(currentElemID)
-	{	
+	try
+	{	switch(currentElemID)
+		{	
 #ifdef MPM_CODE
-		// All MPM Element types
-		case FOUR_NODE_ISO:
-			if(numnds!=4) break;
-			newElem=new FourNodeIsoparam(1,eNode);
-			break;
-			
-		case EIGHT_NODE_ISO_BRICK:
-			if(numnds!=8) break;
-			newElem=new EightNodeIsoparamBrick(1,eNode);
-			break;
+			// All MPM Element types
+			case FOUR_NODE_ISO:
+				if(numnds!=4) break;
+				newElem=new FourNodeIsoparam(1,eNode);
+				break;
+				
+			case EIGHT_NODE_ISO_BRICK:
+				if(numnds!=8) break;
+				newElem=new EightNodeIsoparamBrick(1,eNode);
+				break;
 #else
-		// All FEA Element types
-		case FOUR_NODE_ISO:
-			if(numnds!=4) break;
-			newElem=new FourNodeIsoparam(1,eNode,elemMat,elemAngle,elemThick);
-			break;
-			
-		case EIGHT_NODE_ISO:
-			if(numnds!=8) break;
-			newElem=new EightNodeIsoparam(1,eNode,elemMat,elemAngle,elemThick);
-			break;
+			// All FEA Element types
+			case FOUR_NODE_ISO:
+				if(numnds!=4) break;
+				newElem=new FourNodeIsoparam(1,eNode,elemMat,elemAngle,elemThick);
+				break;
+				
+			case EIGHT_NODE_ISO:
+				if(numnds!=8) break;
+				newElem=new EightNodeIsoparam(1,eNode,elemMat,elemAngle,elemThick);
+				break;
 
-		case ISO_TRIANGLE:
-			if(numnds!=6) break;
-			newElem=new SixNodeTriangle(1,eNode,elemMat,elemAngle,elemThick);
-			break;
-			
-		case CS_TRIANGLE:
-			if(numnds!=3) break;
-			newElem=new CSTriangle(1,eNode,elemMat,elemAngle,elemThick);
-			break;
-			
-		case NINE_NODE_LAGRANGE:
-			if(numnds!=9) break;
-			newElem=new Lagrange2D(1,eNode,elemMat,elemAngle,elemThick);
-			break;
-			
-		case LINEAR_INTERFACE:
-			if(numnds!=4) break;
-			newElem=new LinearInterface(1,eNode,elemMat,elemAngle,elemThick);
-			break;
-			
-		case QUAD_INTERFACE:
-			if(numnds!=6) break;
-			newElem=new QuadInterface(1,eNode,elemMat,elemAngle,elemThick);
-			break;
-			
+			case ISO_TRIANGLE:
+				if(numnds!=6) break;
+				newElem=new SixNodeTriangle(1,eNode,elemMat,elemAngle,elemThick);
+				break;
+				
+			case CS_TRIANGLE:
+				if(numnds!=3) break;
+				newElem=new CSTriangle(1,eNode,elemMat,elemAngle,elemThick);
+				break;
+				
+			case NINE_NODE_LAGRANGE:
+				if(numnds!=9) break;
+				newElem=new Lagrange2D(1,eNode,elemMat,elemAngle,elemThick);
+				break;
+				
+			case LINEAR_INTERFACE:
+				if(numnds!=4) break;
+				newElem=new LinearInterface(1,eNode,elemMat,elemAngle,elemThick);
+				break;
+				
+			case QUAD_INTERFACE:
+				if(numnds!=6) break;
+				newElem=new QuadInterface(1,eNode,elemMat,elemAngle,elemThick);
+				break;
+				
 #endif
-		default:
-			break;
+			default:
+				break;
+		}
+	}
+	catch(std::bad_alloc& ba)
+	{	return false;
 	}
 	
 	// add element and return the result
-	if(newElem==NULL) return false;
 	AddElement(newElem);
 	return true;
 }
@@ -180,124 +186,117 @@ ElementBase *ElementsController::MeshElement(int elemID,int element,int *enode)
 // Create FEA element(s) from node numbers calculated in FEA meshing routine
 int ElementsController::MeshElement(int *eNode,int elemMat,double elemAngle,double elemThick)
 {
-	ElementBase *newElem=NULL;
-	
-	switch(currentElemID)
-	{	case FOUR_NODE_ISO:
-			newElem=new FourNodeIsoparam(1,&eNode[1],elemMat,elemAngle,elemThick);
-			if(newElem==NULL) return FALSE;
-			AddElement(newElem);
-			break;
+	try
+	{	ElementBase *newElem=NULL;
+		
+		switch(currentElemID)
+		{	case FOUR_NODE_ISO:
+				newElem=new FourNodeIsoparam(1,&eNode[1],elemMat,elemAngle,elemThick);
+				AddElement(newElem);
+				break;
+				
+			case EIGHT_NODE_ISO:
+				newElem=new EightNodeIsoparam(1,&eNode[1],elemMat,elemAngle,elemThick);
+				AddElement(newElem);
+				break;
 			
-		case EIGHT_NODE_ISO:
-			newElem=new EightNodeIsoparam(1,&eNode[1],elemMat,elemAngle,elemThick);
-			if(newElem==NULL) return FALSE;
-			AddElement(newElem);
-			break;
-		
-		case NINE_NODE_LAGRANGE:
-			int lNode[9],i;
-			Vector qmidPt;
-			theNodes->MidPoint(&eNode[1],8,&qmidPt);
-			theNodes->AddNode(qmidPt.x,qmidPt.y,(double)0.,(double)0.0);
-			for(i=1;i<=8;i++) lNode[i-1]=eNode[i];
-			lNode[8]=theNodes->numObjects;
-			newElem=new Lagrange2D(1,lNode,elemMat,elemAngle,elemThick);
-			if(newElem==NULL) return FALSE;
-			AddElement(newElem);
-			break;
-		
-		case ISO_TRIANGLE:
-			int tNode[9];
-			Vector midPt;
-			theNodes->MidPoint(&eNode[1],8,&midPt);
-			theNodes->AddNode(midPt.x,midPt.y,(double)0.,(double)0.0);
-			if(!FlipTriangles())
-			{	tNode[1]=eNode[1];
-				tNode[2]=eNode[2];
-				tNode[3]=eNode[3];
-				tNode[4]=eNode[5];
-				tNode[5]=eNode[6];
-				tNode[6]=theNodes->numObjects;
-				newElem=new SixNodeTriangle(1,&tNode[1],elemMat,elemAngle,elemThick);
-				if(newElem==NULL) return FALSE;
+			case NINE_NODE_LAGRANGE:
+				int lNode[9],i;
+				Vector qmidPt;
+				theNodes->MidPoint(&eNode[1],8,&qmidPt);
+				theNodes->AddNode(qmidPt.x,qmidPt.y,(double)0.,(double)0.0);
+				for(i=1;i<=8;i++) lNode[i-1]=eNode[i];
+				lNode[8]=theNodes->numObjects;
+				newElem=new Lagrange2D(1,lNode,elemMat,elemAngle,elemThick);
 				AddElement(newElem);
-				
-				tNode[1]=eNode[3];
-				tNode[2]=eNode[4];
-				tNode[3]=eNode[1];
-				tNode[4]=eNode[7];
-				tNode[5]=eNode[8];
-				newElem=new SixNodeTriangle(1,&tNode[1],elemMat,elemAngle,elemThick);
-				if(newElem==NULL) return FALSE;
+				break;
+			
+			case ISO_TRIANGLE:
+				int tNode[9];
+				Vector midPt;
+				theNodes->MidPoint(&eNode[1],8,&midPt);
+				theNodes->AddNode(midPt.x,midPt.y,(double)0.,(double)0.0);
+				if(!FlipTriangles())
+				{	tNode[1]=eNode[1];
+					tNode[2]=eNode[2];
+					tNode[3]=eNode[3];
+					tNode[4]=eNode[5];
+					tNode[5]=eNode[6];
+					tNode[6]=theNodes->numObjects;
+					newElem=new SixNodeTriangle(1,&tNode[1],elemMat,elemAngle,elemThick);
+					AddElement(newElem);
+					
+					tNode[1]=eNode[3];
+					tNode[2]=eNode[4];
+					tNode[3]=eNode[1];
+					tNode[4]=eNode[7];
+					tNode[5]=eNode[8];
+					newElem=new SixNodeTriangle(1,&tNode[1],elemMat,elemAngle,elemThick);
+					AddElement(newElem);
+				}
+				else
+				{	tNode[1]=eNode[1];
+					tNode[2]=eNode[2];
+					tNode[3]=eNode[4];
+					tNode[4]=eNode[5];
+					tNode[5]=theNodes->numObjects;
+					tNode[6]=eNode[8];
+					newElem=new SixNodeTriangle(1,&tNode[1],elemMat,elemAngle,elemThick);
+					AddElement(newElem);
+					
+					tNode[1]=eNode[4];
+					tNode[2]=eNode[2];
+					tNode[3]=eNode[3];
+					tNode[4]=theNodes->numObjects;
+					tNode[5]=eNode[6];
+					tNode[6]=eNode[7];
+					newElem=new SixNodeTriangle(1,&tNode[1],elemMat,elemAngle,elemThick);
+					AddElement(newElem);
+				}
+				break;
+			
+			case CS_TRIANGLE:
+				if(!FlipTriangles())
+				{	newElem=new CSTriangle(1,&eNode[1],elemMat,elemAngle,elemThick);
+					AddElement(newElem);
+					
+					eNode[5]=eNode[1];
+					newElem=new CSTriangle(1,&eNode[3],elemMat,elemAngle,elemThick);
+					AddElement(newElem);
+				}
+				else
+				{	int holdNode=eNode[3];
+					eNode[3]=eNode[4];
+					newElem=new CSTriangle(1,&eNode[1],elemMat,elemAngle,elemThick);
+					AddElement(newElem);
+					
+					eNode[1]=eNode[4];
+					eNode[3]=holdNode;
+					newElem=new CSTriangle(1,&eNode[1],elemMat,elemAngle,elemThick);
+					AddElement(newElem);
+				}
+				break;
+			
+			case LINEAR_INTERFACE:
+				newElem=new LinearInterface(1,&eNode[1],elemMat,elemAngle,elemThick);
 				AddElement(newElem);
-			}
-			else
-			{	tNode[1]=eNode[1];
-				tNode[2]=eNode[2];
-				tNode[3]=eNode[4];
-				tNode[4]=eNode[5];
-				tNode[5]=theNodes->numObjects;
-				tNode[6]=eNode[8];
-				newElem=new SixNodeTriangle(1,&tNode[1],elemMat,elemAngle,elemThick);
-				if(newElem==NULL) return FALSE;
+				break;
+			
+			case QUAD_INTERFACE:
+				newElem=new QuadInterface(1,&eNode[1],elemMat,elemAngle,elemThick);
 				AddElement(newElem);
-				
-				tNode[1]=eNode[4];
-				tNode[2]=eNode[2];
-				tNode[3]=eNode[3];
-				tNode[4]=theNodes->numObjects;
-				tNode[5]=eNode[6];
-				tNode[6]=eNode[7];
-				newElem=new SixNodeTriangle(1,&tNode[1],elemMat,elemAngle,elemThick);
-				if(newElem==NULL) return FALSE;
-				AddElement(newElem);
-			}
-			break;
-		
-		case CS_TRIANGLE:
-			if(!FlipTriangles())
-			{	newElem=new CSTriangle(1,&eNode[1],elemMat,elemAngle,elemThick);
-				if(newElem==NULL) return FALSE;
-				AddElement(newElem);
-				
-				eNode[5]=eNode[1];
-				newElem=new CSTriangle(1,&eNode[3],elemMat,elemAngle,elemThick);
-				if(newElem==NULL) return FALSE;
-				AddElement(newElem);
-			}
-			else
-			{	int holdNode=eNode[3];
-				eNode[3]=eNode[4];
-				newElem=new CSTriangle(1,&eNode[1],elemMat,elemAngle,elemThick);
-				if(newElem==NULL) return FALSE;
-				AddElement(newElem);
-				
-				eNode[1]=eNode[4];
-				eNode[3]=holdNode;
-				newElem=new CSTriangle(1,&eNode[1],elemMat,elemAngle,elemThick);
-				if(newElem==NULL) return FALSE;
-				AddElement(newElem);
-			}
-			break;
-		
-		case LINEAR_INTERFACE:
-			newElem=new LinearInterface(1,&eNode[1],elemMat,elemAngle,elemThick);
-			if(newElem==NULL) return FALSE;
-			AddElement(newElem);
-			break;
-		
-		case QUAD_INTERFACE:
-			newElem=new QuadInterface(1,&eNode[1],elemMat,elemAngle,elemThick);
-			if(newElem==NULL) return FALSE;
-			AddElement(newElem);
-			break;
-		
-		default:
-			return FALSE;
+				break;
+			
+			default:
+				return false;
+		}
+	}
+	catch(std::bad_alloc& ba)
+	{	// memory error creating new element
+		return false;
 	}
 	
-	return TRUE;
+	return true;
 }
 #endif
 

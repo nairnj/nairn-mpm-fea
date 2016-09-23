@@ -38,7 +38,6 @@ class CoupledSawTooth : public CohesiveZone
     
         // accessors
         virtual const char *MaterialType(void) const;
-        virtual int MaterialTag() const;
 };
 
 #endif

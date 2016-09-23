@@ -82,9 +82,6 @@ public class CmdViewer extends JNCmdTextDocument
 	private boolean mpmMeshToFile;
 	private String feaTemp;
 	private double stressFreeTemp;
-	private double rampTime;
-	private double rampStart;
-	private double rampDiff;
 	private boolean stopCommand;
 	private double MMVmin;
 	private int MMDcheck;
@@ -236,6 +233,7 @@ public class CmdViewer extends JNCmdTextDocument
 	
 	public void runNFMAnalysis(boolean doBackground,int runType,CmdViewer scriptDoc)
 	{
+		//System.out.println("Check real file");
 		// only allowed if the commands have been saved
 		if(getFile()==null)
 		{	JNApplication.appBeep();
@@ -249,11 +247,13 @@ public class CmdViewer extends JNCmdTextDocument
 		else
 			theScript = scriptDoc;
 		
+		//System.out.println("Check NFMAnalysis task");
 		// create once
 		if(nfmAnalysis == null)
 			nfmAnalysis = new NFMAnalysis(this);
 		
 		// what if process is currently running?
+		//System.out.println("Check nothing running");
 		if(nfmAnalysis.isRunning())
 		{	JNApplication.appBeep();
 			String message="An FEA or MPM process is currently running.\nDo you want stop it and start a new process?";
@@ -273,6 +273,7 @@ public class CmdViewer extends JNCmdTextDocument
 			useBackground = doBackground;
 			openMesh = runType;
 			// call in super class initiates command interpretation
+			System.out.println("Interpreting Commands");
 			super.runAnalysis();
 			
 			// when interpretation done, will launch the analysis in analysisFinished()
@@ -310,6 +311,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		// launch analysis with DTD commands in the field
+		System.out.println("Launching analysis");
 		nfmAnalysis.launchNFMAnalysis(useBackground,openMesh,buildXMLCommands(),
 					soutConsole,processors,theScript.getScriptParams());
 	}
@@ -348,8 +350,6 @@ public class CmdViewer extends JNCmdTextDocument
 		globalArchive="";
 		feaTemp = null;
 		stressFreeTemp = 0.;
-		rampStart = -1.;
-		rampTime = -2.;
 		stopCommand = false;
 		damping = null;
 		pdamping = null;
@@ -708,12 +708,6 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("stressfreetemp"))
 			doStressFreeTemp(args);
-		
-		else if(theCmd.equals("thermalramp"))
-			doThermalRamp(args);
-		
-		else if(theCmd.equals("rampstart"))
-			doRampStart(args);
 		
 		else if(theCmd.equals("damping"))
 			doDamping(args,"Damping");
@@ -1695,34 +1689,6 @@ public class CmdViewer extends JNCmdTextDocument
 		stressFreeTemp = readDoubleArg(args.get(1));
 	}
 
-	// ThermalRamp (diff),<(time)>
-	public void doThermalRamp(ArrayList<String> args) throws Exception
-	{	// MPM Only
-		requiresMPM(args);
-		
-		if(args.size()<2)
-			throw new Exception("'ThermalRamp' command with too few arguments:\n"+args);
-			
-		rampDiff = readDoubleArg(args.get(1));
-		
-		rampTime = -1.;
-		if(args.size()>2)
-		{	rampTime = readDoubleArg(args.get(2));
-			if(rampTime<=0.) rampTime = -1.;
-		}
-	}
-	
-	// RampStart (start time)
-	public void doRampStart(ArrayList<String> args) throws Exception
-	{	// MPM Only
-		requiresMPM(args);
-		
-		if(args.size()<2)
-			throw new Exception("'RampStart' command with too few arguments:\n"+args);
-			
-		rampStart = readDoubleArg(args.get(1));
-	}
-	
 	// Damping #1 (number or function),#2 (0 to 1 for PIC),#3 (>0 int for XPIC)
 	// also does PDamping command
 	public void doDamping(ArrayList<String> args,String dcmd) throws Exception
@@ -1779,7 +1745,12 @@ public class CmdViewer extends JNCmdTextDocument
 		requiresMPM(args);
 		
 		// turn it on
+		MMVmin = 0.;		// zero by default
 		MMNormals = 2;		// avggrad default
+		MMDcheck = 1;		// enabled by default
+		MMRigidBias = 1.0;
+		MMAzimuth = 0.0;
+		MMPolar = 0.0;
 		
 		// Vmin
 		if(args.size()>1)
@@ -2604,21 +2575,12 @@ public class CmdViewer extends JNCmdTextDocument
 		{	// MPM: Thermal
 			//-----------------------------------------------------------
 			more = xmldata.get("thermal");
-			if(more!=null || conduction!=null || rampTime>-1.5)
+			if(more!=null || conduction!=null)
 			{	xml.append("  <Thermal>\n");
 
 				// conduction
 				if(conduction!=null) xml.append(conduction);
 				
-				// <Isothermal time="(time)" start="(start time)">(diff)</Isothermal>
-				if(rampTime>-1.5)
-				{	xml.append("    <Isothermal");
-					if(rampTime>0.) xml.append(" time='"+formatDble(rampTime)+"'");
-					if(rampStart>0.) xml.append(" start='"+formatDble(rampStart)+"'");
-					xml.append(">"+formatDble(rampDiff)+"</Isothermal>\n");
-				}
-					
-			
 				// check added xml
 				if(more != null) xml.append(more);
 

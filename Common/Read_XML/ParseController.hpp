@@ -24,7 +24,6 @@ class ParseController
 		
 		// methods
 		bool AddObject(LinkedObject *);
-		void *MakeObjectArray(int);
 		LinkedObject *currentObject(void);
 };
 

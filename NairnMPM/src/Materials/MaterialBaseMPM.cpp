@@ -187,6 +187,7 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
 // Material that allow hardening laws must accept
 // the final call and use if supported
 // Newly created laws should be added here
+// throws std::bad_alloc, SAXException()
 void MaterialBase::SetHardeningLaw(char *lawName)
 {
     HardeningLawBase *pLaw = NULL;
@@ -470,6 +471,7 @@ void MaterialBase::FillTransportProperties(TransportProperties *t)
 		is only called if the material is actually in use by one or more particles
 	If material cannot be used in current analysis type throw an exception
 	Subclass that overrides must pass on to super class
+	throws CommonException()
  */
 void MaterialBase::ValidateForUse(int np) const
 {	int i;
@@ -519,6 +521,7 @@ void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np,int offset) cons
 
 // when set, return total number of materials if this is a new one, or 1 if not in multimaterial mode
 // not thread safe due to push_back()
+// throws CommonException()
 int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activeNum)
 {	if(!multiMaterials)
 	{	// for first particle using this material, add to active material IDs and check required
@@ -611,25 +614,28 @@ double MaterialBase::MaximumDiffusivity(void) const { return kCond/heatCapacity;
 void MaterialBase::SetFriction(int lawID,int matID)
 {	
 	if(lastFriction==NULL)
-    {   // if this material did not have an friction settings, create one now
+    {   // if this material did not have any friction settings, create one now
         // and tell the new object it is the only one (i.e., it's next is NULL)
-		lastFriction=(ContactPair *)malloc(sizeof(ContactPair));
-		lastFriction->nextFriction=NULL;
+		lastFriction = new ContactPair;
+		lastFriction->nextFriction = NULL;
 	}
 	else
     {   // if this material already has a friction setting, create a new one,
         // set it to point to the prior one (in lastFriction), and then set
         // this material's lastFriction to this latest one
-		ContactPair *newFriction=(ContactPair *)malloc(sizeof(ContactPair));
-		newFriction->nextFriction=(char *)lastFriction;
-		lastFriction=newFriction;
+		ContactPair *newFriction = new ContactPair;
+		newFriction->nextFriction = (char *)lastFriction;
+		lastFriction = newFriction;
 	}
     // the law type is set later in MaterialBase::ContactOutput()
-	lastFriction->lawID=lawID;
-	lastFriction->matID=matID;
+	lastFriction->lawID = lawID;
+	lastFriction->matID = matID;
 }
 
-// material-to-material contact
+// Custom material damping.
+// Note that matPIC will be -1 unless this material changed it with PIC attribute on the
+//		the Damping command. Thus particle can do FLIP my matPIC=0 resulting
+//		in matFractionPIC=0 too.
 void MaterialBase::SetDamping(double matDamping,double matPIC)
 {	if(matDamping>-1e12)
 	{	matPdamping = matDamping;
@@ -645,17 +651,17 @@ void MaterialBase::SetDamping(double matDamping,double matPIC)
         matUsePICDamping = false;
 }
 
-// Change damping if this material request it
+// Change damping if this material requests it
 // On input, particleAlpha and gridAlpha should be the global settings
 // if material has particle damping
-//	 AND PIC, change to
-//      particleAlpha   = matPIC/dt + matPdamping(t)
-//      gridAlpha       = -m*matPIC/dt + damping(t)
-//		localXPIC		= m*matPIC/dt
-//   NOT PIC, change to
+//	 Changes PIC fraction (including to zero), change to
+//      particleAlpha   = matFractionPIC/dt + matPdamping(t)
+//      gridAlpha       = -m*matFractionPIC/dt + damping(t)
+//		localXPIC		= m*matFractionPIC/dt
+//   Uses global PIC fraction, change to
 //      particleAlpha   = globalPIC + matPdamping(t)
 //		localXPIC		= m*globalPIC
-// if material has only particle PICdamping, change to
+// if material has no damping, but wants to change PIC fraction (including to zero)
 //      particleAlpha   = matPIC/dt + pdamping(t) = matPIC/dt + (particleAlpha - globalPIC)
 //      gridAlpha       = -m*matPIC/dt + damping(t)
 //		localXPIC		= m*matPIC/dt
@@ -797,14 +803,18 @@ double MaterialBase::GetHistory(int num,char *historyPtr) const { return (double
 // if pchr==NULL, create buffer for material data with the requested number of double
 //		otherwise assume it already exists and is big enough
 // set each double in the history data to zero
+// throws std::bad_alloc
 double *MaterialBase::CreateAndZeroDoubles(char *pchr,int numDoubles) const
 {
 	// create buffer (if needed)
-	double *p;
 	if(pchr==NULL)
-		p = new double[numDoubles];
-	else
-		p = (double *)pchr;
+	{	// allocate history data space
+		int historySize = numDoubles*sizeof(double);
+		pchr = new char[historySize];
+	}
+	
+	// cast to double *
+	double *p = (double *)pchr;
 	
 	// set all to zero
 	int i;

@@ -57,6 +57,7 @@ class BodyForce
 		void SetGridDampingFunction(char *,bool);
 		void SetGridBodyForceFunction(char *,int);
 		void SetFractionPIC(double);
+		double GetFractionPIC(void);
 
 	private:
         double alpha,maxAlpha;

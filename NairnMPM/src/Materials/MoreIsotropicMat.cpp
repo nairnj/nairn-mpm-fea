@@ -92,6 +92,7 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	double dvxxeff = de(0,0)-eres;
 	double dvyyeff = de(1,1)-eres;
 	double dgamxy = de(0,1)+de(1,0);
+	double dVoverV = de(0,0)+de(1,1);
 	
 	// stress increments
 	double delsp[6];
@@ -100,6 +101,7 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 		double dvzzeff = de(2,2)-eres;
 		double dgamyz = de(1,2)+de(2,1);
 		double dgamxz = de(0,2)+de(2,0);
+		dVoverV += de(2,2);
 		
 		for(int i=0;i<3;i++)
 		{   delsp[i] = p->C[i][0]*dvxxeff + p->C[i][1]*dvyyeff + p->C[i][2]*dvzzeff;
@@ -166,7 +168,9 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 		}
 		else if(np==PLANE_STRESS_MPM)
 		{	// zz deformation
-			mptr->IncrementDeformationGradientZZ(p->C[4][1]*dvxxeff + p->C[4][2]*dvyyeff + eres);
+			double dezz = p->C[4][1]*dvxxeff + p->C[4][2]*dvyyeff + eres;
+			mptr->IncrementDeformationGradientZZ(dezz);
+			dVoverV += dezz;
 		}
 		else
 		{	// axisymmetric hoop stress
@@ -175,14 +179,18 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 			// extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
 			workEnergy += sp->zz*de(2,2);
 			resEnergy += sp->zz*eres;
+			dVoverV += de(2,2);
 			//workEnergy += 0.5*(st0.zz+sp->zz)*de(2,2);
 			//resEnergy += 0.5*(st0.zz+sp->zz)*eres;
 		}
 		mptr->AddWorkEnergyAndResidualEnergy(workEnergy, resEnergy);
 	}
+	
+	// Isoentropic temperature rise = -(K 3 alpha T)/(rho Cv) (dV/V) = - gamma0 T (dV/V)
+	double dTq0 = -gamma0*mptr->pPreviousTemperature*dVoverV;
     
     // track heat energy
-    IncrementHeatEnergy(mptr,res->dT,0.,0.);
+    IncrementHeatEnergy(mptr,res->dT,dTq0,0.);
 }
 
 #pragma mark IsotropicMat::Methods (Small Rotation)
@@ -218,6 +226,7 @@ void IsotropicMat::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,i
 	//   (when diffusion, conduction, OR thermal ramp active)
     double dvxxeff = dvxx - eres;
     double dvyyeff = dvyy - eres;
+	double dVoverV = dvxx + dvyy;
     
     // save initial stresses
 	Tensor *sp=mptr->GetStressTensor();
@@ -252,7 +261,9 @@ void IsotropicMat::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,i
 	}
 	else if(np==PLANE_STRESS_MPM)
 	{	// zz deformation
-		mptr->IncrementDeformationGradientZZ(p->C[4][1]*dvxxeff+p->C[4][2]*dvyyeff+eres);
+		double dezz = p->C[4][1]*dvxxeff+p->C[4][2]*dvyyeff+eres;
+		mptr->IncrementDeformationGradientZZ(dezz);
+		dVoverV += dezz;
 	}
 	else
 	{	// axisymmetric hoop stress
@@ -261,11 +272,14 @@ void IsotropicMat::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,i
 		// extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
 		workEnergy += 0.5*(st0.zz+sp->zz)*dvzz;
 		resEnergy += 0.5*(st0.zz+sp->zz)*eres;
+		dVoverV += dvzz;
 	}
 	mptr->AddWorkEnergyAndResidualEnergy(workEnergy, resEnergy);
 	
+	double dTq0 = -gamma0*mptr->pPreviousTemperature*dVoverV;
+    
     // track heat energy
-    IncrementHeatEnergy(mptr,res->dT,0.,0.);
+    IncrementHeatEnergy(mptr,res->dT,dTq0,0.);
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -302,6 +316,7 @@ void IsotropicMat::SRConstitutiveLaw3D(MPMBase *mptr,Matrix3 du,double delTime,i
 	double dvxxeff = dvxx-eres;
 	double dvyyeff = dvyy-eres;
 	double dvzzeff = dvzz-eres;
+	double dVoverV = dvxx + dvyy + dvzz;
 	
     // save initial stresses
 	Tensor *sp=mptr->GetStressTensor();
@@ -325,9 +340,11 @@ void IsotropicMat::SRConstitutiveLaw3D(MPMBase *mptr,Matrix3 du,double delTime,i
 											  + (st0.xz+sp->xz)*dgamxz + (st0.xy+sp->xy)*dgamxy),
 										 0.5*(st0.xx+sp->xx + st0.yy+sp->yy + st0.zz+sp->zz)*eres);
     
+	// Isoentropic temperature rise = -(K 3 alpha T)/(rho Cv) (dV/V) = - gamma0 T (dV/V)
+	double dTq0 = -gamma0*mptr->pPreviousTemperature*dVoverV;
+    
     // track heat energy
-    IncrementHeatEnergy(mptr,res->dT,0.,0.);
-	
+    IncrementHeatEnergy(mptr,res->dT,dTq0,0.);
 }
 
 #pragma mark IsotropicMat::Accessors

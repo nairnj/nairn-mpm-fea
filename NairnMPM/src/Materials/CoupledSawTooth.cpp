@@ -189,6 +189,3 @@ double CoupledSawTooth::CrackTractionEnergy(CrackSegment *cs,double nCod,double 
 // return material type
 const char *CoupledSawTooth::MaterialType(void) const { return "Coupled Triangular Law"; }
 
-// Return the material tag
-int CoupledSawTooth::MaterialTag(void) const { return COUPLEDSAWTOOTHMATERIAL; }
-

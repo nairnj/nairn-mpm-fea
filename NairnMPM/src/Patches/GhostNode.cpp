@@ -17,6 +17,7 @@
 
 // Constructors
 // Create for node at zero-based (row,col) grid position
+// throws std::bad_alloc
 GhostNode::GhostNode(int row,int col,bool interiorRow,bool interiorCol)
 {
 	// create ghost node for the real node
@@ -53,6 +54,7 @@ GhostNode::GhostNode(int row,int col,bool interiorRow,bool interiorCol)
 }
 
 // Create for node at zero-based (row,col) grid position
+// throws std::bad_alloc
 GhostNode::GhostNode(int row,int col,int rank,bool interiorRow,bool interiorCol,bool interiorRank)
 {
 	// create ghost node for the real node
@@ -178,6 +180,7 @@ void GhostNode::DeleteDisp(void)
 #pragma mark GhostNode: Accessors
 
 // if has ghost node return it, otherwise return real node
+// throws CommonException()
 NodalPoint *GhostNode::GetNodePointer(void)
 {	if(ghost==NULL && real==NULL)
 		throw CommonException("double NULL ghost node","GhostNode::GetNodePointer");

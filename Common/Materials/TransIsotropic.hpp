@@ -13,6 +13,8 @@
 
 #define TRANSISO1 2
 #define TRANSISO2 3
+#define AXIAL_Z 2
+#define AXIAL_Y 3
 
 #include "Materials/Elastic.hpp"
 
@@ -53,7 +55,7 @@ class TransIsotropic : public Elastic
        
 	   // accessors
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag() const;
+		virtual int AxialDirection(void) const;
 #ifdef MPM_CODE
         virtual double WaveSpeed(bool,MPMBase *) const;
         virtual double MaximumDiffusion(void) const;
@@ -63,8 +65,9 @@ class TransIsotropic : public Elastic
 #endif
 		
 	protected:
-		double EA,ET,nuA,nuT,GA,aA,aT,GT,KT,betaA,betaT;
+		double EA,ET,nuA,nuAp,nuT,GA,aA,aT,GT,KT,betaA,betaT;
 		char read[ORTHO_PROPS];
+		int tiType;
 #ifdef MPM_CODE
 		double diffA,diffT,kCondA,kCondT;
 #endif
@@ -72,9 +75,6 @@ class TransIsotropic : public Elastic
 		double lastMatAngle;
 		int hasMatProps;
 #endif
-	
-	private:
-		int tiType;
 };
 
 #endif

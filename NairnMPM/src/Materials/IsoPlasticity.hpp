@@ -72,7 +72,6 @@ class IsoPlasticity : public IsotropicMat
 		
 		// accessors
         virtual Tensor GetStress(Tensor *,double,MPMBase *) const;
-       int MaterialTag(void) const;
         const char *MaterialType(void) const;
 		virtual int AltStrainContains(void) const;
 		

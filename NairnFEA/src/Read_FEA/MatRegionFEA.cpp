@@ -20,6 +20,7 @@ static double regionThick;
 static char *regionAngleExpr = NULL;
 
 // Check for material region commands
+// throws std::bad_alloc, SAXException()
 short FEAReadHandler::MatRegionInput(char *xName,const Attributes& attrs)
 {
     int i,numAttr;
@@ -132,6 +133,7 @@ short FEAReadHandler::MatRegionInput(char *xName,const Attributes& attrs)
 }
 
 // Subroutine to finish up mat region commands
+// throws SAXException()
 short FEAReadHandler::EndMatRegionInput(char *xName,int exitBlock)
 {
     // finish the matregion block

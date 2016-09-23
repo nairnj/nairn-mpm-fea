@@ -37,25 +37,26 @@ void UpdateStrainsFirstTask::Execute(void)
 
 // create buffers large enough for all active materials and plastic laws
 // need one for each thread
+// throws CommonException()
 void UpdateStrainsFirstTask::CreatePropertyBuffers(int numThreads)
 {
-    matBuffer = (void **)malloc(numThreads*sizeof(void *));
+    matBuffer = new (nothrow) void *[numThreads];
     if(matBuffer==NULL)
         throw CommonException("Out of memory allocating memory for propery buffers","UpdateStrainsFirstTask::CreatePropertyBuffers");
-    altBuffer = (void **)malloc(numThreads*sizeof(void *));
+    altBuffer = new (nothrow) void *[numThreads];
     if(altBuffer==NULL)
         throw CommonException("Out of memory allocating memory for propery buffers","UpdateStrainsFirstTask::CreatePropertyBuffers");
     
     for(int i=0;i<numThreads;i++)
     {   if(MaterialBase::maxPropertyBufferSize>0)
-        {   matBuffer[i] = (void *)malloc(MaterialBase::maxPropertyBufferSize);
+        {   matBuffer[i] = (void *)(new (nothrow) char[MaterialBase::maxPropertyBufferSize]);
             if(matBuffer[i]==NULL)
                 throw CommonException("Out of memory allocating memory for propery buffers","UpdateStrainsFirstTask::CreatePropertyBuffers");
         }
         else
             matBuffer[i]=NULL;
         if(MaterialBase::maxAltBufferSize>0)
-        {   altBuffer[i] = (void *)malloc(MaterialBase::maxAltBufferSize);
+        {   altBuffer[i] = (void *)(new(nothrow) char[MaterialBase::maxAltBufferSize]);
             if(altBuffer[i]==NULL)
                 throw CommonException("Out of memory allocating memory for propery buffers","UpdateStrainsFirstTask::CreatePropertyBuffers");
         }
@@ -69,6 +70,7 @@ void UpdateStrainsFirstTask::CreatePropertyBuffers(int numThreads)
     Must impose grid velocity BCs and velocity
         alterations due to contact first
     secondPass will be TRUE only for USAVG method
+	throws CommonException()
 **********************************************************/
 void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,int np)
 {
@@ -83,7 +85,7 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 	for(int p=0;p<nmpmsNR;p++)
     {   // next particle
         MPMBase *mptr = mpm[p];
-        
+		
         // this particle's material
         const MaterialBase *matRef = theMaterials[mptr->MatID()];
         
@@ -95,11 +97,25 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 			// finish on the particle
 			mptr->UpdateStrain(strainTime,secondPass,np,properties,matRef->GetField());
 		}
-		catch(CommonException err)
+		catch(CommonException& err)
 		{	if(usfErr==NULL)
 			{
 #pragma omp critical (error)
 				usfErr = new CommonException(err);
+			}
+		}
+		catch(std::bad_alloc& ba)
+		{	if(usfErr==NULL)
+			{
+#pragma omp critical (error)
+				usfErr = new CommonException("Memory error","UpdateStrainsFirstTask::FullStrainUpdat");
+			}
+		}
+		catch(...)
+		{	if(usfErr==NULL)
+			{
+#pragma omp critical (error)
+				usfErr = new CommonException("Unexpected error","UpdateStrainsFirstTask::FullStrainUpdat");
 			}
 		}
     }

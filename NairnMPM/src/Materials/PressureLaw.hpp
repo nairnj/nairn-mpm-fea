@@ -36,7 +36,6 @@ class PressureLaw : public TractionLaw
 	
 		// accessors
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag() const;
 	
 	protected:
 		ROperation *function;

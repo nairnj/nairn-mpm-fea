@@ -318,6 +318,7 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 // For structured, find element from location and return result (1-based element number)
 // Calling code must be sure it is structured grid
 // NairnMPM requires equal element sizes,but OSParticulas allows Tartan grid
+// throws CommonException()
 int MeshInfo::FindElementFromPoint(Vector *pt,MPMBase *mptr)
 {
     int theElem,col,row,zrow;
@@ -376,6 +377,7 @@ int MeshInfo::FindElementFromPoint(Vector *pt,MPMBase *mptr)
 // Create the patches for the grid
 // Return pointer to a 0-based listed or patches[0] ... pathes[numProcs-1]
 // Return NULL on memory error
+// throws std::bad_alloc
 GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 {
 	// serial or single thread is simpler
@@ -482,7 +484,7 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
     
     // alloc space for patches - exit on memory error
     int totalPatches = xpnum*ypnum*zpnum;
-    GridPatch **patch = (GridPatch **)malloc(totalPatches*sizeof(GridPatch));
+	GridPatch **patch = new (nothrow) GridPatch *[totalPatches];
     if(patch==NULL) return NULL;
 	
 	// create the patches
@@ -526,6 +528,7 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 // Create a single patch for the grid and patch has no ghost nodes
 // Return pointer to a 0-based listed or patches[0]
 // Return NULL on memory error
+// throws std::bad_alloc
 GridPatch **MeshInfo::CreateOnePatch(int np)
 {
 	// a single patch
@@ -536,7 +539,7 @@ GridPatch **MeshInfo::CreateOnePatch(int np)
 	zPatchSize = np==THREED_MPM ? depth : 1 ;
     
     // alloc space for patches - exit on memory error
-    GridPatch **patch = (GridPatch **)malloc(sizeof(GridPatch));
+	GridPatch **patch = new (nothrow) GridPatch *[1];
     if(patch==NULL) return NULL;
 	
 	// one patch but no ghost nodes

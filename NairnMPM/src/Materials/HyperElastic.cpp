@@ -71,7 +71,7 @@ const char *HyperElastic::VerifyAndLoadProperties(int np)
 	CME1 = betaI*concSaturation;
     
     // for Cp-Cv (units nJ/(g-K^2))
-    Ka2sp = Ksp*CTE1*CTE1;
+    Ka2sp = 9.*Ksp*CTE1*CTE1;
 	
     // call superclass
     return MaterialBase::VerifyAndLoadProperties(np);

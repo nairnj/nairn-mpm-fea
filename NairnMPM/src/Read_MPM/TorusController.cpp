@@ -17,6 +17,7 @@ TorusController::TorusController(int block) : ShapeController(block)
 }
 
 // set a property
+// throws SAXException()
 void TorusController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
 {
     if(strcmp(aName,"axis")==0)
@@ -97,7 +98,7 @@ bool TorusController::ContainsPoint(Vector& v)
 			R = sqrt((1.+m*m)/(1./a2 + m*m/c2));
 		}
         double rpos = sqrt((v.x-xmid)*(v.x-xmid)+(v.z-zmid)*(v.z-zmid));
-		return (R-rpos)*(R-rpos)/d2 + (v.y-ymid)*(v.y-ymid)/b2 <= 1.;
+        return (R-rpos)*(R-rpos)/d2 + (v.y-ymid)*(v.y-ymid)/b2 <= 1.;
     }
     else
     {   if(v.z>zmax || v.z<zmin) return FALSE;

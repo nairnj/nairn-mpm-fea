@@ -44,7 +44,6 @@ class HillPlastic : public AnisoPlasticity
 	
 		// accessors
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag() const;
 };
 
 #endif

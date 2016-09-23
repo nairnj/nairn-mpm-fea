@@ -180,9 +180,6 @@ double CubicTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,double tC
 
 #pragma mark CubicTraction::Accessors
 
-// Return the material tag
-int CubicTraction::MaterialTag(void) const { return CUBICTRACTIONMATERIAL; }
-
 // return material type
 const char *CubicTraction::MaterialType(void) const { return "Cubic Traction Law"; }
 

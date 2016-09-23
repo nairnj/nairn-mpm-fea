@@ -53,7 +53,6 @@ class ContactLaw : public MaterialBase
 		// accessors
 		virtual int MaterialStyle(void) const;
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag() const;
 		virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual bool IgnoreContact(void) const;
 		virtual bool ContactIsDone(bool) const;

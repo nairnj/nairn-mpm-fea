@@ -226,7 +226,7 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 		cpdi[3]->wg.z = tipwt;
 	}
 		
-    catch(CommonException err)
+    catch(CommonException& err)
     {   char msg[200];
         sprintf(msg,"A CPDI particle domain node has left the grid: %s",err.Message());
         throw CommonException(msg,"MatPointAS::GetCPDINodesAndWeights");
@@ -344,7 +344,7 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 		cElem[1] = mpmgrid.FindElementFromPoint(&c2,this)-1;
 		theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
 	}
-    catch(CommonException err)
+    catch(CommonException& err)
     {   char msg[200];
         sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
         throw CommonException(msg,"MatPointAS::GetTractionInfo");

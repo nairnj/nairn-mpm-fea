@@ -314,9 +314,6 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
 
 #pragma mark Orthotropic::Accessors
 
-// Return the material tag
-int Orthotropic::MaterialTag(void) const { return ORTHO; }
-
 // return material type
 const char *Orthotropic::MaterialType(void) const { return "Orthotropic (3 axis normal to x-y plane)"; }
 

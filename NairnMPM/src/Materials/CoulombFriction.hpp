@@ -34,7 +34,6 @@ class CoulombFriction : public ContactLaw
 	
 		// accessors
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag() const;
 		void SetFrictionCoeff(double);
 		virtual bool IgnoreContact(void) const;
 	

@@ -128,9 +128,6 @@ void NewMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 // return unique, short name for this material
 const char *NewMaterial::MaterialType(void) const { return "Template Material"; }
 
-// Return the material tag
-int NewMaterial::MaterialTag(void) const { return NEWMATERIAL; }
-
 // Calculate maximum wave speed for material in mm/sec.
 double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; }
 

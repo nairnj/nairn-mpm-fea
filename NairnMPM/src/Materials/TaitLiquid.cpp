@@ -99,7 +99,7 @@ const char *TaitLiquid::VerifyAndLoadProperties(int np)
     
 	// Viscosity in Specific units using initial rho (times 2)
 	// Units mass/(L sec) L^3/mass = L^2/sec
-	TwoEtasp = (double *)malloc(numViscosity*sizeof(double));
+	TwoEtasp = new (nothrow) double[numViscosity];
 	if(TwoEtasp == NULL)
 		return "TaitLiquid material out of memory";
 	for(i=0;i<numViscosity;i++)
@@ -141,7 +141,8 @@ void TaitLiquid::PrintMechanicalProperties(void) const
     }
 }
 
-// if analysis not allowed, throw a CommonException
+// check if analysis is allowed
+// throws CommonException()
 void TaitLiquid::ValidateForUse(int np) const
 {	if(np==PLANE_STRESS_MPM)
     {	throw CommonException("TaitLiquid material cannot do 2D plane stress analysis",
@@ -400,9 +401,6 @@ void TaitLiquid::BeginActivePhase(MPMBase *mptr,int np,int historyOffset) const
 // return unique, short name for this material
 const char *TaitLiquid::MaterialType(void) const { return "Tait Liquid"; }
 
-// Return the material tag
-int TaitLiquid::MaterialTag(void) const { return TAITLIQUID; }
-
 // Calculate wave speed for material in L/sec.
 double TaitLiquid::WaveSpeed(bool threeD,MPMBase *mptr) const
 {	return sqrt(Kbulk/rho);
@@ -440,6 +438,7 @@ double TaitLiquid::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const
 // setting initial pressure function if needed
 // Fuunction should evaulate to pressure
 // For gravity, P0 = rho*g*depth
+// throws std::bad_alloc, SAXException()
 void TaitLiquid::SetPressureFunction(char *pFunction)
 {
 	// NULL or empty is an error

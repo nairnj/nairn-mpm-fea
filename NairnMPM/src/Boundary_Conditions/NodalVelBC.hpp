@@ -22,7 +22,6 @@ class NodalVelBC : public BoundaryCondition
 {
     public:
         int dir;
-		Vector *pk;
         
         // constructors and destructors
         NodalVelBC(int,int,int,double,double,double,double);
@@ -61,6 +60,7 @@ class NodalVelBC : public BoundaryCondition
         int mirrorSpacing;
 		int reflectedNode;
 		double reflectRatio;
+		Vector *pk;
 };
 
 // variables (changed in MPM time step)

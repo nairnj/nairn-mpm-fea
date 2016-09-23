@@ -13,6 +13,7 @@
 ********************************************************************************/
 
 // allocate and initialize force field
+// throws std::bad_alloc
 void NodalPoint::InitForceField(void)
 {
     fs=new ForceField;

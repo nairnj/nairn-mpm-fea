@@ -51,7 +51,8 @@ ArchiveData::ArchiveData()
  	contactForce = NULL;
  }
 
-// create archive folder
+// create archive folder - true if works or false if fails
+// throws std::bad_alloc
 bool ArchiveData::MakeArchiveFolder(void)
 {
 	if(archiveRoot==NULL) return false;
@@ -140,6 +141,8 @@ bool ArchiveData::MakeArchiveFolder(void)
 }
 
 // Create global file, get archive size, and print to output file archiving table
+// true if works or false if fails
+// throws std::bad_alloc
 bool ArchiveData::BeginArchives(bool isThreeD,int maxMats)
 {
 	// set up archive times
@@ -329,8 +332,8 @@ void ArchiveData::CalcArchiveSize(void)
     // check what will be there for crack segments
 	
 	/* ARCH_Defaults are
-		planeInElem (int), empty (double), newCrack (short+2), pos (Vector), origPos (Vector),
-			aboveInElem (int), above (Vector) belowInElem (int), below (Vector)
+		plane element (int), empty (double), newCrack (short+2), pos (Vector), origPos (Vector),
+			above element (int), above (Vector) below element (int), below (Vector)
 	*/
     crackRecSize+=sizeof(int)+sizeof(double)+sizeof(short)+2;
 	crackRecSize+=2*sizeof(int)+8*sizeof(double);
@@ -392,6 +395,7 @@ void ArchiveData::SetArchiveHeader(void)
 }
 
 // Create global archive file
+// throws std::bad_alloc
 void ArchiveData::CreateGlobalFile(void)
 {
     FILE *fp;
@@ -500,6 +504,7 @@ void ArchiveData::ArchivePointDimensions(void)
 }
 
 // Archive the results if it is time
+// throws CommonException()
 void ArchiveData::ArchiveResults(double atime)
 {
 	double rho,rho0;
@@ -560,7 +565,7 @@ void ArchiveData::ArchiveResults(double atime)
 		if(afile.bad())
 			FileError("File error writing archive file header",fname,"ArchiveData::ArchiveResults");
 	}
-	catch(CommonException err)
+	catch(CommonException& err)
 	{   // give up on hopefully temporary file problem
 		cout << "# File error - check disk for amount of free space" << endl;
 		cout << "# " << err.Message() << endl;
@@ -575,7 +580,7 @@ void ArchiveData::ArchiveResults(double atime)
 	
 	// allocate space for one material point
 	long blen=recSize;
-	char *aptr=(char *)malloc(blen);
+	char *aptr = new (std::nothrow) char[blen];
 	if(aptr==NULL)
 		throw CommonException("Out of memory allocating buffer for archive file","ArchiveData::ArchiveResults");
     
@@ -1083,19 +1088,19 @@ void ArchiveData::ArchiveResults(double atime)
 			if(afile.bad())
 				FileError("File error writing material point data",fname,"ArchiveData::ArchiveResults");
 		}
-		catch(CommonException err)
+		catch(CommonException& err)
 		{   // give up on hopefully temporary file problem
 			cout << "# File error - check disk for amount of free space" << endl;
 			cout << "# " << err.Message() << endl;
 			cout << "# Will skip this file and try to continue" << endl;
 			afile.close();
-			free(aptr);
+			delete [] aptr;
 			return;
 		}
     }
     
 	// clear material point record buffer
-	free(aptr);
+	delete [] aptr;
     
     // add the cracks
     nextCrack=firstCrack;
@@ -1110,7 +1115,7 @@ void ArchiveData::ArchiveResults(double atime)
 		if(afile.bad())
 			FileError("File error closing an archive file",fname,"ArchiveData::ArchiveResults");
 	}
-	catch(CommonException err)
+	catch(CommonException& err)
 	{   // give up on hopefully temporary file problem
 		cout << "# " << err.Message() << endl;
 		cout << "# Will leave file open and try to continue" << endl;
@@ -1151,7 +1156,7 @@ void ArchiveData::GlobalArchive(double atime)
 			FileError("File error closing global results",globalFile,"ArchiveData::GlobalArchive");
 	}
 	
-    catch(CommonException err)
+    catch(CommonException& err)
 	{   // divert to standard output and try to continue
 		cout << "# File error - check disk for amount of free space" << endl;
 		cout << "# " << err.Message() << endl;
@@ -1418,17 +1423,22 @@ void ArchiveData::ForceArchiving(void)
 }
 
 // report a file error to some file
+// throws CommonException()
 void ArchiveData::FileError(const char *msg,const char *filename,const char *method)
 {	char errNo[50];
 	sprintf(errNo,"%d",errno);
-	char *errMsg=new char[strlen(msg)+strlen(filename)+strlen(errNo)+15];
-	strcpy(errMsg,msg);
-	strcat(errMsg," (file: ");
-	strcat(errMsg,filename);
-	strcat(errMsg,", #");
-	strcat(errMsg,errNo);
-	strcat(errMsg,").");
-	throw CommonException(errMsg,method);
+	char *errMsg=new (std::nothrow) char[strlen(msg)+strlen(filename)+strlen(errNo)+15];
+	if(errMsg !=NULL)
+	{	strcpy(errMsg,msg);
+		strcat(errMsg," (file: ");
+		strcat(errMsg,filename);
+		strcat(errMsg,", #");
+		strcat(errMsg,errNo);
+		strcat(errMsg,").");
+		throw CommonException(errMsg,method);
+	}
+	else
+		throw CommonException("File error",method);
 }
 
 #pragma mark ArchiveData: Log File Methods
@@ -1450,7 +1460,7 @@ void ArchiveData::ClearLogFile(void)
 		logStartTime=fmobj->CPUTime();
 	}
 	
-    catch(CommonException err)
+    catch(CommonException& err)
 	{   // divert to standard output and try to continue
 		cout << "# " << err.Message() << endl;
 		if(logstream.is_open()) logstream.close();
@@ -1487,7 +1497,7 @@ void ArchiveData::WriteLogFile(const char *logLine,double *num)
 			FileError("File error closing log file",logFile,"ArchiveData::WriteLogFile");
 	}
 	
-    catch(CommonException err)
+    catch(CommonException& err)
 	{   // divert to standard output and try to continue
 		cout << "# " << err.Message() << endl;
 		cout << "# Log Line: " << logLine;

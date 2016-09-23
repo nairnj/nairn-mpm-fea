@@ -18,7 +18,7 @@ double CustomThermalRamp::varTime=0.;
 double CustomThermalRamp::varXValue=0.;
 double CustomThermalRamp::varYValue=0.;
 double CustomThermalRamp::varZValue=0.;
-PRVar rampVarArray[5] = { NULL, NULL, NULL, NULL };
+PRVar rampVarArray[4] = { NULL, NULL, NULL, NULL };
 
 #pragma mark Constructors and Destructors
 
@@ -30,6 +30,17 @@ CustomThermalRamp::CustomThermalRamp()
 	isoDeltaT = 0.;
 	sigmoidal = 0;
 	scaleFxn = NULL;
+}
+
+// Destructor (and it is virtual)
+CustomThermalRamp::~CustomThermalRamp()
+{	if(scaleFxn!=NULL)
+	{	delete rampVarArray[0];
+		delete rampVarArray[1];
+		delete rampVarArray[2];
+		delete rampVarArray[3];
+		delete scaleFxn;
+	}
 }
 
 // Return name of this task
@@ -192,4 +203,12 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 	
 	return nextTask;
 }
+
+// Called when custom tasks are all done on a step
+CustomTask *CustomThermalRamp::FinishForStep(bool &removeMe)
+{	double effTime = mtime+timestep;
+	if(effTime>endTime) removeMe = true;
+	return nextTask;
+}
+
 

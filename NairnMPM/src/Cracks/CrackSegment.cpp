@@ -45,6 +45,14 @@ CrackSegment::CrackSegment(double xend,double yend,int tip,int matid)
 	historyData=NULL;
 }
 
+// when add particle, find plane element and set surface element to the same one
+void CrackSegment::FindInitialElement(void)
+{
+	planeInElem = FindElement();
+	surfInElem[0] = planeInElem;
+	surfInElem[1] = planeInElem;
+}
+
 #pragma mark CrackSegment: Methods
 
 // find current element (1 based) or return 0 if no element
@@ -57,7 +65,7 @@ int CrackSegment::FindElement(void)
     
     // check current element
     if(planeInElem>0)
-    {	if(theElements[planeInElem-1]->PtInElement(cpt))
+    {	if(theElements[planeElemID()]->PtInElement(cpt))
             return planeInElem;
     }
 	
@@ -73,6 +81,7 @@ int CrackSegment::FindElement(void)
 }
 
 // find current element (1 based) or return 0 if no element for crack surface
+// side = ABOVE_CRACK (1) or BELOW)_CRACK (2)
 int CrackSegment::FindElement(short side)
 {
     int j=side-1;
@@ -83,7 +92,7 @@ int CrackSegment::FindElement(short side)
 	
     // check current element
     if(surfInElem[j]>0)
-    {	if(theElements[surfInElem[j]-1]->PtInElement(cpt))
+    {	if(theElements[surfaceElemID(side)]->PtInElement(cpt))
             return surfInElem[j];
     }
 	
@@ -125,6 +134,7 @@ void CrackSegment::MovePosition(double xpt,double ypt)
 }
 
 // Move a surface position (2D) (in mm) - must move ABOVE_CRACK and then BELOW_CRACK
+// side = ABOVE_CRACK (1) or BELOW)_CRACK (2)
 bool CrackSegment::MoveSurfacePosition(short side,double xpt,double ypt,bool hasNodes)
 {
     short j=side-1;
@@ -198,6 +208,7 @@ void CrackSegment::AddTractionForceSeg(CrackHeader *theCrack)
 
 // calculate tractions on one side of crack for this segment
 // add forces to material velocity fields on one side of the crack
+// side = ABOVE_CRACK (1) or BELOW)_CRACK (2)
 double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,double sign)
 {
 	int nds[maxShapeNodes];
@@ -209,7 +220,7 @@ double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,doub
 
 	// get element and shape functino to extrapolate to the node
 	int js = side-1;
-	int iel = surfInElem[js]-1;
+	int iel = surfaceElemID(side);
 	Vector cspos;
 	cspos.x = surfx[js];
 	cspos.y = surfy[js];
@@ -236,7 +247,7 @@ double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,doub
 // get normalized vector tangent to crack path and the length of the path associated with this particle
 // vector points in direction of the crack. The corresponding normal (-t.y,t.x) is from below to above
 // (better to use splines)
-Vector CrackSegment::GetTangential(double *length)
+Vector CrackSegment::GetTangential(double *length) const
 {
 	Vector tang;
 	double dl;
@@ -556,6 +567,7 @@ Vector CrackSegment::FTract(double fni)
 }
 
 // calculate tractions on one side of crack for this segment
+// throws std::bad_alloc
 void CrackSegment::FindCrackTipMaterial(int currentNum)
 {
 	// if only one active material, it cannot change
@@ -569,11 +581,11 @@ void CrackSegment::FindCrackTipMaterial(int currentNum)
     double fn[maxShapeNodes];
 	
 	// array to collect weights
-	double *matWeight=(double *)malloc(sizeof(double)*numActiveMaterials);
+	double *matWeight = new double[numActiveMaterials];
 	for(i=0;i<numActiveMaterials;i++) matWeight[i] = 0.;
 	
 	// get shape functions to extrapolate to the particle
-	iel=planeInElem-1;
+	iel=planeElemID();
 	cspos.x=x;
 	cspos.y=y;
 	theElements[iel]->GetShapeFunctionsForCracks(fn,nds,&cspos);
@@ -593,6 +605,9 @@ void CrackSegment::FindCrackTipMaterial(int currentNum)
 			tipWeight = matWeight[i];
 		}
 	}
+	
+	// free memory
+	delete [] matWeight;
 	
 	// if found one, use it
 	if(tipMat>=0)
@@ -680,6 +695,7 @@ int CrackSegment::CheckSurfaces(void)
 // See JAN-OSU-4, pg 133-134
 // thereIsAnotherSegement only true on first of two checks for internal segments
 // vector dir*(-dyp,dxp) should point from surface to back across the crack normal to segment.
+// side = ABOVE_CRACK (1) or BELOW)_CRACK (2)
 bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool thereIsAnotherSegement,double dir)
 {	
 	int j=side-1;								// index to surface position
@@ -829,6 +845,7 @@ void CrackSegment::CreateSegmentExtents(bool isFirstSeg)
 
 // move above or below position slightly in the direction of the normal
 // if it has already moved, then do not bother
+// side = ABOVE_CRACK (1) or BELOW)_CRACK (2)
 Vector CrackSegment::SlightlyMovedIfNotMovedYet(int side)
 {
 	Vector moved;
@@ -864,6 +881,7 @@ Vector CrackSegment::SlightlyMovedIfNotMovedYet(int side)
 
 // area of triangle with given point and vector in forward crack direction along one surface
 // assumes either prevSeg or nextSeg != NULL
+// side = ABOVE_CRACK (1) or BELOW)_CRACK (2)
 double CrackSegment::ForwardArea(double xpt,double ypt,int side)
 {	int js=side-1;
 	return (prevSeg!=NULL) ?
@@ -873,12 +891,17 @@ double CrackSegment::ForwardArea(double xpt,double ypt,int side)
 
 // material ID (convert to zero based)
 int CrackSegment::MatID(void) { return matnum-1; }			// convert 1-based matnum to zero based for materials array
-void CrackSegment::SetMatID(int newMat) { matnum=newMat; }	// input 1-based
+void CrackSegment::SetMatID(int newMat) { matnum=newMat; }			// input 1-based
 
 // pointer to history data for use by traction laws
 void CrackSegment::SetHistoryData(char *p)
-{	if(historyData!=NULL) free(historyData);
+{	if(historyData!=NULL) delete [] historyData;
 	historyData=p;
 }
 char *CrackSegment::GetHistoryData(void) { return historyData; }
+
+// zero based element ID to addess into elements array
+// side = ABOVE_CRACK (1) or BELOW)_CRACK (2)
+int CrackSegment::planeElemID(void) const { return planeInElem-1; }
+int CrackSegment::surfaceElemID(int side) const { return surfInElem[side-1]-1; }
 

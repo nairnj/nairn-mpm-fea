@@ -41,6 +41,7 @@ MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
 
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
+// throws CommonException()
 void MassAndMomentumTask::Execute(void)
 {   
 	CommonException *massErr = NULL;
@@ -88,16 +89,20 @@ void MassAndMomentumTask::Execute(void)
 				}
 			}
 		}
-		catch(CommonException err)
+		catch(CommonException& err)
         {   if(massErr==NULL)
 			{
 #pragma omp critical (error)
 				massErr = new CommonException(err);
 			}
 		}
-        catch(...)
-        {   cout << "Unknown exception in MassAndMomentumTask()" << endl;
-        }
+		catch(...)
+		{	if(massErr==NULL)
+			{
+#pragma omp critical (error)
+				massErr = new CommonException("Unexpected error","MassAndMomentumTask::Execute");
+			}
+		}
 	}
 	
 	// throw now - only possible error if too many CPDI nodes in 3D

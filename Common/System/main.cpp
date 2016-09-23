@@ -125,13 +125,14 @@ int main(int argc,const char *argv[])
 	
 	// ------------------------------------------------------------
     // 4. Main analysis block
-	//		Catches CommonException() cand char * exceptions
+	//		Catches CommonException(), char * exceptions, std::bad__alloc,
+	//		exception, anything else
     try
 	{	// Start analysis
 		fmobj->StartAnalysis(abort);
     }
     
-    catch(CommonException err)
+    catch(CommonException& err)
 	{   cout << "Warning: pipe timing may prevent error details from appearing below" << endl;
 #ifdef MPM_CODE
     	err.Display(fmobj->mstep,mtime);
@@ -148,7 +149,14 @@ int main(int argc,const char *argv[])
 		return AnalysisErr;
 	}
     
-    catch(exception &e)
+	catch(std::bad_alloc& ba)
+	{	// memory error most likely in new command
+        cout << "Memory error: " << ba.what() << endl;
+        cerr << "Memory error: " << ba.what() << endl;
+		return AnalysisErr;
+	}
+	
+    catch(exception& e)
     {   // send to output results and error pipe
         cout << "Standard exception: " << e.what() << endl;
         cerr << "Standard exception: " << e.what() << endl;

@@ -20,15 +20,15 @@
 #pragma mark INITIALIZATION
 
 // Constructors - vfld is field ID and cnum is crack number
+// throws std::bad_alloc
 CrackVelocityField::CrackVelocityField(int num,short theLoc,int cnum)
 {
 	// field number [0] to [3]
 	fieldNum = num;
 	
 	// pointers for material velocity fields (1 if single material modes, or number of materials in use)
-	mvf=(MatVelocityField **)malloc(sizeof(MatVelocityField *)*maxMaterialFields);
-	if(mvf==NULL) throw CommonException("Memory error allocating material velocity field pointers.",
-                                        "CrackVelocityField::CrackVelocityField");
+	mvf = new MatVelocityField *[maxMaterialFields];
+	
 	// set all to NULL, they are created as needed in task 1
 	int i;
 	for(i=0;i<maxMaterialFields;i++)
@@ -52,11 +52,12 @@ CrackVelocityField::CrackVelocityField(int num,short theLoc,int cnum)
 // Destructor - child class deletes material velocity fields as needed
 CrackVelocityField::~CrackVelocityField()
 {	
-	free(mvf);
+	delete [] mvf;
 	DeleteStrainField();
 }
 
 // Create the type of material velocity field that is needed
+// throws std::bad_alloc
 MatVelocityField *CrackVelocityField::CreateMatVelocityField(int fieldFlags)
 {
 	return new MatVelocityField(fieldFlags);
@@ -84,11 +85,14 @@ void CrackVelocityField::Zero(short theLoc,int cnum,bool zeroMVFs)
 }
 
 // Called in intitation to preallocate material velocituy fields
+// throws std::bad_alloc
 void CrackVelocityField::AddMatVelocityField(int matfld) {}
+
 bool CrackVelocityField::NeedsMatVelocityField(int matfld) const { return FALSE; }
 
 // Make sure this crack velocity field on ghost node matches a real one
 // Called during time step initialization if needed (i.e., cracks and/or multimaterial mode)
+// throws std::bad::alloc
 void CrackVelocityField::MatchRealFields(CrackVelocityField *rcvf)
 {	// crack details
 	loc[0] = rcvf->loc[0];
@@ -215,10 +219,10 @@ void CrackVelocityField::IncrementDelvaTask5(int matfld,double fi,GridToParticle
 #pragma mark TASK 7 J AND K CALCULATION METHODS
 
 // create strain field for this crack velocity field
+// throws std::bad_alloc
 void CrackVelocityField::CreateStrainField(void)
 {	df=new DispField;
-    if(df==NULL) throw CommonException("Memory error allocating new strain field.",
-										"CrackVelocityField::CreateStrainField");
+	
 	df->du.x=0.;
 	df->du.y=0.;
 	df->dv.x=0.;
@@ -235,7 +239,7 @@ void CrackVelocityField::CreateStrainField(void)
 	
 	// if more than one material, track material tip to set crack tip material changes
 	if(numActiveMaterials>1)
-	{	df->matWeight=(double *)malloc(sizeof(double)*numActiveMaterials);
+	{	df->matWeight = new double[numActiveMaterials];
 		int i;
 		for(i=0;i<numActiveMaterials;i++)
 			df->matWeight[i] = 0.;
@@ -247,7 +251,7 @@ void CrackVelocityField::CreateStrainField(void)
 // create strain field for this crack velocity field
 void CrackVelocityField::DeleteStrainField(void)
 {	if(df!=NULL)
-	{	if(df->matWeight!=NULL) delete df->matWeight;
+	{	if(df->matWeight!=NULL) delete [] df->matWeight;
 		delete df;
 		df=NULL;
 	}
@@ -470,6 +474,7 @@ bool CrackVelocityField::ActiveNonrigidField(CrackVelocityField *cvf,int number)
 }
 
 // create single or multi material crack velocity field as needed
+// throws std::bad_alloc
 CrackVelocityField *CrackVelocityField::CreateCrackVelocityField(int fieldNum,short theLoc,int cnum)
 {	if(maxMaterialFields==1)
 		return (CrackVelocityField *)(new CrackVelocityFieldSingle(fieldNum,theLoc,cnum));

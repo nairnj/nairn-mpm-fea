@@ -24,7 +24,6 @@ class CrackSegment
 {
     public:
         double x,y,origx,origy;
-        int planeInElem,surfInElem[2];
         double surfx[2],surfy[2];
         CrackSegment *nextSeg,*prevSeg;
         Vector Jint,sif,tract;
@@ -40,7 +39,10 @@ class CrackSegment
         // constructors
         CrackSegment();
         CrackSegment(double,double,int,int);
-        
+	
+		// initialize
+		void FindInitialElement(void);
+	
         // methods
         void FillArchive(char *,int);
         int FindElement(void);
@@ -62,14 +64,16 @@ class CrackSegment
 		double AddTractionForceSegSide(CrackHeader *,int,double);
 		void FindCrackTipMaterial(int);
 		void UpdateTractions(CrackHeader *);
-		Vector GetTangential(double *);
+		Vector GetTangential(double *) const;
 		double TractionEnergy(Vector *,int,bool,CrackSegment **);
 		double SegmentTractionEnergy(bool);
 		Vector FTract(double);
 		void SetHistoryData(char *p);
 		char *GetHistoryData(void);
         void CreateSegmentExtents(bool);
-				
+		int planeElemID(void) const;
+		int surfaceElemID(int side) const;
+	
 	private:
 		Vector cFtract;				// traction law force
 		double dxPlane,dyPlane;
@@ -77,7 +81,8 @@ class CrackSegment
 		bool planeMove;
 		int matnum;						// 1-based material ID for traction law
         char *historyData;				// history dependent traction law data
-    
+		int planeInElem,surfInElem[2];	// 1-based element numbers
+	
 };
 
 #endif

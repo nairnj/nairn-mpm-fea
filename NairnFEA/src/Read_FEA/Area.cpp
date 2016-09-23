@@ -217,6 +217,7 @@ const char *Area::MeshInterface(void)
 }
 
 // Mesh an area that has been checked already as valid and is quadrilateral
+// throws std::bad_alloc
 const char *Area::MeshArea(void)
 {
 	int i;

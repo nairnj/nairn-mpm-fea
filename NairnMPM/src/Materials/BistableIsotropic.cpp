@@ -241,6 +241,7 @@ void BistableIsotropic::PrintTransportProperties(void) const
 }
 
 // 3D not allowed
+// throws CommonException()
 void BistableIsotropic::ValidateForUse(int np) const
 {	if(np==THREED_MPM || np==AXISYMMETRIC_MPM)
 	{	throw CommonException("BistableIsotropic materials cannot do 3D or Axisymmetric MPM analysis",
@@ -554,9 +555,6 @@ void BistableIsotropic::SRConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTim
 }
 
 #pragma mark BistableIsotropic::Accessors
-
-// Return the material tag
-int BistableIsotropic::MaterialTag(void) const { return BISTABLEISO; }
 
 /*	calculate wave speed in mm/sec (because K,G in MPa=g/(mm-msec^2) and rho in g/mm^3)
 	Uses max sqrt((K +4G/3)/rho) which is dilational wave speed

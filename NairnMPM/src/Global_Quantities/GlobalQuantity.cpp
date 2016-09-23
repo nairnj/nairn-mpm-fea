@@ -38,6 +38,7 @@ GlobalQuantity::GlobalQuantity()
 {
 }
 
+// throws std::bad_alloc
 GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 {
 	char nameStr[200];

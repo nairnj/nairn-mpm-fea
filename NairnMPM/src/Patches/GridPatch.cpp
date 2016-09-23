@@ -54,6 +54,7 @@ GridPatch::GridPatch(int xmin,int xmax,int ymin,int ymax,int zmin,int zmax)
 }
 
 // Create all ghost nodes
+// throws std::bad_alloc
 bool GridPatch::CreateGhostNodes(void)
 {
 	int i,j,k;
@@ -87,7 +88,7 @@ bool GridPatch::CreateGhostNodes(void)
 		numGhosts = interiorRow*fullRank + zn*interiorRank;
         //cout << "... base interior " << baseInterior << ", base apex " << baseApex << endl;
 	}
-	ghosts = (GhostNode **)malloc(numGhosts*sizeof(GhostNode));
+	ghosts = new (nothrow) GhostNode *[numGhosts];
 	if(ghosts==NULL) return false;
 	//cout << "... gtot = " << numGhosts << endl;
 
@@ -192,8 +193,7 @@ void GridPatch::DeleteDisp(void)
 // prepare particle to be moved to another patch
 bool GridPatch::AddMovingParticle(MPMBase *mptr,GridPatch *newPatch,MPMBase *prevMptr)
 {	// create data structure
-	MovingData *nextToMove = (MovingData *)malloc(sizeof(MovingData));
-	if(nextToMove == NULL) return false;
+	MovingData *nextToMove = new MovingData;
 	
 	// fill with data
 	nextToMove->movingMptr = mptr;
@@ -295,6 +295,7 @@ void GridPatch::RemoveParticleAfter(MPMBase *mptr,MPMBase *prevMptr)
 
 // return pointer to real or ghost node for 1-based node number num in the global grid
 //	as appropriate for this patch
+// throws CommonException()
 NodalPoint *GridPatch::GetNodePointer(int num)
 {
 	// if single patch, use the real node
@@ -407,6 +408,7 @@ NodalPoint *GridPatch::GetNodePointer(int num)
 
 // return pointer to real or ghost node for 1=based node number num in the global grid
 //	as appropriate for this patch
+// throws CommonException()
 NodalPoint *GridPatch::GetNodePointer(int num,bool debug)
 {
 	// if single patch, use the real node

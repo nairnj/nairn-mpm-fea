@@ -124,9 +124,6 @@ int ContactLaw::MaterialStyle(void) const { return CONTACT_MAT; }
 // return unique, short name for this material
 const char *ContactLaw::MaterialType(void) const { return "Contact Law Material"; }
 
-// Return the material tag
-int ContactLaw::MaterialTag(void) const { return CONTACTLAW; }
-
 // Calculate maximum wave speed for material in mm/sec.
 double ContactLaw::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; }
 
@@ -153,6 +150,7 @@ bool ContactLaw::IsPerfectNormalInterface(void) const { return false; }
 // Given old style input for friction,Dn, Dnc, and Dt, create appropriate contact law,
 // add to contact law cache on material controller, and return a temporary ID
 // if contactProps==NULL, create friction law with useFriction (cannot be for interface)
+// throws std::bad_alloc
 int ContactLaw::ConvertOldStyleToContactLaw(MaterialController *matCtrl,ContactInput *contactProps,double useFriction)
 {	// reading old style input
 	

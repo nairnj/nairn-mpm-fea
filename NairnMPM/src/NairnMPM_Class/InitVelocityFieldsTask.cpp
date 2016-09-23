@@ -32,6 +32,7 @@ InitVelocityFieldsTask::InitVelocityFieldsTask(const char *name) : MPMTask(name)
 // can't use ghost nodes, because need to test all on real nodes
 //
 // This task only used if have cracks or in multimaterial mode
+// throws CommonException()
 void InitVelocityFieldsTask::Execute(void)
 {
 	CommonException *initErr = NULL;
@@ -127,9 +128,13 @@ void InitVelocityFieldsTask::Execute(void)
 							{   try
 								{   vfld = ndptr->AddCrackVelocityField(matfld,cfld);
 								}
-								catch(CommonException err)
+								catch(std::bad_alloc& ba)
 								{   if(initErr==NULL)
-									initErr = new CommonException(err);
+										initErr = new CommonException("Memory error","InitVelocityFieldsTask::Execute");
+								}
+								catch(...)
+								{	if(initErr==NULL)
+										initErr = new CommonException("Unexpected error","InitVelocityFieldsTask::Execute");
 								}
 							}
 						}
@@ -148,9 +153,13 @@ void InitVelocityFieldsTask::Execute(void)
 						{   try
 							{   ndptr->AddMatVelocityField(vfld,matfld);
 							}
-							catch(CommonException err)
+							catch(std::bad_alloc& ba)
 							{   if(initErr==NULL)
-								initErr = new CommonException(err);
+									initErr = new CommonException("Memory error","InitVelocityFieldsTask::Execute");
+							}
+							catch(...)
+						 	{	if(initErr==NULL)
+									initErr = new CommonException("Unexpected error","InitVelocityFieldsTask::Execute");
 							}
 						}
 						

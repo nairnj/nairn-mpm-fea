@@ -34,7 +34,6 @@ void ThermalRamp::Output(void)
 	// always print reference temperature
 	sprintf(hline,"Reference Temperature: %g K",reference);
 	cout << hline << endl;
-	
 }
 
 

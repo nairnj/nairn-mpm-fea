@@ -387,9 +387,6 @@ Tensor Neohookean::GetStress(Tensor *sp,double pressure,MPMBase *) const
     return stress;
 }
 
-// Return the material tag
-int Neohookean::MaterialTag(void) const { return NEOHOOKEAN; }
-
 // Calculate wave speed in L/sec (because G in mass/(L sec^2) and rho in mass/L^3)
 // Uses sqrt((K +4G/3)/rho) which is dilational wave speed at low strain
 double Neohookean::WaveSpeed(bool threeD,MPMBase *mptr) const

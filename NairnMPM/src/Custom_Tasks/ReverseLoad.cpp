@@ -212,7 +212,7 @@ CustomTask *ReverseLoad::Initialize(void)
 
 // Called when custom tasks are all done on a step
 // throws CommonException() to end simulation
-CustomTask *ReverseLoad::FinishForStep(void)
+CustomTask *ReverseLoad::FinishForStep(bool &removeMe)
 {
     // change to true trigger or on end of holding phase
 	bool status = false;

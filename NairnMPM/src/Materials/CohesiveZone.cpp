@@ -267,9 +267,6 @@ double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCo
 // return material type
 const char *CohesiveZone::MaterialType(void) const { return "Triangular Cohesive Zone"; }
 
-// Return the material tag
-int CohesiveZone::MaterialTag(void) const { return COHESIVEZONEMATERIAL; }
-
 //	Calculate properties used in analyses - here triangular law
 //		k1 is slope up (F/L^3)
 //		u2 is final displacement (L)

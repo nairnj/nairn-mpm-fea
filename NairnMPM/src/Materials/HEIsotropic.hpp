@@ -63,13 +63,12 @@ class HEIsotropic : public HyperElastic
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
         virtual Tensor GetStress(Tensor *,double,MPMBase *) const;
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag() const;
 		virtual double WaveSpeed(bool,MPMBase *) const;
         virtual bool SupportsArtificialViscosity(void) const;
 		virtual int AltStrainContains(void) const;
     
     protected:
-		double G1;
+		double G1,gammaI;
 		// double aI,betaI		// isotropic expansion defined in super classes
 		double G1sp;
 		HardeningLawBase *plasticLaw;

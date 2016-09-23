@@ -111,6 +111,7 @@ void CommonArchiveData::SetArchiveMesh(bool newSetting) { archiveMesh=newSetting
 
 // Set path to directory of the input file
 // It is from the file that is read, and this folder is used for all output (so it is really outputDir
+// throws std::bad_alloc
 void CommonArchiveData::SetInputDirPath(const char *cmdFile,bool useWorkingDir)
 {
 	// delete old
@@ -151,6 +152,7 @@ void CommonArchiveData::SetInputDirPath(const char *cmdFile,bool useWorkingDir)
 
 // Get path for file using outputDir. This will be relative to the input file
 //  unless keyed to workiingDirectory, and then will be relative to that directory instead
+// throws std::bad_alloc
 char *CommonArchiveData::ExpandOutputPath(const char *partialName)
 {
 	char *path;
@@ -173,6 +175,7 @@ char *CommonArchiveData::ExpandOutputPath(const char *partialName)
 
 // Set archiveRoot and make sure does not end in period and remove spaces
 // Find parent folder (without the terminal /) or empty string if no parent
+// throws std::bad_alloc
 bool CommonArchiveData::SetArchiveRoot(char *newRoot,bool makeUnique)
 {
 	// second set not allowed

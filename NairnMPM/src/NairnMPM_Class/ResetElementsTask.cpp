@@ -39,6 +39,7 @@ ResetElementsTask::ResetElementsTask(const char *name) : MPMTask(name)
 
 // See if any particles have changed elements
 // Stop if off the grid
+// throws CommonException()
 void ResetElementsTask::Execute(void)
 {
 	// update feedback damping now if needed
@@ -120,11 +121,25 @@ void ResetElementsTask::Execute(void)
 				}
 			}
 		}
-		catch(CommonException err)
+		catch(CommonException& err)
         {   if(resetErr==NULL)
 			{
 #pragma omp critical (error)
 				resetErr = new CommonException(err);
+			}
+		}
+		catch(std::bad_alloc& ba)
+        {   if(resetErr==NULL)
+			{
+#pragma omp critical (error)
+				resetErr = new CommonException("Memory error","ResetElementsTask::Execute");
+			}
+		}
+		catch(...)
+        {   if(resetErr==NULL)
+			{
+#pragma omp critical (error)
+				resetErr = new CommonException("Unexepected error","ResetElementsTask::Execute");
 			}
 		}
 	}

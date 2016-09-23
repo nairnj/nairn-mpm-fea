@@ -38,11 +38,10 @@ ElementBase::~ElementBase()
 #pragma mark ElementBase: Shape and Gradient calls for MPM
 
 
-/*
- Find GIMP information or find CPDI info (one or the other, never both)
- Not called for rigid BC particles because do not use shape functions unless extrapolated
-	and then use simple ones (non-GIMP)
- throws CommonException() if CPDI particle corner has left the grid
+/*	Find GIMP information or find CPDI info (one or the other, never both)
+	Not called for rigid BC particles because do not use shape functions unless extrapolated
+		and then use simple ones (non-GIMP)
+	throws CommonException() if CPDI particle corner has left the grid
 */
 void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
 {
@@ -223,17 +222,16 @@ void ElementBase::GetShapeFunctions(double *fn,int **ndsHandle,MPMBase *mpmptr) 
     }
 }
 
-/* 
- Return list of nodes (possibly change array with address in ndsHandle)
-	and the shape functions and their gradients
- Load node numbers into nds[1]...
- Load shape functions into fn[1]...
- Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
- WARNING: This should never be called for Rigid BC particles
- NOTE: This is called at various places in the time step when shape functions are needed. It should
-	recalculate the ones found at the begnning of the time step using precalculated xipos
-	or CPDI info, which are found in initialization
- throws CommonException() if too many CPDI nodes
+/*	Return list of nodes (possibly change array with address in ndsHandle)
+		and the shape functions and their gradients
+	Load node numbers into nds[1]...
+	Load shape functions into fn[1]...
+	Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
+	WARNING: This should never be called for Rigid BC particles
+	NOTE: This is called at various places in the time step when shape functions are needed. It should
+		recalculate the ones found at the begnning of the time step using precalculated xipos
+		or CPDI info, which are found in initialization
+	throws CommonException() if too many CPDI nodes
 */
 void ElementBase::GetShapeGradients(double *fn,int **ndsHandle,
                                     double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr) const
@@ -819,6 +817,7 @@ int ElementBase::NextNode(int gridNode)
 void ElementBase::GetListOfNeighbors(int *theList) { mpmgrid.ListOfNeighbors2D(num,theList); }
 
 // If needed, create the neighbors array (only done for 2D with cracks)
+// throws std::bad_alloc
 void ElementBase::AllocateNeighborsArray(void)
 {	neighbors = new int[NumberSides()];
 	int i;

@@ -89,6 +89,7 @@ const char *ClampedNeohookean::VerifyAndLoadProperties(int np)
 }
 
 // plane stress not allowed in viscoelasticity
+// throws CommonException()
 void ClampedNeohookean::ValidateForUse(int np) const
 {	if(np==PLANE_STRESS_MPM)
 	{	throw CommonException("Clamped Neohookean material cannot be used in plane stress MPM yet",
@@ -307,9 +308,6 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 }
 	
 #pragma mark ClampedNeohookean::Accessors
-
-// Return the material tag
-int ClampedNeohookean::MaterialTag(void) const { return CLAMPEDNEOHOOKEAN; }
 
 // return material type
 const char *ClampedNeohookean::MaterialType(void) const { return "Clamped Neohookean Hyperelastic-plastic"; }

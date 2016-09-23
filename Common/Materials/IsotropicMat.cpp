@@ -118,14 +118,18 @@ const char *IsotropicMat::VerifyAndLoadProperties(int np)
 	// load elastic properties with constant values
 	FillUnrotatedElasticProperties(&pr,np);
 	
+#ifdef MPM_CODE
+	// heating gamma0 (dimensionless) (K 3 alpha)/(rho Cv)
+    double alphaV = 3.e-6*aI;
+	double Kbulk = E/(3.*(1-2*nu));
+    gamma0 = Kbulk*alphaV/(rho*heatCapacity);
+#endif
+	
 	// superclass call (skip Elastic, which has no VerifyAndLoadProperties()
 	return MaterialBase::VerifyAndLoadProperties(np);
 }
 
 #pragma mark IsotropicMat::Accessors
-
-// Return the material tag
-int IsotropicMat::MaterialTag(void) const { return ISOTROPIC; }
 
 // return material type
 const char *IsotropicMat::MaterialType(void) const { return "Isotropic"; }

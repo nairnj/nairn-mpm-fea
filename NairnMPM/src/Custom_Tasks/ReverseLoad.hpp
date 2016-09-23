@@ -35,7 +35,7 @@ class ReverseLoad : public CustomTask
         virtual char *InputParam(char *,int &,double &);
         virtual CustomTask *Initialize(void);
 	
-        virtual CustomTask *FinishForStep(void);
+        virtual CustomTask *FinishForStep(bool &r);
 
     private:
         double finalTime,endHoldTime;

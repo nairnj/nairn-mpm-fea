@@ -998,7 +998,7 @@ mechanics models. The key commands to use this mode are:</p>
 <li><code>MultimaterialMode &lt;(Vmin)&gt;,&lt;(disps)&gt;,&lt;(norm)&gt;,&lt;(rigidBiasOrAzimuth)&gt;,&lt;(polar)&gt;</code><br>
 Sets to use multimaterial modes and sets some options. <code>(Vmin)</code> is minimum relative volume to allow contact (default 0.0).
 <code>(disps)</code> is &quot;enabled&quot; (or &quot;yes&quot; or 1) or &quot;disabled&quot; (or &quot;no&quot; or 0)
-for detection of contact using particle displacements (default &quot;disabled&quot;). <code>(norm)</code> determines the method used to find surface normals during
+for detection of contact using particle displacements (default &quot;enabled&quot;). <code>(norm)</code> determines the method used to find surface normals during
 contact calculations, with options:
 <ul>
 <li>&quot;maxgrad&quot; (or 0)</li>
@@ -1205,11 +1205,11 @@ Apply traction to selected particles in direction <code>(dir)</code> (x, y, z (o
 <li><a name="loadtype"></a><code>LoadType (type)</code><br>
 Specify loads in current shape command as "net" loads or "perParticle" loads (default is "perParticle"). When set to net, the load specified by the <a href="#force">Load command</a> is spread out over all particles in that shape.</li>
 
-<li><a name="hflux"></a><code>HeatFlux external,(face),(style),(value),&lt;(time)&gt;</code><br>
-Apply heat flux to selected particles on face <code>(face)</code> (see <a href="#traction">Traction command</a> for meaning of (face) parameter). <code>(style)</code> is style with <code>(value)</code> (in K) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition.</li>
+<li><a name="hflux"></a><code>HeatFlux (mode),(face),(style),(value),&lt;(time)&gt;</code><br>
+Apply heat flux to selected particles on face <code>(face)</code> (see <a href="#traction">Traction command</a> for meaning of (face) parameter). For <code>(mode)</code>=external, <code>(style)</code> is style with <code>(value)</code> (in K) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition. For <code>(mode)</code>=coupled, <code>(style)</code> must be "function", <code>(value)</code> is a <a href="#function">user-defined function</a> where <code>t</code> is particle temperature, and if <code>(time)</code> is supplied the coupled condition is applied only after the entered time (in ms).</li>
 
-<li><a name="cflux"></a><code>ConcentrationFlux external,#1,#2,#3,&lt;#4&gt;</code><br>
-Apply concentration flux to selected particles on face <code>(face)</code> (see <a href="#traction">Traction command</a> for meaning of (face) parameter). <code>(style)</code> is style with <code>(value)</code> (in concentration potential) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition.</li>
+<li><a name="cflux"></a><code>ConcentrationFlux (mode),(face),(style),(value),&lt;(time)&gt;</code><br>
+Apply concentration flux to selected particles on face <code>(face)</code> (see <a href="#traction">Traction command</a> for meaning of (face) parameter). For <code>(mode)</code>=external, <code>(style)</code> is style with <code>(value)</code> (in concentration potential) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition. For <code>(mode)</code>=coupled, <code>(style)</code> must be "function", <code>(value)</code> is a <a href="#function">user-defined function</a> where <code>t</code> is difference between particle concentration (0 to 1) and a reservoir concentration, and <code>(time)</code> is the reservoir concentration (0 to 1).</li>
 
 </ul>
 
@@ -1424,6 +1424,7 @@ When this task is triggered by critical crack length, the crack propagation will
 <li>time (time) - enter the time of the thermal ramp (in ms). This parameter is optional; if omitted, the thermal ramp occurs in a single time step.</li>
 <li>start (start) - enter the time to start the thermal ramp (in ms). This parameter is optional; if omitted, the thermal ramp starts at time zero. It ends at time (start)+(time)</li>
 <li>sigmoidal (style) - enter 0 or 1 for a linear or sigmoidal thermal ramp. This parameter is optional; if omitted, the ramp is linear.</li>
+<li><code>scale (function)</code> - if this optional command is used, the applied <code>DeltaT</code> is scaled by any <a href="#function">user-defined function</a> of time and particle position. The <code>(function)</code> must be embedded in the parameter name (<i>e.g.</i>, <code>"scale x/40"</code>).</li>
 </ul>
 </dd>
 

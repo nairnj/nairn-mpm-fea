@@ -28,7 +28,7 @@ class CalcJKTask : public CustomTask
 	
         virtual CustomTask *PrepareForStep(bool &);
         virtual CustomTask *StepCalculation(void);
-		virtual CustomTask *FinishForStep(void);
+		virtual CustomTask *FinishForStep(bool &);
     
         // other methods
         void ScheduleJK(int);

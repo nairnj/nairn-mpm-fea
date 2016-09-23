@@ -169,6 +169,7 @@ void HEMGEOSMaterial::PrintTransportProperties(void) const
 }
 
 // if analysis not allowed, throw an exception
+// throws CommonException()
 void HEMGEOSMaterial::ValidateForUse(int np) const
 {
 	if(thermal.reference<=0)
@@ -289,9 +290,6 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,
 }
 
 #pragma mark HEMGEOSMaterial::Accessors
-
-// Return the material tag
-int HEMGEOSMaterial::MaterialTag(void) const { return HEMGEOSMATERIAL; }
 
 // return unique, short name for this material
 const char *HEMGEOSMaterial::MaterialType(void) const { return "Hyperelastic MGEOS Material"; }

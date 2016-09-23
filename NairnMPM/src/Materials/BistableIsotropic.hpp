@@ -70,7 +70,6 @@ class BistableIsotropic : public IsotropicMat
         virtual double MaximumDiffusion(void) const;
         virtual double MaximumDiffusivity(void) const;
 		virtual const char *MaterialType(void) const;
-		virtual int MaterialTag() const;
     
     private:
         char readbs[BISTABLE_PROPS];

@@ -118,6 +118,7 @@ void BodyForce::GetGridBodyForce(Vector *theFrc,NodalPoint *ndptr,double utime)
 
 
 // set function for grid body force
+// throws std::bad_alloc, SAXException()
 void BodyForce::SetGridBodyForceFunction(char *bcFunction,int input)
 {
 	if(bcFunction==NULL)
@@ -405,6 +406,7 @@ void BodyForce::UpdateAlpha(double delTime,double utime)
 }
 
 // set target function for feedback damping
+// throws std::bad_alloc, SAXException()
 void BodyForce::SetTargetFunction(char *bcFunction,bool gridDamp)
 {   
 	if(bcFunction==NULL)
@@ -433,6 +435,7 @@ void BodyForce::SetTargetFunction(char *bcFunction,bool gridDamp)
 }
 
 // set maximum alpha (units 1/sec)
+// throws SAXException()
 void BodyForce::SetMaxAlpha(double theMax,bool gridDamp)
 {   if(theMax<=0.)
 		ThrowSAXException("Maximum feedback damping alpha must be positive");
@@ -443,6 +446,7 @@ void BodyForce::SetMaxAlpha(double theMax,bool gridDamp)
 }
 
 // set function for grid damping
+// throws std::bad_alloc, SAXException()
 void BodyForce::SetGridDampingFunction(char *bcFunction,bool gridDamp)
 {
 	if(bcFunction==NULL)
@@ -471,6 +475,7 @@ void BodyForce::SetGridDampingFunction(char *bcFunction,bool gridDamp)
 }
 
 // Implement fraction PIC by setting damping values
+// throws SAXException()
 void BodyForce::SetFractionPIC(double fract)
 {
 	if(fract<0. || fract>1.)
@@ -481,7 +486,11 @@ void BodyForce::SetFractionPIC(double fract)
 		usePICDamping = true;
 	}
 	else
+	{	fractionPIC = 0.;
 		usePICDamping = false;
+	}
 }
 
+// get fraction PIC
+double BodyForce::GetFractionPIC(void) { return fractionPIC; }
 

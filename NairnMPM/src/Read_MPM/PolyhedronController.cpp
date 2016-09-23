@@ -27,6 +27,7 @@ PolyhedronController::~PolyhedronController()
 
 // set from  arbitrary string data
 // not thread safe due to push_back()
+// throws std::bad_alloc, SAXException()
 void PolyhedronController::SetProperty(char *bData,CommonReadHandler *reader)
 {
 	int i,numfaces;

@@ -82,11 +82,25 @@ void MoveCracksTask::Execute(void)
 					throw CommonException(errMsg,"MoveCracksTask::Execute");
 				}
 			}
-			catch(CommonException err)
+			catch(CommonException& err)
 			{	if(mcErr==NULL)
 				{
 #pragma omp critical (error)
 					mcErr = new CommonException(err);
+				}
+			}
+			catch(std::bad_alloc& ba)
+			{	if(mcErr==NULL)
+				{
+#pragma omp critical (error)
+					mcErr = new CommonException("Memory error","MoveCracksTask::Execute");
+				}
+			}
+			catch(...)
+			{	if(mcErr==NULL)
+				{
+#pragma omp critical (error)
+					mcErr = new CommonException("Memory error","MoveCracksTask::Execute");
 				}
 			}
 		}
@@ -112,11 +126,25 @@ void MoveCracksTask::Execute(void)
 				// tractions
 				crackList[cn]->UpdateCrackTractions();
 			}
-			catch(CommonException err)
+			catch(CommonException& err)
 			{	if(mcErr==NULL)
 				{
 #pragma omp critical (error)
 					mcErr = new CommonException(err);
+				}
+			}
+			catch(std::bad_alloc& ba)
+			{	if(mcErr==NULL)
+				{
+#pragma omp critical (error)
+					mcErr = new CommonException("Memory error","MoveCracksTask::Execute");
+				}
+			}
+			catch(...)
+			{	if(mcErr==NULL)
+				{
+#pragma omp critical (error)
+					mcErr = new CommonException("Memory error","MoveCracksTask::Execute");
 				}
 			}
 		}
@@ -141,12 +169,26 @@ void MoveCracksTask::Execute(void)
                 throw CommonException(errMsg,"MoveCracksTask::Execute");
             }
         }
-		catch(CommonException err)
+		catch(CommonException& err)
 		{	if(mcErr==NULL)
             {
 #pragma omp critical (error)
                 mcErr = new CommonException(err);
             }
+		}
+		catch(std::bad_alloc& ba)
+		{	if(mcErr==NULL)
+			{
+#pragma omp critical (error)
+				mcErr = new CommonException("Memory error","MoveCracksTask::Execute");
+			}
+		}
+		catch(...)
+		{	if(mcErr==NULL)
+			{
+#pragma omp critical (error)
+				mcErr = new CommonException("Memory error","MoveCracksTask::Execute");
+			}
 		}
 	}
     
@@ -168,12 +210,26 @@ void MoveCracksTask::Execute(void)
                 throw CommonException(errMsg,"MoveCracksTask::Execute");
             }
         }
-		catch(CommonException err)
+		catch(CommonException& err)
 		{	if(mcErr==NULL)
             {
 #pragma omp critical (error)
                 mcErr = new CommonException(err);
             }
+		}
+		catch(std::bad_alloc& ba)
+		{	if(mcErr==NULL)
+			{
+#pragma omp critical (error)
+				mcErr = new CommonException("Memory error","MoveCracksTask::Execute");
+			}
+		}
+		catch(...)
+		{	if(mcErr==NULL)
+			{
+#pragma omp critical (error)
+				mcErr = new CommonException("Memory error","MoveCracksTask::Execute");
+			}
 		}
 	}
 	

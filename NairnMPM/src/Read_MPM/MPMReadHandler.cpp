@@ -58,6 +58,7 @@
 	MPMReadHandler: Constructors and Destructor
 ********************************************************************************/
 
+// throws std::bad_alloc
 MPMReadHandler::MPMReadHandler()
 {
 	crackCtrl=new CrackController();
@@ -83,6 +84,7 @@ MPMReadHandler::~MPMReadHandler()
 ********************************************************************************/
 
 // Custom MPM element start
+// throws std::bad_alloc, SAXException()
 bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 {
     char *aName,*value;
@@ -1100,9 +1102,9 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     // <Thermal> section
 	
 	// thermal ramp
-	else if(strcmp(xName,"Isothermal")==0)
+    else if(strcmp(xName,"Isothermal")==0)
 	{	throw SAXException("The <Isothermal> command has been replaced by the ThermalRamp custom task.");
-	}
+    }
     
 	// Turn on conduction analysis
     else if(strcmp(xName,"Conduction")==0)
@@ -1141,7 +1143,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	}
 	
 	else if(strcmp(xName,"ContactHeatFlow")==0)
-	{	throw SAXException("Contact heat flow spin feature is not available in NairnMPM. It requires OSParticulas.");
+	{	throw SAXException("Contact heat flow feature is not available in NairnMPM. It requires OSParticulas.");
 	}
 	
     //-------------------------------------------------------
@@ -1282,6 +1284,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 }
 
 // End an element
+// throws SAXException()
 void MPMReadHandler::myEndElement(char *xName)
 {
     if(strcmp(xName,"CustomTasks")==0 || strcmp(xName,"Gravity")==0)
@@ -1407,6 +1410,7 @@ void MPMReadHandler::myEndElement(char *xName)
 }
 
 // Decode block of characters if input!=NO_INPUT
+// throws SAXException()
 void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 {
 	MatPtLoadBC *newBC;

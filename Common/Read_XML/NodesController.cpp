@@ -26,6 +26,7 @@ NodesController *theNodes=NULL;
 void NodesController::AddNode(double x,double y,double z) { AddNode(x,y,z,(double)0.0); }
 
 // add new keypoint - assumes keyName is valid and unique
+// throws std::bad_alloc
 void NodesController::AddNode(double x,double y,double z,double temp)
 {
 	NodalPoint *newNode;
@@ -40,8 +41,10 @@ void NodesController::AddNode(double x,double y,double z,double temp)
 // assemble into array used in the code
 int NodesController::SetNodeArray(double *xmin,double *xmax,double *ymin,double *ymax,double *zmin,double *zmax)
 {
-	nd=(NodalPoint **)MakeObjectArray(1);
-	if(nd==NULL) return FALSE;
+	// make 1-based array of nodal points
+	if(numObjects==0) return false;
+	nd = new (std::nothrow) NodalPoint *[numObjects+1];
+	if(nd==NULL) return false;
 	
 	// fill the array
 	NodalPoint *aNode=(NodalPoint *)firstObject;
@@ -62,14 +65,16 @@ int NodesController::SetNodeArray(double *xmin,double *xmax,double *ymin,double 
 		if(aNode->z>*zmax) *zmax=aNode->z;
 		aNode=(NodalPoint *)aNode->GetNextObject();
 	}
-	return TRUE;
+	return true;
 }
 
 // assemble into array used in the code when they are resequenced
 int NodesController::SetNodeArray(int *revMap)
 {
-	nd=(NodalPoint **)MakeObjectArray(1);
-	if(nd==NULL) return FALSE;
+	// make 1-base array of nodal points
+	if(numObjects==0) return false;
+	nd = new (std::nothrow) NodalPoint *[numObjects+1];
+	if(nd==NULL) return false;
 	
 	// fill the array
 	NodalPoint *aNode=(NodalPoint *)firstObject;
@@ -80,7 +85,7 @@ int NodesController::SetNodeArray(int *revMap)
 		aNode->num=revMap[nnodes];
 		aNode=(NodalPoint *)aNode->GetNextObject();
 	}
-	return TRUE;
+	return true;
 }
 
 // next node number

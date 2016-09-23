@@ -38,7 +38,6 @@ class CubicTraction : public TractionLaw
 		// accessors
 		virtual const char *MaterialType(void) const;
 		virtual const char *SetTractionLaw(double &,double &,double &,double &);
-		virtual int MaterialTag() const;
 		
 	protected:
 		double kI1,kII1;

@@ -43,6 +43,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 }
 
 // Print contact law settings for cracks and finalize variables
+// throws std::bad_alloc, CommonException()
 void CrackSurfaceContact::Output(void)
 {
 	// allocate memory for custom crack contact laws
@@ -79,6 +80,7 @@ void CrackSurfaceContact::Output(void)
 }
 
 // Print contact law settings (if has one) and finalize crack law and set if has imperfect interface
+// throws CommonException()
 void CrackSurfaceContact::CustomCrackContactOutput(int &customCrackID,int number)
 {
 	// no custom law was set
@@ -97,6 +99,7 @@ void CrackSurfaceContact::CustomCrackContactOutput(int &customCrackID,int number
 }
 
 // Print contact law settings for cracks and finalize variables
+// throws CommonException()
 void CrackSurfaceContact::MaterialOutput(void)
 {
 	// Global material contact law (must be set,if not force to frictionless)
@@ -154,13 +157,24 @@ void CrackSurfaceContact::MaterialOutput(void)
 }
 
 // prepare array for material contact details
+// throws CommonException()
 void CrackSurfaceContact::MaterialContactPairs(int maxFields)
 {
+	// create double array of pairs
+	mmContactLaw = new (nothrow) ContactLaw **[maxFields];
+	if(mmContactLaw==NULL)
+	{	throw CommonException("Memory error creating contact pairs array","CrackSurfaceContact::MaterialContactPairs");
+	}
+	
 	// fill all pairs with default material properties
-	mmContactLaw=(ContactLaw ***)malloc(maxFields*sizeof(ContactLaw **));
 	int i,j;
 	for(i=0;i<maxFields-1;i++)
-	{	mmContactLaw[i]=(ContactLaw **)malloc((maxFields-1-i)*sizeof(ContactLaw *));
+	{	mmContactLaw[i] = new (nothrow) ContactLaw *[maxFields-1-i];
+		if(mmContactLaw[i]==NULL)
+		{	throw CommonException("Memory error creating contact pairs array","CrackSurfaceContact::MaterialContactPairs");
+		}
+		
+		// to default law
 		for(j=i+1;j<maxFields;j++) mmContactLaw[i][j-i-1] = materialContactLaw;
 	}
 	

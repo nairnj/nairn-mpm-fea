@@ -50,6 +50,7 @@ char *PressureLaw::InputMaterialProperty(char *xName,int &input,double &gScaling
 }
 
 // setting function if needed
+// throws std::bad_alloc, SAXException()
 void PressureLaw::SetStressFunction(char *bcFunction)
 {	
 	// NULL or empty is an error
@@ -134,9 +135,6 @@ double PressureLaw::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod
 }
 
 #pragma mark CubicTraction::Accessors
-
-// Return the material tag
-int PressureLaw::MaterialTag(void) const { return PRESSURELAWMATERIAL; }
 
 // return material type
 const char *PressureLaw::MaterialType(void) const { return "Pressure Traction Law"; }
