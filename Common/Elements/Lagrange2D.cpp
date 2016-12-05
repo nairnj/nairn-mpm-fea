@@ -6,6 +6,7 @@
 	Copyright (c) 2011 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Elements/Lagrange2D.hpp"
 #include "Nodes/NodalPoint.hpp"
 #ifdef MPM_CODE

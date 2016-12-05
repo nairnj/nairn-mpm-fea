@@ -6,6 +6,7 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Read_MPM/MpsController.hpp"
 #include "MPM_Classes/MPMBase.hpp"

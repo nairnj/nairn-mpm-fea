@@ -6,6 +6,7 @@
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "System/UnitsController.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 
@@ -494,5 +495,3 @@ double UnitsController::UnitsAttribute(char *value,int type)
 
 	return attrScale;
 }
-
-

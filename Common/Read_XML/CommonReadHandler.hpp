@@ -18,7 +18,7 @@
 
 	Current files are:
 		CommonReadHandler.cpp, ShapeController.cpp, BitMapFilesCommon.cpp
-	Header Files: MPMReadHandler.hpp, FEAReadHandler.hpp
+	Header Files: MPMReadHandler.hpp, FEAReadHandler.hpp, XYFileImporter.hpp
 	which adds files
 		CommonAnalysis.cpp, Generators.cpp, BitMapFiles.cpp, BitMapFilesFEA.cpp
 */
@@ -31,6 +31,26 @@
 #include <xercesc/sax/SAXException.hpp>
 
 XERCES_CPP_NAMESPACE_USE		// for Xerces >=2.3.0
+
+typedef struct
+{	int width;						// Width of image
+	int height;						// Height of image
+	bool knowsCellSize;				// true if file gives xcell, ycell, and zlevel
+	double xcell;					// x pixels size (if file has it, ignored if XML gives it)
+	double ycell;					// y pixels size (if file has it, ignored if XML gives it)
+	double zlevel;					// z value (if in the file, ignored if XML gives it)
+	int rowBytes;					// bytes in row (i.e., width * bytes per pixel)
+	int version;					// file version
+} XYInfoHeader;
+
+typedef struct
+{	int r1,r2;						// range of rows in a bit map
+	double wtr1,wtr2;				// weight for first and last row
+	int c1,c2;						// range of columns in a bit map
+	double wtc1,wtc2;				// weigth for first and last column
+} DomainMap;
+
+class BMPLevel;
 
 // Input blocks
 #define BAD_BLOCK -1
@@ -54,28 +74,6 @@ enum { SEC_UNITS=0,LENGTH_UNITS,VELOCITY_UNITS,MASS_UNITS };
 // dimension requirement
 enum { ANY_DIM=0,MUST_BE_2D,MUST_BE_3D };
 
-typedef struct
-{	unsigned char type[2];					// Should be 'BM'
-	unsigned int size;                       // File size in Intel order bytes
-	unsigned short int reserved1, reserved2;
-	unsigned int offset;                     // Offset in bytes to image data
-} BMPHeader;
-
-typedef struct
-{	unsigned int size;				// Header size in bytes
-	int width,height;				// Width and height of image
-	unsigned short int planes;		// Number of colour planes
-	unsigned short int bits;		// Bits per pixel
-	unsigned int compression;		// Compression type
-	unsigned int imagesize;			// Image size in bytes
-	int xresolution,yresolution;	// Pixels per meter 
-	unsigned int ncolors;			// Number of colors
-	unsigned int importantcolors;	// Important colors
-	bool knowsCellSize;				// true if file gives xcell, ycell, and zlevel
-	double xcell,ycell;				// x and y pixels size (in in the file, not in bmp files)
-	double zlevel;					// z value (if in the file)
-} BMPInfoHeader;
-
 class CommonReadHandler : public DefaultHandler
 {
     public:
@@ -84,6 +82,7 @@ class CommonReadHandler : public DefaultHandler
         //  Constructors and Destructor
         CommonReadHandler();
         ~CommonReadHandler();
+		void FinishUp(void);
     
         //  Handlers for the SAX ContentHandler interface
         void startElement(const XMLCh* const,const XMLCh* const,const XMLCh* const,const Attributes&);
@@ -103,10 +102,7 @@ class CommonReadHandler : public DefaultHandler
 		short BMPFileCommonInput(char *,const Attributes&,int);
 		short EndBMPInput(char *xName,int);
 		virtual void TranslateBMPFiles(void);
-		int BMPIndex(double,int);
-		void ReadBMPFile(char *,BMPInfoHeader &,unsigned char ***);
-		char *BMPError(const char *,const char *);
-		
+	
         //  Handlers for the SAX ErrorHandler interface
         void warning(const SAXParseException&);
         void error(const SAXParseException&);
@@ -123,6 +119,13 @@ class CommonReadHandler : public DefaultHandler
 	
 		// class methods
 		static bool GetFreeFormatNumbers(char *,vector<double> &,double);
+		static void ReadBMPFile(char *,XYInfoHeader &,unsigned char ***);
+		static char *BMPError(const char *,const char *);
+		static const char *DecodeBMPWidthAndHeight(XYInfoHeader,double &,double &,double &,Vector &,bool);
+		static bool MapDomainToImage(XYInfoHeader,Vector,Vector,Vector,Vector,double,double,DomainMap &);
+		static int BMPIndex(double,int);
+		static BMPLevel *FindBMPLevel(BMPLevel *,DomainMap,unsigned char **);
+		static double FindAverageValue(DomainMap,unsigned char **);
 	
     protected:
         int block,meshType;
@@ -131,11 +134,11 @@ class CommonReadHandler : public DefaultHandler
         double mxmin,mxmax,mymin,mymax,mzmin,mzmax;
 		
 		// bmp file globals
-		double bwidth,bheight,xorig,yorig,zslice;
+		Vector orig;
+		double bwidth,bheight;
         bool yflipped;
 		double minAngle,minIntensity,angleScale;
 		char bmpFileName[300],bmpAngleFileName[300];
-		unsigned int intensity[256];
 };
 
 #endif

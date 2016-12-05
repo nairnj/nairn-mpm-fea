@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.        
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "System/ArchiveData.hpp"
@@ -110,7 +111,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	
 	else if(strcmp(xName,"Timing")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
 		gScaling=ReadUnits(attrs,SEC_UNITS);
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -156,7 +157,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     
 	else if(strcmp(xName,"ArchiveGroup")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
 		gScaling=ReadUnits(attrs,SEC_UNITS);
 		double *atptr = archiver->GetArchTimePtr();			// creates the next group
         for(i=0;i<numAttr;i++)
@@ -187,7 +188,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	input=DOUBLE_NUM;
 		inputPtr=(char *)archiver->GetArchTimePtr();
         gScaling=ReadUnits(attrs,SEC_UNITS);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -218,7 +219,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     
     else if(strcmp(xName,"GlobalArchive")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
 		int setWhichMat=0;
 		quantityName[0]=0;
 		char whichMat[200];
@@ -266,7 +267,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             gridDamp = false;
         }
 		
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -305,7 +306,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             bodyFrc.usePDamping = true;
         }
 		
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -324,7 +325,23 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 
 	// XPIC option - get order (1=PIC, 2 is XPIC, <1 invalid)
     else if(strcmp(xName,"XPIC")==0)
-	{	throw SAXException("The XPIC feature is not available in NairnMPM. It requires OSParticulas.");
+	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+#ifdef ADD_XPIC
+		int newOrder = 1;		// default to regular PIC
+		numAttr=(int)attrs.getLength();
+        for(i=0;i<numAttr;i++)
+        {   aName=XMLString::transcode(attrs.getLocalName(i));
+            value=XMLString::transcode(attrs.getValue(i));
+            if(strcmp(aName,"order")==0)
+			{	sscanf(value,"%d",&newOrder);
+            }
+            delete [] aName;
+            delete [] value;
+        }
+		bodyFrc.SetXPICOrder(newOrder);
+#else
+		throw SAXException("You must recompile with ADD_XPIC defined in MPMPrefix.hpp to use the XPIC feature.");
+#endif
     }
 
     else if(strcmp(xName,"Diffusion")==0)
@@ -352,7 +369,13 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	}
 	
 	else if(strcmp(xName,"TrackParticleSpin")==0)
-	{	throw SAXException("Particle spin feature is not available in NairnMPM. It requires OSParticulas.");
+	{
+#ifdef ADD_PARTICLE_SPIN
+		ValidateCommand(xName,MPMHEADER,ANY_DIM);
+		fmobj->plusParticleSpin = true;
+#else
+		throw SAXException("You must recompile with ADD_PARTICLE_SPIN defined in MPMPrefix.hpp to use the particle spin feature.");
+#endif
 	}
 	
 	else if(strcmp(xName,"GIMP")==0)
@@ -361,7 +384,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		ElementBase::useGimp = UNIFORM_GIMP;
 		ElementBase::analysisGimp = UNIFORM_GIMP;
 		maxShapeNodes = fmobj->np==THREED_MPM ? 28 : 10 ;
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"type")==0)
@@ -398,7 +421,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
 		fmobj->multiMaterialMode=true;
 		block=MULTIMATERIAL;
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
 		double scanInput,polarAngle=0.,azimuthAngle=0.;
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -451,7 +474,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
         input=TEXT_BLOCK;
 		inputID=ARCHIVEROOT_NAME;
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
 		int scanInt;
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -470,6 +493,88 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         input=MPMORDER_BLOCK;
     }
     
+	else if(strcmp(xName,"MPMArchive")==0)
+	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+		int archByte = 0;				// 0 fails, <0 crack archive, >0 mpm archive
+		char setting = 'Y';
+		int historyNum = 0;				// 1 to 4 on history#
+		numAttr=(int)attrs.getLength();
+		for(i=0;i<numAttr;i++)
+		{   aName=XMLString::transcode(attrs.getLocalName(i));
+			if(strcmp(aName,"result")==0)
+			{	value=XMLString::transcode(attrs.getValue(i));
+				if(CIstrcmp(value,"velocity")==0)
+					archByte = ARCH_Velocity;
+				else if(CIstrcmp(value,"stress")==0)
+					archByte = ARCH_Stress;
+				else if(CIstrcmp(value,"strain")==0)
+					archByte = ARCH_Strain;
+				else if(CIstrcmp(value,"rotstrain")==0)
+					archByte = ARCH_RotStrain;
+				else if(CIstrcmp(value,"plasticstrain")==0)
+					archByte = ARCH_PlasticStrain;
+				else if(CIstrcmp(value,"strainenergy")==0)
+					archByte = ARCH_StrainEnergy;
+				else if(CIstrcmp(value,"workenergy")==0)
+					archByte = ARCH_WorkEnergy;
+				else if(CIstrcmp(value,"plasticenergy")==0)
+					archByte = ARCH_PlasticEnergy;
+				else if(CIstrcmp(value,"heatenergy")==0)
+					archByte = ARCH_HeatEnergy;
+				else if(CIstrcmp(value,"lp")==0)
+					archByte = ARCH_SpinMomentum;
+				else if(CIstrcmp(value,"wp")==0)
+					archByte = ARCH_SpinVelocity;
+				else if(CIstrcmp(value,"temperature")==0)
+					archByte = ARCH_DeltaTemp;
+				else if(CIstrcmp(value,"concentration")==0)
+					archByte = ARCH_Concentration;
+				else if( CIstrcmp(value,"history1")==0 || CIstrcmp(value,"history2")==0
+							|| CIstrcmp(value,"history3")==0 || CIstrcmp(value,"history4")==0 )
+				{	archByte = ARCH_History;
+					historyNum = value[7]&0x0F;
+				}
+				else if(CIstrcmp(value,"elementcrossings")==0)
+					archByte = ARCH_ElementCrossings;
+				else if(CIstrcmp(value,"damagenormal")==0)
+					archByte = ARCH_DamageNormal;
+				
+				else if(CIstrcmp(value,"jintegral")==0)
+					archByte = -ARCH_JIntegral;
+				else if(CIstrcmp(value,"stressintensity")==0)
+					archByte = -ARCH_StressIntensity;
+				else if(CIstrcmp(value,"energybalance")==0)
+					archByte = -ARCH_BalanceResults;
+				delete [] value;
+			}
+			else if(strcmp(aName,"setting")==0)
+			{	value=XMLString::transcode(attrs.getValue(i));
+				if(strlen(value)>0) setting = value[0];
+				delete [] value;
+			}
+			delete [] aName;
+		}
+		
+		// set a byte
+		if(archByte==0)
+			throw SAXException("<MPMArchive> command has missing on unrecognized 'result' attribute.");
+		else if(archByte == ARCH_History)
+		{	char history = archiver->GetMPMOrderByte(archByte);
+			if(history=='N') history = 0x30;
+			char historyBit = 1 << (historyNum-1);			// 1, 2, 4, or 8 for 1 to 4
+			if(setting=='Y')
+				history |= historyBit;
+			else if(history&historyBit)
+				history -= historyBit;
+			if(history == 0x30) history = 'N';
+			archiver->SetMPMOrderByte(archByte,history);
+		}
+		else if(archByte>0)
+			archiver->SetMPMOrderByte(archByte,setting);
+		else
+			archiver->SetCrackOrderByte(archByte,setting);
+	}
+	
     else if(strcmp(xName,"CrackArchiveOrder")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
         input=CRACKORDER_BLOCK;
@@ -508,7 +613,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		othername[0]=0;
 		lawname[0]=0;
 		
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
 			value=XMLString::transcode(attrs.getValue(i));
@@ -561,7 +666,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     {	if(block!=CRACKHEADER && block!=MATERIAL)
 			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
 		ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
 		
 		// get which to set
 		int setIndex = strcmp(xName,"Propagate")==0 ? 0 : 1 ;
@@ -614,7 +719,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     
     else if(strcmp(xName,"MovePlane")==0)
 	{	ValidateCommand(xName,CRACKHEADER,MUST_BE_2D);
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
 			value=XMLString::transcode(attrs.getValue(i));
@@ -657,7 +762,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	
     else if(strcmp(xName,"JContour")==0)
 	{	ValidateCommand(xName,CRACKHEADER,MUST_BE_2D);
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -681,10 +786,10 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"Mesh")==0)
 	{	ValidateCommand(xName,NO_BLOCK,ANY_DIM);
 		block=MESHBLOCK;
-		archiver->SetArchiveMesh(FALSE);
+		archiver->SetArchiveMesh(false);
 		value=ReadTagValue("output",attrs);
 		if(value!=NULL)
-		{	if(strcmp(value,"file")==0) archiver->SetArchiveMesh(TRUE);
+		{	if(strcmp(value,"file")==0) archiver->SetArchiveMesh(true);
 			delete [] value;
 		}
 	}
@@ -741,7 +846,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		ZeroVector(&xp);
         int tipMatnum=-1;
 		int matid=0;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
 		char matname[200];
 		matname[0]=0;
         for(i=0;i<numAttr;i++)
@@ -792,7 +897,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         double angle=0.,pConcentration=0.,dval;
 		double thick=mpmgrid.GetDefaultThickness();
 		double pTempInitial=thermal.reference;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
 		char mpmat[200];
 		mpmat[0]=0;
 		Vector lp = MakeVector(0.5, 0.5, 0.5);
@@ -863,7 +968,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,MATLPTS,ANY_DIM);
 		double aScaling=ReadUnits(attrs,MASS_UNITS);
 		double pmass=-1.;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"m")==0)
@@ -897,7 +1002,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 
 		// read crack attributes
 		double dval;
-		numAttr=attrs.getLength();
+		numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
 			value=XMLString::transcode(attrs.getValue(i));
@@ -985,7 +1090,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	int node=0;
 		int dof=0,style=CONSTANT_VALUE,velID=0;;
         double ftime=0.,angle=0.,angle2=0.;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
@@ -1056,7 +1161,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,LOADEDPOINTS,ANY_DIM);
     	int ptNum=0;
 		int dof=0,style=1;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
@@ -1208,7 +1313,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	// Schedule a custom task
     else if(strcmp(xName,"Schedule")==0)
 	{	CustomTask *nextTask=NULL;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"name")==0)
@@ -1260,7 +1365,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	// Set Custom Task parameter
     else if(strcmp(xName,"Parameter")==0)
 	{	inputPtr=NULL;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"name")==0)
@@ -1490,7 +1595,7 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 		
 		case TEXT_PARAMETER:
 			// must be in active custom tasks
-			((CustomTask *)currentTask)->SetTextParameter(xData);
+			((CustomTask *)currentTask)->SetTextParameter(xData,inputPtr);
 			break;
             
         default:

@@ -8,6 +8,7 @@
     Hardening Law is
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/SCGLHardening.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "MPM_Classes/MPMBase.hpp"

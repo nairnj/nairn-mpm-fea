@@ -10,6 +10,7 @@
 	"A constitutive model for strain rates from 10^-4 to 10^6 s^-1
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/SLMaterial.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"

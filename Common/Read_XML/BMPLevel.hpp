@@ -16,24 +16,29 @@
 class BMPLevel : public LinkedObject
 {
     public:
-		int mat,imin,imax;
 		double angle,thickness,temperature,concentration;
 		Vector vel;
+		double currentDeltaT;
         
         // constructors and destructors
         BMPLevel();
 		BMPLevel(int,int,int);
-        
-        // methods
-		int Material(unsigned char,double);
+		void SetDefaults(void);
 		BMPLevel *ClearWeight(void);
-		BMPLevel *MaximumWeight(double&,BMPLevel **);
     
-        // accessors
-        int Material(unsigned char) const;
-		
+        // methods and accessors
+		int Material(void) const;
+		int Material(unsigned char) const;
+		int Material(unsigned char,double);
+		BMPLevel *MaximumWeight(double&,BMPLevel **);
+		void *GetContextInfo(void);
+		void SetContextInfo(void *info);
+		void OutputLevel(void);
+	
     private:
+		int mat,imin,imax;
 		double weight;
+		void *contextInfo;
 };
 
 extern BMPLevel *firstLevel,*currentLevel;

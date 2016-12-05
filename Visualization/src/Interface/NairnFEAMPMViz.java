@@ -8,21 +8,33 @@
 
 import java.io.File;
 import java.io.InputStream;
+import java.net.URL;
 
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 
 import geditcom.JNFramework.*;
 
 public class NairnFEAMPMViz extends JNApplication
 {
+	public static String jarFolder = null;
 	//----------------------------------------------------------------------------
 	// Initialize
 	//----------------------------------------------------------------------------
 	
 	public NairnFEAMPMViz()
-	{	super("NairnFEAMPMViz-OSP","Version 6.4.0",
+	{	super("NairnFEAMPMViz","Version 6.5.0",
 				"Java application for running and visualizing OSParticulas and NairnFEA calculations.");
 		NFMVPrefs.setWorkspace(chooser);
+		
+		// path to folder containing this jar file ending in slash
+		URL jarURL = getClass().getProtectionDomain().getCodeSource().getLocation();
+		File jarFile = new java.io.File(jarURL.getPath()).getAbsoluteFile();
+		jarFolder = jarFile.getPath();
+		int slash = jarFolder.lastIndexOf('\\');
+		if(slash<0) slash = jarFolder.lastIndexOf('\\');
+		if(slash>=0) jarFolder = jarFolder.substring(0, slash+1);
+
 		if(!finishLaunching(false))
 			new NFMVStartUp();
 	}
@@ -154,7 +166,7 @@ public class NairnFEAMPMViz extends JNApplication
     private static void createAndShowGUI()
 	{	// initial preferences first
 		NFMVPrefs.initializePrefs();
-		
+				
 		// select application options
 		// first is to use native LNF and second is menu bar for Mac
 		setLookAndFeel(true,true);

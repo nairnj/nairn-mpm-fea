@@ -14,6 +14,7 @@
 	Update strains on all particles
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/UpdateStrainsLastTask.hpp"
 #include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"

@@ -37,6 +37,16 @@
 		673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */; };
 		6741B24817EDFF1300CFADC7 /* PressureLaw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6741B24617EDFF1300CFADC7 /* PressureLaw.cpp */; };
 		6741B24917EDFF1300CFADC7 /* PressureLaw.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6741B24717EDFF1300CFADC7 /* PressureLaw.hpp */; };
+		6749250A1DF401430004916F /* stdafx.h in Headers */ = {isa = PBXBuildFile; fileRef = 674925091DF401430004916F /* stdafx.h */; };
+		6749250B1DF401430004916F /* stdafx.h in Headers */ = {isa = PBXBuildFile; fileRef = 674925091DF401430004916F /* stdafx.h */; };
+		675181671DF146F1009E72FF /* XYBMPImporter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 675181631DF146F1009E72FF /* XYBMPImporter.cpp */; };
+		675181681DF146F1009E72FF /* XYBMPImporter.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 675181641DF146F1009E72FF /* XYBMPImporter.hpp */; };
+		6751816D1DF161F1009E72FF /* XYFileImporter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6751816B1DF161F1009E72FF /* XYFileImporter.cpp */; };
+		6751816E1DF161F1009E72FF /* XYFileImporter.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6751816C1DF161F1009E72FF /* XYFileImporter.hpp */; };
+		6751816F1DF16712009E72FF /* XYBMPImporter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 675181631DF146F1009E72FF /* XYBMPImporter.cpp */; };
+		675181701DF16715009E72FF /* XYBMPImporter.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 675181641DF146F1009E72FF /* XYBMPImporter.hpp */; };
+		675181711DF16718009E72FF /* XYFileImporter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6751816B1DF161F1009E72FF /* XYFileImporter.cpp */; };
+		675181721DF1671B009E72FF /* XYFileImporter.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6751816C1DF161F1009E72FF /* XYFileImporter.hpp */; };
 		67582CCF1ACCD5880087EA12 /* MoreIsotropicMat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67582CCD1ACCD5880087EA12 /* MoreIsotropicMat.cpp */; };
 		676D76AC1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 676D76AA1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp */; };
 		676D76AD1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 676D76AB1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp */; };
@@ -474,6 +484,11 @@
 		673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CarnotCycle.hpp; sourceTree = "<group>"; };
 		6741B24617EDFF1300CFADC7 /* PressureLaw.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PressureLaw.cpp; sourceTree = "<group>"; };
 		6741B24717EDFF1300CFADC7 /* PressureLaw.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PressureLaw.hpp; sourceTree = "<group>"; };
+		674925091DF401430004916F /* stdafx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = stdafx.h; path = Headers/stdafx.h; sourceTree = "<group>"; };
+		675181631DF146F1009E72FF /* XYBMPImporter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = XYBMPImporter.cpp; sourceTree = "<group>"; };
+		675181641DF146F1009E72FF /* XYBMPImporter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = XYBMPImporter.hpp; sourceTree = "<group>"; };
+		6751816B1DF161F1009E72FF /* XYFileImporter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = XYFileImporter.cpp; sourceTree = "<group>"; };
+		6751816C1DF161F1009E72FF /* XYFileImporter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = XYFileImporter.hpp; sourceTree = "<group>"; };
 		67582CCD1ACCD5880087EA12 /* MoreIsotropicMat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MoreIsotropicMat.cpp; sourceTree = "<group>"; };
 		676D76AA1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InitVelocityFieldsTask.cpp; sourceTree = "<group>"; };
 		676D76AB1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InitVelocityFieldsTask.hpp; sourceTree = "<group>"; };
@@ -908,6 +923,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		674925081DF4011D0004916F /* Headers */ = {
+			isa = PBXGroup;
+			children = (
+				674925091DF401430004916F /* stdafx.h */,
+			);
+			name = Headers;
+			sourceTree = "<group>";
+		};
 		67B6B7E41C31BEC800CFA1EA /* Contact_Laws */ = {
 			isa = PBXGroup;
 			children = (
@@ -953,6 +976,7 @@
 				A7198C6009780F7E00334C4F /* Materials */,
 				A7198C6309780F8700334C4F /* Elements */,
 				A7198C5D09780F7600334C4F /* Nodes */,
+				674925081DF4011D0004916F /* Headers */,
 			);
 			name = Common;
 			path = ..;
@@ -1015,6 +1039,10 @@
 				A767E03A08B14CAA004540AB /* MaterialController.cpp */,
 				A7DDE95D0BCBFA01005CC32D /* mathexpr.hpp */,
 				A7DDE95C0BCBFA01005CC32D /* mathexpr.cpp */,
+				675181631DF146F1009E72FF /* XYBMPImporter.cpp */,
+				675181641DF146F1009E72FF /* XYBMPImporter.hpp */,
+				6751816B1DF161F1009E72FF /* XYFileImporter.cpp */,
+				6751816C1DF161F1009E72FF /* XYFileImporter.hpp */,
 			);
 			path = Read_XML;
 			sourceTree = "<group>";
@@ -1727,6 +1755,9 @@
 				6709D7321C385AD1006C680C /* GridArchive.hpp in Headers */,
 				6709D7361C38BB87006C680C /* ExtrapolateRigidBCsTask.hpp in Headers */,
 				678B7B311D8A76C0001D0AB4 /* CustomThermalRamp.hpp in Headers */,
+				675181681DF146F1009E72FF /* XYBMPImporter.hpp in Headers */,
+				6751816E1DF161F1009E72FF /* XYFileImporter.hpp in Headers */,
+				6749250A1DF401430004916F /* stdafx.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1796,6 +1827,9 @@
 				671514D515465EAD005F33A9 /* OvalController.hpp in Headers */,
 				671514DB1547035D005F33A9 /* PolygonController.hpp in Headers */,
 				6736CBF41AB74C5B0009A663 /* UnitsController.hpp in Headers */,
+				675181701DF16715009E72FF /* XYBMPImporter.hpp in Headers */,
+				675181721DF1671B009E72FF /* XYFileImporter.hpp in Headers */,
+				6749250B1DF401430004916F /* stdafx.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2069,6 +2103,8 @@
 				6709D7311C385AD1006C680C /* GridArchive.cpp in Sources */,
 				6709D7351C38BB87006C680C /* ExtrapolateRigidBCsTask.cpp in Sources */,
 				678B7B301D8A76C0001D0AB4 /* CustomThermalRamp.cpp in Sources */,
+				675181671DF146F1009E72FF /* XYBMPImporter.cpp in Sources */,
+				6751816D1DF161F1009E72FF /* XYFileImporter.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2147,6 +2183,8 @@
 				671514D91547035D005F33A9 /* PolygonController.cpp in Sources */,
 				67A90CC1170F75C40028554A /* svninfo.cpp in Sources */,
 				6736CBF21AB74C5B0009A663 /* UnitsController.cpp in Sources */,
+				6751816F1DF16712009E72FF /* XYBMPImporter.cpp in Sources */,
+				675181711DF16718009E72FF /* XYFileImporter.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2179,9 +2217,9 @@
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				HEADER_SEARCH_PATHS = (
 					../../NairnMPM/src,
+					../Headers,
 					..,
 					/usr/local/include,
-					"/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include",
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
 				LIBRARY_SEARCH_PATHS = /usr/local/bin;
@@ -2209,6 +2247,7 @@
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				HEADER_SEARCH_PATHS = (
 					../../NairnFEA/src,
+					../Headers,
 					..,
 					/usr/local/include,
 				);

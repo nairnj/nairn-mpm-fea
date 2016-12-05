@@ -7,6 +7,7 @@
     Copyright (c) 2008 RSAC Software. All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_FEA/FEAReadHandler.hpp"
 #include "System/CommonArchiveData.hpp"
 #include "Read_XML/RectController.hpp"
@@ -31,9 +32,9 @@ short FEAReadHandler::BMPFileInput(char *xName,const Attributes& attrs)
 //-----------------------------------------------------------
 void FEAReadHandler::TranslateBMPFiles(void)
 {
-	unsigned char **rows,**angleRows;
-	BMPInfoHeader info,angleInfo;
-	bool setAngles=FALSE;
+	// file info and data
+	unsigned char **rows,**angleRows=NULL;
+	XYInfoHeader info,angleInfo;
 	
 	// read image file
 	char *bmpFullPath=archiver->ExpandOutputPath(bmpFileName);
@@ -41,8 +42,9 @@ void FEAReadHandler::TranslateBMPFiles(void)
 	delete [] bmpFullPath;
 	
 	// angle file name
+	bool setAngles = false;
 	if(bmpAngleFileName[0]>0)
-	{	setAngles=TRUE;
+	{	setAngles=true;
 		char *bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName);
 		ReadBMPFile(bmpFullAnglePath,angleInfo,&angleRows);
 		if(info.height!=angleInfo.height || info.width!=angleInfo.width)
@@ -50,193 +52,54 @@ void FEAReadHandler::TranslateBMPFiles(void)
 		delete [] bmpFullAnglePath;
 	}
 	
-	// provided mm per pixel
-	double xpw=-1.,ypw=-1.;
-	if(bheight<0. && bheight>-1.e8)
-	{	ypw = -bheight;
-		bheight = ypw*(double)info.height;
-	}
-	if(bwidth<0. && bwidth>-1.e8)
-	{	xpw = -bwidth;
-		bwidth = xpw*(double)info.width;
-	}
-	
-	// total dimensions (if only one is known, find the other, never have both unknown)
-	if(bheight<0) bheight=bwidth*(double)info.height/(double)info.width;
-	if(bwidth<0) bwidth=bheight*(double)info.width/(double)info.height;
-	
-	// final mm per pixel (if needed)
-	if(xpw<0.) xpw=bwidth/(double)info.width;
-	if(ypw<0.) ypw=bheight/(double)info.height;
-	
-	// create a shape
-	RectController *imageRect=new RectController(NO_BLOCK);
-	imageRect->SetProperty("xmin",xorig);
-	imageRect->SetProperty("xmax",xorig+bwidth);
-	imageRect->SetProperty("ymin",yorig);
-	imageRect->SetProperty("ymax",yorig+bheight);
+	// get final image width, height, and size per pixel
+	Vector pw;
+	const char *msg = CommonReadHandler::DecodeBMPWidthAndHeight(info,bwidth,bheight,orig.z,pw,false);
+	if(msg != NULL) throw SAXException(BMPError(msg,bmpFileName));
+	pw.z = yflipped ? -1. : 1. ;
 	
 	// scan all elements - fill those that are in the area and have no material yet
-	int matID;
-	BMPLevel *nextLevel;
-    BMPLevel *maxLevel;
-	double deltax,deltay;
-	double rmin,rmax,wtr1,wtr2,rweight;
-	double cmin,cmax,wtc1,wtc2,weight;
-	int r1,r2,c1,c2;
-
-	int i,row,col;
+	DomainMap map;
 	ElementBase *elem;
-	Vector center;
-	for(i=0;i<nelems;i++)
+	Vector center,del;
+	for(int i=0;i<nelems;i++)
 	{	elem=theElements[i]; 
         
 		// skip if element already has a material
         if(elem->material!=NO_MATERIAL) continue;
 		
-		// skip unless the center of extent of the element is in the image
+		// get center (will skip unless the center of extent of the element is in the image)
 		elem->GetXYZCentroid(&center);
-		if(!imageRect->ContainsPoint(center)) continue;
 		
-		// half the extent of the volume of a particle
-		deltax=(elem->GetDeltaX())/2.;
-		deltay=(elem->GetDeltaY())/2.;
+		// half the extent of the element (z means 2D)
+		del = MakeVector((elem->GetDeltaX())/2.,(elem->GetDeltaY())/2.,-1.);
 		
-		// find range of rows and cols for pixels over this element extent
-        if(yflipped)
-        {   rmin=(yorig+bheight-center.y-deltay)/ypw;
-            rmax=(yorig+bheight-center.y+deltay)/ypw;
-        }
-        else
-        {   rmin=(center.y-deltay-yorig)/ypw;
-            rmax=(center.y+deltay-yorig)/ypw;
-        }
-		r1=BMPIndex(rmin,info.height);
-        r2=BMPIndex(rmax,info.height);
-		if(r2==r1)
-		{	wtr1=wtr2=1.;
-		}
-		else
-		{	// fractional weight for first and last row in case not all within the extent
-			wtr1=(double)(r1+1)-rmin;
-			wtr2=rmax-(double)r2;
-		}
-		cmin=(center.x-deltax-xorig)/xpw;
-		cmax=(center.x+deltax-xorig)/xpw;
-		c1=BMPIndex(cmin,info.width);
-		c2=BMPIndex(cmax,info.width);
-		if(c2==c1)
-		{	wtc1=wtc2=1.;
-		}
-		else
-		{	// fractional weight for first and last col in case not all within the extent
-			wtc1=(double)(c1+1)-cmin;
-			wtc2=cmax-(double)c2;
-		}
+		// Get range of rows and columns and their weights (or skip if not in the image)
+		if(!MapDomainToImage(info,center,orig,del,pw,bwidth,bheight,map)) continue;
 		
-		// find material ID or none (a hole)
-		// clear material weights
-		nextLevel=firstLevel;
-		while(nextLevel!=NULL) nextLevel=nextLevel->ClearWeight();
-
-		// add weights
-		Vector scanPt;
-		scanPt.z=0.;
-		for(row=r1;row<=r2;row++)
-        {   if(yflipped)
-                scanPt.y = yorig+bheight - ypw*row;		// actual point
-            else
-            	scanPt.y = ypw*row + yorig;		// actual point
-			if(row==r1)
-				rweight=wtr1;
-			else if(row==r2)
-				rweight=wtr2;
-			else
-				rweight=1.;
-			for(col=c1;col<=c2;col++)
-			{	// skip if point is not in the element
-				scanPt.x=xpw*col+xorig;
-				if(!elem->PtInElement(scanPt)) continue;
-				if(col==c1)
-					weight=rweight*wtc1;
-				else if(col==c2)
-					weight=rweight*wtc2;
-				else
-					weight=rweight;
-				
-				// find material at this level
-				// (note: last level with matID=0 catches empty space)
-				nextLevel=firstLevel;
-				while(nextLevel!=NULL)
-				{	matID=nextLevel->Material(rows[row][col],weight);
-					if(matID>=0) break;
-					nextLevel=(BMPLevel *)nextLevel->GetNextObject();
-				}
-			}
-		}
+		// find maximum level and its material ID or none (a hole)
+		int matID=-1;
+		BMPLevel *nextLevel = FindBMPLevel(firstLevel,map,rows);
+		if(nextLevel!=NULL) matID = nextLevel->Material();
 		
-		// find maximum weight (matID=0 means max is empty space)
-		weight=0.;
-		maxLevel=NULL;
-		nextLevel=firstLevel;
-		while(nextLevel!=NULL) nextLevel=nextLevel->MaximumWeight(weight,&maxLevel);
-		if(maxLevel!=NULL)
-		{	matID=maxLevel->mat;
-			nextLevel=maxLevel;
-		}
-		else
-			matID=-1;
-
 		// set material ID if found a match
 		if(matID>0)
 		{	// set it
 			elem->material=matID;
 			
-			// is there an angle image?
+			// is there an angle image too?
 			if(setAngles)
-			{	// weight average of scanned pixels
-				double totalWeight=0.;
-				double totalIntensity=0.;
-				for(row=r1;row<=r2;row++)
-                {   if(yflipped)
-                        scanPt.y = yorig+bheight - ypw*row;		// actual point
-                    else
-                        scanPt.y = ypw*row + yorig;		// actual point
-					if(row==r1)
-						rweight=wtr1;
-					else if(row==r2)
-						rweight=wtr2;
-					else
-						rweight=1.;
-					for(col=c1;col<=c2;col++)
-					{	// skip if point if not in the element
-						scanPt.x=xpw*col+xorig;
-						if(!elem->PtInElement(scanPt)) continue;
-						if(col==c1)
-							weight=rweight*wtc1;
-						else if(col==c2)
-							weight=rweight*wtc2;
-						else
-							weight=rweight;
-						
-						totalIntensity+=weight*angleRows[row][col];
-						totalWeight+=weight;
-					}
-				}
-				if(totalWeight>0.)
-				{	totalIntensity/=totalWeight;
-					double matAngle=minAngle+(totalIntensity-minIntensity)*angleScale;
+			{	double totalIntensity = FindAverageValue(map,rows);
+				if(totalIntensity>0.)
+				{	double matAngle=minAngle+(totalIntensity-minIntensity)*angleScale;
 					elem->SetAngleInDegrees(matAngle);
 				}
 			}
 		}
 	}
 
-	// done with shape
-	delete imageRect;
-	
 	// clean up
-	for(row=0;row<info.height;row++)
+	for(int row=0;row<info.height;row++)
 	{	delete [] rows[row];
 		if(setAngles) delete [] angleRows[row];
 	}

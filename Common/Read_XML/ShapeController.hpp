@@ -33,15 +33,19 @@ class ShapeController
         virtual bool FinishParameter(void);
         virtual bool FinishSetup(void);
         virtual bool HasAllParameters(void);
-    
+	
+		// ShapeController methods only (non-virtual)
+		bool ShapeContainsPoint(Vector&);
+		void resetNodeEnumerator(void);
+		void AddCutoutShape(ShapeController *);
+	
 		// methods
 		virtual bool ContainsPoint(Vector &);
-		virtual void resetNodeEnumerator(void);
 		virtual const char *startNodeEnumerator(int,int);
 		virtual int nextNode(void);
         void resetElementEnumerator(void);
         int nextElement(void);
-    
+	
         // MPM only methods
 #ifdef MPM_CODE
 		void setNetBC(bool);
@@ -52,12 +56,15 @@ class ShapeController
     
         // accessors
         virtual const char *GetShapeName(void);
+		virtual void DescribeShape(const char *);
         virtual bool Is2DShape(void);
         virtual char *GetContextInfo(void);
         // base class only (non virtual)
         int GetSourceBlock(void);
         bool RequiredBlock(int);
-		
+		ShapeController *GetParentShape(void) const;
+		void SetParentShape(ShapeController *);
+	
 	protected:
 		double xmin,xmax,ymin,ymax,zmin,zmax;
 		double distScaling;
@@ -65,7 +72,9 @@ class ShapeController
 #ifdef MPM_CODE
 		int particleNum,numParticles;
 #endif
-		
+		vector< ShapeController * > children;
+		ShapeController *parentShape;
+	
 };
 
 extern ShapeController *theShape;

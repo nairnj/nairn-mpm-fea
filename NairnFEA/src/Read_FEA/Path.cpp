@@ -6,6 +6,9 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
+#include "stdafx.h"
+#include "stdafx.h"
 #include "Read_FEA/Path.hpp"
 #include "Read_FEA/KeypointsController.hpp"
 #include "Read_FEA/Keypoint.hpp"

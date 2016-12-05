@@ -10,6 +10,7 @@
     1. When a material node is detected, an object is created
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Nodes/MaterialInterfaceNode.hpp"
 
 // global point to contact conditions

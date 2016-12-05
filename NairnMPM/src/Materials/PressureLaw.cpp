@@ -6,6 +6,7 @@
 	Copyright (c) 2013 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/PressureLaw.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "Read_XML/mathexpr.hpp"

@@ -18,7 +18,9 @@
 			class has xmin,xmax,ymin,ymax, and tolerance for use) or
 			handle parameters in SetProperty().
 		b. The function ContainsPoint(Vector& v) to decide if the point v is
-			contained by the shape and should be assigned a BC.
+			contained by the shape and should be assigned a BC. The parent
+			function (non-virtual) ShapeContainsPoint(Vector &v) decides
+			if point in shape and not in any subordinate shapes
 		c. The optional FinishSetup() can be called after setting all
 			parameters in case helpful to the object.
 	
@@ -41,6 +43,7 @@
 		BCs.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_XML/ShapeController.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Nodes/NodalPoint.hpp"
@@ -69,6 +72,7 @@ ShapeController::ShapeController(int block)
 	particleNum=0;
 	numParticles=0;
 #endif
+	parentShape = NULL;
 }
 
 ShapeController::ShapeController(int block,double x1,double x2,double y1,double y2,double tolerance)
@@ -87,7 +91,13 @@ ShapeController::ShapeController(int block,double x1,double x2,double y1,double 
 #endif
 }
 
-ShapeController::~ShapeController() { }
+ShapeController::~ShapeController()
+{
+	// delete children shapes
+	for(int i=0;i<children.size();i++)
+	{	delete children[i];
+	}
+}
 
 // set a property on reading for x, y, z, min and max
 void ShapeController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
@@ -142,13 +152,14 @@ void ShapeController::SetParameter(const char *aName,const char *value) { }
 
 // called after finish attributes of subordinate command
 // return FALSE if not set correctly, or TRUE is OK to continue
-bool ShapeController::FinishParameter(void) { return TRUE; }
+bool ShapeController::FinishParameter(void) { return true; }
 
 // called after initialization is done, return TRUE if ready to use
 // or FALSE if this object needs to wait for parameters
 // This base class requires min and max (x, y and z) to differ and
 //      reorders if needed. This it correct for rect, oval, box, sphere
 //      and cylinder, but maybe not for others.
+// throws SAXException()
 bool ShapeController::FinishSetup(void)
 {
     double temp;
@@ -159,7 +170,7 @@ bool ShapeController::FinishSetup(void)
     }
     if(DbleEqual(xmin,xmax))
         ThrowSAXException("%s: xmax cannot equal xmin in input parameters.",GetShapeName());
-        
+	
     if(ymin>ymax)
     {	temp=ymax;
         ymax=ymin;
@@ -167,7 +178,7 @@ bool ShapeController::FinishSetup(void)
     }
     if(DbleEqual(ymin,ymax))
         ThrowSAXException("%s: ymax cannot equal ymin in input parameters.",GetShapeName());
-        
+	
     if(!Is2DShape())
     {	if(zmin>zmax)
         {	temp=zmax;
@@ -178,8 +189,7 @@ bool ShapeController::FinishSetup(void)
             ThrowSAXException("%s: zmax cannot equal zmin in input parameters.",GetShapeName());
     }
 	
-	return TRUE;
-
+	return true;
 }
 
 // some shapes might call this right be fore use. Return TRUE or FALSE
@@ -188,8 +198,23 @@ bool ShapeController::HasAllParameters(void) { return TRUE; }
 
 #pragma mark ShapeController: methods
 
-// Deterime if on the shape (depending of the type of shape) 
+// Determine if on the shape (depending of the type of shape)
 bool ShapeController::ContainsPoint(Vector& v) { return FALSE; }
+
+// Determine if on the shape (depending of the type of shape)
+bool ShapeController::ShapeContainsPoint(Vector& v)
+{	// check shape
+	if(!ContainsPoint(v)) return false;
+	
+	// check subordinate cutouts, and false if any of them
+	for(int i=0;i<children.size();i++)
+	{	if(children[i]->ShapeContainsPoint(v))
+			return false;
+	}
+	
+	// finally true
+	return true;
+}
 
 // reset nodeNum and return NULL (no errors except in other shapes)
 void ShapeController::resetNodeEnumerator(void) { nodeNum=1; }
@@ -207,7 +232,7 @@ int ShapeController::nextNode(void)
 	int i;
 	for(i=nodeNum;i<=nnodes;i++)
     {   Vector nv = MakeVector(nd[i]->x,nd[i]->y,nd[i]->z);
-	    if(ContainsPoint(nv))
+	    if(ShapeContainsPoint(nv))
 		{	nodeNum=i+1;
 			return i;
 		}
@@ -227,13 +252,19 @@ int ShapeController::nextElement(void)
     Vector ev;
     for(i=elemNum;i<nelems;i++)
     {   theElements[i]->GetXYZCentroid(&ev);
-	    if(ContainsPoint(ev))
+	    if(ShapeContainsPoint(ev))
 		{	elemNum=i+1;
 			return i;
 		}
 	}
 	elemNum=nelems;
 	return -1;
+}
+
+// Add a cutout shape
+void ShapeController::AddCutoutShape(ShapeController *cutout)
+{	// add child shape
+	children.push_back(cutout);
 }
 
 #pragma mark ShapeController: MPM only methods
@@ -246,7 +277,7 @@ int ShapeController::nextParticle(void)
 	int i;
 	for(i=particleNum;i<nmpms;i++)
     {   Vector nv = MakeVector(mpm[i]->pos.x,mpm[i]->pos.y,mpm[i]->pos.z);
-	    if(ContainsPoint(nv))
+	    if(ShapeContainsPoint(nv))
 		{	particleNum=i+1;
 			return i;
 		}
@@ -284,8 +315,26 @@ void ShapeController::resetParticleEnumerator(void) { particleNum=0; }
 // type of object - used in some error messages
 const char *ShapeController::GetShapeName(void) { return "Shape"; }
 
-// override for 3D shapes and result FALSE
-bool ShapeController::Is2DShape(void) { return TRUE; }
+// type of object - used in some error messages
+void ShapeController::DescribeShape(const char *prefix)
+{	cout << prefix << "Shape: " << GetShapeName() << " (id: " << this << ")" << endl;
+	cout << prefix << "   x range: " << xmin << " to " << xmax << endl;
+	cout << prefix << "   y range: " << ymin << " to " << ymax << endl;
+	if(!Is2DShape())
+		cout << prefix << "   z range: " << zmin << " to " << zmax << endl;
+	
+	// cutouts
+	if(children.size()>0)
+	{	char cutPrefix[200];
+		strcpy(cutPrefix,prefix);
+		strcat(cutPrefix,"   ");
+		for(int i=0;i<children.size();i++)
+			children[i]->DescribeShape(cutPrefix);
+	}
+}
+
+// override for 3D shapes and result false
+bool ShapeController::Is2DShape(void) { return true; }
 
 // the source block
 int ShapeController::GetSourceBlock(void) { return sourceBlock; }
@@ -295,6 +344,11 @@ bool ShapeController::RequiredBlock(int block) { return block==sourceBlock; }
 
 // return no pointer
 char *ShapeController::GetContextInfo(void) { return NULL; }
+
+// parent shape
+ShapeController *ShapeController::GetParentShape(void) const { return parentShape; }
+void ShapeController::SetParentShape(ShapeController *obj) { parentShape=obj; }
+
 
 
 

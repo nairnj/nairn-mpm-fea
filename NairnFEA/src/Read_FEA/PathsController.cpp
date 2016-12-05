@@ -6,6 +6,7 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_FEA/PathsController.hpp"
 #include "Read_FEA/Path.hpp"
 
@@ -49,7 +50,7 @@ int PathsController::ValidPath(void)
 int PathsController::ValidName(char *pathName)
 {
 	if(pathName==NULL) return FALSE;
-	int len=strlen(pathName);
+	int len=(int)strlen(pathName);
 	if(len<=0 || len>32) return FALSE;
 	if(FindPath(pathName)!=NULL) return FALSE;
 	return TRUE;

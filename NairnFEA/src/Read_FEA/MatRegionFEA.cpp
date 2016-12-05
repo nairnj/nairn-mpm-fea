@@ -7,6 +7,7 @@
     Copyright (c) 2012 RSAC Software. All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_FEA/FEAReadHandler.hpp"
 #include "Read_XML/MaterialController.hpp"
 #include "Read_XML/RectController.hpp"
@@ -36,7 +37,7 @@ short FEAReadHandler::MatRegionInput(char *xName,const Attributes& attrs)
 		char matname[200];
 		matname[0]=0;
         
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
@@ -73,37 +74,50 @@ short FEAReadHandler::MatRegionInput(char *xName,const Attributes& attrs)
     // basic material region shapes
     // Rect and Oval done now, Polygon finished later
     else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0)
-	{	if(strcmp(xName,"Rect")==0)
-        {	ValidateCommand(xName,MATREGIONBLOCK,MUST_BE_2D);
-            theShape = new RectController(MATREGIONBLOCK);
+	{	// only allowed in BODYPART or within a parent BODY_SHAPE
+		if(block!=MATREGIONBLOCK && block!=BODY_SHAPE)
+			ThrowCompoundErrorMessage(xName,"command found at invalid location","");
+		
+		// only allowed if BODY_SHAPE has active shape
+		if(block==BODY_SHAPE && theShape==NULL)
+			throw SAXException("Subordinate shape found without a parent shape.");
+		
+		// create shape
+		ShapeController *newShape;
+		if(strcmp(xName,"Rect")==0)
+        {	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+            newShape = new RectController(MATREGIONBLOCK);
         }
         else if(strcmp(xName,"Oval")==0)
-        {	ValidateCommand(xName,MATREGIONBLOCK,MUST_BE_2D);
-            theShape = new OvalController(MATREGIONBLOCK);
+        {	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+            newShape = new OvalController(MATREGIONBLOCK);
         }
         else if(strcmp(xName,"Polygon")==0)
-        {	ValidateCommand(xName,MATREGIONBLOCK,MUST_BE_2D);
-            theShape = new PolygonController(MATREGIONBLOCK);
+        {	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+            newShape = new PolygonController(MATREGIONBLOCK);
         }
-        
-		theShape->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
-        numAttr = attrs.getLength();
+		else
+		{	// shape that contains no points
+			newShape = new ShapeController(BODYPART);
+		}
+		
+		// attributes
+		newShape->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
+        numAttr = (int)attrs.getLength();
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
-			theShape->SetProperty(aName,value,this);
+			newShape->SetProperty(aName,value,this);
             delete [] aName;
             delete [] value;
         }
+		newShape->FinishSetup();
 		
-		// finish up and if body is done, generate points now
-		if(theShape->FinishSetup())
-		{	SetRegionElements();
-			delete theShape;
-			theShape=NULL;
-		}
-		else
-			block=BODY_SHAPE;
+		// If in BODY_SHAPE then add this as child of current shape
+		if(block==BODY_SHAPE)
+			newShape->SetParentShape(theShape);
+		block=BODY_SHAPE;
+		theShape = newShape;
 	}
     
 	// add to polygon body object
@@ -112,7 +126,7 @@ short FEAReadHandler::MatRegionInput(char *xName,const Attributes& attrs)
 		if(theShape == NULL)
 			throw SAXException("Body object <Ppt> command occurred without an active 2D body shape.");
 		theShape->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
-		numAttr = attrs.getLength();
+		numAttr = (int)attrs.getLength();
 		for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
 			value=XMLString::transcode(attrs.getValue(i));
@@ -123,12 +137,29 @@ short FEAReadHandler::MatRegionInput(char *xName,const Attributes& attrs)
 		theShape->FinishParameter();
 	}
 
-    // no a material region command
+	// add to arec to oval body object
+	else if(strcmp(xName,"arc")==0)
+	{	ValidateCommand(xName,BODY_SHAPE,MUST_BE_2D);
+		if(theShape == NULL)
+			throw SAXException("Body object <arc> command occurred without an active 2D body shape.");
+		numAttr=(int)attrs.getLength();
+		for(i=0;i<numAttr;i++)
+		{	aName=XMLString::transcode(attrs.getLocalName(i));
+			value=XMLString::transcode(attrs.getValue(i));
+			theShape->SetParameter(aName,value);
+			delete [] aName;
+			delete [] value;
+		}
+		if(!theShape->FinishParameter())
+			throw SAXException("<arc> command has invalid start and/or end angle.");
+	}
+
+	// no a material region command
     else
-        return FALSE;
+        return false;
     
     // was handled
-    return TRUE;
+    return true;
 
 }
 
@@ -145,14 +176,29 @@ short FEAReadHandler::EndMatRegionInput(char *xName,int exitBlock)
         }
     }
     
-    // mesh polygon now
-    else if(strcmp(xName,"Polygon")==0)
-	{	if(!theShape->HasAllParameters())
-            throw SAXException("<Polygon> must have at least 3 subordinate <Ppt> commands.");
-		SetRegionElements();
-		delete theShape;
-		theShape = NULL;
-		block=MATREGIONBLOCK;
+    // mesh shape now
+    else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0)
+	{	if(strcmp(xName,"Polygon")==0)
+		{	if(!theShape->HasAllParameters())
+				throw SAXException("<Polygon> must have at least 3 subordinate <Ppt> commands.");
+		}
+		
+		// If parent shape then done
+		ShapeController *parentShape = theShape->GetParentShape();
+		if(parentShape==NULL)
+		{	SetRegionElements();
+			delete theShape;
+			theShape = NULL;
+			block=MATREGIONBLOCK;
+		}
+		
+		// if subordinate shape, add to parent shape
+		else
+		{	parentShape->AddCutoutShape(theShape);
+			// return to parent
+			theShape = parentShape;
+			// stay in BODY_SHAPE block
+		}
 	}
     
 	// not a MatRegion block element

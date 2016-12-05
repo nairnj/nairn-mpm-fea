@@ -88,6 +88,7 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 <ul>
 <li><a href="#header">Main Analysis Header</a> commands</li>
 <li><a href="#mpmheader">MPM Analysis Header</a> commands</li>
+<li><a href="#archive">Archiving Option</a> commands</li>
 <li><a href="#grid">Defining the MPM Grid and Material Points</a> commands</li>
 <li><a href="#materials">Defining Materials</a> commands</li>
 <li><a href="#cracks">Explicit Crack</a> commands</li>
@@ -470,7 +471,40 @@ Set time the MPM calculations will stop in ms.</li>
 Select number of material points along each axis in the grid (in <code>(axis)</code>). The supported options are 1 to 5 for 2D and 1 to 3 of 3D. The total number of points in the element will be square of the entered value in 2D and the cube in 3D.</li>
 </ul>
 
-<h3>MPM Archiving Options</h3>
+<h3><a name="mhdamp"></a>Damping Commands</h3>
+
+<p>All damping options are explained in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Damping_Options">OUSPDocs wiki</a>. They are activated with these commands.</p>
+
+<ul>
+<li><code>Damping (alphag),&lt;(PIC)&gt;</code>,&lt;(XPICOrder)&gt;</code><br>
+<code>PDamping (alphap),&lt;(PIC)&gt;</code>,&lt;(XPICOrder)&gt;</code><br>
+Select factors for damping based on grid velocity (<code>Damping</code>) or on particle velocities (<code>PDamping</code>); <code>(alphag)</code> and <code>(alphap)</code> can be a numeric value or a
+<a href="#function">user-defined function</a> of time (in units of 1/sec). The optional <code>PIC</code> argument sets the fraction PIC for the particle updates (from 0 to 1 with default 0). The optional <code>XPICOrder</code> argument sets XPIC order to use for PIC damping (integer 1 or higher with default 1). Only one pair of fraction PIC and XPIC order is is allowed and it can be set in either damping command.</li>
+<li><code>FeedbackDamping (gaing),&lt;(Tkg)&gt;,&lt;(maxAlphag)&gt;</code><br>
+<code>PFeedbackDamping (gainp),&lt;(Tkp)&gt;,&lt;(maxAlphap)&gt;</code><br>
+Select options for alternative damping of MPM particle velocities. The two commands base the damping on grid velocity (<code>FeedbackDamping</code>) or on particle velocities (<code>PFeedbackDamping</code>). The two commands have independent settings. The  <code>(gaing)</code> (or p) is feedback coefficient in units of 1/mm<sup>2</sup>. The optional <code>(Tkg)</code> (or p) is target kinetic energy (it can be
+<a href="#function">user-defined function</a>) in micro joules. The optional
+<code>(maxAlphag)</code> (or p) is maximum damping factor in units 1/sec (default is to have no maximum).
+</li>
+</ul>
+
+<h3><a name="mhother"></a>Other Options</h3>
+
+<ul>
+<li><code>ExtrapolateRigid &lt;(option)&gt;</code><br>
+When this option is activated (with <code>(option)</code>="yes" or omitted), all <a href="materials.html#rigid">rigid material</a> particles that set boundary conditions for velocity, temperature, or concentration, will extrapolate to the grid first and then set boundary conditions on those extrapolated values instead of the rigid particle velocity, temperature, or concentration. It is normally used when the rigid particle values vary with position, such as loading in shear.</li>
+<li><code>LeaveLimit (allow)</code><br>
+Set number of particles allowed to leave the grid (in <code>(allow)</code>) before an analysis is stopped.
+If command is omitted, the limit is 1% of the particles. Set to 1 to stop when the first particle leaves the grid.</li>
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="archive"></a>Archiving Options</h2>
+
+<p>Calculations results are saved in <a href="#parch">particle archives</a> or <a href="#garch">global archives</a>. These commands determined what reuslts are saves in those archives.</p>
+
+<h3><a name="parch"></a>Particle Archiving Options</h3>
 
 <ul>
 <li><code>Archive (path)</code><br>
@@ -513,7 +547,7 @@ whenever strain is archived (which means full deformation gradient is archived)<
 </li>
 </ul>
 
-<h3>MPM Global Archiving Options</h3>
+<h3><a name="garch"></a>Global Archiving Options</h3>
 
 <ul>
 <li><a name="globalarchive"></a><code>GlobalArchive (quant),&lt;(mat)&gt;</code><br>
@@ -580,33 +614,6 @@ equivalent to the small strain tensor.
 </li>
 <li><code>GlobalArchiveTime (time)</code><br>
 Specify time interval for archiving global results, <code>(time)</code> is the global archiving time in ms. If not specified, global archiving is done at the <a href="#atime">standard archiving time</a>.</li>
-</ul>
-
-<h3><a name="mhdamp"></a>Damping Commands</h3>
-
-<p>All damping options are explained in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Damping_Options">OUSPDocs wiki</a>. They are activated with these commands.</p>
-
-<ul>
-<li><code>Damping (alphag),&lt;(PIC)&gt;</code>,&lt;(XPICOrder)&gt;</code><br>
-<code>PDamping (alphap),&lt;(PIC)&gt;</code>,&lt;(XPICOrder)&gt;</code><br>
-Select factors for damping based on grid velocity (<code>Damping</code>) or on particle velocities (<code>PDamping</code>); <code>(alphag)</code> and <code>(alphap)</code> can be a numeric value or a
-<a href="#function">user-defined function</a> of time (in units of 1/sec). The optional <code>PIC</code> argument sets the fraction PIC for the particle updates (from 0 to 1 with default 0). The optional <code>XPICOrder</code> argument sets XPIC order to use for PIC damping (integer 1 or higher with default 1). Only one pair of fraction PIC and XPIC order is is allowed and it can be set in either damping command.</li>
-<li><code>FeedbackDamping (gaing),&lt;(Tkg)&gt;,&lt;(maxAlphag)&gt;</code><br>
-<code>PFeedbackDamping (gainp),&lt;(Tkp)&gt;,&lt;(maxAlphap)&gt;</code><br>
-Select options for alternative damping of MPM particle velocities. The two commands base the damping on grid velocity (<code>FeedbackDamping</code>) or on particle velocities (<code>PFeedbackDamping</code>). The two commands have independent settings. The  <code>(gaing)</code> (or p) is feedback coefficient in units of 1/mm<sup>2</sup>. The optional <code>(Tkg)</code> (or p) is target kinetic energy (it can be
-<a href="#function">user-defined function</a>) in micro joules. The optional
-<code>(maxAlphag)</code> (or p) is maximum damping factor in units 1/sec (default is to have no maximum).
-</li>
-</ul>
-
-<h3><a name="mhother"></a>Other Options</h3>
-
-<ul>
-<li><code>ExtrapolateRigid &lt;(option)&gt;</code><br>
-When this option is activated (with <code>(option)</code>="yes" or omitted), all <a href="materials.html#rigid">rigid material</a> particles that set boundary conditions for velocity, temperature, or concentration, will extrapolate to the grid first and then set boundary conditions on those extrapolated values instead of the rigid particle velocity, temperature, or concentration. It is normally used when the rigid particle values vary with position, such as loading in shear.</li>
-<li><code>LeaveLimit (allow)</code><br>
-Set number of particles allowed to leave the grid (in <code>(allow)</code>) before an analysis is stopped.
-If command is omitted, the limit is 1% of the particles. Set to 1 to stop when the first particle leaves the grid.</li>
 </ul>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
@@ -676,31 +683,37 @@ EndHole</code><br>
 Define a region for creating a hole that will not be assigned material points by any
 subsequent shape commands.</li>
 
-<li><a name="rectmpm"></a><code>Rect (xmin),(xmax),(ymin),(ymax)</code><br>
+<li><a name="rectmpm"></a><code>Rect (xmin),(xmax),(ymin),(ymax),&lt;(arcStart)&gt;,&lt;(arcEnd)&gt;</code><br>
 Define rectangle using <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, and <code>(ymax)</code> for the
-current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
+current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block. Optional <code>(arcStart)</code> and <code>(arcEnd)</code> limit to arc of the rectangle (ccw from start to end in degrees with 0 degrees along the x axis).</li>
 
-<li><a name="ovalmpm"></a><code>Oval (xmin),(xmax),(ymin),(ymax)</code><br>
-Define oval within the rectangle defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, and <code>(ymax)</code> for the current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
+<li><a name="ovalmpm"></a><code>Oval (xmin),(xmax),(ymin),(ymax),&lt;(arcStart)&gt;,&lt;(arcEnd)&gt;</code><br>
+Define oval within the rectangle defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, and <code>(ymax)</code> for the current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block. Optional <code>(arcStart)</code> and <code>(arcEnd)</code> limit to arc of the oval (ccw from start to end in degrees with 0 degrees along the x axis).</li>
 
 <li><a name="polyptmpm"></a><code>PolyPt &lt;(xpt)&gt;,&lt;(ypt)&gt;</code><br>
 Define next point on a polygon shape or, if no parameters, close the current polygon shape.
 All polygons are automatically closed from last point to the first point (even if one is open at the end of a <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block).</li>
 
-<li><code>Box (xmin),(xmax),(ymin),(ymax),(zmin),(zmax)</code><br>
+<li><a name="boxmpm"></a><code>Box (xmin),(xmax),(ymin),(ymax),(zmin),(zmax)</code><br>
 Define cubical volume using <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, <code>(ymax)</code>, <code>(zmin)</code>, and <code>(zmax)</code> for the current
 <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
 
-<li><code>Sphere (xmin),(xmax),(ymin),(ymax),(zmin),(zmax)</code><br>
+<li><a name="spherempm"></a><code>Sphere (xmin),(xmax),(ymin),(ymax),(zmin),(zmax)</code><br>
 Define spherical volume within the cubical volume  defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, <code>(ymax)</code>, <code>(zmin)</code>, and <code>(zmax)</code> for the current
 <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
 
-<li><code>Cylinder (xmin),(xmax),(ymin),(ymax),(zmin),(zmax),(axis),&lt;(radius)&gt;</code><br>
+<li><a name="cylindermpm"></a><code>Cylinder (xmin),(xmax),(ymin),(ymax),(zmin),(zmax),(axis),&lt;(radius)&gt;</code><br>
 Define cylindrical volume within the cubical volume  defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, <code>(ymax)</code>, <code>(zmin)</code>, and <code>(zmax)</code> along axis <code>(axis)</code> (1, 2, 3, x, y, or z) for the current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block. Optional <code>(radius)</code> converts to cone with relative radius (-1 to 1) at the top (if >0)
 or at the bottom (if &lt; 0).</li>
 
-<li><code>Torus (xmin),(xmax),(ymin),(ymax),(zmin),(zmax),(axis),&lt;(radius)&gt;</code><br>
+<li><a name="torusmpm"></a><code>Torus (xmin),(xmax),(ymin),(ymax),(zmin),(zmax),(axis),&lt;(radius)&gt;</code><br>
 Define toriodal volume within  dimensions defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, <code>(ymax)</code>, <code>(zmin)</code>, and <code>(zmax)</code> along axis <code>(axis)</code> (1, 2, 3, x, y, or z) for the current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block. The (axis) specifies the normal direction to the plane of the torus. The bounds for the directions in the plane of the torus (e.g., x and y bounds when axis is z) define an ellipsoid (or circle if the bounds have the same separation) that runs through the center of the torodial ring. The bounds in the direction of the axis define top and bottom for the cross-section of the torodial ring. The cross section will be a circle with radius given by half the distance between the top and bottom. To have an eliptical cross section, you can specify optional parameter (radius) to define the radius of the cross section in the plane of the torus (while top and bottom give radius of the cross section in the axis direction).</li>
+
+<li><code>Cut (Shape_Command)</code><br>
+<code>Cut Cut (Shape_Command)</code></br>
+<code>...</code><br>
+Shape commands can be nested by starting that command with one or more <code>Cut</code> commands (separated by spaces). First nesting removes that shape (<a href="#rectmpm">Rect</a>, <a href="#ovalmpm">Oval</a>, or <a href="#polyptmpm">PolyPt</a> for 2D or <a href="#boxmpm">Box</a>, <a href="#spherempm">Sphere</a>, <a href="#cylindermpm">Cylinder</a>, or <a href="#torusmpm">Torus</a> for 3D) from the parent shape, the second adds that shape back, <i>etc.</i>. For proper nesting, the number of <code>Cut</code>'s must be less than or equal to previous command plus one (<i>e.g.</i>, <code>Cut</code> can be followed by <code>Cut Cut</code> for subordinate shape, <code>Cut</code> for another shape in the same parent shape, or no <code>Cut</code>s to start a new parent shape; it cannot be followed by <code>Cut Cut Cut</code>).
+</li>
 
 <li><a name="rotatempm"></a><code>Rotate (axis),(angle),&lt;(axis),(angle)&gt;,...</code><br>
 To rotate, in order, about each axis <code>(axis)</code> (x,y,z,1,2,or 3) by each angle <code>(angle)</code> (can be function) for materials in the current <a href="#regionmpm">region</a>. The <code>(axis)</code> can alternatively be "reset" to remove all previous rotations in the current
@@ -821,16 +834,22 @@ EndHole</code><br>
 Define a region for creating a hole that removes elements in the mesh whose material
 ID was set to &quot;_NONE_&quot;</li>
 
-<li><a name="rectfea"></a><code>Rect (xmin),(xmax),(ymin),(ymax)</code><br>
+<li><a name="rectfea"></a><code>Rect (xmin),(xmax),(ymin),(ymax),&lt;(arcStart)&gt;,&lt;(arcEnd)&gt;</code><br>
 Define rectangle using <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, and <code>(ymax)</code> for the
-current <a href="#regionfea">region</a> or <a href="#holempm">hole</a> block.</li>
+current <a href="#regionfea">region</a> or <a href="#holempm">hole</a> block. Optional <code>(arcStart)</code> and <code>(arcEnd)</code> limit to arc of the rectangle (ccw from start to end in degrees with 0 degrees along the x axis).</li>
 
-<li><a name="ovalfea"></a><code>Oval (xmin),(xmax),(ymin),(ymax)</code><br>
-Define oval within the rectangle defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, and <code>(ymax)</code> for the current <a href="#regionfea">region</a> or <a href="#holefea">hole</a> block.</li>
+<li><a name="ovalfea"></a><code>Oval (xmin),(xmax),(ymin),(ymax),&lt;(arcStart)&gt;,&lt;(arcEnd)&gt;</code><br>
+Define oval within the rectangle defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, and <code>(ymax)</code> for the current <a href="#regionfea">region</a> or <a href="#holefea">hole</a> block. Optional <code>(arcStart)</code> and <code>(arcEnd)</code> limit to arc of the oval (ccw from start to end in degrees with 0 degrees along the x axis).</li>
 
 <li><a name="polyptfea"></a><code>PolyPt &lt;(xpt)&gt;,&lt;(ypt)&gt;</code><br>
 Define next point on a polygon shape or, if no parameters, close the current polygon shape.
 All polygons are automatically closed from last point to the first point (even if one is open at the end of a <a href="#regionfea">region</a> or <a href="#holefea">hole</a> block).</li>
+
+<li><code>Cut (Shape_Command)</code><br>
+<code>Cut Cut (Shape_Command)</code></br>
+<code>...</code><br>
+Shape commands can be nested by starting that command with one or more <code>Cut</code> commands (separated by spaces). First nesting removes that shape (<a href="#rectfea">Rect</a>, <a href="#ovalfea">Oval</a>, or <a href="#polyptfea">PolyPt</a>) from the parent shape, the second adds that shape back, <i>etc.</i>. For proper nesting, the number of <code>Cut</code>'s must be less than or equal to previous command plus one (<i>e.g.</i>, <code>Cut</code> can be followed by <code>Cut Cut</code> for subordinate shape, <code>Cut</code> for another shape in the same parent shape, or no <code>Cut</code>s to start a new parent shape; it cannot be followed by <code>Cut Cut Cut</code>).
+</li>
 
 <li><a name="bmpregionfea"></a><code>BMPRegion (path),(width),&lt;(height)&gt;,&lt;anglesPath&gt;<br>
 &nbsp;&nbsp;(One <a href="#origbmpfea">Origin</a> command and <a href="#intensityfea">Intensity</a> commands)<br>
@@ -982,8 +1001,8 @@ Used with a <a href="#cracks">new crack</a> definition, the command set current 
 </p>
 <ul>
 <li><code>CrackTip (xtip),&lt;(ytip)&gt;</code><br>
-Create quarter-point elements at the crack tip. Is only (xtop) is give, it is a keypoint ID for the keypoint at the crack tip.
-If two arguments the node closet to <code>(xtip,ytip)</code> (in mm) is the crack tip.</li>
+Create quarter-point elements at the crack tip. If only <code>(xtip)</code> is given, it is a keypoint ID for the keypoint at the crack tip.
+If two arguments are givem, the node closet to <code>(xtip,ytip)</code> (in mm) is the crack tip.</li>
 </ul>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
@@ -1320,7 +1339,7 @@ custom task parameters do not take a value.
 </ul>
 
 <p>The currently available (and documented) custom tasks and their parameters are given below (see last one
-for handling unknown tasks):</p>
+for handling undocumented tasks):</p>
 
 <dl>
 
@@ -1426,14 +1445,15 @@ When this task is triggered by critical crack length, the crack propagation will
 <li>sigmoidal (style) - enter 0 or 1 for a linear or sigmoidal thermal ramp. This parameter is optional; if omitted, the ramp is linear.</li>
 <li><code>scale (function)</code> - if this optional command is used, the applied <code>DeltaT</code> is scaled by any <a href="#function">user-defined function</a> of time and particle position. The <code>(function)</code> must be embedded in the parameter name (<i>e.g.</i>, <code>"scale x/40"</code>).</li>
 </ul>
+Another option for this task is to set the thermal field using a bit mapped image of the temperature distribution. To use this option see on-line help on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/ThermalRamp_Custom_Task">OSUPDocs wiki </a>. 
 </dd>
 
-<dt>Unknown Custom Tasks</dt>
-<dd>Sometimes custom tasks may be written for NairnMPM (or OSParticulas) but not known to this application.
-You can still use those tasks. Enter the name of the task (exactly as needed by NairnMPM and case sensitive) in the
+
+<dt>Undocumented Custom Tasks</dt>
+<dd>Other custom tasks may be written for NairnMPM (or OSParticulas) but not known to this help information. You might find such tasks on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Input_Files#Custom_Tasks">OSUPDocs wiki on Cusom Tasks</a>. You can still use such tasks. Enter the name of the task (exactly as specified and case sensitive) in the
 <code>CustomTask</code> command and then follow that with any number of <code>Parameter</code> commands. The
 parameter names and their values are passed exactly as provided (case sensitive) to the input file (including text
-values) and should match the requirements of the unknown task.</dd>
+values) and should match the requirements of the undocumented task.</dd>
 
 </dl>
 

@@ -16,6 +16,7 @@
 class CommonArchiveData
 {
     public:
+		static char folderDelim;
 	
         //  Constructors and Destructor
         CommonArchiveData();
@@ -33,9 +34,11 @@ class CommonArchiveData
 		void SetArchiveMesh(bool);
 		void SetInputDirPath(const char *,bool);
 		char *ExpandOutputPath(const char *);
-		
+		void GetFilePath(char *,const char *);
+		void GetFilePathNum(char *,const char *,int);
+
 	protected:
-		char *inputDir,*archiveRoot,*globalFile,*archiveParent;
+		char *inputDir,*archiveRoot,*globalFile,*archiveParent,*archiveDosRoot;
 		char *outputDir;
 		bool archiveMesh,forceUnique;
 };

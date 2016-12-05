@@ -8,6 +8,7 @@
 	Update strains on particles after initial projection to the grid
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MPMBase.hpp"
@@ -104,7 +105,7 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 				usfErr = new CommonException(err);
 			}
 		}
-		catch(std::bad_alloc& ba)
+		catch(std::bad_alloc&)
 		{	if(usfErr==NULL)
 			{
 #pragma omp critical (error)

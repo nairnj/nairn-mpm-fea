@@ -662,13 +662,13 @@ public class CmdViewer extends JNCmdTextDocument
 			regions.AddAngularMom0(args);
 		
 		else if(theCmd.equals("endregion"))
-			regions.EndRegion(args);
+			regions.EndRegion(args,theCmd);
 		
 		else if(theCmd.equals("hole"))
 			regions.StartHole(args);
 		
 		else if(theCmd.equals("endhole"))
-			regions.EndHole(args);
+			regions.EndRegion(args,theCmd);
 		
 		else if(theCmd.equals("rect"))
 			regions.AddRectOrOval(args,"Rect");
@@ -690,6 +690,9 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("sphere"))
 			regions.AddBox(args,"Sphere");
+		
+		else if(theCmd.equals("cut"))
+			regions.AddCutShape(args);
 		
 		else if(theCmd.equals("gridhoriz"))
 			gridinfo.doGridAxis(args,0);
@@ -1590,7 +1593,9 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		// check MaterialPoints block and intersperse
 		else if(section.equals("materialpoints"))
-		{	if(isFEA())
+		{	if(regions.isInRegion())
+			throw new Exception("XMLData insert in 'materialpoints' must be between regions");
+			if(isFEA())
 				regions.AddXML(newXML);
 			else
 				regions.AddXML(newXML);

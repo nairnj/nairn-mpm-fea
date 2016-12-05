@@ -6,6 +6,7 @@
 	Copyright (c) 2011 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "PolyhedronController.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Read_MPM/PolyTriangle.hpp"

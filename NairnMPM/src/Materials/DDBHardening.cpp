@@ -16,6 +16,7 @@
 		MaterialBase.hpp
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/DDBHardening.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"

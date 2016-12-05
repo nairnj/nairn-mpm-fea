@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include <fstream>
 
 #include "NairnMPM_Class/NairnMPM.hpp"
@@ -358,10 +359,16 @@ short CrackHeader::MoveCrack(void)
 	// move crack plane particles by CM velocity
 	else
 	{	int iel;
-		double fn[maxShapeNodes],shapeNorm;
+		double shapeNorm;
 		int j,nodeCounter;
 		Vector delv,cpos,vcm;
+#ifdef CONST_ARRAYS
+		double fn[MAX_SHAPE_NODES];
+		int nds[MAX_SHAPE_NODES];
+#else
+		double fn[maxShapeNodes];
 		int nds[maxShapeNodes];
+#endif
 		
 		// loop over crack points
 		while(scrk != NULL)
@@ -429,10 +436,16 @@ short CrackHeader::MoveCrack(short side)
 {
     CrackSegment *scrk=firstSeg;
     int iel;
-    double fn[maxShapeNodes],surfaceMass;
+    double surfaceMass;
     short js=side-1,nodeCounter,j;
-	int nds[maxShapeNodes];
     Vector delv,cpos;
+#ifdef CONST_ARRAYS
+	double fn[MAX_SHAPE_NODES];
+	int nds[MAX_SHAPE_NODES];
+#else
+	double fn[maxShapeNodes];
+	int nds[maxShapeNodes];
+#endif
     
     // loop over crack points
     while(scrk!=NULL)
@@ -914,10 +927,10 @@ void CrackHeader::JIntegral(void)
 				}
 				
 				// check corners for extent of contour rectangle
-				cxmin=min(cxmin,nd[gridNode]->x);
-				cxmax=max(cxmax,nd[gridNode]->x);
-				cymin=min(cymin,nd[gridNode]->y);
-				cymax=max(cymax,nd[gridNode]->y);
+				cxmin=fmin(cxmin,nd[gridNode]->x);
+				cxmax=fmax(cxmax,nd[gridNode]->x);
+				cymin=fmin(cymin,nd[gridNode]->y);
+				cymax=fmax(cymax,nd[gridNode]->y);
 
                 // adjust to half edge when about to do j=4 edge
 				numPts = (j==3) ? JGridSize-1 : 2*JGridSize;
@@ -1354,7 +1367,7 @@ void CrackHeader::JIntegral(void)
 				ZeroVector(&tipCrk->Jint);
 			}
 		}
-		catch(std::bad_alloc& ba)
+		catch(std::bad_alloc&)
 		{	throw "Memory error in CrackHeader::JIntegral()";
 		}
 		catch( ... )
@@ -1431,9 +1444,15 @@ void CrackHeader::CrackTipHeating(void)
 {
     CrackSegment *scrk=firstSeg;
 	int iel;
-	double fn[maxShapeNodes];
 	Vector cpos;
-	int i,nds[maxShapeNodes];
+	int i;
+#ifdef CONST_ARRAYS
+	double fn[MAX_SHAPE_NODES];
+	int nds[MAX_SHAPE_NODES];
+#else
+	double fn[maxShapeNodes];
+	int nds[maxShapeNodes];
+#endif
     
 	// exit if no segments
     if(scrk==NULL) return;
@@ -1852,7 +1871,7 @@ bool CrackHeader::CreateHierarchy(void)
     if(scrk1==NULL) return false;
     CrackSegment *scrk2 = scrk1->nextSeg;
     if(scrk2==NULL) return false;
-    CrackLeaf *firstLeaf=NULL,*lastLeaf,*leaf;
+    CrackLeaf *firstLeaf=NULL,*lastLeaf=NULL,*leaf;
     int numLeaves=0;
     
     // consider line segments in pairs (or could be only 1 if scrk2->nextSeg==NULL)
@@ -2146,7 +2165,7 @@ double CrackHeader::AdjustGrowForCrossing(Vector *grow,CrackSegment *crkTip,doub
 				double plen = sqrt(pxs*pxs+pys*pys);					// length of crack tip segment
 				double glen = sqrt(grow->x*grow->x+grow->y*grow->y);	// length to proposed new tip segment
 				if(PropagateTask::cellsPerPropagationStep>.7)
-				{	int numSegs= 2*(PropagateTask::cellsPerPropagationStep+.25);
+				{	int numSegs= (int)(2*(PropagateTask::cellsPerPropagationStep+.25));
 					glen /= (double)numSegs;
 				}
 				double pmin = plen/glen<0.5 ? 0.5 : 0.0;

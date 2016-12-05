@@ -9,6 +9,7 @@
 		mathexpr
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "FEABoundaryCondition.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Read_XML/mathexpr.hpp"

@@ -8,6 +8,7 @@
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/CoulombFriction.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"

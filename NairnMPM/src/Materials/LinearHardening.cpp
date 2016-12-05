@@ -15,6 +15,7 @@
         this law can be used with materials that do not define E
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/LinearHardening.hpp"
 #include "System/UnitsController.hpp"
 

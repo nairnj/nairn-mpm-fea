@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Nodes/NodalPoint.hpp"
 
 // Nodal Point global

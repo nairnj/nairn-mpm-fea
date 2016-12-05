@@ -9,6 +9,7 @@
 		HyperElastic.hpp (MaterialBase.hpp)
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "HEIsotropic.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"

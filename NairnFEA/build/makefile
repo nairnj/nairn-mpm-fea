@@ -84,7 +84,7 @@ ifeq ($(SYSTEM),carbon)
     CC= /usr/local/gcc48/bin/g++
 endif
 ifeq ($(SYSTEM),mac)
-    CC= /opt/local/bin/g++-mp-4.8
+    CC= /opt/local/bin/g++-mp-4.9
 endif
 RM= rm
 CP= cp
@@ -120,10 +120,11 @@ ioutput = ~/bin
 #     The commented com option is needed if you follow the suggested Eclipse procedure
 src = ../src
 com = ../../Common
+std = ../../Common/Headers
 #com = ../../NairnMPM/Common
 
 # Macros for headers and all files
-headers = -I$(src) -I$(com) -I$(headersPath)
+headers = -I$(src) -I$(std) -I$(com) -I$(headersPath)
 ArcController = $(com)/Read_XML/ArcController
 Area = $(src)/Read_FEA/Area
 BitMapFilesCommon = $(com)/Read_XML/BitMapFilesCommon
@@ -195,6 +196,8 @@ svninfo = $(com)/System/svninfo
 TransIsotropic = $(com)/Materials/TransIsotropic
 UnitsController = $(com)/System/UnitsController
 Utilities = $(src)/System/Utilities
+XYFileImporter = $(com)/Read_XML/XYFileImporter
+XYBMPImporter = $(com)/Read_XML/XYBMPImporter
 
 # path from 'makefile' to prefix header file
 prefix = $(src)/System/FEAPrefix.hpp
@@ -243,6 +246,8 @@ dprefix = $(src)/System/FEAPrefix.hpp $(com)/System/DataTypes.hpp \
 # RectController.hpp : ShapeController.hpp
 # SixNodeTriangle.hpp : Quad2D.hpp (ElementBase.hpp)
 # TransIsotropic.hpp : Elastic.hpp (MaterialBase.hpp)
+# XYFileImporter.hpp : CommonReadHandler.hpp
+# XYBMPImporter.hpp : XYFileImporter.hpp, CommonReadHandler.hpp
 
 # Header files with no dependencies
 # Area.hpp CommonArchiveData.hpp CommonException.hpp CommonReadHandler.hpp FEABoundaryCondition.hpp
@@ -257,6 +262,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		LineController.o MaterialController.o IsotropicMat.o TransIsotropic.o BoxController.o \
 		Orthotropic.o NodalPoint.o FEAArchiveData.o Utilities.o NairnFEA.o FEAStartResults.o \
 		FEAReadHandler.o KeypointsController.o Keypoint.o PathsController.o Path.o Area.o \
+		XYFileImporter.o XYBMPImporter.o \
 		EdgeBCController.o NodalDispBCController.o NodalLoadController.o MaterialBaseFEA.o \
 		ImperfectInterface.o MoreElementBase.o Quad2D.o EightNodeIsoparam.o SixNodeTriangle.o \
 		CSTriangle.o Interface2D.o LinearInterface.o QuadInterface.o MoreNodalPoint.o \
@@ -296,7 +302,12 @@ UnitsController.o : $(UnitsController).cpp $(UnitsController).hpp $(CommonReadHa
 CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp $(NairnFEA).hpp \
 			$(MaterialController).hpp $(NodesController).hpp $(ElementsController).hpp $(StrX).hpp $(ElementBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonReadHandler).cpp
-BitMapFilesCommon.o : $(BitMapFilesCommon).cpp $(dprefix) $(CommonReadHandler).hpp $(BMPLevel).hpp $(MaterialController).hpp
+XYFileImporter.o : $(XYFileImporter).cpp $(dprefix) $(XYFileImporter).hpp $(CommonReadHandler).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(XYFileImporter).cpp
+XYBMPImporter.o : $(XYFileImporter).cpp $(dprefix) $(XYBMPImporter).hpp $(XYFileImporter).hpp $(CommonReadHandler).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(XYBMPImporter).cpp
+BitMapFilesCommon.o : $(BitMapFilesCommon).cpp $(dprefix) $(CommonReadHandler).hpp $(BMPLevel).hpp $(MaterialController).hpp \
+			$(XYFileImporter).hpp $(XYBMPImporter).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BitMapFilesCommon).cpp
 BMPLevel.o : $(BMPLevel).cpp $(dprefix) $(BMPLevel).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BMPLevel).cpp

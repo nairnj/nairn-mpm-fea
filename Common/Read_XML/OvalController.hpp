@@ -13,9 +13,9 @@
 
 #define _OVALCONTROLLER_
 
-#include "Read_XML/ShapeController.hpp"
+#include "Read_XML/RectController.hpp"
 
-class OvalController : public ShapeController
+class OvalController : public RectController
 {
     public:
 	
@@ -31,6 +31,7 @@ class OvalController : public ShapeController
     
     private:
         double x0,y0;
+		double a,b;
 };
 
 #endif

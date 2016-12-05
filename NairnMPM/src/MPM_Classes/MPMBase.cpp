@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
@@ -365,7 +366,7 @@ double MPMBase::GetParticleZSize(void) const { return 0.5*mpm_lp.z*theElements[i
 // get rotation angle for 2D calculations
 // Use polar decomposition to get sin(theta) and cos(theta) for ccw rotation
 //		from initial material position to current position
-double MPMBase::Get2DSinCos(double *sintheta,double *costheta)
+void MPMBase::Get2DSinCos(double *sintheta,double *costheta)
 {	// particle rotation
 	double F11plusF22 = 2. + ep.xx + ep.yy;
 	double denom = 1./sqrt(F11plusF22*F11plusF22+wrot.xy*wrot.xy);

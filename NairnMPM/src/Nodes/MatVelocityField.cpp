@@ -14,6 +14,7 @@
 	
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/MatVelocityField.hpp"
 #include "Exceptions/CommonException.hpp"

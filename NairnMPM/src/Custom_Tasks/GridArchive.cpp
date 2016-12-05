@@ -6,6 +6,7 @@
 	Parent class for custom task to archive grid results
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Custom_Tasks/GridArchive.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "System/ArchiveData.hpp"

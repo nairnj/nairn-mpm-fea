@@ -6,6 +6,7 @@
     Copyright (c) 2003, All rights reserved.    
 *********************************************************************/
 
+#include "stdafx.h"
 #include "NairnFEA_Class/NairnFEA.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Materials/MaterialBase.hpp"

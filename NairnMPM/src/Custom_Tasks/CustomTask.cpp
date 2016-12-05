@@ -6,6 +6,7 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Custom_Tasks/CalcJKTask.hpp"
 
 // globals
@@ -27,12 +28,11 @@ const char *CustomTask::TaskName(void) { return "Unnamed Custom Task"; }
 // On error, cout a message and return NULL or throw SAXException()
 char *CustomTask::InputParam(char *pName,int &input,double &gScaling) { return NULL; }
 
-// If pointer in InputParam is set to TEXT_PARAMETER, this method is called
+// If pointer type in InputParam is set to TEXT_PARAMETER, this method is called
 //      immediately after with the text of the parameter
-// If value not accepted, pass on to parent CustomTask (which throws an exception)
-//      or throw custom exception
+// If value not accepted, throw exception
 // throws SAXException()
-void CustomTask::SetTextParameter(char *value)
+void CustomTask::SetTextParameter(char *value,char *ptr)
 {	
 	ThrowSAXException("The text parameter with value '%s' is not valid for current custom task",value);
 }

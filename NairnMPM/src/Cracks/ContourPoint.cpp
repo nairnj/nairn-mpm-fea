@@ -6,6 +6,7 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Cracks/ContourPoint.hpp"
 #include "Nodes/NodalPoint.hpp"
 

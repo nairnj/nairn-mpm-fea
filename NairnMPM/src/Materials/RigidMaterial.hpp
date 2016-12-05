@@ -56,6 +56,7 @@ class RigidMaterial : public MaterialBase
 		bool GetValueSetting(double *,double,Vector *) const;
 		bool GetVectorSetting(Vector *,bool *,double,Vector *) const;
 		void SetSettingFunction(char *,int);
+		void ReplaceSettingFunction(char *,int);
 		bool IsConstantVelocity(void);
 		
 		// accessors

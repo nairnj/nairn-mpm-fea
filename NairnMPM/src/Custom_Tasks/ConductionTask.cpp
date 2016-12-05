@@ -37,6 +37,7 @@
 			grid based one causes numerical diffision.
 *********************************************************************************************/
 
+#include "stdafx.h"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Elements/ElementBase.hpp"
@@ -160,8 +161,13 @@ void ConductionTask::ImposeValueBCs(double stepTime)
 TransportTask *ConductionTask::GetGradients(double stepTime)
 {
     CommonException *transErr = NULL;
+#ifdef CONST_ARRAYS
+	int ndsArray[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
+#else
 	int ndsArray[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+#endif
     
 	// in case 2D planar
     for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;

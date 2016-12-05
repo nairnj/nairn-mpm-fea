@@ -12,6 +12,7 @@
 	MaterialBase (base class)
 ****************************************************************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/MaterialBase.hpp"
 #include "System/UnitsController.hpp"
 
@@ -110,7 +111,7 @@ void MaterialBase::PrintProperty(const char *propName,double value,const char *u
 	
 	// name
 	strcpy(prop,propName);
-	int length=strlen(prop);
+	int length=(int)strlen(prop);
 	while(length<PROP_LABEL_LENGTH)
 	{	strcat(prop," ");
 		length++;
@@ -128,7 +129,7 @@ void MaterialBase::PrintProperty(const char *propName,double value,const char *u
 	}
 	
 	// pad to column
-	length=strlen(prop);
+	length=(int)strlen(prop);
 	int padLength = (length<PROP_COLUMN) ? PROP_COLUMN : 2*PROP_COLUMN ;
 	while(length<padLength)
 	{	strcat(prop," ");
@@ -145,7 +146,7 @@ void MaterialBase::PrintProperty(const char *text,bool rightJustify)
 	char prop[200];
 	
 	// up to two columns wide
-	int length=strlen(text);
+	int length=(int)strlen(text);
 	int padLength = (length<PROP_COLUMN) ? PROP_COLUMN : 2*PROP_COLUMN ;
 	strcpy(prop,"");
 	

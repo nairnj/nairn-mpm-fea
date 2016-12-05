@@ -9,6 +9,7 @@
 		sigma = yield (1 + beta ep^npow)
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/Nonlinear2Hardening.hpp"
 
 #pragma mark Nonlinear2Hardening::Constructors and Destructors

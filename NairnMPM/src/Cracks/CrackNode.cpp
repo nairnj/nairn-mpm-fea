@@ -15,6 +15,7 @@
 		contact.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Cracks/CrackNode.hpp"
 
 // global point to contact conditions

@@ -6,6 +6,7 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.    
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Exceptions/MPMWarnings.hpp"
 #include "System/ArchiveData.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
@@ -84,7 +85,7 @@ void MPMWarnings::CreateWarningList(void)
 
 // Activate all warnings for the next step
 void MPMWarnings::BeginStep(void)
-{	unsigned i;
+{	int i;
 	for(i=0;i<numWarnings;i++)
 	{	warningSet[i]->thisStep = true;
 	}
@@ -172,7 +173,7 @@ int MPMWarnings::Issue(int warnKind,int theID,char *comment)
 // Report all warning results
 void MPMWarnings::Report(void)
 {
-	unsigned i;
+	int i;
 	bool hasTitle=FALSE;
 	
 	// check for any warning

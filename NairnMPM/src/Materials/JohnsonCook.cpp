@@ -9,6 +9,7 @@
         (Ajc + Bjc εpnjc) [1 + Cjc ln(dεp/ep0jc) ] (1 - Trmjc)
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/JohnsonCook.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"

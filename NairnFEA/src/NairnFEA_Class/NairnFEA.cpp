@@ -6,6 +6,7 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 *********************************************************************/
 
+#include "stdafx.h"
 #include "NairnFEA_Class/NairnFEA.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Exceptions/CommonException.hpp"
@@ -32,7 +33,7 @@ int gelbnd(double **,int,int,double *,double *,int);
 NairnFEA::NairnFEA()
 {
 	version=5;					// NairnFEA version number
-	subversion=0;				// subversion number
+	subversion=1;				// subversion number
 	buildnumber=0;				// build number
 	xax='x';					// default axis names
 	yax='y';
@@ -389,7 +390,7 @@ void NairnFEA::DisplacementResults(void)
     cout << "------------------------------------------------------" << endl;
     
     // each nodal displacement
-    maxi = outFlags[DISPLACEMENT_OUT]=='Y' ? nnodes : selectedNodes.size();
+    maxi = outFlags[DISPLACEMENT_OUT]=='Y' ? nnodes : (int)selectedNodes.size();
     for(ii=1;ii<=maxi;ii++)
     {	// find node and dof
     	if(outFlags[DISPLACEMENT_OUT]=='Y')
@@ -557,7 +558,7 @@ void NairnFEA::AvgNodalStresses(void)
     cout << "--------------------------------------------------------------------------" << endl;
 
     // print all or selected nodes
-    numshw = (outFlags[AVGSTRESS_OUT]=='Y') ? nnodes : selectedNodes.size();
+    numshw = (outFlags[AVGSTRESS_OUT]=='Y') ? nnodes : (int)selectedNodes.size();
     for(ii=1; ii<=numshw;ii++)
     {	i = (outFlags[AVGSTRESS_OUT]=='Y') ? ii : selectedNodes[ii-1];
         nd[i]->PrintAvgStress();

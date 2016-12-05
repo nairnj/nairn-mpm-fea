@@ -6,6 +6,7 @@
     Copyright (c) 2006 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/ImperfectInterface.hpp"
 #include "System/UnitsController.hpp"
 

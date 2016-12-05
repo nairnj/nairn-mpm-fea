@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Elements/ElementBase3D.hpp"
 #include "Nodes/NodalPoint.hpp"
 #ifdef MPM_CODE
@@ -56,10 +57,10 @@ void ElementBase3D::GetXYZCentroid(Vector *center)
 
 // depth - 3D element return z extent
 double ElementBase3D::GetDeltaZ(void) const { return zmax-zmin; }
-bool ElementBase3D::IntersectsBox(double xorig,double yorig,double xlength,double ylength,double zslice) const
-{	if(zslice<zmin) return false;
-	if(zslice>zmax) return false;
-	return ElementBase::IntersectsBox(xorig,yorig,xlength,ylength,zslice);
+bool ElementBase3D::IntersectsBox(Vector orig,double xlength,double ylength) const
+{	if(orig.z<zmin) return false;
+	if(orig.z>zmax) return false;
+	return ElementBase::IntersectsBox(orig,xlength,ylength);
 }
 // 3D range (overides 2D in base)
 void ElementBase3D::GetRange(int ax,double &amin,double &amax) const

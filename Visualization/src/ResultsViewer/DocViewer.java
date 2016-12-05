@@ -176,7 +176,7 @@ public class DocViewer extends JNDocument
 				}
 				catch(Exception tpe)
 				{	JNApplication.appBeep();
-					JOptionPane.showMessageDialog(timeFrame,tpe.toString());
+					JOptionPane.showMessageDialog(timeFrame,tpe.getLocalizedMessage());
 				}
 				
 				break;
@@ -193,7 +193,7 @@ public class DocViewer extends JNDocument
 				}
 				catch(Exception tpe)
 				{	JNApplication.appBeep();
-					JOptionPane.showMessageDialog(xyPlotFrame,tpe.toString());
+					JOptionPane.showMessageDialog(xyPlotFrame,tpe.getLocalizedMessage());
 				}
 				
 				break;

@@ -6,6 +6,7 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_FEA/Area.hpp"
 #include "Read_FEA/PathsController.hpp"
 #include "Read_XML/ElementsController.hpp"

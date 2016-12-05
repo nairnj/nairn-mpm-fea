@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.    
 ********************************************************************************/
 
+#include "stdafx.h"
 #include <fstream>
 #include <errno.h>
 
@@ -40,8 +41,20 @@ ArchiveData::ArchiveData()
 	
 	globalFile=NULL;		// path to global results file
 	threeD=FALSE;			// three D calculations
-    SetMPMOrder("mYYYYYNYYYNNNNNNNNNNNN");		// byte order + 21 items
-    SetCrackOrder("mYNNN");					// byte order + defaults + 3 items
+	
+	// default archive has byte order and defaults only
+	char defaultOrder[ARCH_MAXMPMITEMS+1];
+	strcpy(defaultOrder,"mY");
+	for(int i=2;i<ARCH_MAXMPMITEMS;i++)
+		strcat(defaultOrder,"N");
+	SetMPMOrder(defaultOrder);
+	
+	// default archive has byte order and defaults
+	strcpy(defaultOrder,"mY");
+	for(int i=2;i<ARCH_MAXCRACKITEMS;i++)
+		strcat(defaultOrder,"N");
+    SetCrackOrder(defaultOrder);
+	
 	timeStamp=NULL;			// pointer to header
 	propgationCounter=0;					// counts crack propagation
     
@@ -65,11 +78,20 @@ bool ArchiveData::MakeArchiveFolder(void)
 		if(forceUnique)
 		{	int folderID=1;
 			while(folderID<1000)
-			{	if(strlen(archiveParent)>0)
+			{
+#ifdef WINDOWS_EXE
+				if(strlen(archiveParent)>0)
+					sprintf(syscmd,"if not exist \"%s%s\\%d\" exit 1",outputDir,archiveParent,folderID);
+				else
+					sprintf(syscmd,"if not exist \"%s%d\" exit 1",outputDir,folderID);
+				int exists=system(syscmd);
+#else
+				if(strlen(archiveParent)>0)
 					sprintf(syscmd,"test -d '%s%s/%d'",outputDir,archiveParent,folderID);
 				else
 					sprintf(syscmd,"test -d '%s%d'",outputDir,folderID);
 				int exists=system(syscmd);
+#endif
 				if(exists!=0) break;			// zero means it already exists
 				folderID++;
 			}
@@ -77,13 +99,13 @@ bool ArchiveData::MakeArchiveFolder(void)
 			// if not found, an error
 			if(folderID>=1000) return false;
 			
-			// adjust archiveParent and archiveRoot
-			int insertPos=strlen(archiveParent);
+			// adjust archiveParent and archiveRoot if changed by unique subfolder
+			int insertPos=(int)strlen(archiveParent);
 			if(insertPos>0)
 			{	char fldrNum[10];
 				sprintf(fldrNum,"/%d",folderID);			// max length is 4, and space was saved for it
-				int endPos=strlen(archiveRoot);
-				int numLength=strlen(fldrNum);
+				int endPos=(int)strlen(archiveRoot);
+				int numLength=(int)strlen(fldrNum);
 				int i;
 				for(i=endPos+numLength;i>=insertPos;i--)
 				{	if(i>=insertPos+numLength)
@@ -99,17 +121,47 @@ bool ArchiveData::MakeArchiveFolder(void)
 				sprintf(syscmd,"%s/%d",archiveParent,folderID);
 				strcpy(archiveParent,syscmd);
 			}
+#ifdef WINDOWS_EXE
+			// update changed in for DOS files
+			MakeDOSPath(archiveParent);
+			strcpy(archiveDosRoot, archiveRoot);
+			MakeDOSPath(archiveDosRoot);
+#endif
 		}
 		
 		// now make the folder
+#ifdef WINDOWS_EXE
+		strcpy(syscmd,"if not exist \"");
+		char *dosPath = new char[strlen(outputDir) + strlen(archiveParent) + 1];
+		strcpy(dosPath, outputDir);
+		strcat(dosPath, archiveParent);
+		strcat(syscmd,MakeDOSPath(dosPath));
+		strcat(syscmd,"\"");
+		strcat(syscmd, " MD \"");
+		strcat(syscmd,dosPath);
+		strcat(syscmd,"\"");
+		system(syscmd);
+		delete[] dosPath;
+#else
     	strcpy(syscmd,"mkdir -p '");
 		strcat(syscmd,outputDir);
 		strcat(syscmd,archiveParent);
 		strcat(syscmd,"'");
 		system(syscmd);
+#endif
 	}
 	
 	// copy input commands
+#ifdef WINDOWS_EXE
+	strcpy(syscmd,"COPY /Y \"");
+	strcat(syscmd, inputDir);		// empty or ends in backslash
+	strcat(syscmd, &inputDir[strlen(inputDir) + 1]);		// name only
+	strcat(syscmd, "\" \"");
+	strcat(syscmd, outputDir);
+	strcat(syscmd, archiveDosRoot);
+	strcat(syscmd, ".fmcmd\" > NUL");
+	system(syscmd);
+#else
 	strcpy(syscmd,"cp '");
 	strcat(syscmd,inputDir);							// input folder
 	strcat(syscmd,&inputDir[strlen(inputDir)+1]);		// input name
@@ -117,7 +169,8 @@ bool ArchiveData::MakeArchiveFolder(void)
 	strcat(syscmd,outputDir);
 	strcat(syscmd,archiveRoot);
 	strcat(syscmd,".fmcmd'");
-    system(syscmd);	
+    system(syscmd);
+#endif
 	
 	// test by creating dummy file because return value above may be system dependent
 	// If logging progress, keep the temporary file for future use
@@ -128,7 +181,7 @@ bool ArchiveData::MakeArchiveFolder(void)
 #else
 	char *logFile=new char[strlen(outputDir)+strlen(archiveRoot)+6];
 #endif
-	sprintf(logFile,"%s%s.log",outputDir,archiveRoot);
+	GetFilePath(logFile,"%s%s.log");
     if((fp=fopen(logFile,"w"))==NULL) return false;
 	fclose(fp);
 #ifndef LOG_PROGRESS
@@ -146,11 +199,11 @@ bool ArchiveData::MakeArchiveFolder(void)
 bool ArchiveData::BeginArchives(bool isThreeD,int maxMats)
 {
 	// set up archive times
-	int blocks = archTimes.size();
+	int blocks = (int)archTimes.size();
 	if(blocks==0) return false;
 
 	// archve the first one always
-	archBlock=0.;
+	archBlock=0;
 	nextArchTime=0.;
 	
 	// fill in blank initial phase
@@ -207,7 +260,7 @@ void ArchiveData::CalcArchiveSize(void)
     // pad if needed, and truncate if not recognized
     if(strlen(mpmOrder)<2) strcpy(mpmOrder,"mY");
     if(strlen(mpmOrder)<ARCH_MAXMPMITEMS)
-    {	for(i=strlen(mpmOrder);i<ARCH_MAXMPMITEMS;i++)
+    {	for(i=(int)strlen(mpmOrder);i<ARCH_MAXMPMITEMS;i++)
             mpmOrder[i]='N';
     }
     mpmOrder[ARCH_MAXMPMITEMS]=0;
@@ -220,7 +273,7 @@ void ArchiveData::CalcArchiveSize(void)
 	
     if(strlen(crackOrder)<2) strcpy(crackOrder,"mY");
     if(strlen(crackOrder)<ARCH_MAXCRACKITEMS)
-    {	for(i=strlen(crackOrder);i<ARCH_MAXCRACKITEMS;i++)
+    {	for(i=(int)strlen(crackOrder);i<ARCH_MAXCRACKITEMS;i++)
             crackOrder[i]='N';
     }
     crackOrder[ARCH_MAXCRACKITEMS]=0;
@@ -376,11 +429,11 @@ void ArchiveData::SetArchiveHeader(void)
 	strcpy(archHeader,"ver6");
 	
 	// mpmOrder
-	archHeader[strlen(archHeader)]=strlen(mpmOrder);
+	archHeader[strlen(archHeader)]=(char)strlen(mpmOrder);
 	strcat(archHeader,mpmOrder);
 	
 	// crackOrder
-	archHeader[strlen(archHeader)]=strlen(crackOrder);
+	archHeader[strlen(archHeader)]=(char)strlen(crackOrder);
 	strcat(archHeader,crackOrder);
 	
 	// 2 or 3 dimensions
@@ -407,7 +460,7 @@ void ArchiveData::CreateGlobalFile(void)
 	
 	// get relative path name to the file
 	globalFile=new char[strlen(outputDir)+strlen(archiveRoot)+8];
-	sprintf(globalFile,"%s%s.global",outputDir,archiveRoot);
+	GetFilePath(globalFile,"%s%s.global");
 	
     // create and open the file
     if((fp=fopen(globalFile,"w"))==NULL) goto abort;
@@ -452,7 +505,7 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 	if(archiveMesh && fmobj->IsThreeD())
 	{	char fname[500];
 		ofstream outfile;
-		sprintf(fname,"%s%s_VelBCs.txt",outputDir,archiveRoot);
+		GetFilePath(fname,"%s%s_VelBCs.txt");
 		outfile.open(fname);
 		if(outfile)
     	{	sprintf(fname,"%s_VelBCs.txt",archiveRoot);
@@ -479,7 +532,7 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 void ArchiveData::ArchivePointDimensions(void)
 {	char fname[500];
 	ofstream outfile;
-	sprintf(fname,"%s%s_PtDims.txt",outputDir,archiveRoot);
+	GetFilePath(fname,"%s%s_PtDims.txt");
 	outfile.open(fname);
 	
 	if(outfile)
@@ -543,11 +596,11 @@ void ArchiveData::ArchiveResults(double atime)
 		GlobalArchive(atime);
     
     // get relative path name to the file
-    sprintf(fname,"%s%s.%d",outputDir,archiveRoot,fmobj->mstep);
+	GetFilePathNum(fname,"%s%s.%d",fmobj->mstep);
     
     // output step number, time, and file name to results file
-    for(i=strlen(fname);i>=0;i--)
-    {	if(fname[i]=='/') break;
+    for(i=(int)strlen(fname);i>=0;i--)
+    {	if(fname[i]=='/' || fname[i]=='\\') break;
     }
     sprintf(fline,"%7d %15.7e  %s",fmobj->mstep,atime*UnitsController::Scaling(1.e3),&fname[i+1]);
     cout << fline << endl;
@@ -560,7 +613,7 @@ void ArchiveData::ArchiveResults(double atime)
 			FileError("Cannot open an archive file",fname,"ArchiveData::ArchiveResults");
 		
 		// write header created in SetArchiveHeader
-		*timeStamp=atime*UnitsController::Scaling(1.e3);
+		*timeStamp=(float)(atime*UnitsController::Scaling(1.e3));
 		afile.write(archHeader,HEADER_LENGTH);
 		if(afile.bad())
 			FileError("File error writing archive file header",fname,"ArchiveData::ArchiveResults");
@@ -1172,7 +1225,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
     char fname[300],fline[300];
 	
     // get relative path name to the file
-    sprintf(fname,"%s%s_%d.vtk",outputDir,archiveRoot,fmobj->mstep);
+	GetFilePathNum(fname,"%s%s_%d.vtk",fmobj->mstep);
     
     // open the file
 	ofstream afile;
@@ -1370,7 +1423,7 @@ void ArchiveData::ArchiveHistoryFile(double atime,vector< int > quantity)
     char fname[300],fline[600],subline[100];
 	
     // get relative path name to the file
-    sprintf(fname,"%s%s_History_%d.txt",outputDir,archiveRoot,fmobj->mstep);
+    GetFilePathNum(fname,"%s%s_History_%d.txt",fmobj->mstep);
     
     // open the file
 	ofstream afile;
@@ -1525,9 +1578,9 @@ int ArchiveData::WillArchiveJK(bool rightNow)
 }
 
 // return TRUE if archiving will happen on the next time step
-int ArchiveData::WillArchive(void)
-{ 	if(mtime+timestep<nextArchTime) return FALSE;
-	return TRUE;
+bool ArchiveData::WillArchive(void)
+{ 	if(mtime+timestep<nextArchTime) return false;
+	return true;
 }
 
 // Record size after it is calculated
@@ -1535,7 +1588,11 @@ int ArchiveData::GetRecordSize(void) { return recSize; }
  
 // set archive orders
 void ArchiveData::SetMPMOrder(const char *xData) { strcpy(mpmOrder,xData); }
+void ArchiveData::SetMPMOrderByte(int byteNum,char setting) { mpmOrder[byteNum] = setting; }
+char ArchiveData::GetMPMOrderByte(int byteNum) { return mpmOrder[byteNum]; }
 void ArchiveData::SetCrackOrder(const char *xData) { strcpy(crackOrder,xData); }
+void ArchiveData::SetCrackOrderByte(int byteNum,char setting) { crackOrder[byteNum] = setting; }
+char ArchiveData::GetCrackOrderByte(int byteNum) { return crackOrder[byteNum]; }
 bool ArchiveData::PointArchive(int orderBit) { return mpmOrder[orderBit]=='Y'; }
 bool ArchiveData::CrackArchive(int orderBit) { return crackOrder[orderBit]=='Y'; }
 void ArchiveData::SetDoingArchiveContact(bool setting) { doingArchiveContact=setting; }
@@ -1566,7 +1623,7 @@ bool ArchiveData::PassedLastArchived(int qIndex,double criticalValue)
 // Propgation Counter
 void ArchiveData::IncrementPropagationCounter(void) { propgationCounter++; }
 void ArchiveData::SetMaxiumPropagations(int maxp)
-{	int blocks = maxProps.size();
+{	int blocks = (int)maxProps.size();
 	if(blocks>0) maxProps[blocks-1] = maxp;
 }
 
@@ -1576,7 +1633,7 @@ double *ArchiveData::GetArchTimePtr(void)
 {	archTimes.push_back(0.);
 	firstArchTimes.push_back(0.);
 	maxProps.push_back(0);
-	int blocks = archTimes.size();
+	int blocks = (int)archTimes.size();
 	return &archTimes[blocks-1];
 }
 
@@ -1584,7 +1641,7 @@ double *ArchiveData::GetArchTimePtr(void)
 // error if none ready
 // if first block, create new first block
 double *ArchiveData::GetFirstArchTimePtr(void)
-{	int blocks = archTimes.size();
+{	int blocks = (int)archTimes.size();
 	if(blocks==0)
 		return NULL;
 	else if(blocks==1)

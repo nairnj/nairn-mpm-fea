@@ -98,7 +98,7 @@
 				| Ex | ER | Ey | EZ | Ez | Gxy | Gyx | GRZ | GZR | Gxz | Gzx 
 				| GRT | GTR | Gyz | Gzy | GZT | GTZ
 				| nuxy | nuyx | nuRZ | nuZR | nuxz | nuzx | nuRT | nuTR | nuyz | nuzy | nuZT | nuTZ
-				| alphax | alphay | alphaz | alphaR | alphaZ | alphaT
+				| alphax | alphay | alphaz | alphaR | alphaZ
 				| Dn | Dt )* >
 <!ATTLIST	Material
 			Type CDATA #REQUIRED
@@ -106,7 +106,8 @@
 
 <!-- Region shapes -->
 
-<!ELEMENT	Rect EMPTY>
+<!ELEMENT	Rect
+			( arc?, ( Rect | Oval | Polygon )* )>
 <!ATTLIST	Rect
             units CDATA #IMPLIED
             xmin CDATA #REQUIRED
@@ -114,7 +115,8 @@
             ymin CDATA #REQUIRED
             ymax CDATA #REQUIRED>
 
-<!ELEMENT	Oval EMPTY>
+<!ELEMENT	Oval
+			( arc?, ( Rect | Oval | Polygon )* )>
 <!ATTLIST	Oval
             units CDATA #IMPLIED
             xmin CDATA #REQUIRED
@@ -123,9 +125,14 @@
             ymax CDATA #REQUIRED>
 
 <!ELEMENT	Polygon
-            ( pt+ )>
+			( pt+, ( Rect | Oval | Polygon )* )>
 <!ATTLIST	Polygon
             np CDATA #IMPLIED>
+
+<!ELEMENT	arc EMPTY>
+<!ATTLIST	arc
+            start CDATA #REQUIRED
+            end CDATA #REQUIRED>
 
 <!-- Boundary conditions all on the grid -->
 

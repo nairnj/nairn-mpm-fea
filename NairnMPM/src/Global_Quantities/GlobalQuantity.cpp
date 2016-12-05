@@ -11,6 +11,7 @@
 		3. Add calculations in AppendQuantity()
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Global_Quantities/GlobalQuantity.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/MaterialBase.hpp"

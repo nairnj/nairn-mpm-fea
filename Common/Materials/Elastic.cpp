@@ -6,6 +6,7 @@
     Copyright (c) 2007 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/Elastic.hpp"
 #ifdef MPM_CODE
 	#include "Global_Quantities/ThermalRamp.hpp"
@@ -34,7 +35,7 @@ char *Elastic::InputMaterialProperty(char *xName,int &input,double &gScaling)
 		return((char *)&useLargeRotation);
 	}
 #endif
-	
+
     return MaterialBase::InputMaterialProperty(xName,input,gScaling);
 }
 

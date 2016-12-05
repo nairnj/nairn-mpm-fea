@@ -6,6 +6,7 @@
 	Copyright (c) 2014 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_MPM/ShellController.hpp"
 #include "Read_XML/mathexpr.hpp"
 
@@ -21,6 +22,7 @@ ShellController::ShellController(int block) : BoxController(block)
 }
 
 // set a property
+// throws std::bad_alloc, SAXException()
 void ShellController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
 {
     if(strcmp(aName,"radius")==0)

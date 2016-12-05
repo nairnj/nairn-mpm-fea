@@ -24,6 +24,7 @@
 	Mode II: s1=stress2, u1=umidII, s2=sII2, u2=uII2, u3=delIIc, area=JIc
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/TrilinearTraction.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "System/UnitsController.hpp"
@@ -86,8 +87,8 @@ const char *TrilinearTraction::VerifyAndLoadProperties(int np)
 	const char *err = TractionLaw::VerifyAndLoadProperties(np);
 	
 	// See if break points are the same
-	break1is2I = DbleEqual(umidI,uI2);
-	break1is2II = DbleEqual(umidII,uII2);
+	break1is2I = (bool)DbleEqual(umidI,uI2);
+	break1is2II = (bool)DbleEqual(umidII,uII2);
 	
 	return err;
 }

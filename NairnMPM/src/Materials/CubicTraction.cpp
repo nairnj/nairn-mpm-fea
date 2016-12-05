@@ -16,6 +16,7 @@
     Copyright (c) 2008 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/CubicTraction.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "System/UnitsController.hpp"

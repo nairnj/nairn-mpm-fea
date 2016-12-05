@@ -6,6 +6,7 @@
     Copyright (c) 200y John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NodalPoint3D.hpp"
 
 #pragma mark NodalPoin3D: Constructors and Destructor

@@ -15,6 +15,7 @@
 
 #include "Custom_Tasks/CustomTask.hpp"
 class ROperation;
+class BMPLevel;
 
 class CustomThermalRamp : public CustomTask
 {
@@ -27,7 +28,7 @@ class CustomThermalRamp : public CustomTask
 		// standard methods
 		virtual const char *TaskName(void);
 		virtual char *InputParam(char *,int &,double &);
-		virtual void SetTextParameter(char *);
+		virtual void SetTextParameter(char *,char *);
 		virtual CustomTask *Initialize(void);
 	
 		virtual CustomTask *PrepareForStep(bool &);
@@ -44,6 +45,17 @@ class CustomThermalRamp : public CustomTask
 		int sigmoidal;			// Use sigmoidal shape
 		ROperation *scaleFxn;
 		static double varTime,varXValue,varYValue,varZValue;
+	
+		// for imaged ramp
+		char *bmpFile;
+		Vector orig;
+		double width,height;
+		bool flipped;
+		double deltaTmin,deltaTmax,deltaTscale;
+		BMPLevel *firstLevel;
+		BMPLevel *currentLevel;
+		BMPLevel *firstMatPt;
+		BMPLevel *currentMatPt;
 };
 
 #endif

@@ -6,6 +6,7 @@
     Copyright (c) 2013 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -110,8 +111,13 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 	
     // compact CPDI nodes into list of nodes (nds) and final shape function term (fn)
     // May need up to 8 (in 3D) for each of the numDnds (2 in 2D or 4 in 3D)
+#ifdef CONST_ARRAYS
+	int nds[8 * 4 + 1];
+	double fn[8 * 4 + 1];
+#else
     int nds[8*numDnds+1];
     double fn[8*numDnds+1];
+#endif
     int numnds = CompactCornerNodes(numDnds,corners,cElem,ratio,nds,fn);
 	
     // add force to each node

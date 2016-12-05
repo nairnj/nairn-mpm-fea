@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Cracks/CrackSegment.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Elements/ElementBase.hpp"
@@ -211,8 +212,13 @@ void CrackSegment::AddTractionForceSeg(CrackHeader *theCrack)
 // side = ABOVE_CRACK (1) or BELOW)_CRACK (2)
 double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,double sign)
 {
+#ifdef CONST_ARRAYS
+	int nds[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES];
+#else
 	int nds[maxShapeNodes];
-    double fn[maxShapeNodes];
+	double fn[maxShapeNodes];
+#endif
     short vfld;
 	double fnorm = 0.;
 	NodalPoint *ndi;
@@ -577,9 +583,15 @@ void CrackSegment::FindCrackTipMaterial(int currentNum)
 	if(theMaterials[currentNum-1]->KeepsCrackTip()) return;
 	
 	Vector cspos;
-	int i,iel,nds[maxShapeNodes];
-    double fn[maxShapeNodes];
-	
+	int i,iel;
+#ifdef CONST_ARRAYS
+	double fn[MAX_SHAPE_NODES];
+	int nds[MAX_SHAPE_NODES];
+#else
+	double fn[maxShapeNodes];
+	int nds[maxShapeNodes];
+#endif
+
 	// array to collect weights
 	double *matWeight = new double[numActiveMaterials];
 	for(i=0;i<numActiveMaterials;i++) matWeight[i] = 0.;

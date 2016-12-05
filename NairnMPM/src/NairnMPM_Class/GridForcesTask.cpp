@@ -18,6 +18,7 @@
 		tasks.
 ******************************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/GridForcesTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -47,13 +48,17 @@ void GridForcesTask::Execute(void)
 	CommonException *forceErr = NULL;
 	
 	// need to be private in threads
-	TransportProperties t;
-	int numnds,ndsArray[maxShapeNodes];
+#ifdef CONST_ARRAYS
+	double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
+	int ndsArray[MAX_SHAPE_NODES];
+#else
 	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
-	
+	int ndsArray[maxShapeNodes];
+#endif
+
 	// loop over non-rigid particles - this parallel part changes only particle p
 	// forces are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
-#pragma omp parallel private(t,numnds,ndsArray,fn,xDeriv,yDeriv,zDeriv)
+#pragma omp parallel private(ndsArray,fn,xDeriv,yDeriv,zDeriv)
 	{	// in case 2D planar
         for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
         
@@ -67,6 +72,7 @@ void GridForcesTask::Execute(void)
 				int matfld = matref->GetField(); 
 				
 				// get transport tensors (if needed)
+				TransportProperties t;
 				if(transportTasks!=NULL)
 					matref->GetTransportProps(mpmptr,fmobj->np,&t);
 				
@@ -74,7 +80,7 @@ void GridForcesTask::Execute(void)
 				const ElementBase *elemref = theElements[mpmptr->ElemID()];
 				int *nds = ndsArray;
 				elemref->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,mpmptr);
-				numnds = nds[0];
+				int numnds = nds[0];
 				
 				// Add particle property to buffer on the material point (needed to allow parallel code)
 				short vfld;
@@ -121,7 +127,7 @@ void GridForcesTask::Execute(void)
 				forceErr = new CommonException(err);
 			}
 		}
-		catch(std::bad_alloc& ba)
+		catch(std::bad_alloc&)
 		{	if(forceErr==NULL)
 			{
 #pragma omp critical (error)

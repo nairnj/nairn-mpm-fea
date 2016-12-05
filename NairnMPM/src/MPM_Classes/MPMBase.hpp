@@ -109,7 +109,7 @@ class MPMBase : public LinkedObject
 		void IncrementElementCrossings(void);
 		bool HasLeftTheGridBefore(void);
 		void SetHasLeftTheGridBefore(bool);
-		double Get2DSinCos(double *,double *);
+		void Get2DSinCos(double *,double *);
 		Matrix3 *GetRtotPtr(void);
 		void SetRtot(Matrix3);
 		void InitRtot(Matrix3);

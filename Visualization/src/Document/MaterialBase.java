@@ -148,7 +148,10 @@ public class MaterialBase
 			default:
 				break;
 		}
-		return NOTHING;
+		
+		// unknown materials default to plastic strain
+		// would be better to look up in an editable resource
+		return ENG_BIOT_PLASTIC_STRAIN;
 		
 	}
 

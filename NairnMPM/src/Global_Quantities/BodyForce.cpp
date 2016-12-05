@@ -6,6 +6,7 @@
     Copyright (c) 2004 John A. Nairn, All rights reserved.    
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Global_Quantities/BodyForce.hpp"
 #include "Read_XML/mathexpr.hpp"
 #include "MPM_Classes/MPMBase.hpp"
@@ -180,7 +181,10 @@ double BodyForce::GetDamping(double utime)
     if(useFeedback) totalDamping += alpha;
 	
     // PIC Damping
-	if(usePICDamping) totalDamping -= fractionPIC/timestep;
+	if(usePICDamping)
+	{
+		totalDamping -= fractionPIC/timestep;
+	}
     
     return totalDamping;
 }
@@ -332,7 +336,8 @@ void BodyForce::Output(void)
 
     // PIC damping
 	if(usePICDamping)
-	{	cout << "PIC damping fraction: " << fractionPIC << endl;
+	{	cout << "PIC damping fraction: " << fractionPIC;
+		cout << endl;
 	}
 
 }

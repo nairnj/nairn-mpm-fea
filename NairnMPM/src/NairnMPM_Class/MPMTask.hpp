@@ -35,7 +35,7 @@ class MPMTask : public CommonTask
         // class methods
         static int GetPatchNumber(void);
         static NodalPoint *GetNodePointer(int,int);
-		static bool GetNumberOfThreads(void);
+		static int GetNumberOfThreads(void);
     
 	protected:
 	

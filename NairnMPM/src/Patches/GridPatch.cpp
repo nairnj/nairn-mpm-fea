@@ -12,6 +12,7 @@
 		last ghostRows+1 rows: xnodes + 2*ghostRows
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Patches/GridPatch.hpp"
 #include "Patches/GhostNode.hpp"
 #include "Nodes/NodalPoint.hpp"

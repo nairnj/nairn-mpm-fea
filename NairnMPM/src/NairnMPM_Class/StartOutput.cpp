@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 *********************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"

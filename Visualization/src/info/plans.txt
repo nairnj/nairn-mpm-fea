@@ -2,9 +2,10 @@
 NairnFEAMPMVizOSP Plans
 -------------------------------------------------------------------
 
-¥ Correctly abort running calculations in Windows. May have to wait until know how
-     to run without using cygwin
-     
+¥ Option when on Mac to enter $(bundle)
+
+¥ Can dos exe run in background mode?
+
 ¥ Remote execution
 	Background submits (use submit commands instead of run, and no download)
 		add exception until it is implemented

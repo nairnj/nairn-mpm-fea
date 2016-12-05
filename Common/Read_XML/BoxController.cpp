@@ -6,6 +6,7 @@
     Copyright (c) 2007 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_XML/BoxController.hpp"
 
 #pragma mark BoxController: constructors, destructor, initializers
@@ -17,6 +18,7 @@ BoxController::BoxController(int block) : ShapeController(block)
 }
 
 // set a property
+// throws SAXException()
 void BoxController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
 {
     if(strcmp(aName,"axis")==0)

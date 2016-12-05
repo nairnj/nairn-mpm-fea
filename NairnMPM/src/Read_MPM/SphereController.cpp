@@ -6,6 +6,7 @@
     Copyright (c) 2007 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_MPM/SphereController.hpp"
 
 #pragma mark SphereController: initializers

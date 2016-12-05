@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 *********************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "System/ArchiveData.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -70,7 +71,7 @@ int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
 NairnMPM::NairnMPM()
 {
 	version=11;						// main version
-	subversion=4;					// subversion (must be < 10)
+	subversion=5;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 
 	mpmApproach=USAVG_METHOD;		// mpm method
@@ -257,14 +258,20 @@ void NairnMPM::MPMStep(void)
 
 /**********************************************************
 	Preliminary MPM Calclations prior to analysis
-	1. Loop over particles
-		- Check time step vs element size
-		- check propagation time step
-		- zero external forces on particle
-		- Initialize history variables
-	2. Loop over elements
-	3. Print information about particles
-	4. Initialize thermal calculations
+	1. Make some settings
+		Thermo mode, grid type, Element CPDI data
+	2. Loop over particles
+		Validate material, initialize history and mass and concentration potential
+		Check time steps (mechanics and transport)
+		Set velocity field
+		Allocate GIMP or CPDI info
+	3. Reorder rigid and nonrigid particles and rigid contact particles
+	4. Some checks include final time step check
+	5. Create patches
+	6. Print boundary conditions
+	7. Print particle, grid, and mass matrix info
+	8. NodalPoint preliminary calcs
+	9. Create warnings list
  
 	throws CommonException()
 **********************************************************/
@@ -671,6 +678,8 @@ void NairnMPM::PreliminaryCalcs(void)
 }
 
 // create all the tasks needed for current simulation
+// Custom task (add CalcJKTask() if needed) and Initialize them all
+// MPM time step tasks
 // throws std::bad_alloc
 void NairnMPM::CreateTasks(void)
 {
@@ -750,7 +759,7 @@ void NairnMPM::CreateTasks(void)
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
 	
-	// if rigid BCs by extrapolation, project to BCs
+	// if rigid BCs not by extrapolation, project to BCs
 	if(nmpms>nmpmsRC && !MaterialBase::extrapolateRigidBCs)
 	{	nextMPMTask=(MPMTask *)new ProjectRigidBCsTask("Rigid BCs by Projection");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);

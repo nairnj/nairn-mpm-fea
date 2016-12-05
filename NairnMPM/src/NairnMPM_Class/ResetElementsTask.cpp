@@ -16,6 +16,7 @@
 		USAVG mode.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MPMBase.hpp"
@@ -128,7 +129,7 @@ void ResetElementsTask::Execute(void)
 				resetErr = new CommonException(err);
 			}
 		}
-		catch(std::bad_alloc& ba)
+		catch(std::bad_alloc&)
         {   if(resetErr==NULL)
 			{
 #pragma omp critical (error)

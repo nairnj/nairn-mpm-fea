@@ -7,6 +7,7 @@
 
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "CommonTask.hpp"
 
 // class statics

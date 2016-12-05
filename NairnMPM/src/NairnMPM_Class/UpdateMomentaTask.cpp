@@ -20,6 +20,7 @@
 	transport tasks
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/UpdateMomentaTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
@@ -57,7 +58,7 @@ void UpdateMomentaTask::Execute(void)
 		{	try
 			{	ndptr->MaterialContactOnNode(timestep,UPDATE_MOMENTUM_CALL,NULL,NULL);
 			}
-			catch(std::bad_alloc& ba)
+			catch(std::bad_alloc&)
 			{	if(umErr==NULL)
 				{
 #pragma omp critical (error)

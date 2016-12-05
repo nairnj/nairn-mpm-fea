@@ -73,7 +73,7 @@ class AnisoPlasticity : public Orthotropic
 		virtual void LRGetDfDsigma(Matrix3 &,int,LRAnisoPlasticProperties *p) const;
 		virtual void LRUpdateStress(Matrix3 &,Matrix3 &,double,int,LRAnisoPlasticProperties *p) const;
 		virtual double LRGetFkFromLambdak(MPMBase *,Matrix3 &,Matrix3 &,double,int,LRAnisoPlasticProperties *) const;
-		virtual double LRPrintFk(MPMBase *,Matrix3 &,Matrix3 &,double,int,LRAnisoPlasticProperties *,double,double) const;
+		virtual void LRPrintFk(MPMBase *,Matrix3 &,Matrix3 &,double,int,LRAnisoPlasticProperties *,double,double) const;
 
 		// small rotation methods
 		virtual void SRConstitutiveLaw2D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
@@ -84,7 +84,7 @@ class AnisoPlasticity : public Orthotropic
 		virtual void GetDfDsigma(Tensor *,int,AnisoPlasticProperties *p) const;
 		virtual void UpdateStress(Tensor *,Tensor *,double,int,AnisoPlasticProperties *p) const;
 		virtual double GetFkFromLambdak(MPMBase *,Tensor *,Tensor *,double,int,AnisoPlasticProperties *) const;
-		virtual double SRPrintFk(MPMBase *,Tensor *,Tensor *,double,int,AnisoPlasticProperties *,double,double) const;
+		virtual void SRPrintFk(MPMBase *,Tensor *,Tensor *,double,int,AnisoPlasticProperties *,double,double) const;
  		
 		// hardening term methods (move to hardening law class when want more hardening options)
 		virtual void UpdateTrialAlpha(MPMBase *,int,AnisoHardProperties *,int) const = 0;

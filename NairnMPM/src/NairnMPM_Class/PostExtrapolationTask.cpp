@@ -16,6 +16,7 @@
 	6. Impost all boundary conditions
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/PostExtrapolationTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Cracks/CrackHeader.hpp"
@@ -76,7 +77,7 @@ void PostExtrapolationTask::Execute(void)
 				while(nextTransport!=NULL)
 					nextTransport = nextTransport->GetNodalValue(ndptr);
 			}
-			catch(std::bad_alloc& ba)
+			catch(std::bad_alloc&)
 			{	if(massErr==NULL)
 				{
 #pragma omp critical (error)

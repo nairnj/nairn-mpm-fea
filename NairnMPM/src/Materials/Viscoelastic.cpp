@@ -6,6 +6,7 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/Viscoelastic.hpp"
 #include "MPM_Classes/MPMBase.hpp"

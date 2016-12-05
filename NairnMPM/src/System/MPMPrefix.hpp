@@ -26,7 +26,9 @@
 //#define CHECK_NAN
 
 // C includes
-// Used to have <stdio.h>
+#ifdef WINDOWS_EXE
+#include <stdio.h>
+#endif
 #include <cstdio>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +36,7 @@
 #include <math.h>
 #include <vector>
 #include <omp.h>
+#include <ctime>
 
 // For c++89 compliance
 using namespace std;
@@ -56,6 +59,7 @@ using namespace std;
 
 // maxShapeNodes - max number non-zero shape functions +1
 extern int maxShapeNodes;
+#define MAX_SHAPE_NODES 40
 
 // Max number of nodes in an element + 1
 #define MaxElNd 10

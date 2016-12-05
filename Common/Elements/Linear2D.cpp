@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Elements/Linear2D.hpp"
 #include "Nodes/NodalPoint.hpp"
 

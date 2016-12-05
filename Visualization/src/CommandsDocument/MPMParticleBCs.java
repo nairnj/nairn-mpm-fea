@@ -115,6 +115,7 @@ public class MPMParticleBCs
 		HashMap<String,Integer> options = new HashMap<String,Integer>(7);
 		if(theType==ADD_CONCENTRATIONFLUX || theType==ADD_HEATFLUX)
 		{	options.put("external", new Integer(1));
+			options.put("coupled", new Integer(2));
 		}
 		else
 		{	options.put("x", new Integer(1));
@@ -189,6 +190,8 @@ public class MPMParticleBCs
 		else if(theType==ADD_HEATFLUX)
 		{	// <HeatFluxBC dir='1' face='1' style='1' value='0' time='0.0' function='sinh(t)'/>
 			bcSettings.append("      <HeatFluxBC dir='"+dof+"' face='"+face+"' style='"+style+"'");
+			if(dof==2 && style!=6)
+				throw new Exception("Coupled HeatFlux must use a function");
 			if(style==6)
 				bcSettings.append(" function='"+function+"'");
 			else
@@ -198,6 +201,8 @@ public class MPMParticleBCs
 		else
 		{	// <ConcFluxBC dir='1' face='1' style='1' value='0' time='0.0' function='sinh(t)'/>
 			bcSettings.append("      <ConcFluxBC dir='"+dof+"' face='"+face+"' style='"+style+"'");
+			if(dof==2 && style!=6)
+				throw new Exception("Coupled ConcentrationFlux must use a function");
 			if(style==6)
 				bcSettings.append(" function='"+function+"'");
 			else

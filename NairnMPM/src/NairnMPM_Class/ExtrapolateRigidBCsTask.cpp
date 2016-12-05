@@ -10,6 +10,7 @@
 	momentum extrapolation
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/ExtrapolateRigidBCsTask.hpp"
 #include "NairnMPM_Class/ProjectRigidBCsTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
@@ -32,7 +33,11 @@ ExtrapolateRigidBCsTask::ExtrapolateRigidBCsTask(const char *name) : MPMTask(nam
 //	and find grid momenta
 void ExtrapolateRigidBCsTask::Execute(void)
 {
+#ifdef CONST_ARRAYS
+	double fn[MAX_SHAPE_NODES];
+#else
 	double fn[maxShapeNodes];
+#endif
 	
 	// undo dynamic velocity, temp, and conc BCs from rigid materials
 	// and get pointer to first empty one in reuseRigid...BC

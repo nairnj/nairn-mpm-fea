@@ -34,6 +34,7 @@
     Copyright (c) 2102 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/CoupledSawTooth.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "System/UnitsController.hpp"

@@ -120,10 +120,13 @@ These code engines can be installed on any platform. The details are not given i
 help. Instead refer to the <code>nairn-mpm-fea</code> wiki page (see <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a> or using "internet" icon in tool bar). The wiki has complete instructions for getting the package and compiling the code engines.
 </p>
 
+<h3>Setting Code and DTD File Locations</h3>
+
 <p>Once the code engines are compiled, you have to configure <b>NairnFEAMPMViz</b> to
 know the location of the compiled binaries and (optionally) their <code>DTD</code> files.
 The process is:
 </p>
+
 <ol>
 <li>Choose the &quot;Preferences...&quot; menu command (or click the
 &quot;Prefs&quot; icon).</li>
@@ -146,19 +149,35 @@ file provided with the code engine source code, repeat for &quot;FEA DTD File Pa
 and select the <code>NairnFEA.dtd</code> file. To validate FEA calculations
 check the &quot;Validate&quot; option (recommended); uncheck it to skip validation.</li>
 
-<li>Click the &quot;Change...&quot; button for the &quot;Shell Command&quot;
-and select the or <code>bash</code> command (or <code>bash.exe</code> in Windows)
-in your system. It is normally in the <code>/bin</code> folder. In Windows,
-it will be located in the <code>/bin</code> folder within
-the <code>cygwin</code> folder.</li>
+</ol>
 
-<li>You can optionally define a work space folder using &quot;Change...&quot; button
+<p>Another option, which is available only in Windows, is to enter file name as "$(bundle)" for any (or all) of the code or <code>DTD</code> file locations. When this specific text is entered, the corresponding file will be expected to be in a folder called "bundle" that is in the same folder as the <b>NairnFEAMPMViz</b> jar file.</p>
+
+<h3><a name="native"></a>Setting the Shell Command Path</h3>
+
+<p>The shell command option depends on the system and option you are using to run the <b>NairnFEAMPMViz</b> app:</p>
+
+<dl>
+<dt>Windows Native</dt>
+<dd>This option means the <code>.exe</code> files were created using Visual Studio and can be run using a Windows command line. When using this option, the "Shell Command" should be set to "$(windows)". Click the "Change..." button and enter file name as "$(windows)". When using this option, you must also compile xerces in Visual Studio and place the resulting xerces dll file in the same folder as the compiled <code>.exe</code> files.</dd>
+
+<dt>Windows using Cygwin</dt>
+<dd>Before "Windows Native" was available, code could be compiled using cygwin. This option is still supported (but not recommended because comipled code is slower). To use it, click the &quot;Change...&quot; button for the &quot;Shell Command&quot;
+and select the <code>bash.exe</code>. It is normally in the <code>/bin</code> folder that is located within the <code>cygwin</code> folder.</dd>
+
+<dt>Mac, Unix, or Linux</dt>
+<dd>The "Shell Command" is only used when running background jobs. To allow that option, click the &quot;Change...&quot; button for the &quot;Shell Command&quot;
+and select the <code>bash</code> file (which is usually at <code>/bin/bash</code>).</dd>
+
+</dl>
+
+<h3>Setting Work Space Folder</h3>
+
+<p>You can optionally define a work space folder using the &quot;Change...&quot; button
 in the &quot;Work Space Directory&quot; section. Select any folder and that folder
 will be the default folder when opening and saving files. Any change made to the
 work space will only affect new windows.
-</li>
-
-</ol>
+</p>
 
 <p>| <a href="#index">index</a> |</p>
 
@@ -232,12 +251,13 @@ the selected name is already in that folder, the copy will overwrite that file w
 
 <li>The calculation will run and the output will stream to the bottom of the commands window.
 When the calculation is done, the output results will automatically
-open for <a href="#viz">visualization</a>.
-You can stop a calculation in progress with the &quot;Stop&quot; menu command.
+open for <a href="#viz">visualization</a>.</li>
+
+<li>You can stop a calculation in progress with the &quot;Stop&quot; menu command.
 If any results were finished, you can click the &quot;Image&quot; icon
-to open the partial results for <a href="#viz">visualization</a>
-(note: there may be a slight delay after selecting &quot;Stop&quot; before the task terminates
-and the file is saved and ready for visualization).
+to open the partial results for <a href="#viz">visualization</a>.
+<b>Note</b>: there may be a slight delay after selecting &quot;Stop&quot; before the task terminates
+and the file is saved and ready for visualization. <b>Note</b>: because of a bug in Java, the "Stop" command does not work when using the <a href="#native">Windows in Cygwin</a> mode.
 </ol>
 
 <h3>Background Jobs</h3>
@@ -246,6 +266,8 @@ and the file is saved and ready for visualization).
 To submit a background job, choose the &quot;Background FEA/MPM Analysis&quot; menu command.
 The subsequent steps are identical to running a calculation except that once submitted, nothing streams to the commands window. You can then proceed with other calculations or even quit <b>NairnFEAMPMViz</b>. The background job will run until it is complete. Once it is complete, you can <a href="#opening">open the results file for visualization</a>.
 </p>
+
+<p>The background option is currently not available when using the <a href="#native">Windows Native</a> mode.</p>
 
 <h3>Checking the Mesh</h3>
 

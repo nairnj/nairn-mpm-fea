@@ -14,6 +14,7 @@
 	Update strains on all particles
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/UpdateStrainsLastContactTask.hpp"
 #include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
@@ -40,9 +41,13 @@ UpdateStrainsLastContactTask::UpdateStrainsLastContactTask(const char *name) : M
 void UpdateStrainsLastContactTask::Execute(void)
 {
 	CommonException *uslErr = NULL;
-	
+#ifdef CONST_ARRAYS
+	int ndsArray[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
+#else
 	int ndsArray[maxShapeNodes];
 	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+#endif
 	
 #pragma omp parallel private(ndsArray,fn,xDeriv,yDeriv,zDeriv)
 	{
@@ -92,7 +97,7 @@ void UpdateStrainsLastContactTask::Execute(void)
 				uslErr = new CommonException(err);
 			}
 		}
-		catch(std::bad_alloc& ba)
+		catch(std::bad_alloc&)
 		{	if(uslErr==NULL)
 			{
 #pragma omp critical (error)

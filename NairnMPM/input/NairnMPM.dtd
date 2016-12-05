@@ -19,7 +19,7 @@
 
 <!ELEMENT	MPMHeader
 			( MatlPtsPerElement | Cracks | MPMMethod | Timing | ArchiveGroup | ArchiveRoot | MPMArchiveOrder
-			| CrackArchiveOrder | ProgSteps | Damping | FeedbackDamping | GlobalArchive
+			| CrackArchiveOrder | ProgSteps | Damping | FeedbackDamping | GlobalArchive | MPMArchive
 			| DefGradTerms | Diffusion | StressFreeTemp | GIMP | LeaveLimit | MultiMaterialMode
             | PDamping | PFeedbackDamping | TimeStep | TimeFactor | MaxTime | ArchiveTime | FirstArchiveTime
 			| GlobalArchiveTime | ExtrapolateRigid )*>
@@ -106,15 +106,15 @@
 			( Oval | Rect | Polygon | Sphere | Box | Cylinder | Torus | Shell )*>
 
 <!ELEMENT	Polygon
-			( pt+ )>
+			( pt+, ( Rect | Oval | Polygon )* )>
 <!ATTLIST	Polygon
 			np CDATA #IMPLIED>
 
 <!ELEMENT	Polyhedron
-			( faces+ )>
+			( faces+, ( Box | Sphere | Cylinder | Shell | Torus | Polyhedron )* )>
 
 <!ELEMENT	BMP
-			( Origin | Intensity | RotateX | RotateY | RotateZ | Unrotate)*>
+			( Origin | Intensity | RotateX | RotateY | RotateZ | Unrotate )*>
 <!ATTLIST	BMP
 			units CDATA #IMPLIED
 			name CDATA #REQUIRED
@@ -328,6 +328,10 @@
 <!ATTLIST	ArchiveRoot
 			unique (0|1) #IMPLIED>
 <!ELEMENT	MPMArchiveOrder (#PCDATA)>
+<!ELEMENT	MPMArchive EMPTY>
+<!ATTLIST	MPMArchive
+			result CDATA #REQUIRED
+			setting CDATA #IMPLIED>
 <!ELEMENT	CrackArchiveOrder (#PCDATA)>
 <!ELEMENT	DefGradTerms (#PCDATA)>
 <!ELEMENT	ProgSteps (#PCDATA)>
@@ -677,7 +681,8 @@
 <!ELEMENT	RotateZ (#PCDATA)>
 <!ELEMENT	Unrotate EMPTY>
 
-<!ELEMENT	Rect EMPTY>
+<!ELEMENT	Rect
+			( arc?, ( Rect | Oval | Polygon )* )>
 <!ATTLIST	Rect
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED
@@ -685,7 +690,8 @@
 			ymin CDATA #REQUIRED
 			ymax CDATA #REQUIRED>
 
-<!ELEMENT	Box EMPTY>
+<!ELEMENT	Box
+			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron )* >
 <!ATTLIST	Box
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED
@@ -695,7 +701,8 @@
 			zmin CDATA #REQUIRED
 			zmax CDATA #REQUIRED>
 
-<!ELEMENT	Shell EMPTY>
+<!ELEMENT	Shell
+			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron )* >
 <!ATTLIST	Shell
 			units CDATA #IMPLIED
 			xmin CDATA #IMPLIED
@@ -708,7 +715,8 @@
             radius CDATA #REQUIRED
 			thickness CDATA #REQUIRED>
 
-<!ELEMENT	Oval EMPTY>
+<!ELEMENT	Oval
+			( arc?, ( Rect | Oval | Polygon )* )>
 <!ATTLIST	Oval
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED
@@ -716,7 +724,13 @@
 			ymin CDATA #REQUIRED
 			ymax CDATA #REQUIRED>
 
-<!ELEMENT	Sphere EMPTY>
+<!ELEMENT	arc EMPTY>
+<!ATTLIST	arc
+			start CDATA #REQUIRED
+			end CDATA #REQUIRED>
+
+<!ELEMENT	Sphere
+			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron )* >
 <!ATTLIST	Sphere
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED
@@ -726,7 +740,8 @@
 			zmin CDATA #REQUIRED
 			zmax CDATA #REQUIRED>
 
-<!ELEMENT	Cylinder EMPTY>
+<!ELEMENT	Cylinder
+			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron )* >
 <!ATTLIST	Cylinder
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED
@@ -738,7 +753,8 @@
 			axis CDATA #REQUIRED
             radius CDATA #IMPLIED>
 
-<!ELEMENT	Torus EMPTY>
+<!ELEMENT	Torus
+			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron )* >
 <!ATTLIST	Torus
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED

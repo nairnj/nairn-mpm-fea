@@ -6,6 +6,7 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/Mooney.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"

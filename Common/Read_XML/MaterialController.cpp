@@ -6,6 +6,7 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_XML/MaterialController.hpp"
 
 // Material types created here

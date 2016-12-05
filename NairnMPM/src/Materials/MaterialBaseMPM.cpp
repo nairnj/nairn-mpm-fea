@@ -6,6 +6,7 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Cracks/CrackHeader.hpp"
@@ -35,8 +36,8 @@ bool MaterialBase::isolatedSystemAndParticles = FALSE;
 vector<int> MaterialBase::fieldMatIDs;					// material ID in velocity field [i]
 vector<int> MaterialBase::activeMatIDs;					// list of active material velocity fields
 int MaterialBase::incrementalDefGradTerms = 2;			// terms in exponential of deformation gradient
-int MaterialBase::maxPropertyBufferSize = 0.;           // maximum buffer size needed among active materials to get copy of mechanical properties
-int MaterialBase::maxAltBufferSize = 0.;                // maximum optional buffer size needed for more properties (e.g., hardenling law)
+int MaterialBase::maxPropertyBufferSize = 0;            // maximum buffer size needed among active materials to get copy of mechanical properties
+int MaterialBase::maxAltBufferSize = 0;                 // maximum optional buffer size needed for more properties (e.g., hardenling law)
 bool MaterialBase::extrapolateRigidBCs = false;			// rigid BCs extrapolated (new) or projected (old)
 
 #pragma mark MaterialBase::Initialization

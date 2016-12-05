@@ -35,7 +35,7 @@ class PropagateTask : public CustomTask
         virtual CustomTask *StepCalculation(void);
         
         // special methods
-        void ArrestGrowth(int);
+        void ArrestGrowth(bool);
         bool Arrested(void);
         
     private:

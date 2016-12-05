@@ -6,6 +6,7 @@
 	Copyright 2010 Oregon State University. All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "WoodMaterial.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"

@@ -121,9 +121,10 @@ ioutput = ~/bin
 #     The commented com option is needed if you follow the suggested Eclipse procedure
 src = ../src
 com = ../../Common
+std = ../../Common/Headers
 #com = ../Common
 
-headers = -I$(src) -I$(com) -I$(headersPath)
+headers = -I$(src) -I$(std) -I$(com) -I$(headersPath)
 
 # NairnMPM file abbreviations
 AdjustTimeStepTask = $(src)/Custom_Tasks/AdjustTimeStepTask
@@ -281,6 +282,8 @@ UpdateStrainsLastContactTask = $(src)/NairnMPM_Class/UpdateStrainsLastContactTas
 Viscoelastic = $(src)/Materials/Viscoelastic
 VTKArchive = $(src)/Custom_Tasks/VTKArchive
 WoodMaterial = $(src)/Materials/WoodMaterial
+XYFileImporter = $(com)/Read_XML/XYFileImporter
+XYBMPImporter = $(com)/Read_XML/XYBMPImporter
 
 # path from 'makefile' to prefix header file
 prefix = $(src)/System/MPMPrefix.hpp
@@ -401,6 +404,8 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # Viscoelastic.hpp : MaterialBase.hpp
 # WoodMaterial : HillPlastic.hpp (AnisoPlasticity.hpp, Orthotropic.hpp TranIsotropic.hpp Elastic.hpp MaterialBase.hpp)
 # VTKArchive.hpp : CustomTask.hpp, GridArchive.hpp
+# XYFileImporter.hpp : CommonReadHandler.hpp
+# XYBMPImporter.hpp : XYFileImporter.hpp, CommonReadHandler.hpp
 
 # NairnMPM header files with no dependencies
 # BMPLevel.hpp
@@ -439,6 +444,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		InitializationTask.o MassAndMomentumTask.o UpdateStrainsFirstTask.o GridForcesTask.o UpdateMomentaTask.o SetRigidContactVelTask.o \
 		UpdateParticlesTask.o UpdateStrainsLastTask.o UpdateStrainsLastContactTask.o RunCustomTasksTask.o MoveCracksTask.o ResetElementsTask.o \
 		StartOutput.o MPMReadHandler.o Generators.o BitMapFiles.o BitMapFilesCommon.o BMPLevel.o MpsController.o \
+		XYFileImporter.o XYBMPImporter.o \
 		CrackController.o MPMWarnings.o BodyForce.o GlobalQuantity.o BoundaryCondition.o DDBHardening.o CrossedCrack.o \
 		ThermalRamp.o MPMBase.o MatPoint2D.o MatPointAS.o CrackHeader.o CrackSegment.o CrackLeaf.o ContourPoint.o \
 		CrackSurfaceContact.o CrackNode.o MaterialInterfaceNode.o MaterialBaseMPM.o Viscoelastic.o JohnsonCook.o \
@@ -489,7 +495,12 @@ UnitsController.o : $(UnitsController).cpp $(UnitsController).hpp $(CommonReadHa
 CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp $(NairnMPM).hpp $(MaterialController).hpp \
 		$(NodesController).hpp $(ElementsController).hpp $(StrX).hpp $(ElementBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonReadHandler).cpp
-BitMapFilesCommon.o : $(BitMapFilesCommon).cpp $(dprefix) $(CommonReadHandler).hpp $(BMPLevel).hpp $(MaterialController).hpp
+XYFileImporter.o : $(XYFileImporter).cpp $(dprefix) $(XYFileImporter).hpp $(CommonReadHandler).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(XYFileImporter).cpp
+XYBMPImporter.o : $(XYFileImporter).cpp $(dprefix) $(XYBMPImporter).hpp $(XYFileImporter).hpp $(CommonReadHandler).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(XYBMPImporter).cpp
+BitMapFilesCommon.o : $(BitMapFilesCommon).cpp $(dprefix) $(CommonReadHandler).hpp $(BMPLevel).hpp $(MaterialController).hpp \
+		$(XYFileImporter).hpp $(XYBMPImporter).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BitMapFilesCommon).cpp
 BMPLevel.o : $(BMPLevel).cpp $(dprefix) $(BMPLevel).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BMPLevel).cpp
@@ -979,7 +990,8 @@ CarnotCycle.o : $(CarnotCycle).cpp $(dprefix) $(CarnotCycle).hpp $(CustomTask).h
 			$(CommonException).hpp $(MaterialBase).hpp $(MPMBase).hpp $(CustomTask).hpp \
 			$(ConductionTask).hpp $(MaterialBase).hpp $(BodyForce).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CarnotCycle).cpp
-CustomThermalRamp.o : $(CustomThermalRamp).cpp $(dprefix) $(CustomThermalRamp).hpp $(NairnMPM).hpp $(MPMBase).hpp $(mathexpr).hpp
+CustomThermalRamp.o : $(CustomThermalRamp).cpp $(dprefix) $(CustomThermalRamp).hpp $(NairnMPM).hpp $(MPMBase).hpp $(mathexpr).hpp \
+			$(ArchiveData).hpp $(CommonArchiveData).hpp $(CommonReadHandler).hpp $(CommonException).hpp $(BMPLevel).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CustomThermalRamp).cpp
 
 # MPM: Elements

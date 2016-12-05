@@ -6,6 +6,7 @@
     Copyright (c) 2006 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Elements/QuadInterface.hpp"
 #include "NairnFEA_Class/NairnFEA.hpp"
 #include "Materials/MaterialBase.hpp"

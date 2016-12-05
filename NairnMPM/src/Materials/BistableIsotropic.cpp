@@ -6,6 +6,7 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/BistableIsotropic.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
@@ -564,11 +565,11 @@ double BistableIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 }
 
 // maximum diffusion coefficient in mm^2/sec
-double BistableIsotropic::MaximumDiffusion(void) const { return max(diffd,diff0); }
+double BistableIsotropic::MaximumDiffusion(void) const { return fmax(diffd,diff0); }
 
 // maximum diffusivity in mm^2/sec
 // specific k is nJ mm^2/(sec-K-g) and Cp is nJ/(g-K) so k/C = mm^2/sec
-double BistableIsotropic::MaximumDiffusivity(void) const { return max(kCondd,kCond0)/heatCapacity; }
+double BistableIsotropic::MaximumDiffusivity(void) const { return fmax(kCondd,kCond0)/heatCapacity; }
 
 // return material type
 const char *BistableIsotropic::MaterialType(void) const { return "Bistable Isotropic"; }

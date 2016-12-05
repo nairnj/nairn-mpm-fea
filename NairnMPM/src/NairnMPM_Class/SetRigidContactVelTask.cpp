@@ -8,6 +8,7 @@
 	If there are rigid contact particles find there velocity in each time step
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/SetRigidContactVelTask.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/RigidMaterial.hpp"

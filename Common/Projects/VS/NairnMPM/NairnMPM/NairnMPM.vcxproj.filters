@@ -1,0 +1,1141 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{8ca05a89-c206-40b9-8874-c99c363e7633}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Common\Elements">
+      <UniqueIdentifier>{fe3d3869-ac0a-46b4-b046-e59235dda2f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\Exceptions">
+      <UniqueIdentifier>{393086cd-02dd-4a73-b7e9-31084d8ee2ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\Materials">
+      <UniqueIdentifier>{0233703f-3b45-4431-82ef-e4d8ffd3d853}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\Nodes">
+      <UniqueIdentifier>{d68fc00e-c6e4-4f73-80d6-d45c0c53175b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\Read_XML">
+      <UniqueIdentifier>{bf137f82-5e83-4b0c-a8f4-a6db03dd0c3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\System">
+      <UniqueIdentifier>{b6f184c7-5956-40ad-ad81-aec5f18f30d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\System">
+      <UniqueIdentifier>{0f53d25d-cee9-40f2-9e12-b97640389695}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Read_MPM">
+      <UniqueIdentifier>{fb583263-e384-4ddc-a1dc-6b8d18c59e19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\NairnMPM_Class">
+      <UniqueIdentifier>{ee9f1577-ee71-4c84-ac36-93762e978bda}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Materials">
+      <UniqueIdentifier>{e675544d-d4b6-44a9-8c5a-534608282942}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Hypoplastic_Plastic">
+      <UniqueIdentifier>{9649407b-e899-46d0-8e99-ee4729037006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Hyperelastic_Plastic">
+      <UniqueIdentifier>{35a5d495-59ce-46d3-9fc2-934da0b4397a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Softening">
+      <UniqueIdentifier>{ad6dd418-0a5b-46a0-abc8-4d99ee4b1f6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Hardening_Laws">
+      <UniqueIdentifier>{7c9ade91-f4fd-49f9-9304-12bba7ae423a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Traction_Laws">
+      <UniqueIdentifier>{200337b5-730a-459b-9e2c-0a9574808b7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Contact_Laws">
+      <UniqueIdentifier>{3250e32d-a580-41fd-9704-186ffff41fbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Elements">
+      <UniqueIdentifier>{d4cac772-7298-437a-ac12-d2ea54df7662}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Nodes">
+      <UniqueIdentifier>{2f127dbd-421c-4026-8a51-ae9a5d334b6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Patches">
+      <UniqueIdentifier>{62d4c9c7-7316-4f07-9f0e-35d3347d5538}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Global_Quantities">
+      <UniqueIdentifier>{880bd8d3-ad18-452e-8b74-0102b8c8db70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\MPM_Classes">
+      <UniqueIdentifier>{d0204318-45d3-4f00-99f2-39aab903197e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Cracks">
+      <UniqueIdentifier>{b0a1051c-bb02-4147-9eb9-3c61902a16da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Boundary_Conditions">
+      <UniqueIdentifier>{ba81bd76-9126-4f52-a3ed-0392960908cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Exceptions">
+      <UniqueIdentifier>{0d20d353-2aa6-46e6-b0ad-0dcf613c22c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnMPM_src\Custom_Tasks">
+      <UniqueIdentifier>{bc8f3822-7fb7-4388-8be1-113e56229071}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="info">
+      <UniqueIdentifier>{e95c7eae-db0d-446f-9e44-848100d11e3d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Elements\ElementBase.hpp">
+      <Filter>Common\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Elements\FourNodeIsoparam.hpp">
+      <Filter>Common\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Elements\Lagrange2D.hpp">
+      <Filter>Common\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Elements\Linear2D.hpp">
+      <Filter>Common\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Elements\Quad2D.hpp">
+      <Filter>Common\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Exceptions\CommonException.hpp">
+      <Filter>Common\Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Exceptions\StrX.hpp">
+      <Filter>Common\Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Materials\Elastic.hpp">
+      <Filter>Common\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Materials\IsotropicMat.hpp">
+      <Filter>Common\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Materials\MaterialBase.hpp">
+      <Filter>Common\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Materials\Orthotropic.hpp">
+      <Filter>Common\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Materials\TransIsotropic.hpp">
+      <Filter>Common\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\CommonAnalysis.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\CommonArchiveData.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\CommonTask.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\DataTypes.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\LinkedObject.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\Matrix3.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\UnitsController.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\ArcController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\BMPLevel.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\BoxController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\CommonReadHandler.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\ElementsController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\LineController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\MaterialController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\mathexpr.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\NodesController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\OvalController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\ParseController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\PointController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\PolygonController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\RectController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\ShapeController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\XYBMPImporter.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\XYFileImporter.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\XYFPGImporter.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Nodes\NodalPoint.hpp">
+      <Filter>Common\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Nodes\NodalPoint2D.hpp">
+      <Filter>Common\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Nodes\NodalPoint3D.hpp">
+      <Filter>Common\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\System\ArchiveData.hpp">
+      <Filter>NairnMPM_src\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\AreaOfInterest.hpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\CrackController.hpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\MPMReadHandler.hpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\MpsController.hpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\PolyhedronController.hpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\PolyTriangle.hpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\ShellController.hpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\SphereController.hpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\TorusController.hpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ExtrapolateRigidBCsTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\GridForcesTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\InitializationTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\InitVelocityFieldsTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MassAndMomentumTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MeshInfo.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MoveCracksTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MPMTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\NairnMPM.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\PostExtrapolationTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\PostForcesTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ProjectRigidBCsTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ResetElementsTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\RunCustomTasksTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\SetRigidContactVelTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateMomentaTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateParticlesTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsFirstTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastContactTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\BistableIsotropic.hpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\RigidMaterial.hpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Viscoelastic.hpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\AnisoPlasticity.hpp">
+      <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HillPlastic.hpp">
+      <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticity.hpp">
+      <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\WoodMaterial.hpp">
+      <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\AnisoMembrane.hpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\ClampedNeohookean.hpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HEIsotropic.hpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HEMGEOSMaterial.hpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HyperElastic.hpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IdealGas.hpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Mooney.hpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\MooneyMembrane.hpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Neohookean.hpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\PhaseTransitionMat.hpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TaitLiquid.hpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\FailureSurface.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoSoftening.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TIFailureSurface.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TransIsoSoftening.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\DDBHardening.hpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HardeningLawBase.hpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\JohnsonCook.hpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LinearHardening.hpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Nonlinear2Hardening.hpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\NonlinearHardening.hpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SCGLHardening.hpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SLMaterial.hpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CohesiveZone.hpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CoupledSawTooth.hpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CubicTraction.hpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LinearTraction.hpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\PressureLaw.hpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TractionLaw.hpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.hpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\AdhesionFriction.hpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\ContactLaw.hpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CoulombFriction.hpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LinearInterface.hpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Elements\EightNodeIsoparamBrick.hpp">
+      <Filter>NairnMPM_src\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Elements\ElementBase3D.hpp">
+      <Filter>NairnMPM_src\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityField.hpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldMulti.hpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldSingle.hpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MaterialInterfaceNode.hpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityField.hpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityFieldPS.hpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Patches\GhostNode.hpp">
+      <Filter>NairnMPM_src\Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Patches\GridPatch.hpp">
+      <Filter>NairnMPM_src\Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Global_Quantities\BodyForce.hpp">
+      <Filter>NairnMPM_src\Global_Quantities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Global_Quantities\GlobalQuantity.hpp">
+      <Filter>NairnMPM_src\Global_Quantities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Global_Quantities\ThermalRamp.hpp">
+      <Filter>NairnMPM_src\Global_Quantities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint2D.hpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint3D.hpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPointAS.hpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPoint2D.hpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPoint3D.hpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPointAS.hpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MPMBase.hpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\ContourPoint.hpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackHeader.hpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackLeaf.hpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackNode.hpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackSegment.hpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackSurfaceContact.hpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrossedCrack.hpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\BoundaryCondition.hpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtFluxBC.hpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtHeatFluxBC.hpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtLoadBC.hpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtTractionBC.hpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalConcBC.hpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalTempBC.hpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalVelBC.hpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Exceptions\MPMWarnings.hpp">
+      <Filter>NairnMPM_src\Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\AdjustTimeStepTask.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CalcJKTask.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CarnotCycle.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTask.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTaskMulti.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTaskSingle.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CSVArchive.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CustomTask.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CustomThermalRamp.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\DiffusionTask.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\GridArchive.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\HistoryArchive.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\LoadControl.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PropagateTask.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ReverseLoad.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TransportTask.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\VTKArchive.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\System\MPMPrefix.hpp">
+      <Filter>NairnMPM_src\System</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Elements\ElementBase.cpp">
+      <Filter>Common\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Elements\FourNodeIsoparam.cpp">
+      <Filter>Common\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Elements\Lagrange2D.cpp">
+      <Filter>Common\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Elements\Linear2D.cpp">
+      <Filter>Common\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Elements\Quad2D.cpp">
+      <Filter>Common\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Exceptions\CommonException.cpp">
+      <Filter>Common\Exceptions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Materials\Elastic.cpp">
+      <Filter>Common\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Materials\IsotropicMat.cpp">
+      <Filter>Common\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Materials\MaterialBase.cpp">
+      <Filter>Common\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Materials\Orthotropic.cpp">
+      <Filter>Common\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Materials\TransIsotropic.cpp">
+      <Filter>Common\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\CommonAnalysis.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\CommonArchiveData.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\CommonTask.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\CommonUtilities.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\LinkedObject.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\main.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\Matrix3.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\svninfo.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\UnitsController.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\ArcController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\BitMapFilesCommon.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\BMPLevel.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\BoxController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\CommonReadHandler.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\ElementsController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\LineController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\MaterialController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\mathexpr.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\NodesController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\OvalController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\ParseController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\PointController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\PolygonController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\RectController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\ShapeController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\XYBMPImporter.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\XYFileImporter.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\XYFPGImporter.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Nodes\NodalPoint.cpp">
+      <Filter>Common\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Nodes\NodalPoint2D.cpp">
+      <Filter>Common\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Nodes\NodalPoint3D.cpp">
+      <Filter>Common\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\System\ArchiveData.cpp">
+      <Filter>NairnMPM_src\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\AreaOfInterest.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\BitMapFiles.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\CrackController.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\Generators.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\MPMReadHandler.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\MpsController.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\PolyhedronController.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\PolyTriangle.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\ShellController.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\SphereController.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\TorusController.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ExtrapolateRigidBCsTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\GridForcesTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\InitializationTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\InitVelocityFieldsTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MassAndMomentumTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MeshInfo.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MoveCracksTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MPMTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\NairnMPM.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\PostExtrapolationTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\PostForcesTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ProjectRigidBCsTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ResetElementsTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\RunCustomTasksTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\SetRigidContactVelTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\StartOutput.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateMomentaTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateParticlesTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsFirstTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastContactTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\BistableIsotropic.cpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ElasticMPM.cpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\MaterialBaseMPM.cpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\MoreIsotropicMat.cpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\RigidMaterial.cpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Viscoelastic.cpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\AnisoPlasticity.cpp">
+      <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HillPlastic.cpp">
+      <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticity.cpp">
+      <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\WoodMaterial.cpp">
+      <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\AnisoMembrane.cpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ClampedNeohookean.cpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HEIsotropic.cpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HEMGEOSMaterial.cpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HyperElastic.cpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IdealGas.cpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Mooney.cpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\MooneyMembrane.cpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Neohookean.cpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\PhaseTransitionMat.cpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TaitLiquid.cpp">
+      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\FailureSurface.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoSoftening.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TIFailureSurface.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TransIsoSoftening.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\DDBHardening.cpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HardeningLawBase.cpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\JohnsonCook.cpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LinearHardening.cpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Nonlinear2Hardening.cpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\NonlinearHardening.cpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SCGLHardening.cpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SLMaterial.cpp">
+      <Filter>NairnMPM_src\Hardening_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\CohesiveZone.cpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\CoupledSawTooth.cpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\CubicTraction.cpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LinearTraction.cpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\PressureLaw.cpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TractionLaw.cpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.cpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\AdhesionFriction.cpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ContactLaw.cpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\CoulombFriction.cpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LinearInterface.cpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Elements\EightNodeIsoparamBrick.cpp">
+      <Filter>NairnMPM_src\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Elements\ElementBase3D.cpp">
+      <Filter>NairnMPM_src\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Elements\MoreMPMElementBase.cpp">
+      <Filter>NairnMPM_src\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityField.cpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldMulti.cpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldSingle.cpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\MaterialInterfaceNode.cpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityField.cpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityFieldPS.cpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\NodalPointMPM.cpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Patches\GhostNode.cpp">
+      <Filter>NairnMPM_src\Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Patches\GridPatch.cpp">
+      <Filter>NairnMPM_src\Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Global_Quantities\BodyForce.cpp">
+      <Filter>NairnMPM_src\Global_Quantities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Global_Quantities\GlobalQuantity.cpp">
+      <Filter>NairnMPM_src\Global_Quantities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Global_Quantities\ThermalRamp.cpp">
+      <Filter>NairnMPM_src\Global_Quantities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint2D.cpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint3D.cpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPointAS.cpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPoint2D.cpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPoint3D.cpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPointAS.cpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MPMBase.cpp">
+      <Filter>NairnMPM_src\MPM_Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\ContourPoint.cpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackHeader.cpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackLeaf.cpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackNode.cpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackSegment.cpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackSurfaceContact.cpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrossedCrack.cpp">
+      <Filter>NairnMPM_src\Cracks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\BoundaryCondition.cpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtFluxBC.cpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtHeatFluxBC.cpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtLoadBC.cpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtTractionBC.cpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalConcBC.cpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalTempBC.cpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalVelBC.cpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Exceptions\MPMWarnings.cpp">
+      <Filter>NairnMPM_src\Exceptions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\AdjustTimeStepTask.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CalcJKTask.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CarnotCycle.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTask.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTaskMulti.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTaskSingle.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CSVArchive.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CustomTask.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CustomThermalRamp.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\DiffusionTask.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\GridArchive.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\HistoryArchive.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\LoadControl.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PropagateTask.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ReverseLoad.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TransportTask.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\VTKArchive.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\..\NairnMPM\build\makefile">
+      <Filter>info</Filter>
+    </None>
+    <None Include="..\..\..\..\..\NairnMPM\input\NairnMPM.dtd">
+      <Filter>info</Filter>
+    </None>
+  </ItemGroup>
+</Project>

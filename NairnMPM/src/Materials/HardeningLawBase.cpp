@@ -8,6 +8,7 @@
     This is elastic plastic, and never assigned to a material
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/HardeningLawBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"

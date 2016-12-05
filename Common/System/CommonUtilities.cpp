@@ -6,9 +6,10 @@
     Copyright (c) 2006 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
+
 // local globals
 static int section=1;
-
 
 #pragma mark Miscellaneous Functions
 
@@ -31,7 +32,7 @@ void PrintSection(const char *text)
 	If both are less than 1e-12, they are assumed equal
 ************************************************************/
 
-int DbleEqual(double db1,double db2)
+bool DbleEqual(double db1,double db2)
 {
     double ab1=fabs(db1);
     double ab2=fabs(db2);
@@ -304,7 +305,7 @@ double Tensor_ij(Tensor *t,int row,int col)
 // Print vector to cout when debugging
 void PrintTensor(const char *label,Tensor *t)
 {
-	int i,lead=strlen(label);
+	int i,lead=(int)strlen(label);
 	for(i=0;i<lead;i++) cout << " ";
 #ifdef MPM_CODE
 	cout << "(" << t->xx << ", " << t->xy << "," << t->xz << ")" << endl;
@@ -330,6 +331,73 @@ TensorAntisym *ZeroTensorAntisym(TensorAntisym *a)
 
 #endif
 
+#pragma mark String Functions
+
+// convert character to lower case
+unsigned char ConvertToLower(unsigned char ch)
+{	if (ch >= 'A' && ch <= 'Z')
+		ch = 'a' + (ch - 'A');
+	return ch;
+}
+
+// convert path with / to DOS path with back slashes
+// return pointer to input string
+char *MakeDOSPath(char *unixPath)
+{	for (unsigned int i = 0; i < strlen(unixPath); i++)
+	{	if (unixPath[i] == '/')
+			unixPath[i] = '\\';
+	}
+	return unixPath;
+}
+
+// case insensitive compare
+// return 0 if match, return <0 or >0 if first case insentive mismatch character
+//      has lower value in s1 or in s2, respectively
+int CIstrcmp(const char *s1, const char *s2)
+{
+	unsigned char *us1 = (unsigned char *)s1;
+	unsigned char *us2 = (unsigned char *)s2;
+	
+	while(ConvertToLower(*us1) == ConvertToLower(*us2++))
+	{	// they are equal, so still matching
+		
+		// if matching at the end, then found a match
+		if(*us1 == '\0') return (0);
+		
+		// otherwise on to next character
+		us1++;
+	}
+	
+	// found mismatch
+	us2--;
+	return (int)(ConvertToLower(*us1) - ConvertToLower(*us2));
+}
+
+// file extension of last component in the path (or empty string if none)
+void GetFileExtension(const char *fileName,char *ext,int maxLength)
+{
+	int endLoc = (int)strlen(fileName)-1;
+	int dotLoc = endLoc;
+	while(dotLoc>=0 && fileName[dotLoc]!='.' && fileName[dotLoc]!='/') dotLoc--;
+	
+	// found an extension
+	ext[0] = 0;
+	if(dotLoc>=0)
+	{	// empty if hit folder divider
+		if(fileName[dotLoc]=='/') return;
+		
+		// first character after the period
+		dotLoc++;
+		int ei = 0;
+		
+		// last one gets the zero terminator
+		while(ei<maxLength && dotLoc<=endLoc)
+			ext[ei++]=fileName[dotLoc++];
+		ext[ei] = 0;
+	}
+}
+
+#pragma mark Other Function
 
 /****************************************************************
  *  Functions for an intersect of plane and  unit cube

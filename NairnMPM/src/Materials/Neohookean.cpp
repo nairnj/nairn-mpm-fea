@@ -6,6 +6,7 @@
 	Copyright (c) 2012 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/Neohookean.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"

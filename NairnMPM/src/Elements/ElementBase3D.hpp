@@ -29,7 +29,7 @@ class ElementBase3D : public ElementBase
 		virtual void GetXYZCentroid(Vector *);
 		virtual double GetDeltaZ(void) const;
 		virtual void GetRange(int,double &,double &) const;
-		virtual bool IntersectsBox(double,double,double,double,double) const;
+		virtual bool IntersectsBox(Vector,double,double) const;
 		virtual bool OnTheEdge(void);
 		virtual void GetListOfNeighbors(int *);
 };

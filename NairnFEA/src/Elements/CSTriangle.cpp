@@ -6,6 +6,7 @@
     Copyright (c) 2004 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Elements/CSTriangle.hpp"
 #include "NairnFEA_Class/NairnFEA.hpp"
 #include "Materials/MaterialBase.hpp"

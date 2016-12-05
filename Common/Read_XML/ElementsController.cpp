@@ -6,6 +6,7 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_XML/ElementsController.hpp"
 #include "Elements/FourNodeIsoparam.hpp"
 #include "Elements/Lagrange2D.hpp"
@@ -81,7 +82,7 @@ int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,d
 	
 	// read the data into a vector of doubles
 	if(!CommonReadHandler::GetFreeFormatNumbers(xData,pts,1.0)) return false;
-	int numnds = pts.size();
+	int numnds = (int)pts.size();
 	if(numnds<=0 || numnds>MaxElNd) return false;
 	
 	// convert to integers
@@ -147,7 +148,7 @@ int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,d
 				break;
 		}
 	}
-	catch(std::bad_alloc& ba)
+	catch(std::bad_alloc&)
 	{	return false;
 	}
 	
@@ -291,7 +292,7 @@ int ElementsController::MeshElement(int *eNode,int elemMat,double elemAngle,doub
 				return false;
 		}
 	}
-	catch(std::bad_alloc& ba)
+	catch(std::bad_alloc&)
 	{	// memory error creating new element
 		return false;
 	}

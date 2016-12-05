@@ -6,6 +6,7 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_FEA/KeypointsController.hpp"
 #include "Read_FEA/Keypoint.hpp"
 
@@ -35,7 +36,7 @@ KeypointsController::~KeypointsController(void)
 int KeypointsController::ValidName(char *keyName)
 {
 	if(keyName==NULL) return FALSE;
-	int len=strlen(keyName);
+	int len=(int)strlen(keyName);
 	if(len<=0 || len>32) return FALSE;
 	if(FindKeypoint(keyName)!=NULL) return FALSE;
 	return TRUE;

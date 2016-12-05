@@ -1,0 +1,501 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{767408bc-f5d1-4766-b758-246a07424ab9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\System">
+      <UniqueIdentifier>{a3d56cf1-c8b6-42fa-8b3f-d97e0fd255f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnFEA_src">
+      <UniqueIdentifier>{3fe4f2e6-6e6d-4156-92f6-98d453a29a97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnFEA_src\System">
+      <UniqueIdentifier>{d893791d-c329-4972-8a03-ce3fdedffeae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\Read_XML">
+      <UniqueIdentifier>{a7800043-31aa-4e4d-a048-892e5161333c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\Exceptions">
+      <UniqueIdentifier>{4127f277-f2ad-4e29-ae13-0d2eaa45fbf0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\Materials">
+      <UniqueIdentifier>{14bb44eb-ffa6-476b-912d-2b94a74e9033}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\Elements">
+      <UniqueIdentifier>{a4d53687-5d76-4c12-bd54-a7f1a8d37633}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\Nodes">
+      <UniqueIdentifier>{9ff79352-4df5-47ac-9f16-41669c380bd0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnFEA_src\Read_FEA">
+      <UniqueIdentifier>{a5733588-5e92-4d95-9831-6642d5297583}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnFEA_src\NairnFEA_Class">
+      <UniqueIdentifier>{d473e69e-4c10-470f-b6c7-e05c324c3584}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnFEA_src\Materials">
+      <UniqueIdentifier>{8fe28d04-5612-403b-9725-073e1e3c5547}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnFEA_src\Elements">
+      <UniqueIdentifier>{462c59b5-8456-4d1d-a520-20ba50bf05fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnFEA_src\Nodes">
+      <UniqueIdentifier>{e19b7bf6-3cf0-4008-822c-8a447e73680c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnFEA_src\Boundary_Conditions">
+      <UniqueIdentifier>{6374d2a6-06b4-4359-b6ec-f1670efa1e6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NairnFEA_src\Numerical">
+      <UniqueIdentifier>{e5248656-ecb2-4a2b-8a2a-b709273b46f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="info">
+      <UniqueIdentifier>{1a0d714a-f931-4000-a295-ab3f089ab39c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\CommonAnalysis.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\CommonArchiveData.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\CommonTask.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\DataTypes.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\LinkedObject.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\Matrix3.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\UnitsController.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\System\FEAArchiveData.hpp">
+      <Filter>NairnFEA_src\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\ArcController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\BMPLevel.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\BoxController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\CommonReadHandler.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\ElementsController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\LineController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\MaterialController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\mathexpr.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\NodesController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\OvalController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\ParseController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\PointController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\PolygonController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\RectController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\ShapeController.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\XYBMPImporter.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\XYFileImporter.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\XYFPGImporter.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Exceptions\CommonException.hpp">
+      <Filter>Common\Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Exceptions\StrX.hpp">
+      <Filter>Common\Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Materials\Elastic.hpp">
+      <Filter>Common\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Materials\IsotropicMat.hpp">
+      <Filter>Common\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Materials\MaterialBase.hpp">
+      <Filter>Common\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Materials\Orthotropic.hpp">
+      <Filter>Common\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Materials\TransIsotropic.hpp">
+      <Filter>Common\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Elements\ElementBase.hpp">
+      <Filter>Common\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Elements\FourNodeIsoparam.hpp">
+      <Filter>Common\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Elements\Lagrange2D.hpp">
+      <Filter>Common\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Elements\Linear2D.hpp">
+      <Filter>Common\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Elements\Quad2D.hpp">
+      <Filter>Common\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Nodes\NodalPoint.hpp">
+      <Filter>Common\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Nodes\NodalPoint2D.hpp">
+      <Filter>Common\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Nodes\NodalPoint3D.hpp">
+      <Filter>Common\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Area.hpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\ConstraintController.hpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\EdgeBCController.hpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\FEAReadHandler.hpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Keypoint.hpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\KeypointsController.hpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\NodalDispBCController.hpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\NodalLoadController.hpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Path.hpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\PathBCController.hpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\PathsController.hpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\NairnFEA_Class\NairnFEA.hpp">
+      <Filter>NairnFEA_src\NairnFEA_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Materials\ImperfectInterface.hpp">
+      <Filter>NairnFEA_src\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\CSTriangle.hpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\EightNodeIsoparam.hpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\Interface2D.hpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\LinearInterface.hpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\QuadInterface.hpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\SixNodeTriangle.hpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\Constraint.hpp">
+      <Filter>NairnFEA_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\EdgeBC.hpp">
+      <Filter>NairnFEA_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\FEABoundaryCondition.hpp">
+      <Filter>NairnFEA_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\NodalDispBC.hpp">
+      <Filter>NairnFEA_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\NodalLoad.hpp">
+      <Filter>NairnFEA_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\System\FEAPrefix.hpp">
+      <Filter>NairnFEA_src\System</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\CommonAnalysis.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\CommonArchiveData.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\CommonTask.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\CommonUtilities.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\LinkedObject.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\main.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\Matrix3.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\svninfo.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\UnitsController.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\System\FEAArchiveData.cpp">
+      <Filter>NairnFEA_src\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\System\Utilities.cpp">
+      <Filter>NairnFEA_src\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\ArcController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\BitMapFilesCommon.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\BMPLevel.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\BoxController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\CommonReadHandler.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\ElementsController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\LineController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\MaterialController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\mathexpr.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\NodesController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\OvalController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\ParseController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\PointController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\PolygonController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\RectController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\ShapeController.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\XYBMPImporter.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\XYFileImporter.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\XYFPGImporter.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Exceptions\CommonException.cpp">
+      <Filter>Common\Exceptions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Materials\Elastic.cpp">
+      <Filter>Common\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Materials\IsotropicMat.cpp">
+      <Filter>Common\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Materials\MaterialBase.cpp">
+      <Filter>Common\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Materials\Orthotropic.cpp">
+      <Filter>Common\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Materials\TransIsotropic.cpp">
+      <Filter>Common\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Elements\ElementBase.cpp">
+      <Filter>Common\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Elements\FourNodeIsoparam.cpp">
+      <Filter>Common\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Elements\Lagrange2D.cpp">
+      <Filter>Common\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Elements\Linear2D.cpp">
+      <Filter>Common\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Elements\Quad2D.cpp">
+      <Filter>Common\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Nodes\NodalPoint.cpp">
+      <Filter>Common\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Nodes\NodalPoint2D.cpp">
+      <Filter>Common\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Nodes\NodalPoint3D.cpp">
+      <Filter>Common\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Area.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\BitMapFilesFEA.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\ConstraintController.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\EdgeBCController.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\FEAReadHandler.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Keypoint.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\KeypointsController.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\MatRegionFEA.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\NodalDispBCController.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\NodalLoadController.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Path.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\PathBCController.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\PathsController.cpp">
+      <Filter>NairnFEA_src\Read_FEA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\NairnFEA_Class\FEAStartResults.cpp">
+      <Filter>NairnFEA_src\NairnFEA_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\NairnFEA_Class\NairnFEA.cpp">
+      <Filter>NairnFEA_src\NairnFEA_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Materials\ImperfectInterface.cpp">
+      <Filter>NairnFEA_src\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Materials\MaterialBaseFEA.cpp">
+      <Filter>NairnFEA_src\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\CSTriangle.cpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\EightNodeIsoparam.cpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\Interface2D.cpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\LinearInterface.cpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\MoreElementBase.cpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\QuadInterface.cpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\SixNodeTriangle.cpp">
+      <Filter>NairnFEA_src\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Nodes\MoreNodalPoint.cpp">
+      <Filter>NairnFEA_src\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\Constraint.cpp">
+      <Filter>NairnFEA_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\EdgeBC.cpp">
+      <Filter>NairnFEA_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\FEABoundaryCondition.cpp">
+      <Filter>NairnFEA_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\NodalDispBC.cpp">
+      <Filter>NairnFEA_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\NodalLoad.cpp">
+      <Filter>NairnFEA_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Numerical\Gauss.cpp">
+      <Filter>NairnFEA_src\Numerical</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\..\NairnFEA\input\NairnFEA.dtd">
+      <Filter>info</Filter>
+    </None>
+    <None Include="..\..\..\..\..\NairnFEA\build\makefile">
+      <Filter>info</Filter>
+    </None>
+  </ItemGroup>
+</Project>

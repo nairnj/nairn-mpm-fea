@@ -8,6 +8,7 @@
     See Create_MPM_Material for details in google code web site wiki
  ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/TaitLiquid.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
@@ -57,14 +58,14 @@ char *TaitLiquid::InputMaterialProperty(char *xName,int &input,double &gScaling)
 	// read properties for this material
     if(strcmp(xName,"viscosity")==0)
     {	viscosity.push_back(0.);
-		numViscosity = viscosity.size();
+		numViscosity = (int)viscosity.size();
 		input=DOUBLE_NUM;
 		return UnitsController::ScaledPtr((char *)&viscosity[numViscosity-1],gScaling,1.e-3);
     }
 	
     else if(strcmp(xName,"logshearrate")==0)
     {	logShearRate.push_back(0.);
-		int numRates = logShearRate.size();
+		int numRates = (int)logShearRate.size();
 		input=DOUBLE_NUM;
 		return UnitsController::ScaledPtr((char *)&logShearRate[numRates-1],gScaling,1.);
     }
@@ -322,7 +323,7 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	mptr->SetHistoryDble(J_History+2,shearRate,historyOffset);
 	
 	// Get effective visocisy
-	double twoetaspRate;
+	double twoetaspRate = 0.;
 	if(numViscosity==1)
 	{	twoetaspRate = TwoEtasp[0];
 	}
@@ -459,5 +460,4 @@ void TaitLiquid::SetPressureFunction(char *pFunction)
 	if(function->HasError())
 		ThrowSAXException("Initial pressure function is not valid");
 }
-
 

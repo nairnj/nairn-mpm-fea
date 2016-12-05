@@ -21,12 +21,20 @@ class RectController : public ShapeController
 	
 		// contructors
 		RectController(int);
+		virtual void SetParameter(const char *,const char *);
+		virtual bool FinishParameter(void);
 	
 		// methods
 		virtual bool ContainsPoint(Vector &);
-    
+		virtual bool CheckAngle(double,double);
+	
         // accessors
         virtual const char *GetShapeName();
+	
+	protected:
+		double startAngle;
+		double endAngle;
+
 
 };
 

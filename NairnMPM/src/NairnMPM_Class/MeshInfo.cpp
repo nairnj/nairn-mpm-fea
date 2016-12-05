@@ -9,6 +9,7 @@
 		none
 *********************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Patches/GridPatch.hpp"
 #include "MPM_Classes/MPMBase.hpp"

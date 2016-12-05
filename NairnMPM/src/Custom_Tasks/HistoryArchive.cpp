@@ -6,6 +6,7 @@
 	Copyright (c) 2012 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Custom_Tasks/HistoryArchive.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "System/ArchiveData.hpp"

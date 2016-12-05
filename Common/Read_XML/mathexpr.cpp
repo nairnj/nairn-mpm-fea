@@ -78,6 +78,7 @@ Changes by John Nairn, April 2007
 
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "mathexpr.hpp"
 
 #pragma mark USAGE UTILITILES
@@ -973,7 +974,7 @@ int IsVar(const char *s,int n,int nvar,PRVar *ppvar)
 	int l=0;
 	for(i=0;i<nvar;i++)
 	{	if(CompStr(s,n,(*(ppvar+i))->name))
-			l=max(l,strlen((*(ppvar+i))->name));
+			l=max(l,(int)strlen((*(ppvar+i))->name));
 	}
 	return l;
 }
@@ -1004,7 +1005,7 @@ int IsFunction(const char*s,int n,int nfunc,PRFunction*ppfunc)
 	l=0;
 	for(i=0;i<nfunc;i++)
 	{	if(CompStr(s,n,ppfunc[i]->name))
-			l=max(l,strlen(ppfunc[i]->name));
+			l=max(l,(int)strlen(ppfunc[i]->name));
 	}
 	return l;
 }
@@ -1176,7 +1177,7 @@ ROperation::ROperation(char*sp,int nvar,PRVar*ppvarp,int nfuncp,PRFunction*ppfun
 	i=SearchOperator(s,Juxt);
 	if(i!=-1)
 	{	s1=MidStr(s,0,i-1);
-		s2=MidStr(s,i+1,strlen(s)-1);
+		s2=MidStr(s,i+1,(int)strlen(s)-1);
 		op=Juxt;
 		mmb1=new ROperation(s1,nvar,ppvarp,nfuncp,ppfuncp);
 		mmb2=new ROperation(s2,nvar,ppvarp,nfuncp,ppfuncp);
@@ -1185,7 +1186,7 @@ ROperation::ROperation(char*sp,int nvar,PRVar*ppvarp,int nfuncp,PRFunction*ppfun
 	i=SearchOperator(s,Add);
 	if(i!=-1)
 	{	s1=MidStr(s,0,i-1);
-		s2=MidStr(s,i+1,strlen(s)-1);
+		s2=MidStr(s,i+1,(int)strlen(s)-1);
 		op=Add;
 		mmb1=new ROperation(s1,nvar,ppvarp,nfuncp,ppfuncp);
 		mmb2=new ROperation(s2,nvar,ppvarp,nfuncp,ppfuncp);
@@ -1194,14 +1195,14 @@ ROperation::ROperation(char*sp,int nvar,PRVar*ppvarp,int nfuncp,PRFunction*ppfun
 	i=SearchOperator(s,Sub);
 	if(i!=-1)
     {	s1=MidStr(s,0,i-1);
-		s2=MidStr(s,i+1,strlen(s)-1);
+		s2=MidStr(s,i+1,(int)strlen(s)-1);
 		op=Sub;
 		mmb1=new ROperation(s1,nvar,ppvarp,nfuncp,ppfuncp);
 		mmb2=new ROperation(s2,nvar,ppvarp,nfuncp,ppfuncp);
 		goto fin;
 	}
 	if(s[0]=='-')
-	{	s2=MidStr(s,1,strlen(s)-1);
+	{	s2=MidStr(s,1,(int)strlen(s)-1);
 		op=Opp;
 		mmb1=NULL;
 		mmb2=new ROperation(s2,nvar,ppvarp,nfuncp,ppfuncp);
@@ -1268,103 +1269,103 @@ ROperation::ROperation(char*sp,int nvar,PRVar*ppvarp,int nfuncp,PRFunction*ppfun
 	if(s[0]=='(' && SearchCorOpenbracket(s,0)==(int)strlen(s)-1)
 	{	if(CompStr(s,1,"exp"))
 		{	op=Exp;
-			s2=MidStr(s,4,strlen(s)-2);
+			s2=MidStr(s,4,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"abs"))
 		{	op=Abs;
-			s2=MidStr(s,4,strlen(s)-2);
+			s2=MidStr(s,4,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"int"))
 		{	op=IntFun;
-			s2=MidStr(s,4,strlen(s)-2);
+			s2=MidStr(s,4,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"sign"))
 		{	op=Sign;
-			s2=MidStr(s,5,strlen(s)-2);
+			s2=MidStr(s,5,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"sin"))
 		{	op=Sin;
-			s2=MidStr(s,4,strlen(s)-2);
+			s2=MidStr(s,4,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"cos"))
 		{	op=Cos;
-			s2=MidStr(s,4,strlen(s)-2);
+			s2=MidStr(s,4,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"tan"))
 		{	op=Tg;
-			s2=MidStr(s,4,strlen(s)-2);
+			s2=MidStr(s,4,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"log"))
 		{	op=Log;
-			s2=MidStr(s,4,strlen(s)-2);
+			s2=MidStr(s,4,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"atg"))
 		{	op=Atan;
-			s2=MidStr(s,4,strlen(s)-2);
+			s2=MidStr(s,4,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"tg"))
 		{	op=Tg;
-			s2=MidStr(s,3,strlen(s)-2);
+			s2=MidStr(s,3,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"ln"))
 		{	op=Ln;
-			s2=MidStr(s,3,strlen(s)-2);
+			s2=MidStr(s,3,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"asin"))
 		{	op=Asin;
-			s2=MidStr(s,5,strlen(s)-2);
+			s2=MidStr(s,5,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"acos"))
 		{	op=Acos;
-			s2=MidStr(s,5,strlen(s)-2);
+			s2=MidStr(s,5,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"atan"))
 		{	op=Atan;
-			s2=MidStr(s,5,strlen(s)-2);
+			s2=MidStr(s,5,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"sqrt"))
 		{	op=Sqrt;
-			s2=MidStr(s,5,strlen(s)-2);
+			s2=MidStr(s,5,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"Sinh"))
 		{	op=Sinh;
-			s2=MidStr(s,5,strlen(s)-2);
+			s2=MidStr(s,5,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"Cosh"))
 		{	op=Cosh;
-			s2=MidStr(s,5,strlen(s)-2);
+			s2=MidStr(s,5,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"Tanh"))
 		{	op=Tanh;
-			s2=MidStr(s,5,strlen(s)-2);
+			s2=MidStr(s,5,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"arcsin"))
 		{	op=Asin;
-			s2=MidStr(s,7,strlen(s)-2);
+			s2=MidStr(s,7,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"arccos"))
 		{	op=Acos;
-			s2=MidStr(s,7,strlen(s)-2);
+			s2=MidStr(s,7,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"arctan"))
 		{	op=Atan;
-			s2=MidStr(s,7,strlen(s)-2);
+			s2=MidStr(s,7,(int)strlen(s)-2);
 		}
 		else if(CompStr(s,1,"arctg"))
 		{	op=Atan;
-			s2=MidStr(s,6,strlen(s)-2);
+			s2=MidStr(s,6,(int)strlen(s)-2);
 		}
 		else
 		{	// look for user function
 			for(i=-1,k=0,j=0;j<nfuncp;j++)
 			{	if(CompStr(s,1,ppfuncp[j]->name)&&k<(int)strlen(ppfuncp[j]->name))
-				{	k=strlen(ppfuncp[j]->name);
+				{	k=(int)strlen(ppfuncp[j]->name);
 					i=j;
 				}
 			}
 			if(i>-1)
 			{	op=Fun;
-				s2=MidStr(s,strlen(ppfuncp[i]->name)+1,strlen(s)-2);
+				s2=MidStr(s,(int)strlen(ppfuncp[i]->name)+1,(int)strlen(s)-2);
 				pfunc=ppfuncp[i];
 			}
 		}
@@ -1384,7 +1385,7 @@ ROperation::ROperation(char*sp,int nvar,PRVar*ppvarp,int nfuncp,PRFunction*ppfun
 	i=SearchOperator(s,Mult);
 	if(i!=-1)
 	{	s1=MidStr(s,0,i-1);
-		s2=MidStr(s,i+1,strlen(s)-1);
+		s2=MidStr(s,i+1,(int)strlen(s)-1);
 		op=Mult;
 		mmb1=new ROperation(s1,nvar,ppvarp,nfuncp,ppfuncp);
 		mmb2=new ROperation(s2,nvar,ppvarp,nfuncp,ppfuncp);
@@ -1393,7 +1394,7 @@ ROperation::ROperation(char*sp,int nvar,PRVar*ppvarp,int nfuncp,PRFunction*ppfun
 	i=SearchOperator(s,Div);
 	if(i!=-1)
 	{	s1=MidStr(s,0,i-1);
-		s2=MidStr(s,i+1,strlen(s)-1);
+		s2=MidStr(s,i+1,(int)strlen(s)-1);
 		op=Div;
 		mmb1=new ROperation(s1,nvar,ppvarp,nfuncp,ppfuncp);
 		mmb2=new ROperation(s2,nvar,ppvarp,nfuncp,ppfuncp);
@@ -1402,7 +1403,7 @@ ROperation::ROperation(char*sp,int nvar,PRVar*ppvarp,int nfuncp,PRFunction*ppfun
 	i=SearchOperator(s,Pow);
 	if(i!=-1)
 	{	s1=MidStr(s,0,i-1);
-		s2=MidStr(s,i+1,strlen(s)-1);
+		s2=MidStr(s,i+1,(int)strlen(s)-1);
 		op=Pow;
 		mmb1=new ROperation(s1,nvar,ppvarp,nfuncp,ppfuncp);
 		mmb2=new ROperation(s2,nvar,ppvarp,nfuncp,ppfuncp);
@@ -1411,7 +1412,7 @@ ROperation::ROperation(char*sp,int nvar,PRVar*ppvarp,int nfuncp,PRFunction*ppfun
 	i=SearchOperator(s,NthRoot);
 	if(i!=-1)
 	{	s1=MidStr(s,0,i-1);
-		s2=MidStr(s,i+1,strlen(s)-1);
+		s2=MidStr(s,i+1,(int)strlen(s)-1);
 		if(i==0||s[i-1]!=')')
 		{	op=Sqrt;
 			mmb1=NULL;
@@ -1427,7 +1428,7 @@ ROperation::ROperation(char*sp,int nvar,PRVar*ppvarp,int nfuncp,PRFunction*ppfun
 	if(i==-1) i=SearchOperator(s,e10);
 	if(i!=-1)
 	{	s1=MidStr(s,0,i-1);
-		s2=MidStr(s,i+1,strlen(s)-1);
+		s2=MidStr(s,i+1,(int)strlen(s)-1);
 		op=E10;
 		mmb1=new ROperation(s1,nvar,ppvarp,nfuncp,ppfuncp);
 		mmb2=new ROperation(s2,nvar,ppvarp,nfuncp,ppfuncp);
@@ -1610,16 +1611,16 @@ char* ROperation::Expr(char varPrefix) const
 	signed char f=0,g=0;
 	if(op==Fun)
 	{	if(strlen(pfunc->name)>4)
-			n+=strlen(pfunc->name)-4;
+			n+=(int)strlen(pfunc->name)-4;
 	}
 	if(mmb1!=NULL)
 	{	s1=mmb1->Expr(varPrefix);
-		n+=strlen(s1);
+		n+=(int)strlen(s1);
 		f=IsFunction(mmb1->op);
 	}
 	if(mmb2!=NULL)
 	{	s2=mmb2->Expr(varPrefix);
-		n+=strlen(s2);
+		n+=(int)strlen(s2);
 		g=IsFunction(mmb2->op);
 	}
 	s=new char[n];

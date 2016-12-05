@@ -6,6 +6,7 @@
     Copyright (c) 2003 John A. Nairn. All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnFEA_Class/NairnFEA.hpp"
 #include "Read_FEA/FEAReadHandler.hpp"
 #include "Elements/ElementBase.hpp"
@@ -79,7 +80,7 @@ FEAReadHandler::~FEAReadHandler()
 // not thread safe due to push_back()
 // throws std::bad_alloc, SAXException()
 bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
-{   
+{
     char *value,*aName;
     char matName[100];
     int i,numAttr;
@@ -137,7 +138,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		matName[0]=0;
 		double ratio=1.;
 		int intervals=1;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
@@ -168,7 +169,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		matname[0]=0;
 		char *angleExpr=NULL;		// optional
 		double thick=1.0;		// optional
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
@@ -211,7 +212,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
         {	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
             x=y=temp=0.;
             matName[0]=0;
-            numAttr=attrs.getLength();
+            numAttr=(int)attrs.getLength();
 			double aScaling=ReadUnits(attrs,LENGTH_UNITS);
             
             for(i=0;i<numAttr;i++)
@@ -280,7 +281,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
         elemAngle=0.;
         elemThick=1.;
 		int elemTypeSet=FALSE;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
 		char elmat[200];
 		elmat[0]=0;
         for(i=0;i<numAttr;i++)
@@ -340,7 +341,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
     // Store a line and tolerance into the current line (in theShape)
     else if(strcmp(xName,"BCLine")==0)
 	{	ValidateCommand(xName,GRIDBCHEADER,MUST_BE_2D);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         double tolerance=ElementBase::gridTolerance;
 		double xmin=0.,xmax=0.,ymin=0.,ymax=0.;
 		bool select=FALSE;
@@ -388,7 +389,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		{	if(dispBCCtrl->numObjects>0 || loadBCCtrl->numObjects>0 || edgeBCCtrl->numObjects>0)
 				throw SAXException("<Cracktip> must be first command in <GridBCs> section");
 		}
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
 		double xpt=0.,ypt=0.;
 		int nearestNode=-1;
 		bool select=FALSE;
@@ -445,7 +446,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		int dof=0;
 		bool fixDu=FALSE,fixDudy=FALSE;
 		double du=0.,dudy=0.;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
@@ -511,7 +512,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,FIXEDNODES,MUST_BE_2D);
 		int node=0;
 		int dof=0;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
@@ -542,7 +543,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		int axis=0;
 		double angle=0.;
 		bool hasAngle=FALSE;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
@@ -592,7 +593,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,LOADEDNODES,MUST_BE_2D);
 		int node=0;
 		int dof=0;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
@@ -618,7 +619,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"stress")==0)
 	{	ValidateCommand(xName,LOADEDFACES,MUST_BE_2D);
 		int elem=0,face=0,dir=0;
-    	numAttr=attrs.getLength();
+    	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
@@ -645,7 +646,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
         double disp=0.;
 		int dof=0;
 		char *function=NULL;
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -682,7 +683,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
         int dof=0;
         double load=0.0;
 		char *function=NULL;
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -722,7 +723,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
         int dir=0;
 		int nloads=0;
         double load[3]={0.,0.,0.};
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -1143,7 +1144,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 	for(i=1;i<=nnodes;i++)
 	{	if(fmobj->periodic.dof&0x01)
 		{	if(DbleEqual(xmax,nd[i]->x))
-			{	unsigned int numOrig=xMinNodes.size();
+			{	unsigned int numOrig=(unsigned int)xMinNodes.size();
 				for(iter=xMinNodes.begin(); iter!=xMinNodes.end(); ++iter)
 				{	if(DbleEqual(nd[i]->y,nd[*iter]->y))
 					{	xPeriodicNodes.push_back(*iter);
@@ -1158,7 +1159,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 		}
 		if(fmobj->periodic.dof&0x02)
 		{	if(DbleEqual(ymax,nd[i]->y))
-			{	unsigned int numOrig=yMinNodes.size();
+			{	unsigned int numOrig=(unsigned int)yMinNodes.size();
 				for(iter=yMinNodes.begin(); iter!=yMinNodes.end(); ++iter)
 				{	if(DbleEqual(nd[i]->x,nd[*iter]->x))
 					{	yPeriodicNodes.push_back(*iter);

@@ -15,6 +15,7 @@
 	Vrel = 1 + exx for 1D compression in x direction
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Custom_Tasks/CarnotCycle.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Exceptions/CommonException.hpp"
@@ -81,7 +82,7 @@ CustomTask *CarnotCycle::Initialize(void)
 		throw CommonException("The first expansion volume (V1rel) must be greater than 1","CarnotCycle::Initialize()");
 	if(T2>thermal.reference || T2<0)
 		throw CommonException("The second temperature, T2, must be less than the reference temperature.","CarnotCycle::Initialize()");
-	if(V3rel>0. and V3rel<1.)
+	if(V3rel>0. && V3rel<1.)
 		throw CommonException("The third expansion volume (V3rel) must be greater than 1","CarnotCycle::Initialize()");
 	
 	// initial settings

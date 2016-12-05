@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Elements/FourNodeIsoparam.hpp"
 #include "Nodes/NodalPoint.hpp"
 #ifdef MPM_CODE

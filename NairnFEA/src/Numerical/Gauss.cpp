@@ -6,6 +6,8 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
+
 // prototype
 int gelbnd(double **,int,int,double *,double *,int);
 
@@ -42,9 +44,9 @@ int gelbnd(double **,int,int,double *,double *,int);
 
 int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
 {
-    int i,j2,k,imin1,jend,ind;
+    int i,k,imin1,jend;
     int ierr=0;
-    double Uii,Uim,Uik,UikOverUii,Lki,yi,sum;
+    double Uii,yi,sum;
     
     // Check for trival unit band length problem
     if(nband==1)
@@ -90,14 +92,14 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
 			
             // Loop over rows that need to be reduced
 			// Changes only row k  and aik, input is aik, Uii
-#pragma omp parallel for private(k,ind,j2,Uim,Uik,UikOverUii)
+#pragma omp parallel for private(k)
             for(int j=2; j<=jend; j++)
 			{	// aik = a[i][k-i+1] = a[i][j]
-            	Uik = a[i][j];			// Now Uik since row i has been reduced, but not converted to Lki yet
+            	double Uik = a[i][j];			// Now Uik since row i has been reduced, but not converted to Lki yet
 				
 				// if zero, nothing to do, otherwise do a reduction
                 if(Uik != 0.)
-				{	UikOverUii = Uik/Uii;
+				{	double UikOverUii = Uik/Uii;
                     k = j+imin1;				// reducing row k
 					
 					// in row k, need to reduce elements m = k to n to
@@ -106,10 +108,10 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
 					// Let j2 run from j to jend and counter ind from 1 to jend-j+1, then m = k+ind-1 = k+j2-j
 					//	   akm = a[k][m-k+1] = a[k][ind]
 					//     aim = a[i][m-i+1] = a[i][j2]
-                    ind = 0;
-					for(j2=j; j2<=jend; j2++)
+                    int ind = 0;
+					for(int j2=j; j2<=jend; j2++)
                     {	ind++;						// m-k+1
-                        Uim = a[i][j2];				// Now Ui,j2-i+1 = Uim since row i has been reduced
+                        double Uim = a[i][j2];				// Now Ui,j2-i+1 = Uim since row i has been reduced
                         if(Uim != 0.)
                             a[k][ind] -= UikOverUii*Uim;
                     }
@@ -137,9 +139,9 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
         yi = r[i];
 		
 		// Let k = i+j-1, then k from i+1 to end
-#pragma omp parallel for private(Lki)
+#pragma omp parallel for
         for(int j=2; j<=jend; j++)
-        {   Lki = a[i][j];                  // Lki or loop Li+1,i to end
+        {   double Lki = a[i][j];                  // Lki or loop Li+1,i to end
             if(Lki!=0.)
 			{	r[imin1+j] -= Lki*yi;		// changing r[i+1] to r[i-1+jend] in parallel
             }
@@ -162,9 +164,9 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
 		
 		// Let k=i+j-1 and loop k=i+1 to end
         sum = 0.;
-#pragma omp parallel for reduction(+:sum) private(Lki)
+#pragma omp parallel for reduction(+:sum)
         for(int j=2; j<=jend; j++)
-        {   Lki = a[i][j];                  // From decomposition is Lki
+        {   double Lki = a[i][j];                  // From decomposition is Lki
             if(Lki!=0.)
                 sum += Lki*r[imin1+j];		// summand Lki*xk now in r[i+1] to r[i-1+jend] in parallel
         }

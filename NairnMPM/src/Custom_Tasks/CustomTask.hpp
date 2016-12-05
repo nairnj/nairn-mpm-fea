@@ -28,7 +28,7 @@ class CustomTask
         // initialize
 		virtual const char *TaskName(void);
         virtual char *InputParam(char *,int &,double &);
-		virtual void SetTextParameter(char *);
+		virtual void SetTextParameter(char *,char *);
         virtual CustomTask *Initialize(void);
 	
 		// run the task

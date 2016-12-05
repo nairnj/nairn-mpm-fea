@@ -67,10 +67,14 @@ class ArchiveData : public CommonArchiveData
 		
 		// accessors
 		int WillArchiveJK(bool);
-		int WillArchive(void);
+		bool WillArchive(void);
 		void ForceArchiving(void);
 		int GetRecordSize(void);
 		void SetMPMOrder(const char *);
+		void SetMPMOrderByte(int,char);
+		char GetMPMOrderByte(int byteNum);
+		void SetCrackOrderByte(int,char);
+		char GetCrackOrderByte(int byteNum);
 		void SetCrackOrder(const char *);
 		bool PointArchive(int);
 		bool CrackArchive(int);
@@ -84,7 +88,7 @@ class ArchiveData : public CommonArchiveData
 		double *GetFirstArchTimePtr(void);
 		double *GetGlobalTimePtr(void);
 		Vector *GetLastContactForcePtr(void);
-	
+
 	private:
 		int archBlock;
 		vector<double> archTimes,firstArchTimes,maxProps;

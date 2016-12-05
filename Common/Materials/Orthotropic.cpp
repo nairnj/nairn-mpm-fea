@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/Orthotropic.hpp"
 #ifdef MPM_CODE
 	#include "Custom_Tasks/ConductionTask.hpp"

@@ -6,6 +6,7 @@
 	Copyright (c) 2009 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Nodes/CrackVelocityField.hpp"
@@ -38,8 +39,6 @@ CrackVelocityField::CrackVelocityField(int num,short theLoc,int cnum)
 	// (and it is never rigid and never ignores cracks for flags is zero
 	if(maxMaterialFields==1)
 	{	mvf[0] = CreateMatVelocityField(0);
-		if(mvf[0]==NULL) throw CommonException("Memory error allocating material velocity field.",
-											   "CrackVelocityField::CrackVelocityField");
 	}
 		
 	// clear all data.
@@ -66,7 +65,9 @@ MatVelocityField *CrackVelocityField::CreateMatVelocityField(int fieldFlags)
 #pragma mark TASK 0 METHODS
 
 // zero this velocity field, set loc and crackNum for first crack and optionally
-//		zero or delete the material velocity fields
+//		zero the material velocity fields
+// WARNING: if zeroMVFS is true (which zeros velocity field too), must
+//      NULL out fields that ignore crack before calling this method
 void CrackVelocityField::Zero(short theLoc,int cnum,bool zeroMVFs)
 {
 	// duplicate this part in contructor

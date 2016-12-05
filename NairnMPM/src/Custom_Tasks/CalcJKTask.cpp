@@ -6,6 +6,7 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Custom_Tasks/CalcJKTask.hpp"
 #include "System/ArchiveData.hpp"
 #include "Nodes/NodalPoint.hpp"
@@ -108,9 +109,13 @@ CustomTask *CalcJKTask::StepCalculation(void)
 {
     // skip if not needed
     if(!getJKThisStep) return nextTask;
-    
+#ifdef CONST_ARRAYS
+	int ndsArray[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES];
+#else
     int ndsArray[maxShapeNodes];
     double fn[maxShapeNodes];
+#endif
 	//double xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
     
     // set up strain fields for crack extrapolations

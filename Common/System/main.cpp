@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 *********************************************************************/
 
+#include "stdafx.h"
 #ifdef MPM_CODE
 	#include "NairnMPM_Class/NairnMPM.hpp"
 #else
@@ -47,7 +48,7 @@ int main(int argc,const char *argv[])
     // Check for options
     for(parmInd=1;parmInd<argc && argv[parmInd][0]=='-';parmInd++)
 	{	// each option in the argument
-        unsigned arglen = strlen(argv[parmInd]);
+        unsigned arglen = (int)strlen(argv[parmInd]);
 		for(optInd=1;optInd<arglen;optInd++)
 		{	// Help request
 			if(argv[parmInd][optInd]=='H')
@@ -101,7 +102,9 @@ int main(int argc,const char *argv[])
 #else
 	// pick number of processors, but no more than number available
     // if set to 0, will set to maximum number
-    int maxProcs = max(omp_get_max_threads(),omp_get_num_procs());
+	int maxThreads = omp_get_max_threads();
+	int numProcsAvail = omp_get_num_procs();
+    int maxProcs = maxThreads>numProcsAvail ? maxThreads : numProcsAvail;
     if(numProcs>0)
     {   if(numProcs > maxProcs) numProcs = maxProcs;
         omp_set_num_threads(numProcs);
@@ -116,7 +119,7 @@ int main(int argc,const char *argv[])
     fmobj->SetNumberOfProcessors(numProcs);
 	
 	// seed random number generator
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
     
 	//-------------------------------------------------------------
     // 3. Read the input file, exceptions handled in ReadFile()

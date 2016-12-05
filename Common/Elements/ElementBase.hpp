@@ -99,7 +99,7 @@ class ElementBase : public LinkedObject
 		virtual void PrintElement(ostream &,int);
         virtual void SetThickness(double);
 		virtual void GetXYZCentroid(Vector *);
-		virtual bool IntersectsBox(double,double,double,double,double) const;
+		virtual bool IntersectsBox(Vector,double,double) const;
 		int NodeIndex(int);
         virtual void FindExtent(void);
 		virtual void FindCentroid(Vector *);

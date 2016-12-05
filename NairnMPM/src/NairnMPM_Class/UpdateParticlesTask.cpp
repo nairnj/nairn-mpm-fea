@@ -9,6 +9,7 @@
 		and concentration. For rigid particles, however, just update postion
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/UpdateParticlesTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -34,8 +35,13 @@ UpdateParticlesTask::UpdateParticlesTask(const char *name) : MPMTask(name)
 void UpdateParticlesTask::Execute(void)
 {
 	CommonException *upErr = NULL;
-	int numnds,ndsArray[maxShapeNodes];
+#ifdef CONST_ARRAYS
+	int ndsArray[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES];
+#else
+	int ndsArray[maxShapeNodes];
 	double fn[maxShapeNodes];
+#endif
     
     // Damping terms on the grid or on the particles
     //      particleAlpha   =  (1-beta)/dt + pdamping(t)
@@ -49,7 +55,7 @@ void UpdateParticlesTask::Execute(void)
     double globalPIC = bodyFrc.GetPICDamping();
 
     // Update particle position, velocity, temp, and conc
-#pragma omp parallel for private(numnds,ndsArray,fn)
+#pragma omp parallel for private(ndsArray,fn)
     for(int p=0;p<nmpmsNR;p++)
 	{	MPMBase *mpmptr = mpm[p];
 		
@@ -58,7 +64,7 @@ void UpdateParticlesTask::Execute(void)
 			const ElementBase *elemRef = theElements[mpmptr->ElemID()];
 			int *nds = ndsArray;
 			elemRef->GetShapeFunctions(fn,&nds,mpmptr);
-			numnds = nds[0];
+			int numnds = nds[0];
 			
 			// Update particle position and velocity
 			const MaterialBase *matRef=theMaterials[mpmptr->MatID()];
@@ -149,7 +155,7 @@ void UpdateParticlesTask::Execute(void)
 				upErr = new CommonException(err);
 			}
 		}
-		catch(std::bad_alloc& ba)
+		catch(std::bad_alloc&)
 		{	if(upErr==NULL)
 			{
 #pragma omp critical (error)

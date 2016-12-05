@@ -6,6 +6,7 @@
     Copyright (c) 2004 John A. Nairn, All rights reserved.    
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "MPM_Classes/MPMBase.hpp"

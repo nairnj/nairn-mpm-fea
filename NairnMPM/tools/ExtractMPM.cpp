@@ -16,6 +16,8 @@
 		Does not support ver2 or earlier files
 *********************************************************************/
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "ExtractMPM.hpp"
 
 // Global variable settings
@@ -83,7 +85,7 @@ int main(int argc, char * const argv[])
 	{	// each character in the next argument (skipping the '-')
 		for(optInd=1;optInd<strlen(argv[parmInd]);optInd++)
 		{	// Help request
-			if(argv[parmInd][optInd]=='H')
+			if(argv[parmInd][optInd]=='H' || argv[parmInd][optInd]=='?')
 			{	Usage(NULL);
 				return noErr;
 			}
@@ -374,37 +376,40 @@ void Usage(const char *msg)
 		
 	cout << "\nExtractMPM\n    version 1.0.0" << endl;
     cout << "\nUsage:\n"
-            "    ExtractMPM [-options] <InputFile>\n\n"
-            "This program reads the <InputFile>, extracts the desired data as\n"
-            "selected in the options and writes to standard output or to a file\n"
-            "selected in the options.\n\n"
-            "Options:\n"
-            "    -b format          MPM archive file format (only used for 'ver3' files)\n"
-            "    -c format          MPM archive file crack format (only used for 'ver3' files)\n"
-            "    -C                 Extract crack data only\n"
-            "    -d                 Output as little Endian binary doubles file\n"
-            "    -D                 Output as big Endian binary doubles file\n"
-            "    -f                 Output as little Endian binary floats file\n"
-            "    -F                 Output as big Endian binary floats file\n"
-            "    -h                 Write header in file (default: false)\n"
-            "    -H                 Show this help and exit\n"
-            "    -m num             Exclude this material\n"
-            "    -M num             Include only this material\n"
-            "    -n name            Title or name to be in the header\n"
-            "    -o path            Output file name with no extension\n"
-			"		                       (quoted if name has spaces)\n"
-			"    -s                 Include step number from input file numeric\n"
-			"                              extension in the output file name\n"
-            "    -P                 Extract particle data only (the default)\n"
-            "    -q name            Add column with named quantity\n"
-            "    -s                 Include step number in output file name\n"
-            "    -T                 Output as tab-delimited text file (the default)\n"
-            "    -V                 Output as VTK Legacy file (particle date only)\n"
-            "    -X                 Output as XML file\n"
-            "    -2                 Input file has 2D data (the default)\n"
-            "    -3                 Input file has 3D data (only used for 'ver3' files)\n"
-			"\n"
-            "See http://osupdocs.forestry.oregonstate.edu/index.php/ExtractMPM for documentation.\n\n"
+        "    ExtractMPM [-options] <InputFile>\n\n"
+        "This program reads the <InputFile>, extracts the desired data as\n"
+        "selected in the options and writes to standard output or to a file\n"
+        "selected in the options.\n\n"
+        "Options:\n"
+		"  Input file information (only used for 'ver3' files)\n"
+		"    -2                 Input file has 2D data (the default)\n"
+		"    -3                 Input file has 3D data\n"
+		"    -b format          MPM archive file format\n"
+        "    -c format          MPM archive file crack format\n"
+		"  Select output data to extract\n"
+		"    -q name            Add column with named quantity\n"
+		"    -P                 Extract particle data only (the default)\n"
+		"    -C                 Extract crack data only\n"
+		"    -m num             Exclude this material\n"
+		"    -M num             Include only this material\n"
+		"    -h                 Write header in file (default: false)\n"
+		"    -n name            Title or name to be in the header\n"
+		"    -s                 Include step number from input file numeric\n"
+		"                              extension in the output file name\n"
+		"  Select output file name and format\n"
+		"    -o path            Output file name with no extension\n"
+		"		                       (quoted if name has spaces)\n"
+		"    -T                 Output as tab-delimited text file (the default)\n"
+		"    -V                 Output as VTK Legacy file (particle date only)\n"
+		"    -X                 Output as XML file\n"
+		"    -d                 Output as little Endian binary doubles file\n"
+        "    -D                 Output as big Endian binary doubles file\n"
+        "    -f                 Output as little Endian binary floats file\n"
+        "    -F                 Output as big Endian binary floats file\n"
+		"  Other options\n"
+        "    -H (of -?)         Show this help and exit\n"
+		"\n"
+        "See http://osupdocs.forestry.oregonstate.edu/index.php/ExtractMPM for documentation.\n\n"
           <<  endl;
 }
 
@@ -416,7 +421,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	int i;
 	
 	// skip non archive (all archives end in .# where # is integer)
-	i = strlen(mpmFile)-1;
+	i = (int)strlen(mpmFile)-1;
 	while(i>0 && mpmFile[i]!='.')
 	{	if(mpmFile[i]<'0' || mpmFile[i]>'9')
 		{	cout << "File '" << mpmFile <<"' is not an MPM archive file" << endl;
@@ -529,7 +534,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	if(outfile!=NULL)
 	{	char fname[256],step[256];
 		if(stepExtension)
-		{	int ext=0,dot=strlen(mpmFile)-1;
+		{	int ext=0,dot=(int)strlen(mpmFile)-1;
 			while(dot>=0 && mpmFile[dot]!='.') dot--;
 			if(dot>=0)
 			{	step[ext++]='_';
@@ -610,7 +615,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 		{	strcat(headBuffer,"Export Particle_Data\n");
 			if(includeMaterial.size()>0)
 			{	strcat(headBuffer,"Included_Materials");
-				for(i=0;i<includeMaterial.size();i++)
+				for(i=0;i<(int)includeMaterial.size();i++)
 				{	sprintf(headLine," %d",includeMaterial[i]);
 					strcat(headBuffer,headLine);
 				}
@@ -618,7 +623,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 			}
 			if(excludeMaterial.size()>0)
 			{	strcat(headBuffer,"Excluded_Materials");
-				for(i=0;i<excludeMaterial.size();i++)
+				for(i=0;i<(int)excludeMaterial.size();i++)
 				{	sprintf(headLine," %d",excludeMaterial[i]);
 					strcat(headBuffer,headLine);
 				}
@@ -631,7 +636,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 		strcat(headBuffer,"x y");
 		if(threeD) strcat(headBuffer," z");
 		if(quantity.size()>0)
-		{	for(i=0;i<quantity.size();i++)
+		{	for(i=0;i<(int)quantity.size();i++)
 			{	strcat(headBuffer," ");
 				strcat(headBuffer,quantityName[i]);
 			}
@@ -683,7 +688,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	}
 	
 	// the file
-	int nummpms=fileLength/recSize;
+	int nummpms=(int)(fileLength/recSize);
 	int p;
 	short *mptr;
 	BeginMP(os);
@@ -754,7 +759,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 		}
 		
 		// write quantities
-		for(i=0;i<quantity.size();i++)
+		for(i=0;i<(int)quantity.size();i++)
 			OutputQuantity(i,ap,os,matnum,'\t');
 		
 		OutputRecordEnd(os,true);
@@ -794,7 +799,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 				if(threeD) OutputDouble((double *)(ap+crackPosOffset),2,'\t',reverseFromInput,os,-1);
 			
 				// write quantities
-				for(i=0;i<quantity.size();i++)
+				for(i=0;i<(int)quantity.size();i++)
 				{	switch(quantity[i])
 					{	case J1:
 						case J2:
@@ -859,7 +864,7 @@ int VTKLegacy(ostream &os,const char *mpmFile)
 	os << "DATASET POLYDATA" << endl;
 	
 	// count points to extract
-	int nummpms=fileLength/recSize;
+	int nummpms=(int)(fileLength/recSize);
 	int p,numExtract=0;
     long origOffset = (long)(ap-buffer);
 	for(p=0;p<nummpms;p++)
@@ -902,7 +907,7 @@ int VTKLegacy(ostream &os,const char *mpmFile)
 	if(quantity.size()==0) return noErr;
 	os << "POINT_DATA " << numExtract << endl;
 	int i;
-	for(i=0;i<quantity.size();i++)
+	for(i=0;i<(int)quantity.size();i++)
     {   // back to start of the file
         if(!RestartFileBlocks(origOffset,mpmFile)) return FileAccessErr;
         
@@ -1018,21 +1023,18 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
                 double *syy=(sxx+SYY-SXX);
                 double *szz=(sxx+SZZ-SXX);
                 double *sxy=(sxx+SXY-SXX);
+				double *sxz = (sxx + SXZ - SXX);
+				double *syz = (sxx + SYZ - SXX);
                 if(reverseFromInput)
                 {	Reverse((char *)sxx,sizeof(double));
                     Reverse((char *)syy,sizeof(double));
                     Reverse((char *)szz,sizeof(double));
                     Reverse((char *)sxy,sizeof(double));
-                }
-                double *sxz,*syz;
-                if(threeD)
-                {   sxz=(sxx+SXZ-SXX);
-                    syz=(sxx+SYZ-SXX);
-                    if(reverseFromInput)
-                    {	Reverse((char *)sxz,sizeof(double));
-                        Reverse((char *)syz,sizeof(double));
-                    }
-                }
+					if(threeD)
+					{	Reverse((char *)sxz, sizeof(double));
+						Reverse((char *)syz, sizeof(double));
+					}
+				}
                 double se = pow(*sxx-*syy,2.) + pow(*syy-*szz,2.) + pow(*sxx-*szz,2.);
                 se += 6.*(*sxy)*(*sxy);
                 if(threeD) se += 6.*((*sxz)*(*sxz) + (*syz)*(*syz));
@@ -1238,7 +1240,7 @@ bool skipThisPoint(short matnum)
 	if(includeMaterial.size()>0)
 	{	// if have list of included, make sure on the list
 		skip=true;
-		for(i=0;i<includeMaterial.size();i++)
+		for(i=0;i<(int)includeMaterial.size();i++)
 		{	if(includeMaterial[i]==matnum)
 			{	skip=false;
 				break;
@@ -1249,7 +1251,7 @@ bool skipThisPoint(short matnum)
 		
 	// can override with exclusion
 	if(!skip)
-	{	for(i=0;i<excludeMaterial.size();i++)
+	{	for(i=0;i<(int)excludeMaterial.size();i++)
 		{	if(excludeMaterial[i]==matnum)
 			{	skip=true;
 				break;
@@ -1293,14 +1295,14 @@ void OutputDouble(double *data,int offset,char delim,bool mustReverse,ostream &o
 		
 		case 'f':
 			if(mustReverse) Reverse((char *)data,sizeof(double));
-			fdata=*data;
+			fdata=(float)(*data);
 			if(thisEndian=='m') Reverse((char *)&fdata,sizeof(float));
 			os.write((char *)&fdata,sizeof(float));
 			break;
 			
 		case 'F':
 			if(mustReverse) Reverse((char *)data,sizeof(double));
-			fdata=*data;
+			fdata=(float)(*data);
 			if(thisEndian=='i' ) Reverse((char *)&fdata,sizeof(float));
 			os.write((char *)&fdata,sizeof(float));
 			break;
@@ -1424,12 +1426,12 @@ int CalcArchiveSize(int vernum)
     // pad if needed, and truncate if unknowns are all 'N'
     if(strlen(mpmOrder)<2) strcpy(mpmOrder,"mY");
     if(strlen(mpmOrder)<ARCH_MAXMPMITEMS)
-    {	for(i=strlen(mpmOrder);i<ARCH_MAXMPMITEMS;i++)
+    {	for(i=(int)strlen(mpmOrder);i<ARCH_MAXMPMITEMS;i++)
             mpmOrder[i]='N';
     }
 	else if(strlen(mpmOrder)>ARCH_MAXMPMITEMS)
     {	// File might have more data, but OK if all unknowns are 'N'
-		for(i=ARCH_MAXMPMITEMS;i<strlen(mpmOrder);i++)
+		for(i=ARCH_MAXMPMITEMS;i<(int)strlen(mpmOrder);i++)
 		{	if(mpmOrder[i]!='N')
 				return FileAccessErr;
 		}
@@ -1440,12 +1442,12 @@ int CalcArchiveSize(int vernum)
     // pad if needed, and truncate if unknowns are all 'N'
     if(strlen(crackOrder)<2) strcpy(crackOrder,"mY");
     if(strlen(crackOrder)<ARCH_MAXCRACKITEMS)
-    {	for(i=strlen(crackOrder);i<ARCH_MAXCRACKITEMS;i++)
+    {	for(i=(int)strlen(crackOrder);i<ARCH_MAXCRACKITEMS;i++)
             crackOrder[i]='N';
     }
 	else if(strlen(crackOrder)>ARCH_MAXCRACKITEMS)
     {	// File might have more data, but OK if all unknowns are 'N'
-		for(i=ARCH_MAXCRACKITEMS;i<strlen(crackOrder);i++)
+		for(i=ARCH_MAXCRACKITEMS;i<(int)strlen(crackOrder);i++)
 		{	if(crackOrder[i]!='N')
 				return FileAccessErr;
 		}
@@ -1579,8 +1581,8 @@ int CalcArchiveSize(int vernum)
  	crackPosOffset=sizeof(int)+sizeof(double)+sizeof(short)+2;
 	
 	/* ARCH_Defaults are
-		planeInElem (int), empty (double), newCrack (short+2), pos (Vector), origPos (Vector),
-			aboveInElem (int), above (Vector) belowInElem (int), below (Vector)
+		plane element (int), empty (double), newCrack (short+2), pos (Vector), origPos (Vector),
+			above element (int), above (Vector) below element (int), below (Vector)
 	*/
     int crackRecSize=sizeof(int)+sizeof(double)+sizeof(short)+2;
 	//crackPosOffset=crackRecSize;

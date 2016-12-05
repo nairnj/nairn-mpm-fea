@@ -6,6 +6,7 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Custom_Tasks/PropagateTask.hpp"
 #include "Custom_Tasks/CalcJKTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
@@ -129,8 +130,8 @@ CustomTask *PropagateTask::StepCalculation(void)
                     
                     // if jump is .7 or more cells, divide propagation into multiple segments
                     int iseg,numSegs = 1;
-                    if(p*cellsPerPropagationStep>.7) numSegs= 2*(p*cellsPerPropagationStep+.25);
-                    CrackSegment *newCrkTip;
+                    if(p*cellsPerPropagationStep>.7) numSegs= (int)(2*(p*cellsPerPropagationStep+.25));
+                    CrackSegment *newCrkTip = NULL;
                     for(iseg=1;iseg<=numSegs;iseg++)
                     {   growTo.x=crkTip->x+(double)iseg*grow.x/(double)numSegs;
                         growTo.y=crkTip->y+(double)iseg*grow.y/(double)numSegs;
@@ -161,6 +162,6 @@ CustomTask *PropagateTask::StepCalculation(void)
 #pragma mark PropagateTask METHODS
 
 // turn crack propagation task on or off
-void PropagateTask::ArrestGrowth(int newArrest) { arrested=newArrest; }
+void PropagateTask::ArrestGrowth(bool newArrest) { arrested=newArrest; }
 bool PropagateTask::Arrested(void) { return arrested; }
 

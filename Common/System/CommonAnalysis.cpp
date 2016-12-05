@@ -6,6 +6,7 @@
     Copyright (c) 2006 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #ifdef MPM_CODE
 	#include "System/ArchiveData.hpp"
 	#include "Read_MPM/MPMReadHandler.hpp"
@@ -196,7 +197,8 @@ void CommonAnalysis::StartResultsOutput(void)
 	startCPU=clock();
 }
 
-//Main entry to read file and decode into objects
+// Main entry to read file and decode into objects
+// xmlFile are command arg - relative or full path, dos path in windows
 int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
 {
 	// set directory of input file
@@ -229,7 +231,7 @@ int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
         return XercesInitErr;
     }
 	
-	catch(std::bad_alloc& ba)
+	catch(std::bad_alloc&)
 	{	cerr << "\nMemory error initializing Xerces" << endl;
 		return XercesInitErr;
 	}
@@ -257,6 +259,7 @@ int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
 #else
 		// delete parser;			// not sure why cannot delete the parser in FEA code
 #endif
+		handler->FinishUp();
 		delete handler;
 		XMLPlatformUtils::Terminate();
     }

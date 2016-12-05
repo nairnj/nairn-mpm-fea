@@ -6,6 +6,7 @@
 	Copyright (c) 2012 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Elements/ElementBase.hpp"
@@ -64,8 +65,13 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
     
     // compact CPDI nodes into list of nodes (nds) and final shape function term (fn)
     // May need up to 8 (in 3D) for each of the numDnds (2 in 2D or 4 in 3D)
+#ifdef CONST_ARRAYS
+	int nds[8 * 4 + 1];
+	double fn[8 * 4 + 1];
+#else
     int nds[8*numDnds+1];
     double fn[8*numDnds+1];
+#endif
     int numCnds = CompactCornerNodes(numDnds,corners,cElem,ratio,nds,fn);
     
     // Particle information about field
@@ -73,11 +79,19 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 	int matfld = matID->GetField();									// material velocity field
 		
 	// get crack velocity fields, if they are needed
-	int numnds;
-    int sndsArray[maxShapeNodes],*snds;
+	int numnds = 0,*snds=NULL;
+#ifdef CONST_ARRAYS
+	int sndsArray[MAX_SHAPE_NODES];
+#else
+    int sndsArray[maxShapeNodes];
+#endif
 	if(firstCrack!=NULL)
 	{	const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
+#ifdef CONST_ARRAYS
+		double fn[MAX_SHAPE_NODES];
+#else
 		double fn[maxShapeNodes];
+#endif	
 		snds = sndsArray;
 		elref->GetShapeFunctions(fn,&snds,mpmptr);
 		numnds = snds[0];

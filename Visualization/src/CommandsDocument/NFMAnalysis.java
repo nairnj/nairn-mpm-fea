@@ -39,6 +39,10 @@ public class NFMAnalysis  implements Runnable
 	public static final int RUN_CHECK_MESH=1;
 	public static final int FULL_ANALYSIS=2;
 	public static final int SCRIPT_ONLY=3;
+	
+	public static final int MAC_UNIX=0;
+	public static final int WINDOWS_CYGWIN=1;
+	public static final int WINDOWS_EXE=2;
 
 	//----------------------------------------------------------------------------
 	// Initialize
@@ -67,6 +71,32 @@ public class NFMAnalysis  implements Runnable
 		// read command file name
 		File inFile=doc.getFile();
 		
+		// get shell command (if needed) and set command style
+		int commandStyle = MAC_UNIX;
+		String commandSep = ";";
+		String pathDelim = "/";
+		String bracket = "'";
+		String bashPath = NFMVPrefs.prefs.get(NFMVPrefs.ShellKey,NFMVPrefs.ShellDef);
+		if(NairnFEAMPMViz.isWindowsOS())
+		{	if(bashPath.indexOf("$(windows)")<0)
+				commandStyle = WINDOWS_CYGWIN;
+			else
+			{	commandStyle = WINDOWS_EXE;
+				commandSep = " &";
+				pathDelim = "\\";
+				bracket = "\"";
+			}
+		}
+		
+		// trap background run in windows
+		if(commandStyle==WINDOWS_EXE && doBackground)
+		{	String msg = "Windows command line binary cannot yet be run in background.\n";
+			msg = msg+"Use 'Run FEA/MPM Analysis' menu command instead.";
+			JNApplication.appBeep();
+			JOptionPane.showMessageDialog(doc,msg);
+			return;
+		}
+
 		// prepare output path and check on DTD validation by finding
 		// 		myCmd = path to executable
 		//		myDTD - path to DTD file
@@ -81,12 +111,20 @@ public class NFMAnalysis  implements Runnable
 				myCmd=NFMVPrefs.prefs.get(NFMVPrefs.NairnMPMKey,NFMVPrefs.NairnMPMDef);
 				myDTD=NFMVPrefs.prefs.get(NFMVPrefs.NairnMPMDTDKey,NFMVPrefs.NairnMPMDTDDef);
 				doValidate=NFMVPrefs.prefs.getBoolean(NFMVPrefs.NairnMPMValidateKey,NFMVPrefs.NairnMPMValidateDef);
+				if(myCmd.indexOf("$(bundle)")>=0)
+					myCmd=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnMPM.exe";
+				if(myDTD.indexOf("$(bundle)")>=0)
+					myDTD=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnMPM.dtd";
 			}
 			else
 			{	// get path to NairnFEA and NairnMPM
 				myCmd=NFMVPrefs.prefs.get(NFMVPrefs.NairnFEAKey,NFMVPrefs.NairnFEADef);
 				myDTD=NFMVPrefs.prefs.get(NFMVPrefs.NairnFEADTDKey,NFMVPrefs.NairnFEADTDDef);
 				doValidate=NFMVPrefs.prefs.getBoolean(NFMVPrefs.NairnFEAValidateKey,NFMVPrefs.NairnFEAValidateDef);
+				if(myCmd.indexOf("$(bundle)")>=0)
+					myCmd=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnFEA.exe";
+				if(myDTD.indexOf("$(bundle)")>=0)
+					myDTD=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnFEA.dtd";
 			}
 		}
 		else
@@ -112,10 +150,10 @@ public class NFMAnalysis  implements Runnable
 				return;
 			}
 		}
-		
+				
 		// insert DTD path if validating
 		if(doValidate)
-		{	if(!insertDTD(myDTD))
+		{	if(!insertDTD(myDTD,commandStyle))
 			{	JNApplication.appBeep();
 				JOptionPane.showMessageDialog(doc,"The XML input commands do not start with the required <?xml ...?> element.");
 				return;
@@ -144,7 +182,7 @@ public class NFMAnalysis  implements Runnable
 			outFile = soutConsole.getFile();
 			
 			// write temporary file to the selected output folder
-			tmpFile = saveCopyOfCommands(new File(outFile.getParent()+"/"+inFile.getName()));
+			tmpFile = saveCopyOfCommands(new File(outFile.getParent()+pathDelim+inFile.getName()));
 		}
 		else if(scriptInfo!=null)
 		{	// REMOTE_ACCESS script mode -----------------
@@ -268,37 +306,50 @@ public class NFMAnalysis  implements Runnable
 		if(tmpFile==null) return;
 			
 		// set commands and options
+		// bashcmds - list of commands to launch bash shell for cygwin or mac in background
 		ArrayList<String> bashcmds=new ArrayList<String>(20);
+		// pbcmds for process building
 		ArrayList<String> pbcmds=new ArrayList<String>(20);
 		
-		// start login bash shell
-		bashcmds.add(NFMVPrefs.prefs.get(NFMVPrefs.ShellKey,NFMVPrefs.ShellDef));
-		bashcmds.add("--login");
-		bashcmds.add("-c");
+		// start login bash shell (only used in cygwin or mac in backgorund)
+		if(commandStyle!=WINDOWS_EXE)
+		{	bashcmds.add(NFMVPrefs.prefs.get(NFMVPrefs.ShellKey,NFMVPrefs.ShellDef));
+			bashcmds.add("--login");
+			bashcmds.add("-c");
+		}
 		
-		// build shell command to run with bashcmds
+		// build shell command which will be
+		// cd (parent folder); (executable)
 		StringBuffer shell=new StringBuffer();
 		
-		// Get command to do to the parent folder director
+		// Get command to go to the parent folder directory
 		if(!NFMVPrefs.getRemoteMode())
 		{	// LOCAL_EXECUTION
-			// cd to local file directory
-			shell.append("cd ");
 			String shellCD = outFile.getParent();
-			if(NairnFEAMPMViz.isWindowsOS())
-			{	// shellCD=shellCD.replace('\\','/');
-				shellCD = PathToCygwin(shellCD);
+			if(commandStyle==WINDOWS_EXE)
+			{	if(shellCD.indexOf(':')==1)
+				{	shell.append(shellCD.substring(0,2)+commandSep+" ");
+				}
+				shell.append("CD ");
+				
+			}
+			else
+			{	if(commandStyle==WINDOWS_CYGWIN)
+					shellCD = PathToCygwin(shellCD);
+				shell.append("cd ");
 			}
 			if(shellCD.indexOf(' ') >= 0)
-				shell.append("'" + shellCD + "'; ");
+				shell.append(bracket + shellCD + bracket);
 			else
-				shell.append(shellCD + "; ");
+				shell.append(shellCD);
+			shell.append(commandSep+" ");
 		}
 
-		// executable (as shell command)
-		if(NairnFEAMPMViz.isWindowsOS())
-		{	//myCmd=myCmd.replace('\\','/');
-			myCmd=PathToCygwin(myCmd);
+		// executable (Mac and Exe to process builder, all to shell)
+		// pbcmds will be [(cmd),[options],(input)]
+		// shell will be cd (parent) ; (cmd) (options) (input)
+		if(commandStyle==WINDOWS_CYGWIN)
+		{	myCmd=PathToCygwin(myCmd);
 		}
 		else
 		{	// as direct process builder command
@@ -310,13 +361,12 @@ public class NFMAnalysis  implements Runnable
 				pbcmds.add(""+processors);
 			}
 		}
-		// command in a bash command
 		if(myCmd.indexOf(' ')>=0)
-			shell.append("'"+myCmd+"'");
+			shell.append(bracket+myCmd+bracket);
 		else
 			shell.append(myCmd);
 					
-		// options (-a to abort after setup, -v to validate, -np processors)
+		// shell options (-a to abort after setup, -v to validate, -np processors)
 		if(runType==RUN_CHECK_MESH) shell.append(" -a");
 		if(doValidate) shell.append(" -v");
 		if(processors>1) shell.append(" -np "+processors); 
@@ -324,12 +374,12 @@ public class NFMAnalysis  implements Runnable
 		// input file name to shell command
 		String inName = tmpFile.getName();
 		if(inName.indexOf(' ')>=0)
-			shell.append(" '"+inName+"'");
+			shell.append(" "+bracket+inName+bracket);
 		else
 			shell.append(" "+inName);
 		
 		// and to direct file name command
-		if(!NairnFEAMPMViz.isWindowsOS())
+		if(commandStyle!=WINDOWS_CYGWIN)
 			pbcmds.add(inName);
 		
 		// Finish building commands then launch thread (see run() method)
@@ -370,11 +420,11 @@ public class NFMAnalysis  implements Runnable
 				shell.append(" &");
 			}
 			
-			// can shell command to the bash shell login
+			// add shell command to the bash shell login
 			bashcmds.add(shell.toString());
 			
 			// create the process and set working directory
-			if(!NairnFEAMPMViz.isWindowsOS() && !doBackground)
+			if(commandStyle!=WINDOWS_CYGWIN && !doBackground)
 			{	builder = new ProcessBuilder(pbcmds);
 				builder.directory(outFile.getParentFile());
 				System.out.println(pbcmds);
@@ -393,7 +443,7 @@ public class NFMAnalysis  implements Runnable
 	}
 	
 	// insert DTD path into commands
-	public boolean insertDTD(String dtdPath)
+	public boolean insertDTD(String dtdPath,int commandStyle)
 	{
 		int offset=cmds.indexOf("<!DOCTYPE"),endOffset=0;
 		int docOffset=offset;
@@ -432,7 +482,7 @@ public class NFMAnalysis  implements Runnable
 		}
 		
 		// REMOTE_ACCESS - convert if not in root
-		if(!NFMVPrefs.getRemoteMode())
+		if(!NFMVPrefs.getRemoteMode() && commandStyle==WINDOWS_CYGWIN)
 			dtdPath=PathToCygwin(dtdPath);
 		
 		if(offset>0)
@@ -557,7 +607,7 @@ public class NFMAnalysis  implements Runnable
 				is.close();
 				process.destroy();
 			}
-			catch(IOException tpe)
+			catch(Exception tpe)
 			{	JNApplication.appBeep();
 				JOptionPane.showMessageDialog(doc,tpe.getLocalizedMessage());
 			}

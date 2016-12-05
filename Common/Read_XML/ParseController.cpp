@@ -6,6 +6,7 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_XML/ParseController.hpp"
 
 #pragma mark ParseController: Constructors and Destructor

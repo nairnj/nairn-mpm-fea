@@ -6,6 +6,7 @@
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/InitVelocityFieldsTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Patches/GridPatch.hpp"
@@ -42,8 +43,13 @@ void InitVelocityFieldsTask::Execute(void)
 #pragma omp parallel
 	{
 #ifndef LOAD_GIMP_INFO
+#ifdef CONST_ARRAYS
+		int ndsArray[MAX_SHAPE_NODES];
+		double fn[MAX_SHAPE_NODES];
+#else
 		int ndsArray[maxShapeNodes];
 		double fn[maxShapeNodes];
+#endif
 #endif
 		
 		int pn = GetPatchNumber();
@@ -128,7 +134,7 @@ void InitVelocityFieldsTask::Execute(void)
 							{   try
 								{   vfld = ndptr->AddCrackVelocityField(matfld,cfld);
 								}
-								catch(std::bad_alloc& ba)
+								catch(std::bad_alloc&)
 								{   if(initErr==NULL)
 										initErr = new CommonException("Memory error","InitVelocityFieldsTask::Execute");
 								}
@@ -140,7 +146,7 @@ void InitVelocityFieldsTask::Execute(void)
 						}
 						
 						// set material point velocity field for this node
-						mpmptr->vfld[i] = vfld;
+						mpmptr->vfld[i] = (char)vfld;
 					}
 					
 					// make sure material velocity field is created too
@@ -153,7 +159,7 @@ void InitVelocityFieldsTask::Execute(void)
 						{   try
 							{   ndptr->AddMatVelocityField(vfld,matfld);
 							}
-							catch(std::bad_alloc& ba)
+							catch(std::bad_alloc&)
 							{   if(initErr==NULL)
 									initErr = new CommonException("Memory error","InitVelocityFieldsTask::Execute");
 							}

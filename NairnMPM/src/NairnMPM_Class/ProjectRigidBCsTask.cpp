@@ -9,6 +9,7 @@
 	project them to the grid now.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/ProjectRigidBCsTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/RigidMaterial.hpp"

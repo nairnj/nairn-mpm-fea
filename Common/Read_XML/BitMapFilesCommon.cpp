@@ -7,21 +7,24 @@
     Copyright (c) 2004 RSAC Software. All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include <fstream>
 
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Read_XML/BMPLevel.hpp"
 #include "Read_XML/MaterialController.hpp"
+#include "Read_XML/XYBMPImporter.hpp"
 
 #ifdef MPM_CODE
 extern char rotationAxes[4];
 #endif
 
 // file type allowed in BMP command
-enum { BMP_INPUT_FILE=0,FPG_INPUT_FILE };
+enum { BMP_INPUT_FILE=0,FPG_INPUT_FILE,UNKNOWN_INPUT_FILE};
 
 //-----------------------------------------------------------
 // Check for bmp element, return false if not
+// throws std::bad_alloc, SAXException()
 //-----------------------------------------------------------
 short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,int expectedBlock)
 {
@@ -38,11 +41,10 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 		bwidth=bheight=-1.e9;		// < -1.e8 means dimension was not specified
 		bmpFileName[0]=0;
 		bmpAngleFileName[0]=0;
-		xorig=yorig=0.;
+		orig = MakeVector(0.,0.,-1.e9);		// //  < -1.e8 means zlevel was not specified
         yflipped=false;
-		zslice=0.;
 		aScaling=ReadUnits(attrs,LENGTH_UNITS);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
 #ifdef MPM_CODE
 		rotationAxes[0]=0;				// no rotations yet
 #endif
@@ -63,7 +65,7 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 		bwidth*=aScaling;
 		bheight*=aScaling;
 		if(bmpFileName[0]==0)
-            throw SAXException("<BMP> must specify the file in a name attribute.");
+            throw SAXException("Bit-mapped file must specify the file in a name attribute.");
 	}
 	
     //-----------------------------------------------------------
@@ -72,21 +74,21 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
     else if(strcmp(xName,"Origin")==0)
 	{	ValidateCommand(xName,BMPBLOCK,ANY_DIM);
 		aScaling=ReadUnits(attrs,LENGTH_UNITS);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"x")==0)
-			{	sscanf(value,"%lf",&xorig);
-				xorig*=aScaling;
+			{	sscanf(value,"%lf",&orig.x);
+				orig.x*=aScaling;
 			}
             else if(strcmp(aName,"y")==0)
-			{	sscanf(value,"%lf",&yorig);
-				yorig*=aScaling;
+			{	sscanf(value,"%lf",&orig.y);
+				orig.y*=aScaling;
 			}
             else if(strcmp(aName,"z")==0)
-			{	sscanf(value,"%lf",&zslice);
-				zslice*=aScaling;
+			{	sscanf(value,"%lf",&orig.z);
+				orig.z*=aScaling;
 			}
             else if(strcmp(aName,"flipped")==0)
 			{	if(strcmp(value,"yes")==0 || strcmp(value,"Yes")==0 || strcmp(value,"YES")==0 || strcmp(value,"1")==0 )
@@ -104,7 +106,7 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
     //-----------------------------------------------------------
     else if(strcmp(xName,"Intensity")==0)
 	{	ValidateCommand(xName,BMPBLOCK,ANY_DIM);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
 		int mat=-1;
 		int imin=-1;
 		int imax=-1;
@@ -141,8 +143,6 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 			throw SAXException(BMPError("<Intensity> range is not valid.",bmpFileName));
 		if(mat>=0)
 		{	BMPLevel *newLevel=new BMPLevel(mat,imin,imax);
-			if(newLevel==NULL)
-				throw SAXException(BMPError("<Intensity> failed due to memory error.",bmpFileName));
 			if(currentLevel==NULL)
 				firstLevel=newLevel;
 			else
@@ -194,6 +194,7 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 
 //-----------------------------------------------------------
 // Subroutine to set block on element end
+// throws std::bad_alloc, SAXException()
 //-----------------------------------------------------------
 short CommonReadHandler::EndBMPInput(char *xName,int exitBlock)
 {
@@ -256,234 +257,253 @@ int CommonReadHandler::BMPIndex(double value,int indexMax)
 
 //-----------------------------------------------------------
 // Subroutine to read BMP file
+// throws std::bad_alloc, SAXException()
 //-----------------------------------------------------------
-void CommonReadHandler::ReadBMPFile(char *bmpFullPath,BMPInfoHeader &info,unsigned char ***theData)
+void CommonReadHandler::ReadBMPFile(char *bmpFullPath,XYInfoHeader &info,unsigned char ***theData)
 {
-	short mustReverse=false,status=true;
-	FILE *fp;
-	unsigned int i,ncolors;
-	int row,col,rowBytes;
+	// get file extension
+	char ext[11];
+	GetFileExtension(bmpFullPath,ext,10);
 	
-	// decide what computer I am on
-    // byte order marker
-    int test=1;
-    char *testPtr=(char *)&test;
-    if(*testPtr==0) mustReverse=true;
-	
-	// open the file
-	if((fp=fopen(bmpFullPath,"r"))==NULL)
-		throw SAXException(BMPError("The <BMP> file could not be opened.",bmpFullPath));
-	
-	// get file type from extension (all upper or all lower case)
-	// If no extension, or unknown extension, assume to be BMP file
-	int fileType = BMP_INPUT_FILE;
-	int byteSize = 1;
-	int endLoc = strlen(bmpFullPath)-1;
-	int dotLoc = endLoc-1;
-	while(dotLoc>0 && bmpFullPath[dotLoc]!='.') dotLoc--;
-	if(dotLoc>0)
-	{	char ext[11];
-		dotLoc++;
-		int ei = 0;
-		while(ei<11 && dotLoc<=endLoc) ext[ei++]=bmpFullPath[dotLoc++];
-		
-		// look for supported extensions besides BMP
-	}
-	
-	// Read the file header (depending on file type)
-	
-	if(fileType==BMP_INPUT_FILE)
-	{	// read and check the header (individual reads due to Windows alignment issues)
-		BMPHeader header;
-		if(fread(header.type,2,1,fp)<1) status=false;
-		if(fread(&header.size,4,1,fp)<1) status=false;
-		if(fread(&header.reserved1,2,1,fp)<1) status=false;
-		if(fread(&header.reserved2,2,1,fp)<1) status=false;
-		if(fread(&header.offset,4,1,fp)<1) status=false;
-		if(!status)
-		{	fclose(fp);
-			throw SAXException(BMPError("Error reading the specified <BMP> file.",bmpFileName));
-		}
-		if(mustReverse)
-		{	Reverse((char *)&header.size,sizeof(int));
-			Reverse((char *)&header.offset,sizeof(int));
-		}
-		
-		// precalculate number of colors from header data
-		ncolors=(header.offset-14-40)>>2;
-		
-		// exit if does not look like BMP file
-		if(header.type[0]!='B' || header.type[1]!='M')
-		{	fclose(fp);
-			throw SAXException(BMPError("<BMP> file is not a valid bit map file.",bmpFileName));
-		}
-		
-		// read information
-		if(fread(&info.size,4,1,fp)<1) status=false;
-		if(fread(&info.width,4,1,fp)<1) status=false;
-		if(fread(&info.height,4,1,fp)<1) status=false;
-		if(fread(&info.planes,2,1,fp)<1) status=false;
-		if(fread(&info.bits,2,1,fp)<1) status=false;
-		if(fread(&info.compression,4,1,fp)<1) status=false;
-		if(fread(&info.imagesize,4,1,fp)<1) status=false;
-		if(fread(&info.xresolution,4,1,fp)<1) status=false;
-		if(fread(&info.yresolution,4,1,fp)<1) status=false;
-		if(fread(&info.ncolors,4,1,fp)<1) status=false;
-		if(fread(&info.importantcolors,4,1,fp)<1) status=false;
-		if(!status)
-		{	fclose(fp);
-			throw SAXException(BMPError("Error reading the specified <BMP> file.",bmpFileName));
-		}
-		if(mustReverse)
-		{	Reverse((char *)&info.size,sizeof(int));
-			Reverse((char *)&info.width,sizeof(int));
-			Reverse((char *)&info.height,sizeof(int));
-			Reverse((char *)&info.planes,2);
-			Reverse((char *)&info.bits,2);
-			Reverse((char *)&info.compression,sizeof(int));
-			Reverse((char *)&info.imagesize,sizeof(int));
-			Reverse((char *)&info.xresolution,sizeof(int));
-			Reverse((char *)&info.yresolution,sizeof(int));
-			Reverse((char *)&info.ncolors,sizeof(int));
-			Reverse((char *)&info.importantcolors,sizeof(int));
-		}
-		
-		// correct for Photoshop lack of information
-		if(info.imagesize==0)
-			info.imagesize=header.size-header.offset;
-		if(info.ncolors==0)
-			info.ncolors=ncolors;
-		
-		// can I read this BMP file
-		if(info.planes!=1)
-		{	fclose(fp);
-			throw SAXException(BMPError("Cannot read <BMP> files with more than 1 color plane.",bmpFileName));
-		}
-		if(info.compression!=0)
-		{	fclose(fp);
-			throw SAXException(BMPError("Cannot read compressed <BMP> files.",bmpFileName));
-		}
-		if(info.ncolors!=ncolors || (ncolors!=2 && ncolors!=16 && ncolors!=256))
-		{	fclose(fp);
-			throw SAXException(BMPError("<BMP> files does not appear to be 1, 4, or 8 bit grayscale image.",bmpFileName));
-		}
-		
-		// read the 2, 16, or 256 colors
-		unsigned char blueByte,greenByte,redByte,junkByte;
-		for(i=0;i<ncolors;i++)
-		{	if(fread(&blueByte,1,1,fp)<1) status=false;
-			if(fread(&greenByte,1,1,fp)<1) status=false;
-			if(fread(&redByte,1,1,fp)<1) status=false;
-			if(fread(&junkByte,1,1,fp)<1) status=false;
-			if(!status)
-			{	fclose(fp);
-				throw SAXException(BMPError("<BMP> color table is corrupted.",bmpFileName));
-			}
-			intensity[i]=((int)blueByte+(int)greenByte+(int)blueByte)/3;
-		}
-		
-		// read one byte at a time (which might have multiple points) but each
-		//	row is multiple of 4 bytes
-		int colorsPerByte=1;
-		if(ncolors==16)
-			colorsPerByte=2;
-		else if(ncolors==2)
-			colorsPerByte=8;
-		rowBytes=info.width/colorsPerByte;
-		if(rowBytes%4!=0)
-			rowBytes+=4-(rowBytes % 4);
-		
-		// BMP files do not know actual size
-		info.knowsCellSize = false;
-	}
-	
+	// get file type from extension (case insensitive)
+	XYFileImporter *xyFile = NULL;
+	if(CIstrcmp(ext,"bmp")==0)
+		xyFile = (XYFileImporter *)new XYBMPImporter(bmpFullPath);
 	else
-	{	// Read header of any other defined binary file types
-	}
+		throw SAXException(BMPError("The bit mapped file type is not recognized.",bmpFullPath));
 	
+	// Read the file header
+	xyFile->GetXYFileHeader(info);
+
 	// buffer to read the file
-	unsigned char **rows=new unsigned char *[info.height];
+	unsigned char **rows=new (nothrow) unsigned char *[info.height];
 	*theData=rows;
 	if(rows==NULL)
-	{	fclose(fp);
-		throw SAXException(BMPError("Out of memory reading <BMP> file.",bmpFileName));
+	{	delete xyFile;
+		throw SAXException(BMPError("Out of memory reading bit mapped file file.",bmpFullPath));
 	}
-	for(row=0;row<info.height;row++)
-	{	rows[row]=new unsigned char[info.width];
+	for(int row=0;row<info.height;row++)
+	{	rows[row]=new (nothrow) unsigned char[info.width];
 		if(rows[row]==NULL)
-		{	fclose(fp);
-			throw SAXException(BMPError("Out of memory reading <BMP> file.",bmpFileName));
+		{	delete xyFile;
+			throw SAXException(BMPError("Out of memory reading bit mapped file file.",bmpFullPath));
 		}
 	}
 	
-	// check size
-	unsigned int expectSize=(unsigned int)(info.height*rowBytes);
-	if(info.imagesize<expectSize)
-	{	fclose(fp);
-		throw SAXException(BMPError("<BMP> file size does not match expected data size.",bmpFileName));
-	}
-	
-	// scan each row (depending on file type)
-	if(fileType == BMP_INPUT_FILE)
-	{	unsigned char dataByte,mask;
-		int colByte;
-		
-		// loop over rows
-		for(row=0;row<info.height;row++)
-		{	// each row has chunks of rwoBytes bytes
-			col=0;
-			for(colByte=0;colByte<rowBytes;colByte++)
-			{	// read next byte
-				if(fread(&dataByte,byteSize,1,fp)<1)
-				{	fclose(fp);
-					throw SAXException(BMPError("Error reading image date of <BMP> file.",bmpFileName));
-				}
-				if(col>=info.width) continue;
-				switch(ncolors)
-				{	case 256:		// each byte is an index
-						rows[row][col]=intensity[dataByte];
-						col++;
-						break;
-					case 16:		// each byte has two indices
-						rows[row][col]=intensity[(dataByte&0xF0)>>4];
-						col++;
-						if(col>=info.width) break;
-						rows[row][col]=intensity[dataByte&0x0F];
-						col++;
-						break;
-					case 2:
-						mask=0x80;
-						for(i=1;i<=8;i++)
-						{	rows[row][col]=intensity[(dataByte&mask)>>(8-i)];
-							col++;
-							if(col>=info.width) break;
-							mask>>=1;
-						}
-						break;
-					default:
-						break;
-				}
-			}
-		}
-	}
-	
-	else
-	{	// Read any other supported binary type
-	}
+	// read the data
+	xyFile->ReadXYFileData(rows,info);
 	
 	// close the file
-	fclose(fp);
+	delete xyFile;
 }
 
 // create error message with bmp file name
 char *CommonReadHandler::BMPError(const char *msg,const char *fileName)
 {
-	char *error=new char[strlen(msg)+strlen(fileName)+10];
-	strcpy(error,msg);
-	strcat(error," (file: ");
-	strcat(error,fileName);
-	strcat(error,")");
-	return error;
+	char *error=new (nothrow) char[strlen(msg)+strlen(fileName)+10];
+	if(error != NULL)
+	{	strcpy(error,msg);
+		strcat(error," (file: ");
+		strcat(error,fileName);
+		strcat(error,")");
+		return error;
+	}
+	else
+		return (char *)msg;
+}
+
+// Give input width, height, zlevel and file info, decode into final image width, height, and zlevel and
+// x and y length per pixel (note - dimensiones are not scaled from mm)
+// If error, return string
+const char *CommonReadHandler::DecodeBMPWidthAndHeight(XYInfoHeader info,double &width,double &height,double &zlevel,Vector &pw,bool is3D)
+{
+	// height and width from input (<-1.e8 means not provided)
+	//   other negative value means it is mm/pixel, positive is total size
+	// if not provided, file might have it, but if provided, file not used
+	pw.x=-1.;
+	pw.y=-1.;
+	if(width<-1.e8 && height<-1.e8)
+	{	if(!info.knowsCellSize)
+			return "Image file settings must specify width and/or height as size or pixels per mm.";
+		width = info.width*info.xcell;
+		height = info.height*info.ycell;
+		pw.x = info.xcell;
+		pw.y = info.ycell;
+	}
+	else
+	{	// here means one or both was provided
+		if(height<0. && height>-1.e8)
+		{	pw.y = -height;
+			height = pw.y*(double)info.height;
+		}
+		if(width<0. && width>-1.e8)
+		{	pw.x = -width;
+			width = pw.x*(double)info.width;
+		}
+	}
+	
+	// total dimensions (if only one is known, find the other, never have both unknown)
+	if(height<0) height = width*(double)info.height/(double)info.width;
+	if(width<0) width = height*(double)info.width/(double)info.height;
+	
+	// final mm per pixel (if needed)
+	if(pw.x<0.) pw.x = width/(double)info.width;
+	if(pw.y<0.) pw.y = height/(double)info.height;
+	
+	// set zlevel (but only for 3D)
+	if(is3D && zlevel<-1.e8)
+	{	if(!info.knowsCellSize)
+			zlevel = 0.;
+		else
+			zlevel = info.zlevel;
+	}
+	else
+		zlevel = 0.;
+	
+	return NULL;
+}
+
+// Input: info is from the bit mapper file reading
+// spot is position to inspect
+// orig = (xorigin,yorigin,zlevel)
+// del = (deltax,deltay,deltaz) (deltaz<0 for 3D)
+// pw = (xpw,ypw,+/-1) - pixel width, last is -1 to flip
+// width and height of image
+// return row and column ranges and weights of first and last one
+bool CommonReadHandler::MapDomainToImage(XYInfoHeader info,Vector spot,Vector orig,Vector del,Vector pw,
+										 double width,double height,DomainMap &map)
+{
+	// if point in the view area, then check it
+	if((spot.x>=orig.x && spot.x<orig.x+width) && (spot.y>=orig.y && spot.y<orig.y+height))
+	{	// for 3D, check z as well
+		if(del.z>0. && (spot.z<orig.z-del.z || spot.z>=orig.z+del.z)) return false;
+		
+		// find range of rows and cols for pixels over this material point
+		double rmin,rmax;
+		if(pw.z<0.)
+		{   rmin = (orig.y+height-spot.y-del.y)/pw.y;
+			rmax = (orig.y+height-spot.y-del.y)/pw.y;
+		}
+		else
+		{   rmin = (spot.y-del.y-orig.y)/pw.y;
+			rmax = (spot.y+del.y-orig.y)/pw.y;
+		}
+		map.r1 = BMPIndex(rmin,info.height);
+		map.r2 = BMPIndex(rmax,info.height);
+		if(map.r2==map.r1)
+		{	// a single row
+			map.wtr1 = map.wtr2 = 1.;
+		}
+		else
+		{	// fractional weight for first and last row in case not all within the extent
+			map.wtr1 = (double)(map.r1+1)-rmin;
+			map.wtr2 = rmax-(double)map.r2;
+		}
+		
+		double cmin=(spot.x-del.x-orig.x)/pw.x;
+		double cmax=(spot.x+del.x-orig.x)/pw.y;
+		map.c1 = BMPIndex(cmin,info.width);
+		map.c2 = BMPIndex(cmax,info.width);
+		if(map.c2==map.c1)
+		{	// a single column
+			map.wtc1 = map.wtc2 = 1.;
+		}
+		else
+		{	// fractional weight for first and last col in case not all within the extent
+			map.wtc1 = (double)(map.c1+1)-cmin;
+			map.wtc2 = cmax-(double)map.c2;
+		}
+		
+		return true;
+	}
+	
+	// not in the image
+	return false;
+}
+
+// Find the most prominent level withing a domain on top of and bmp grid
+BMPLevel *CommonReadHandler::FindBMPLevel(BMPLevel *startLevel,DomainMap map,unsigned char **rows)
+{
+	// clear level weights
+	BMPLevel *nextLevel = startLevel;
+	while(nextLevel!=NULL) nextLevel = nextLevel->ClearWeight();
+		
+	// add weights
+	double rweight,weight;
+	for(int row=map.r1;row<=map.r2;row++)
+	{	// get weight for this row (first and last may differ)
+		if(row==map.r1)
+			rweight=map.wtr1;
+		else if(row==map.r2)
+			rweight=map.wtr2;
+		else
+			rweight=1.;
+		for(int col=map.c1;col<=map.c2;col++)
+		{	// get weight for this column (first and last may differ)
+			if(col==map.c1)
+				weight=rweight*map.wtc1;
+			else if(col==map.c2)
+				weight=rweight*map.wtc2;
+			else
+				weight=rweight;
+				
+			// find ID (i.e., material) at this level
+			// (note: last level with ID=0 catches empty space when doing materials)
+			nextLevel=startLevel;
+			while(nextLevel!=NULL)
+			{	int levID=nextLevel->Material(rows[row][col],weight);
+				if(levID>=0) break;
+				nextLevel=(BMPLevel *)nextLevel->GetNextObject();
+			}
+		}
+	}
+	
+	// find level with maximum weight (may be empty space when doing materials)
+	// it will be NULL if all weights are zero
+	weight=0.;
+	BMPLevel *maxLevel = NULL;
+	nextLevel = startLevel;
+	while(nextLevel!=NULL) nextLevel=nextLevel->MaximumWeight(weight,&maxLevel);
+	return maxLevel;
+}
+
+// Search domain and find weight average of pixel values in the domain
+// If find any value calculate average and return true, otherwise return false
+double CommonReadHandler::FindAverageValue(DomainMap map,unsigned char **rows)
+{
+	// initialize
+	double totalIntensity=0.;
+	double totalWeight=0.;
+	
+	// scan the domain
+	double rweight,weight;
+	for(int row=map.r1;row<=map.r2;row++)
+	{	// get weight for row (first and last may differ
+		if(row==map.r1)
+			rweight=map.wtr1;
+		else if(row==map.r2)
+			rweight=map.wtr2;
+		else
+			rweight=1.;
+		
+		for(int col=map.c1;col<=map.c2;col++)
+		{	// get weigth for column (first and last may differ
+			if(col==map.c1)
+				weight=rweight*map.wtc1;
+			else if(col==map.c2)
+				weight=rweight*map.wtc2;
+			else
+				weight=rweight;
+			
+			// add pixel value
+			totalIntensity += weight*rows[row][col];
+			totalWeight += weight;
+		}
+	}
+	
+	// get weight average value
+	if(totalWeight>0.) totalIntensity /= totalWeight;
+	return totalIntensity;
 }
 
 

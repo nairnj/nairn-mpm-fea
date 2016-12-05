@@ -1,0 +1,454 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{402DEB67-A73F-4592-BD53-AB13F1B86F27}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>NairnMPM</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir)..\..\..\..\..\xerces-c-3.1.4\src;$(ProjectDir);$(SolutionDir)..\..\..\..\NairnMPM\src;$(SolutionDir)..\..\..;$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)Build\$(Configuration)-$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)Build\$(Configuration)-$(Platform)\$(ProjectName)-data\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <DisableSpecificWarnings>4068;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <EnableParallelCodeGeneration>
+      </EnableParallelCodeGeneration>
+      <OpenMPSupport>true</OpenMPSupport>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\..\..\xerces-c-3.1.4\Build\Win64\VC14\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>xerces-c_3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\BoundaryCondition.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtFluxBC.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtHeatFluxBC.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtLoadBC.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtTractionBC.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalConcBC.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalTempBC.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalVelBC.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\ContourPoint.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackHeader.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackLeaf.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackNode.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackSegment.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackSurfaceContact.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrossedCrack.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\AdjustTimeStepTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CalcJKTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CarnotCycle.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTaskMulti.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTaskSingle.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CSVArchive.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CustomTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CustomThermalRamp.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\DiffusionTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\GridArchive.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\HistoryArchive.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\LoadControl.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PropagateTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ReverseLoad.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TransportTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\VTKArchive.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Elements\EightNodeIsoparamBrick.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Elements\ElementBase3D.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Exceptions\MPMWarnings.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Global_Quantities\BodyForce.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Global_Quantities\GlobalQuantity.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Global_Quantities\ThermalRamp.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\AdhesionFriction.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\AnisoMembrane.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\AnisoPlasticity.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\BistableIsotropic.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\ClampedNeohookean.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CohesiveZone.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\ContactLaw.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CoulombFriction.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CoupledSawTooth.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CubicTraction.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\DDBHardening.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\FailureSurface.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HardeningLawBase.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HEIsotropic.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HEMGEOSMaterial.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HillPlastic.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HyperElastic.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IdealGas.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticity.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoSoftening.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\JohnsonCook.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LinearHardening.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LinearInterface.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LinearTraction.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Mooney.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\MooneyMembrane.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Neohookean.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Nonlinear2Hardening.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\NonlinearHardening.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\PhaseTransitionMat.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\PressureLaw.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\RigidMaterial.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SCGLHardening.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SLMaterial.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TaitLiquid.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TIFailureSurface.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TractionLaw.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TransIsoSoftening.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Viscoelastic.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\WoodMaterial.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint2D.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint3D.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPointAS.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPoint2D.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPoint3D.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPointAS.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MPMBase.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ExtrapolateRigidBCsTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\GridForcesTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\InitializationTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\InitVelocityFieldsTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MassAndMomentumTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MeshInfo.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MoveCracksTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MPMTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\NairnMPM.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\PostExtrapolationTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\PostForcesTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ProjectRigidBCsTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ResetElementsTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\RunCustomTasksTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\SetRigidContactVelTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateMomentaTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateParticlesTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsFirstTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastContactTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityField.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldMulti.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldSingle.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MaterialInterfaceNode.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityField.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityFieldPS.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Patches\GhostNode.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Patches\GridPatch.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\AreaOfInterest.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\CrackController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\MPMReadHandler.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\MpsController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\PolyhedronController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\PolyTriangle.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\ShellController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\SphereController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\TorusController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\System\ArchiveData.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\System\MPMPrefix.hpp" />
+    <ClInclude Include="..\..\..\..\Elements\ElementBase.hpp" />
+    <ClInclude Include="..\..\..\..\Elements\FourNodeIsoparam.hpp" />
+    <ClInclude Include="..\..\..\..\Elements\Lagrange2D.hpp" />
+    <ClInclude Include="..\..\..\..\Elements\Linear2D.hpp" />
+    <ClInclude Include="..\..\..\..\Elements\Quad2D.hpp" />
+    <ClInclude Include="..\..\..\..\Exceptions\CommonException.hpp" />
+    <ClInclude Include="..\..\..\..\Exceptions\StrX.hpp" />
+    <ClInclude Include="..\..\..\..\Materials\Elastic.hpp" />
+    <ClInclude Include="..\..\..\..\Materials\IsotropicMat.hpp" />
+    <ClInclude Include="..\..\..\..\Materials\MaterialBase.hpp" />
+    <ClInclude Include="..\..\..\..\Materials\Orthotropic.hpp" />
+    <ClInclude Include="..\..\..\..\Materials\TransIsotropic.hpp" />
+    <ClInclude Include="..\..\..\..\Nodes\NodalPoint.hpp" />
+    <ClInclude Include="..\..\..\..\Nodes\NodalPoint2D.hpp" />
+    <ClInclude Include="..\..\..\..\Nodes\NodalPoint3D.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\ArcController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\BMPLevel.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\BoxController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\CommonReadHandler.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\ElementsController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\LineController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\MaterialController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\mathexpr.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\NodesController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\OvalController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\ParseController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\PointController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\PolygonController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\RectController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\ShapeController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\XYBMPImporter.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\XYFileImporter.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\XYFPGImporter.hpp" />
+    <ClInclude Include="..\..\..\..\System\CommonAnalysis.hpp" />
+    <ClInclude Include="..\..\..\..\System\CommonArchiveData.hpp" />
+    <ClInclude Include="..\..\..\..\System\CommonTask.hpp" />
+    <ClInclude Include="..\..\..\..\System\DataTypes.hpp" />
+    <ClInclude Include="..\..\..\..\System\LinkedObject.hpp" />
+    <ClInclude Include="..\..\..\..\System\Matrix3.hpp" />
+    <ClInclude Include="..\..\..\..\System\UnitsController.hpp" />
+    <ClInclude Include="stdafx.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\BoundaryCondition.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtFluxBC.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtHeatFluxBC.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtLoadBC.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtTractionBC.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalConcBC.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalTempBC.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalVelBC.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\ContourPoint.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackHeader.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackLeaf.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackNode.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackSegment.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackSurfaceContact.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrossedCrack.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\AdjustTimeStepTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CalcJKTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CarnotCycle.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTaskMulti.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTaskSingle.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CSVArchive.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CustomTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CustomThermalRamp.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\DiffusionTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\GridArchive.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\HistoryArchive.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\LoadControl.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PropagateTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ReverseLoad.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TransportTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\VTKArchive.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Elements\EightNodeIsoparamBrick.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Elements\ElementBase3D.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Elements\MoreMPMElementBase.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Exceptions\MPMWarnings.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Global_Quantities\BodyForce.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Global_Quantities\GlobalQuantity.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Global_Quantities\ThermalRamp.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\AdhesionFriction.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\AnisoMembrane.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\AnisoPlasticity.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\BistableIsotropic.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ClampedNeohookean.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\CohesiveZone.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ContactLaw.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\CoulombFriction.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\CoupledSawTooth.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\CubicTraction.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\DDBHardening.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ElasticMPM.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\FailureSurface.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HardeningLawBase.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HEIsotropic.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HEMGEOSMaterial.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HillPlastic.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HyperElastic.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IdealGas.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticity.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoSoftening.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\JohnsonCook.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LinearHardening.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LinearInterface.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LinearTraction.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\MaterialBaseMPM.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Mooney.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\MooneyMembrane.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\MoreIsotropicMat.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Neohookean.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Nonlinear2Hardening.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\NonlinearHardening.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\PhaseTransitionMat.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\PressureLaw.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\RigidMaterial.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SCGLHardening.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SLMaterial.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TaitLiquid.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TIFailureSurface.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TractionLaw.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TransIsoSoftening.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Viscoelastic.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\WoodMaterial.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint2D.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint3D.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPointAS.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPoint2D.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPoint3D.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPointAS.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MPMBase.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ExtrapolateRigidBCsTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\GridForcesTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\InitializationTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\InitVelocityFieldsTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MassAndMomentumTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MeshInfo.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MoveCracksTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\MPMTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\NairnMPM.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\PostExtrapolationTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\PostForcesTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ProjectRigidBCsTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ResetElementsTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\RunCustomTasksTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\SetRigidContactVelTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\StartOutput.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateMomentaTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateParticlesTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsFirstTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastContactTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityField.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldMulti.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldSingle.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\MaterialInterfaceNode.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityField.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityFieldPS.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\NodalPointMPM.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Patches\GhostNode.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Patches\GridPatch.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\AreaOfInterest.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\BitMapFiles.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\CrackController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\Generators.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\MPMReadHandler.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\MpsController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\PolyhedronController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\PolyTriangle.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\ShellController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\SphereController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\TorusController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\System\ArchiveData.cpp" />
+    <ClCompile Include="..\..\..\..\Elements\ElementBase.cpp" />
+    <ClCompile Include="..\..\..\..\Elements\FourNodeIsoparam.cpp" />
+    <ClCompile Include="..\..\..\..\Elements\Lagrange2D.cpp" />
+    <ClCompile Include="..\..\..\..\Elements\Linear2D.cpp" />
+    <ClCompile Include="..\..\..\..\Elements\Quad2D.cpp" />
+    <ClCompile Include="..\..\..\..\Exceptions\CommonException.cpp" />
+    <ClCompile Include="..\..\..\..\Materials\Elastic.cpp" />
+    <ClCompile Include="..\..\..\..\Materials\IsotropicMat.cpp" />
+    <ClCompile Include="..\..\..\..\Materials\MaterialBase.cpp" />
+    <ClCompile Include="..\..\..\..\Materials\Orthotropic.cpp" />
+    <ClCompile Include="..\..\..\..\Materials\TransIsotropic.cpp" />
+    <ClCompile Include="..\..\..\..\Nodes\NodalPoint.cpp" />
+    <ClCompile Include="..\..\..\..\Nodes\NodalPoint2D.cpp" />
+    <ClCompile Include="..\..\..\..\Nodes\NodalPoint3D.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\ArcController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\BitMapFilesCommon.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\BMPLevel.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\BoxController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\CommonReadHandler.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\ElementsController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\LineController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\MaterialController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\mathexpr.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\NodesController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\OvalController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\ParseController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\PointController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\PolygonController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\RectController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\ShapeController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\XYBMPImporter.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\XYFileImporter.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\XYFPGImporter.cpp" />
+    <ClCompile Include="..\..\..\..\System\CommonAnalysis.cpp" />
+    <ClCompile Include="..\..\..\..\System\CommonArchiveData.cpp" />
+    <ClCompile Include="..\..\..\..\System\CommonTask.cpp" />
+    <ClCompile Include="..\..\..\..\System\CommonUtilities.cpp" />
+    <ClCompile Include="..\..\..\..\System\LinkedObject.cpp" />
+    <ClCompile Include="..\..\..\..\System\main.cpp" />
+    <ClCompile Include="..\..\..\..\System\Matrix3.cpp" />
+    <ClCompile Include="..\..\..\..\System\svninfo.cpp" />
+    <ClCompile Include="..\..\..\..\System\UnitsController.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\..\NairnMPM\build\makefile" />
+    <None Include="..\..\..\..\..\NairnMPM\input\NairnMPM.dtd" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

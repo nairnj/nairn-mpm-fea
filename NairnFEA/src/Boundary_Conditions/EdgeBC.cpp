@@ -6,6 +6,7 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Boundary_Conditions/EdgeBC.hpp"
 #include "Elements/ElementBase.hpp"
 

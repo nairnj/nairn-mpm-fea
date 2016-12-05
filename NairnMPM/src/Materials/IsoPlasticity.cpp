@@ -9,6 +9,7 @@
 		Orthotropic.hpp (TranIsotropic.hpp, MaterialBase.hpp)
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "IsoPlasticity.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"

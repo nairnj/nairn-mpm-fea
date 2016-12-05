@@ -24,6 +24,7 @@
 			3: ABORT: Stop the analysis immediately
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Custom_Tasks/ReverseLoad.hpp"
 #include "Custom_Tasks/PropagateTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
@@ -276,7 +277,7 @@ CustomTask *ReverseLoad::FinishForStep(bool &removeMe)
                 throw CommonException("Crack has reached specified length","ReverseLoad::FinishForStep");
             
             // stop propgation
-            propagateTask->ArrestGrowth(TRUE);
+            propagateTask->ArrestGrowth(true);
             cout << "# Crack growth arrested at time t: " << mtime*UnitsController::Scaling(1.e3)
 				<< " " << UnitsController::Label(ALTTIME_UNITS) << endl;
         }

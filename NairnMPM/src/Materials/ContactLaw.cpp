@@ -9,6 +9,7 @@
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/ContactLaw.hpp"
 #include "Read_XML/MaterialController.hpp"
 #include "Materials/CoulombFriction.hpp"

@@ -30,27 +30,27 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 
 	// path to NairnMPM binary
 	public static String NairnMPMKey = "NairnMPM Path";
-	public static String NairnMPMDef = "/usr/local/bin/NairnMPM";
+	public static String NairnMPMDef = "$(bundle)";
 
 	// path to NairnMPM dtd
 	public static String NairnMPMDTDKey = "NairnMPM DTD File Path";
-	public static String NairnMPMDTDDef = "/usr/local/include/NairnMPM.dtd";
+	public static String NairnMPMDTDDef = "$(bundle)";
 	public static String NairnMPMValidateKey = "Validate MPM Calculations";
 	public static boolean NairnMPMValidateDef = true;
 
 	// path to NairnFEA binary
 	public static String NairnFEAKey = "NairnFEA Path";
-	public static String NairnFEADef = "/usr/local/bin/NairnFEA";
+	public static String NairnFEADef = "$(bundle)";
 
 	// path to NairnFEA DTD
 	public static String NairnFEADTDKey = "NairnFEA DTD File Path";
-	public static String NairnFEADTDDef = "/usr/local/include/NairnFEA.dtd";
+	public static String NairnFEADTDDef = "$(bundle)";
 	public static String NairnFEAValidateKey = "Validate MPM Calculations";
 	public static boolean NairnFEAValidateDef = true;
 
 	// path to shell command
 	public static String ShellKey = "Shell Path";
-	public static String ShellDef = "/bin/bash";
+	public static String ShellDef = "$(windows)";
 
 	// path to workspace folder
 	public static String WorkSpaceKey = "Workspace Folder";
@@ -553,10 +553,12 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	public void actionPerformed(ActionEvent e)
 	{   String theCmd=e.getActionCommand();
 
-	if(theCmd.equals("MPM Code"))
+		if(theCmd.equals("MPM Code"))
 		{	int result=chooser.showOpenDialog(this);
 			if(result==JFileChooser.CANCEL_OPTION) return;
 			String newPath=chooser.getSelectedFile().getPath();
+			if(newPath.indexOf("$(bundle)")>=0)
+				newPath = "$(bundle)";
 			mpmCodePath.setText(newPath);
 			prefs.put(NairnMPMKey,newPath);
 		}
@@ -569,6 +571,8 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		{	int result=chooser.showOpenDialog(this);
 			if(result==JFileChooser.CANCEL_OPTION) return;
 			String newPath=chooser.getSelectedFile().getPath();
+			if(newPath.indexOf("$(bundle)")>=0)
+				newPath = "$(bundle)";
 			mpmDTDPath.setText(newPath);
 			prefs.put(NairnMPMDTDKey,newPath);
 		}
@@ -577,6 +581,8 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		{	int result=chooser.showOpenDialog(this);
 			if(result==JFileChooser.CANCEL_OPTION) return;
 			String newPath=chooser.getSelectedFile().getPath();
+			if(newPath.indexOf("$(bundle)")>=0)
+				newPath = "$(bundle)";
 			feaCodePath.setText(newPath);
 			prefs.put(NairnFEAKey,newPath);
 		}
@@ -613,6 +619,8 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		{	int result=chooser.showOpenDialog(this);
 			if(result==JFileChooser.CANCEL_OPTION) return;
 			String newPath=chooser.getSelectedFile().getPath();
+			if(newPath.indexOf("$(bundle)")>=0)
+				newPath = "$(bundle)";
 			feaDTDPath.setText(newPath);
 			prefs.put(NairnFEADTDKey,newPath);
 		}
@@ -621,6 +629,8 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		{	int result=chooser.showOpenDialog(this);
 			if(result==JFileChooser.CANCEL_OPTION) return;
 			String newPath=chooser.getSelectedFile().getPath();
+			if(newPath.indexOf("$(windows)")>=0)
+				newPath = "$(windows)";
 			shellPath.setText(newPath);
 			prefs.put(ShellKey,newPath);
 		}

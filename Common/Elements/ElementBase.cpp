@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 
@@ -114,11 +115,11 @@ double ElementBase::GetCenterX(void) const { return 0.5*(xmax+xmin); }
 double ElementBase::GetDeltaX(void) const { return xmax-xmin; }
 double ElementBase::GetDeltaY(void) const { return ymax-ymin; }
 double ElementBase::GetDeltaZ(void) const { return GetThickness(); }
-bool ElementBase::IntersectsBox(double xorig,double yorig,double xlength,double ylength,double zslice) const
-{	if(xmax<xorig) return false;
-	if(xmin>xorig+xlength) return false;
-	if(ymax<yorig) return false;
-	if(ymin>yorig+ylength) return false;
+bool ElementBase::IntersectsBox(Vector orig,double xlength,double ylength) const
+{	if(xmax<orig.x) return false;
+	if(xmin>orig.x+xlength) return false;
+	if(ymax<orig.y) return false;
+	if(ymin>orig.y+ylength) return false;
 	return true;
 }
 

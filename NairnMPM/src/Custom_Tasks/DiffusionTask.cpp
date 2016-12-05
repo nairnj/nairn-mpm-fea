@@ -19,6 +19,7 @@
         Flux set as mass per area per sec. See documentation for conversions.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Elements/ElementBase.hpp"
@@ -134,12 +135,18 @@ void DiffusionTask::ImposeValueBCs(double stepTime)
 }
 
 // Get gradients in Vp * cp on particles
+// throws CommonException()
 TransportTask *DiffusionTask::GetGradients(double stepTime)
 {
     CommonException *transErr = NULL;
+#ifdef CONST_ARRAYS
+	int ndsArray[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
+#else
 	int ndsArray[maxShapeNodes];
-    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
-    
+	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+#endif
+
 	// in case 2D planar
     for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
 	
@@ -161,7 +168,7 @@ TransportTask *DiffusionTask::GetGradients(double stepTime)
                 mptr->AddConcentrationGradient(ScaleVector(&deriv,nd[nds[i]]->gConcentration));
             }
         }
-        catch(CommonException err)
+        catch(CommonException& err)
         {   if(transErr!=NULL)
             {
 #pragma omp critical (error)

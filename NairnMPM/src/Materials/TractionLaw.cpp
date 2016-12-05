@@ -6,6 +6,7 @@
     Copyright (c) 2008 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/TractionLaw.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "System/ArchiveData.hpp"

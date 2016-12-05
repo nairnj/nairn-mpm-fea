@@ -18,6 +18,7 @@
 		2. Other the same (except mass treated different and transport is skipped)
  ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/MassAndMomentumTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/RigidMaterial.hpp"
@@ -45,8 +46,13 @@ MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
 void MassAndMomentumTask::Execute(void)
 {   
 	CommonException *massErr = NULL;
+#ifdef CONST_ARRAYS
+	double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
+	int ndsArray[MAX_SHAPE_NODES];
+#else
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
     int ndsArray[maxShapeNodes];
+#endif
 
 	// loop over non-rigid and rigid contact particles - this parallel part changes only particle p
 	// mass, momenta, etc are stored on ghost nodes, which are sent to real nodes in next non-parallel loop

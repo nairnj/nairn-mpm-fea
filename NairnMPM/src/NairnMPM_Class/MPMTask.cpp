@@ -6,6 +6,7 @@
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/MPMTask.hpp"
 #include "System/ArchiveData.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
@@ -79,7 +80,7 @@ NodalPoint *MPMTask::GetNodePointer(int pn,int nodeNum)
 }
 
 // return number of threads (>1 if in parallel section)
-bool MPMTask::GetNumberOfThreads(void)
+int MPMTask::GetNumberOfThreads(void)
 {
 #ifdef _OPENMP
 	return omp_get_num_threads();

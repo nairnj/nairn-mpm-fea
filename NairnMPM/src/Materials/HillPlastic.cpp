@@ -9,6 +9,7 @@
 		AnisoPlasticity.hpp (Orthotropic.hpp, TranIsotropic.hpp, MaterialBase.hpp)
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "HillPlastic.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 

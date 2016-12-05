@@ -126,9 +126,9 @@ The plane stress stiffness equations for in-plane stresses are
  \end{equation}
 The elements of the $\Q$ matrix are found from
 \begin{eqnarray}%
-   Q_{xx} &  = &  {E_{xx}\over 1 - \v{xy}\v{yx}} \\
-   Q_{yy} & = & {E_{yy}\over 1 - \v{xy}\v{yx}} \\
-   Q_{xy} &  = & {E_{xx}\v{yx}\over 1 - \v{xy}\v{yx}}  =  {E_{yy}\v{xy}\over 1 - \v{xy}\v{yx}}\\
+   Q_{xx} &  = &  C_{11} - {C_{13}^2\over C_{33}} = {E_{xx}\over 1 - \v{xy}\v{yx}} \\
+   Q_{yy} & = & C_{22} - {C_{23}^2\over C_{33}} = {E_{yy}\over 1 - \v{xy}\v{yx}} \\
+   Q_{xy} &  = & C_{12} - {C_{13}C_{23}\over C_{33}} = {E_{xx}\v{yx}\over 1 - \v{xy}\v{yx}}  =  {E_{yy}\v{xy}\over 1 - \v{xy}\v{yx}}\\
    Q_{xyxy} & = &  G_{xy} 
 \end{eqnarray}%
 These elements are calculated in \code{SetAnalysisProps()} as \code{C11} = $Q_{xx}$, \code{C12} = $Q_{xy}$, \code{C22} = $Q_{yy}$, and \code{C66} = $Q_{xyxy}$. The thermal  and moisture expansion coefficients are equal to the material thermal  and moisture expansion coefficients and set as \code{CTE1} $=\a{xx}$, \code{CTE2} $=\a{yy}$, \code{CME1} $=\b{xx}$, and \code{CME2} $=\b{yy}$, also in \code{SetAnalysisProps()}.
@@ -1151,6 +1151,66 @@ The numerical solution uses the following iterative equations
         \lambda^{(k+1)} & = & \lambda^{(k)} - {f^{(k)} \over {df^{(k)}/ d\lambda} } \\
         \vec\alpha^{(k+1)} & = & \vec\alpha^{0} -  \lambda^{(k+1)} \vec h^{(k)}
 \end{eqnarray}
+
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+\section{More General Plasticity Methods}
+
+We define several variables (6 components of stress and $\lambda$) and need to solve the simultaneous equations:
+\begin{eqnarray}
+       0 & = & \Delta \tens\sigma - \tens C( d\tens\varepsilon - d\tens\varepsilon_p) = \Delta \tens\sigma - \tens C d\tens\varepsilon + \lambda \tens C \nabla f(\tens\sigma + \Delta \tens\sigma,\alpha +d\alpha)\\
+       0 & = & f(\tens\sigma + \Delta \tens\sigma,\alpha +d\alpha) = f\left(\tens\sigma + \Delta \tens\sigma,\alpha +\sqrt{3\over2}\lambda \norm{\nabla f}\right)
+\end{eqnarray}
+We convert to $F(\vec x)=0$ where $x_1$ to $x_6$ are components of stress increment and $x_7$ is $\lambda$. The Newton's method solution is:
+\begin{equation}
+    J(\vec x^{(n)}) \left(\vec x^{(n+1)}-\vec x^{(n)}\right) = -F(\vec x^{(n)})
+\end{equation}
+Here $J(\vec x^{(n)})$ is the Jacobian of $F(\vec x^{(n)})$. The equation can be written as
+\begin{equation}
+    J(\vec x^{(n)})\left(\vec x^{(n+1)}-\vec x^{(n)}\right) = \left[ \begin{array}{cc}   \tens I + \lambda\tens C{d\nabla f \over d\Delta\tens\sigma} & \tens C\nabla f \\
+                     \nabla f & {df\over d\alpha} {d\alpha\over d\lambda} \end{array} \right]^{(n)} 
+                     \left[\begin{array}{c} \delta\tens\sigma^{(n)} \\ \delta\lambda^{(n)} \end{array}\right]
+                     = -\left[\begin{array}{c} \vec p^{(n)} \\ q^{(n)} \end{array}\right]
+\end{equation}
+where
+\begin{eqnarray}
+       \vec p^{(n)} & = &  \Delta \tens\sigma^{(n)} - \tens C d\tens\varepsilon + \lambda^{(n)} \tens C \nabla f(\tens\sigma + \Delta \tens\sigma^{(n)},\alpha +d\alpha^{(n)})\\
+       q^{(n)} & = &  f\left(\tens\sigma + \Delta \tens\sigma^{(n)},\alpha +d\alpha^{(n)}\right) \\
+       d\alpha^{(n)} & = & \sqrt{3\over2}\lambda \norm{\nabla f(\tens\sigma + \Delta \tens\sigma^{(n)},\alpha +d\alpha^{(n)})}
+\end{eqnarray}
+The next iteration for stress and $\lambda$ are
+\begin{eqnarray}
+       \Delta\tens\sigma^{(n+1)} = \Delta\tens\sigma^{(n)} + \delta\tens\sigma^{(n)} \\
+       \delta\lambda^{(n+1)}  = \lambda^{(n)}  + \delta\lambda^{(n)}  
+\end{eqnarray}
+
+For the special case of $J_2$ plasticity, the gradient $\nabla f$ is independent of the increment, which implies ${d\nabla f / d\Delta\tens\sigma} =0$. The incremental resulgts can be solved as:
+\begin{equation}
+      \delta\tens\sigma^{(n)} = -\vec p^{(n)} - \delta\lambda^{(n)}\tens C\nabla f
+      \qquad {\rm and} \qquad
+      \delta\lambda^{(n)} = -{q^{(n)} - \nabla f\cdot\vec p^{(n)} \over \nabla f\cdot\tens C\nabla f - {df\over d\alpha} {d\alpha\over d\lambda}}
+\end{equation}
+For next increment:
+\begin{eqnarray}
+       \vec p^{(n+1)} & = &  \Delta \tens\sigma^{(n+1)} - \tens C d\tens\varepsilon + \lambda^{(n+1)} \tens C \nabla f \\
+          & = & \Delta \tens\sigma^{(n)} -\vec p^{(n)} - \delta\lambda^{(n)}\tens C\nabla f - \tens C d\tens\varepsilon + (\lambda^{(n)}+\delta\lambda^{(n)}) \tens C \nabla f \\
+          & = & 0
+\end{eqnarray}
+We thus seed the numerical solution with $\Delta \tens\sigma^{(n)}=\tens C d\tens\varepsilon$ and $\lambda^{(0)}=0$ leading to $\vec p^{(0)}=0$ and all other $\vec p_{(n)}=0$. The final stress increment becomes:
+\begin{equation}
+      \Delta\tens\sigma^{(n)} = -\sum_{i=0}^{n} \delta\lambda^{(i)}\tens C\nabla f = -\lambda^{(n)} \tens C\nabla f
+\end{equation}
+The analysis reduces to a single equation, which may need numerical solution, of
+\begin{equation}
+            0 =  f\left(\tens\sigma +\tens C d\tens\varepsilon -  \lambda^{(n)} \tens C\nabla f,\alpha +d\alpha^{(n)}\right)
+            = f_{trial} - \lambda^{(n)}\left(\nabla f\cdot \tens C\nabla - {df\over d\alpha} {d\alpha\over d\lambda}\right)
+\end{equation}
+Starting with $\lambda^{(0)}$ and $q^{(0)}=f_{trial}$ leads to Newton's method with step increment:
+\begin{equation}
+       \delta\lambda^{(n)} = -{q^{(n)}  \over \nabla f\cdot\tens C\nabla f - {df\over d\alpha} {d\alpha\over d\lambda}}
+\end{equation}
+which is identical to $J_2$ plasticity methods defined above. The derivation assumes a single hardening variable, $\alpha$ but can easily be generalized to more than one.
+
 
 \chapter{Small Strain Materials with Large Rotation}
 

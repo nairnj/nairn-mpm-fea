@@ -8,6 +8,7 @@
 	MPM-specific code for istropic, low-strain materials
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/IsotropicMat.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"

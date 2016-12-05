@@ -7,6 +7,7 @@
     Copyright (c) 2002 RSAC Software. All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Read_MPM/MPMReadHandler.hpp"
@@ -81,7 +82,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             throw SAXException("<Grid> cannot be mixed with an explicit mesh.");
 		aScaling=ReadUnits(attrs,LENGTH_UNITS);
         block=GRIDBLOCK;
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
 		Xmin=Xmax=Ymin=Ymax=Zmin=Zmax=0.;
 		Z2DThickness=1.0;
         for(i=0;i<numAttr;i++) {
@@ -134,7 +135,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
     //-----------------------------------------------------------
     else if(strcmp(xName,"Horiz")==0)
 	{	ValidateCommand(xName,GRIDBLOCK,ANY_DIM);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++) {
             aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -159,7 +160,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 
     else if(strcmp(xName,"Vert")==0)
 	{	ValidateCommand(xName,GRIDBLOCK,ANY_DIM);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++) {
             aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -184,7 +185,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 
     else if(strcmp(xName,"Depth")==0)
 	{	ValidateCommand(xName,GRIDBLOCK,MUST_BE_3D);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++) {
             aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -235,7 +236,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             Angle=Vel.x=Vel.y=Vel.z=0.0;
 			pConc=0.0;
 			pTempSet = thermal.reference;
-            numAttr=attrs.getLength();
+            numAttr=(int)attrs.getLength();
 			rotationAxes[0]=0;			// no rotations yet
             for(i=0;i<numAttr;i++)
 			{	aName=XMLString::transcode(attrs.getLocalName(i));
@@ -295,7 +296,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	else if(strcmp(xName,"RotateZ")==0)
 	{	if(block!=BODYPART && block!=BMPBLOCK)
             ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
-		int rotationNum=strlen(rotationAxes);
+		int rotationNum=(int)strlen(rotationAxes);
 		if(rotationNum>=3)
 			throw SAXException("Maximum of three rotations allowed within a single <Body>.");
 		strcat(rotationAxes,"Z");
@@ -308,7 +309,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,NO_BLOCK,MUST_BE_3D);
 		if(block!=BODYPART && block!=BMPBLOCK)
             ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
-		int rotationNum=strlen(rotationAxes);
+		int rotationNum=(int)strlen(rotationAxes);
 		if(rotationNum>=3)
 			throw SAXException("Maximum of three rotations allowed within a single <Body>.");
 		rotationAxes[rotationNum]=xName[6];
@@ -320,7 +321,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	
 	else if(strcmp(xName,"Unrotate")==0)
 	{	ValidateCommand(xName,BODYPART,ANY_DIM);
-		int numRotations=strlen(rotationAxes);
+		int numRotations=(int)strlen(rotationAxes);
 		for(i=0;i<numRotations;i++) delete [] angleExpr[i];
 		rotationAxes[0]=0;
 	}
@@ -336,56 +337,70 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0
 				|| strcmp(xName,"Sphere")==0 || strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0
 				|| strcmp(xName,"Polyhedron")==0 || strcmp(xName,"Torus")==0 || strcmp(xName,"Shell")==0)
-	{	if(strcmp(xName,"Rect")==0)
-		{	ValidateCommand(xName,BODYPART,MUST_BE_2D);
-            theShape = new RectController(BODYPART);
+	{	// only allowed in BODYPART or within a parent BODY_SHAPE
+		if(block!=BODYPART && block!=BODY_SHAPE)
+			ThrowCompoundErrorMessage(xName,"command found at invalid location","");
+		
+		// only allowed if BODY_SHAPE has active shape
+		if(block==BODY_SHAPE && theShape==NULL)
+			throw SAXException("Subordinate shape found without a parent shape.");
+		
+		// create shape
+		ShapeController *newShape;
+		if(strcmp(xName,"Rect")==0)
+		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+            newShape = new RectController(BODYPART);
  		}
 		else if(strcmp(xName,"Oval")==0)
-		{	ValidateCommand(xName,BODYPART,MUST_BE_2D);
-            theShape = new OvalController(BODYPART);
+		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+            newShape = new OvalController(BODYPART);
 		}
 		else if(strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0)
-		{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
-			theShape = new BoxController(BODYPART);
+		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_3D);
+			newShape = new BoxController(BODYPART);
 		}
  		else if(strcmp(xName,"Sphere")==0)
-		{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
-			theShape = new SphereController(BODYPART);
+		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_3D);
+			newShape = new SphereController(BODYPART);
 		}
  		else if(strcmp(xName,"Torus")==0)
-		{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
-			theShape = new TorusController(BODYPART);
+		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_3D);
+			newShape = new TorusController(BODYPART);
 		}
 		else if(strcmp(xName,"Polygon")==0)
-		{	ValidateCommand(xName,BODYPART,MUST_BE_2D);
-			theShape = new PolygonController(BODYPART);
+		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+			newShape = new PolygonController(BODYPART);
 		}
 		else if(strcmp(xName,"Polyhedron")==0)
-		{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
-			theShape = new PolyhedronController(BODYPART);
+		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_3D);
+			newShape = new PolyhedronController(BODYPART);
 		}
 		else if(strcmp(xName,"Shell")==0)
-		{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
-			theShape = new ShellController(BODYPART);
+		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_3D);
+			newShape = new ShellController(BODYPART);
 		}
-		theShape->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
-        numAttr=attrs.getLength();
+		else
+		{	// shape that contains no points
+			newShape = new ShapeController(BODYPART);
+		}
+		
+		// atrributes
+		newShape->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
-			theShape->SetProperty(aName,value,this);
+			newShape->SetProperty(aName,value,this);
             delete [] aName;
             delete [] value;
         }
+		newShape->FinishSetup();
 		
-		// finish up and if body is done, generate points now
-		if(theShape->FinishSetup())
-		{	MPMPts();
-			delete theShape;
-			theShape = NULL;
-		}
-		else
-			block=BODY_SHAPE;
+		// If in BODY_SHAPE then add this as child of current shape
+		if(block==BODY_SHAPE)
+			newShape->SetParentShape(theShape);
+		block=BODY_SHAPE;
+		theShape = newShape;
 	}
 
     //-----------------------------------------------------------
@@ -408,12 +423,12 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	//       Circle (xmin,ymin,xmax,ymax)
 	// Liping Xue
     //-----------------------------------------------------------
-    else if(strcmp(xName,"Line")==0 | strcmp(xName,"Circle")==0 )
+    else if(strcmp(xName,"Line")==0 || strcmp(xName,"Circle")==0 )
 	{	ValidateCommand(xName,CRACKLIST,MUST_BE_2D);
 		int crackShape=LINE_SHAPE;
 		if(strcmp(xName,"Circle")==0)
 			crackShape=CIRCLE_SHAPE;
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
 		aScaling=ReadUnits(attrs,LENGTH_UNITS);
 		Xmin=Xmax=Ymin=Ymax=0.;
 		int resolution=1;
@@ -476,7 +491,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		if(theShape == NULL)
 			throw SAXException("Body object <pt> command occurred without an active 2D body shape.");
 		theShape->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
-		numAttr=attrs.getLength();
+		numAttr=(int)attrs.getLength();
 		for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
 			value=XMLString::transcode(attrs.getValue(i));
@@ -487,6 +502,23 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		theShape->FinishParameter();
 	}
 	
+	// add to arec to oval body object
+	else if(strcmp(xName,"arc")==0)
+	{	ValidateCommand(xName,BODY_SHAPE,MUST_BE_2D);
+		if(theShape == NULL)
+			throw SAXException("Body object <arc> command occurred without an active 2D body shape.");
+		numAttr=(int)attrs.getLength();
+		for(i=0;i<numAttr;i++)
+		{	aName=XMLString::transcode(attrs.getLocalName(i));
+			value=XMLString::transcode(attrs.getValue(i));
+			theShape->SetParameter(aName,value);
+			delete [] aName;
+			delete [] value;
+		}
+		if(!theShape->FinishParameter())
+			throw SAXException("<arc> command has invalid start and/or end angle.");
+	}
+
 	// Deform shapes in a BODY
     else if(strcmp(xName,"Deform")==0)
 	{	throw SAXException("<Deform> command requires OSParticulas");
@@ -499,7 +531,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			throw SAXException("Body object <faces> command occurred without an active 3D body shape.");
 		theShape->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
 		theShape->SetParameter("style","");
-		numAttr=attrs.getLength();
+		numAttr=(int)attrs.getLength();
 		for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
 			value=XMLString::transcode(attrs.getValue(i));
@@ -518,7 +550,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
     	if(block!=GRIDBCHEADER && block!=PARTICLEBCHEADER)
             ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
 		LineController *theLine=new LineController(block);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
 		theLine->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
 		theLine->SetTolerance(ElementBase::gridTolerance);
         for(i=0;i<numAttr;i++)
@@ -539,7 +571,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
     	if(block!=GRIDBCHEADER && block!=PARTICLEBCHEADER)
             ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
 		ArcController *theArc=new ArcController(block);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
 		theArc->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
 		theArc->SetTolerance(ElementBase::gridTolerance);
         for(i=0;i<numAttr;i++)
@@ -560,7 +592,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
     	if(block!=GRIDBCHEADER && block!=PARTICLEBCHEADER)
             ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
 		BoxController *theBox=new BoxController(block);
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
 		theBox->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -582,7 +614,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         double dispvel=0.0,ftime=0.0,angle=0.,angle2=0.;
 		int dof=0,style=CONSTANT_VALUE,velID=0;
 		char *function=NULL;
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -663,7 +695,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         double bcvalue=0.0,ftime=0.0;
         int style=CONSTANT_VALUE;
 		char *function=NULL;
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -711,7 +743,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
 		RectController *theRect=new RectController(block);
 		theRect->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -736,7 +768,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         int dof=0,style=1,face=1;
         double ftime=0.0,load=0.0;
 		char *function=NULL;
-        numAttr=attrs.getLength();
+        numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -875,8 +907,8 @@ short MPMReadHandler::EndGenerator(char *xName)
         block=MESHBLOCK;            // Must have been in MESHBLOCK
     }
 
-    else if(strcmp(xName,"Body")==0)
-	{	int numRotations=strlen(rotationAxes);
+    else if(strcmp(xName,"Body")==0 || strcmp(xName,"Hole")==0)
+	{	int numRotations=(int)strlen(rotationAxes);
 		int i;
 		for(i=0;i<numRotations;i++)
 		{	delete [] angleExpr[i];
@@ -887,13 +919,41 @@ short MPMReadHandler::EndGenerator(char *xName)
 	else if(strcmp(xName,"RotateZ")==0 || strcmp(xName,"RotateY")==0 || strcmp(xName,"RotateX")==0)
 	{	if(inputPtr==NULL)
 			throw SAXException("No rotation angle or expression was provided in <RotateX(YZ)> command.");
-		int rotationNum=strlen(rotationAxes);
+		int rotationNum=(int)strlen(rotationAxes);
 		angleExpr[rotationNum-1]=inputPtr;
 	}
 	
 	else if(strcmp(xName,"Hole")==0)
     	block=POINTSBLOCK;
     
+	else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0
+			|| strcmp(xName,"Sphere")==0 || strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0
+			|| strcmp(xName,"Polyhedron")==0 || strcmp(xName,"Torus")==0 || strcmp(xName,"Shell")==0)
+	{	// check shapes that require more parameters
+		if(strcmp(xName,"Polygon")==0 || strcmp(xName,"Polyhedron")==0)
+		{	if(!theShape->HasAllParameters())
+				throw SAXException("<Polygon> or <Polyhedron> must have at least 3 points or 4 faces.");
+		}
+		
+		// If parent shape then done
+		ShapeController *parentShape = theShape->GetParentShape();
+		if(parentShape==NULL)
+		{	MPMPts();
+			delete theShape;
+			theShape = NULL;
+			block=BODYPART;
+		}
+		
+		// if subordinate shape, add to parent shape
+		else
+		{	parentShape->AddCutoutShape(theShape);
+			// return to parent
+			theShape = parentShape;
+			// stay in BODY_SHAPE block
+		}
+	}
+	
+	/*
     else if(strcmp(xName,"Polygon")==0)
 	{	if(!theShape->HasAllParameters())
 			throw SAXException("<Polygon> must have at least 3 subordinate <pt> commands.");
@@ -911,6 +971,7 @@ short MPMReadHandler::EndGenerator(char *xName)
 		theShape = NULL;
 		block=BODYPART;
 	}
+	*/
 
     else if(strcmp(xName,"BCLine")==0 || strcmp(xName,"LdRect")==0 || strcmp(xName,"BCLine")==0 || strcmp(xName,"BCBox")==0)
 	{	block=theShape->GetSourceBlock();
@@ -935,7 +996,7 @@ void MPMReadHandler::MPMPts(void)
 	Vector ppos[MaxElParticles];
     MPMBase *newMpt;
     int i,k,ptFlag=0;
-	int numRotations=strlen(rotationAxes);
+	int numRotations=(int)strlen(rotationAxes);
 	
 	// rotation functions
 	if(numRotations>0)
@@ -958,7 +1019,7 @@ void MPMReadHandler::MPMPts(void)
                 if(theElements[i-1]->filled&ptFlag) continue;
                 
                 // check if particle is in the shape
-                if(theShape->ContainsPoint(ppos[k]))
+                if(theShape->ShapeContainsPoint(ppos[k]))
                 {   // for Region (MatID>0) create the particle
                     // for Hole (MatID<=0), just set the point flag
                 	if(MatID>0)

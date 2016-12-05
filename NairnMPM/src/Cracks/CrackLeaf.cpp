@@ -6,6 +6,7 @@
     Copyright (c) 2012 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Cracks/CrackLeaf.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "Cracks/CrackHeader.hpp"

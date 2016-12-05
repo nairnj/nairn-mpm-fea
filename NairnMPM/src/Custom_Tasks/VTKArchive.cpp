@@ -17,6 +17,7 @@
 		material angle(s) or rotation strain, kinetic energy
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Custom_Tasks/VTKArchive.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
@@ -235,7 +236,7 @@ CustomTask *VTKArchive::Initialize(void)
             qparam[q] = matnum;
         }
 		if(q<quantity.size()-1) cout << ", ";
-		len+=strlen(name)+2;
+		len+=(int)strlen(name)+2;
 	}
 	cout << endl;
 	

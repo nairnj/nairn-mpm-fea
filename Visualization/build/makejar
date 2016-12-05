@@ -22,16 +22,14 @@
 #      /usr/local/jdk1.5.0_06/bin/jar
 
 usage1="usage: makejar [-wml?]"
-usage2=".........w=Windows (default), m=Mac, l=Linux, ?=this message"
+usage2=".........w=Windows (default), m=Mac, l=Linux/unix ?=this message"
 clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.10.jar"
 
 while getopts ":wcmlu" opt; do
   case $opt in
     w ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.10.jar" ;;
-    c ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar;../src/lib/jsch-0.1.51.jar;../src/lib/VectorGraphics2D-0.10.jar" ;;
     m ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.10.jar ;;
     l ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.10.jar ;;
-    u ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar:../src/lib/jsch-0.1.51.jar:../src/lib/VectorGraphics2D-0.10.jar ;;
     \?) echo $usage1
         echo $usage2
         exit 1 ;;

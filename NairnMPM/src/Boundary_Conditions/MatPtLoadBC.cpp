@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -172,7 +173,13 @@ int MatPtLoadBC::CompactCornerNodes(int numDnds,Vector *corners,int *cElem,doubl
     // loop over corners finding all nodes and add to force
     // maximum is numDnds nodes with 8 nodes (if 3D) for each
     int i,j,numnds,ncnds=0;
-    double cnodes[8*numDnds],twt[8*numDnds];
+#ifdef CONST_ARRAYS
+	int cnodes[8 * 4];
+	double twt[8*4];
+#else
+	int cnodes[8 * numDnds];
+	double twt[8 * numDnds];
+#endif
     double scale = 1.;
 	
     for(i=0;i<numDnds;i++)

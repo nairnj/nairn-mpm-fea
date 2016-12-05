@@ -6,6 +6,7 @@
 	Copyright (c) 2009 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Nodes/CrackVelocityFieldMulti.hpp"
@@ -308,7 +309,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,double delt
 		// some variables
 		Vector norm,delPi,delta,tangDel;
 		bool hasDisplacements = false;
-		double dotn,massi=mvf[i]->mass,massRatio=massi/Mc,mred,deln,delt;
+		double dotn,massi=mvf[i]->mass,massRatio=massi/Mc,mred = 1.,deln,delt;
         double voli=mvf[i]->GetContactVolume();
 		double contactArea = -1.,mredDE = -1.;
 		
@@ -539,7 +540,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,double delt
 		}
 		
 		// on post update contact, do not change nodes with boundary conditions
-		unsigned char fixedDirection=ndptr->fixedDirection;
+		unsigned char fixedDirection=(unsigned char)ndptr->fixedDirection;
         if(postUpdate && (fixedDirection&XYZ_SKEWED_DIRECTION))
 		{	if(fixedDirection&X_DIRECTION) delPi.x=0.;
 			if(fixedDirection&Y_DIRECTION) delPi.y=0.;
@@ -829,7 +830,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 		}
 		
 		// on post update contact, do not change nodes with boundary conditions
-		unsigned char fixedDirection=ndptr->fixedDirection;
+		unsigned char fixedDirection=(unsigned char)ndptr->fixedDirection;
 		if(postUpdate && (fixedDirection&XYZ_SKEWED_DIRECTION))
 		{	if(fixedDirection&X_DIRECTION) delPi.x=0.;
 			if(fixedDirection&Y_DIRECTION) delPi.y=0.;

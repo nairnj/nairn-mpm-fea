@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Read_XML/mathexpr.hpp"
@@ -40,7 +41,7 @@ BoundaryCondition *BoundaryCondition::SetRigidProperties(int num,int dof,int bcS
     style = bcStyle;
     value = bcValue;
 	ftime = 0.;
-	bcID = 0.;
+	bcID = 0;
 	return (BoundaryCondition *)this;
 }
 

@@ -6,6 +6,7 @@
     Copyright (c) 2006 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "MPM_Classes/MatPoint3D.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Elements/ElementBase.hpp"
@@ -41,8 +42,14 @@ MatPoint3D::MatPoint3D(int inElemNum,int theMatl,double angin) : MPMBase(inElemN
 // matRef is the material and properties have been loaded, matFld is the material field
 void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
 {
-	int i,numnds,ndsArray[maxShapeNodes];
-    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+#ifdef CONST_ARRAYS
+	int ndsArray[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
+#else
+	int ndsArray[maxShapeNodes];
+	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+#endif
+	int i,numnds;
 	Vector vel;
     Matrix3 dv;
 	
@@ -334,8 +341,9 @@ void MatPoint3D::GetSemiSideVectors(Vector *r1,Vector *r2,Vector *r3) const
 	r3->z = pF[2][2]*psz.z;
 }
 
-// Get undeformed size (only called by GIMP traction)
+// Get undeformed size (only called by GIMP traction and Custom thermal ramp)
 // This uses mpmgrid so membrane particles must override
+// Assumes undeformation particle aligned with x-y-z axes
 void MatPoint3D::GetUndeformedSemiSides(double *r1x,double *r2y,double *r3z) const
 {   Vector psz = GetParticleSize();
     *r1x = psz.x;

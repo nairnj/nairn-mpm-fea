@@ -6,6 +6,8 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 *********************************************************************/
 
+#include "stdafx.h"
+
 // Return TRUE or FALSE according to num even
 int IsEven(int num)
 {

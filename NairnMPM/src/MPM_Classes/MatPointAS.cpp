@@ -13,6 +13,7 @@
 		material point
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "MPM_Classes/MatPointAS.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Elements/ElementBase.hpp"
@@ -40,8 +41,14 @@ MatPointAS::MatPointAS(int inElemNum,int theMatl,double angin,double thickin) : 
 // matRef is the material and properties have been loaded, matFld is the material field
 void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
 {
-	int i,numnds,ndsArray[maxShapeNodes];
-    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+#ifdef CONST_ARRAYS
+	int ndsArray[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
+#else
+	int ndsArray[maxShapeNodes];
+	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+#endif
+	int i,numnds;
 	Vector vel;
     Matrix3 dv;
 	

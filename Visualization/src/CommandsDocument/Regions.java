@@ -16,7 +16,8 @@ public class Regions
 	private int inRegion;
 	private StringBuffer xmlRegions;
 	private String indent;
-	private boolean inPoly;
+	private ArrayList<RegionPiece> pieces;
+	private RegionPiece currentPiece;
 	
 	private static int REGION_BLOCK=1;
 	private static int HOLE_BLOCK=2;
@@ -29,13 +30,14 @@ public class Regions
 	public Regions(CmdViewer cmdDoc)
 	{	// save parent CmdViewer
 		doc = cmdDoc;
+		pieces = null;
 	}
 	
 	public void initRunSettings()
 	{	inRegion = 0;
 		xmlRegions = new StringBuffer("");
 		indent = "";
-		inPoly = false;
+		pieces=new ArrayList<RegionPiece>(20);
 	}
 	
 	//----------------------------------------------------------------------------
@@ -54,6 +56,7 @@ public class Regions
 		
 	    // activate
 	    inRegion = REGION_BLOCK;
+	    pieces.clear();
 	    
 	    // read material by ID
 	    if(args.size()<2)
@@ -155,6 +158,425 @@ public class Regions
 			throw new Exception("'Region' command not allowed before analysis type is set:\n"+args);
 	}
 
+	// end current region, bmpregion, or hole
+	public void EndRegion(ArrayList<String> args,String theCmd) throws Exception
+	{
+		// must be in region
+		if(theCmd.equals("endhole"))
+		{	if(inRegion!=HOLE_BLOCK)
+			throw new Exception("'EndHole' command when not in a Hole:\n"+args);
+		}
+		else
+		{	if(inRegion != REGION_BLOCK && inRegion!=BMPREGION_BLOCK)
+			throw new Exception("'EndRegion' command when not in a Region or BMPRegion:\n"+args);
+		}
+		
+		// add XML data
+		if(inRegion==BMPREGION_BLOCK)
+		{	xmlRegions.append(indent+"</BMP>\n");
+		}
+		else
+		{	// go through pieces
+			int numPieces = pieces.size();
+			if(numPieces>0)
+			{	// initialize
+				currentPiece = null;
+				int currentLevel = 0;
+				
+				int i=0;
+				while(i<numPieces)
+				{	RegionPiece obj = pieces.get(i);
+					int level = obj.getLevel();
+					
+					// check if this level is less than parent level
+					if(level<=currentLevel && currentPiece!=null)
+					{	// climb back up the tree
+						currentLevel = insertPriorElements(level);
+					}
+					
+					switch(obj.getType())
+					{	// Standard shapes
+						case RegionPiece.RECT_OR_OVAL:
+						case RegionPiece.SHAPE_3D:
+							obj.setParent(currentPiece);
+							currentLevel = level;
+							currentPiece = obj;
+							break;
+							
+						// 2D Polygons
+						case RegionPiece.POLY_PT:
+							obj.setParent(currentPiece);
+							currentLevel = level;
+							currentPiece = obj;
+							String ptIndent = indent;
+							for(int ii=0;ii<level;ii++) ptIndent = ptIndent+"  ";
+							
+							// loop until done
+							while(i<numPieces-1)
+							{	obj = pieces.get(i+1);
+								
+								// exit if new level or not a polygon
+								if(obj.getLevel()!=level || obj.getType()!=RegionPiece.POLY_PT) break;
+							
+								// add a polypt
+								currentPiece.appendXmlStart(ptIndent+obj.getXmlStart());
+								i++;
+							}
+							
+							// skip a break piece
+							if(i<numPieces-1 && obj.getType()==RegionPiece.END_POLYGON) i++;
+							break;
+						
+						case RegionPiece.END_POLYGON:
+							// POLYPT_PIECE should always handle this
+							break;
+						
+						// non shape options (must be at level 0)
+						case RegionPiece.COMMAND_PIECE:
+							xmlRegions.append(obj.getXmlStart());
+							break;
+							
+						default:
+							break;
+					}
+					
+					// next object
+					i++;
+				}
+			}
+		
+			// finish current elements
+			if(currentPiece!=null)
+				insertPriorElements(0);
+			
+			// end the body or holr
+			if(inRegion==REGION_BLOCK)
+				xmlRegions.append(indent+"</Body>\n");
+			else
+				xmlRegions.append(indent+"</Hole>\n");
+		}
+		
+		// region is done
+		inRegion = 0;
+	}
+	
+	// climb back tree
+	public int insertPriorElements(int level)
+	{
+		int newLevel = 0;
+		
+		while(true)
+		{	RegionPiece parent = currentPiece.getParent();
+			if(parent==null)
+			{	xmlRegions.append(currentPiece.xmlString(indent));
+			}
+			else
+			{	// add child
+				parent.addChild(currentPiece);
+			}
+			
+			// up to parent
+			currentPiece = parent;
+			
+			// exit if done
+			if(currentPiece==null) break;
+			newLevel = currentPiece.getLevel();
+			if(level>newLevel) break;
+		}
+		
+		return newLevel;
+	}
+	
+	// start Hole (FEA or MPM)
+	public void StartHole(ArrayList<String> args) throws Exception
+	{
+		// verify not nested
+		if(inRegion != 0)
+			throw new Exception("Regions, Holes, and BMPRegions cannot be nested:\n"+args);
+		    
+		// activate
+		inRegion = HOLE_BLOCK;
+		pieces.clear();
+		indent = doc.isMPM() ? "    " : "  ";
+		    
+		// start tag
+		xmlRegions.append("    <Hole>\n");
+	}
+	
+	// Cut Cut ... shape args command
+	public void AddCutShape(ArrayList<String> args) throws Exception
+	{
+		// in a region
+		if(inRegion==0)
+			throw new Exception("Cut shape commands must be within a region");
+		if(args.size()<2)
+			throw new Exception("Cut copmmand with no cut shape");
+		
+		// assume next argument is delimited with spaces
+		String [] cutArgs = args.get(1).split(" ");
+		
+		// find the level
+		int level = 1;
+		String shape = "cut";
+		while(cutArgs.length>level-1)
+		{	shape = cutArgs[level-1].toLowerCase();
+			if(!shape.equals("cut")) break;
+			level++;
+		}
+		
+		// set command to shape name and first paremeter to last cutArg
+		args.set(0,shape);
+		args.set(1,cutArgs[cutArgs.length-1]);
+		
+		// each type
+		if(shape.equals("rect"))
+			AddRectOrOval(args,"Rect");
+		else if(shape.equals("oval"))
+			AddRectOrOval(args,"Oval");
+		else if(shape.equals("polypt"))
+			AddPolypoint(args);
+		else if(shape.equals("box"))
+			AddBox(args,"Box");
+		else if(shape.equals("sphere"))
+			AddBox(args,"Sphere");
+		else if(shape.equals("cylinder"))
+			AddBox(args,"Cylinder");
+		else if(shape.equals("torus"))
+			AddBox(args,"Torus");
+		else
+			throw new Exception("An invalid shape ('"+shape+"') in a 'Cut' command");
+		
+		// set last piece level
+		if(!setLastPieceLevel(level))
+			throw new Exception("Incorrectly nested shape commands in 'Region' or 'Hole'");
+
+	}
+	
+	// bool set last piece level
+	public boolean setLastPieceLevel(int level)
+	{
+		int numPieces = pieces.size();
+		if(numPieces<1) return false;
+		RegionPiece cutPiece = pieces.get(numPieces-1);
+		RegionPiece prevPiece = pieces.get(numPieces-2);
+		
+		// set cut piece level
+		if(cutPiece.getType()==RegionPiece.COMMAND_PIECE) return false;
+		if(level<1) return false;
+		cutPiece.setLevel(level);
+		
+		// check previous piece
+		// Must be shape with level one less or greater
+		if(prevPiece.getType()==RegionPiece.COMMAND_PIECE) return false;
+		if(prevPiece.getLevel()<level-1) return false;
+		
+		return true;
+	}
+	
+	// add shape for Rect #1,#2,#3,#4
+	public void AddRectOrOval(ArrayList<String> args,String shape) throws Exception
+	{	// times not allowed
+		if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
+			throw new Exception("'"+shape+"' command is only allowed within a Region or Hole block:\n"+args);
+		if(doc.isMPM3D())
+			throw new Exception("'"+shape+"' command is only allowed within 2D MPM:\n"+args);
+		
+		// four numbers
+		if(args.size()<5)
+			throw new Exception("'"+shape+"' command has too few parameters:\n"+args);
+		double xmin = doc.readDoubleArg(args.get(1));
+		double xmax = doc.readDoubleArg(args.get(2));
+		double ymin = doc.readDoubleArg(args.get(3));
+		double ymax = doc.readDoubleArg(args.get(4));
+		
+		// arc angles
+		double arcStart=-1.,arcEnd=0.;
+		if(args.size()>5)
+		{	arcStart = doc.readDoubleArg(args.get(5));
+			if(args.size()>6)
+			{	arcEnd = doc.readDoubleArg(args.get(6));
+				if(arcStart<0. || arcStart>360. || arcEnd<arcStart)
+					throw new Exception("Invalid arc angles (need 0<=start<=360 and end>=start)");
+			}
+			else
+				throw new Exception("Has arc start angle but no end angle");
+		}
+		
+		// start string
+		StringBuffer newShape = new StringBuffer("");
+		newShape.append(indent+"  <"+shape+" xmin='"+doc.formatDble(xmin)+"' xmax='"+doc.formatDble(xmax)+"'");
+		newShape.append(" ymin='"+doc.formatDble(ymin)+"' ymax='"+doc.formatDble(ymax)+"'");
+		
+		// add piece
+		RegionPiece newPiece = new RegionPiece(RegionPiece.RECT_OR_OVAL,newShape.toString(),shape);
+		if(arcStart>=0.) newPiece.setArcAngles(arcStart,arcEnd);
+		pieces.add(newPiece);
+	}
+
+	// add point to polygon
+	public void AddPolypoint(ArrayList<String> args) throws Exception
+	{	// times not allowed
+		if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
+			throw new Exception("'PolyPt' command is only allowed within a polygon sequence:\n"+args);
+		if(doc.isMPM3D())
+			throw new Exception("'PolyPt' command is only allowed within 2D MPM:\n"+args);
+		
+		// end the polygon
+		if(args.size()==1)
+		{	RegionPiece newPiece = new RegionPiece(RegionPiece.END_POLYGON,"","");
+			pieces.add(newPiece);
+			return;
+		}
+		
+		// needs two arguments
+		if(args.size()<3)
+			throw new Exception("'PolyPt' command has too few parameters:\n"+args);
+		double x = doc.readDoubleArg(args.get(1));
+		double y = doc.readDoubleArg(args.get(2));
+		
+		// add it
+		String ptStr = "    <pt x='"+doc.formatDble(x)+"' y='"+doc.formatDble(y)+"'/>\n";
+		RegionPiece newPiece = new RegionPiece(RegionPiece.POLY_PT,ptStr,"Polygon");
+		pieces.add(newPiece);
+	}
+	
+	// add shape for Box #1,#2,#3,#4,#5,#6 or Sphere
+	// Cylinder #1,#2,#3,#4,#5,#6,#7,<#8>  or Torus
+	public void AddBox(ArrayList<String> args,String shape) throws Exception
+	{	// times not allowed
+		if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
+			throw new Exception("'"+shape+"' command is only allowed within a Region or Hole block:\n"+args);
+		if(!doc.isMPM3D())
+			throw new Exception("'"+shape+"' command is only allowed within 3D MPM:\n"+args);
+		
+		// four numbers
+		if(args.size()<7)
+			throw new Exception("'"+shape+"' command has too few parameters: "+args);
+		double xmin = doc.readDoubleArg(args.get(1));
+		double xmax = doc.readDoubleArg(args.get(2));
+		double ymin = doc.readDoubleArg(args.get(3));
+		double ymax = doc.readDoubleArg(args.get(4));
+		double zmin = doc.readDoubleArg(args.get(5));
+		double zmax = doc.readDoubleArg(args.get(6));
+		
+		// add it
+		StringBuffer newShape = new StringBuffer("");
+		newShape.append(indent+"  <"+shape+" xmin='"+doc.formatDble(xmin)+"' xmax='"+doc.formatDble(xmax)+"'");
+		newShape.append(" ymin='"+doc.formatDble(ymin)+"' ymax='"+doc.formatDble(ymax)+"'");
+		newShape.append(" zmin='"+doc.formatDble(zmin)+"' zmax='"+doc.formatDble(zmax)+"'");
+		if(shape.equals("Cylinder") || shape.equals("Torus"))
+		{	if(args.size()<8)
+				throw new Exception("'"+shape+"' command has too few parameters: "+args);
+			// axis
+			HashMap<String,Integer> options = new HashMap<String,Integer>(10);
+			options.put("x", new Integer(1));
+			options.put("y", new Integer(2));
+			options.put("z", new Integer(3));
+			int axis = doc.readIntOption(args.get(7),options,"shape axis");
+			newShape.append(" axis='"+axis+"'");
+			if(args.size()>8)
+				newShape.append(" radius='"+doc.formatDble(doc.readDoubleArg(args.get(8)))+"'");
+		}
+		
+		// add piece
+		RegionPiece newPiece = new RegionPiece(RegionPiece.SHAPE_3D,newShape.toString(),shape);
+		pieces.add(newPiece);
+	}
+	
+	// Rotate #1,#2,<#3,#4>,<#5,$6>
+	public void AddRotate(ArrayList<String> args) throws Exception
+	{	// times not allowed
+		if(inRegion==0 || inRegion==HOLE_BLOCK)
+			throw new Exception("'Rotate' command is only allowed within a Region or BMPRegion block:\n"+args);
+		
+		// check for reset
+		if(args.size()<2)
+			throw new Exception("'Rotate' command has too few parameters:\n"+args);
+		
+		// Is is "reset"
+		String reset = doc.readStringArg(args.get(1)).toLowerCase();
+		if(reset.equals("reset"))
+		{	String rotStr = indent+"  <Unrotate/>\n";
+			if(inRegion == REGION_BLOCK)
+			{	RegionPiece newPiece = new RegionPiece(RegionPiece.COMMAND_PIECE,rotStr,"");
+				pieces.add(newPiece);
+			}
+			else
+				xmlRegions.append(rotStr);
+			return;
+		}
+		
+		// need at least one axis
+		if(args.size()<3)
+			throw new Exception("'Rotate' command has too few parameters:\n"+args);
+		
+		// up to three pairs (3D only)
+		int axisNum=2;
+		while(args.size()>axisNum && axisNum<8)
+		{	// get axis
+			int axis=0;
+			Object axisArg = doc.readStringOrDoubleArg(args.get(axisNum-1));
+			if(axisArg.getClass().equals(Double.class))
+				axis = ((Double)axisArg).intValue();
+			else if(((String)axisArg).toLowerCase().equals("x"))
+				axis = 1;
+			else if(((String)axisArg).toLowerCase().equals("y"))
+				axis = 2;
+			else if(((String)axisArg).toLowerCase().equals("z"))
+				axis = 3;
+			if(axis<1 || axis>3)
+				throw new Exception("'Rotate' command has invalid rotation axis:\n"+args);
+			if(axis!=3 && !doc.isMPM3D())
+				throw new Exception("'Rotate' command axis must be z axis in 2D simulations:\n"+args);
+			
+			// get angle (can be function)
+			String angle = doc.readStringArg(args.get(axisNum));
+			
+			// add piece
+			String newShape;
+			if(axis==1)
+				newShape = indent+"  <RotateX>"+angle+"</RotateX>\n";
+			else if(axis==2)
+				newShape = indent+"  <RotateY>"+angle+"</RotateY>\n";
+			else
+				newShape = indent+"  <RotateZ>"+angle+"</RotateZ>\n";
+			if(inRegion == REGION_BLOCK)
+			{	RegionPiece newPiece = new RegionPiece(RegionPiece.COMMAND_PIECE,newShape,"");
+				pieces.add(newPiece);
+			}
+			else
+				xmlRegions.append(newShape);
+			
+			// next pair
+			axisNum += 2;
+			if(!doc.isMPM3D()) break;
+		}
+	}
+	
+	// AngularMom0 Lpz (if 2D) or AngularMom0 Lpx,Lpy,Lpz (if 3D)
+	public void AddAngularMom0(ArrayList<String> args) throws Exception
+	{	// check allowed
+		if(inRegion == 0 || inRegion!=REGION_BLOCK)
+			throw new Exception("'AngularMom0' command is only allowed within a Region block:\n"+args);
+		
+		// 2D or 3D
+		if(args.size()<2)
+			throw new Exception("'AngulaMom0' command has too few parameters: "+args);
+		
+		String Lp;
+		Object LpFxn = doc.readStringOrDoubleArg(args.get(1));
+		if(doc.isMPM3D())
+		{	Lp = "      <Lp0X>"+LpFxn+"</Lp0X>\n";
+			if(args.size()>2)
+				Lp = Lp + "      <Lp0Y>"+doc.readStringOrDoubleArg(args.get(2))+"</Lp0Y>\n";
+			if(args.size()>3)
+				Lp = Lp + "      <Lp0Z>"+doc.readStringOrDoubleArg(args.get(3))+"</Lp0Z>\n";
+		}
+		else
+			Lp = "      <Lp0Z>"+LpFxn+"</Lp0Z>\n";
+		xmlRegions.append(Lp);
+	}
+	
 	// start FEA Region #1,#2,<#3>
 	// 		#1 is material, #2 is thickness, #3 is material angle function
 	// or MPM Region #1,#2,#3,#4,(#5,#6 pairs)
@@ -167,6 +589,7 @@ public class Regions
 		
 	    // activate
 	    inRegion = BMPREGION_BLOCK;
+	    pieces.clear();
 	    
 	    // read path and width
 	    if(args.size()<2)
@@ -206,120 +629,6 @@ public class Regions
 	    
 	    // end it
 	    xmlRegions.append(">\n");	    
-}
-	
-	// end current region
-	public void EndRegion(ArrayList<String> args) throws Exception
-	{
-		// must be in region
-		if(inRegion != REGION_BLOCK && inRegion!=BMPREGION_BLOCK)
-			throw new Exception("'EndRegion' command when not in a Region or BMPRegion:\n"+args);
-		
-		if(inRegion==BMPREGION_BLOCK)
-		{	xmlRegions.append(indent+"</BMP>\n");
-		}
-		else
-		{	// active polygon
-			if(inPoly == true)
-			{	xmlRegions.append(indent+"  </Polygon>\n");
-				inPoly = false;
-			}
-		
-			// end the body
-			xmlRegions.append(indent+"</Body>\n");
-		}
-		inRegion = 0;
-	}
-	
-	// start Hole (FEA or MPM)
-	public void StartHole(ArrayList<String> args) throws Exception
-	{
-		// verify not nested
-		if(inRegion != 0)
-			throw new Exception("Regions, Holes, and BMPRegions cannot be nested:\n"+args);
-		    
-		// activate
-		inRegion = HOLE_BLOCK;
-		indent = doc.isMPM() ? "    " : "  ";
-		    
-		// start tag
-		xmlRegions.append("  <Hole>\n");
-	}
-
-	// end current region
-	public void EndHole(ArrayList<String> args) throws Exception
-	{
-		// must be in region
-		if(inRegion != HOLE_BLOCK)
-			throw new Exception("'EndHole' command when not in a hole:\n"+args);
-		
-		// active polygon
-		if(inPoly == true)
-		{	xmlRegions.append(indent+"  </Polygon>\n");
-			inPoly = false;
-		}
-		
-		// end the body
-		xmlRegions.append(indent+"</Hole>\n\n");
-		inRegion = 0;
-	}
-	
-	// add shape for Rect #1,#2,#3,#4
-	public void AddRectOrOval(ArrayList<String> args,String shape) throws Exception
-	{	// times not allowed
-		if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
-			throw new Exception("'"+shape+"' command is only allowed within a Region or Hole block:\n"+args);
-		if(doc.isMPM3D())
-			throw new Exception("'"+shape+"' command is only allowed within 2D MPM:\n"+args);
-		if(inPoly == true)
-		{	xmlRegions.append(indent+"  </Polygon>\n");
-			inPoly = false;
-		}
-		
-		// four numbers
-		if(args.size()<5)
-			throw new Exception("'"+shape+"' command has too few parameters:\n"+args);
-		double xmin = doc.readDoubleArg(args.get(1));
-		double xmax = doc.readDoubleArg(args.get(2));
-		double ymin = doc.readDoubleArg(args.get(3));
-		double ymax = doc.readDoubleArg(args.get(4));
-		
-		// add it
-		xmlRegions.append(indent+"  <"+shape+" xmin='"+doc.formatDble(xmin)+"' xmax='"+doc.formatDble(xmax)+"'");
-		xmlRegions.append(" ymin='"+doc.formatDble(ymin)+"' ymax='"+doc.formatDble(ymax)+"'/>\n");
-	}
-
-	// add point to polygon
-	public void AddPolypoint(ArrayList<String> args) throws Exception
-	{	// times not allowed
-		if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
-			throw new Exception("'PolyPt' command is only allowed within a polygon sequence:\n"+args);
-		if(inPoly==false && args.size()<2)
-			throw new Exception("Empty 'PolyPt' command only allowed in a polygon sequence:\n"+args);
-		if(doc.isMPM3D())
-			throw new Exception("'PolyPt' command is only allowed within 2D MPM:\n"+args);
-		
-		// start a polygon
-		if(inPoly == false)
-		{	xmlRegions.append(indent+"  <Polygon>\n");
-			inPoly = true;
-		}
-		
-		// end the polygon
-		if(args.size()==1)
-		{	xmlRegions.append(indent+"  </Polygon>\n");
-			inPoly = false;
-			return;
-		}
-		
-		// needs two arguments
-		if(args.size()<3)
-			throw new Exception("'PolyPt' command has too few parameters:\n"+args);
-		double x = doc.readDoubleArg(args.get(1));
-		double y = doc.readDoubleArg(args.get(2));
-		
-		// add it
-		xmlRegions.append(indent+"    <pt x='"+doc.formatDble(x)+"' y='"+doc.formatDble(y)+"'/>\n");
 	}
 	
 	// Origin #1,#2,<#3>,<#4>
@@ -432,123 +741,7 @@ public class Regions
 		}
 	}
 	
-	// Rotate #1,#2,<#3,#4>,<#5,$6>
-	public void AddRotate(ArrayList<String> args) throws Exception
-	{	// times not allowed
-		if(inRegion==0 || inRegion==HOLE_BLOCK)
-			throw new Exception("'Rotate' command is only allowed within a Region or BMPRegion block:\n"+args);
-		
-		// check for reset
-		if(args.size()<2)
-			throw new Exception("'Rotate' command has too few parameters:\n"+args);
-		
-		// Is is "reset"
-		String reset = doc.readStringArg(args.get(1)).toLowerCase();
-		if(reset.equals("reset"))
-		{	xmlRegions.append(indent+"  <Unrotate/>\n");
-			return;
-		}
-		
-		// need at least one axis
-		if(args.size()<3)
-			throw new Exception("'Rotate' command has too few parameters:\n"+args);
-		
-		// up to three pairs (3D only)
-		int axisNum=2;
-		while(args.size()>axisNum && axisNum<8)
-		{	// get axis
-			int axis=0;
-			Object axisArg = doc.readStringOrDoubleArg(args.get(axisNum-1));
-			if(axisArg.getClass().equals(Double.class))
-				axis = ((Double)axisArg).intValue();
-			else if(((String)axisArg).toLowerCase().equals("x"))
-				axis = 1;
-			else if(((String)axisArg).toLowerCase().equals("y"))
-				axis = 2;
-			else if(((String)axisArg).toLowerCase().equals("z"))
-				axis = 3;
-			if(axis<1 || axis>3)
-				throw new Exception("'Rotate' command has invalid rotation axis:\n"+args);
-			if(axis!=3 && !doc.isMPM3D())
-				throw new Exception("'Rotate' command axis must be z axis in 2D simulations:\n"+args);
-			
-			// get angle (can be function)
-			String angle = doc.readStringArg(args.get(axisNum));
-			
-			if(axis==1)
-				xmlRegions.append(indent+"  <RotateX>"+angle+"</RotateX>\n");
-			else if(axis==2)
-				xmlRegions.append(indent+"  <RotateY>"+angle+"</RotateY>\n");
-			else
-				xmlRegions.append(indent+"  <RotateZ>"+angle+"</RotateZ>\n");
-			
-			// next pair
-			axisNum += 2;
-			if(!doc.isMPM3D()) break;
-		}
-	}
-	
-	// add shape for Box #1,#2,#3,#4,#5,#6 or Sphere
-	// Cylinder #1,#2,#3,#4,#5,#6,#7,<#8>  or Torus
-	public void AddBox(ArrayList<String> args,String shape) throws Exception
-	{	// times not allowed
-		if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
-			throw new Exception("'"+shape+"' command is only allowed within a Region or Hole block:\n"+args);
-		if(!doc.isMPM3D())
-			throw new Exception("'"+shape+"' command is only allowed within 3D MPM:\n"+args);
-		
-		// four numbers
-		if(args.size()<7)
-			throw new Exception("'"+shape+"' command has too few parameters: "+args);
-		double xmin = doc.readDoubleArg(args.get(1));
-		double xmax = doc.readDoubleArg(args.get(2));
-		double ymin = doc.readDoubleArg(args.get(3));
-		double ymax = doc.readDoubleArg(args.get(4));
-		double zmin = doc.readDoubleArg(args.get(5));
-		double zmax = doc.readDoubleArg(args.get(6));
-		
-		// add it
-		xmlRegions.append(indent+"  <"+shape+" xmin='"+doc.formatDble(xmin)+"' xmax='"+doc.formatDble(xmax)+"'");
-		xmlRegions.append(" ymin='"+doc.formatDble(ymin)+"' ymax='"+doc.formatDble(ymax)+"'");
-		xmlRegions.append(" zmin='"+doc.formatDble(zmin)+"' zmax='"+doc.formatDble(zmax)+"'");
-		if(shape.equals("Cylinder") || shape.equals("Torus"))
-		{	if(args.size()<8)
-				throw new Exception("'"+shape+"' command has too few parameters: "+args);
-			// axis
-			HashMap<String,Integer> options = new HashMap<String,Integer>(10);
-			options.put("x", new Integer(1));
-			options.put("y", new Integer(2));
-			options.put("z", new Integer(3));
-			int axis = doc.readIntOption(args.get(7),options,"shape axis");
-			xmlRegions.append(" axis='"+axis+"'");
-			if(args.size()>8)
-				xmlRegions.append(" radius='"+doc.formatDble(doc.readDoubleArg(args.get(8)))+"'");
-		}
-		xmlRegions.append("/>\n");
-	}
-	
-	// AngularMom0 Lpz (if 2D) or AngularMom0 Lpx,Lpy,Lpz (if 3D)
-	public void AddAngularMom0(ArrayList<String> args) throws Exception
-	{	// 2D or 3D
-		if(args.size()<2)
-			throw new Exception("'AngulaMom0' command has too few parameters: "+args);
-		
-		String Lp;
-		Object LpFxn = doc.readStringOrDoubleArg(args.get(1));
-		if(doc.isMPM3D())
-		{	Lp = "      <Lp0X>"+LpFxn+"</Lp0X>\n";
-			if(args.size()>2)
-				Lp = Lp + "      <Lp0Y>"+doc.readStringOrDoubleArg(args.get(2))+"</Lp0Y>\n";
-			if(args.size()>3)
-				Lp = Lp + "      <Lp0Z>"+doc.readStringOrDoubleArg(args.get(3))+"</Lp0Z>\n";
-		}
-		else
-			Lp = "      <Lp0Z>"+LpFxn+"</Lp0Z>\n";
-		xmlRegions.append(Lp);
-
-	}
-	
-	// insert XML
+	// insert XML data in pieces or xml data
 	public void AddXML(String rawXML)
 	{	xmlRegions.append(rawXML);
 	}
@@ -562,4 +755,5 @@ public class Regions
 	
 	public boolean isInBMPRegion() { return inRegion==BMPREGION_BLOCK; }
 
+	public boolean isInRegion() { return inRegion!=0; }
 }

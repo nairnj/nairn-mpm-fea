@@ -8,6 +8,7 @@
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/LinearInterface.hpp"
 #include "System/UnitsController.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"

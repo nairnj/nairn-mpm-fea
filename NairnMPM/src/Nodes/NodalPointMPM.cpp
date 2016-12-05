@@ -8,6 +8,7 @@
 	NodalPoint: Methods for MPM only
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Nodes/NodalPoint.hpp"

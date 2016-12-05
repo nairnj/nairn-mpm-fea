@@ -9,6 +9,7 @@
         sigma = yield (1 + beta ep)^npow
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/NonlinearHardening.hpp"
 #include "System/UnitsController.hpp"
 

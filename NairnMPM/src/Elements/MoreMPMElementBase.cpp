@@ -6,6 +6,7 @@
     Copyright (c) 2004 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
@@ -193,7 +194,11 @@ void ElementBase::GetShapeFunctions(double *fn,int **ndsHandle,MPMBase *mpmptr) 
 #else
         case UNIFORM_GIMP:
         {	// GIMP analysis
+#ifdef CONST_ARRAYS
+			unsigned char ndIDs[MAX_SHAPE_NODES];
+#else
             unsigned char ndIDs[maxShapeNodes];
+#endif
             Vector *xipos = mpmptr->GetNcpos();
             mpmptr->GetDimensionlessSize(lp);
             GetGimpNodes(&nds[0],nds,ndIDs,xipos,lp);
@@ -204,7 +209,11 @@ void ElementBase::GetShapeFunctions(double *fn,int **ndsHandle,MPMBase *mpmptr) 
             
         case UNIFORM_GIMP_AS:
         {	// GIMP analysis
+#ifdef CONST_ARRAYS
+			unsigned char ndIDs[MAX_SHAPE_NODES];
+#else
             unsigned char ndIDs[maxShapeNodes];
+#endif
             Vector *xipos = mpmptr->GetNcpos();
             mpmptr->GetDimensionlessSize(lp);
 			GetGimpNodes(&nds[0],nds,ndIDs,xipos,lp);
@@ -282,7 +291,11 @@ void ElementBase::GetShapeGradients(double *fn,int **ndsHandle,
 #else
         case UNIFORM_GIMP:
         {	// uGIMP analysis
-            unsigned char ndIDs[maxShapeNodes];
+#ifdef CONST_ARRAYS
+			unsigned char ndIDs[MAX_SHAPE_NODES];
+#else
+			unsigned char ndIDs[maxShapeNodes];
+#endif
             Vector *xipos = mpmptr->GetNcpos();
             mpmptr->GetDimensionlessSize(lp);
             GetGimpNodes(&nds[0],nds,ndIDs,xipos,lp);
@@ -293,7 +306,11 @@ void ElementBase::GetShapeGradients(double *fn,int **ndsHandle,
             
         case UNIFORM_GIMP_AS:
         {	// uGIMP analysis
-            unsigned char ndIDs[maxShapeNodes];
+#ifdef CONST_ARRAYS
+			unsigned char ndIDs[MAX_SHAPE_NODES];
+#else
+			unsigned char ndIDs[maxShapeNodes];
+#endif
             Vector *xipos = mpmptr->GetNcpos();
             mpmptr->GetDimensionlessSize(lp);
             GetGimpNodes(&nds[0],nds,ndIDs,xipos,lp);

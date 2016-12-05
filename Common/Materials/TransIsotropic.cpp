@@ -6,6 +6,7 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/TransIsotropic.hpp"
 #ifdef MPM_CODE
 	#include "Custom_Tasks/ConductionTask.hpp"
@@ -650,11 +651,11 @@ double TransIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 }
 
 // maximum diffusion coefficient in mm^2/sec (diff in mm^2/sec)
-double TransIsotropic::MaximumDiffusion(void) const { return max(diffA,diffT); }
+double TransIsotropic::MaximumDiffusion(void) const { return fmax(diffA,diffT); }
 
 // maximum diffusivity in mm^2/sec
 // specific k is nJ mm^2/(sec-K-g) and Cp is nJ/(g-K) so k/Cp = mm^2 /sec
-double TransIsotropic::MaximumDiffusivity(void) const { return max(kCondA,kCondT)/heatCapacity; }
+double TransIsotropic::MaximumDiffusivity(void) const { return fmax(kCondA,kCondT)/heatCapacity; }
 
 // diffusion and conductivity in the z direction
 double TransIsotropic::GetDiffZ(void) const { return AxialDirection()==AXIAL_Z ? diffA : diffT; }

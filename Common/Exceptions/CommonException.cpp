@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.    
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Exceptions/CommonException.hpp"
 
 #pragma mark CommonException: Constructors and Destructors

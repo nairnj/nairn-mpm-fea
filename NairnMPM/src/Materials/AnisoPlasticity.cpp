@@ -17,6 +17,7 @@
 		Orthotropic.hpp (TranIsotropic.hpp, MaterialBase.hpp)
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "AnisoPlasticity.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
@@ -810,7 +811,7 @@ void AnisoPlasticity::LRUpdateStress(Matrix3 &strial,Matrix3 &stk,double lambda,
 	
 	// iterate until close or 10 steps
 	int nstep = 1;
-	double diffnorm;
+	double diffnorm = 0.;
 	while(nstep<iterSteps)
 	{	// save last
 		stkprev = stk;
@@ -880,7 +881,7 @@ double AnisoPlasticity::LRGetFkFromLambdak(MPMBase *mptr,Matrix3 &strial,Matrix3
 }
 
 // debugging - print function trying to solve
-double AnisoPlasticity::LRPrintFk(MPMBase *mptr,Matrix3 &strial,Matrix3 &stk,
+void AnisoPlasticity::LRPrintFk(MPMBase *mptr,Matrix3 &strial,Matrix3 &stk,
 								  double lambda,int np,LRAnisoPlasticProperties *p,double ftrial,double lambdaInitial) const
 {
 	double lambdamax = log(2.*lambda);
@@ -1292,8 +1293,10 @@ void AnisoPlasticity::GetDfDsigma(Tensor *st0,int np,AnisoPlasticProperties *p) 
 {
 	// clockwise rotation from analysis to material axes
 	Tensor srot;
+
 	double rootSAS = GetMagnitudeRotatedHill(st0,&srot,np,p);
-	
+
+		
 	if(rootSAS>0.)
 	{	double dfdsxxrot,dfdsyyrot,dfdszzrot,dfdtxyrot;
 		dfdsxxrot = (syxxred2*srot.xx - hTerm*srot.yy - gTerm*srot.zz) / rootSAS;
@@ -1644,7 +1647,7 @@ void AnisoPlasticity::UpdateStress(Tensor *strial,Tensor *stk,double lambda,int 
 	
 	// iterate until close or 10 steps
 	int nstep = 1;
-	double diffnorm;
+	double diffnorm = 0.;
 	while(nstep<iterSteps)
 	{	// save last
 		stkprev = *stk;
@@ -1712,7 +1715,7 @@ double AnisoPlasticity::GetFkFromLambdak(MPMBase *mptr,Tensor *strial,Tensor *st
 }
 
 // debugging - print function trying to solve
-double AnisoPlasticity::SRPrintFk(MPMBase *mptr,Tensor *strial,Tensor *stk,
+void AnisoPlasticity::SRPrintFk(MPMBase *mptr,Tensor *strial,Tensor *stk,
 								  double lambda,int np,AnisoPlasticProperties *p,double ftrial,double lambdaInitial) const
 {
 	double lambdamax = log(2.*lambda);

@@ -1,0 +1,252 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{8FEBA1C0-2E4B-4E5E-93F7-D8C736901CAE}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>NairnFEA</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(ProjectDir);$(SolutionDir)..\..\..\..\NairnFEA\src;$(SolutionDir)..\..\..;$(SolutionDir)..\..\..\..\..\xerces-c-3.1.4\src;$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)Build\$(Configuration)-$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)Build\$(Configuration)-$(Platform)\$(ProjectName)-data\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <DisableSpecificWarnings>4068;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <EnableParallelCodeGeneration>
+      </EnableParallelCodeGeneration>
+      <OpenMPSupport>true</OpenMPSupport>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\..\..\xerces-c-3.1.4\Build\Win64\VC14\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>xerces-c_3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\Constraint.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\EdgeBC.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\FEABoundaryCondition.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\NodalDispBC.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\NodalLoad.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\CSTriangle.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\EightNodeIsoparam.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\Interface2D.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\LinearInterface.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\QuadInterface.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\SixNodeTriangle.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Materials\ImperfectInterface.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\NairnFEA_Class\NairnFEA.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Area.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\ConstraintController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\EdgeBCController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\FEAReadHandler.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Keypoint.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\KeypointsController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\NodalDispBCController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\NodalLoadController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Path.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\PathBCController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\PathsController.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\System\FEAArchiveData.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnFEA\src\System\FEAPrefix.hpp" />
+    <ClInclude Include="..\..\..\..\Elements\ElementBase.hpp" />
+    <ClInclude Include="..\..\..\..\Elements\FourNodeIsoparam.hpp" />
+    <ClInclude Include="..\..\..\..\Elements\Lagrange2D.hpp" />
+    <ClInclude Include="..\..\..\..\Elements\Linear2D.hpp" />
+    <ClInclude Include="..\..\..\..\Elements\Quad2D.hpp" />
+    <ClInclude Include="..\..\..\..\Exceptions\CommonException.hpp" />
+    <ClInclude Include="..\..\..\..\Exceptions\StrX.hpp" />
+    <ClInclude Include="..\..\..\..\Materials\Elastic.hpp" />
+    <ClInclude Include="..\..\..\..\Materials\IsotropicMat.hpp" />
+    <ClInclude Include="..\..\..\..\Materials\MaterialBase.hpp" />
+    <ClInclude Include="..\..\..\..\Materials\Orthotropic.hpp" />
+    <ClInclude Include="..\..\..\..\Materials\TransIsotropic.hpp" />
+    <ClInclude Include="..\..\..\..\Nodes\NodalPoint.hpp" />
+    <ClInclude Include="..\..\..\..\Nodes\NodalPoint2D.hpp" />
+    <ClInclude Include="..\..\..\..\Nodes\NodalPoint3D.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\ArcController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\BMPLevel.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\BoxController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\CommonReadHandler.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\ElementsController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\LineController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\MaterialController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\mathexpr.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\NodesController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\OvalController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\ParseController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\PointController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\PolygonController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\RectController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\ShapeController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\XYBMPImporter.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\XYFileImporter.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\XYFPGImporter.hpp" />
+    <ClInclude Include="..\..\..\..\System\CommonAnalysis.hpp" />
+    <ClInclude Include="..\..\..\..\System\CommonArchiveData.hpp" />
+    <ClInclude Include="..\..\..\..\System\CommonTask.hpp" />
+    <ClInclude Include="..\..\..\..\System\DataTypes.hpp" />
+    <ClInclude Include="..\..\..\..\System\LinkedObject.hpp" />
+    <ClInclude Include="..\..\..\..\System\Matrix3.hpp" />
+    <ClInclude Include="..\..\..\..\System\UnitsController.hpp" />
+    <ClInclude Include="stdafx.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\Constraint.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\EdgeBC.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\FEABoundaryCondition.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\NodalDispBC.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\NodalLoad.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\CSTriangle.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\EightNodeIsoparam.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\Interface2D.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\LinearInterface.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\MoreElementBase.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\QuadInterface.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\SixNodeTriangle.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Materials\ImperfectInterface.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Materials\MaterialBaseFEA.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\NairnFEA_Class\FEAStartResults.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\NairnFEA_Class\NairnFEA.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Nodes\MoreNodalPoint.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Numerical\Gauss.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Area.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\BitMapFilesFEA.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\ConstraintController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\EdgeBCController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\FEAReadHandler.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Keypoint.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\KeypointsController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\MatRegionFEA.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\NodalDispBCController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\NodalLoadController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Path.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\PathBCController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\PathsController.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\System\FEAArchiveData.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnFEA\src\System\Utilities.cpp" />
+    <ClCompile Include="..\..\..\..\Elements\ElementBase.cpp" />
+    <ClCompile Include="..\..\..\..\Elements\FourNodeIsoparam.cpp" />
+    <ClCompile Include="..\..\..\..\Elements\Lagrange2D.cpp" />
+    <ClCompile Include="..\..\..\..\Elements\Linear2D.cpp" />
+    <ClCompile Include="..\..\..\..\Elements\Quad2D.cpp" />
+    <ClCompile Include="..\..\..\..\Exceptions\CommonException.cpp" />
+    <ClCompile Include="..\..\..\..\Materials\Elastic.cpp" />
+    <ClCompile Include="..\..\..\..\Materials\IsotropicMat.cpp" />
+    <ClCompile Include="..\..\..\..\Materials\MaterialBase.cpp" />
+    <ClCompile Include="..\..\..\..\Materials\Orthotropic.cpp" />
+    <ClCompile Include="..\..\..\..\Materials\TransIsotropic.cpp" />
+    <ClCompile Include="..\..\..\..\Nodes\NodalPoint.cpp" />
+    <ClCompile Include="..\..\..\..\Nodes\NodalPoint2D.cpp" />
+    <ClCompile Include="..\..\..\..\Nodes\NodalPoint3D.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\ArcController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\BitMapFilesCommon.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\BMPLevel.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\BoxController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\CommonReadHandler.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\ElementsController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\LineController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\MaterialController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\mathexpr.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\NodesController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\OvalController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\ParseController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\PointController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\PolygonController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\RectController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\ShapeController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\XYBMPImporter.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\XYFileImporter.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\XYFPGImporter.cpp" />
+    <ClCompile Include="..\..\..\..\System\CommonAnalysis.cpp" />
+    <ClCompile Include="..\..\..\..\System\CommonArchiveData.cpp" />
+    <ClCompile Include="..\..\..\..\System\CommonTask.cpp" />
+    <ClCompile Include="..\..\..\..\System\CommonUtilities.cpp" />
+    <ClCompile Include="..\..\..\..\System\LinkedObject.cpp" />
+    <ClCompile Include="..\..\..\..\System\main.cpp" />
+    <ClCompile Include="..\..\..\..\System\Matrix3.cpp" />
+    <ClCompile Include="..\..\..\..\System\svninfo.cpp" />
+    <ClCompile Include="..\..\..\..\System\UnitsController.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\..\NairnFEA\build\makefile" />
+    <None Include="..\..\..\..\..\NairnFEA\input\NairnFEA.dtd" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

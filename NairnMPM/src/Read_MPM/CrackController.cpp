@@ -6,6 +6,7 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_MPM/CrackController.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackSegment.hpp"

@@ -6,6 +6,7 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_XML/NodesController.hpp"
 #include "Nodes/NodalPoint2D.hpp"
 #include "Nodes/NodalPoint3D.hpp"

@@ -22,6 +22,7 @@
 		?
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/MoveCracksTask.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
@@ -47,7 +48,7 @@ void MoveCracksTask::Execute(void)
 {
 	CommonException *mcErr = NULL;
     
-    int numCracksPerProc = (double)numberOfCracks/(double)(fmobj->GetNumberOfProcessors());
+    int numCracksPerProc = (int)((double)numberOfCracks/(double)(fmobj->GetNumberOfProcessors()));
     
     // uncomment this line to prevent parallelization of this task
     //numCracksPerProc = 0;
@@ -89,7 +90,7 @@ void MoveCracksTask::Execute(void)
 					mcErr = new CommonException(err);
 				}
 			}
-			catch(std::bad_alloc& ba)
+			catch(std::bad_alloc&)
 			{	if(mcErr==NULL)
 				{
 #pragma omp critical (error)
@@ -133,7 +134,7 @@ void MoveCracksTask::Execute(void)
 					mcErr = new CommonException(err);
 				}
 			}
-			catch(std::bad_alloc& ba)
+			catch(std::bad_alloc&)
 			{	if(mcErr==NULL)
 				{
 #pragma omp critical (error)

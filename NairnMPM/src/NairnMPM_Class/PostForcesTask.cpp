@@ -17,6 +17,7 @@
 	7. Make transport tasks forces consistent with transport nodal BCs
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/PostForcesTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/NodalPoint.hpp"

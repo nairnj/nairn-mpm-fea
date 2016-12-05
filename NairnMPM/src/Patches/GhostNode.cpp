@@ -6,6 +6,7 @@
 	Copyright (c) 2013 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Patches/GhostNode.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Nodes/NodalPoint2D.hpp"

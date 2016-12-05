@@ -9,6 +9,7 @@
 		to the grid
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "NairnMPM_Class/RunCustomTasksTask.hpp"
 #include "Custom_Tasks/CustomTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
@@ -28,10 +29,18 @@ RunCustomTasksTask::RunCustomTasksTask(const char *name) : MPMTask(name)
 // Run all custom tasks
 void RunCustomTasksTask::Execute(void)
 {
-	int matfld,numnds,ndsArray[maxShapeNodes];
-	const MaterialBase *matID;
-	double fnmp,fn[maxShapeNodes];
+#ifdef CONST_ARRAYS
+	int ndsArray[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES];
+	//double xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
+#else
+	int ndsArray[maxShapeNodes];
+	double fn[maxShapeNodes];
 	//double xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+#endif
+	int matfld,numnds;
+	const MaterialBase *matID;
+	double fnmp;
 	short vfld,isRigid;
     
 	// in case 2D planar

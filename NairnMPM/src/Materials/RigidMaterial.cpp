@@ -16,6 +16,7 @@
         mp/(rho rp) = particle area in mm^2 (because rho=1 g/mm^3)
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Materials/RigidMaterial.hpp"
 #include "Read_XML/mathexpr.hpp"
 #include "Exceptions/CommonException.hpp"
@@ -542,6 +543,75 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 			}
 			if(Vfunction->HasError())
 				ThrowSAXException("Value setting function is not valid");
+			break;
+		default:
+			break;
+	}
+}
+
+// replace setting function, but HasError() is not called
+// throws std::bad_alloc, CommonException()
+void RigidMaterial::ReplaceSettingFunction(char *bcFunction,int functionNum)
+{
+	int numVars = 5;
+	
+	// set one to three functions in order in check them
+	switch(functionNum)
+	{	case SETTING_FUNCTION_BLOCK:
+			if(function==NULL)
+			{	throw CommonException("Setting function #1 to replace not there.",
+									  "RigidMaterial::ReplaceSettingFunction");
+			}
+			delete function;
+			try
+			{	function=new ROperation(bcFunction,numVars,rmTimeArray);
+			}
+			catch(...)
+			{	throw CommonException("Setting function #1 is not valid.",
+									  "RigidMaterial::ReplaceSettingFunction");
+			}
+			break;
+		case SETTING_FUNCTION2_BLOCK:
+			if(function2==NULL)
+			{	throw CommonException("Setting function #2 to replace not there.",
+									  "RigidMaterial::ReplaceSettingFunction");
+			}
+			delete function2;
+			try
+			{	function2=new ROperation(bcFunction,numVars,rmTimeArray);
+			}
+			catch(...)
+			{	throw CommonException("Setting function #2 is not valid.",
+									  "RigidMaterial::ReplaceSettingFunction");
+			}
+			break;
+		case SETTING_FUNCTION3_BLOCK:
+			if(function3==NULL)
+			{	throw CommonException("Setting function #3 to replace not there.",
+									  "RigidMaterial::ReplaceSettingFunction");
+			}
+			delete function3;
+			try
+			{	function3=new ROperation(bcFunction,numVars,rmTimeArray);
+			}
+			catch(...)
+			{	throw CommonException("Setting function #3 is not valid.",
+								  "RigidMaterial::ReplaceSettingFunction");
+			}
+			break;
+		case VALUE_FUNCTION_BLOCK:
+			if(Vfunction==NULL)
+			{	throw CommonException("Value setting function to replace not there.",
+									  "RigidMaterial::ReplaceSettingFunction");
+			}
+			delete Vfunction;
+			try
+			{	Vfunction=new ROperation(bcFunction,numVars,rmTimeArray);
+			}
+			catch(...)
+			{	throw CommonException("Value setting function is not valid.",
+									  "RigidMaterial::ReplaceSettingFunction");
+			}
 			break;
 		default:
 			break;

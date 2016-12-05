@@ -6,6 +6,7 @@
     Copyright (c) 2006 John A. Nairn. All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #ifdef MPM_CODE
 	#include "NairnMPM_Class/NairnMPM.hpp"
 #else
@@ -37,11 +38,14 @@ CommonReadHandler::CommonReadHandler()
 // throws SAXException()
 CommonReadHandler::~CommonReadHandler()
 {
-	// set material array
-	const char *emsg = matCtrl->SetMaterialArray();
+	delete matCtrl;
+}
+
+// set material array before deleting
+void CommonReadHandler::FinishUp(void)
+{	const char *emsg = matCtrl->SetMaterialArray();
 	if(emsg!=NULL)
 		throw SAXException(emsg);
-	delete matCtrl;
 }
 
 /********************************************************************************
@@ -97,7 +101,7 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 		strcpy(mass,"");
 		strcpy(timeu,"");
 		char *aName,*value;
-    	int i,numAttr=attrs.getLength();
+    	int i,numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -171,7 +175,7 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
         int matID=0;		// invalid ID unless it is set
 		char matName[200],*aName,*value;
 		matName[0]=0;		// to get the name of the material
-    	int i,numAttr=attrs.getLength();
+    	int i,numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -196,7 +200,7 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 			throw SAXException("<color> must be within a <Material> definition.");
 		float redClr=-1.,greenClr=-1.,blueClr=-1.,alpha=1.;
 		char *aName,*value;
-    	int i,numAttr=attrs.getLength();
+    	int i,numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -313,7 +317,7 @@ void CommonReadHandler::characters(const XMLCh* const chars,const XMLSize_t leng
 					// the end element method should assign its pointer to inputPtr
 					break;
 				default:
-					myCharacters(xData,length);
+					myCharacters(xData,(int)length);
 					break;
 			}
 			break;
@@ -338,7 +342,7 @@ void CommonReadHandler::characters(const XMLCh* const chars,const XMLSize_t leng
 			break;
 		
         default:
-			myCharacters(xData,length);
+			myCharacters(xData,(int)length);
             break;
     }
     delete [] xData;
@@ -348,7 +352,7 @@ void CommonReadHandler::characters(const XMLCh* const chars,const XMLSize_t leng
 // Caller must delete [] it
 char *CommonReadHandler::ReadTagValue(const char *theTag,const Attributes& attrs)
 {
-	int i,numAttr=attrs.getLength();
+	int i,numAttr=(int)attrs.getLength();
     char *aName,*value;
 	
 	for(i=0;i<numAttr;i++)
@@ -368,7 +372,7 @@ char *CommonReadHandler::ReadTagValue(const char *theTag,const Attributes& attrs
 // Main use is for command with a single numeric tag
 double CommonReadHandler::ReadNumericAttribute(const char *theTag,const Attributes& attrs,double defaultValue)
 {
-	int i,numAttr=attrs.getLength();
+	int i,numAttr=(int)attrs.getLength();
     char *aName,*value;
 	double attrValue=defaultValue;
 	
@@ -391,7 +395,7 @@ void CommonReadHandler::ReadTagNumber(int *myval,const Attributes& attrs)
 {
     int i,aval;
     char *aName,*value;
-    int numAttr=attrs.getLength();
+    int numAttr=(int)attrs.getLength();
 	*myval=0;
 	
     for(i=0;i<numAttr;i++)
@@ -414,7 +418,7 @@ void CommonReadHandler::ReadTagNumber(int *myval,const Attributes& attrs)
 // If no 'units' found or invalid one found, return 1.
 double CommonReadHandler::ReadUnits(const Attributes& attrs,int type)
 {
-    int i,numAttr=attrs.getLength();
+    int i,numAttr=(int)attrs.getLength();
     char *aName,*value;
     double attrScale=1.;
     
@@ -457,8 +461,8 @@ void CommonReadHandler::ThrowCatErrorMessage(const char *msg,const char *comment
 // throws SAXException()
 void CommonReadHandler::ThrowCompoundErrorMessage(const char *msg,const char *extra,const char *comment)
 {  
-	int msgLen=strlen(msg)+1;
-	if(strlen(extra)>0) msgLen+=strlen(extra)+1;
+	int msgLen=(int)strlen(msg)+1;
+	if(strlen(extra)>0) msgLen+=(int)strlen(extra)+1;
 	char *errMsg=new (nothrow) char[msgLen];
 	if(errMsg != NULL)
 	{	strcpy(errMsg,msg);
@@ -606,7 +610,7 @@ double CommonReadHandler::ReadGridPoint(char *value,double distScaling,double ax
 
 #pragma mark ACCESSORS
 
-// decode string delimited by white space, commands, or tabs and add intervening numbers
+// decode string delimited by white space, puctuation (, : ;), or tabs and add intervening numbers
 // to the input vector (which is cleared first). Any other characters trigger an error
 // not thread safe due to push_back()
 bool CommonReadHandler::GetFreeFormatNumbers(char *nData,vector<double> &values,double scaling)
@@ -655,4 +659,3 @@ bool CommonReadHandler::GetFreeFormatNumbers(char *nData,vector<double> &values,
 	
 	return true;
 }
-		

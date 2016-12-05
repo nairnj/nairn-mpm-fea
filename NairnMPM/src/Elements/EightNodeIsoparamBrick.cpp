@@ -6,6 +6,7 @@
 	Copyright 2006 RSAC Software. All rights reserved.
  ******************************************************************/
 
+#include "stdafx.h"
 #include "Elements/EightNodeIsoparamBrick.hpp"
 #include "Nodes/NodalPoint.hpp"
 #ifdef MPM_CODE

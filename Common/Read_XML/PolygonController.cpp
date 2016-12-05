@@ -6,6 +6,7 @@
     Copyright (c) 2007 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Read_XML/PolygonController.hpp"
 
 #pragma mark PolygonController: initializers
@@ -41,7 +42,7 @@ void PolygonController::SetParameter(const char *aName,const char *value)
 bool PolygonController::FinishParameter(void)
 {	xpt.push_back(xparm);
 	ypt.push_back(yparm);
-	return TRUE;
+	return true;
 }
 
 // add point using numbers

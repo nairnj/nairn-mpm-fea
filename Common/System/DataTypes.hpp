@@ -147,7 +147,7 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 
 // common utility methods
 void PrintSection(const char *text);
-int DbleEqual(double,double);
+bool DbleEqual(double,double);
 int Reverse(char *,int);
 void PrimeFactors(int,vector<int> &);
 
@@ -171,6 +171,11 @@ Tensor *ScaleTensor(Tensor *,double);
 double Tensor_i(Tensor *,int);
 double Tensor_ij(Tensor *,int,int);
 void PrintTensor(const char *,Tensor *);
+
+unsigned charConvertToLower(unsigned char);
+int CIstrcmp(const char *, const char *);
+void GetFileExtension(const char *,char *,int);
+char *MakeDOSPath(char *);
 
 #ifdef MPM_CODE
 TensorAntisym *ZeroTensorAntisym(TensorAntisym *);

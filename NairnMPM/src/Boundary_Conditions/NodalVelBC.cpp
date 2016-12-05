@@ -6,6 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
