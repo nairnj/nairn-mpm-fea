@@ -48,9 +48,6 @@
     <Filter Include="NairnMPM_src\Hyperelastic_Plastic">
       <UniqueIdentifier>{35a5d495-59ce-46d3-9fc2-934da0b4397a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="NairnMPM_src\Softening">
-      <UniqueIdentifier>{ad6dd418-0a5b-46a0-abc8-4d99ee4b1f6f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="NairnMPM_src\Hardening_Laws">
       <UniqueIdentifier>{7c9ade91-f4fd-49f9-9304-12bba7ae423a}</UniqueIdentifier>
     </Filter>
@@ -203,9 +200,6 @@
     <ClInclude Include="..\..\..\..\Read_XML\XYFileImporter.hpp">
       <Filter>Common\Read_XML</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\Read_XML\XYFPGImporter.hpp">
-      <Filter>Common\Read_XML</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\Nodes\NodalPoint.hpp">
       <Filter>Common\Nodes</Filter>
     </ClInclude>
@@ -217,9 +211,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\System\ArchiveData.hpp">
       <Filter>NairnMPM_src\System</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\AreaOfInterest.hpp">
-      <Filter>NairnMPM_src\Read_MPM</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\CrackController.hpp">
       <Filter>NairnMPM_src\Read_MPM</Filter>
@@ -305,9 +296,6 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastTask.hpp">
       <Filter>NairnMPM_src\NairnMPM_Class</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTask.hpp">
-      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\BistableIsotropic.hpp">
       <Filter>NairnMPM_src\Materials</Filter>
     </ClInclude>
@@ -329,9 +317,6 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\WoodMaterial.hpp">
       <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\AnisoMembrane.hpp">
-      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\ClampedNeohookean.hpp">
       <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
     </ClInclude>
@@ -350,32 +335,11 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Mooney.hpp">
       <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\MooneyMembrane.hpp">
-      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Neohookean.hpp">
-      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\PhaseTransitionMat.hpp">
       <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TaitLiquid.hpp">
       <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\FailureSurface.hpp">
-      <Filter>NairnMPM_src\Softening</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoSoftening.hpp">
-      <Filter>NairnMPM_src\Softening</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.hpp">
-      <Filter>NairnMPM_src\Softening</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TIFailureSurface.hpp">
-      <Filter>NairnMPM_src\Softening</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TransIsoSoftening.hpp">
-      <Filter>NairnMPM_src\Softening</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\DDBHardening.hpp">
       <Filter>NairnMPM_src\Hardening_Laws</Filter>
@@ -422,9 +386,6 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.hpp">
       <Filter>NairnMPM_src\Traction_Laws</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\AdhesionFriction.hpp">
-      <Filter>NairnMPM_src\Contact_Laws</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\ContactLaw.hpp">
       <Filter>NairnMPM_src\Contact_Laws</Filter>
     </ClInclude>
@@ -455,9 +416,6 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityField.hpp">
       <Filter>NairnMPM_src\Nodes</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityFieldPS.hpp">
-      <Filter>NairnMPM_src\Nodes</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Patches\GhostNode.hpp">
       <Filter>NairnMPM_src\Patches</Filter>
     </ClInclude>
@@ -480,15 +438,6 @@
       <Filter>NairnMPM_src\MPM_Classes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPointAS.hpp">
-      <Filter>NairnMPM_src\MPM_Classes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPoint2D.hpp">
-      <Filter>NairnMPM_src\MPM_Classes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPoint3D.hpp">
-      <Filter>NairnMPM_src\MPM_Classes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPointAS.hpp">
       <Filter>NairnMPM_src\MPM_Classes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MPMBase.hpp">
@@ -554,15 +503,6 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTask.hpp">
       <Filter>NairnMPM_src\Custom_Tasks</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTaskMulti.hpp">
-      <Filter>NairnMPM_src\Custom_Tasks</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTaskSingle.hpp">
-      <Filter>NairnMPM_src\Custom_Tasks</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CSVArchive.hpp">
-      <Filter>NairnMPM_src\Custom_Tasks</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CustomTask.hpp">
       <Filter>NairnMPM_src\Custom_Tasks</Filter>
     </ClInclude>
@@ -576,9 +516,6 @@
       <Filter>NairnMPM_src\Custom_Tasks</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\HistoryArchive.hpp">
-      <Filter>NairnMPM_src\Custom_Tasks</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\LoadControl.hpp">
       <Filter>NairnMPM_src\Custom_Tasks</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PropagateTask.hpp">
@@ -715,9 +652,6 @@
     <ClCompile Include="..\..\..\..\Read_XML\XYFileImporter.cpp">
       <Filter>Common\Read_XML</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\Read_XML\XYFPGImporter.cpp">
-      <Filter>Common\Read_XML</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\Nodes\NodalPoint.cpp">
       <Filter>Common\Nodes</Filter>
     </ClCompile>
@@ -729,9 +663,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\System\ArchiveData.cpp">
       <Filter>NairnMPM_src\System</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\AreaOfInterest.cpp">
-      <Filter>NairnMPM_src\Read_MPM</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\BitMapFiles.cpp">
       <Filter>NairnMPM_src\Read_MPM</Filter>
@@ -826,9 +757,6 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastTask.cpp">
       <Filter>NairnMPM_src\NairnMPM_Class</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTask.cpp">
-      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\BistableIsotropic.cpp">
       <Filter>NairnMPM_src\Materials</Filter>
     </ClCompile>
@@ -859,9 +787,6 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\WoodMaterial.cpp">
       <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\AnisoMembrane.cpp">
-      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ClampedNeohookean.cpp">
       <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
     </ClCompile>
@@ -880,32 +805,11 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Mooney.cpp">
       <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\MooneyMembrane.cpp">
-      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Neohookean.cpp">
-      <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\PhaseTransitionMat.cpp">
       <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TaitLiquid.cpp">
       <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\FailureSurface.cpp">
-      <Filter>NairnMPM_src\Softening</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoSoftening.cpp">
-      <Filter>NairnMPM_src\Softening</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.cpp">
-      <Filter>NairnMPM_src\Softening</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TIFailureSurface.cpp">
-      <Filter>NairnMPM_src\Softening</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TransIsoSoftening.cpp">
-      <Filter>NairnMPM_src\Softening</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\DDBHardening.cpp">
       <Filter>NairnMPM_src\Hardening_Laws</Filter>
@@ -952,9 +856,6 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.cpp">
       <Filter>NairnMPM_src\Traction_Laws</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\AdhesionFriction.cpp">
-      <Filter>NairnMPM_src\Contact_Laws</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ContactLaw.cpp">
       <Filter>NairnMPM_src\Contact_Laws</Filter>
     </ClCompile>
@@ -988,9 +889,6 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityField.cpp">
       <Filter>NairnMPM_src\Nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityFieldPS.cpp">
-      <Filter>NairnMPM_src\Nodes</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\NodalPointMPM.cpp">
       <Filter>NairnMPM_src\Nodes</Filter>
     </ClCompile>
@@ -1016,15 +914,6 @@
       <Filter>NairnMPM_src\MPM_Classes</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPointAS.cpp">
-      <Filter>NairnMPM_src\MPM_Classes</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPoint2D.cpp">
-      <Filter>NairnMPM_src\MPM_Classes</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPoint3D.cpp">
-      <Filter>NairnMPM_src\MPM_Classes</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MemPointAS.cpp">
       <Filter>NairnMPM_src\MPM_Classes</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MPMBase.cpp">
@@ -1090,15 +979,6 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTask.cpp">
       <Filter>NairnMPM_src\Custom_Tasks</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTaskMulti.cpp">
-      <Filter>NairnMPM_src\Custom_Tasks</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ConductionTaskSingle.cpp">
-      <Filter>NairnMPM_src\Custom_Tasks</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CSVArchive.cpp">
-      <Filter>NairnMPM_src\Custom_Tasks</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CustomTask.cpp">
       <Filter>NairnMPM_src\Custom_Tasks</Filter>
     </ClCompile>
@@ -1112,9 +992,6 @@
       <Filter>NairnMPM_src\Custom_Tasks</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\HistoryArchive.cpp">
-      <Filter>NairnMPM_src\Custom_Tasks</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\LoadControl.cpp">
       <Filter>NairnMPM_src\Custom_Tasks</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PropagateTask.cpp">

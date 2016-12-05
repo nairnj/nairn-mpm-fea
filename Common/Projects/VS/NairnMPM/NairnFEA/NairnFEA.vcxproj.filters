@@ -136,9 +136,6 @@
     <ClInclude Include="..\..\..\..\Read_XML\XYFileImporter.hpp">
       <Filter>Common\Read_XML</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\Read_XML\XYFPGImporter.hpp">
-      <Filter>Common\Read_XML</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\Exceptions\CommonException.hpp">
       <Filter>Common\Exceptions</Filter>
     </ClInclude>
@@ -349,9 +346,6 @@
       <Filter>Common\Read_XML</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\Read_XML\XYFileImporter.cpp">
-      <Filter>Common\Read_XML</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Read_XML\XYFPGImporter.cpp">
       <Filter>Common\Read_XML</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\Exceptions\CommonException.cpp">

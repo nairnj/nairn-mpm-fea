@@ -435,5 +435,6 @@ void Elastic::HypoIncrementDeformation(MPMBase *mptr,Matrix3 du) const
 // box define by the particle volume. Return that area divided by particle volume
 double Elastic::GetAcOverVp(int np,MPMBase *mptr,Vector *norm) const
 {
+	return 1.;
 }
 

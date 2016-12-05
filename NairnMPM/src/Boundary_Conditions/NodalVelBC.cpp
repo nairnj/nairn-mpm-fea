@@ -255,7 +255,7 @@ NodalVelBC *NodalVelBC::SetMirroredVelBC(double bctime)
                 int mirror = neighbor+mirrorSpacing;
                 if(mirror>0 && mirror<=nnodes)
                 {   // it should not fix the direection and should have particles
-                    if((nd[mirror]->fixedDirection&dir)==0 && nd[mirror]->NodeHasNonrigidParticles()>0)
+                    if((nd[mirror]->fixedDirection&dir)==0 && nd[mirror]->NodeHasNonrigidParticles())
                     {   // maybe should verify neighbor is for same rigid material, but needs to check all BCs for their ID
                         
                         // found node to reflect
