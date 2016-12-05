@@ -39,8 +39,8 @@ CustomThermalRamp::CustomThermalRamp()
 	// for imaged ramp
 	bmpFile = NULL;
 	orig = MakeVector(0.,0.,-1.e-9);	// <-1.-8 means zlevel not supplied
-	width = -1.e-9;			// <-1.-8 means not supplied
-	height = -1.e-9;
+	width = -1.e9;			// <-1.-8 means not supplied
+	height = -1.e9;
 	flipped = false;
 	deltaTmin = 0.;
 	deltaTmax = 0.;
@@ -106,7 +106,6 @@ char *CustomThermalRamp::InputParam(char *pName,int &input,double &gScaling)
 	}
 	
 	else if(strcmp(pName,"scale")==0)
-<<<<<<< Updated upstream
 	{	input=TEXT_PARAMETER;
 		return (char *)&scaleFxn;
 	}
@@ -184,10 +183,6 @@ char *CustomThermalRamp::InputParam(char *pName,int &input,double &gScaling)
 			input=DOUBLE_NUM;
 			return (char *)&(currentLevel->temperature);
 		}
-=======
-	{	input=INT_NUM;
-		return (char *)&scaleFxn;
->>>>>>> Stashed changes
 	}
 	
 	// check remaining commands
@@ -257,7 +252,7 @@ CustomTask *CustomThermalRamp::Initialize(void)
 	// current Delta T
 	currentDeltaT = 0.;
 	
-	cout << "Ramp particle temperatures." << endl;
+	cout << "Ramp particle temperatures:" << endl;
 	
 	// Two options
 	// 1. Ramp to isoDeltaT, optionally scalled by scaleFxn (when bmpFile is NULL)
