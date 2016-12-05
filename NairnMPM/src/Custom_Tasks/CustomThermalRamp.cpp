@@ -106,6 +106,7 @@ char *CustomThermalRamp::InputParam(char *pName,int &input,double &gScaling)
 	}
 	
 	else if(strcmp(pName,"scale")==0)
+<<<<<<< Updated upstream
 	{	input=TEXT_PARAMETER;
 		return (char *)&scaleFxn;
 	}
@@ -183,6 +184,10 @@ char *CustomThermalRamp::InputParam(char *pName,int &input,double &gScaling)
 			input=DOUBLE_NUM;
 			return (char *)&(currentLevel->temperature);
 		}
+=======
+	{	input=INT_NUM;
+		return (char *)&scaleFxn;
+>>>>>>> Stashed changes
 	}
 	
 	// check remaining commands
