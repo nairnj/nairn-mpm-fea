@@ -351,11 +351,14 @@ const char *CommonReadHandler::DecodeBMPWidthAndHeight(XYInfoHeader info,double 
 	if(pw.y<0.) pw.y = height/(double)info.height;
 	
 	// set zlevel (but only for 3D)
-	if(is3D && zlevel<-1.e8)
-	{	if(!info.knowsCellSize)
-			zlevel = 0.;
-		else
-			zlevel = info.zlevel;
+	if(is3D)
+	{	// if not set, try to find it in the file info
+		if(zlevel<-1.e8)
+		{	if(!info.knowsCellSize)
+				zlevel = 0.;
+			else
+				zlevel = info.zlevel;
+		}
 	}
 	else
 		zlevel = 0.;
