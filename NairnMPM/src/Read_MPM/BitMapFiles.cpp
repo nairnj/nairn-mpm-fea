@@ -168,7 +168,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
                         
 						// is there an angle image too?
 						if(setAngles)
-						{	double totalIntensity = FindAverageValue(map,rows);
+						{	double totalIntensity = FindAverageValue(map,angleRows);
 							if(totalIntensity>0.)
 							{	double matAngle=minAngle+(totalIntensity-minIntensity)*angleScale;
 								newMpt->SetAnglez0InDegrees(matAngle);
