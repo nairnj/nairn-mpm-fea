@@ -45,12 +45,12 @@ double zeroDouble=0.;
 int recSize;
 int vectorSize,tensorSize;
 bool reverseFromInput;
-int angleOffset=-1,posOffset=-1,stressOffset=-1,strainOffset=-1;
+int angleOffset=-1,angleYOffset,angleXOffset,posOffset=-1,stressOffset=-1,strainOffset=-1;
 int crackPosOffset=-1,jIntOffset=-1,kSifOffset=-1;
 int velocityOffset=-1,origPosOffset=-1,plStrainOffset=-1;
 int tempOffset=-1,concOffset=-1,strainEnergyOffset=-1,plasticEnergyOffset=-1;
 int history1Offset=-1,history2Offset=-1,history3Offset=-1,history4Offset=-1;
-int workEnergyOffset=-1,heatEnergyOffset=-1;
+int workEnergyOffset=-1,heatEnergyOffset=-1,rotStrainOffset=-1;
 
 // global file variables
 unsigned char *buffer;
@@ -185,6 +185,12 @@ int main(int argc, char * const argv[])
 					q=WORKENERGY;
 				else if(strcmp(parm,"heat")==0)
 					q=HEATENERGY;
+				else if(strcmp(parm,"angz")==0)
+					q=MATANGLEZ;
+				else if(strcmp(parm,"angy")==0)
+					q=MATANGLEY;
+				else if(strcmp(parm,"angx")==0)
+					q=MATANGLEX;
 				else
 				{   cerr << "ExtractMPM option 'q' argument of '" << parm << "' is not recognized" << endl;
 					return BadOptionErr;
@@ -1171,7 +1177,25 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 		case MASS:
 			OutputDouble((double *)(ap+sizeof(int)),0,delim,reverseFromInput,os,quantity[i]);
 			break;
-        
+		
+		case MATANGLEZ:
+			OutputDouble((double *)(ap+angleOffset),0,delim,reverseFromInput,os,quantity[i]);
+			break;
+			
+		case MATANGLEY:
+			if(angleYOffset>0)
+				OutputDouble((double *)(ap+angleYOffset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case MATANGLEX:
+			if(angleXOffset>0)
+				OutputDouble((double *)(ap+angleXOffset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
         case HIST1:
             if(history1Offset>0)
                 OutputDouble((double *)(ap+history1Offset),0,delim,reverseFromInput,os,quantity[i]);
@@ -1483,6 +1507,10 @@ int CalcArchiveSize(int vernum)
 	*/
 	int mpmRecSize=sizeof(int)+3*sizeof(double)+thirdAngle+2*vectorSize+sizeof(short)+2;
 	angleOffset=sizeof(int)+sizeof(double)+sizeof(short)+2;
+	if(threeD)
+	{	angleYOffset=angleOffset+sizeof(double);
+		angleXOffset=angleYOffset+sizeof(double);
+	}
 	posOffset=angleOffset+2*sizeof(double)+thirdAngle;
 	origPosOffset=posOffset+vectorSize;
 	
@@ -1553,7 +1581,8 @@ int CalcArchiveSize(int vernum)
     if(mpmOrder[ARCH_ElementCrossings]=='Y')
         mpmRecSize+=sizeof(int);
     if(mpmOrder[ARCH_RotStrain]=='Y')
-	{	if(threeD)
+	{	rotStrainOffset=mpmRecSize;
+		if(threeD)
 			mpmRecSize+=3*sizeof(double);
 		else
 			mpmRecSize+=sizeof(double);

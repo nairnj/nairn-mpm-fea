@@ -36,15 +36,21 @@ void CrackVelocityFieldSingle::ZeroMatFields(void)
 #pragma mark TASK 1 METHODS
 
 // Delete empty velocity fields, count number of materials, and return total mass
+// Make copy of momentu, to be restored after strain update and forces
 // Note: never have materials that ignore cracks when this class is active
 double CrackVelocityFieldSingle::GetTotalMassAndCount(void)
-{	return mvf[0]->numberPoints>0 ? mvf[0]->mass : 0. ;
+{	if(mvf[0]->numberPoints<1) return 0.;
+	
+	// copy the extrapolated momenta
+	mvf[0]->xpic[PK_COPY] = mvf[0]->pk;
+	
+	return mvf[0]->mass;
 }
 
 #pragma mark TASK 3 METHODS
 
 // Add to force spread out over the materials so each has same extra accelerations = f/M_i
-// Only called by AddTractionForce() and CrackInterfaceForce()
+// Only called by AddTractionForce()
 // Only addes force to fields that see cracks (not relevant in single material mode)
 void CrackVelocityFieldSingle::AddFtotSpreadTask3(Vector *f)
 {	if(mvf[0]->numberPoints>0)
@@ -55,6 +61,16 @@ void CrackVelocityFieldSingle::AddFtotSpreadTask3(Vector *f)
 void CrackVelocityFieldSingle::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
 {	if(mvf[0]->numberPoints>0)
 		mvf[0]->AddGravityAndBodyForceTask3(gridBodyForce);
+}
+
+// Restore momenta just prior to momentum update and to setting forces
+// for velocity BCs
+void CrackVelocityFieldSingle::RestoreMomenta(void)
+{	if(mvf[0]->numberPoints>0)
+	{	// paste the extrapolated momenta back and zero storage location
+		mvf[0]->pk = mvf[0]->xpic[PK_COPY];
+		ZeroVector(&mvf[0]->xpic[PK_COPY]);
+	}
 }
 
 #pragma mark TASK 4 METHODS

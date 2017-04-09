@@ -39,7 +39,7 @@ class TransportTask
 		virtual TransportTask *TransportTimeStep(int,double,double *) = 0;
 		
 		// Task 1 Extrapolation of transport property to the grid
-		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double) = 0;
+		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double,short,int) = 0;
 		virtual TransportTask *Task1Reduction(NodalPoint *,NodalPoint *) = 0;
 
 		// Get grid values
@@ -52,7 +52,7 @@ class TransportTask
 		virtual TransportTask *GetGradients(double) = 0;
 		
 		// find forces for transport calculation
-		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *) = 0;
+		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *,short,int) = 0;
         virtual TransportTask *CopyForces(NodalPoint *,NodalPoint *) = 0;
 
 		// adjust forces at grid points with transport BCs and add flux BCs
@@ -63,7 +63,7 @@ class TransportTask
 		virtual TransportTask *TransportRates(NodalPoint *,double) = 0;
 		
 		// increment transport rate
-		virtual TransportTask *IncrementTransportRate(const NodalPoint *,double,double &) const = 0;
+		virtual TransportTask *IncrementTransportRate(const NodalPoint *,double,double &,short,int) const = 0;
 		
 		// increment particle transpoprt value
 		virtual TransportTask *MoveTransportValue(MPMBase *,double,double) const = 0;
@@ -72,7 +72,7 @@ class TransportTask
 		virtual TransportTask *UpdateNodalValues(double) = 0;
 		
 		// increment transport rate when updating particle strain
-		virtual double IncrementValueExtrap(NodalPoint *,double) const = 0;
+		virtual double IncrementValueExtrap(NodalPoint *,double,short,int) const = 0;
 		
 		// find change in transport value on the particle from grid results
 		virtual double GetDeltaValue(MPMBase *,double) const = 0;

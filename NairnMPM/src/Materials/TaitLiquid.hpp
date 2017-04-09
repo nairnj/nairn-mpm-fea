@@ -40,6 +40,8 @@ class TaitLiquid : public HyperElastic
     
         // contitutive law methods
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
+		virtual double GetTwoEtaOverRho(double) const;
+		virtual double BracketContactLawShearRate(double,double,double &,double &,double &,double &) const;
 		virtual void BeginActivePhase(MPMBase *mptr,int np,int historyOffset) const;
     
         // accessors
@@ -49,7 +51,8 @@ class TaitLiquid : public HyperElastic
         virtual Tensor GetStress(Tensor *sp,double pressure,MPMBase *) const;
 		virtual double GetCurrentRelativeVolume(MPMBase *,int) const;
 		virtual void SetPressureFunction(char *);
-    
+		virtual double GetViscosity(double shearRate) const;
+
     protected:
 		// unique properties
 		vector<double> viscosity;

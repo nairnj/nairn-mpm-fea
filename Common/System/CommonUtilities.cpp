@@ -8,6 +8,8 @@
 
 #include "stdafx.h"
 
+#define T_SQRT3    1.73205080756887729352744634151   // sqrt(3)
+
 // local globals
 static int section=1;
 
@@ -32,28 +34,26 @@ void PrintSection(const char *text)
 	If both are less than 1e-12, they are assumed equal
 ************************************************************/
 
-bool DbleEqual(double db1,double db2)
+#define MAX_DIFF 1.0e-16
+#define MAX_REL_DIFF 1.0e-7
+
+bool DbleEqual(double A, double B)
 {
-    double ab1=fabs(db1);
-    double ab2=fabs(db2);
-    double change;
-    
-    if(db1==db2)
-        return(TRUE);
-    else if(ab1>ab2)
-        change=fabs(db1-db2)/ab1;
-    else
-        change=fabs(db1-db2)/ab2;
-            
-    // Equal if different by less than 1 ppm (used to be 100 ppm)
-    if(change<1.e-6)
-        return TRUE;
-    else
-    {	if(ab1<1e-12 && ab2<1e-12)
-            return TRUE;
-        else
-            return FALSE;
-    }
+	// Check if the numbers are really close -- needed
+	// when comparing numbers near zero.
+	double diff = fabs(A - B);
+	if (diff <= MAX_DIFF)
+		return true;
+
+	// Check relative difference
+	A = fabs(A);
+	B = fabs(B);
+	double largest = (B > A) ? B : A;
+	if (diff <= largest * MAX_REL_DIFF)
+		return true;
+
+	// assuming unequal
+	return false;
 }
 
 /************************************************************
@@ -190,6 +190,34 @@ void PrintVector(const char *label,const Vector *v)
 
 #pragma mark Tensor Functions
 
+// return tensor from components
+Tensor MakeTensor(double xx,double yy,double zz,double yz,double xz,double xy)
+{	Tensor t;
+	t.xx = xx;
+	t.yy = yy;
+	t.zz = zz;
+#ifdef MPM_CODE
+	t.yz = yz;
+	t.xz = xz;
+#endif
+	t.xy = xy;
+	return t;
+}
+
+// return tensor from components
+Tensor MakeTensor2D(double xx,double yy,double zz,double xy)
+{	Tensor t;
+	t.xx = xx;
+	t.yy = yy;
+	t.zz = zz;
+#ifdef MPM_CODE
+	t.yz = 0.;
+	t.xz = 0.;
+#endif
+	t.xy = xy;
+	return t;
+}
+
 // zero a vector and return pointer to zeroed v
 Tensor *ZeroTensor(Tensor *t)
 {	t->xx=0.;
@@ -228,6 +256,105 @@ Tensor *ScaleTensor(Tensor *t,double scale)
 	t->xy*=scale;
 	return t;
 }
+
+// Dot product of two vectors (if used for 2D make sure z's are zero)
+double DotTensors2D(const Tensor *t1,const Tensor *t2)
+{	return t1->xx*t2->xx + t1->yy*t2->yy + t1->zz*t2->zz + t1->xy*t2->xy;
+}
+
+
+#ifdef MPM_CODE
+// Dot product of two vectors (if used for 2D make sure z's are zero)
+double DotTensors(const Tensor *t1,const Tensor *t2)
+{	return t1->xx*t2->xx + t1->yy*t2->yy + t1->zz*t2->zz
+	+ t1->yz*t2->yz + t1->xz*t2->xz + t1->xy*t2->xy;
+}
+
+// Find Eigenvalues of symmetric tensor in Voight form
+// stress is true for stress vector or false for strain vector
+// is2D is true for 2D tensor or false for 3D
+Vector TensorEigenvalues(Tensor *t,bool stress,bool is2D)
+{
+	Vector lam;
+	
+	if(is2D)
+	{   // solving x^2 + bx + c = 0 (see Numerical Recipes in C, page 156)
+		double b = -(t->xx+t->yy);
+		double c = stress ? t->xx*t->yy - t->xy*t->xy : t->xx*t->yy - 0.25*t->xy*t->xy ;
+		double arg = b*b-4.*c;
+		if(arg<0.)
+		{	// assuming here all matrices are positive definite, which means
+			// a negative value should be interpreted as zero
+			lam.x = -0.5*b;
+		}
+		else
+		{	arg = sqrt(arg);
+			lam.x = b>0 ? -0.5*(b+arg) : -0.5*(b-arg) ;
+		}
+		lam.y = lam.x==0. ? 0. : c/lam.x;
+		lam.z = t->zz;
+	}
+	else
+	{	double mm, c1, c0;
+		
+		// Determine coefficients of characteristic poynomial. We write
+		//       | a   d   f  |
+		//  m =  | d   b   e  |
+		//       | f   e   c  |
+		double fde,dd,ee,ff;		// products of elements
+		if(stress)
+		{	fde = t->xy*t->yz*t->xz;
+			dd = t->xy*t->xy;
+			ee = t->yz*t->yz;
+			ff = t->xz*t->xz;
+		}
+		else
+		{	fde = 0.125*t->xy*t->yz*t->xz;
+			dd = 0.25*t->xy*t->xy;
+			ee = 0.25*t->yz*t->yz;
+			ff = 0.25*t->xz*t->xz;
+		}
+		mm  = t->xx + t->yy + t->zz;
+		c1 = (t->xx*t->yy + t->xx*t->zz + t->yy*t->zz)
+					- (dd + ee + ff);				// a*b + a*c + b*c - d^2 - e^2 - f^2
+		c0 = t->zz*dd + t->xx*ee + t->yy*ff - t->xx*t->yy*t->zz
+					- 2.0*fde;						// c*d^2 + a*e^2 + b*f^2 - a*b*c - 2*f*d*e)
+		
+		double p, sqrt_p, q, c, s, phi;
+		p = mm*mm - 3.0*c1;
+		q = mm*(p - (3.0/2.0)*c1) - (27.0/2.0)*c0;
+		sqrt_p = sqrt(fabs(p));
+		
+		phi = 27.0 * ( 0.25*c1*c1*(p - c1) + c0*(q + 27.0/4.0*c0));
+		phi = (1.0/3.0) * atan2(sqrt(fabs(phi)), q);
+		
+		c = sqrt_p*cos(phi);
+		s = (1.0/T_SQRT3)*sqrt_p*sin(phi);
+		
+		lam.y  = (1.0/3.0)*(mm - c);
+		lam.z  = lam.y + s;
+		lam.x  = lam.y + c;
+		lam.y -= s;
+	}
+	
+	return lam;
+}
+
+// convert tensor to matrix (stress is true for straight convertion of false to assume strain tensor)
+Matrix3 TensorToMatrix(Tensor *t,bool stress)
+{	return stress ?
+			Matrix3(t->xx,t->xy,t->xz,t->xy,t->yy,t->yz,t->xz,t->yz,t->zz) :
+			Matrix3(t->xx,0.5*t->xy,0.5*t->xz,0.5*t->xy,t->yy,0.5*t->yz,0.5*t->xz,0.5*t->yz,t->zz) ;
+}
+
+// convert tensor to matrix (stress is true for straight convertion of false to assume strain tensor)
+Matrix3 TensorToMatrix2D(Tensor *t,bool stress)
+{	return stress ?
+			Matrix3(t->xx,t->xy,t->xy,t->yy,t->zz) :
+			Matrix3(t->xx,0.5*t->xy,0.5*t->xy,t->yy,t->zz) ;
+}
+
+#endif
 
 // get element of contracted tensor by ID
 double Tensor_i(Tensor *t,int contractedID)
@@ -302,7 +429,7 @@ double Tensor_ij(Tensor *t,int row,int col)
 	}
 }
 
-// Print vector to cout when debugging
+// Print tensor to cout when debuggingin form of a matrix
 void PrintTensor(const char *label,Tensor *t)
 {
 	int i,lead=(int)strlen(label);

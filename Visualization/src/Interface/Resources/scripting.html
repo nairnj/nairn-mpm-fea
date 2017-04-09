@@ -91,7 +91,7 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 
 <h2><a name="vars"></a>Script Variables</h2>
 
-<p>Scripts allow standard numeric and string variables supported by the <a href="commands.html#language">interpretive language</a>. In addition, scripts define a new type of variable to represent "objects," which for <b>NairnFEAMPMViz</b> scripts are either commands documents of results documents. Commands documents are documents with commands to run FEA or MPM calculations and results documents are documents with the output results of calculations. Object variables must begin in a letter and can contain only letters, numbers, and the underscore character.</p>
+<p>Scripts allow standard numeric and string variables supported by the <a href="commands.html#language">interpretive language</a>. In addition, scripts define a new type of variable to represent "objects," which for <b>NairnFEAMPMViz</b> scripts are either commands documents or results documents. Commands documents are documents with commands to run FEA or MPM calculations and results documents are documents with the output results of calculations. Object variables must begin in a letter and can contain only letters, numbers, and the underscore character.</p>
 
 <p>When a script tells a commands document to interpret its commands or to interpret and run calculations, all variables defined in the script are transferred to the document. The typical script will define variables to control a calculation and then run one or more calculations.</p>
 
@@ -114,7 +114,7 @@ endif</blockquote>
 This command must be the first command in a script. Its presence is how <b>NairnFEAMPMViz</b> knows to interpret the commands as a script rather than as commands to setup FEA or MPM calculations.</li>
 
 <li><code>Open (doc),&lt;(path)&gt;</code><br>
-Open a document and set the object variable in <code>(doc)</code> (which must be a valid object variable name and not an expression) to the opened document. The optional <code>(path)</code> argument is full or relative path to the document to be opened. Relative paths are given from the saved script document. If this variable is omitted, the user is presented a standard file-opening dialog box and asked to select the file to be opened. If the requested file is already opened, its window will be brought to the front.</li>
+Open a document and set the object variable in <code>(doc)</code> (which must be a <a href="#vars">valid object variable name</a> and not an expression) to the opened document. The optional <code>(path)</code> argument is full or relative path to the document to be opened. Relative paths are given from the saved script document. If this variable is omitted, the user is presented a standard file-opening dialog box and asked to select the file to be opened. If the requested file is already opened, its window will be brought to the front.</li>
 
 <li><code>OpenFolder (strVar),&lt;(title)&gt;,&lt;(path)&gt;</code><br>
 This command will select a folder and create it if needed. If the optional <code>(path)</code> variable is omitted,
@@ -190,7 +190,7 @@ FEA and MPM commands documents can read all variables defined in scripts, but an
 
 <ul>
 <li><code>@object.section.(sectionName)</code><br>
-Returns the entire text to the section titled <code>(sectionName)</code>, which must be a quoted string or a string variable. The section names are the complete, case-sensitive text of the sections listed on the top left index of a results document. Hint: the text read from a section can be parsed using <a href="commands.html#debug"><code>Lines</code> and <code>Words</code> commands</a>.</li>
+Returns the entire text to the section titled <code>(sectionName)</code>, which must be a quoted string or a string variable. The section names are the complete, case-sensitive text of the sections listed on the top left index of a results document. Hint: the text read from a section can be parsed using <a href="commands.html#debug"><code>Lines</code> and <code>Words</code> commands</a> and <a href="commands.html#varexp">string expressions</a>.</li>
 
 <li><code>@object.energy</code><br>
 Returns the total strain energy in an FEA results document (assuming the output file contains the strain energy results). It is a common quantity to read when doing script control of FEA calculations.</li>

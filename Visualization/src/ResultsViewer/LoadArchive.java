@@ -28,7 +28,9 @@ public class LoadArchive extends PlotControl implements ActionListener
 	public static final int TIME_PLOT=1;
 	public static final int MESH_PLOT=2;
 	public static final int MESH2D_PLOT=3;
-	private int selected;
+	private int selected = -1;
+	
+	private static int previousPlotOption = NO_PLOT;
 	
 	// initilize
 	LoadArchive(DocViewer dc)
@@ -40,23 +42,30 @@ public class LoadArchive extends PlotControl implements ActionListener
 		rbIcon=new JButton[4];
 		int top=6;
 		createButtonIcon(PARTICLE_PLOT,"ParticlePlots",top,"Particle plot of MPM results");
-		plotType[PARTICLE_PLOT].setSelected(true);
 		createButtonIcon(TIME_PLOT,"TimePlots",top,"Plot results as a function of time");
 		createButtonIcon(MESH_PLOT,"MeshPlots",top,"Mesh plot of MPM or FEA results");
 		createButtonIcon(MESH2D_PLOT,"Mesh2DPlots",top,"Plot results along a line through the grid at a fixed time");
 		
 		setEnabled(false);
 		setSize(ControlPanel.WIDTH,plotType[MESH2D_PLOT].getY()+plotType[MESH2D_PLOT].getHeight()+12);
+		
+		// change selection
+		if(previousPlotOption!=NO_PLOT)
+		{	if(plotType[previousPlotOption].isEnabled())
+			{	plotType[previousPlotOption].setSelected(true);
+				selected = previousPlotOption;
+			}
+		}
 	}
 
 	// called when new file is loaded
 	public void setEnabled()
-	{	if(docCtrl.resDoc.isMPMAnalysis())
+	{	int newSelected;
+		if(docCtrl.resDoc.isMPMAnalysis())
 		{	if(docCtrl.resDoc.is3D())
-			{	plotType[PARTICLE_PLOT].setEnabled(false);
+			{	newSelected=TIME_PLOT;
+				plotType[PARTICLE_PLOT].setEnabled(false);
 				rbIcon[PARTICLE_PLOT].setEnabled(false);
-				plotType[TIME_PLOT].setSelected(true);
-				selected=TIME_PLOT;
 				plotType[TIME_PLOT].setEnabled(true);
 				rbIcon[TIME_PLOT].setEnabled(true);
 				plotType[MESH_PLOT].setEnabled(false);
@@ -65,8 +74,7 @@ public class LoadArchive extends PlotControl implements ActionListener
 				rbIcon[MESH2D_PLOT].setEnabled(false);
 			}
 			else
-			{	plotType[PARTICLE_PLOT].setSelected(true);
-				selected=PARTICLE_PLOT;
+			{	newSelected=PARTICLE_PLOT;
 				plotType[PARTICLE_PLOT].setEnabled(true);
 				rbIcon[PARTICLE_PLOT].setEnabled(true);
 				plotType[TIME_PLOT].setEnabled(true);
@@ -78,8 +86,7 @@ public class LoadArchive extends PlotControl implements ActionListener
 			}
 		}
 		else
-		{	plotType[MESH_PLOT].setSelected(true);
-			selected=MESH_PLOT;
+		{	newSelected=MESH_PLOT;
 			plotType[PARTICLE_PLOT].setEnabled(false);
 			rbIcon[PARTICLE_PLOT].setEnabled(false);
 			plotType[TIME_PLOT].setEnabled(false);
@@ -88,6 +95,16 @@ public class LoadArchive extends PlotControl implements ActionListener
 			rbIcon[MESH_PLOT].setEnabled(true);
 			plotType[MESH2D_PLOT].setEnabled(true);
 			rbIcon[MESH2D_PLOT].setEnabled(true);
+		}
+		
+		// switch selection if needed
+		if(selected < 0)
+		{	plotType[newSelected].setSelected(true);
+			selected = newSelected;
+		}
+		else if(!plotType[selected].isEnabled())
+		{	plotType[newSelected].setSelected(true);
+			selected = newSelected;
 		}
 	}
 	
@@ -137,6 +154,7 @@ public class LoadArchive extends PlotControl implements ActionListener
 		{	selected=MESH2D_PLOT;
 		}
 
+		previousPlotOption = selected;
 		if(selected!=oldSelected)
 		{	plotType[selected].setSelected(true);
 			docCtrl.controls.hiliteControls();

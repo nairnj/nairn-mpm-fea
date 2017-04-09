@@ -15,6 +15,10 @@
 
 #include "Read_XML/ShapeController.hpp"
 
+#ifdef MPM_CODE
+    class MPMBase;
+#endif
+
 class BoxController : public ShapeController
 {
     public:

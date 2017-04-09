@@ -12,6 +12,9 @@
 #ifdef MPM_CODE
 	#include "NairnMPM_Class/MeshInfo.hpp"
     #include "NairnMPM_Class/NairnMPM.hpp"
+	#include "MPM_Classes/MPMBase.hpp"
+	#include <map>
+	#include <vector>
 #endif
 
 // globals for node locations

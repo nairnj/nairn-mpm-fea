@@ -29,22 +29,18 @@ class LinearInterface : public ContactLaw
 		virtual void PrintContactLaw(void) const;
 	
 		// methods
-		virtual bool GetInterfaceForcesForNode(Vector *,Vector *,double *,double,Vector *,double,bool,bool,double,
-										   Vector *,double,double) const;
-		virtual bool GetCrackInterfaceForce(Vector *,Vector *,Vector *,double,double,Vector *,double *) const;
-
+		virtual void GetInterfaceForces(Vector *,Vector *,double *,double,Vector *,double,double,Vector *,double,double,double) const;
+		virtual double GetTerms(double d,double m,double &sineTerm,double &sincosTerm) const;
+	
 		// accessors
 		virtual const char *MaterialType(void) const;
 		void SetParameters(double,double,double);
 		virtual bool IgnoreContact(void) const;
 		virtual bool IsImperfectInterface(void) const;
-		virtual bool IsPerfectTangentialInterface(void) const;
-		virtual bool IsPerfectNormalInterface(bool) const;
-		virtual bool IsPerfectNormalInterface(void) const;
 	
 	protected:
 		double Dnt,Dnc,Dt;
-		bool hasSetDnc;
+		bool hasSetDnc;					// false means linear in normal direction
 	
 };
 

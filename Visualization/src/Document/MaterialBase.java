@@ -42,11 +42,14 @@ public class MaterialBase
 	public static final int CLAMPEDNEOHOOKEAN=29;
 	public static final int PHASETRANSITION=30;
 	public static final int ISOSOFTENING=50;
+	public static final int TRANSISOSOFTENING1=51;
+	public static final int TRANSISOSOFTENING2=52;
 	public static final int IGNORECONTACT=60;
 	public static final int COULOMBFRICTION=61;
 	public static final int LINEARIMPERFECT=62;
 	public static final int ADHESIVEFRICTION=63;
-	public static final int UNKNOWNMATERIAL=64;
+	public static final int LIQUIDCONTACT=64;
+	public static final int UNKNOWNMATERIAL=65;
 	
 	public static final int NOTHING=0;
 	public static final int ENG_BIOT_PLASTIC_STRAIN=1;
@@ -128,6 +131,8 @@ public class MaterialBase
 			case SLMATERIAL:
 			case WOODMATERIAL:
 			case ISOSOFTENING:
+			case TRANSISOSOFTENING1:
+			case TRANSISOSOFTENING2:
 				return ENG_BIOT_PLASTIC_STRAIN;
 			
 			case MOONEYRIVLIN:

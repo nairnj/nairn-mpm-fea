@@ -12,14 +12,14 @@ Header
 EndHeader
 
 ! options are "Plane Stress", "Plane Strain", or "Axisymmetric"
-#mode$="Plane Strain"
+#mode$="Plane Stress"
 
 ! Element type
-#elem$="9 Node Lagrange"
+#elem$="3 Node Triangle"
 
-! Material types "Isotropic", "Ortho"
-#matID$="Ortho"
-#angle=-45
+! Material types "Isotropic", "Ortho", "iptrans", "ztrans"
+#matID$="ztrans"
+#angle=0
 
 ! Specimen
 #length=100
@@ -33,13 +33,16 @@ EndHeader
 
 ! Loads "stress" (by #stress MPa),"force" (by #force N, total),
 !             or "displacement" (by #disp mm)
-#loading$="displacement"
+#loading$="force"
 #stress=100
 #force=100*#width*#thick
 #disp=0.01*#length
 
 Analysis #mode$
 Element #elem$
+
+Comment #mode$&", Uniaxial Loading"&", Elements:"&#elem$
+Comment "Material:"&#matID$&", Loading:"&#loading$&", Angle:"&#angle
 
 ! ********** Parameters Section **********
 
@@ -63,6 +66,31 @@ else if #matID$="Ortho"
     nuxz 0.3
     nuyz 0.05
   Done
+
+else if #matID$="iptrans"
+  Material #matID$,"Carbon Fiber","Transverse 2"
+    EA 220000
+    ET 20000
+    GA 18000
+    nuT 0.3
+    nuA .2
+    alphaA -.4
+    alphaT 18
+    rho 1.76
+  Done
+
+else if #matID$="ztrans"
+  Material #matID$,"Carbon Fiber","Transverse 1"
+    EA 220000
+    ET 20000
+    GA 18000
+    nuT 0.3
+    nuA .2
+    alphaA -.4
+    alphaT 18
+    rho 1.76
+  Done
+
 endif
 
 ! ********** Meshing Section **********
@@ -98,7 +126,7 @@ EndArea
 
 ! ********** Boundary Condition Section **********
 FixLine "Left"
-  Rotate "z",#rotate
+  Rotate 3,#rotate
   Displacement x
 EndFixLine
 
@@ -120,13 +148,13 @@ else if #loading$="force"
     #nodes=2*#trans+1
   endif
   FixLine "Right"
-    Rotate "z",#rotate
+    Rotate 3,#rotate
     Load "x",#force/#nodes			! N per node
   EndFixLine
 
 else if #loading$="displacement"
   FixLine "Right"
-    Rotate "z",#rotate
+    Rotate 3,#rotate
     Displacement "x",#disp
   EndFixLine
   

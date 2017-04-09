@@ -2,7 +2,7 @@
 	CoulombFriction.cpp
 	nairn-mpm-fea
 
-	Friction slicing or stick contact
+	Friction sliding or stick contact
 
 	Created by John Nairn, Oct 24, 3015.
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
@@ -126,7 +126,7 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
 		CopyScaleVector(delPi,norm,dotn);
 		return true;
 	}
-	
+
 	// Rest implements friction sliding
 	// The initial delPi = (-N A dt) norm + (Sstick A dt) tang = dotn norm + dott tang
 	// where N is normal traction (positive in compression), A is contact area, and dt is timestep
@@ -137,9 +137,9 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
     CopyVector(&tang,delPi);
     AddScaledVector(&tang,norm,-dotn);
     double tangMag = sqrt(DotVectors(&tang,&tang));
-    
+	
     // if has tangential motion, we need to change momemtum if frictional sliding is occuring
-    if(!DbleEqual(tangMag,0.))
+	if (tangMag>0.)
     {	ScaleVector(&tang,1./tangMag);
         double dott = DotVectors(delPi,&tang);
         
@@ -153,7 +153,7 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
 		// Then if dott > Sslide Ac dt (which means Sstick>Sslide)
 		//	a. Set delPi = dotn norm + Sslide Ac dt tang
 		//      For example, Coulomb friction has Fslide dt = mu(dotn) so delPi = (norm - mu tang) dotn
-		double SslideAcDt = GetSslideAcDt(-dotn,dott,0.,mred,contactArea,inContact,deltime);
+		double SslideAcDt = GetSslideAcDt(-dotn,dott,mred,contactArea,inContact,deltime);
 		if(!inContact) return false;
 		
 		if(dott > SslideAcDt)
@@ -176,7 +176,6 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
 					*mredDE = Vs - 0.5*AsDt;
 			}
 		}
-
     }
 	
 	// still in contact
@@ -187,18 +186,19 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
 // Input is N Ac dt (and is always positive when in contact)
 // If needed in the friction law, Ac is the contact area (not yet provided)
 // The relative sliding speed after correcting the momentum will be (SStickAcDt-SslideAcDt)/mred
-double CoulombFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double Ac,double mred,
+double CoulombFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred,
 									  double contactArea,bool &inContact,double deltime) const
 {
 	// check static coefficient
 	if(frictionCoeffStatic>0.)
-	{	double Sstatic = frictionCoeffStatic*NAcDt;
-		//if(SStickAcDt<=Sstatic) cout << "# static stick " << SStickAcDt << "," << Sstatic << "," << mtime << endl;
-		if(SStickAcDt<=Sstatic) return Sstatic;			// it will stick
+	{	// If forcet to stick is less that static coefficient, then it will stick
+		double Sstatic = frictionCoeffStatic*NAcDt;
+		if(SStickAcDt<=Sstatic) return Sstatic;
+		
+		// it did not stick, so fall through to sliding
 	}
 	
-	// S = mu N so S Ac dt = mu N Ac dt
-	//if(SStickAcDt<=frictionCoeff*NAcDt) cout << "# dynamic stick " << SStickAcDt << "," << frictionCoeff*NAcDt << "," << mtime << endl;
+	// S = mu N   or   S Ac dt = mu N Ac dt
 	return frictionCoeff*NAcDt;
 }
 

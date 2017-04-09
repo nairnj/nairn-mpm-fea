@@ -11,7 +11,7 @@ import java.awt.geom.*;
 public class BoundaryCondition
 {
 	// variables and constants
-	static final double BC_SIZE=0.035;
+	static final double BC_SIZE=0.03;
 	static final int CONSTANT_VALUE=1;
 	static final int LINEAR_VALUE=2;
 	static final int SINE_VALUE=3;
@@ -29,6 +29,8 @@ public class BoundaryCondition
 	static final int N_DIRECTION=11;
 	static final int T1_DIRECTION=12;
 	static final int T2_DIRECTION=13;
+	static final int TEMPERATURE_DIR=-1;
+	static final int CONCENTRATION_DIR=-2;
 		
 	protected int node,dof,style;
 	protected double value,argument,angle;

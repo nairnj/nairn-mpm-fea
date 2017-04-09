@@ -95,7 +95,7 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 
 // allocation diffusion data if needed in this calculations
 // throws std::bad_alloc
-void MPMBase::AllocateTemperature(void)
+void MPMBase::AllocateTemperature(int gradTwo,int gradThree)
 {	int size = 3;
 	pTemp = new double[size];
 	for(int i=0;i<size;i++) pTemp[i] = 0.;
@@ -363,6 +363,14 @@ double MPMBase::GetParticleXSize(void) const { return 0.5*mpm_lp.x*theElements[i
 double MPMBase::GetParticleYSize(void) const { return 0.5*mpm_lp.y*theElements[inElem-1]->GetDeltaY(); }
 double MPMBase::GetParticleZSize(void) const { return 0.5*mpm_lp.z*theElements[inElem-1]->GetDeltaZ(); }
 
+// get shortest side (3D overrides to check z component) 
+double MPMBase::GetMinParticleLength(void) const
+{	Vector part = GetParticleSize();
+	double minPart = part.x;
+	if (part.y < minPart) minPart = part.y;
+	return 2.*minPart;
+}
+
 // get rotation angle for 2D calculations
 // Use polar decomposition to get sin(theta) and cos(theta) for ccw rotation
 //		from initial material position to current position
@@ -384,8 +392,8 @@ void MPMBase::Get2DSinCos(double *sintheta,double *costheta)
 
 // Rotation matrix (for materials that track it)
 // All hypoelastic materials when in large rotation mode and tracking is activated
-// 3D, small rotation, and anisotropic tracks rotation always. It is calculated will fill elasti
-//    properties and then stored for later use by anisotropic plasti or transport properties
+// 3D, small rotation, and anisotropic tracks rotation always. It is calculated when fill elastic
+//    properties and then stored for later use by anisotropic plastic or transport properties
 Matrix3 *MPMBase::GetRtotPtr(void) { return Rtot; }
 void MPMBase::SetRtot(Matrix3 newR) { Rtot->set(newR); }
 

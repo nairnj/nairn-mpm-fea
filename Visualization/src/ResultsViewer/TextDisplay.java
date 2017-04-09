@@ -167,11 +167,14 @@ public class TextDisplay extends JSplitPane
 			Scanner s=new Scanner(fdata);
 			s.useDelimiter("\\r\\n|\\n|\\r");
 			title = s.next();
+			s.close();
+			
 			// remove the number Assum #. or ##.
 			if(title.charAt(1)=='.')
 				title = title.substring(3);
 			else
 				title = title.substring(4);
+			
 			try
 			{	int endFile=fdata.indexOf("\n",index);
 				int crEnd=fdata.indexOf("\r",index);

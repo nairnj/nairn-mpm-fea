@@ -58,7 +58,8 @@ class RigidMaterial : public MaterialBase
 		void SetSettingFunction(char *,int);
 		void ReplaceSettingFunction(char *,int);
 		bool IsConstantVelocity(void);
-		
+		void SetControlVelocity(double,int);
+	
 		// accessors
 		virtual const char *MaterialType(void) const;
         virtual double WaveSpeed(bool,MPMBase *) const;
@@ -71,6 +72,9 @@ class RigidMaterial : public MaterialBase
 		ROperation *function2;
 		ROperation *function3;
         ROperation *Vfunction;
+		bool useControlVelocity;
+		int controlDirection;
+		double controlVelocity;
 		static double varTime,xPos,yPos,zPos,delTime;
 };
 

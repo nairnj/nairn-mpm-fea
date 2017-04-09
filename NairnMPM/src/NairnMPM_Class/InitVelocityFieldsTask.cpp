@@ -4,6 +4,14 @@
 
 	Created by John Nairn on March 6, 2015
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
+ 
+	The tasks are:
+	--------------
+	* If no crack and single material, set each MP to use vfld=0
+    * If cracks or multimaterial mode
+		- Find vfld for CVF (create CVF if will be needed)
+		- In multimaterial mode, and MVF if will be needed
+	* Reduction to copy field info to ghost nodes
 ********************************************************************************/
 
 #include "stdafx.h"

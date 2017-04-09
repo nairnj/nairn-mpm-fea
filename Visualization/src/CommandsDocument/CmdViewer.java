@@ -53,7 +53,7 @@ public class CmdViewer extends JNCmdTextDocument
 	public Regions regions = null;
 	public MPMGrid gridinfo = null;
 	private FEABCs feaBCs = null;
-	private MPMGridBCs mpmGridBCs = null;
+	public MPMGridBCs mpmGridBCs = null;
 	public MPMParticleBCs mpmParticleBCs = null;
 	public Cracks cracks = null;
 	private StringBuffer outFlags;
@@ -263,7 +263,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		// save this document (commands saved before each run - preference would be better)
-		//if(!saveDocument()) return;
+		if(!saveDocument()) return;
 		
 		// check if XML file
 		soutConsole.clear();
@@ -273,7 +273,7 @@ public class CmdViewer extends JNCmdTextDocument
 			useBackground = doBackground;
 			openMesh = runType;
 			// call in super class initiates command interpretation
-			System.out.println("Interpreting Commands");
+			//System.out.println("Interpreting Commands");
 			super.runAnalysis();
 			
 			// when interpretation done, will launch the analysis in analysisFinished()
@@ -311,7 +311,6 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		// launch analysis with DTD commands in the field
-		System.out.println("Launching analysis");
 		nfmAnalysis.launchNFMAnalysis(useBackground,openMesh,buildXMLCommands(),
 					soutConsole,processors,theScript.getScriptParams());
 	}
@@ -323,6 +322,7 @@ public class CmdViewer extends JNCmdTextDocument
 		username = null;
 		header = new StringBuffer("");
 		np = -1;
+		processors = 1;
 		plusSpin = false;
 		lnameEl = NO_ELEMENT;
 		xmldata = new HashMap<String,String>(10);
@@ -566,6 +566,12 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("select"))
 			feaBCs.AddSelect(args);
 		
+		else if(theCmd.equals("gridbc"))
+			mpmGridBCs.StartMoveLine(args,MPMGridBCs.GRID_BC);
+		
+		else if(theCmd.equals("endgridbc"))
+			mpmGridBCs.EndMoveBlock(args,MPMGridBCs.GRID_BC);
+		
 		else if(theCmd.equals("moveline"))
 			mpmGridBCs.StartMoveLine(args,MPMGridBCs.MOVELINE_BC);
 		
@@ -600,6 +606,12 @@ public class CmdViewer extends JNCmdTextDocument
 				mpmGridBCs.AddTempConc(args,MPMGridBCs.ADD_TEMPERATURE);
 		}
 
+		else if(theCmd.equals("particlebc"))
+			mpmGridBCs.StartMoveLine(args,MPMGridBCs.PARTICLE_BC);
+		
+		else if(theCmd.equals("endparticlebc"))
+			mpmParticleBCs.EndLoadBlock(args,MPMGridBCs.PARTICLE_BC);
+		
 		else if(theCmd.equals("loadline"))
 			mpmGridBCs.StartMoveLine(args,MPMGridBCs.LOADLINE_BC);
 		
@@ -616,16 +628,16 @@ public class CmdViewer extends JNCmdTextDocument
 			mpmParticleBCs.doLoadType(args);
 		
 		else if(theCmd.equals("endloadline"))
-			mpmParticleBCs.EndLoadBlock(args,MPMParticleBCs.LOADLINE_BC);
+			mpmParticleBCs.EndLoadBlock(args,MPMGridBCs.LOADLINE_BC);
 		
 		else if(theCmd.equals("endloadarc"))
-			mpmParticleBCs.EndLoadBlock(args,MPMParticleBCs.LOADARC_BC);
+			mpmParticleBCs.EndLoadBlock(args,MPMGridBCs.LOADARC_BC);
 		
 		else if(theCmd.equals("endloadrect"))
-			mpmParticleBCs.EndLoadBlock(args,MPMParticleBCs.LOADRECT_BC);
+			mpmParticleBCs.EndLoadBlock(args,MPMGridBCs.LOADRECT_BC);
 		
 		else if(theCmd.equals("endloadbox"))
-			mpmParticleBCs.EndLoadBlock(args,MPMParticleBCs.LOADBOX_BC);
+			mpmParticleBCs.EndLoadBlock(args,MPMGridBCs.LOADBOX_BC);
 		
 		else if(theCmd.equals("traction"))
 			mpmParticleBCs.AddCondition(args,MPMParticleBCs.ADD_TRACTION);
@@ -671,25 +683,35 @@ public class CmdViewer extends JNCmdTextDocument
 			regions.EndRegion(args,theCmd);
 		
 		else if(theCmd.equals("rect"))
-			regions.AddRectOrOval(args,"Rect");
+			regions.AddRectOrOval(args,"Rect",0);
 		
 		else if(theCmd.equals("oval"))
-			regions.AddRectOrOval(args,"Oval");
+			regions.AddRectOrOval(args,"Oval",0);
 		
 		else if(theCmd.equals("polypt"))
-			regions.AddPolypoint(args);
+			regions.AddPolypoint(args,0);
+		
+		else if(theCmd.equals("arc"))
+			regions.AddRectOrOval(args,"Arc",0);
+
+		else if(theCmd.equals("line"))
+		{	if(isMPM3D())
+				regions.AddBox(args,"Line",0);
+			else
+				regions.AddRectOrOval(args,"Line",0);
+		}
 		
 		else if(theCmd.equals("box"))
-			regions.AddBox(args,"Box");
+			regions.AddBox(args,"Box",0);
 		
 		else if(theCmd.equals("cylinder"))
-			regions.AddBox(args,"Cylinder");
+			regions.AddBox(args,"Cylinder",0);
 		
 		else if(theCmd.equals("torus"))
-			regions.AddBox(args,"Torus");
+			regions.AddBox(args,"Torus",0);
 		
 		else if(theCmd.equals("sphere"))
-			regions.AddBox(args,"Sphere");
+			regions.AddBox(args,"Sphere",0);
 		
 		else if(theCmd.equals("cut"))
 			regions.AddCutShape(args);
@@ -1254,6 +1276,8 @@ public class CmdViewer extends JNCmdTextDocument
 				shapeMethod = "lCPDI";
 			else if(shape.equals("qcpdi"))
 				shapeMethod = "qCPDI";
+			else if(shape.equals("finite"))
+				shapeMethod = "Finite";
 			else if(shape.equals("classic") || shape.equals("dirac"))
 				shapeMethod = "Dirac";
 			else
@@ -2049,7 +2073,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 
 		// the command
-		diffusion = "    <Diffusion reference='"+ref+"/>\n";
+		diffusion = "    <Diffusion reference='"+ref+"'/>\n";
 	}
 	
 	// Conduction (yes or no),<adibatic (or mechanical energy) or isothermal or "Crack Tips">
@@ -2305,9 +2329,9 @@ public class CmdViewer extends JNCmdTextDocument
 					
 					// object properties
 					if(nextAtom.equals("energy"))
-					{	if(!obj.getClass().equals(ResultsDocument.class))
+					{	if(!obj.getClass().equals(DocViewer.class))
 							throw new Exception("energy property can only used for results documents");
-						return ((ResultsDocument)obj).getEnergy();
+						return ((DocViewer)obj).resDoc.getEnergy();
 					}
 					
 					else if(nextAtom.equals("get"))
@@ -2315,7 +2339,7 @@ public class CmdViewer extends JNCmdTextDocument
 						if(i>=atoms.length)
 							throw new Exception("get property missing variable name");
 						if(!obj.getClass().equals(CmdViewer.class))
-							throw new Exception("energy property can only used for commands documents");
+							throw new Exception("get property can only used for commands documents");
 						return ((CmdViewer)obj).getVariable(atoms[i]);
 					}
 					
@@ -2324,15 +2348,15 @@ public class CmdViewer extends JNCmdTextDocument
 						if(i>=atoms.length)
 							throw new Exception("The section name is missing");
 						atoms[i] = atomString(atoms[i],variablesStrs);
-						if(!obj.getClass().equals(ResultsDocument.class))
-							throw new Exception("energy property can only used for results documents");
-						return ((ResultsDocument)obj).section(atoms[i]);
+						if(!obj.getClass().equals(DocViewer.class))
+							throw new Exception("section property can only used for results documents");
+						return ((DocViewer)obj).resDoc.section(atoms[i]);
 					}
 					
 					else if(nextAtom.equals("timeplot"))
-					{	if(!obj.getClass().equals(ResultsDocument.class))
+					{	if(!obj.getClass().equals(DocViewer.class))
 							throw new Exception("timeplot property can only be used for results documents");
-						return ((ResultsDocument)obj).collectTimePlotData(atoms,variables,variablesStrs);
+						return ((DocViewer)obj).resDoc.collectTimePlotData(atoms,variables,variablesStrs);
 					}
 					
 				}
@@ -2721,8 +2745,9 @@ public class CmdViewer extends JNCmdTextDocument
 	{
 		String dstr = String.format("%g", dval);
 		if(dstr.indexOf('e')>0 || dstr.indexOf('E')>0) return dstr;
+		if(dstr.indexOf('.')<0) return dstr;
 		
-		// remove trailing zeros
+		// remove trailing zeros (if has decimal point)
 		int lastChar = dstr.length()-1;
 		while(lastChar>0 && dstr.charAt(lastChar)=='0') lastChar--;
 		

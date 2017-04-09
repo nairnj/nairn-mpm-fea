@@ -83,6 +83,10 @@ void IsotropicMat::PrintMechanicalProperties(void) const
 	cout << endl;
 	
 	PrintProperty("a",aI,"");
+#ifdef MPM_CODE
+	PrintProperty("K",E*UnitsController::Scaling(1.e-6)/(3.*(1.-2.*nu)),"");
+	PrintProperty("gam0",gamma0,"");
+#endif
     cout << endl;
 }
 

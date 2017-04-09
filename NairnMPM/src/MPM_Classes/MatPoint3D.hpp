@@ -51,6 +51,7 @@ class MatPoint3D : public MPMBase
         virtual void GetSemiSideVectors(Vector *,Vector *,Vector *) const;
         virtual void GetUndeformedSemiSides(double *,double *,double *) const;
 		virtual Vector GetParticleSize(void) const;
+		virtual double GetMinParticleLength(void) const;
 		virtual void GetCPDINodesAndWeights(int);
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *);
 		virtual Matrix3 GetInitialRotation(void);

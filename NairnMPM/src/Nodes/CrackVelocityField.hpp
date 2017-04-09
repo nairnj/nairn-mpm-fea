@@ -69,6 +69,7 @@ class CrackVelocityField
 		virtual void CopyGridForces(NodalPoint *);
 		virtual void AddFtotSpreadTask3(Vector *) = 0;
 		virtual void AddGravityAndBodyForceTask3(Vector *) = 0;
+		virtual void RestoreMomenta(void) = 0;
 	
 		virtual void UpdateMomentaOnField(double) = 0;
 		virtual void IncrementDelvaTask5(int,double,GridToParticleExtrap *) const;
@@ -86,7 +87,7 @@ class CrackVelocityField
 		void AddVolume(int,double);
 	
 		// methods
-		virtual void MaterialContactOnCVF(NodalPoint *,double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
+		virtual void MaterialContactOnCVF(NodalPoint *,double,int);
 		virtual bool HasVolumeGradient(int) const;
 		virtual void GetVolumeGradient(int,const NodalPoint *,Vector *,double) const;
 		virtual void CalcVelocityForStrainUpdate(void) = 0;

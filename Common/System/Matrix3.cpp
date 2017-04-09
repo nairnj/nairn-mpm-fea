@@ -167,6 +167,98 @@ Matrix3 Matrix3::RMRT(Matrix3 &R) const
 	}
 }
 
+// Assume this matrix is a rotation matrix and rotate Voight form tensor for stress (if stressis true)
+// or strain (if false). If do2D is true, assume matrix is Rz matrix with t->yz=t->xz=0 and t->zz=1
+// Compared to RTVoightR, this rotates by R
+Tensor Matrix3::RVoightRT(Tensor *t,bool stress,bool do2D) const
+{	Tensor mT;
+	double urArg,llArg;
+	if(stress)
+	{	urArg = 2.;
+		llArg = 1.;
+	}
+	else
+	{	urArg = 1.;
+		llArg = 2.;
+	}
+	if(do2D)
+	{	// assuming Rz with m[2][2] = 1 and m[2][0]=m[2][1]=m[0][2]=m[1[2]=0
+		mT.xx = m[0][0]*m[0][0]*t->xx + m[0][1]*m[0][1]*t->yy + urArg*m[0][0]*m[0][1]*t->xy;
+		mT.yy = m[1][0]*m[1][0]*t->xx + m[1][1]*m[1][1]*t->yy + urArg*m[1][1]*m[1][0]*t->xy;
+		mT.xy = llArg*(m[0][0]*m[1][0]*t->xx + m[1][1]*m[0][1]*t->yy) + (m[0][1]*m[1][0] + m[0][0]*m[1][1])*t->xy;
+		mT.zz = t->zz;
+#ifdef MPM_CODE
+		mT.yz = 0.;
+		mT.xz = 0.;
+#endif
+	}
+	else
+	{	mT.xx = m[0][0]*m[0][0]*t->xx + m[0][1]*m[0][1]*t->yy + m[0][2]*m[0][2]*t->zz
+					+ urArg*(m[0][1]*m[0][2]*t->yz + m[0][0]*m[0][2]*t->xz + m[0][0]*m[0][1]*t->xy);
+		mT.yy = m[1][0]*m[1][0]*t->xx + m[1][1]*m[1][1]*t->yy + m[1][2]*m[1][2]*t->zz
+					+ urArg*(m[1][1]*m[1][2]*t->yz + m[1][0]*m[1][2]*t->xz + m[1][1]*m[1][0]*t->xy);
+		mT.zz = m[2][0]*m[2][0]*t->xx + m[2][1]*m[2][1]*t->yy + m[2][2]*m[2][2]*t->zz
+					+ urArg*(m[2][2]*m[2][1]*t->yz + m[2][2]*m[2][0]*t->xz + m[2][0]*m[2][1]*t->xy);
+		mT.yz = llArg*(m[1][0]*m[2][0]*t->xx + m[1][1]*m[2][1]*t->yy + m[2][2]*m[1][2]*t->zz)
+					+ (m[1][2]*m[2][1] + m[1][1]*m[2][2])*t->yz + (m[1][2]*m[2][0] + m[1][0]*m[2][2])*t->xz
+					+ (m[1][1]*m[2][0] + m[1][0]*m[2][1])*t->xy;
+		mT.xz = llArg*(m[0][0]*m[2][0]*t->xx + m[0][1]*m[2][1]*t->yy + m[2][2]*m[0][2]*t->zz)
+					+ (m[0][2]*m[2][1] + m[2][2]*m[0][1])*t->yz + (m[0][2]*m[2][0] + m[0][0]*m[2][2])*t->xz
+					+ (m[0][1]*m[2][0] + m[0][0]*m[2][1])*t->xy;
+		mT.xy = llArg*(m[0][0]*m[1][0]*t->xx + m[0][1]*m[1][1]*t->yy + m[0][2]*m[1][2]*t->zz)
+					+ (m[1][1]*m[0][2] + m[1][2]*m[0][1])*t->yz + (m[0][2]*m[1][0] + m[0][0]*m[1][2])*t->xz
+					+ (m[0][1]*m[1][0] + m[0][0]*m[1][1])*t->xy;
+	}
+	
+	return mT;
+}
+
+// Assume this matrix is a rotation matrix and rotate Voight form tensor for stress (if stressis true)
+// or strain (if false). If do2D is true, assume matrix is Rz matrix with t->yz=t->xz=0 and t->zz=1
+// Compared to RVoightRT, this rotates by R inverse
+Tensor Matrix3::RTVoightR(Tensor *t,bool stress,bool do2D) const
+{	Tensor mT;
+	double urArg,llArg;
+	if(stress)
+	{	urArg = 2.;
+		llArg = 1.;
+	}
+	else
+	{	urArg = 1.;
+		llArg = 2.;
+	}
+	if(do2D)
+	{	// assuming Rz with m[2][2] = 1
+		mT.xx = m[0][0]*m[0][0]*t->xx + m[1][0]*m[1][0]*t->yy + urArg*m[0][0]*m[1][0]*t->xy;
+		mT.yy = m[0][1]*m[0][1]*t->xx + m[1][1]*m[1][1]*t->yy + urArg*m[1][1]*m[0][1]*t->xy;
+		mT.xy = llArg*(m[0][0]*m[0][1]*t->xx + m[1][1]*m[1][0]*t->yy) + (m[0][1]*m[1][0] + m[0][0]*m[1][1])*t->xy;
+		mT.zz = t->zz;
+#ifdef MPM_CODE
+		mT.yz = 0.;
+		mT.xz = 0.;
+#endif
+	}
+	else
+	{	mT.xx = m[0][0]*m[0][0]*t->xx + m[1][0]*m[1][0]*t->yy + m[2][0]*m[2][0]*t->zz
+					+ urArg*(m[1][0]*m[2][0]*t->yz + m[0][0]*m[2][0]*t->xz + m[0][0]*m[1][0]*t->xy);
+		mT.yy = m[0][1]*m[0][1]*t->xx + m[1][1]*m[1][1]*t->yy + m[2][1]*m[2][1]*t->zz
+					+ urArg*(m[1][1]*m[2][1]*t->yz + m[0][1]*m[2][1]*t->xz + m[1][1]*m[0][1]*t->xy);
+		mT.zz = m[0][2]*m[0][2]*t->xx + m[1][2]*m[1][2]*t->yy + m[2][2]*m[2][2]*t->zz
+					+ urArg*(m[2][2]*m[1][2]*t->yz + m[2][2]*m[0][2]*t->xz + m[0][2]*m[1][2]*t->xy);
+		mT.yz = llArg*(m[0][1]*m[0][2]*t->xx + m[1][1]*m[1][2]*t->yy + m[2][2]*m[2][1]*t->zz)
+					+ (m[2][1]*m[1][2] + m[1][1]*m[2][2])*t->yz + (m[2][1]*m[0][2] + m[0][1]*m[2][2])*t->xz
+					+ (m[1][1]*m[0][2] + m[0][1]*m[1][2])*t->xy;
+		mT.xz = llArg*(m[0][0]*m[0][2]*t->xx + m[1][0]*m[1][2]*t->yy + m[2][2]*m[2][0]*t->zz)
+					+ (m[2][0]*m[1][2] + m[2][2]*m[1][0])*t->yz + (m[2][0]*m[0][2] + m[0][0]*m[2][2])*t->xz
+					+ (m[1][0]*m[0][2] + m[0][0]*m[1][2])*t->xy;
+		mT.xy = llArg*(m[0][0]*m[0][1]*t->xx + m[1][0]*m[1][1]*t->yy + m[2][0]*m[2][1]*t->zz)
+					+ (m[1][1]*m[2][0] + m[2][1]*m[1][0])*t->yz + (m[2][0]*m[0][1] + m[0][0]*m[2][1])*t->xz
+					+ (m[0][1]*m[1][0] + m[0][0]*m[1][1])*t->xy;
+	}
+	
+	return mT;
+}
+
 // Form the triple product R.M.R^T in one step (R need not be a rotation matrix)
 Matrix3 Matrix3::RTMR(Matrix3 &R) const
 {	if(is2D && R.getIs2D())

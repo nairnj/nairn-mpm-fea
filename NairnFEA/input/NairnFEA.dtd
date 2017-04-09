@@ -60,11 +60,12 @@
 			units CDATA "mm"
 			name CDATA #REQUIRED
 			angles CDATA #IMPLIED
+			anglesZ CDATA #IMPLIED
 			width CDATA #IMPLIED
 			height CDATA #IMPLIED>
 
 <!ELEMENT	Body
-            ( Rect | Oval | Polygon )*>
+            ( Rect | Oval | Polygon | Line | Arc )*>
 <!ATTLIST	Body
             mat CDATA #IMPLIED
             matname CDATA #IMPLIED
@@ -72,7 +73,7 @@
             thick CDATA #IMPLIED>
 
 <!ELEMENT	Hole
-            ( Rect | Oval | Polygon )*>
+            ( Rect | Oval | Polygon | Line | Arc )*>
 
 <!ELEMENT	Intensity
 			( Angle | Thickness | Temperature )*>
@@ -107,7 +108,7 @@
 <!-- Region shapes -->
 
 <!ELEMENT	Rect
-			( arc?, ( Rect | Oval | Polygon )* )>
+			( arc?, ( Rect | Oval | Polygon | Line | Arc )* )>
 <!ATTLIST	Rect
             units CDATA #IMPLIED
             xmin CDATA #REQUIRED
@@ -116,7 +117,7 @@
             ymax CDATA #REQUIRED>
 
 <!ELEMENT	Oval
-			( arc?, ( Rect | Oval | Polygon )* )>
+			( arc?, ( Rect | Oval | Polygon | Line | Arc )* )>
 <!ATTLIST	Oval
             units CDATA #IMPLIED
             xmin CDATA #REQUIRED
@@ -125,7 +126,7 @@
             ymax CDATA #REQUIRED>
 
 <!ELEMENT	Polygon
-			( pt+, ( Rect | Oval | Polygon )* )>
+			( pt+, ( Rect | Oval | Polygon | Line | Arc )* )>
 <!ATTLIST	Polygon
             np CDATA #IMPLIED>
 
@@ -133,6 +134,36 @@
 <!ATTLIST	arc
             start CDATA #REQUIRED
             end CDATA #REQUIRED>
+
+<!ELEMENT	Arc
+			(  Rect | Oval | Polygon | Line | Arc )* >
+<!ATTLIST	Arc
+			units CDATA #IMPLIED
+			xmin CDATA #IMPLIED
+			ymin CDATA #IMPLIED
+			xmax CDATA #IMPLIED
+			ymax CDATA #IMPLIED
+			x1 CDATA #IMPLIED
+			y1 CDATA #IMPLIED
+			x2 CDATA #IMPLIED
+			y2 CDATA #IMPLIED
+			tolerance CDATA #IMPLIED
+			start CDATA #IMPLIED
+			end CDATA #IMPLIED>
+			
+<!ELEMENT	Line
+			(  Rect | Oval | Polygon | Line | Arc )* >
+<!ATTLIST	Line
+			units CDATA #IMPLIED
+			xmin CDATA #IMPLIED
+			ymin CDATA #IMPLIED
+			xmax CDATA #IMPLIED
+			ymax CDATA #IMPLIED
+			x1 CDATA #IMPLIED
+			y1 CDATA #IMPLIED
+			x2 CDATA #IMPLIED
+			y2 CDATA #IMPLIED
+			tolerance CDATA #IMPLIED>
 
 <!-- Boundary conditions all on the grid -->
 

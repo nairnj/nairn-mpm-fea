@@ -97,7 +97,7 @@ public class ResultsDocument extends AbstractTableModel
 		String line,archDir;
 		char strChar;
 		String [] words;
-		Scanner s,sline;
+		Scanner s=null,sline=null;
 		int numMps=1;
 		
 		//----------------------------------------------------------
@@ -114,9 +114,12 @@ public class ResultsDocument extends AbstractTableModel
 					break;
 				}
 			}
+			s.close();
+			s=null;
 		}
 		catch(NoSuchElementException e)
-		{	throw new Exception("Could not read the header for this file");
+		{	s.close();
+			throw new Exception("Could not read the header for this file");
 		}
 		units.setOutputUnits(fileUnits);
 		
@@ -124,6 +127,7 @@ public class ResultsDocument extends AbstractTableModel
 		// Expected number of nodes and elements
 		String summary=section("NODES AND ELEMENTS");
 		int nnodes,nelems;
+		Scanner nline=null;
 		try
 		{	// get nodes and elements
 			s=new Scanner(summary);
@@ -132,46 +136,48 @@ public class ResultsDocument extends AbstractTableModel
 			s.next();
 			s.next();
 			
-			sline=new Scanner(s.next());
-			sline.useLocale(Locale.US);
-			sline.next();
-			nnodes=sline.nextInt();
-			sline.next();
-			nelems=sline.nextInt();
-			sline.close();
+			nline=new Scanner(s.next());
+			nline.useLocale(Locale.US);
+			nline.next();
+			nnodes=nline.nextInt();
+			nline.next();
+			nelems=nline.nextInt();
+			nline.close();
 		
 			// Options are 2D Plane Strain Analysis, 2D Plane Stress Analysis, Axisymmetric Analysis,
 			//	2D Plane Strain MPM Analysis, 2D Plane Stress MPM Analysis, 3D MPM Analysis
-			sline=new Scanner(s.next());
-			sline.useLocale(Locale.US);
-			sline.next();
-			sline.next();
-			sline.next();
-			sline.next();
-			String word=sline.next();
+			nline=new Scanner(s.next());
+			nline.useLocale(Locale.US);
+			nline.next();
+			nline.next();
+			nline.next();
+			nline.next();
+			String word=nline.next();
 			if(word.equals("3D"))
 				np=THREED_MPM;
 			else if(word.equals("Axisymmetric"))
-			{	if(sline.next().equals("MPM"))
+			{	if(nline.next().equals("MPM"))
 					np=AXI_SYM_MPM;
 				else
 					np=AXI_SYM;
 			}
 			else
-			{	sline.next();
-				if(sline.next().equals("Strain"))
+			{	nline.next();
+				if(nline.next().equals("Strain"))
 					np=PLANE_STRAIN;
 				else
 					np=PLANE_STRESS;
-				if(sline.next().equals("MPM"))
+				if(nline.next().equals("MPM"))
 					np = (np==PLANE_STRAIN) ? PLANE_STRAIN_MPM : PLANE_STRESS_MPM;
 			}
-			sline.close();
-			
+			nline.close();
 			s.close();
+			s=null;
 		}
 		catch(NoSuchElementException e)
-		{	throw new Exception("Could not decode analysis type for this file");
+		{	if(s!=null) s.close();
+			if(nline!=null) nline.close();
+			throw new Exception("Could not decode analysis type for this file");
 		}
 		//if(is3D())
 		//	throw new Exception("This tool cannot visualize 3D results; see help information for other options.");
@@ -214,6 +220,7 @@ public class ResultsDocument extends AbstractTableModel
 			}
 		}
 		s.close();
+		s=null;
 		if(prevNodeNum!=nnodes)
 			throw new Exception("Number of nodes does not match expected number of nodes.");
 		
@@ -275,6 +282,7 @@ public class ResultsDocument extends AbstractTableModel
 			prevElemNum=elemNum;
 		}
 		s.close();
+		s=null;
 		if(prevElemNum!=nelems)
 			throw new Exception("Number of elements does not match expected number of elements.");
 		
@@ -317,10 +325,26 @@ public class ResultsDocument extends AbstractTableModel
 			else if(word1.equals("Tranversely"))
 			{	sline.next();
 				sline.next();
-				if(sline.next().equals("normal"))
+				word1 = sline.next();
+				// old style
+				if(word1.equals("normal"))
 					matl=new MaterialBase(matName,MaterialBase.TRANSISO1);
-				else
+				else if(word1.equals("in"))
 					matl=new MaterialBase(matName,MaterialBase.TRANSISO2);
+				else
+				{	// new style
+					sline.next();
+					word1=sline.next();
+					word2=sline.next();
+					if(word1.equals("z"))
+						matl=new MaterialBase(matName,MaterialBase.TRANSISO1);
+					else if(word1.equals("y"))
+						matl=new MaterialBase(matName,MaterialBase.TRANSISO2);
+					else if(word2.equals("z"))
+						matl=new MaterialBase(matName,MaterialBase.TRANSISOSOFTENING1);
+					else
+						matl=new MaterialBase(matName,MaterialBase.TRANSISOSOFTENING2);
+				}
 			}
 			else if(word1.equals("Orthotropic"))
 				matl=new MaterialBase(matName,MaterialBase.ORTHO);
@@ -374,16 +398,21 @@ public class ResultsDocument extends AbstractTableModel
 				matl=new MaterialBase(matName,MaterialBase.COULOMBFRICTION);
 			else if(word1.equals("Adhesion"))
 				matl=new MaterialBase(matName,MaterialBase.ADHESIVEFRICTION);
+			else if(word1.equals("Liquid/Wall"))
+				matl=new MaterialBase(matName,MaterialBase.LIQUIDCONTACT);
 			else
 			{	// try to continue with unknown material type
 				matl=new MaterialBase(matName,MaterialBase.UNKNOWNMATERIAL);
 			}
+			sline.close();
+			sline=null;
 			
 			// decode material properteis
 			matl.decodeData(s);
 			materials.add(matl);
 		}
 		s.close();
+		s=null;
 
 		//----------------------------------------------------------
 		// mesh boundary conditions
@@ -437,6 +466,8 @@ public class ResultsDocument extends AbstractTableModel
 					addGridBC(nodeNum,dof,bcID,bcVal*units.lengthScale(),bcArg*units.altTimeScale(),bcAngle,bcAngle2);
 				}
 			}
+			s.close();
+			s=null;
 		}
 		
 		//----------------------------------------------------------
@@ -461,6 +492,8 @@ public class ResultsDocument extends AbstractTableModel
 					// value not scaled, but current not visualizes
 					addParticleBC(nodeNum,dof,0,bcID,bcLoad,bcArg*units.altTimeScale());
 				}
+				s.close();
+				s=null;
 			}
 			
 			bcs=section("MATERIAL POINTS WITH TRACTIONS");
@@ -481,8 +514,98 @@ public class ResultsDocument extends AbstractTableModel
 						s.next();
 					addParticleBC(nodeNum,dof,bcFace,bcID,bcLoad,bcArg*units.altTimeScale());
 				}
+				s.close();
+				s=null;
 			}
 			
+			bcs=section("NODAL POINTS WITH FIXED CONCENTRATIONS");
+			lineStart=findNextLine(bcs,"--------");
+			if(lineStart>0 && lineStart<bcs.length())
+			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
+				s.useLocale(Locale.US);
+				int bcID;
+				double bcVal,bcTime;
+				while(s.hasNextInt())
+				{	nodeNum=s.nextInt();
+					bcID=s.nextInt();
+					bcVal=s.nextDouble();
+					bcTime=s.nextDouble();
+					if(bcID==BoundaryCondition.FUNCTION_VALUE)
+						s.next();
+					addGridBC(nodeNum,BoundaryCondition.CONCENTRATION_DIR,
+								bcID,bcVal,bcTime*units.altTimeScale(),0.,0.);
+				}
+				s.close();
+				s=null;
+			}
+			
+			bcs=section("MATERIAL POINTS WITH CONCENTRATION FLUX");
+			lineStart=findNextLine(bcs,"--------");
+			if(lineStart>0 && lineStart<bcs.length())
+			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
+				s.useLocale(Locale.US);
+				int bcID,bcDir,bcFace;
+				double bcVal,bcTime;
+				while(s.hasNextInt())
+				{	nodeNum=s.nextInt();
+					bcDir=s.nextInt();
+					bcFace=s.nextInt();
+					bcID=s.nextInt();
+					bcVal=s.nextDouble();
+					bcTime=s.nextDouble();
+					if(bcID==BoundaryCondition.FUNCTION_VALUE)
+						s.next();
+					addParticleBC(nodeNum,bcDir,bcFace,bcID,bcVal,bcTime*units.altTimeScale());
+					particleBCs.get(particleBCs.size()-1).setBCType(BoundaryCondition.CONCENTRATION_DIR);
+				}
+				s.close();
+				s=null;
+			}
+			
+			bcs=section("NODAL POINTS WITH FIXED TEMPERATURES");
+			lineStart=findNextLine(bcs,"--------");
+			if(lineStart>0 && lineStart<bcs.length())
+			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
+				s.useLocale(Locale.US);
+				int bcID;
+				double bcVal,bcTime;
+				while(s.hasNextInt())
+				{	nodeNum=s.nextInt();
+					bcID=s.nextInt();
+					bcVal=s.nextDouble();
+					bcTime=s.nextDouble();
+					if(bcID==BoundaryCondition.FUNCTION_VALUE)
+						s.next();
+					addGridBC(nodeNum,BoundaryCondition.TEMPERATURE_DIR,
+								bcID,bcVal,bcTime*units.altTimeScale(),0.,0.);
+				}
+				s.close();
+				s=null;
+			}
+
+			bcs=section("MATERIAL POINTS WITH HEAT FLUX");
+			lineStart=findNextLine(bcs,"--------");
+			if(lineStart>0 && lineStart<bcs.length())
+			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
+				s.useLocale(Locale.US);
+				int bcID,bcDir,bcFace;
+				double bcVal,bcTime;
+				while(s.hasNextInt())
+				{	nodeNum=s.nextInt();
+					bcDir=s.nextInt();
+					bcFace=s.nextInt();
+					bcID=s.nextInt();
+					bcVal=s.nextDouble();
+					bcTime=s.nextDouble();
+					if(bcID==BoundaryCondition.FUNCTION_VALUE)
+						s.next();
+					addParticleBC(nodeNum,bcDir,bcFace,bcID,bcVal,bcTime*units.altTimeScale());
+					particleBCs.get(particleBCs.size()-1).setBCType(BoundaryCondition.TEMPERATURE_DIR);
+				}
+				s.close();
+				s=null;
+			}
+
 			bcs=section("FULL MASS MATRIX");
 			s=new Scanner(bcs);
 			s.useDelimiter("\\r\\n|\\n|\\r");
@@ -507,6 +630,8 @@ public class ResultsDocument extends AbstractTableModel
 				}
 			}
 			s.close();
+			s=null;
+			
 			if(gridInfo!=null)
 			{	// read grid info and find relative cell sides
 				// minimum side scale is 1 and other are relative to that side
@@ -562,6 +687,7 @@ public class ResultsDocument extends AbstractTableModel
 				}
 				
 				sline.close();
+				sline=null;
 			}
 		}
 		
@@ -595,6 +721,8 @@ public class ResultsDocument extends AbstractTableModel
 					// value not scaled, but not currently visualized
 					addNodalLoadBC(nodeNum,dof,bcLoad,bcAngle);
 				}
+				s.close();
+				s=null;
 			}
 		}
 		
@@ -627,6 +755,8 @@ public class ResultsDocument extends AbstractTableModel
 					// stress not scaled, but currently not visualized
 					addElementBC(elemNum,face,orient,str1,str2,str3);
 				}
+				s.close();
+				s=null;
 			}
 		}
 		
@@ -635,17 +765,22 @@ public class ResultsDocument extends AbstractTableModel
 		if(isMPMAnalysis())
 		{	String globalResults=section("ARCHIVED GLOBAL RESULTS");
 			if(globalResults.length()>0)
-			{	s=new Scanner(globalResults).useDelimiter("\\r\\n|\\n|\\r");
-				s.useLocale(Locale.US);
-				s.next();
-				s.next();
+			{	Scanner ss=new Scanner(globalResults);
+				ss.useDelimiter("\\r\\n|\\n|\\r");
+				ss.useLocale(Locale.US);
+				ss.next();
+				ss.next();
 				
 				// global results file name
-				sline=new Scanner(s.next()).useDelimiter(": ");
-				sline.useLocale(Locale.US);
-				sline.next();
-				line=sline.next();
+				Scanner ssline=new Scanner(ss.next());
+				ssline.useDelimiter(": ");
+				ssline.useLocale(Locale.US);
+				ssline.next();
+				line=ssline.next();
 				setGlobalPath(file.getParentFile(),line);
+				
+				ss.close();
+				ssline.close();
 			}
 			else
 				globalArchive=null;
@@ -667,6 +802,8 @@ public class ResultsDocument extends AbstractTableModel
 			sline.useLocale(Locale.US);
 			sline.next();
 			line=sline.next();
+			sline.close();
+			sline=null;
 			endIndex=line.lastIndexOf('/');
 			if(endIndex>=0)
 				archDir=line.substring(0,endIndex+1);
@@ -675,7 +812,6 @@ public class ResultsDocument extends AbstractTableModel
 			setPath(file.getParentFile(),archDir);
 			String ptsPath = line.substring(0, line.length()-1)+"_PtSizes.txt";
 			String dimPath = line.substring(0, line.length()-1)+"_PtDims.txt";
-			sline.close();
 			
 			// archive format and check it
 			sline=new Scanner(s.next());
@@ -683,16 +819,16 @@ public class ResultsDocument extends AbstractTableModel
 			sline.useLocale(Locale.US);
 			sline.next();
 			setArchFormat(sline.next());
+			sline.close();
+			sline=null;
 			if(archFormat.length()>ReadArchive.ARCH_MAXMPMITEMS)
 			{	for(int ii=ReadArchive.ARCH_MAXMPMITEMS;ii<archFormat.length();ii++)
 				{	if(archFormat.charAt(ii)=='Y')
 					{	s.close();
-						sline.close();
 						throw new Exception("This archive includes data not supported by this version of NairnFEAMPMViz");
 					}
 				}
 			}
-			sline.close();
 			
 			// crack archive format
 			sline=new Scanner(s.next());
@@ -710,6 +846,7 @@ public class ResultsDocument extends AbstractTableModel
 				}
 			}
 			sline.close();
+			sline=null;
 			
 			// archive files
 			s.next();
@@ -735,6 +872,7 @@ public class ResultsDocument extends AbstractTableModel
 				}
 			}
 			s.close();
+			s=null;
 			
 			// error in no files were found
 			if(archiveTimes.size()<1)
@@ -774,6 +912,7 @@ public class ResultsDocument extends AbstractTableModel
 						pline.close();
 					}
 					s.close();
+					s=null;
 				}
 			}
 			
@@ -821,6 +960,7 @@ public class ResultsDocument extends AbstractTableModel
 							pline.close();
 						}
 						s.close();
+						s=null;
 					}
 				}
 			}
@@ -853,6 +993,7 @@ public class ResultsDocument extends AbstractTableModel
 				}
 				feaArchFormat[ReadArchive.ARCH_FEADisplacements]='Y';
 				s.close();
+				s=null;
 			}
 			
 			for(i=0;i<elements.size();i++)
@@ -880,6 +1021,7 @@ public class ResultsDocument extends AbstractTableModel
 				}
 				feaArchFormat[ReadArchive.ARCH_FEAAvgStress]='Y';
 				s.close();
+				s=null;
 			}
 			
 			// FEA element energies
@@ -902,6 +1044,7 @@ public class ResultsDocument extends AbstractTableModel
 				}
 				feaArchFormat[ReadArchive.ARCH_FEAElemEnergy]='Y';
 				s.close();
+				s=null;
 			}
 			
 			// NODAL FORCES AND ELEMENT STRESSES (FEA)
@@ -990,6 +1133,7 @@ public class ResultsDocument extends AbstractTableModel
 				if(hasStresses) feaArchFormat[ReadArchive.ARCH_FEAElemStress]='Y';
 				
 				s.close();
+				s=null;
 			}
 		}
 		

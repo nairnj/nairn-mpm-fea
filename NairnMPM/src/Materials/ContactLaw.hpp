@@ -16,6 +16,7 @@
 #include "Materials/MaterialBase.hpp"
 
 class MaterialController;
+class NodalPoint;
 
 // contact law properties for inptu only to support old style entry
 typedef struct {
@@ -45,10 +46,8 @@ class ContactLaw : public MaterialBase
 	
 		// methods
 		virtual bool GetFrictionalDeltaMomentum(Vector *,Vector *,double,double *,double,bool,double,bool,double,Vector *) const;
-		virtual bool GetInterfaceForcesForNode(Vector *,Vector *,double *,double,Vector *,double,bool,bool,double,
-											   Vector *,double,double) const;
-		virtual bool GetCrackInterfaceForce(Vector *,Vector *,Vector *,double,double,Vector *,double *) const;
-		virtual double GetSslideAcDt(double,double,double,double,double,bool &,double) const;
+		virtual void GetInterfaceForces(Vector *,Vector *,double *,double,Vector *,double,double,Vector *,double,double,double) const;
+		virtual double GetSslideAcDt(double,double,double,double,bool &,double) const;
 	
 		// accessors
 		virtual int MaterialStyle(void) const;
@@ -57,11 +56,8 @@ class ContactLaw : public MaterialBase
 		virtual bool IgnoreContact(void) const;
 		virtual bool ContactIsDone(bool) const;
 		virtual bool IsFrictionalContact(void) const;
-		virtual bool FrictionLawNeedsContactArea(void) const;
+		virtual bool ContactLawNeedsContactArea(void) const;
 		virtual bool IsImperfectInterface(void) const;
-		virtual bool IsPerfectTangentialInterface(void) const;
-		virtual bool IsPerfectNormalInterface(bool) const;
-		virtual bool IsPerfectNormalInterface(void) const;
 	
 		// Class methods
 		static int ConvertOldStyleToContactLaw(MaterialController *,ContactInput *,double);

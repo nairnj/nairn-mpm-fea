@@ -5,17 +5,12 @@
 	Created by John Nairn on July 22, 2010
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
  
-	Find all forces on the grid including internal forces (from particle stress)
-		external forces, and body forces. Add equivalent forces for transport
-		tasks.
- 
-	After main loop, get traction forces on cracks, add crack tip heating,
-		and imperfect interface forces on cracks and track interface energy.
- 
-	Sum all forces only with external damping on the nodes
- 
-	Finally reconcile forces with boundary conditions. Do same for transport
-		tasks.
+	The tasks are:
+    -------------
+	* Find all forces on the grid including internal forces (from particle stress)
+		external forces, and body forces.
+	* If transport activated, add equivalent forces for transport.
+	* Reduction phase to copy from ghost nodes at the end
 ******************************************************************************************/
 
 #include "stdafx.h"
@@ -87,7 +82,7 @@ void GridForcesTask::Execute(void)
 				NodalPoint *ndptr;
 				for(int i=1;i<=numnds;i++)
 				{	vfld = (short)mpmptr->vfld[i];					// crack velocity field to use
-					
+
 					// total force vector = internal + external forces
 					//	(in g mm/sec^2 or micro N)
 					Vector theFrc;
@@ -110,10 +105,11 @@ void GridForcesTask::Execute(void)
 						}
                     }
 #endif
+					
 					// transport forces
 					TransportTask *nextTransport=transportTasks;
 					while(nextTransport!=NULL)
-						nextTransport=nextTransport->AddForces(ndptr,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],&t);
+						nextTransport=nextTransport->AddForces(ndptr,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],&t,vfld,matfld);
 				}
 
 				// next material point
@@ -152,5 +148,4 @@ void GridForcesTask::Execute(void)
 	{	for(int pn=0;pn<totalPatches;pn++)
 			patches[pn]->GridForcesReduction();
 	}
-	
 }

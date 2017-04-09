@@ -5,8 +5,13 @@
 	Created by John Nairn on March 6, 2015
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
  
-	If simulation has rigid particles and the are not be set by extrapolation,
-	project them to the grid now.
+	The tasks are:
+	-------------
+	* This task only active when have some rigid BC particles
+			(particles from nmpmsRC to nmpms-1)
+	* Project values of rigid particles to all nodes in the element
+	  containing the particle
+	* May be velocity, temperature, and concentration
 ********************************************************************************/
 
 #include "stdafx.h"
@@ -126,7 +131,7 @@ void ProjectRigidBCsTask::Execute(void)
 
 // Unset nodal dof for rigid BCs so can try to reuse
 //   them without needing new memory allocations
-// No rigid BCs are deleted and when done, reuseRigidBC is set to first empty on
+// No rigid BCs are deleted and when done, reuseRigidBC is set to first empty one
 void ProjectRigidBCsTask::UnsetRigidBCs(BoundaryCondition **firstBC,BoundaryCondition **lastBC,
 										BoundaryCondition **firstRigidBC,BoundaryCondition **reuseRigidBC)
 {

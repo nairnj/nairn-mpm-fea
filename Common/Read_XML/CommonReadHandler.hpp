@@ -99,7 +99,7 @@ class CommonReadHandler : public DefaultHandler
         void ReadTagNumber(int *,const Attributes&);
 		double ReadNumericAttribute(const char *,const Attributes&,double);
         double ReadUnits(const Attributes&,int type);
-		short BMPFileCommonInput(char *,const Attributes&,int);
+		short BMPFileCommonInput(char *,const Attributes&,int,bool);
 		short EndBMPInput(char *xName,int);
 		virtual void TranslateBMPFiles(void);
 	
@@ -137,8 +137,9 @@ class CommonReadHandler : public DefaultHandler
 		Vector orig;
 		double bwidth,bheight;
         bool yflipped;
-		double minAngle,minIntensity,angleScale;
-		char bmpFileName[300],bmpAngleFileName[300];
+		double minAngle[3],minIntensity[3],angleScale[3];
+		int numAngles;
+		char bmpFileName[300],bmpAngleFileName[3][300];
 };
 
 #endif

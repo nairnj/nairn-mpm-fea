@@ -153,10 +153,15 @@ public class TwoDPlotWindow extends JNChildWindow
 		
 		// File menu
 		menuBar.add(document.defaultPlotFileMenu(plot2DView,this,this,this));	// File menu
-		menuBar.add(JNDocument.defaultPlotEditMenu(plot2DView));	// Edit menu
+		
+		// Edit Menu
+		JMenu menu = menuBar.add(JNDocument.defaultPlotEditMenu(plot2DView));	// Edit menu
+		// Data set add end edit
+		JNDocument.makeMenuItem(menu,"Add Data Set","AddDataSet",plot2DView,KeyEvent.VK_D,true);
+		JNDocument.makeMenuItem(menu,"Edit Data Set...","EditDataSet",plot2DView,KeyEvent.VK_E,true);
 		
 		// Window
-		JMenu menu = new JMenu("Window");
+		menu = new JMenu("Window");
 		menuBar.add(menu);
 		if(JNApplication.isMacLNF())
 		{	menu.add(JNApplication.main.getOpenHelpAction());

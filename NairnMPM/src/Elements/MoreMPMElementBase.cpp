@@ -55,7 +55,7 @@ void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
 			
         case UNIFORM_GIMP:
         case UNIFORM_GIMP_AS:
-		{	// during initialization, find dimenless positiong, and nodes for non-zero shape function
+		{	// during initialization, find dimensionless position, and nodes for non-zero shape function
 			Vector *xipos = mpmptr->GetNcpos();
             GetXiPos(&mpmptr->pos,xipos);
 			Vector lp;
@@ -697,11 +697,14 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 		{	if(fn[count]>1.e-10)
 			{	count++;		// keep previous one only if shape ends up nonzero (otherwise previous one is removed as too small)
 				if(count>=maxShapeNodes)
-                {	cout << "# Found " << count-1 << " nodes; need room for remaining nodes:" << endl;
-                    for(j=i;j<ncnds;j++)
-                    {   cout << "#   node = " << cnodes[j] << ", ws*Si = " << endl;
-                    }
-					throw CommonException("Too many CPDI nodes found; increase maxShapeNodes in source code by at least number of remaining nodes","ElementBase::GetCPDIFunctions");
+                {
+#pragma omp critical (output)
+					{	cout << "# Found " << count-1 << " nodes; need room for remaining nodes:" << endl;
+						for(j=i;j<ncnds;j++)
+						{   cout << "#   node = " << cnodes[j] << ", ws*Si = " << endl;
+						}
+						throw CommonException("Too many CPDI nodes found; increase maxShapeNodes in source code by at least number of remaining nodes","ElementBase::GetCPDIFunctions");
+					}
 				}
 			}
 			nds[count] = cnodes[i];

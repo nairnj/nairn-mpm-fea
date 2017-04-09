@@ -5,13 +5,30 @@
 	Created by John Nairn on 4/7/2015
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
 
-	A strain update at the end of the MPM step is used in the SZS and
-	the USAVG methods.
-
-	Before updating strain, adjust new moment for material contact, crack contact, and
-	boundary conditions and update nodal transport properties
-
-	Update strains on all particles
+	Update strains on particles after they have been updated. This task
+	is active for USL and USAVG update methods and when simulation
+	requests a re=extrapolation to the grid (which often works better
+	in problems with cracks or contact)
+ 
+	The tasks are:
+	--------------
+	* For each non-rigid particle:
+		- Extrapolate mass and momentum to the grid
+		- If cracks or multimaterial mode
+			+ Extrapolation position or displacement
+			+ Extrapolate deformed area volume
+			+ It multimaterial extrapolate volume gradient
+	* Reduction to copy from ghost to real nodes
+	* Update nodal transport values
+	* Material contact and crack contact
+	* Get grid BCs using GridMomentumConditions()
+	* Full strain update
+		- Get grid velocities (p/m)
+		- Copy mechanical properties of a material
+		- Tell material to update strain (etc) on the particle
+		- Also extrapolates transport to particle and saves a "previous"
+ 
+	This tasks not used when doing transport only
 ********************************************************************************/
 
 #include "stdafx.h"
@@ -132,14 +149,14 @@ void UpdateStrainsLastContactTask::Execute(void)
 	// adjust momenta for multimaterial contact
 	if(fmobj->multiMaterialMode)
 	{	for(int i=1;i<=nnodes;i++)
-			nd[i]->MaterialContactOnNode(timestep,UPDATE_STRAINS_LAST_CALL,NULL,NULL);
+			nd[i]->MaterialContactOnNode(timestep,UPDATE_STRAINS_LAST_CALL);
 	}
 	
 	// adjust momenta for crack contact
 	if(firstCrack!=NULL) CrackNode::ContactOnKnownNodes();
 	
 	// impose grid boundary conditions
-	NodalVelBC::GridMomentumConditions(FALSE);
+	NodalVelBC::GridMomentumConditions();
 	
 	// update strains based on current velocities
 	UpdateStrainsFirstTask::FullStrainUpdate(strainTimestep,(fmobj->mpmApproach==USAVG_METHOD),fmobj->np);

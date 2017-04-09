@@ -48,7 +48,7 @@ class MPMBase : public LinkedObject
         MPMBase(int,int,double);
 		virtual ~MPMBase();
 		void AllocateDiffusion(bool);
-		void AllocateTemperature(void);
+		void AllocateTemperature(int,int);
 		void AllocateJStructures(void);
         bool AllocateCPDIorGIMPStructures(int,bool);
 		bool AllocateGIMPStructures(int,bool);
@@ -91,6 +91,7 @@ class MPMBase : public LinkedObject
 		virtual double GetParticleXSize(void) const;
 		virtual double GetParticleYSize(void) const;
 		virtual double GetParticleZSize(void) const;
+		virtual double GetMinParticleLength(void) const;
 
         // defined virtual methods
 		virtual double GetUnscaledVolume(void);

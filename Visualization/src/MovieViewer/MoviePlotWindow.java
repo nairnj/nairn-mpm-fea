@@ -141,7 +141,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		JNDocument.makeMenuItem(menu,"Export Graphics...","ExportFrame",this,KeyEvent.VK_G,true);
 		JNDocument.makeMenuItem(menu,"Export Movie Frames...","ExportMovie",this,KeyEvent.VK_M,true);
 		menu.addSeparator();
-		JNDocument.makeMenuItem(menu,"Close","Close",this,KeyEvent.VK_W);
+		JNDocument.makeMenuItem(menu,"Close","closeWindow",this,KeyEvent.VK_W);
 		
 		// Zoom menu
 		zoomMenu = new JMenu("Zoom");
@@ -156,6 +156,9 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		makeCheckBoxMenuItem(zoomMenu,"1000%","ZoomPlot",this,KeyEvent.VK_8);
 		checkedZoomItem.setSelected(true);
 		currentScale = 1.0;
+		zoomMenu.addSeparator();
+		JNDocument.makeMenuItem(zoomMenu,"Previous Frame","ShowPrevious",this,KeyEvent.VK_LEFT);
+		JNDocument.makeMenuItem(zoomMenu,"Next Frame","ShowNext",this,KeyEvent.VK_RIGHT);
 		
 		// Window
 		menu = new JMenu("Window");
@@ -371,6 +374,16 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 			plotScroll.setScale(currentScale,null);
 		}
 		
+		else if(theCmd.equals("ShowPrevious"))
+		{	if(!movieControls.decrementArchiveIndex())
+				JNApplication.appBeep();
+		}
+		
+		else if(theCmd.equals("ShowNext"))
+		{	if(!movieControls.incrementArchiveIndex())
+				JNApplication.appBeep();
+		}
+		
 		else
 			super.actionPerformed(e);
 	}
@@ -485,7 +498,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 	//----------------------------------------------------------------------------
 	
 	public void windowOpened(WindowEvent e)
-	{	int newComponent=((DocViewer)document).controls.getPlotComponent();
+	{	int newComponent=((DocViewer)document).controls.getPlotComponent(-1);
 		beginNewIndexNewComponent(((DocViewer)document).controls.getArchiveIndex(),newComponent);
 		plotView.setFirstLoad(true);
 		super.windowOpened(e);

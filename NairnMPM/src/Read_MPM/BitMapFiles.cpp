@@ -21,6 +21,7 @@
 
 extern char *angleExpr[3];
 extern char rotationAxes[4];
+extern char angleAxes[4];
 
 //-----------------------------------------------------------
 // Check for bmp element, return false if not
@@ -28,7 +29,7 @@ extern char rotationAxes[4];
 short MPMReadHandler::BMPFileInput(char *xName,const Attributes& attrs)
 {
 	// check for common commands
-	if(BMPFileCommonInput(xName,attrs,POINTSBLOCK)) return TRUE;
+	if(BMPFileCommonInput(xName,attrs,POINTSBLOCK,fmobj->IsThreeD())) return TRUE;
 	
 	//-----------------------------------------------------------
     // Intensity properties for MPM only
@@ -56,8 +57,8 @@ short MPMReadHandler::BMPFileInput(char *xName,const Attributes& attrs)
 void MPMReadHandler::TranslateBMPFiles(void)
 {
 	// file info and data
-	unsigned char **rows,**angleRows = NULL;
-	XYInfoHeader info,angleInfo;
+	unsigned char **rows,**angleRows = NULL,**angle2Rows = NULL,**angle3Rows = NULL;
+	XYInfoHeader info;
 	
 	// read image file
 	char *bmpFullPath=archiver->ExpandOutputPath(bmpFileName);
@@ -67,13 +68,49 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	// angle file name (overrides other angle settings)
 	bool setAngles = false;
 	int numRotations=(int)strlen(rotationAxes);
-	if(bmpAngleFileName[0]>0)
+	int fileRotations=(int)strlen(angleAxes);
+	if(bmpAngleFileName[0][0]>0)
 	{	setAngles = true;
-		char *bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName);
+		
+		// first file always there
+		XYInfoHeader angleInfo;
+		char *bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[0]);
 		ReadBMPFile(bmpFullAnglePath,angleInfo,&angleRows);
 		if(info.height!=angleInfo.height || info.width!=angleInfo.width)
-			throw SAXException(BMPError("The image file and angle file sizes do not match.",bmpFileName));
+			throw SAXException(BMPError("The image file and first angle file sizes do not match.",bmpFileName));
 		delete [] bmpFullAnglePath;
+		
+		// was angle mapping set
+		if(numAngles==0)
+			throw SAXException(BMPError("No mapping of pixels to angles for angle file were provided.",bmpFileName));
+		
+		if(fileRotations>1)
+		{	bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[1]);
+			ReadBMPFile(bmpFullAnglePath,angleInfo,&angle2Rows);
+			if(info.height!=angleInfo.height || info.width!=angleInfo.width)
+				throw SAXException(BMPError("The image file and second angle file sizes do not match.",bmpFileName));
+			delete [] bmpFullAnglePath;
+			if(numAngles<2)
+			{	minAngle[1] = minAngle[0];
+				minIntensity[1] = minIntensity[0];
+				angleScale[1] = angleScale[0];
+				numAngles++;
+			}
+		}
+		
+		if(fileRotations>2)
+		{	bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[2]);
+			ReadBMPFile(bmpFullAnglePath,angleInfo,&angle3Rows);
+			if(info.height!=angleInfo.height || info.width!=angleInfo.width)
+				throw SAXException(BMPError("The image file and second angle file sizes do not match.",bmpFileName));
+			delete [] bmpFullAnglePath;
+			if(numAngles<3)
+			{	minAngle[2] = minAngle[1];
+				minIntensity[2] = minIntensity[1];
+				angleScale[2] = angleScale[1];
+				numAngles++;
+			}
+		}
 	}
 	else if(numRotations>0)
 	{	int i;
@@ -168,15 +205,22 @@ void MPMReadHandler::TranslateBMPFiles(void)
                         
 						// is there an angle image too?
 						if(setAngles)
-						{	double totalIntensity = FindAverageValue(map,rows);
-							if(totalIntensity>0.)
-							{	double matAngle=minAngle+(totalIntensity-minIntensity)*angleScale;
-								newMpt->SetAnglez0InDegrees(matAngle);
+						{	double matAngle[3];
+							double totalIntensity = FindAverageValue(map,angleRows);
+							matAngle[0] = minAngle[0]+(totalIntensity-minIntensity[0])*angleScale[0];
+							if(fileRotations>1)
+							{	totalIntensity = FindAverageValue(map,angle2Rows);
+								matAngle[1] = minAngle[1]+(totalIntensity-minIntensity[1])*angleScale[1];
 							}
+							if(fileRotations>2)
+							{	totalIntensity = FindAverageValue(map,angle3Rows);
+								matAngle[2] = minAngle[2]+(totalIntensity-minIntensity[2])*angleScale[2];
+							}
+							SetMptAnglesFromFunctions(angleAxes,matAngle,&mpos[k],newMpt);
 						}
 						else
 						{	// If had Rotate commands then use them
-							SetMptAnglesFromFunctions(numRotations,&mpos[k],newMpt);
+							SetMptAnglesFromFunctions(rotationAxes,NULL,&mpos[k],newMpt);
 						}
 						
 						// fill the spot
@@ -193,10 +237,18 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	// clean up
 	for(int row=0;row<info.height;row++)
 	{	delete [] rows[row];
-		if(setAngles) delete [] angleRows[row];
+		if(setAngles)
+		{	delete [] angleRows[row];
+			if(fileRotations>1) delete [] angle2Rows[row];
+			if(fileRotations>2) delete [] angle3Rows[row];
+		}
 	}
 	delete [] rows;
-	if(setAngles) delete [] angleRows;
+	if(setAngles)
+	{	delete [] angleRows;
+		if(fileRotations>1) delete [] angle2Rows;
+		if(fileRotations>2) delete [] angle3Rows;
+	}
 	
 	// angles if allocated
 	for(int ii=0;ii<numRotations;ii++)

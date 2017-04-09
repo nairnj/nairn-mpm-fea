@@ -5,13 +5,24 @@
 	Created by John Nairn on July 22, 2010
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
 
-	A strain update at the end of the MPM step is used in the SZS and
-	the USAVG methods.
-
-	Before updating strain, update nodal transport properties.
-	This tasks only implemented when in single material mode and no cracks
-
-	Update strains on all particles
+	Update strains on particles after they have been updated. This task
+	is active for USL and USAVG update methods
+ 
+	The tasks are:
+	--------------
+    * Update nodal transport values
+	* Full strain update
+		- Get grid velocities (p/m)
+		- Copy mechanical properties of a material
+		- Tell material to update strain (etc) on the particle
+		- Also extrapolates transport to particle and saves as "previous"
+ 
+	The tasks for transport only are:
+	---------------------------------
+	* Update nodal transport values
+	* Full strain update
+		- Tell material to particle heat energy
+		- Also extrapolates transport to particle and saves as "previous"
 ********************************************************************************/
 
 #include "stdafx.h"

@@ -75,22 +75,25 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     // e.g., now dvrr = dvr/dr * dt = d/dr(du/dt) * dt = d/dt(du/dr) * dt = du/dr)
     dv.Scale(strainTime);
     
-	// find effective particle transport properties from grid results
+	// Extrapolate grid temperature (or concentration) to the particle
+	// Find delta value from previous extrapolated grid value on particle
+	// (and save this new one for use by others and next time step)
 	ResidualStrains res;
 	res.dT = 0;
 	res.dC = 0.;
 	if(!ConductionTask::active)
-	{	res.dT = pTemperature-pPreviousTemperature;
+	{	// just use then reset previous temperature
+		res.dT = pTemperature-pPreviousTemperature;
 		pPreviousTemperature = pTemperature;
 	}
 	else
 	{	for(i=1;i<=numnds;i++)
-		res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i]);
+		res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
 		res.dT = conduction->GetDeltaValue(this,res.dT);
 	}
 	if(DiffusionTask::active)
 	{	for(i=1;i<=numnds;i++)
-		res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i]);
+		res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
 		res.dC = diffusion->GetDeltaValue(this,res.dC);
 	}
 	
@@ -246,6 +249,7 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
     }
 }
 
+// Note: Handled by MatPoint2D parent class when doing exact tractions
 // To support traction boundary conditions, find the deformed edge, natural coordinates of
 // the corners along the edge, elements for those edges, and a normal vector in direction
 // of the traction
@@ -277,7 +281,7 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         r2mag = r2.y;
     }
     
-    else
+    else if(ElementBase::useGimp==LINEAR_CPDI_AS)
     {   // always LINEAR_CPDI_AS
 	
         // get polygon vectors - these are from particle to edge
@@ -299,6 +303,11 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         r2mag = sqrt(r2.x*r2.x + r2.y*r2.y);
     }
     
+	else
+	{	// Currently not allowed
+		throw CommonException("Traction BCs in axisymmetri require lCPDI or uGIMP shape functions.","MatPoint2D::GetTractionInfo");
+	}
+	
     // Find corners
 	Vector c1,c2;
 	switch(face)
@@ -392,6 +401,5 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 	// return ratio of second nodal weight to first one
 	return ratio;
 }
-
 
 

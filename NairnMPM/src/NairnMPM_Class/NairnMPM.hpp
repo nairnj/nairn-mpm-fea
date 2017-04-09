@@ -38,6 +38,8 @@ class NairnMPM : public CommonAnalysis
 		bool multiMaterialMode;			// TRUE to use separate velocity fields for each material
 		bool hasRigidContactParticles;	// TRUE if some particles in multimaterial mode or rigid (direction=8)
 		bool skipPostExtrapolation;		// Skip post update extrapolation
+	
+		// parameters only active for ADD_PARTICLE_SPIN, TRACK_GRADV or EXACT_TRACTIONS
 		bool plusParticleSpin;			// MPM+PS mode
 		
         //  Constructors and Destructor

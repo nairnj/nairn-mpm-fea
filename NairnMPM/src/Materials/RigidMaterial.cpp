@@ -55,6 +55,7 @@ RigidMaterial::RigidMaterial(char *matName) : MaterialBase(matName)
     Vfunction=NULL;
 	rho=1.;
 	mirrored=0;
+	useControlVelocity = false;
 }
 
 #pragma mark RigidMaterial::Initialization
@@ -392,7 +393,25 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
     // false if no functions or 1 to 3 values set
 	if(setDirection==RIGID_MULTIMATERIAL_MODE)
     {   if(function==NULL && function2==NULL && function3==NULL)
-            return false;
+		{	if(useControlVelocity)
+			{	if(controlDirection==1)
+				{	vel->x=controlVelocity;
+					hasDir[0]=true;
+				}
+				else if(controlDirection==2)
+				{	vel->y = controlVelocity;
+					hasDir[1]=true;
+				}
+				else if(controlDirection==3)
+				{	vel->z = controlVelocity;
+					hasDir[2]=true;
+				}
+				else
+					return false;
+			}
+			else
+				return false;
+		}
         
         // set variables
         varTime = theTime*UnitsController::Scaling(1.e3);
@@ -617,3 +636,12 @@ void RigidMaterial::ReplaceSettingFunction(char *bcFunction,int functionNum)
 			break;
 	}
 }
+
+// replace setting function, but HasError() is not called
+// throws std::bad_alloc, CommonException()
+void RigidMaterial::SetControlVelocity(double velocity,int direction)
+{	controlVelocity = velocity;
+	controlDirection = direction;
+	useControlVelocity = true;
+}
+

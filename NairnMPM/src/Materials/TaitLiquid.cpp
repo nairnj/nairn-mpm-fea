@@ -322,30 +322,9 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	// Store shear rate
 	mptr->SetHistoryDble(J_History+2,shearRate,historyOffset);
 	
-	// Get effective visocisy
-	double twoetaspRate = 0.;
-	if(numViscosity==1)
-	{	twoetaspRate = TwoEtasp[0];
-	}
-	else
-	{	shearRate = log10(shearRate);
-		if(shearRate < logShearRate[0])
-			twoetaspRate = TwoEtasp[0];
-		else if(shearRate > logShearRate[numViscosity-1])
-			twoetaspRate = TwoEtasp[numViscosity-1];
-		else
-		{	// interpolate
-			for(int i=1;i<numViscosity;i++)
-			{	if(shearRate <= logShearRate[i])
-				{	// between i-1 and i
-					double fract = (logShearRate[i]-shearRate)/(logShearRate[i]-logShearRate[i-1]);
-					twoetaspRate = fract*TwoEtasp[i-1] + (1.-fract)*TwoEtasp[i];
-					break;
-				}
-			}
-		}
-	}
-    
+	// Get effective viscosity
+	double twoetaspRate = GetTwoEtaOverRho(shearRate);
+	
     // Get Kirchoff shear stress (over rho0)
     shear.Scale(J*twoetaspRate/delTime);
     
@@ -377,7 +356,79 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     IncrementHeatEnergy(mptr,res->dT,dTq0,shearWork);
 }
 
-// When becomes active update J, set B elastic, set pressure, and zero deviatorix stress
+// get 2 eta/rho for use in constitutive law (<=0 to get zero shear rate viscosity)
+double TaitLiquid::GetTwoEtaOverRho(double shearRate) const
+{
+	double twoetaspRate = 0.;
+	if(numViscosity==1 || shearRate<=0.)
+	{	twoetaspRate = TwoEtasp[0];
+	}
+	else
+	{	shearRate = log10(shearRate);
+		if(shearRate < logShearRate[0])
+			twoetaspRate = TwoEtasp[0];
+		else if(shearRate > logShearRate[numViscosity-1])
+			twoetaspRate = TwoEtasp[numViscosity-1];
+		else
+		{	// interpolate
+			for(int i=1;i<numViscosity;i++)
+			{	if(shearRate <= logShearRate[i])
+				{	// between i-1 and i
+					double fract = (logShearRate[i]-shearRate)/(logShearRate[i]-logShearRate[i-1]);
+					twoetaspRate = fract*TwoEtasp[i-1] + (1.-fract)*TwoEtasp[i];
+					break;
+				}
+			}
+		}
+	}
+	return twoetaspRate;
+}
+
+
+// This method has several options:
+//	1. Solve x(1+k*eta(x*gmaxdot)) - 1 = 0 on interval 0 < x < 1 and return eta(g(dot))
+//		Note: x = g(dot)/gmaxdot
+//  2. If solution not possible, bracket the solution to y = x(1+k*eta(x*gmaxdot)) - 1 = 0
+//		Such that y1(x1)<0 and y(x2)>0
+//	3. If can't help, set brackets to 0 and 1
+double TaitLiquid::BracketContactLawShearRate(double gmaxdot,double k,double &x1,double &y1,double &x2,double &y2) const
+{
+	// if no shear dependence, return constant viscosity
+	if(numViscosity==1) return viscosity[0];
+	
+	// get log(gmax(dot)) and exit if below first break point
+	double logsmax = log10(gmaxdot);
+	if(logsmax <= logShearRate[0]) return viscosity[0];
+	
+	// start at first point (and done if already positive)
+	x1 = pow(10,logShearRate[0]-logsmax);			// always < 1
+	y1 = x1*(1.+k*viscosity[0]) - 1.;
+	if(y1 >= 0) return viscosity[0];
+	
+	// find interval were y(x2)>0
+	for(int i=1;i<numViscosity;i++)
+	{	// done if past the max, return bracket x1 and x2=1
+		if(logShearRate[i] > logsmax)
+		{	x2 = 1.;
+			y2 = k*GetViscosity(gmaxdot);
+			return -1.;
+		}
+		
+		// get new x2 (which must be < 1), y2, exit if y2>0
+		x2 = pow(10,logShearRate[i]-logsmax);
+		y2 = x2*(1.+k*viscosity[i]) - 1.;
+		if(y2 >= 0.) return -1;
+		
+		// reset starting point
+		x1 = x2;
+		y1 = y2;
+	}
+	
+	// answer is between last shear rate and max shear rate where this material uses a constant
+	return viscosity[numViscosity-1];
+}
+
+// When becomes active update J, set B elastic, set pressure, and zero deviatoric stress
 void TaitLiquid::BeginActivePhase(MPMBase *mptr,int np,int historyOffset) const
 {	double J = mptr->GetRelativeVolume();
 	mptr->SetHistoryDble(J_History,J,historyOffset);
@@ -461,3 +512,5 @@ void TaitLiquid::SetPressureFunction(char *pFunction)
 		ThrowSAXException("Initial pressure function is not valid");
 }
 
+// get viscosity eta = 0.5*rho*(2 eta/rho) for use in constitutive law
+double TaitLiquid::GetViscosity(double shearRate) const { return 0.5*rho*GetTwoEtaOverRho(shearRate); }

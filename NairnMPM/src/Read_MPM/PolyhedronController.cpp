@@ -16,6 +16,7 @@
 // constructor
 PolyhedronController::PolyhedronController(int block) : ShapeController(block)
 {
+	twoDShape = false;
 }
 
 // destructor

@@ -25,7 +25,6 @@ class NodalVelBC : public BoundaryCondition
         
         // constructors and destructors
         NodalVelBC(int,int,int,double,double,double,double);
-		virtual ~NodalVelBC();
 		virtual BoundaryCondition *UnsetDirection(void);
 		virtual BoundaryCondition *SetRigidProperties(int,int,int,double);
         
@@ -33,8 +32,6 @@ class NodalVelBC : public BoundaryCondition
         virtual BoundaryCondition *PrintBC(ostream &);
 				
 		// specific methods
-        NodalVelBC *CopyNodalVelocities(NodalPoint *);
-        NodalVelBC *PasteNodalVelocities(NodalPoint *);
 		NodalVelBC *ZeroVelBC(double);
 		NodalVelBC *AddVelBC(double);
 		NodalVelBC *SetMirroredVelBC(double);
@@ -48,7 +45,7 @@ class NodalVelBC : public BoundaryCondition
 		void SetMirrorSpacing(int);
 	
 		// class methods
-		static void GridMomentumConditions(int);
+		static void GridMomentumConditions(void);
 		static void ConsistentGridForces(void);
 		static Vector TotalReactionForce(int);
 	
@@ -60,7 +57,6 @@ class NodalVelBC : public BoundaryCondition
         int mirrorSpacing;
 		int reflectedNode;
 		double reflectRatio;
-		Vector *pk;
 };
 
 // variables (changed in MPM time step)

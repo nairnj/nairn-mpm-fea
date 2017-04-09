@@ -31,6 +31,10 @@ public class LimitsSelector extends PlotControl
 	private JLabel maxLabel=new JLabel("Max:");
 	private JTextField maxText=new JTextField("1");
 	
+	private static int prevLimits = 0;
+	private static String prevMinText = "0";
+	private static String prevMaxText = "1";
+	
 	// initialize
 	LimitsSelector(DocViewer dc)
 	{   super(ControlPanel.WIDTH,104,dc);
@@ -38,6 +42,9 @@ public class LimitsSelector extends PlotControl
 		GridBagConstraints c = new GridBagConstraints();
 		//setLayout(new GridLayout(2,2));
 		setLayout(gridbag);
+		
+		minText.setText(prevMinText);
+		maxText.setText(prevMaxText);
 
 		c.fill = GridBagConstraints.BOTH;
 		
@@ -46,7 +53,7 @@ public class LimitsSelector extends PlotControl
 		c.gridwidth = GridBagConstraints.REMAINDER;
 		c.weightx = 1.0;
 		gridbag.setConstraints(dynamicLimits, c);
-		dynamicLimits.setSelected(true);
+		if(prevLimits==0) dynamicLimits.setSelected(true);
 		limitType.add(dynamicLimits);
 		add(dynamicLimits);
 		dynamicLimits.addActionListener(new ActionListener()
@@ -61,6 +68,7 @@ public class LimitsSelector extends PlotControl
 		
 		// Row 2: Second radio button
 		gridbag.setConstraints(globalLimits, c);
+		if(prevLimits==1) globalLimits.setSelected(true);
 		limitType.add(globalLimits);
 		add(globalLimits);
 		globalLimits.addActionListener(new ActionListener()
@@ -81,6 +89,7 @@ public class LimitsSelector extends PlotControl
 		
 		// Row 3: Third radio button
 		gridbag.setConstraints(fixedLimits, c);
+		if(prevLimits==2) fixedLimits.setSelected(true);
 		limitType.add(fixedLimits);
 		add(fixedLimits);
 		fixedLimits.addActionListener(new ActionListener()
@@ -154,6 +163,8 @@ public class LimitsSelector extends PlotControl
 			{	case FIXED_LIMITS:
 					dmin=ControlPanel.readDouble(minText,"minimum limit");
 					dmax=ControlPanel.readDouble(maxText,"maximum limit");
+					prevMinText = minText.getText();
+					prevMaxText = maxText.getText();
 					break;
 				case GLOBAL_LIMITS:
 					if(validLimits)
@@ -181,11 +192,17 @@ public class LimitsSelector extends PlotControl
 	// get particle number option for time plots
 	public int getLimitType()
 	{	if(dynamicLimits.isSelected())
+		{	prevLimits = 0;
 			return DYNAMIC_LIMITS;
+		}
 		else if(globalLimits.isSelected())
+		{	prevLimits = 1;
 			return GLOBAL_LIMITS;
+		}
 		else
+		{	prevLimits = 2;
 			return FIXED_LIMITS;
+		}
 	}
 
 }

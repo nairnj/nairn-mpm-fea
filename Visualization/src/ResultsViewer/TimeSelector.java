@@ -138,4 +138,13 @@ public class TimeSelector extends PlotControl
 		select.setValue(currentIndex+1);
 		return true;
 	}
+	
+	// decrement archive index if possible
+	public boolean decrementArchiveIndex()
+	{	int currentIndex=select.getValue();
+		if(currentIndex==select.getMinimum()) return false;
+		select.setValue(currentIndex-1);
+		return true;
+	}
+
 }

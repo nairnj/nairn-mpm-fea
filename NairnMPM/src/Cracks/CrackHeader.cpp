@@ -1258,7 +1258,7 @@ void CrackHeader::JIntegral(void)
 							// Units uN/mm = uN mm/mm^2
 							// add rho*() weighted by area or Ap*(rho0/Jp)*()
 							if(JContourType == AXISYM_BROBERG_J)
-							{	// See Broberg, Cracks and Fraction (1999), page 65
+							{	// See Broberg, Cracks and Fracture (1999), page 65
 								f2axisym += (Ap*rho0/Jp)*(sp.xx*duxdx - sp.zz*gradU(2,2) + sp.xy*duydx)/xp;
 							}
 							else

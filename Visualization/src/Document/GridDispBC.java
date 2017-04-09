@@ -6,11 +6,14 @@
 	Copyright 2007 RSAC Software. All rights reserved.
 *******************************************************************/
 
+import java.awt.Color;
 import java.awt.geom.*;
 
 public class GridDispBC extends BoundaryCondition
 {
 	protected double angle2;
+	
+	public static float lineWidth=(float)2.0;
 	
 	// initialize
 	GridDispBC(int nodeNum,int bcDof,int theID,double theVal,double theArg,double theAngle,double xyzAngle)
@@ -37,12 +40,30 @@ public class GridDispBC extends BoundaryCondition
 		NodalPoint nd=doc.nodes.get(node);
 		
 		GeneralPath theBC=new GeneralPath();
-		theBC.moveTo(0.f,0.f);
-		theBC.lineTo((float)(-width),(float)(-height));
-		theBC.lineTo((float)width,(float)(-height));
-		theBC.lineTo(0.f,0.f);
-		theBC.append(new Ellipse2D.Double(-width,-height-diam,diam,diam),false);
-		theBC.append(new Ellipse2D.Double(width-diam,-height-diam,diam,diam),false);
+		if(dof==TEMPERATURE_DIR)
+		{	// diamond on the node
+			height = 0.6*height;
+			width = 0.5*height;
+			theBC.moveTo(0.f,0.f);
+			theBC.lineTo((float)(-width),(float)(-0.5*height));
+			theBC.lineTo((float)0.,(float)(-height));
+			theBC.lineTo((float)width,(float)(-0.5*height));
+			theBC.lineTo(0.f,0.f);
+		}
+		else if(dof==CONCENTRATION_DIR)
+		{	// diamond on the node
+			height = 0.5*height;
+			width = height;
+			theBC.append(new Ellipse2D.Double(-0.5*width,-height,width,height), false);
+		}
+		else
+		{	theBC.moveTo(0.f,0.f);
+			theBC.lineTo((float)(-width),(float)(-height));
+			theBC.lineTo((float)width,(float)(-height));
+			theBC.lineTo(0.f,0.f);
+			theBC.append(new Ellipse2D.Double(-width,-height-diam,diam,diam),false);
+			theBC.append(new Ellipse2D.Double(width-diam,-height-diam,diam,diam),false);
+		}
 		
 		double rotationAngle;
 		if(style==FEA_DISPBC)
@@ -96,6 +117,25 @@ public class GridDispBC extends BoundaryCondition
 						transform.rotate(Math.PI);
 				}
 				break;
+			case TEMPERATURE_DIR:
+			case CONCENTRATION_DIR:
+			{	double xb = (nd.x-pv.xyBounds.getMinX())/pv.xyBounds.getWidth(),xt = 1.-xb;
+				double yb = (nd.y-pv.xyBounds.getMinY())/pv.xyBounds.getHeight(),yt = 1.-yb;
+				// which is smallest and assume tha edge
+				if(xb<=xt && xb<=yb && xb<=yt)
+				{	// closest to left edge
+					transform.rotate(-Math.PI/2.);
+				}
+				else if(xt<=xb && xt<=yb && xt<=yt)
+				{	// closest to right edge
+					transform.rotate(Math.PI/2.);
+				}
+				else if(yt<=yb && yt<=xb && yt<=xt)
+				{	// closest to right edge
+					transform.rotate(Math.PI);
+				}
+				break;
+			}
 			default:
 				break;
 		}
@@ -106,6 +146,20 @@ public class GridDispBC extends BoundaryCondition
 		transform.translate(nd.x,nd.y);
 		theBC.transform(transform);
 		
+		Color bcColor;
+		if(dof==TEMPERATURE_DIR)
+		{	bcColor=NFMVPrefs.getPrefColor(NFMVPrefs.tempBCColorKey,NFMVPrefs.tempBCColorDef);
+			pv.setLineWidth(lineWidth);
+		}
+		else if(dof==CONCENTRATION_DIR)
+		{	bcColor=NFMVPrefs.getPrefColor(NFMVPrefs.concBCColorKey,NFMVPrefs.concBCColorDef);
+			pv.setLineWidth(lineWidth);
+		}
+		else
+		{	bcColor=NFMVPrefs.getPrefColor(NFMVPrefs.meshLineColorKey,NFMVPrefs.meshLineColorDef);
+			pv.setLineWidth(ElementBase.lineWidth);
+		}
+		pv.drawColor(bcColor);
 		pv.strokeShape(theBC);
 	}
 	

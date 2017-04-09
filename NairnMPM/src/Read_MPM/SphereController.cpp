@@ -14,6 +14,7 @@
 // constructor
 SphereController::SphereController(int block) : ShapeController(block)
 {
+	twoDShape = false;
 }
 
 // called after initialization is done

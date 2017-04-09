@@ -39,13 +39,6 @@ NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTi
 	
     // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
     nd[nodeNum]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
-	
-	pk=NULL;
-}
-
-// Destructor (and it is virtual)
-NodalVelBC::~NodalVelBC()
-{	if(pk!=NULL) delete [] pk;
 }
 
 // Reuse Rigid properties
@@ -179,35 +172,6 @@ BoundaryCondition *NodalVelBC::PrintBC(ostream &os)
     os << nline;
 	PrintFunction(os);
 	return (BoundaryCondition *)GetNextObject();
-}
-
-// save nodal momentum and std::bad_allocCommonException()
-NodalVelBC *NodalVelBC::CopyNodalVelocities(NodalPoint *nd)
-{
-	// create vector to hold options
-	if(pk==NULL)
-		pk = new Vector[maxMaterialFields*maxCrackFields];
-	
-	// save momenta
-	int offset=0;
-	for(int i=0;i<maxCrackFields;i++)
-	{	if(CrackVelocityField::ActiveNonrigidField(nd->cvf[i]))
-			offset=nd->cvf[i]->CopyFieldMomenta(pk,offset);
-	}
-    
-    return (NodalVelBC *)GetNextObject();
-}
-
-// paste nodal momentum and velocity (but only once)
-NodalVelBC *NodalVelBC::PasteNodalVelocities(NodalPoint *nd)
-{
-	int i;
-	int offset=0;
-	for(i=0;i<maxCrackFields;i++)
-	{	if(CrackVelocityField::ActiveNonrigidField(nd->cvf[i]))
-			offset=nd->cvf[i]->PasteFieldMomenta(pk,offset);
-	}
-    return (NodalVelBC *)GetNextObject();
 }
 
 // set to zero in x, y, or z velocity
@@ -349,32 +313,12 @@ void NodalVelBC::SetMirrorSpacing(int mirrored)
     Impose specified momenta at selected nodes.
     The imposed momenta are needed before any strain update.
 	Called in Tasks 1 and 6
-    
-    Note: makeCopy is TRUE for Task 1 and FALSE for Task 6
-        In Task 6, use BC at mtime+timestep
-    
-    When makeCopy is true (Task 1), it stores
-        copy of the original nodal momenta that correspond to 
-        initial particle extrapolation. After calculating total
-        force by extrapolation, these values are pasted back
-        and the forces are changed such that the momentum
-        update will result in nodal momenta specified by
-        the boundary conditions.
-    
-    This approach is needed such that the nodal forces (which
-        are essentially accelerations) will have the right
-        values to correctly update particle velocities. In other
-		words, the accelerations are adjusted to cause the
-		no-boundary-condition momenta to update to the
-		specifed momenta. Without this fix the particle positions
-		would be correct (velocities are OK), but the particle
-		velocities would be wrong (accelerations not consistent).
 */
-void NodalVelBC::GridMomentumConditions(int makeCopy)
+void NodalVelBC::GridMomentumConditions(void)
 {
     int i;
     NodalVelBC *nextBC;
-	
+
 #ifdef ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
 	// adjust for symmetry plane option
 	nextBC=firstVelocityBC;
@@ -391,18 +335,6 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
 	}
 #endif
     
-	// convert time to ms, use time at beginning or end of time step
-    // On first pass (when true), copy nodal momenta before anything changed
-    //	(may make multiple copies, but that is OK)
-	if(makeCopy)
-	{	nextBC=firstVelocityBC;
-        while(nextBC!=NULL)
-		{	i=nextBC->GetNodeNum(mtime);
-			if(i>0) nextBC->CopyNodalVelocities(nd[i]);
-			nextBC = (NodalVelBC *)nextBC->GetNextObject();
-        }
-    }
-	
     // Now zero nodes with velocity set by BC
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
@@ -421,16 +353,8 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
 */
 void NodalVelBC::ConsistentGridForces(void)
 {
-    int i;
-    NodalVelBC *nextBC = firstVelocityBC;
-    
-    // First restore initial nodal values
-    while(nextBC!=NULL)
-	{	i = nextBC->GetNodeNum(mtime);
-		if(i>0) nextBC->PasteNodalVelocities(nd[i]);
-		nextBC = (NodalVelBC *)nextBC->GetNextObject();
-    }
-	
+	NodalVelBC *nextBC = firstVelocityBC;
+
     // Second set force to -p(interpolated)/timestep
     nextBC = firstVelocityBC;
     while(nextBC!=NULL)
@@ -440,7 +364,6 @@ void NodalVelBC::ConsistentGridForces(void)
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
 		nextBC = nextBC->SuperposeFtotDirection(mtime);
-	
 }
 
 /**********************************************************

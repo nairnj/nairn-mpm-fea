@@ -21,7 +21,7 @@
 short FEAReadHandler::BMPFileInput(char *xName,const Attributes& attrs)
 {
 	// check for common commands
-	if(BMPFileCommonInput(xName,attrs,MUST_BE_NO_BLOCK)) return TRUE;
+	if(BMPFileCommonInput(xName,attrs,MUST_BE_NO_BLOCK,false)) return true;
 	
 	return FALSE;
 }
@@ -43,9 +43,9 @@ void FEAReadHandler::TranslateBMPFiles(void)
 	
 	// angle file name
 	bool setAngles = false;
-	if(bmpAngleFileName[0]>0)
+	if(bmpAngleFileName[0][0]>0)
 	{	setAngles=true;
-		char *bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName);
+		char *bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[0]);
 		ReadBMPFile(bmpFullAnglePath,angleInfo,&angleRows);
 		if(info.height!=angleInfo.height || info.width!=angleInfo.width)
 			throw SAXException(BMPError("The image file and angle file sizes do not match.",bmpFileName));
@@ -89,9 +89,9 @@ void FEAReadHandler::TranslateBMPFiles(void)
 			
 			// is there an angle image too?
 			if(setAngles)
-			{	double totalIntensity = FindAverageValue(map,rows);
+			{	double totalIntensity = FindAverageValue(map,angleRows);
 				if(totalIntensity>0.)
-				{	double matAngle=minAngle+(totalIntensity-minIntensity)*angleScale;
+				{	double matAngle=minAngle[0]+(totalIntensity-minIntensity[0])*angleScale[0];
 					elem->SetAngleInDegrees(matAngle);
 				}
 			}

@@ -13,7 +13,7 @@
 	ArcController: Constructors and Destructor
 ********************************************************************************/
 
-ArcController::ArcController(int block) : LineController(block)
+ArcController::ArcController(int block) : LineController(block,true)
 {	startAngle=0.;
 	endAngle=2.*PI_CONSTANT;
 }
@@ -26,7 +26,7 @@ bool ArcController::FinishSetup(void)
 	centerY=(ymax+ymin)/2.0;
 	a=(xmax-xmin)/2.0;
 	b=(ymax-ymin)/2.0;
-    return TRUE;
+    return true;
 }
 
 /********************************************************************************
@@ -56,16 +56,16 @@ bool ArcController::ContainsPoint(Vector& v)
 		R=a*b/sqrt(a*a*sin(sita)*sin(sita)+b*b*cos(sita)*cos(sita));
 	
 	// get positive angle only (0 to 2PI)
-	if((sita>=startAngle) && (sita<=endAngle) && (fabs(polarR-R)<=tolerance)) return TRUE;
+	if((sita>=startAngle) && (sita<=endAngle) && (fabs(polarR-R)<=tolerance)) return true;
 	
 	// does arc have negative angles
-	if(startAngle>=0. || deltaY>=0.) return FALSE;
+	if(startAngle>=0. || deltaY>=0.) return false;
 	
 	// check the negative angle
 	sita -= 2.0*PI_CONSTANT;
-	if((sita>=startAngle) && (sita<=endAngle) && (fabs(polarR-R)<=tolerance)) return TRUE;
+	if((sita>=startAngle) && (sita<=endAngle) && (fabs(polarR-R)<=tolerance)) return true;
 
-    return FALSE;
+    return false;
 }
 
 // set a property

@@ -15,7 +15,7 @@
 
 // When not defined, use Classic shape functions for cracks (the default)
 // When defined, use GIMP shape function based on crackParticleSize (default is zero
-//		which is equivalent to classic, but maybe slightly slower)
+//		which is equivalent to classic, but may be slightly slower)
 // <CrackParticleSize> can be set in <Cracks> element and is undocumented feature
 //#define CRACK_GIMP
 
@@ -24,8 +24,11 @@ class NodalPoint;
 class MPMBase;
 
 // grid type - all 3D ones above the marker, all known grid types > 0
-// Square, Rect, Cubic, and orthogonal all have equal element sizes
+//		UNKNOWN_GRID only while reading, it is set if not known before things start
+// Square, Rectangular, Cubic, and Orthogonal all have equal element sizes
 // Variable means rectangular (2D) or orthogonal (3D), but variable element sizes
+// NOT_CARTENSIAN means unstrutured and elements not orthogonal. Code does not work in this
+//		case without a lot of modification
 enum {	UNKNOWN_GRID=-1,NOT_CARTESIAN=0,SQUARE_GRID,RECTANGULAR_GRID,VARIABLE_RECTANGULAR_GRID,
 			BEGIN_3D_GRIDS,CUBIC_GRID,ORTHOGONAL_GRID,VARIABLE_ORTHOGONAL_GRID,NOT_CARTESIAN_3D };
 
@@ -84,14 +87,14 @@ class MeshInfo
 		bool equalElementSizes;			// true if all elements the same size
 		int totalElems;					// total number of elements
 		int horiz,vert,depth;			// number of elements in that direction (if from a grid)
-		double cellVolume;				// cell volume
-        double avgCellSize;             // average cell size
 		double cellMinSize;				// minimum cell length
-        bool contactByDisplacements;    // TRUE is using displacements, false if need to adjust normal COD
+        bool contactByDisplacements;    // true is using displacements, false if need to adjust normal COD
 		int xpnum,ypnum,zpnum;			// patch grid size
 		int xPatchSize,yPatchSize,zPatchSize;		// patch sizes in elements (last may differ)
 
-        double lp;                      // semilength of particle (lp in natural coordinates)
+		double cellVolume;				// cell volume when equal element sizes
+		double avgCellSize;             // average cell size when equal element sizes
+		double lp;						// semilength of particle (lp in natural coordinates)
         Vector grid;                    // cell size when equal element sizes
         Vector part;                    // particle size in x, y, and z direction when equal element sizes
         Vector diag;                    // cell diagonal

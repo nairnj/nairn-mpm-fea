@@ -14,6 +14,9 @@
 #define _SHAPECONTROLLER_
 
 class CommonReadHandler;
+#ifdef MPM_CODE
+	class MPMBase;
+#endif
 
 class ShapeController
 {
@@ -21,18 +24,20 @@ class ShapeController
 	
 		// contructors
 		ShapeController(int);
-		ShapeController(int,double,double,double,double,double);
+		ShapeController(int,double,double,double,double);
 		virtual ~ShapeController();
     
         // initialize
         virtual void SetProperty(const char *,char *,CommonReadHandler *);
         virtual void SetProperty(const char *,double);
         virtual void SetProperty(char *,CommonReadHandler *);
-        virtual void SetScaling(double);
         virtual void SetParameter(const char *,const char *);
         virtual bool FinishParameter(void);
         virtual bool FinishSetup(void);
         virtual bool HasAllParameters(void);
+	
+		// initialize, but do not override without converting to virtual
+		void SetScaling(double);
 	
 		// ShapeController methods only (non-virtual)
 		bool ShapeContainsPoint(Vector&);
@@ -56,6 +61,7 @@ class ShapeController
     
         // accessors
         virtual const char *GetShapeName(void);
+		virtual bool IsRealShape(void);
 		virtual void DescribeShape(const char *);
         virtual bool Is2DShape(void);
         virtual char *GetContextInfo(void);
@@ -69,6 +75,7 @@ class ShapeController
 		double xmin,xmax,ymin,ymax,zmin,zmax;
 		double distScaling;
 		int sourceBlock,nodeNum,elemNum;
+		bool twoDShape;
 #ifdef MPM_CODE
 		int particleNum,numParticles;
 #endif

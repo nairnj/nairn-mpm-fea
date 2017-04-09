@@ -79,7 +79,6 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	
 	// save initial stresses
 	Tensor *sp = mptr->GetStressTensor();
-	//Tensor st0 = *sp;
 	
 	// residual strains (thermal and moisture)
 	double eres = CTE1*res->dT;
@@ -96,7 +95,7 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	double dVoverV = de(0,0)+de(1,1);
 	
 	// stress increments
-	double delsp[6];
+	Tensor delsp;
 	if(np==THREED_MPM)
 	{	// more effective strains
 		double dvzzeff = de(2,2)-eres;
@@ -104,68 +103,52 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 		double dgamxz = de(0,2)+de(2,0);
 		dVoverV += de(2,2);
 		
-		for(int i=0;i<3;i++)
-		{   delsp[i] = p->C[i][0]*dvxxeff + p->C[i][1]*dvyyeff + p->C[i][2]*dvzzeff;
-		}
-		delsp[3] = p->C[3][3]*dgamyz;
-		delsp[4] = p->C[4][4]*dgamxz;
-		delsp[5] = p->C[5][5]*dgamxy;
+		delsp.xx = p->C[0][0]*dvxxeff + p->C[0][1]*dvyyeff + p->C[0][2]*dvzzeff;
+		delsp.yy = p->C[1][0]*dvxxeff + p->C[1][1]*dvyyeff + p->C[1][2]*dvzzeff;
+		delsp.zz = p->C[2][0]*dvxxeff + p->C[2][1]*dvyyeff + p->C[2][2]*dvzzeff;
+		delsp.yz = p->C[3][3]*dgamyz;
+		delsp.xz = p->C[4][4]*dgamxz;
+		delsp.xy = p->C[5][5]*dgamxy;
 		
-		// incremental rotate of prior strain
-		Matrix3 stn(sp->xx,sp->xy,sp->xz,sp->xy,sp->yy,sp->yz,sp->xz,sp->yz,sp->zz);
-		Matrix3 str = stn.RMRT(dR);
-		
-		sp->xx = str(0,0)+delsp[0];
-		sp->yy = str(1,1)+delsp[1];
-		sp->zz = str(2,2)+delsp[2];
-		sp->yz = str(1,2)+delsp[3];
-		sp->xz = str(0,2)+delsp[4];
-		sp->xy = str(0,1)+delsp[5];
+		// increment stress: rotate previous stress and add new one
+		*sp = dR.RVoightRT(sp,true,false);
+		AddTensor(sp,&delsp);
 		
 		// work energy increment per unit mass (dU/(rho0 V0))
-		mptr->AddWorkEnergyAndResidualEnergy(sp->xx*de(0,0) + sp->yy*de(1,1) + sp->zz*de(2,2) + sp->yz*dgamyz + sp->xz*dgamxz + sp->xy*dgamxy,
-											   (sp->xx + sp->yy + sp->zz)*eres);
-		//mptr->AddWorkEnergyAndResidualEnergy( 0.5*((st0.xx+sp->xx)*du(0,0) + (st0.yy+sp->yy)*du(1,1)
-		//										   + (st0.zz+sp->zz)*du(2,2)  + (st0.yz+sp->yz)*(du(1,2)+du(2,1))
-		//										   + (st0.xz+sp->xz)*(du(0,2)+du(2,0)) + (st0.xy+sp->xy)*(du(0,1)+du(1,0))),
-		//									 0.5*(st0.xx+sp->xx + st0.yy+sp->yy + st0.zz+sp->zz)*eres);
+		mptr->AddWorkEnergyAndResidualEnergy(sp->xx*de(0,0) + sp->yy*de(1,1) + sp->zz*de(2,2)
+						+ sp->yz*(de(1,2)+de(2,1)) + sp->xz*(de(0,2)+de(2,0)) + sp->xy*(de(0,1)+de(1,0)),
+							(sp->xx + sp->yy + sp->zz)*eres);
 	}
 	
 	else
 	{	if(np==AXISYMMETRIC_MPM)
 		{	// hoop stress affect on RR, ZZ, and RZ stresses
 			double dvzzeff = de(2,2) - eres;
-			delsp[0] = p->C[1][1]*dvxxeff + p->C[1][2]*dvyyeff + p->C[4][1]*dvzzeff;
-			delsp[1] = p->C[1][2]*dvxxeff + p->C[2][2]*dvyyeff + p->C[4][2]*dvzzeff;
-			delsp[5] = p->C[3][3]*dgamxy;
+			delsp.xx = p->C[1][1]*dvxxeff + p->C[1][2]*dvyyeff + p->C[4][1]*dvzzeff;
+			delsp.yy = p->C[1][2]*dvxxeff + p->C[2][2]*dvyyeff + p->C[4][2]*dvzzeff;
+			delsp.xy = p->C[3][3]*dgamxy;
 		}
 		else
-		{	delsp[0] = p->C[1][1]*dvxxeff + p->C[1][2]*dvyyeff;
-			delsp[1] = p->C[1][2]*dvxxeff + p->C[2][2]*dvyyeff;
-			delsp[5] = p->C[3][3]*dgamxy;
+		{	delsp.xx = p->C[1][1]*dvxxeff + p->C[1][2]*dvyyeff;
+			delsp.yy = p->C[1][2]*dvxxeff + p->C[2][2]*dvyyeff;
+			delsp.xy = p->C[3][3]*dgamxy;
 		}
 		
-		// rotate previous stress
-		Matrix3 stn(sp->xx,sp->xy,sp->xy,sp->yy,sp->zz);
-		Matrix3 str = stn.RMRT(dR);
-		
-		// update in plane stress
-		sp->xx = str(0,0)+delsp[0];
-		sp->yy = str(1,1)+delsp[1];
-		sp->xy = str(0,1)+delsp[5];
+		// increment stress: rotate previous stress and add in-plane components
+		*sp = dR.RVoightRT(sp,true,true);
+		sp->xx += delsp.xx;
+		sp->yy += delsp.yy;
+		sp->xy += delsp.xy;
 		
 		// work and resdidual strain energy increments
-		double workEnergy = sp->xx*de(0,0) + sp->yy*de(1,1) + sp->xy*dgamxy;
+		double workEnergy = sp->xx*de(0,0) + sp->yy*de(1,1) + sp->xy*(de(0,1)+de(1,0));
 		double resEnergy = (sp->xx + sp->yy)*ezzres;
-		//double workEnergy = 0.5*((st0.xx+sp->xx)*de(0,0) + (st0.yy+sp->yy)*de(1,1) + (st0.xy+sp->xy)*dgamxy);
-		//double resEnergy = 0.5*(st0.xx+sp->xx + st0.yy+sp->yy)*ezzres;
 		if(np==PLANE_STRAIN_MPM)
 		{	// need to add back terms to get from reduced cte to actual cte
 			sp->zz += p->C[4][1]*(de(0,0)-ezzres) + p->C[4][2]*(de(1,1)-ezzres) - p->C[4][4]*ezzres;
 			
 			// extra residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
 			resEnergy += sp->zz*ezzres;
-			//resEnergy += 0.5*(st0.zz+sp->zz)*ezzres;
 		}
 		else if(np==PLANE_STRESS_MPM)
 		{	// zz deformation
@@ -181,8 +164,6 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 			workEnergy += sp->zz*de(2,2);
 			resEnergy += sp->zz*eres;
 			dVoverV += de(2,2);
-			//workEnergy += 0.5*(st0.zz+sp->zz)*de(2,2);
-			//resEnergy += 0.5*(st0.zz+sp->zz)*eres;
 		}
 		mptr->AddWorkEnergyAndResidualEnergy(workEnergy, resEnergy);
 	}
@@ -277,6 +258,7 @@ void IsotropicMat::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,i
 	}
 	mptr->AddWorkEnergyAndResidualEnergy(workEnergy, resEnergy);
 	
+	// Isoentropic temperature rise = -(K 3 alpha T)/(rho Cv) (dV/V) = - gamma0 T (dV/V)
 	double dTq0 = -gamma0*mptr->pPreviousTemperature*dVoverV;
     
     // track heat energy

@@ -502,7 +502,7 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 {
 	BoundaryCondition *nextBC=firstBC;
 	
-	if(archiveMesh && fmobj->IsThreeD())
+	if(archiveMesh)
 	{	char fname[500];
 		ofstream outfile;
 		GetFilePath(fname,"%s%s_VelBCs.txt");

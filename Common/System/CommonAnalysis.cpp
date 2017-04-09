@@ -180,7 +180,7 @@ void CommonAnalysis::StartResultsOutput(void)
 		cout << endl;
         if(err!=NULL)
 		{	cout << "Invalid material properties\n   " << err << endl;
-            throw CommonException("See material error above.","CommonAnalysis::StartResultsOutput");
+            throw CommonException("Invalid material properties - see output file for details","CommonAnalysis::StartResultsOutput");
 		}
    }
 	

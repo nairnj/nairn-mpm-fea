@@ -86,6 +86,10 @@
 		67B6B7EF1C31BF3A00CFA1EA /* LinearInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B6B7E91C31BF3A00CFA1EA /* LinearInterface.cpp */; };
 		67B6B7F01C31BF3A00CFA1EA /* LinearInterface.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B6B7EA1C31BF3A00CFA1EA /* LinearInterface.hpp */; };
 		67B916D416AE15E600632385 /* HEIsotropic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B916D316AE15E600632385 /* HEIsotropic.cpp */; };
+		67BF96BB1E95D14A007A9F25 /* NonlinearInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67BF96B91E95D14A007A9F25 /* NonlinearInterface.cpp */; };
+		67BF96BC1E95D14A007A9F25 /* NonlinearInterface.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67BF96BA1E95D14A007A9F25 /* NonlinearInterface.hpp */; };
+		67BF96BE1E96A390007A9F25 /* libxerces-c-3.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 67BF96BD1E96A390007A9F25 /* libxerces-c-3.1.dylib */; };
+		67BF96BF1E96A390007A9F25 /* libxerces-c-3.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 67BF96BD1E96A390007A9F25 /* libxerces-c-3.1.dylib */; };
 		67BFA35511FB81B70083F95B /* InitializationTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67BFA35311FB81B70083F95B /* InitializationTask.hpp */; };
 		67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67BFA35411FB81B70083F95B /* InitializationTask.cpp */; };
 		67C3E42E16482C7500AD5339 /* MatPointAS.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 673B31CF1636F6CC00FB27DA /* MatPointAS.cpp */; };
@@ -293,8 +297,6 @@
 		A7721178103F13EA002F99FC /* CrackVelocityFieldMulti.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7721174103F13EA002F99FC /* CrackVelocityFieldMulti.hpp */; };
 		A7721179103F13EA002F99FC /* CrackVelocityFieldSingle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7721175103F13EA002F99FC /* CrackVelocityFieldSingle.cpp */; };
 		A772117A103F13EA002F99FC /* CrackVelocityFieldSingle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7721176103F13EA002F99FC /* CrackVelocityFieldSingle.hpp */; };
-		A772E3E8155349CA0090B050 /* MaterialInterfaceNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A772E3E7155349CA0090B050 /* MaterialInterfaceNode.cpp */; };
-		A772E3EA155349DF0090B050 /* MaterialInterfaceNode.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A772E3E9155349DF0090B050 /* MaterialInterfaceNode.hpp */; };
 		A7731E2B05B44BDE00294E25 /* ArchiveData.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7731E2A05B44BDE00294E25 /* ArchiveData.hpp */; };
 		A7731E3005B44C0100294E25 /* GlobalQuantity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7731E2E05B44C0100294E25 /* GlobalQuantity.cpp */; };
 		A7731E3105B44C0100294E25 /* GlobalQuantity.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7731E2F05B44C0100294E25 /* GlobalQuantity.hpp */; };
@@ -343,8 +345,6 @@
 		A79115C60720554600B81ECA /* ConductionTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A79115C40720554600B81ECA /* ConductionTask.cpp */; };
 		A797728F0DA2E4EB00B0C21E /* LinearTraction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A797728D0DA2E4EB00B0C21E /* LinearTraction.hpp */; };
 		A79772900DA2E4EB00B0C21E /* LinearTraction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A797728E0DA2E4EB00B0C21E /* LinearTraction.cpp */; };
-		A79AD68F14C8EFB800993169 /* libxerces-c-3.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A79AD68E14C8EFB800993169 /* libxerces-c-3.1.dylib */; };
-		A79AD69014C8F12A00993169 /* libxerces-c-3.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A79AD68E14C8EFB800993169 /* libxerces-c-3.1.dylib */; };
 		A79D0A2D1744267300321C74 /* TorusController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A79D0A2C1744267300321C74 /* TorusController.cpp */; };
 		A79D0A301744268600321C74 /* TorusController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A79D0A2F1744268600321C74 /* TorusController.hpp */; };
 		A79E3D310A1A80BF00378F5C /* MeshInfo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A79E3D2F0A1A80BE00378F5C /* MeshInfo.hpp */; };
@@ -525,6 +525,9 @@
 		67B6B7E91C31BF3A00CFA1EA /* LinearInterface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LinearInterface.cpp; sourceTree = "<group>"; };
 		67B6B7EA1C31BF3A00CFA1EA /* LinearInterface.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LinearInterface.hpp; sourceTree = "<group>"; };
 		67B916D316AE15E600632385 /* HEIsotropic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HEIsotropic.cpp; path = Materials/HEIsotropic.cpp; sourceTree = "<group>"; };
+		67BF96B91E95D14A007A9F25 /* NonlinearInterface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NonlinearInterface.cpp; sourceTree = "<group>"; };
+		67BF96BA1E95D14A007A9F25 /* NonlinearInterface.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NonlinearInterface.hpp; sourceTree = "<group>"; };
+		67BF96BD1E96A390007A9F25 /* libxerces-c-3.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libxerces-c-3.1.dylib"; path = "../../../../../../../usr/local/lib/libxerces-c-3.1.dylib"; sourceTree = "<group>"; };
 		67BFA35311FB81B70083F95B /* InitializationTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InitializationTask.hpp; sourceTree = "<group>"; };
 		67BFA35411FB81B70083F95B /* InitializationTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InitializationTask.cpp; sourceTree = "<group>"; };
 		67C733BD167412DC00698D4F /* Documentation */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Documentation; path = ../../Documentation; sourceTree = "<group>"; };
@@ -649,8 +652,6 @@
 		A7721174103F13EA002F99FC /* CrackVelocityFieldMulti.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CrackVelocityFieldMulti.hpp; sourceTree = "<group>"; };
 		A7721175103F13EA002F99FC /* CrackVelocityFieldSingle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CrackVelocityFieldSingle.cpp; sourceTree = "<group>"; };
 		A7721176103F13EA002F99FC /* CrackVelocityFieldSingle.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CrackVelocityFieldSingle.hpp; sourceTree = "<group>"; };
-		A772E3E7155349CA0090B050 /* MaterialInterfaceNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MaterialInterfaceNode.cpp; sourceTree = "<group>"; };
-		A772E3E9155349DF0090B050 /* MaterialInterfaceNode.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MaterialInterfaceNode.hpp; sourceTree = "<group>"; };
 		A7731E2A05B44BDE00294E25 /* ArchiveData.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = ArchiveData.hpp; sourceTree = "<group>"; };
 		A7731E2E05B44C0100294E25 /* GlobalQuantity.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = GlobalQuantity.cpp; sourceTree = "<group>"; };
 		A7731E2F05B44C0100294E25 /* GlobalQuantity.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = GlobalQuantity.hpp; sourceTree = "<group>"; };
@@ -703,7 +704,6 @@
 		A79115C40720554600B81ECA /* ConductionTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConductionTask.cpp; sourceTree = "<group>"; };
 		A797728D0DA2E4EB00B0C21E /* LinearTraction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LinearTraction.hpp; sourceTree = "<group>"; };
 		A797728E0DA2E4EB00B0C21E /* LinearTraction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LinearTraction.cpp; sourceTree = "<group>"; };
-		A79AD68E14C8EFB800993169 /* libxerces-c-3.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libxerces-c-3.1.dylib"; path = "/usr/local/lib/libxerces-c-3.1.dylib"; sourceTree = "<absolute>"; };
 		A79D0A2C1744267300321C74 /* TorusController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TorusController.cpp; sourceTree = "<group>"; };
 		A79D0A2F1744268600321C74 /* TorusController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TorusController.hpp; sourceTree = "<group>"; };
 		A79E3D2F0A1A80BE00378F5C /* MeshInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MeshInfo.hpp; sourceTree = "<group>"; };
@@ -848,7 +848,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A79AD68F14C8EFB800993169 /* libxerces-c-3.1.dylib in Frameworks */,
+				67BF96BE1E96A390007A9F25 /* libxerces-c-3.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -856,7 +856,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A79AD69014C8F12A00993169 /* libxerces-c-3.1.dylib in Frameworks */,
+				67BF96BF1E96A390007A9F25 /* libxerces-c-3.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -866,7 +866,7 @@
 		0249A662FF388D9811CA2CEA /* External Frameworks and Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				A79AD68E14C8EFB800993169 /* libxerces-c-3.1.dylib */,
+				67BF96BD1E96A390007A9F25 /* libxerces-c-3.1.dylib */,
 			);
 			name = "External Frameworks and Libraries";
 			sourceTree = "<group>";
@@ -940,6 +940,8 @@
 				67B6B7E81C31BF3A00CFA1EA /* CoulombFriction.hpp */,
 				67B6B7E91C31BF3A00CFA1EA /* LinearInterface.cpp */,
 				67B6B7EA1C31BF3A00CFA1EA /* LinearInterface.hpp */,
+				67BF96B91E95D14A007A9F25 /* NonlinearInterface.cpp */,
+				67BF96BA1E95D14A007A9F25 /* NonlinearInterface.hpp */,
 			);
 			name = Contact_Laws;
 			path = Materials;
@@ -1276,8 +1278,6 @@
 				A7721175103F13EA002F99FC /* CrackVelocityFieldSingle.cpp */,
 				A7721174103F13EA002F99FC /* CrackVelocityFieldMulti.hpp */,
 				A7721173103F13EA002F99FC /* CrackVelocityFieldMulti.cpp */,
-				A772E3E9155349DF0090B050 /* MaterialInterfaceNode.hpp */,
-				A772E3E7155349CA0090B050 /* MaterialInterfaceNode.cpp */,
 			);
 			path = Nodes;
 			sourceTree = "<group>";
@@ -1714,7 +1714,6 @@
 				A76DC512130342EE00BFECBD /* Quad2D.hpp in Headers */,
 				671514D415465EAD005F33A9 /* OvalController.hpp in Headers */,
 				671514DA1547035D005F33A9 /* PolygonController.hpp in Headers */,
-				A772E3EA155349DF0090B050 /* MaterialInterfaceNode.hpp in Headers */,
 				A743491615792C0300EF8DFA /* IdealGas.hpp in Headers */,
 				A7E8CEA315E6E63200910593 /* CrackLeaf.hpp in Headers */,
 				A7834B5315F000C80043ADB9 /* CoupledSawTooth.hpp in Headers */,
@@ -1758,6 +1757,7 @@
 				675181681DF146F1009E72FF /* XYBMPImporter.hpp in Headers */,
 				6751816E1DF161F1009E72FF /* XYFileImporter.hpp in Headers */,
 				6749250A1DF401430004916F /* stdafx.h in Headers */,
+				67BF96BC1E95D14A007A9F25 /* NonlinearInterface.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2061,7 +2061,6 @@
 				A76DC511130342EE00BFECBD /* Quad2D.cpp in Sources */,
 				671514D115465E8B005F33A9 /* OvalController.cpp in Sources */,
 				671514D81547035D005F33A9 /* PolygonController.cpp in Sources */,
-				A772E3E8155349CA0090B050 /* MaterialInterfaceNode.cpp in Sources */,
 				A743491515792C0300EF8DFA /* IdealGas.cpp in Sources */,
 				A7E8CEA115E6E61800910593 /* CrackLeaf.cpp in Sources */,
 				A7834B5115F000A10043ADB9 /* CoupledSawTooth.cpp in Sources */,
@@ -2105,6 +2104,7 @@
 				678B7B301D8A76C0001D0AB4 /* CustomThermalRamp.cpp in Sources */,
 				675181671DF146F1009E72FF /* XYBMPImporter.cpp in Sources */,
 				6751816D1DF161F1009E72FF /* XYFileImporter.cpp in Sources */,
+				67BF96BB1E95D14A007A9F25 /* NonlinearInterface.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2222,7 +2222,7 @@
 					/usr/local/include,
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
-				LIBRARY_SEARCH_PATHS = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-fopenmp";

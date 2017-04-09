@@ -19,6 +19,12 @@
 #define MAX_FIELDS_FOR_ONE_CRACK 4
 
 #define RIGID_FIELD_BIT 1
+#define IGORE_CRACKS_BIT 2
+
+#define VSTAR_VEC 0
+#define PK_COPY 0
+#define VSTARPREV_VEC 1
+#define VSTARNEXT_VEC 2
 
 class NodalPoint;
 
@@ -31,6 +37,7 @@ class MatVelocityField
 		Vector pk;					// momentum
 		Vector disp;				// displacement for contact calculations
 		Vector *volumeGrad;			// volume gradient allocated in multimaterial mode
+		Vector *xpic;				// For XPIC (OSParticulas) or copy momenta (nfm)
 		//Vector fext;              // This was used when keep separate fint and fext
 	
 		// constants (not changed in MPM time step)
@@ -62,7 +69,7 @@ class MatVelocityField
 		void AddContactVolume(double);
 		void SetContactVolume(double);
 		double GetContactVolume(void) const;
-        void SetVelocity(Vector *);					// VEL1: not needed
+        void SetVelocity(Vector *);
         Vector GetVelocity(void);
         void SetMomentVelocityDirection(Vector *);
         void AddMomentVelocityDirection(Vector *,double);

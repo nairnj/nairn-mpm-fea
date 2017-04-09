@@ -15,7 +15,7 @@ public class MPMParticlePlotWindow extends MoviePlotWindow
 	{	super(gResDoc,gDocView);
 	}
 	
-	// load everything needed to plot or replat data
+	// load everything needed to plot or replot data
 	public void loadPlotData() throws Exception
 	{	resDoc.readSelectedArchive(movieControls.getArchiveIndex());
 		MaterialPoint.loadPlotData(movieComponent,resDoc);

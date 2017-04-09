@@ -30,7 +30,7 @@ class CoulombFriction : public ContactLaw
 	
 		// methods
 		virtual bool GetFrictionalDeltaMomentum(Vector *,Vector *,double,double *,double,bool,double,bool,double,Vector *) const;
-		virtual double GetSslideAcDt(double,double,double,double,double,bool &,double) const;
+		virtual double GetSslideAcDt(double,double,double,double,bool &,double) const;
 	
 		// accessors
 		virtual const char *MaterialType(void) const;

@@ -6,8 +6,6 @@
  * Copyright (c) 2012 RSAC Software. All rights reserved.
  */
 
-import geditcom.JNFramework.JNEvaluator;
-
 import java.util.*;
 
 public class Regions
@@ -36,7 +34,7 @@ public class Regions
 	public void initRunSettings()
 	{	inRegion = 0;
 		xmlRegions = new StringBuffer("");
-		indent = "";
+		indent = "    ";
 		pieces=new ArrayList<RegionPiece>(20);
 	}
 	
@@ -177,77 +175,7 @@ public class Regions
 		}
 		else
 		{	// go through pieces
-			int numPieces = pieces.size();
-			if(numPieces>0)
-			{	// initialize
-				currentPiece = null;
-				int currentLevel = 0;
-				
-				int i=0;
-				while(i<numPieces)
-				{	RegionPiece obj = pieces.get(i);
-					int level = obj.getLevel();
-					
-					// check if this level is less than parent level
-					if(level<=currentLevel && currentPiece!=null)
-					{	// climb back up the tree
-						currentLevel = insertPriorElements(level);
-					}
-					
-					switch(obj.getType())
-					{	// Standard shapes
-						case RegionPiece.RECT_OR_OVAL:
-						case RegionPiece.SHAPE_3D:
-							obj.setParent(currentPiece);
-							currentLevel = level;
-							currentPiece = obj;
-							break;
-							
-						// 2D Polygons
-						case RegionPiece.POLY_PT:
-							obj.setParent(currentPiece);
-							currentLevel = level;
-							currentPiece = obj;
-							String ptIndent = indent;
-							for(int ii=0;ii<level;ii++) ptIndent = ptIndent+"  ";
-							
-							// loop until done
-							while(i<numPieces-1)
-							{	obj = pieces.get(i+1);
-								
-								// exit if new level or not a polygon
-								if(obj.getLevel()!=level || obj.getType()!=RegionPiece.POLY_PT) break;
-							
-								// add a polypt
-								currentPiece.appendXmlStart(ptIndent+obj.getXmlStart());
-								i++;
-							}
-							
-							// skip a break piece
-							if(i<numPieces-1 && obj.getType()==RegionPiece.END_POLYGON) i++;
-							break;
-						
-						case RegionPiece.END_POLYGON:
-							// POLYPT_PIECE should always handle this
-							break;
-						
-						// non shape options (must be at level 0)
-						case RegionPiece.COMMAND_PIECE:
-							xmlRegions.append(obj.getXmlStart());
-							break;
-							
-						default:
-							break;
-					}
-					
-					// next object
-					i++;
-				}
-			}
-		
-			// finish current elements
-			if(currentPiece!=null)
-				insertPriorElements(0);
+			compilePieces(pieces,xmlRegions);
 			
 			// end the body or holr
 			if(inRegion==REGION_BLOCK)
@@ -260,15 +188,95 @@ public class Regions
 		inRegion = 0;
 	}
 	
+	// compile pieces
+	public void compilePieces(ArrayList<RegionPiece> myPieces,StringBuffer myXML)
+	{
+		// go through pieces
+		currentPiece = null;
+		int numPieces = myPieces.size();
+		if(numPieces>0)
+		{	// initialize
+			int currentLevel = 0;
+			
+			int i=0;
+			while(i<numPieces)
+			{	RegionPiece obj = myPieces.get(i);
+				int level = obj.getLevel();
+				
+				// check if this level is less than parent level
+				if(level<=currentLevel && currentPiece!=null)
+				{	// climb back up the tree
+					currentLevel = insertPriorElements(level,myXML);
+				}
+				
+				switch(obj.getType())
+				{	// Standard shapes
+					case RegionPiece.RECT_OR_OVAL:
+					case RegionPiece.SHAPE_3D:
+						obj.setParent(currentPiece);
+						currentLevel = level;
+						currentPiece = obj;
+						break;
+						
+					// 2D Polygons
+					case RegionPiece.POLY_PT:
+						obj.setParent(currentPiece);
+						currentLevel = level;
+						currentPiece = obj;
+						String ptIndent = indent;
+						for(int ii=0;ii<level;ii++) ptIndent = ptIndent+"  ";
+						
+						// loop until done
+						while(i<numPieces-1)
+						{	obj = myPieces.get(i+1);
+							
+							// exit if new level or not a polygon
+							if(obj.getLevel()!=level || obj.getType()!=RegionPiece.POLY_PT) break;
+						
+							// add a polypt
+							currentPiece.appendXmlStart(ptIndent+obj.getXmlStart());
+							i++;
+						}
+						
+						// skip a break piece
+						if(i<numPieces-1 && obj.getType()==RegionPiece.END_POLYGON) i++;
+						break;
+					
+					case RegionPiece.END_POLYGON:
+						// POLYPT_PIECE should always handle this
+						break;
+					
+					// non shape options (must be at level 0)
+					case RegionPiece.COMMAND_PIECE:
+						myXML.append(obj.getXmlStart());
+						break;
+						
+					default:
+						break;
+				}
+				
+				// next object
+				i++;
+			}
+		}
+	
+		// finish current elements
+		if(currentPiece!=null)
+			insertPriorElements(0,myXML);
+		
+		// done with pieces
+		myPieces.clear();
+	}
+	
 	// climb back tree
-	public int insertPriorElements(int level)
+	public int insertPriorElements(int level,StringBuffer myXML)
 	{
 		int newLevel = 0;
 		
 		while(true)
 		{	RegionPiece parent = currentPiece.getParent();
 			if(parent==null)
-			{	xmlRegions.append(currentPiece.xmlString(indent));
+			{	myXML.append(currentPiece.xmlString(indent));
 			}
 			else
 			{	// add child
@@ -306,9 +314,12 @@ public class Regions
 	// Cut Cut ... shape args command
 	public void AddCutShape(ArrayList<String> args) throws Exception
 	{
-		// in a region
-		if(inRegion==0)
-			throw new Exception("Cut shape commands must be within a region");
+		// Must be in region or a BC
+		// note that level is verified later
+		if(inRegion==0 && doc.mpmGridBCs.getInBC()==0 && doc.mpmParticleBCs.getInBC()==0)
+			throw new Exception("Cut shape commands must be in a 'Region', 'Hole' or BC block");
+		
+		// needs more parameters
 		if(args.size()<2)
 			throw new Exception("Cut copmmand with no cut shape");
 		
@@ -324,41 +335,57 @@ public class Regions
 			level++;
 		}
 		
-		// set command to shape name and first paremeter to last cutArg
-		args.set(0,shape);
-		args.set(1,cutArgs[cutArgs.length-1]);
+		// set command to shape name and first parameter to last cutArg
+		args.set(0,shape);							// shape name
+		args.set(1,cutArgs[cutArgs.length-1]);		// first argument to shape
 		
 		// each type
 		if(shape.equals("rect"))
-			AddRectOrOval(args,"Rect");
+			AddRectOrOval(args,"Rect",level);
 		else if(shape.equals("oval"))
-			AddRectOrOval(args,"Oval");
+			AddRectOrOval(args,"Oval",level);
 		else if(shape.equals("polypt"))
-			AddPolypoint(args);
+			AddPolypoint(args,level);
+		else if(shape.equals("arc"))
+			AddRectOrOval(args,"Arc",level);
+		else if(shape.equals("line"))
+		{	if(doc.isMPM3D())
+				AddBox(args,"Line",level);
+			else
+				AddRectOrOval(args,"Line",level);
+		}
 		else if(shape.equals("box"))
-			AddBox(args,"Box");
+			AddBox(args,"Box",level);
 		else if(shape.equals("sphere"))
-			AddBox(args,"Sphere");
+			AddBox(args,"Sphere",level);
 		else if(shape.equals("cylinder"))
-			AddBox(args,"Cylinder");
+			AddBox(args,"Cylinder",level);
 		else if(shape.equals("torus"))
-			AddBox(args,"Torus");
+			AddBox(args,"Torus",level);
 		else
 			throw new Exception("An invalid shape ('"+shape+"') in a 'Cut' command");
 		
 		// set last piece level
-		if(!setLastPieceLevel(level))
-			throw new Exception("Incorrectly nested shape commands in 'Region' or 'Hole'");
-
+		boolean validLevel;
+		if(doc.mpmGridBCs.getInBC()!=0)
+			validLevel = setLastPieceLevel(level,doc.mpmGridBCs.pieces);
+		else if(doc.mpmParticleBCs.getInBC()!=0)
+			validLevel = setLastPieceLevel(level,doc.mpmParticleBCs.pieces);
+		else
+			validLevel = setLastPieceLevel(level,pieces);
+		System.out.println("validate "+validLevel);
+		if(!validLevel)
+			throw new Exception("Incorrectly nested shape commands in 'Region', 'Hole' or BC block");
 	}
 	
 	// bool set last piece level
-	public boolean setLastPieceLevel(int level)
+	public boolean setLastPieceLevel(int level,ArrayList<RegionPiece> myPieces)
 	{
-		int numPieces = pieces.size();
-		if(numPieces<1) return false;
-		RegionPiece cutPiece = pieces.get(numPieces-1);
-		RegionPiece prevPiece = pieces.get(numPieces-2);
+		// cut piece already added, need at least one more for potential parent
+		int numPieces = myPieces.size();
+		if(numPieces<2) return false;
+		RegionPiece cutPiece = myPieces.get(numPieces-1);
+		RegionPiece prevPiece = myPieces.get(numPieces-2);
 		
 		// set cut piece level
 		if(cutPiece.getType()==RegionPiece.COMMAND_PIECE) return false;
@@ -373,11 +400,26 @@ public class Regions
 		return true;
 	}
 	
-	// add shape for Rect #1,#2,#3,#4
-	public void AddRectOrOval(ArrayList<String> args,String shape) throws Exception
-	{	// times not allowed
-		if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
+	// add shape for Rect (or Oval) #1,#2,#3,#4,<#5>,<#6> (last two for arc range)
+	//    or Line #1,#2,#3,#4,<#5> (last is tolerance)
+	//    or Arc #1,#2,#3,#4,#5,#6,<#7> (last is tolerance)
+	public void AddRectOrOval(ArrayList<String> args,String shape,int level) throws Exception
+	{
+		// Allowed in GridBC and ParticleBC (maybe)
+		if(doc.mpmGridBCs.getInBC()!=0)
+		{	if(!doc.mpmGridBCs.allowsShape(level))
+				throw new Exception("'"+shape+"' command not allowed in current BC block:\n"+args);
+		}
+		else if(doc.mpmParticleBCs.getInBC()!=0)
+		{	if(!doc.mpmParticleBCs.allowsShape(level))
+				throw new Exception("'"+shape+"' command not allowed in current BC block:\n"+args);
+		}
+		
+		// otherwise must be in region
+		else if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
 			throw new Exception("'"+shape+"' command is only allowed within a Region or Hole block:\n"+args);
+
+		// here 2D shapes only
 		if(doc.isMPM3D())
 			throw new Exception("'"+shape+"' command is only allowed within 2D MPM:\n"+args);
 		
@@ -390,16 +432,25 @@ public class Regions
 		double ymax = doc.readDoubleArg(args.get(4));
 		
 		// arc angles
-		double arcStart=-1.,arcEnd=0.;
+		double arcStart=-1.,arcEnd=0.,tolerance=-1.;
 		if(args.size()>5)
 		{	arcStart = doc.readDoubleArg(args.get(5));
-			if(args.size()>6)
-			{	arcEnd = doc.readDoubleArg(args.get(6));
-				if(arcStart<0. || arcStart>360. || arcEnd<arcStart)
-					throw new Exception("Invalid arc angles (need 0<=start<=360 and end>=start)");
+		
+			if(!shape.equals("Line"))
+			{	if(args.size()>6)
+				{	arcEnd = doc.readDoubleArg(args.get(6));
+					if(arcStart<0. || arcStart>360. || arcEnd<arcStart)
+						throw new Exception("Invalid arc angles (need 0<=start<=360 and end>=start)");
+				}
+				else
+					throw new Exception("Has arc start angle but no end angle");
+			
+				// arc may also have tolerances
+				if(shape.equals("Arc"))
+				{	if(args.size()>7)
+						tolerance = doc.readDoubleArg(args.get(7));
+				}
 			}
-			else
-				throw new Exception("Has arc start angle but no end angle");
 		}
 		
 		// start string
@@ -407,45 +458,102 @@ public class Regions
 		newShape.append(indent+"  <"+shape+" xmin='"+doc.formatDble(xmin)+"' xmax='"+doc.formatDble(xmax)+"'");
 		newShape.append(" ymin='"+doc.formatDble(ymin)+"' ymax='"+doc.formatDble(ymax)+"'");
 		
+		// Finish up line or arc
+		if(shape.equals("Arc"))
+		{	if(arcStart<0. || arcStart>360. || arcEnd<arcStart)
+				throw new Exception("Invalid arc angles (0<=start<=360 and end>=start)");
+		
+			newShape.append(" start='"+doc.formatDble(arcStart)+"' end='"+doc.formatDble(arcEnd)+"'");
+			if(tolerance>0.) newShape.append(" tolerance='"+tolerance+"'");
+			arcStart = -1.;
+		}
+		else if(shape.equals("Line"))
+		{	if(arcStart>0.) newShape.append(" tolerance='"+arcStart+"'");
+			arcStart = -1.;
+		}
+		
 		// add piece
 		RegionPiece newPiece = new RegionPiece(RegionPiece.RECT_OR_OVAL,newShape.toString(),shape);
 		if(arcStart>=0.) newPiece.setArcAngles(arcStart,arcEnd);
-		pieces.add(newPiece);
+		
+		// add to BC block or current region
+		if(doc.mpmGridBCs.getInBC()!=0)
+			doc.mpmGridBCs.addPiece(newPiece);
+		else if(doc.mpmParticleBCs.getInBC()!=0)
+			doc.mpmParticleBCs.addPiece(newPiece);
+		else
+			pieces.add(newPiece);
 	}
 
 	// add point to polygon
-	public void AddPolypoint(ArrayList<String> args) throws Exception
-	{	// times not allowed
-		if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
+	public void AddPolypoint(ArrayList<String> args,int level) throws Exception
+	{
+		// Allowed in GridBC and ParticleBC (maybe)
+		if(doc.mpmGridBCs.getInBC()!=0)
+		{	if(!doc.mpmGridBCs.allowsShape(level))
+				throw new Exception("'PolyPt' command not allowed in current BC block:\n"+args);
+		}
+		else if(doc.mpmParticleBCs.getInBC()!=0)
+		{	if(!doc.mpmParticleBCs.allowsShape(level))
+				throw new Exception("'PolyPt' command not allowed in current BC block:\n"+args);
+		}
+		
+		// otherwise must be in region
+		else if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
 			throw new Exception("'PolyPt' command is only allowed within a polygon sequence:\n"+args);
+		
+		// this is a 2D shape
 		if(doc.isMPM3D())
 			throw new Exception("'PolyPt' command is only allowed within 2D MPM:\n"+args);
 		
+		// create a piece
+		RegionPiece newPiece;
+		
 		// end the polygon
 		if(args.size()==1)
-		{	RegionPiece newPiece = new RegionPiece(RegionPiece.END_POLYGON,"","");
-			pieces.add(newPiece);
-			return;
+		{	newPiece = new RegionPiece(RegionPiece.END_POLYGON,"","");
 		}
 		
-		// needs two arguments
-		if(args.size()<3)
-			throw new Exception("'PolyPt' command has too few parameters:\n"+args);
-		double x = doc.readDoubleArg(args.get(1));
-		double y = doc.readDoubleArg(args.get(2));
+		else
+		{	// needs two arguments
+			if(args.size()<3)
+				throw new Exception("'PolyPt' command has too few parameters:\n"+args);
+			double x = doc.readDoubleArg(args.get(1));
+			double y = doc.readDoubleArg(args.get(2));
+			
+			// add it
+			String ptStr = "    <pt x='"+doc.formatDble(x)+"' y='"+doc.formatDble(y)+"'/>\n";
+			newPiece = new RegionPiece(RegionPiece.POLY_PT,ptStr,"Polygon");
+		}
 		
-		// add it
-		String ptStr = "    <pt x='"+doc.formatDble(x)+"' y='"+doc.formatDble(y)+"'/>\n";
-		RegionPiece newPiece = new RegionPiece(RegionPiece.POLY_PT,ptStr,"Polygon");
-		pieces.add(newPiece);
+		// add to BC block or current region
+		if(doc.mpmGridBCs.getInBC()!=0)
+			doc.mpmGridBCs.addPiece(newPiece);
+		else if(doc.mpmParticleBCs.getInBC()!=0)
+			doc.mpmParticleBCs.addPiece(newPiece);
+		else
+			pieces.add(newPiece);
 	}
 	
 	// add shape for Box #1,#2,#3,#4,#5,#6 or Sphere
 	// Cylinder #1,#2,#3,#4,#5,#6,#7,<#8>  or Torus
-	public void AddBox(ArrayList<String> args,String shape) throws Exception
-	{	// times not allowed
-		if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
+	public void AddBox(ArrayList<String> args,String shape,int level) throws Exception
+	{
+		// Allowed in GridBC and ParticleBC (maybe)
+		if(doc.mpmGridBCs.getInBC()!=0)
+		{	if(!doc.mpmGridBCs.allowsShape(level))
+				throw new Exception("'"+shape+"' command not allowed in current BC block:\n"+args);
+		}
+		else if(doc.mpmParticleBCs.getInBC()!=0)
+		{	if(!doc.mpmParticleBCs.allowsShape(level))
+				throw new Exception("'"+shape+"' command not allowed in current BC block:\n"+args);
+		}
+		
+		// otherwise must be in region
+		else if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
 			throw new Exception("'"+shape+"' command is only allowed within a Region or Hole block:\n"+args);
+		
+		// this is a 3D shape
 		if(!doc.isMPM3D())
 			throw new Exception("'"+shape+"' command is only allowed within 3D MPM:\n"+args);
 		
@@ -477,10 +585,23 @@ public class Regions
 			if(args.size()>8)
 				newShape.append(" radius='"+doc.formatDble(doc.readDoubleArg(args.get(8)))+"'");
 		}
+		else if(shape.equals("Line"))
+		{	if(args.size()>7)
+			{	double tolerance = doc.readDoubleArg(args.get(7));
+				if(tolerance>0.) newShape.append(" tolerance='"+tolerance+"'");
+			}
+		}
 		
 		// add piece
 		RegionPiece newPiece = new RegionPiece(RegionPiece.SHAPE_3D,newShape.toString(),shape);
-		pieces.add(newPiece);
+		
+		// add to BC block or current region
+		if(doc.mpmGridBCs.getInBC()!=0)
+			doc.mpmGridBCs.addPiece(newPiece);
+		else if(doc.mpmParticleBCs.getInBC()!=0)
+			doc.mpmParticleBCs.addPiece(newPiece);
+		else
+			pieces.add(newPiece);
 	}
 	
 	// Rotate #1,#2,<#3,#4>,<#5,$6>
@@ -605,8 +726,35 @@ public class Regions
 	    if(args.size()>3) height = doc.readDoubleArg(args.get(3));
 	    
 	    // optional angles path
-	    String anglesPath = null;
-	    if(args.size()>4) anglesPath = doc.readStringArg(args.get(4));
+	    String [] anglesPath = new String[3];
+	    anglesPath[0] = null;
+	    anglesPath[1] = null;
+	    anglesPath[2] = null;
+	    String scheme = "";
+	    if(args.size()>4)
+	    {	// get parameter, which will be scheme or a file path
+	    	anglesPath[0] = doc.readStringArg(args.get(4));
+	    
+	    	// MPM file can have anglesPath (old method) or scheme,angle1,angle2,angle3
+	    	// FEA file can have anglesPath (old method) or "Z",angle1
+	    	// assume scheme if 3 or less characters; all files have more than 3
+	    	if(anglesPath[0].length()<4)
+	    	{	scheme = anglesPath[0].toUpperCase();
+	    		if(!doc.isMPM3D() && !scheme.equals("Z"))
+    				throw new Exception("2D Simulations can only have a 'Z' rotation scheme:\n"+args);
+	    		// read more files
+	    		for(int i=5;i<5+scheme.length();i++)
+	    		{	if(args.size()>i)
+	    				anglesPath[i-5] = doc.readStringArg(args.get(i));
+	    			else
+	    				throw new Exception("'BMPRegion' command missing angle file name needed for rotation scheme:\n"+args);
+	    		}
+	    	}
+	    	else
+	    	{	// accept one angle file to rotate about Z
+	    		scheme = "Z";
+	    	}
+	    }
 	    
 	    // set indent
 	    if(doc.isMPM())
@@ -619,13 +767,14 @@ public class Regions
 	    // create the command
 	    xmlRegions.append(indent+"<BMP name='"+filePath+"'");
 	    
-	    // optional attrributes
+	    // optional attributes
 	    if(width>-1.e8) xmlRegions.append(" width='"+doc.formatDble(width)+"'");
 	    if(height>-1.e8) xmlRegions.append(" height='"+doc.formatDble(height)+"'");
-	    if(anglesPath!=null)
-	    {	if(anglesPath.length()>0)
-	    		xmlRegions.append(" angles='"+anglesPath+"'");
-	    }
+	    
+	    // 0 to 3 angle file path names
+		for(int i=0;i<scheme.length();i++)
+		{	xmlRegions.append(" angles"+scheme.charAt(i)+"='"+anglesPath[i]+"'");
+		}
 	    
 	    // end it
 	    xmlRegions.append(">\n");	    

@@ -15,11 +15,10 @@
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Elements/ElementBase.hpp"
-#include "Global_Quantities/BodyForce.hpp"
-#include "Global_Quantities/ThermalRamp.hpp"
-#include "Custom_Tasks/TransportTask.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Global_Quantities/BodyForce.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "Custom_Tasks/TransportTask.hpp"
 #include "Exceptions/CommonException.hpp"
 
 #pragma mark CONSTRUCTORS
@@ -42,7 +41,7 @@ void UpdateParticlesTask::Execute(void)
 	int ndsArray[maxShapeNodes];
 	double fn[maxShapeNodes];
 #endif
-    
+
     // Damping terms on the grid or on the particles
     //      particleAlpha   =  (1-beta)/dt + pdamping(t)
     //      gridAlpha       = -m*(1-beta)/dt + damping(t)
@@ -58,7 +57,7 @@ void UpdateParticlesTask::Execute(void)
 #pragma omp parallel for private(ndsArray,fn)
     for(int p=0;p<nmpmsNR;p++)
 	{	MPMBase *mpmptr = mpm[p];
-		
+
 		try
 		{	// get shape functions
 			const ElementBase *elemRef = theElements[mpmptr->ElemID()];
@@ -117,7 +116,7 @@ void UpdateParticlesTask::Execute(void)
 				nextTransport=transportTasks;
 				task=0;
 				while(nextTransport!=NULL)
-					nextTransport=nextTransport->IncrementTransportRate(ndptr,fn[i],rate[task++]);
+					nextTransport=nextTransport->IncrementTransportRate(ndptr,fn[i],rate[task++],vfld,matfld);
 			}
 
 			// Find grid damping acceleration parts =  ag*Vgp(n) = ag*(Vgp(n+1) - Agp(n)*dt)

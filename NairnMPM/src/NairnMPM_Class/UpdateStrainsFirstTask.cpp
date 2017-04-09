@@ -6,6 +6,20 @@
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
  
 	Update strains on particles after initial projection to the grid
+ 
+	The tasks are:
+	--------------
+	* Full strain update
+		- Get grid velocities (p/m)
+		- Copy mechanical properties of a material
+		- Tell material to update strain (etc) on the particle
+		- Also extrapolates transport to particle and saves a "previous"
+
+	The tasks for transport only are:
+	---------------------------------
+	* Full strain update
+		- Tell material to particle heat energy
+		- Also extrapolates transport to particle and saves a "previous"
 ********************************************************************************/
 
 #include "stdafx.h"
@@ -31,7 +45,7 @@ UpdateStrainsFirstTask::UpdateStrainsFirstTask(const char *name) : MPMTask(name)
 // Update strains with just-extrapolated momenta
 void UpdateStrainsFirstTask::Execute(void)
 {
-	FullStrainUpdate(strainTimestep,FALSE,fmobj->np);
+	FullStrainUpdate(strainTimestep,false,fmobj->np);
 }
 
 #pragma mark UpdateStrainFirstTask Class Methods
@@ -76,7 +90,7 @@ void UpdateStrainsFirstTask::CreatePropertyBuffers(int numThreads)
 void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,int np)
 {
 	CommonException *usfErr = NULL;
-	
+
     NodalPoint::GetGridVelocitiesForStrainUpdate();			// velocities needed for strain update
 
 	// loop over nonrigid particles

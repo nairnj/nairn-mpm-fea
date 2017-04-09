@@ -633,7 +633,7 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-3.*avgP*eres);
 		
 		// Isoentropic temperature rise = -(K 3 alpha T)/(rho Cv) (dV/V)
-		dTq0 += -3.*Kered*CTE*mptr->pPreviousTemperature*(delV+3*eres)/GetHeatCapacity(mptr);;
+		dTq0 += -3.*Kered*CTE*mptr->pPreviousTemperature*(delV+3*eres)/GetHeatCapacity(mptr);
 	}
 	else
 	{	// J is total volume change - may need to reference to free-swelling volume if that works

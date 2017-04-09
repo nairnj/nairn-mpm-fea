@@ -325,23 +325,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 
 	// XPIC option - get order (1=PIC, 2 is XPIC, <1 invalid)
     else if(strcmp(xName,"XPIC")==0)
-	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
-#ifdef ADD_XPIC
-		int newOrder = 1;		// default to regular PIC
-		numAttr=(int)attrs.getLength();
-        for(i=0;i<numAttr;i++)
-        {   aName=XMLString::transcode(attrs.getLocalName(i));
-            value=XMLString::transcode(attrs.getValue(i));
-            if(strcmp(aName,"order")==0)
-			{	sscanf(value,"%d",&newOrder);
-            }
-            delete [] aName;
-            delete [] value;
-        }
-		bodyFrc.SetXPICOrder(newOrder);
-#else
-		throw SAXException("You must recompile with ADD_XPIC defined in MPMPrefix.hpp to use the XPIC feature.");
-#endif
+	{	throw SAXException("You must recompile using OSParticulas with ADD_XPIC defined in MPMPrefix.hpp to use the XPIC feature.");
     }
 
     else if(strcmp(xName,"Diffusion")==0)
@@ -370,12 +354,17 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	
 	else if(strcmp(xName,"TrackParticleSpin")==0)
 	{
-#ifdef ADD_PARTICLE_SPIN
-		ValidateCommand(xName,MPMHEADER,ANY_DIM);
-		fmobj->plusParticleSpin = true;
-#else
-		throw SAXException("You must recompile with ADD_PARTICLE_SPIN defined in MPMPrefix.hpp to use the particle spin feature.");
-#endif
+		throw SAXException("You must recompile using OSParticulas with ADD_PARTICLE_SPIN defined in MPMPrefix.hpp to use particle spin.");
+	}
+	
+	else if(strcmp(xName,"TrackGradV")==0)
+	{
+		throw SAXException("You must recompile using OSParticulas with TRACK_VGRAD defined in MPMPrefix.hpp to track particle grad V.");
+	}
+
+	else if(strcmp(xName,"ExactTractions")==0)
+	{
+		throw SAXException("You must recompile using OSParticulas with EXACT_TRACTIONS defined in MPMPrefix.hpp to use exact traction BCs.");
 	}
 	
 	else if(strcmp(xName,"GIMP")==0)
@@ -743,7 +732,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"ContactPosition")==0)
     {	if(block!=CRACKHEADER && block!=MULTIMATERIAL)
 			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
-		mpmgrid.SetContactByDisplacements(FALSE);
+		mpmgrid.SetContactByDisplacements(false);
     	input=DOUBLE_NUM;
         inputPtr=(char *)&mpmgrid.positionCutoff;
     }
@@ -1246,7 +1235,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,THERMAL,ANY_DIM);
 		ConductionTask::AVHeating = false;
 	}
-	
+
 	else if(strcmp(xName,"ContactHeatFlow")==0)
 	{	throw SAXException("Contact heat flow feature is not available in NairnMPM. It requires OSParticulas.");
 	}
@@ -1422,6 +1411,7 @@ void MPMReadHandler::myEndElement(char *xName)
 		delete velocityBCs;
 		delete concBCs;
 		delete tempBCs;
+		block=NO_BLOCK;
 	}
 	
 	else if(strcmp(xName,"ParticleBCs")==0)
@@ -1433,6 +1423,7 @@ void MPMReadHandler::myEndElement(char *xName)
 		delete mpTractionCtrl;
 		delete mpConcFluxCtrl;
 		delete mpHeatFluxCtrl;
+		block=NO_BLOCK;
 	}
 	
     else if(strcmp(xName,"MaterialPoints")==0)

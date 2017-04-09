@@ -1,61 +1,8 @@
 -------------------------------------------------------------------
-NairnFEAMPMVizOSP Plans
--------------------------------------------------------------------
-
-¥ Option when on Mac to enter $(bundle)
-
-¥ Can dos exe run in background mode?
-
-¥ Remote execution
-	Background submits (use submit commands instead of run, and no download)
-		add exception until it is implemented
-	Trap error returns and show error stream in window
-	Download progress bar?
-
-¥ When clip to particles in  mesh plot and zoom, it draws outside the view port
-
-¥ Plot angle - add slider in the movie window before PS slider (do quantities work?)
-
-¥ Control click plot for pop-up menu of plot options
-
-¥ FEA Crack Closure Calculations
-
-* BC plotting (both codes)
-	Silent, heat flux, concentration flux, temperature, concentration
-	
-¥ Preferences
-	Spectra inversion and brightness
-	See NairnFEAMPM preferences for more
-	Support setup of multiple servers
-
-¥ Language
-	Maintain library of subroutines to load
-	Entity - Look for other commands to support its use
-	Maintain library of material definitions
-	See if NairnFEAMPM can allow same commands and assignments in materials
-
--------------------------------------------------------------------
-NairnFEAMPMViz Script Option
--------------------------------------------------------------------
-
-New Command Ideas
------------------
-¥ user input (string)
-¥ user option (buttons)
-¥ user choice (list)
-¥ Crack Closure
-¥ user openFile (is it needed?)
-¥ user save (is it needed?)
-
-New Properties
---------------
-¥ Find Node near (x,y)
-
--------------------------------------------------------------------
 Development Notes
 -------------------------------------------------------------------
 
-¥ Keyboard commands
+Keyboard commands
 	A: Select All
 		shift A: Add arrow (2D plot window)
 	B: Background FEA/MPM Analysis (commands window), Delete (2D plot window)

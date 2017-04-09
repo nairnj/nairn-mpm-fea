@@ -15,6 +15,7 @@ TorusController::TorusController(int block) : ShapeController(block)
 {
     axis = 3;           // 0 for box, 1,2,3 for axis of a torus (normal to plane)
     ringRadius = -1.;   // if not set use axis radius
+	twoDShape = false;
 }
 
 // set a property

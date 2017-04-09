@@ -17,6 +17,7 @@
 #include "Materials/LinearHardening.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "System/UnitsController.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
 
 #pragma mark HEIsotropic::Constructors and Destructors
 
@@ -111,6 +112,7 @@ void HEIsotropic::PrintMechanicalProperties(void) const
     cout << endl;
     
     PrintProperty("a",aI,"");
+	PrintProperty("gam0",gammaI,"");
     switch(UofJOption)
     {   case J_MINUS_1_SQUARED:
             PrintProperty("U(J)",UofJOption,"[ = (K/2)(J-1)^2 ]");

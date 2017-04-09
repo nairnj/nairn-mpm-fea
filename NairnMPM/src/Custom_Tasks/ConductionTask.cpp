@@ -10,24 +10,25 @@
 	Initialization:
 		Set gTemperature, gMpCp, fcond on node to zero;
 	Mass and Momentum Task
-		Extrapolate gTemperature and gMpCp (Task1Extrapolation())
-		Divide gTemperature by gMpCp (GetNodalValue()
+		Extrapolate gTemperature, gMpCp, (m... and c... if needed) (Task1Extrapolation())
+		Divide gTemperature by gMpCp (m... and c... if needed) (GetNodalValue())
 		Impose grid T BCs (ImposeValueBCs())
 		Find grad T on particles (GetGradients())
 	Grid Forces Task
-		Extrapolate conductivity force to fcond (AddForces())
+		Extrapolate conductivity force to fcond (m... and c... if needed) (AddForces())
 			(include heat sources, and energy coupling)
 		Add crack tip heating to fcond (AddCrackTipHeating())
 		Finish grid BCs and impose flux BCs in fcond (SetTransportForceBCs())
 	Update Momenta Task
 		Divide fcond by gMpCp to get temperature rates (TransportRates())
+		Implement contact flow methods (OSParticulas only)
 	Update Particles Task
 		Each particle: zero rate, extrapolate from nodes to particle, then
 			update particle (IncrementTransportRate(),MoveTransportRate()).
 	Update strains last (if used)
-		Update gTemperature on nodes (UpdateNodalValues())
+		Update gTemperature (m... and c... if needed) on nodes (UpdateNodalValues())
 	Update strains on particles (both places)
-		Extrapolate grid temperature to particle using IncrementValueExtrap()
+		Extrapolate grid or mvf temperature to particle using IncrementValueExtrap()
 		Find dT = extrapolated value minus previous extrapolated value and then
 			store extrapolated value in pPreviousTemperature (GetDeltaValue())
 		This task is done because contititutive laws work better when temperature comes
@@ -51,6 +52,8 @@
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Materials/RigidMaterial.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Cracks/CrackSurfaceContact.hpp"
+#include "System/UnitsController.hpp"
 
 // flag to activate
 bool ConductionTask::active=false;
@@ -76,6 +79,10 @@ const char *ConductionTask::TaskName(void) { return "conduction calculations"; }
 // called once at start of MPM analysis and after preliminary calcse are eon
 TransportTask *ConductionTask::Initialize(void)
 {
+	// gradient addresses if needed
+	crackGradT = -1;
+	materialGradT = -1;
+	
 	// print task details
 	cout << "Coupled " << TaskName() << endl;
 	if(crackTipHeating)
@@ -85,10 +92,10 @@ TransportTask *ConductionTask::Initialize(void)
 	if(matContactHeating)
 		cout << "   Material contact frictional heating activated" << endl;
 	
-	// allocate diffusion data on each particle
+	// allocate conduction data on each particle
     // done before know number of nonrigid, so do on all
 	for(int p=0;p<nmpms;p++)
-		mpm[p]->AllocateTemperature();
+		mpm[p]->AllocateTemperature(crackGradT,materialGradT);
 	
 	return nextTask;
 }
@@ -104,7 +111,8 @@ TransportTask *ConductionTask::TransportTimeStep(int matid,double dcell,double *
 #pragma mark MASS AND MOMENTUM EXTRAPOLATIONS
 
 // Task 1 Extrapolation of temperature to the grid
-TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
+// Only called for non-rigid materials
+TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape,short vfld,int matfld)
 {	double Cp = theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);		// nJ/(g-K) using Cv is correct
 	double arg = mptr->mp*Cp*shape;										// nJ/K
 	double argT = mptr->pTemperature*arg;								// nJ
@@ -184,9 +192,10 @@ TransportTask *ConductionTask::GetGradients(double stepTime)
 			int i,numnds = nds[0];
             
             // Find gradients from current temperatures
+			Vector deriv;
             mptr->AddTemperatureGradient(GRAD_GLOBAL);			// zero gradient on the particle
             for(i=1;i<=numnds;i++)
-            {	Vector deriv = MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
+            {	deriv = MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
                 mptr->AddTemperatureGradient(GRAD_GLOBAL,ScaleVector(&deriv,nd[nds[i]]->gTemperature));
             }
 			
@@ -209,7 +218,7 @@ TransportTask *ConductionTask::GetGradients(double stepTime)
 
 // find forces for conduction calculation (N-mm/sec = mJ/sec) (non-rigid particles only)
 TransportTask *ConductionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double sh,double dshdx,
-										 double dshdy,double dshdz,TransportProperties *t)
+										 double dshdy,double dshdz,TransportProperties *t,short vfld,int matfld)
 {
 	// internal force based on conduction tensor
 	ndptr->fcond += mptr->FCond(GRAD_GLOBAL,dshdx,dshdy,dshdz,t);
@@ -289,9 +298,9 @@ void ConductionTask::AddFluxCondition(NodalPoint *ndptr,double extraFlux,bool po
 	}
 }
 
-#pragma mark UPDATE MOMENTA TASK
+#pragma mark UPDATE MOMENTA TASK AND CONTACT FLOW
 
-// get temperature rates node
+// get temperature rates node in active nodes
 TransportTask *ConductionTask::TransportRates(NodalPoint *ndptr,double deltime)
 {	if(ndptr->NodeHasNonrigidParticles())
 		ndptr->fcond /= ndptr->gMpCp;
@@ -301,7 +310,7 @@ TransportTask *ConductionTask::TransportRates(NodalPoint *ndptr,double deltime)
 #pragma mark UPDATE PARTICLES TASK
 
 // increment temperature rate on the particle
-TransportTask *ConductionTask::IncrementTransportRate(const NodalPoint *ndpt,double shape,double &rate) const
+TransportTask *ConductionTask::IncrementTransportRate(const NodalPoint *ndpt,double shape,double &rate,short vfld,int matfld) const
 {	rate += ndpt->fcond*shape;
 	return nextTask;
 }
@@ -315,7 +324,7 @@ TransportTask *ConductionTask::MoveTransportValue(MPMBase *mptr,double deltime,d
 #pragma mark UPDATE PARTICLE STRAIN TASK
 
 // return increment transport rate
-double ConductionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape) const
+double ConductionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape,short vfld,int matfld) const
 {	return ndpt->gTemperature*shape;
 }
 

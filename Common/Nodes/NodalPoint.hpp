@@ -13,9 +13,14 @@
 
 #define _NODALPOINT_
 
+// To do imperfect interface force after mass and momentum (OK to first order) define this term
+// Undefine to do after momentum update, which should be second order
+// Make sure all code includes NodalPoint.hpp
+//#define MANDMIMPINT
+
 #ifdef MPM_CODE
+
 class CrackSegment;
-class MaterialInterfaceNode;
 class CrackNode;
 class TransportTask;
 #include "Nodes/CrackVelocityField.hpp"
@@ -122,12 +127,10 @@ class NodalPoint : public LinkedObject
         short GetCMVelocity(Vector *);
         void CalcStrainField(void);
 		void Interpolate(NodalPoint *,NodalPoint *,double,int);
-        void CrackContact(bool,double,CrackNode **,CrackNode **);
-		void CrackContactThree(int,bool,double);
-		void CrackInterfaceForce(void);
-		void InterfaceForceInteractingCracks(int);
-		void MaterialContactOnNode(double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
-        void MaterialInterfaceForce(MaterialInterfaceNode *);
+        void CrackContact(int,double,CrackNode **,CrackNode **);
+		void AdjustDelPiForBCs(Vector *) const;
+		void CrackContactThree(int,int,double);
+		void MaterialContactOnNode(double,int);
         void GetMatVolumeGradient(int,Vector *) const;
         void SetMomVel(Vector *);
         void AddMomVel(Vector *,double);
@@ -138,6 +141,7 @@ class NodalPoint : public LinkedObject
 		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);
 		void CalcTotalMassAndCount(void);
+		void RestoreMomenta(void);
 		void AddGetContactForce(bool,Vector *,double,Vector *);
 		void AddRigidBCInfo(MPMBase *,double,int,Vector *);
 		int ReadAndZeroRigidBCInfo(Vector *,double *,double *);
@@ -166,8 +170,7 @@ class NodalPoint : public LinkedObject
 #ifdef MPM_CODE
         //methods - MPM only
 		void AverageStrain(DispField *,DispField *,DispField *,double);
-        void AdjustContact(short,short,Vector *,int,bool,double);
-		void AddInterfaceForceOnCrack(short,short,Vector *,int);
+        void AdjustContact(short,short,Vector *,int,int,double);
 #endif
 
 };

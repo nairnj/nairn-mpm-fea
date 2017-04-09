@@ -35,7 +35,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 	{
 		// the component to plot
 		controls=plotControls;
-		component=controls.adjustComponent(controls.getPlotComponent());
+		component=controls.adjustComponent(controls.getPlotComponent(LoadArchive.TIME_PLOT));
 		ResultsDocument resDoc=((DocViewer)document).resDoc;
 		
 		// plot file of global results
@@ -48,7 +48,8 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 				char [] buffer=new char [(int)resDoc.globalArchive.length()];
 				fr.read(buffer);
 				fr.close();
-				plot2DView.readTable(new String(buffer));
+				String globalTable = new String(buffer);
+				plot2DView.readTable(globalTable);
 				plot2DView.setXTitle("Time ("+resDoc.units.timeUnits()+")");
 				plot2DView.setYTitle("Global Quantity");
 				setVisible(true);

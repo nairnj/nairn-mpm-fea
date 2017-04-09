@@ -83,17 +83,36 @@ public class MaterialPoint
 		Vector3 pradius = getParticleRadius(resDoc);
 		double radiix = 0.01*mpDiam*pradius.x*scale;
 		double radiiy = 0.01*mpDiam*pradius.y*scale;
+		double maxElong = 5.;		// make a preference
 		
 		if(showSquarePts)
 		{	if(transformPts)
 			{	// This works in Java 1.5
-				// transformed (radiix,0)
 				Matrix3 F = getDeformationGradient(resDoc);
-				double r1x = radiix*F.get(0,0);
-				double r1y = -radiix*F.get(1,0);
-				// transformed (0,radiiy)
-				double r2x = radiiy*F.get(0,1);
-				double r2y = -radiiy*F.get(1,1);
+				
+				double r1x,r1y,r2x,r2y;
+				if(maxElong<1.)
+				{	// transformed (radiix,0)
+					r1x = radiix*F.get(0,0);
+					r1y = -radiix*F.get(1,0);
+					// transformed (0,radiiy)
+					r2x = radiiy*F.get(0,1);
+					r2y = -radiiy*F.get(1,1);
+				}
+				else
+				{	// transformed (radiix,0)
+					double fc = F.get(0,0);
+					r1x = fc>0. ? radiix*Math.min(fc, maxElong) : radiix*Math.max(fc, -maxElong);
+					fc = F.get(1,0);
+					r1y = fc>0. ? -radiix*Math.min(fc, maxElong) : -radiix*Math.max(fc, -maxElong);
+					// transformed (0,radiiy)
+					fc = F.get(0,1);
+					r2x = fc>0. ? radiiy*Math.min(fc, maxElong) : radiiy*Math.max(fc, -maxElong);
+					fc = F.get(1,1);
+					r2y = fc>0. ? -radiiy*Math.min(fc, maxElong) : -radiiy*Math.max(fc, -maxElong);
+				}
+				
+				// make the path
 				GeneralPath quad=new GeneralPath();
 				Point2D.Float pathPt0=new Point2D.Float((float)(xpt+r1x+r2x),(float)(ypt+r1y+r2y));
 				quad.moveTo(pathPt0.x,pathPt0.y);
@@ -1032,9 +1051,9 @@ public class MaterialPoint
 			biot = new Matrix3();
 			biot.set(0,0,scale*eplast[XXID]);
 			biot.set(1,1,scale*eplast[YYID]);
-			biot.set(0,0,scale*eplast[XYID]);
 			biot.set(0,1,0.5*scale*eplast[XYID]);
 			biot.set(1,0,biot.get(0,1));
+			biot.set(2,2,scale*eplast[ZZID]);
 			if(doc.is3D())
 			{	biot.set(0,2,0.5*scale*eplast[XZID]);
 				biot.set(2,0,biot.get(0,2));

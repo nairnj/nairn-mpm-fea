@@ -56,8 +56,8 @@ class MPMReadHandler : public CommonReadHandler
 		void grid(void);
 };
 
-void SetMptAnglesFromFunctions(int,Vector *,MPMBase *);		// 3D transformation angles
-void ConvertToZYX(MPMBase *newMpt,double,double,double,double,double,double,double,double);
+void SetMptAnglesFromFunctions(char *,double *,Vector *,MPMBase *);		// 3D transformation angles
+void ConvertToZYX(MPMBase *newMpt,double,double,double,double,double,double,double,double,double);
 
 #endif
 

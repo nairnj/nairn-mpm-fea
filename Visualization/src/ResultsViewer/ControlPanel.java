@@ -239,7 +239,7 @@ public class ControlPanel extends JPanel
 		selectTime.setEnabled(selected);
 		options.setEnabled(selected);
 		
-		int plotComponent=getPlotComponent();
+		int plotComponent=getPlotComponent(selected);
 		thelimits.setEnabled(selected,plotComponent);
 		timeoptions.setEnabled(selected,plotComponent);
 		thecrack.setEnabled(selected,plotComponent);
@@ -254,7 +254,7 @@ public class ControlPanel extends JPanel
 	// call when select new plot component
 	public void changeComponent()
 	{	int selected=load.getSelected();
-		int plotComponent=getPlotComponent();
+		int plotComponent=getPlotComponent(selected);
 		timeoptions.setEnabled(selected,plotComponent);
 		thecrack.setEnabled(selected,plotComponent);
 		/*
@@ -291,7 +291,7 @@ public class ControlPanel extends JPanel
 	//----------------------------------------------------------------------------
 	
 	// get plot wanted
-	public int getPlotComponent() { return quantity.getPlotComponent(); }
+	public int getPlotComponent(int selected) { return quantity.getPlotComponent(selected); }
 	public JComboBox<PlotMenuItem> getQuantityMenu() { return quantity.quant; }
 	public JComboBox<String> getComponentMenu() { return quantity.cmpnt; }
 	

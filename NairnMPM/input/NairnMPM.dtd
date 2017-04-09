@@ -22,7 +22,7 @@
 			| CrackArchiveOrder | ProgSteps | Damping | FeedbackDamping | GlobalArchive | MPMArchive
 			| DefGradTerms | Diffusion | StressFreeTemp | GIMP | LeaveLimit | MultiMaterialMode
             | PDamping | PFeedbackDamping | TimeStep | TimeFactor | MaxTime | ArchiveTime | FirstArchiveTime
-			| GlobalArchiveTime | ExtrapolateRigid )*>
+			| GlobalArchiveTime | ExtrapolateRigid | SkipPostExtrapolation )*>
 
 <!ELEMENT	Cracks
 			( Friction | Propagate | AltPropagate | JContour | MovePlane | ContactPosition | PropagateLength | CrackParticleSize )*>
@@ -90,7 +90,8 @@
 
 <!ELEMENT	Body
 			( RotateX | RotateY | RotateZ | Unrotate | Oval | Rect | Polygon
-			| Sphere | Box | Cylinder | Polyhedron | Torus | Shell )*>
+			| Sphere | Box | Cylinder | Polyhedron | Torus | Shell
+			| vel0X | vel0Y | vel0Z | Line | Arc )*>
 <!ATTLIST	Body
 			mat CDATA #IMPLIED
 			matname CDATA #IMPLIED
@@ -103,15 +104,15 @@
 			wtconc CDATA #IMPLIED
 			temp CDATA #IMPLIED>
 <!ELEMENT	Hole
-			( Oval | Rect | Polygon | Sphere | Box | Cylinder | Torus | Shell )*>
+			( Oval | Rect | Polygon | Sphere | Box | Cylinder | Torus | Shell | Line | Arc )*>
 
 <!ELEMENT	Polygon
-			( pt+, ( Rect | Oval | Polygon )* )>
+			( pt+, ( Rect | Oval | Polygon | Line | Arc )* )>
 <!ATTLIST	Polygon
 			np CDATA #IMPLIED>
 
 <!ELEMENT	Polyhedron
-			( faces+, ( Box | Sphere | Cylinder | Shell | Torus | Polyhedron )* )>
+			( faces+, ( Box | Sphere | Cylinder | Shell | Torus | Polyhedron | Line )* )>
 
 <!ELEMENT	BMP
 			( Origin | Intensity | RotateX | RotateY | RotateZ | Unrotate )*>
@@ -119,6 +120,9 @@
 			units CDATA #IMPLIED
 			name CDATA #REQUIRED
 			angles CDATA #IMPLIED
+			anglesX CDATA #IMPLIED
+			anglesY CDATA #IMPLIED
+			anglesZ CDATA #IMPLIED
 			width CDATA #IMPLIED
 			height CDATA #IMPLIED>
 
@@ -171,7 +175,7 @@
 				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | S3 | GPpG0 | GTpG0 | gamma0 | pressureLaw
 				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2
                 | tayM | rhoW | rhoC | fo | flim | fsto | sto | m | n | alp | burg | K1 | alpstar
-                | betastar | k0 | Atd | Btd | tempDepend | MMG | PDamping )* >
+                | betastar | k0 | Atd | Btd | tempDepend | MMG | PDamping | order )* >
 <!ATTLIST	Material
 			Type CDATA #REQUIRED
 			Name CDATA #REQUIRED>
@@ -179,7 +183,7 @@
 <!-- Displacement Boundary Conditions -->
 
 <!ELEMENT	GridBCs
-			( DisplacementBCs | BCLine | LdRect | BCArc | BCBox )*>
+			( DisplacementBCs | BCLine | LdRect | BCArc | BCBox | BCShape )*>
 			
 <!ELEMENT	DisplacementBCs
 			( fix* )>
@@ -187,13 +191,16 @@
 <!-- Particle Load Boundary Conditions -->
 
 <!ELEMENT	ParticleBCs
-			( LoadBCs | LdRect | BCLine | BCArc | BCBox )*>
+			( LoadBCs | LdRect | BCLine | BCArc | BCBox | BCShape )*>
 
 <!ELEMENT	LoadBCs
 			( load* )>
 
 <!-- BC Shapes -->
 
+<!ELEMENT	BCShape
+			( ( Oval | Rect | Polygon | Sphere | Box | Cylinder | Torus | Shell | Line | Arc )*,
+			( DisBC | ConcBC | LoadBC | ConcFluxBC | HeatFluxBC | TempBC | net | perParticle | TractionBC )* )>
 <!ELEMENT	BCLine
 			( DisBC | ConcBC | LoadBC | ConcFluxBC | HeatFluxBC | TempBC | net | perParticle | TractionBC )*>
 <!ATTLIST	BCLine
@@ -521,6 +528,7 @@
 <!ELEMENT	Dnt (#PCDATA)>
 <!ELEMENT	Dnc (#PCDATA)>
 <!ELEMENT	Dt (#PCDATA)>
+<!ELEMENT	order (#PCDATA)>
 <!ELEMENT	coeff (#PCDATA)>
 <!ELEMENT	coeffStatic (#PCDATA)>
 <!ELEMENT	shareMatField (#PCDATA)>
@@ -605,14 +613,25 @@
 			mat CDATA #IMPLIED
 			matname CDATA #IMPLIED>
 
-<!ELEMENT	Line EMPTY>
+<!-- This element is overloaded and used as shape and to define cracks -->
+<!ELEMENT	Line
+			( Rect | Oval | Polygon | Line | Arc )* >
 <!ATTLIST	Line
 			units CDATA #IMPLIED
-			xmin CDATA #REQUIRED
-			ymin CDATA #REQUIRED
-			xmax CDATA #REQUIRED
-			ymax CDATA #REQUIRED
-			resolution CDATA #REQUIRED
+			xmin CDATA #IMPLIED
+			ymin CDATA #IMPLIED
+			zmin CDATA #IMPLIED
+			xmax CDATA #IMPLIED
+			ymax CDATA #IMPLIED
+			zmax CDATA #IMPLIED
+			x1 CDATA #IMPLIED
+			y1 CDATA #IMPLIED
+			z1 CDATA #IMPLIED
+			x2 CDATA #IMPLIED
+			y2 CDATA #IMPLIED
+			z2 CDATA #IMPLIED
+			tolerance CDATA #IMPLIED
+			resolution CDATA #IMPLIED
 			start_tip CDATA #IMPLIED
 			end_tip CDATA #IMPLIED
 			mat CDATA #IMPLIED
@@ -676,13 +695,16 @@
 			units CDATA #IMPLIED
 			m CDATA #REQUIRED>
 
+<!ELEMENT	vel0X (#PCDATA)>
+<!ELEMENT	vel0Y (#PCDATA)>
+<!ELEMENT	vel0Z (#PCDATA)>
 <!ELEMENT	RotateX (#PCDATA)>
 <!ELEMENT	RotateY (#PCDATA)>
 <!ELEMENT	RotateZ (#PCDATA)>
 <!ELEMENT	Unrotate EMPTY>
 
 <!ELEMENT	Rect
-			( arc?, ( Rect | Oval | Polygon )* )>
+			( arc?, ( Rect | Oval | Polygon | Line | Arc )* )>
 <!ATTLIST	Rect
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED
@@ -691,7 +713,7 @@
 			ymax CDATA #REQUIRED>
 
 <!ELEMENT	Box
-			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron )* >
+			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron | Line )* >
 <!ATTLIST	Box
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED
@@ -702,7 +724,7 @@
 			zmax CDATA #REQUIRED>
 
 <!ELEMENT	Shell
-			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron )* >
+			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron | Line )* >
 <!ATTLIST	Shell
 			units CDATA #IMPLIED
 			xmin CDATA #IMPLIED
@@ -716,7 +738,7 @@
 			thickness CDATA #REQUIRED>
 
 <!ELEMENT	Oval
-			( arc?, ( Rect | Oval | Polygon )* )>
+			( arc?, ( Rect | Oval | Polygon | Line | Arc )* )>
 <!ATTLIST	Oval
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED
@@ -729,8 +751,24 @@
 			start CDATA #REQUIRED
 			end CDATA #REQUIRED>
 
+<!ELEMENT	Arc
+			( Rect | Oval | Polygon | Line | Arc )* >
+<!ATTLIST	Arc
+			units CDATA #IMPLIED
+			xmin CDATA #IMPLIED
+			ymin CDATA #IMPLIED
+			xmax CDATA #IMPLIED
+			ymax CDATA #IMPLIED
+			x1 CDATA #IMPLIED
+			y1 CDATA #IMPLIED
+			x2 CDATA #IMPLIED
+			y2 CDATA #IMPLIED
+			tolerance CDATA #IMPLIED
+			start CDATA #IMPLIED
+			end CDATA #IMPLIED>
+
 <!ELEMENT	Sphere
-			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron )* >
+			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron | Line )* >
 <!ATTLIST	Sphere
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED
@@ -741,7 +779,7 @@
 			zmax CDATA #REQUIRED>
 
 <!ELEMENT	Cylinder
-			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron )* >
+			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron | Line )* >
 <!ATTLIST	Cylinder
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED
@@ -754,7 +792,7 @@
             radius CDATA #IMPLIED>
 
 <!ELEMENT	Torus
-			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron )* >
+			( Box | Sphere | Cylinder | Shell | Torus | Polyhedron | Line )* >
 <!ATTLIST	Torus
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED

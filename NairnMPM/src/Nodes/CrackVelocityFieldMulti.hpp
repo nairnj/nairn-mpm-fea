@@ -38,17 +38,17 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void AddFtotSpreadTask3(Vector *);
 		virtual void CopyGridForces(NodalPoint *);
 		virtual void AddGravityAndBodyForceTask3(Vector *);
+		virtual void RestoreMomenta(void);
 	
 		virtual void UpdateMomentaOnField(double);
 
 		virtual void RezeroNodeTask6(double);
-	
-		virtual void MaterialContactOnCVF(NodalPoint *,double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
+
+		virtual void MaterialContactOnCVF(NodalPoint *,double,int);
 		virtual bool HasVolumeGradient(int) const;
 		virtual void GetVolumeGradient(int,const NodalPoint *,Vector *,double) const;
-		virtual void RigidMaterialContactOnCVF(int,bool,NodalPoint *,double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
+		virtual void RigidMaterialContactOnCVF(int,bool,NodalPoint *,double,int);
 		virtual double GetContactArea(NodalPoint *,double,double,Vector *,Vector *,Vector *,double *,double *) const;
-		virtual double GetContactCOD(NodalPoint *,Vector *,Vector *,Vector *,double,double,bool *);
 		virtual void CalcVelocityForStrainUpdate(void);
 	
 		// boundary conditions

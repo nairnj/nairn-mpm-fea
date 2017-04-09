@@ -8,8 +8,6 @@
 
 import java.util.*;
 
-import geditcom.JNFramework.JNUtilities;
-
 public class Materials
 {
 	private HashMap<String,Integer> matIDs;
@@ -104,11 +102,15 @@ public class Materials
 		options.put("neohookean", new Integer(28));
 		options.put("clampedneohookean", new Integer(29));
 		options.put("isosoftening", new Integer(50));
+		options.put("transisosoftening 1", new Integer(51));
+		options.put("transisosoftening 2", new Integer(52));
 		options.put("phasetransition", new Integer(30));
 		options.put("ignorecontact", new Integer(60));
 		options.put("coulombfriction", new Integer(61));
 		options.put("adhesivefriction", new Integer(63));
 		options.put("linearinterface", new Integer(62));
+		options.put("liquidcontact", new Integer(64));
+		options.put("nonlinearinterface", new Integer(65));
 		matType = doc.readIntOption(args.get(3),options,null);
 		if(matType<0)
 			throw new Exception("'Material' type not yet supported in scripting commands.\nUse XML method instead: "+args);
@@ -457,6 +459,22 @@ public class Materials
 		}
 		else if(prop.toLowerCase().equals("softeningii"))
 		{	xmldata.append("    <SofteningII>"+doc.readStringArg(args.get(1))+"</SofteningII>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeningea"))
+		{	xmldata.append("    <SofteningEA>"+doc.readStringArg(args.get(1))+"</SofteningEA>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeningga"))
+		{	xmldata.append("    <SofteningGA>"+doc.readStringArg(args.get(1))+"</SofteningGA>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeninget"))
+		{	xmldata.append("    <SofteningET>"+doc.readStringArg(args.get(1))+"</SofteningET>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeninggt"))
+		{	xmldata.append("    <SofteningGT>"+doc.readStringArg(args.get(1))+"</SofteningGT>\n");
 			return;
 		}
 		else if(prop.toLowerCase().equals("tauk"))

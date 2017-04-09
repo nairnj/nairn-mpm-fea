@@ -5,9 +5,16 @@
 	Created by John Nairn on March 6, 2015
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
  
-	If there are rigid BC particles and the simualation is to set them
-	after extrapolating to the grid, set them here before the mass and
-	momentum extrapolation
+	The tasks are:
+	--------------
+	* This task only active if there are rigid BC particles and the
+	  simulation is to set them AFTER extrapolating to the grid
+	  (these are non contact rigid from nmpmsRC to nmpms)
+	* First loop extrapolates rigid vel, T, and c to nodes
+	* Second loop sets BCs on those nodes (and clears nodal values
+	  because they are used need on subsequent steps and this step
+	  is before any are needed).
+	* May be velocity, temperature, and concentration
 ********************************************************************************/
 
 #include "stdafx.h"
@@ -115,12 +122,12 @@ void ExtrapolateRigidBCsTask::Execute(void)
 						(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 						(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 		}
-		if(setFlags&CONTROL_X_DIRECTION)
+		if(setFlags&CONTROL_Y_DIRECTION)
 		{	ProjectRigidBCsTask::SetRigidBCs(i,-40,Y_DIRECTION,rvel.y,0.,0,
 						(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 						(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 		}
-		if(setFlags&CONTROL_X_DIRECTION)
+		if(setFlags&CONTROL_Z_DIRECTION)
 		{	ProjectRigidBCsTask::SetRigidBCs(i,-40,Z_DIRECTION,rvel.z,0.,0,
 						(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 						(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);

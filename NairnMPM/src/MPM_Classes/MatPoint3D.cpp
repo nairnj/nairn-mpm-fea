@@ -71,22 +71,25 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     // convert to strain increments
     dv.Scale(strainTime);
     
-	// find effective particle transport properties from grid results
+	// Extrapolate grid temperature (or concentration) to the particle
+	// Find delta value from previous extrapolated grid value on particle
+	// (and save this new one for use by others and next time step)
 	ResidualStrains res;
 	res.dT = 0;
 	res.dC = 0.;
 	if(!ConductionTask::active)
-	{	res.dT = pTemperature-pPreviousTemperature;
+	{	// just use and reset previous temperature
+		res.dT = pTemperature-pPreviousTemperature;
 		pPreviousTemperature = pTemperature;
 	}
 	else
 	{	for(i=1;i<=numnds;i++)
-		res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i]);
+		res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
 		res.dT = conduction->GetDeltaValue(this,res.dT);
 	}
 	if(DiffusionTask::active)
 	{	for(i=1;i<=numnds;i++)
-		res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i]);
+		res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
 		res.dC = diffusion->GetDeltaValue(this,res.dC);
 	}
 
@@ -171,6 +174,15 @@ Vector MatPoint3D::GetParticleSize(void) const
 	part.y *= 0.5*mpm_lp.y;
 	part.z *= 0.5*mpm_lp.z;
 	return part;
+}
+
+// get minimum particle side
+double MatPoint3D::GetMinParticleLength(void) const
+{	Vector part = GetParticleSize();
+	double minPart = part.x;
+	if (part.y < minPart) minPart = part.y;
+	if (part.z < minPart) minPart = part.z;
+	return 2.*minPart;
 }
 
 // calculate internal force as -mp sigma.deriv
@@ -544,7 +556,8 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 			SubVector(&e2,&c1);
 		}
     }
-    else
+	
+    else if(ElementBase::useGimp==LINEAR_CPDI)
     {   // get deformed corners, but get element and natural coordinates
         //  from CPDI info because corners have moved by here for any
         //  simulations that update strains between initial extrapolation
@@ -633,6 +646,11 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 		}
     }
 	
+	else
+	{	// Current not allowed
+		throw CommonException("Traction BCs in 3D require lCPDI or uGIMP shape functions.","MatPoint2D::GetTractionInfo");
+	}
+	
     // get traction normal vector
 	
     ZeroVector(tscaled);
@@ -665,6 +683,10 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 }
 
 // Get Rotation matrix for initial material orientation (anistropic only)
+// Matrix in Rz.Ry.Rx with
+//    Rz=((cz,sz,0),(-sz,cz,0),(0,0,1))
+//    Ry=((cy,0,-sy),(0,1,0),(sy,0,cy))
+//    Rx=((1,0,0),(0,cx,sx),(0,-sx,cx))
 Matrix3 MatPoint3D::GetInitialRotation(void)
 {	double z = GetAnglez0InRadians();
 	double y = GetAngley0InRadians();
@@ -675,9 +697,13 @@ Matrix3 MatPoint3D::GetInitialRotation(void)
 	double sy = sin(y);
 	double cz = cos(z);
 	double sz = sin(z);
+	
+	// Return Rz.Ry.Rx
 	return Matrix3( cy*cz,  cz*sx*sy+cx*sz,  -cx*cz*sy+sx*sz,
 				   -cy*sz,  cx*cz-sx*sy*sz,   cz*sx+cx*sy*sz,
 				   sy,     -cy*sx,            cx*cy );
+	
+	// This is (Rz.Ry.Rx)^T = RzT.RyT.RxT
 	//return Matrix3( cy*cz,         -cy*sz,           sy,
 	//			    cz*sx*sy+cx*sz, cx*cz-sx*sy*sz, -cy*sx,
 	//			   -cx*cz*sy+sx*sz, cz*sx+cx*sy*sz,  cx*cy );

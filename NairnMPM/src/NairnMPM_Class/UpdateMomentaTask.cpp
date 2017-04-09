@@ -5,19 +5,20 @@
 	Created by John Nairn on July 22, 2010
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
  
-	This task updates momenta on the nodes using
- 
+	The tasks are:
+	-------------
+	* Updates momenta on the nodes using
 		pk(i+1) = pk(i) + ftot(i)*dt
- 
-	for each velocity field on each node.
- 
-	Once get new momenta, check for material contact and then crack
-	contact. If either changes, change force too to keep consistent with
-	momentum change. The material contact checks all nodes. The crack contact
-	looks only at nodes known to have cracks
- 
-	Finally, update analog of momenta (genearalized forces) in all
-	transport tasks
+	  for each velocity field on each node.
+	* If transport activated, find transpotr rate by dividing
+	  transport force by analog of mass (e.g., for conduction):
+		fcond(i) /= gMpCp
+	* Once get new momenta, check for material contact. Crack contact
+	  is checked in a separate step outside the main loop. The material
+	  contact checks all nodes. The crack contact	looks only at nodes known
+	  to have cracks
+	  Note: If either contact changes momenta, change force too to keep consistent with
+	  momentum change (because not in post-update tasks)
 ********************************************************************************/
 
 #include "stdafx.h"
@@ -45,6 +46,7 @@ void UpdateMomentaTask::Execute(void)
 #pragma omp parallel for
 	for(int i=1;i<=nnodes;i++)
 	{	NodalPoint *ndptr = nd[i];
+		
 		ndptr->UpdateMomentaOnNode(timestep);
 		
 		// get grid transport rates (update transport properties when particle state updated)
@@ -56,7 +58,7 @@ void UpdateMomentaTask::Execute(void)
 		// material contact
 		if(fmobj->multiMaterialMode)
 		{	try
-			{	ndptr->MaterialContactOnNode(timestep,UPDATE_MOMENTUM_CALL,NULL,NULL);
+			{	ndptr->MaterialContactOnNode(timestep,UPDATE_MOMENTUM_CALL);
 			}
 			catch(std::bad_alloc&)
 			{	if(umErr==NULL)
@@ -73,13 +75,11 @@ void UpdateMomentaTask::Execute(void)
 				}
 			}
 		}
-		
 	}
 	
 	// throw error now
 	if(umErr!=NULL) throw *umErr;
-		
+
 	// adjust momenta and forces for crack contact on known nodes
 	CrackNode::CrackContactTask4(timestep);
 }
-	

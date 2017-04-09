@@ -1,7 +1,7 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+ï»¿<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<meta http-equiv="content-type" content="text/html;charset=utf-8">
 	<title>NairnFEAMPMViz Help</title>
 <style type="text/css">
 h1 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
@@ -76,7 +76,7 @@ Done</blockquote>
 
 <h2><a name="tables"></a>Tables of Materials and other Lawss</h2>
 
-<p>The following tables list <a href="#solidmats">material models</a>, <a href="#tractionlaws">traction laws</a>, <a href="#contactlaws">contact laws</a>, <a href="initiation">damage initation laws</a>, and <a href="softening">softening laws</a> that call can be created with the <code>Material</code> command. The first column is the <code>(type)</code> code for the material while the second is numerical eequivalent to that code. The columns on the right list the type of analyses that allow that material type (with an "X"). The 2D MPM column has three subcolumns or use of that material in plane stress (P&sigma;), plane strain (P&epsilon;), or axisymmetric (AS) calculations.  Clicking any material name will show a list of all properties that can be set by replacing "prop" in an subordinate element with the property name (case sensitive).</p>
+<p>The following tables list <a href="#solidmats">material models</a>, <a href="#tractionlaws">traction laws</a>, <a href="#contactlaws">contact laws</a>, <a href="#initiation">damage initation laws</a>, and <a href="#softening">softening laws</a> that call can be created with the <code>Material</code> command. The first column is the <code>(type)</code> code for the material while the second is numerical eequivalent to that code. The columns on the right list the type of analyses that allow that material type (with an "X"). The 2D MPM column has three subcolumns or use of that material in plane stress (P&sigma;), plane strain (P&epsilon;), or axisymmetric (AS) calculations.  Clicking any material name will show a list of all properties that can be set by replacing "prop" in an subordinate element with the property name (case sensitive).</p>
 
 <h3><a name="solidmats"></a>Linear Elastic Small Strain Materials</h3>
 
@@ -204,7 +204,7 @@ and rubber elastic materials as special cases.</td>
 <td><a href="#isosoft"><code>IsoSoftening</code></a></td>
 <td>50</td>
 <td width="50%">Small-strain isotropic material with anisotropic damage mechanics using mode I and mode I softening laws.</td>
-<td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 </table>
@@ -360,9 +360,21 @@ and rubber elastic materials as special cases.</td>
 </tr>
 
 <tr>
+<td><a href="#liquid"><code>LiquidContact</code></a></td>
+<td>64</td>
+<td>From slip to stick contact for fluid flow</td>
+</tr>
+
+<tr>
 <td><a href="#linearimp"><code>LinearInterface</code></a></td>
 <td>62</td>
 <td>An imperfect interface with linear traction laws</td>
+</tr>
+
+<tr>
+<td><a href="#nonlinearimp"><code>NonlinearInterface</code></a></td>
+<td>65</td>
+<td>An imperfect interface with potential for nonlinear traction laws</td>
 </tr>
 
 </table>
@@ -440,6 +452,12 @@ and rubber elastic materials as special cases.</td>
 <td><a href="#linearSoft"><code>Linear</code></a></td>
 <td>1</td>
 <td>Linear softening law</td>
+</tr>
+
+<tr>
+<td><a href="#expSoft"><code>Exponential</code></a></td>
+<td>2</td>
+<td>Exponential softening law</td>
 </tr>
 
 </table>
@@ -872,6 +890,8 @@ where h is height of liquid above the position (x, y, z).</li>
 <ol>
 <li>The maximum crack opening strain</li>
 <li>The maximum crack shear strain</li>
+<li>The current d<sub>n</sub> or normal damage parameter</li>
+<li>The current d<sub>t</sub> or normal damage parameter</li>
 <li>cos(&alpha;) in 2D or &alpha; in 3D for normal to the crack plane</li>
 <li>sin(&alpha;) in 2D or &beta; in 3D for normal to the crack plane</li>
 <li>0 in 2D or &gamma; in 3D for normal to the crack plane</li>
@@ -1039,10 +1059,10 @@ It is ignored if it is negative (default is -1)</li>
 </p>
 
 <blockquote>
-<code>S<sub>slide</sub> = µ N</code>
+<code>S<sub>slide</sub> = Âµ N</code>
 </blockquote>
 
-<p>and µ is the dynamic coefficient of friction. If the friction coefficient is entered as a negative number, then surfaces stick when in contact but move freely when separated. The properties for this law are:</p>
+<p>and Âµ is the dynamic coefficient of friction. If the friction coefficient is entered as a negative number, then surfaces stick when in contact but move freely when separated. The properties for this law are:</p>
 
 <ul>
 
@@ -1056,28 +1076,28 @@ It is ignored if it is negative (default is -1)</li>
 
 <!-- Material  Section -->
 
-<a name="adhesive"></a><h2>Coulomb Friction with Adhesion Contact Law</h2>
+<a name="adhesive"></a><h2>Coulomb Friction with Adhesion Contact Law (Type=63)</h2>
 
 <p>This law implements Coulomb friction law with adhesion (in OSParticulus only). If the surface are in contact,
 the frictional sliding force is
 </p>
 
 <blockquote>
-<code>S<sub>slide</sub> = S<sub>a</sub> + (µ +k&Delta;v)N</code>
+<code>S<sub>slide</sub> = S<sub>a</sub> + (Âµ +k&Delta;v)N</code>
 </blockquote>
 
-<p>where S<sub>a</sub> is the tangential adhesion strength and µ is the coefficient of friction, and k allows the dynamic coefficient of friction to depend linearly on sliding velocity. The µ term models transition from static to dynamic coefficient of friction by</p>
+<p>where S<sub>a</sub> is the tangential adhesion strength and Âµ is the coefficient of friction, and k allows the dynamic coefficient of friction to depend linearly on sliding velocity. The Âµ term models transition from static to dynamic coefficient of friction by</p>
 
 <blockquote>
-<code>µ = (µ<sub>s</sub> vhalf + µ<sub>d</sub> v)/(vhalf + v)</code>
+<code>Âµ = (Âµ<sub>s</sub> vhalf + Âµ<sub>d</sub> v)/(vhalf + v)</code>
 </blockquote>
 
-<p>where <code>vhalf</code> is velocity for which coefficient of friction is half way from static coefficient of friction (µ<sub>s</sub>) to dynamic coefficient of friction (µ<sub>d</sub>). The default is <code>vhalf</code>=0, which corresponds to instantaneous drop from µ<sub>s</sub> to µ<sub>d</sub> at the onset of sliding.</p>
+<p>where <code>vhalf</code> is velocity for which coefficient of friction is half way from static coefficient of friction (Âµ<sub>s</sub>) to dynamic coefficient of friction (Âµ<sub>d</sub>). The default is <code>vhalf</code>=0, which corresponds to instantaneous drop from Âµ<sub>s</sub> to Âµ<sub>d</sub> at the onset of sliding.</p>
 
 <p>If the surfaces are not in contact, the surface continue to stick as long as:</p>
 
 <blockquote>
-<code>(S<sub>stick</sub>/S<sub>a</sub>)<sup>2</sup> + (N/N<sub>a</sub>)<sup>2</sup> < 1</code>
+<code>(S<sub>stick</sub>/S<sub>a</sub>)<sup>2</sup> + (N/N<sub>a</sub>)<sup>2</sup> &lt; 1</code>
 </blockquote>
 
 <p>where N<sub>a</sub> is the normal adhesion strength. If this criterion is not met (or if either Sa or Na are zero), the surfaces move freely with zero tractions. The properties for this law are:</p>
@@ -1088,7 +1108,7 @@ the frictional sliding force is
 <li><code>Sa</code> for tangential adhesion strength (in MPa) (default is 0).</li>
 <li><code>Na</code> for normal adhesion strength (in MPa) (default is 0).</li>
 <li>kmu - slope of coefficient of friction vs. velocity (in sec/mm) (default is 0).</li>
-<li>vhalf - velocity at which µ is half way from µ<sub>s</sub> to µ<sub>d</sub> (in mm/sec) (default is 0).</li>
+<li>vhalf - velocity at which Âµ is half way from Âµ<sub>s</sub> to Âµ<sub>d</sub> (in mm/sec) (default is 0).</li>
 </ul>
 
 <p>If the optional static coefficient of friction is changed to a positive number,
@@ -1101,9 +1121,31 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 
 <!-- Material  Section -->
 
+<a name="liquid"></a><h2>Liquid Contact Law (Type=64)</h2>
+
+<p>This frictional contact law implements a friction-style law between liquid and a wall where contact shear is related to shear rate, viscosity, and a scaling factor to vary from stick to slip contact. The sliding traction is
+</p>
+
+<blockquote>
+<code>S<sub>slide</sub> = k &eta; &Delta;v</code>
+</blockquote>
+
+<p>where <i>k</i> is a scaling factor (with units 1/length) and &eta; is viscosity of a fluid (which may depend on shear rate). Note that k = 0 leads to zero sliding traction or pure slipe; k large approaches stick contact; all other values of k give partial-slip boundary conditions that depend on the liquid's viscosity and could be tailored to match experimental results. The properties for this law are:</p>
+
+<ul>
+<li><code>coeff</code> for the scaling factor <i>k</i> in the contact law (default is 2 mm<sup>-1</sup>).</li>
+<li><code>LiquidPhase</code> for the liquid phase material by ID (default is none).</li>
+</ul>
+
+<p>Note that this contact law uses the viscosity provided by the entered <code>LiquidPhase</code> material for all contact situations.</p>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- Material  Section -->
+
 <a name="linearimp"></a><h2>Linear Imperfect Interface Contact Law (Type=62)</h2>
 
-<p>This law implements an imperfect interface with tractions that depend linearly on crack opening displacements, although slopes can be different in tension or compression:
+<p>This law implements an imperfect interface with tractions that depend linearly on displacement discontinuities at the interface, although slopes can be different in tension or compression:
 </p>
 
 <blockquote>
@@ -1120,9 +1162,19 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 <li>Dt - the interfacial stiffness in shear (in MPa mm) (default -1)</li>
 </ul>
 
-<p>Although an interface becomes perfect as the interface parameters approach infinity, high interfacial stiffness make the problem numerically unstable. To nmodel a perfect interface in any direction, set the interface parameter to -1, instead of using a high value.
-</li>
+<p>Although an interface becomes perfect as the interface parameters approach infinity, high interfacial stiffness make the problem numerically unstable. To model a perfect interface in any direction, set the interface parameter to -1, instead of using a high value.
+</p>
 
+<a name="nonlinearimp"></a><h2>Nonlinear Imperfect Interface Contact Law (Type=65)</h2>
+
+<p>This law implements an imperfect interface with tractions that depend on displacement discontinuities at the interface. It is currently the same as the <a href="#linearimp">linear interface law</a> except the implementation is done differently. It is more approximate, but likely very close to linear law and possibly faster. The parameters are:</p>
+
+<ul>
+<li>Dnt, Dnc, and Dt - see <a href="#linearimp">linear interface law</a></li>
+<li>order - sets level of approximation to 0<sup>th</sup> order or 1<sup>st</sup> order (default 1)</li>
+</ul>
+
+<p>In the future, this law (or subclasses of this law) will add actual non-linear traction laws.</p>
 <p>|<a href="#tables">Material Tables</a>|</p>
 
 <!-- Material  Section -->
@@ -1318,6 +1370,17 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <p>Note that you do not enter &delta;<sub>max</sub>. It is determined at run time because it is affected by particle volume, initiation stress, and crack orientation.</p>
 
+<h2><a name="expSoft"></a>Exponential Softening (number=2)</h2>
+
+<p>The exponential softening law is f(&delta;) = exp(-k&delta;). The input property is:</p>
+
+<ul>
+
+<li>Gc - the toughness of the material is this law's failure mode (in J/m<sup>2</sup>). The default is very large number which means the material will not soften after initiation of damage.</li>
+</ul>
+
+<p>Note that you do not enter <i>k</i>. It is determined at run time because it is affected by particle volume, initiation stress, and crack orientation.</p>
+
 <p>|<a href="#tables">Material Tables</a>|</p>
 
 <!-- Material  Section -->
@@ -1412,20 +1475,7 @@ materials in different velocity fields by contact or interface laws. Materials s
 
 </ul>
 
-<p>The following are deprecated material properties to set contact properties:</p>
-
-<ul>
-
-<li><code>Friction</code> (<font color="red">deprecated</font>) - a Friction command within a material definition can define custom frictional properties
-for <a href="commands.html#mmmode">multimaterial mode MPM</a> contact between the current material
-and another material.</li>
-
-<li><code>Interface</code> (<font color="red">deprecated</font>) - an Interface command within a material definition can define custom imperfect interface
-parameters properties for <a href="commands.html#mmmode">multimaterial mode MPM</a> contact between the
-current material and another material.</li>
-
-</ul>
-
+<p>The <a href="commands.html#matprops">deprecated material properties</a> <code>Friction</code> and <code>Interface</code> should be replaced by the above <code>Contact</code> property.</p>
 
 <h3><a name="cmn5"></a>Artificial Viscosity</h3>
 

@@ -11,8 +11,6 @@ import java.io.InputStream;
 import java.net.URL;
 
 import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-
 import geditcom.JNFramework.*;
 
 public class NairnFEAMPMViz extends JNApplication
@@ -23,8 +21,8 @@ public class NairnFEAMPMViz extends JNApplication
 	//----------------------------------------------------------------------------
 	
 	public NairnFEAMPMViz()
-	{	super("NairnFEAMPMViz","Version 6.5.0",
-				"Java application for running and visualizing OSParticulas and NairnFEA calculations.");
+	{	super("NairnFEAMPMViz","Version 7.0.0",
+				"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
 		NFMVPrefs.setWorkspace(chooser);
 		
 		// path to folder containing this jar file ending in slash
@@ -174,7 +172,7 @@ public class NairnFEAMPMViz extends JNApplication
 		
 		// optional info strings
 		JNApplication.iconResource="Resources/AboutIcon.png";
-		JNApplication.copyright="Copyright 2004-2016, John A. Nairn, All Rights Reserved";
+		JNApplication.copyright="Copyright 2004-2017, John A. Nairn, All Rights Reserved";
 		JNApplication.author="Written and documented by John A. Nairn";
 		JNApplication.webSite="http://www.cof.orst.edu/cof/wse/faculty/Nairn/";
 		

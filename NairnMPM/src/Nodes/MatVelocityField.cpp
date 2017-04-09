@@ -31,6 +31,8 @@ MatVelocityField::MatVelocityField(int setFlags)
 		volumeGrad=new Vector;
 	else
 		volumeGrad=NULL;
+	// a single vector is used to copy and restore momenta
+	xpic = new Vector[1];
 	SetRigidField(false);
 	Zero();
 	flags = setFlags;
@@ -40,6 +42,7 @@ MatVelocityField::MatVelocityField(int setFlags)
 MatVelocityField::~MatVelocityField()
 {	if(volumeGrad!=NULL)
 		delete volumeGrad;
+	delete [] xpic;
 }
 
 // zero data at start of time step
@@ -56,6 +59,7 @@ void MatVelocityField::Zero(void)
 	if(volumeGrad!=NULL) ZeroVector(volumeGrad);
 	numberPoints=0;
 	volume=0.;
+	ZeroVector(&xpic[PK_COPY]);
 }
 
 #pragma mark METHODS
@@ -198,7 +202,7 @@ void MatVelocityField::UpdateMomentum(double timestep)
     AddScaledVector(&pk,&ftot,timestep);
 }
 
-// on strain updates, increment nodal velocity and acceleration
+// on particle updates, increment nodal velocity and acceleration and others as needed
 // fi is shape function
 void MatVelocityField::IncrementNodalVelAcc(double fi,GridToParticleExtrap *gp) const
 {
@@ -253,14 +257,17 @@ void MatVelocityField::AdjustForSymmetryBC(int fixedDirection)
 {   if(fixedDirection&XSYMMETRYPLANE_DIRECTION)
     {   pk.x = 0.;
         vk.x = 0.;
+		xpic[PK_COPY].x=0.;
     }
     if(fixedDirection&YSYMMETRYPLANE_DIRECTION)
     {   pk.y = 0.;
         vk.y = 0.;
+		xpic[PK_COPY].y=0.;
     }
     if(fixedDirection&ZSYMMETRYPLANE_DIRECTION)
     {   pk.z = 0.;
         vk.z = 0.;
+		xpic[PK_COPY].z=0.;
     }
 }
 

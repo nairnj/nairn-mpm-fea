@@ -10,7 +10,7 @@
 		for a shape. The process is:
 	
 	1. Define new XML command for the shape with enough attributes to define
-		the shape. In code for ne XML command, create new shape and set block to
+		the shape. In code for new XML command, create new shape and set block to
 		BCSHAPE. Read paramters using SetProperty() whenever possible
 	
 	2. Subclass needs only the following:
@@ -73,9 +73,10 @@ ShapeController::ShapeController(int block)
 	numParticles=0;
 #endif
 	parentShape = NULL;
+	twoDShape = true;
 }
 
-ShapeController::ShapeController(int block,double x1,double x2,double y1,double y2,double tolerance)
+ShapeController::ShapeController(int block,double x1,double x2,double y1,double y2)
 {
 	sourceBlock=block;
 	distScaling=1.;
@@ -89,6 +90,7 @@ ShapeController::ShapeController(int block,double x1,double x2,double y1,double 
 	particleNum=0;
 	numParticles=0;
 #endif
+	twoDShape = true;
 }
 
 ShapeController::~ShapeController()
@@ -194,12 +196,12 @@ bool ShapeController::FinishSetup(void)
 
 // some shapes might call this right be fore use. Return TRUE or FALSE
 // if has all parameters. Normally only for shapes with subordinate commands.
-bool ShapeController::HasAllParameters(void) { return TRUE; }
+bool ShapeController::HasAllParameters(void) { return true; }
 
 #pragma mark ShapeController: methods
 
 // Determine if on the shape (depending of the type of shape)
-bool ShapeController::ContainsPoint(Vector& v) { return FALSE; }
+bool ShapeController::ContainsPoint(Vector& v) { return false; }
 
 // Determine if on the shape (depending of the type of shape)
 bool ShapeController::ShapeContainsPoint(Vector& v)
@@ -312,8 +314,9 @@ void ShapeController::resetParticleEnumerator(void) { particleNum=0; }
 
 #pragma mark ShapeController: accessors
 
-// type of object - used in some error messages
-const char *ShapeController::GetShapeName(void) { return "Shape"; }
+// type of object - used in some error messages  base class is never a shape)
+const char *ShapeController::GetShapeName(void) { return "none"; }
+bool ShapeController::IsRealShape(void) { return strcmp(GetShapeName(),"none")!=0; }
 
 // type of object - used in some error messages
 void ShapeController::DescribeShape(const char *prefix)
@@ -334,7 +337,7 @@ void ShapeController::DescribeShape(const char *prefix)
 }
 
 // override for 3D shapes and result false
-bool ShapeController::Is2DShape(void) { return true; }
+bool ShapeController::Is2DShape(void) { return twoDShape; }
 
 // the source block
 int ShapeController::GetSourceBlock(void) { return sourceBlock; }

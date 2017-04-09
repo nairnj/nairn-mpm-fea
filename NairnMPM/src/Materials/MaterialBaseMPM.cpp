@@ -825,7 +825,7 @@ double *MaterialBase::CreateAndZeroDoubles(char *pchr,int numDoubles) const
 	return p;
 }
 
-// Damage normal vector
+// Damage zero normal vector - damage material will override
 Vector MaterialBase::GetDamageNormal(MPMBase *mptr,bool threeD) const
 {	Vector dnorm;
 	ZeroVector(&dnorm);
@@ -856,7 +856,7 @@ void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffe
 // Get transport property tensors (if change with particle state)
 void MaterialBase::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t) const { *t = tr; }
 
-// Get Cv heat capacity
+// Get Cv heat capacity (with option for parent to add excess heat capacity)
 // Implemented in case heat capacity changes with particle state
 // Legacy Units nJ/(g-K)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
@@ -1525,6 +1525,10 @@ short MaterialBase::RigidContact(void) const { return false; }
 
 // check if membrane material
 int MaterialBase::MaterialStyle(void) const { return SOLID_MAT; }
+
+// density (NULL is allowed as long as material not using child materials)
+// in MPM use a MPMBase *, in FEA always use NULL
+double MaterialBase::GetRho(MPMBase *mptr) const { return rho; }
 
 // check if keeps crack tip
 int MaterialBase::KeepsCrackTip(void) const { return constantTip; }

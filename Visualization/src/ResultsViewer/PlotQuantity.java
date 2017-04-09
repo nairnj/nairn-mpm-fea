@@ -150,10 +150,20 @@ public class PlotQuantity extends PlotControl
 	static final int MESHNODEANGLE=1029;		// in expressions - ccw angle in radians from x axis
 	static final int MESHPRESSURE=1032;
 	
+	public static int mpmMovieQuant=-1;
+	public static int mpmMovieComp=-1;
+	public static int mpmTimeQuant=-1;
+	public static int mpmTimeComp=-1;
+	public static int mpmMesh2DQuant=-1;
+	public static int mpmMesh2DComp=-1;
+	public static int feaMeshQuant=-1;
+	public static int feaMeshComp=-1;
+	
 	// pop-up menus
 	public JComboBox<PlotMenuItem> quant=new JComboBox<PlotMenuItem>();
 	public JComboBox<String> cmpnt=new JComboBox<String>();
 	private int checkMeshItem;
+	private boolean suspendStoreSelection = false;
 	
 	// axes
 	private String xchar="x";
@@ -224,6 +234,10 @@ public class PlotQuantity extends PlotControl
 				ychar="z";
 				zchar="t";
 			}
+			
+			int preselect = -1;
+			int preComp = -1;
+			suspendStoreSelection = true;
 			
 			if(docCtrl.resDoc.isMPMAnalysis())
 			{	byte [] arch=docCtrl.resDoc.archFormat.getBytes();
@@ -332,6 +346,9 @@ public class PlotQuantity extends PlotControl
 						quant.addItem(new PlotMenuItem("Debond Tip Normal COD",MPMDEBONDNCTOD));
 						quant.addItem(new PlotMenuItem("Debond Tip Shear COD",MPMDEBONDSCTOD));
 					}
+					
+					preselect = mpmTimeQuant;
+					preComp = mpmTimeComp;
 				}
 				
 				// additional time plot options
@@ -342,6 +359,14 @@ public class PlotQuantity extends PlotControl
 					quant.addItem(new PlotMenuItem("Crack Tangential CTOD",MPMSHEARCTOD));
 					quant.addItem(new PlotMenuItem("Crack Opening Fraction",MPMOPENINGFRACTION));
 					quant.addItem(new PlotMenuItem("Crack Sliding Fraction",MPMSHEARFRACTION));
+					
+					preselect = mpmMesh2DQuant;
+					preComp = mpmMesh2DComp;
+				}
+				
+				else
+				{	preselect = mpmMovieQuant;
+					preComp = mpmMovieComp;
 				}
 			}
 			
@@ -371,7 +396,24 @@ public class PlotQuantity extends PlotControl
 				}
 				quant.addItem(new PlotMenuItem("Material",MESHMATERIAL));
 				quant.addItem(new PlotMenuItem("Material Angle",MESHANGLE));
+				
+				preselect = feaMeshQuant;
+				preComp = feaMeshComp;
 			}
+			
+			// preselect and item if has one
+			if(preselect>=0)
+			{	for(int i=0;i<quant.getItemCount();i++)
+				{	PlotMenuItem pm=(PlotMenuItem)quant.getItemAt(i);
+					if(pm.getTag()==preselect)
+					{	quant.setSelectedIndex(i);
+						if(preComp>=0 && preComp<cmpnt.getItemCount())
+							cmpnt.setSelectedIndex(preComp);
+						break;
+					}
+				}
+			}
+			suspendStoreSelection = false;
 		}
 	    else
 		{   quant.setEnabled(false);
@@ -384,19 +426,32 @@ public class PlotQuantity extends PlotControl
 	{
 		PlotMenuItem pm=(PlotMenuItem)quant.getSelectedItem();
 		if(pm==null) return;
+		
+		int numItems = cmpnt.getItemCount();
 		switch(pm.getTag())
 		{   case MPMSIGMAX:
 			case MPMEPSX:
 			case MPMPLEPSX:
 			case MPMEPSTOTX:
-				cmpnt.removeAllItems();
-				cmpnt.addItem(xchar+xchar);
-				cmpnt.addItem(ychar+ychar);
-				cmpnt.addItem(xchar+ychar);
-				cmpnt.addItem(zchar+zchar);
 				if(docCtrl.resDoc.is3D())
-				{	cmpnt.addItem(xchar+zchar);
-					cmpnt.addItem(ychar+zchar);
+				{	if(numItems!=6 || !cmpnt.getItemAt(0).equals(xchar+xchar))
+					{	cmpnt.removeAllItems();
+						cmpnt.addItem(xchar+xchar);
+						cmpnt.addItem(ychar+ychar);
+						cmpnt.addItem(xchar+ychar);
+						cmpnt.addItem(zchar+zchar);
+						cmpnt.addItem(xchar+zchar);
+						cmpnt.addItem(ychar+zchar);
+					}
+				}
+				else
+				{	if(numItems!=4 || !cmpnt.getItemAt(0).equals(xchar+xchar))
+					{	cmpnt.removeAllItems();
+						cmpnt.addItem(xchar+xchar);
+						cmpnt.addItem(ychar+ychar);
+						cmpnt.addItem(xchar+ychar);
+						cmpnt.addItem(zchar+zchar);
+					}
 				}
 				cmpnt.setEnabled(true);
 				break;
@@ -404,57 +459,87 @@ public class PlotQuantity extends PlotControl
 			case MESHSIGMAX:
 			case MESHSTRAINX:
 			case MESHELEMSIGMAX:
-				cmpnt.removeAllItems();
-				cmpnt.addItem(xchar+xchar);
-				cmpnt.addItem(ychar+ychar);
-				cmpnt.addItem(xchar+ychar);
-				cmpnt.addItem(zchar+zchar);
+				if(numItems!=4 || !cmpnt.getItemAt(0).equals(xchar+xchar))
+				{	cmpnt.removeAllItems();
+					cmpnt.addItem(xchar+xchar);
+					cmpnt.addItem(ychar+ychar);
+					cmpnt.addItem(xchar+ychar);
+					cmpnt.addItem(zchar+zchar);
+				}
 				cmpnt.setEnabled(true);
 				break;
 			
 			case MPMVELX:
 			case MPMDISPX:
-				cmpnt.removeAllItems();
-				cmpnt.addItem(xchar);
-				cmpnt.addItem(ychar);
 				if(docCtrl.resDoc.is3D())
-				{	cmpnt.addItem(zchar);
+				{	if(numItems!=3 || !cmpnt.getItemAt(0).equals(xchar))
+					{	cmpnt.removeAllItems();
+						cmpnt.addItem(xchar);
+						cmpnt.addItem(ychar);
+						cmpnt.addItem(zchar);
+					}
+				}
+				else
+				{	if(numItems!=2 || !cmpnt.getItemAt(0).equals(xchar))
+					{	cmpnt.removeAllItems();
+						cmpnt.addItem(xchar);
+						cmpnt.addItem(ychar);
+					}
 				}
 				cmpnt.setEnabled(true);
 				break;
 				
 			case MPMSPINVELOCITYX:
 			case MPMSPINMOMENTUMX:
-				cmpnt.removeAllItems();
 				if(docCtrl.resDoc.is3D())
-				{	cmpnt.addItem(xchar);
-					cmpnt.addItem(ychar);
+				{	if(numItems!=3 || !cmpnt.getItemAt(0).equals(xchar))
+					{	cmpnt.removeAllItems();
+						cmpnt.addItem(xchar);
+						cmpnt.addItem(ychar);
+						cmpnt.addItem(zchar);
+					}
 				}
-				cmpnt.addItem(zchar);
+				else
+				{	if(numItems!=1 || !cmpnt.getItemAt(0).equals(zchar))
+					{	cmpnt.removeAllItems();
+						cmpnt.addItem(zchar);
+					}
+				}
 				cmpnt.setEnabled(true);
 				break;
 				
 			case MESHDISPX:
 			case MESHFORCEX:
-				cmpnt.removeAllItems();
-				cmpnt.addItem(xchar);
-				cmpnt.addItem(ychar);
+				if(numItems!=2 || !cmpnt.getItemAt(0).equals(xchar))
+				{	cmpnt.removeAllItems();
+					cmpnt.addItem(xchar);
+					cmpnt.addItem(ychar);
+				}
 				cmpnt.setEnabled(true);
 				break;
 			
 				
 			case MPMDCDX:
-				cmpnt.removeAllItems();
-				cmpnt.addItem("dc/d"+xchar);
-				cmpnt.addItem("dc/d"+ychar);
 				if(docCtrl.resDoc.is3D())
-				{	cmpnt.addItem("dc/d"+zchar);
+				{	if(numItems!=3 || !cmpnt.getItemAt(0).equals("dc/d"+xchar))
+					{	cmpnt.removeAllItems();
+						cmpnt.addItem("dc/d"+xchar);
+						cmpnt.addItem("dc/d"+ychar);
+						cmpnt.addItem("dc/d"+zchar);
+					}
+				}
+				else
+				{	if(numItems!=2 || !cmpnt.getItemAt(0).equals("dc/d"+xchar))
+					{	cmpnt.removeAllItems();
+						cmpnt.addItem("dc/d"+xchar);
+						cmpnt.addItem("dc/d"+ychar);
+					}
 				}
 				cmpnt.setEnabled(true);
 				break;
 				
 			case MESHDVDX:
-				if(!cmpnt.getItemAt(0).equals("dv/d"+xchar))
+				if(numItems!=2 || !cmpnt.getItemAt(0).equals("dv/d"+xchar))
 				{	cmpnt.removeAllItems();
 					cmpnt.addItem("dv/d"+xchar);
 					cmpnt.addItem("du/d"+ychar);
@@ -463,7 +548,7 @@ public class PlotQuantity extends PlotControl
 				break;
 			
 			case INTERFACETRACTION_N:
-				if(!cmpnt.getItemAt(0).equals("normal"))
+				if(numItems!=2 || !cmpnt.getItemAt(0).equals("normal"))
 				{	cmpnt.removeAllItems();
 					cmpnt.addItem("normal");
 					cmpnt.addItem("tangential");
@@ -478,13 +563,13 @@ public class PlotQuantity extends PlotControl
 	}
 	
 	// get plot component from current selection
-	public int getPlotComponent()
+	public int getPlotComponent(int selected)
 	{	PlotMenuItem pm=(PlotMenuItem)quant.getSelectedItem();
 		if(pm==null) return -1;
 		int plotComponent=pm.getTag();
 		
 		// adjust component menus - add component selected in component menu
-		int extra;
+		int extra = 0;
 		switch(plotComponent)
 		{   case MPMSIGMAX:
 			case MPMEPSX:
@@ -501,21 +586,41 @@ public class PlotQuantity extends PlotControl
 			case MESHFORCEX:
 			case INTERFACETRACTION_N:
 				extra=cmpnt.getSelectedIndex();
-				if(extra>=0) plotComponent+=extra;
 				break;
 			case PlotQuantity.MPMSPINVELOCITYX:
 			case PlotQuantity.MPMSPINMOMENTUMX:
 				if(docCtrl.resDoc.is3D())
-				{	extra=cmpnt.getSelectedIndex();
-					if(extra>=0) plotComponent+=extra;
-				}
+					extra=cmpnt.getSelectedIndex();
 				else
-					plotComponent+=2;	// only z in 2D
+					extra = 2;	// only z in 2D
 				break;
 			default:
 				break;
 		}
-		return plotComponent;
+		
+		// save selection
+		if(plotComponent>=0 && !suspendStoreSelection)
+		{	if(docCtrl.resDoc.isMPMAnalysis())
+			{	if(selected==LoadArchive.TIME_PLOT)
+				{	mpmTimeQuant=plotComponent;
+					mpmTimeComp=extra;
+				}
+				else if(selected==LoadArchive.MESH2D_PLOT)
+				{	mpmMesh2DQuant=plotComponent;
+					mpmMesh2DComp=extra;
+				}
+				else 
+				{	mpmMovieQuant=plotComponent;
+					mpmMovieComp=extra;
+				}
+			}
+			else
+			{	feaMeshQuant=plotComponent;
+				feaMeshComp=extra;
+			}
+		}
+		
+		return plotComponent+extra;
 	}
 	
 	// Label for plot axes (i.e., just generic name and plot units)

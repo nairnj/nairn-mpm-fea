@@ -29,6 +29,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 	
 		virtual void AddFtotSpreadTask3(Vector *);
 		virtual void AddGravityAndBodyForceTask3(Vector *);
+		virtual void RestoreMomenta(void);
 	
 		virtual void UpdateMomentaOnField(double);
 

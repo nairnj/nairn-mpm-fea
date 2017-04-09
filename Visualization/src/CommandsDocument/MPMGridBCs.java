@@ -11,20 +11,23 @@
 
 import java.util.*;
 
-public class MPMGridBCs {
+public class MPMGridBCs
+{
 	private CmdViewer doc;
 	private String bcAttrs;
 	private String bcCmd;
 	private StringBuffer bcSettings;
 	private StringBuffer xmlbcs = null;
 	private int boundaryID;
-
 	private int inBC;
+	public ArrayList<RegionPiece> pieces;
+	
+	public static final int GRID_BC = 1;
+	public static final int MOVELINE_BC = 2;
+	public static final int MOVEARC_BC = 3;
+	public static final int MOVEBOX_BC = 4;
 
-	public static final int MOVELINE_BC = 1;
-	public static final int MOVEARC_BC = 2;
-	public static final int MOVEBOX_BC = 3;
-
+	public static final int PARTICLE_BC = 10;
 	public static final int LOADLINE_BC = 11;
 	public static final int LOADARC_BC = 12;
 	public static final int LOADRECT_BC = 14;
@@ -37,14 +40,16 @@ public class MPMGridBCs {
 	// Initialize
 	// ----------------------------------------------------------------------------
 
-	public MPMGridBCs(CmdViewer cmdDoc) { // save parent CmdViewer
+	public MPMGridBCs(CmdViewer cmdDoc)
+	{	// save parent CmdViewer
 		doc = cmdDoc;
 	}
 
-	public void initRunSettings() {
-		inBC = 0;
+	public void initRunSettings()
+	{	inBC = 0;
 		xmlbcs = new StringBuffer("");
 		boundaryID = 0;
+		pieces=new ArrayList<RegionPiece>(20);
 	}
 
 	// ----------------------------------------------------------------------------
@@ -54,92 +59,120 @@ public class MPMGridBCs {
 	// start grid BC line or arc
 	// MoveLine x1,y1,x2,y2,(tolerance)
 	// MoveArc x1,y1,x2,y2,start,end,(tolerance)
-	public void StartMoveLine(ArrayList<String> args, int theType)
-			throws Exception {
-		// MPM Only
+	public void StartMoveLine(ArrayList<String> args, int theType) throws Exception
+	{	// MPM Only
 		doc.requiresMPM(args);
 
 		// verify not nested
-		if (inBC != 0 && theType < LOADLINE_BC)
-			throw new Exception(
-					"MoveLine, MoveArc, and MoveBox cannot be nested:\n" + args);
-		else if (doc.mpmParticleBCs.getInBC() != 0 && theType >= LOADLINE_BC)
-			throw new Exception(
-					"LoadLine, LoadArc, LoadRect, and LoadBox cannot be nested:\n"
+		if (inBC != 0 && theType < PARTICLE_BC)
+		{	if(theType==GRID_BC)
+				throw new Exception("GridBC blocks cannot be nested:\n" + args);
+			else
+				throw new Exception("MoveLine, MoveArc, and MoveBox cannot be nested:\n" + args);
+		}
+		else if (doc.mpmParticleBCs.getInBC() != 0 && theType >= PARTICLE_BC)
+		{	if(theType==PARTICLE_BC)
+				throw new Exception("Particle blocks cannot be nested:\n" + args);
+			else
+			{	throw new Exception("LoadLine, LoadArc, LoadRect, and LoadBox cannot be nested:\n"
 							+ args);
-
-		// needs at least 4 arguments
-		if (((theType == MOVELINE_BC || theType == LOADLINE_BC) && args.size() < 5)
-				|| ((theType == MOVEARC_BC || theType == LOADARC_BC) && args
-						.size() < 7))
-			throw new Exception("'" + args.get(0)
-					+ "' has too few parameters:\n" + args);
-
-		// get x1,y1,x2,y2
-		double x1 = doc.readDoubleArg(args.get(1));
-		double y1 = doc.readDoubleArg(args.get(2));
-		double x2 = doc.readDoubleArg(args.get(3));
-		double y2 = doc.readDoubleArg(args.get(4));
-
-		double tolerance = -1., startAng = 0., endAng = 0.;
-		if (theType == MOVELINE_BC || theType == LOADLINE_BC) { // get optional
-																// tolerance
-			if (args.size() > 5)
-				tolerance = doc.readDoubleArg(args.get(5));
-			if (theType == MOVELINE_BC) {
-				bcAttrs = "<BCLine x1='" + x1 + "' y1='" + y1 + "' x2='" + x2
-						+ "' y2='" + y2 + "'";
-				if (tolerance > 0.)
-					bcAttrs = bcAttrs + " tolerance='" + tolerance + "'>\n";
-				else
-					bcAttrs = bcAttrs + ">\n";
-				bcSettings = new StringBuffer("");
-				inBC = MOVELINE_BC;
-				bcCmd = "BCLine";
-			} else {
-				String theAttrs = "<BCLine x1='" + x1 + "' y1='" + y1
-						+ "' x2='" + x2 + "' y2='" + y2 + "'";
-				if (tolerance > 0.)
-					theAttrs = theAttrs + " tolerance='" + tolerance + "'>\n";
-				else
-					theAttrs = theAttrs + ">\n";
-				doc.mpmParticleBCs.SetLoadLine(theAttrs,
-						MPMParticleBCs.LOADLINE_BC, "BCLine");
 			}
-		} else { // angles
-			startAng = doc.readDoubleArg(args.get(5));
-			endAng = doc.readDoubleArg(args.get(6));
-			if (args.size() > 7)
-				tolerance = doc.readDoubleArg(args.get(7));
-			if (theType == MOVEARC_BC) {
-				bcAttrs = "<BCArc x1='" + x1 + "' y1='" + y1 + "' x2='" + x2
-						+ "' y2='" + y2 + "' start='" + startAng + "' end='"
-						+ endAng + "'";
-				if (tolerance > 0.)
-					bcAttrs = bcAttrs + " tolerance='" + tolerance + "'>\n";
+		}
+		
+		if(theType==GRID_BC)
+		{	// no arguments
+			if(args.size()>2)
+				throw new Exception("GridBC command should have not parameters:\n" + args);
+			bcAttrs = "<BCShape>\n";
+			bcSettings = new StringBuffer("");
+			inBC = GRID_BC;
+			bcCmd = "BCShape";
+			pieces.clear();
+		}
+		
+		else if(theType==PARTICLE_BC)
+		{	// no arguments
+			if(args.size()>2)
+				throw new Exception("ParticleBC command should have not parameters:\n" + args);
+			String theAttrs = "<BCShape>\n";
+			doc.mpmParticleBCs.SetLoadLine(theAttrs,PARTICLE_BC,"BCShape");
+		}
+
+		else
+		{	// needs at least 4 arguments
+			if (((theType == MOVELINE_BC || theType == LOADLINE_BC) && args.size() < 5)
+					|| ((theType == MOVEARC_BC || theType == LOADARC_BC) && args.size() < 7))
+			{	throw new Exception("'" + args.get(0)
+						+ "' has too few parameters:\n" + args);
+			}
+	
+			// get x1,y1,x2,y2
+			double x1 = doc.readDoubleArg(args.get(1));
+			double y1 = doc.readDoubleArg(args.get(2));
+			double x2 = doc.readDoubleArg(args.get(3));
+			double y2 = doc.readDoubleArg(args.get(4));
+	
+			double tolerance = -1., startAng = 0., endAng = 0.;
+			if (theType == MOVELINE_BC || theType == LOADLINE_BC)
+			{ 	// get optional tolerance
+				if (args.size() > 5)
+					tolerance = doc.readDoubleArg(args.get(5));
+				if (theType == MOVELINE_BC)
+				{	bcAttrs = "<BCLine x1='" + x1 + "' y1='" + y1 + "' x2='" + x2
+							+ "' y2='" + y2 + "'";
+					if (tolerance > 0.)
+						bcAttrs = bcAttrs + " tolerance='" + tolerance + "'>\n";
+					else
+						bcAttrs = bcAttrs + ">\n";
+					bcSettings = new StringBuffer("");
+					inBC = MOVELINE_BC;
+					bcCmd = "BCLine";
+				}
 				else
-					bcAttrs = bcAttrs + ">\n";
-				bcSettings = new StringBuffer("");
-				inBC = MOVEARC_BC;
-				bcCmd = "BCArc";
-			} else {
-				String theAttrs = "<BCArc x1='" + x1 + "' y1='" + y1 + "' x2='"
-						+ x2 + "' y2='" + y2 + "' start='" + startAng
-						+ "' end='" + endAng + "'";
-				if (tolerance > 0.)
-					theAttrs = theAttrs + " tolerance='" + tolerance + "'>\n";
+				{	String theAttrs = "<BCLine x1='" + x1 + "' y1='" + y1
+							+ "' x2='" + x2 + "' y2='" + y2 + "'";
+					if (tolerance > 0.)
+						theAttrs = theAttrs + " tolerance='" + tolerance + "'>\n";
+					else
+						theAttrs = theAttrs + ">\n";
+					doc.mpmParticleBCs.SetLoadLine(theAttrs,LOADLINE_BC,"BCLine");
+				}
+			}
+			else
+			{	// angles
+				startAng = doc.readDoubleArg(args.get(5));
+				endAng = doc.readDoubleArg(args.get(6));
+				if (args.size() > 7)
+					tolerance = doc.readDoubleArg(args.get(7));
+				if (theType == MOVEARC_BC)
+				{	bcAttrs = "<BCArc x1='" + x1 + "' y1='" + y1 + "' x2='" + x2
+							+ "' y2='" + y2 + "' start='" + startAng + "' end='"
+							+ endAng + "'";
+					if (tolerance > 0.)
+						bcAttrs = bcAttrs + " tolerance='" + tolerance + "'>\n";
+					else
+						bcAttrs = bcAttrs + ">\n";
+					bcSettings = new StringBuffer("");
+					inBC = MOVEARC_BC;
+					bcCmd = "BCArc";
+				}
 				else
-					theAttrs = theAttrs + ">\n";
-				doc.mpmParticleBCs.SetLoadLine(theAttrs,
-						MPMParticleBCs.LOADARC_BC, "BCArc");
+				{	String theAttrs = "<BCArc x1='" + x1 + "' y1='" + y1 + "' x2='"
+							+ x2 + "' y2='" + y2 + "' start='" + startAng
+							+ "' end='" + endAng + "'";
+					if (tolerance > 0.)
+						theAttrs = theAttrs + " tolerance='" + tolerance + "'>\n";
+					else
+						theAttrs = theAttrs + ">\n";
+					doc.mpmParticleBCs.SetLoadLine(theAttrs,LOADARC_BC, "BCArc");
+				}
 			}
 		}
 	}
 
 	// start grid BC line
-	public void StartMoveBox(ArrayList<String> args, int theType)
-			throws Exception {
-		// MPM Only
+	public void StartMoveBox(ArrayList<String> args, int theType) throws Exception
+	{	// MPM Only
 		doc.requiresMPM(args);
 		if (!doc.isMPM3D())
 			throw new Exception("MoveBox and LoadBox only allowed in 3D MPM:\n"
@@ -169,8 +202,8 @@ public class MPMGridBCs {
 
 		// get optional axis
 		int axis = -1;
-		if (args.size() > 7) {
-			HashMap<String, Integer> options = new HashMap<String, Integer>(3);
+		if (args.size() > 7)
+		{	HashMap<String, Integer> options = new HashMap<String, Integer>(3);
 			options.put("x", new Integer(1));
 			options.put("y", new Integer(2));
 			options.put("z", new Integer(3));
@@ -180,8 +213,8 @@ public class MPMGridBCs {
 						+ "' cylinder axis is not valid:\n" + args);
 		}
 
-		if (theType == MOVEBOX_BC) {
-			bcAttrs = "<BCBox xmin='" + x1 + "' ymin='" + y1 + "' zmin='" + z1
+		if (theType == MOVEBOX_BC)
+		{	bcAttrs = "<BCBox xmin='" + x1 + "' ymin='" + y1 + "' zmin='" + z1
 					+ "' xmax='" + x2 + "' ymax='" + y2 + "' zmax='" + z2 + "'";
 			if (axis > 0)
 				bcAttrs = bcAttrs + " axis='" + axis + "'>\n";
@@ -190,29 +223,35 @@ public class MPMGridBCs {
 			bcSettings = new StringBuffer("");
 			inBC = MOVEBOX_BC;
 			bcCmd = "BCBox";
-		} else {
-			String theAttrs = "<BCBox xmin='" + x1 + "' ymin='" + y1
+		}
+		else
+		{	String theAttrs = "<BCBox xmin='" + x1 + "' ymin='" + y1
 					+ "' zmin='" + z1 + "' xmax='" + x2 + "' ymax='" + y2
 					+ "' zmax='" + z2 + "'";
 			if (axis > 0)
 				theAttrs = theAttrs + " axis='" + axis + "'>\n";
 			else
 				theAttrs = theAttrs + ">\n";
-			doc.mpmParticleBCs.SetLoadLine(theAttrs, MPMParticleBCs.LOADBOX_BC,
-					"BCBox");
+			doc.mpmParticleBCs.SetLoadLine(theAttrs,LOADBOX_BC,"BCBox");
 		}
 	}
 
 	// MoveLine, MoveArc, or MoveBox is done
-	public void EndMoveBlock(ArrayList<String> args, int endType)
-			throws Exception {
-		if (inBC != endType)
-			throw new Exception("'" + args.get(0)
+	public void EndMoveBlock(ArrayList<String> args, int endType) throws Exception
+	{	if (inBC != endType)
+		{	throw new Exception("'" + args.get(0)
 					+ "' does not match current boundary condition block:\n"
 					+ args);
+		}
+	
+		// get shape
+		StringBuffer shapeXML = new StringBuffer("");
+		if(inBC == GRID_BC)
+		{	doc.regions.compilePieces(pieces, shapeXML);
+		}
 
 		// append block
-		xmlbcs.append("    " + bcAttrs + bcSettings + "    </" + bcCmd + ">\n");
+		xmlbcs.append("    " + bcAttrs + shapeXML + bcSettings + "    </" + bcCmd + ">\n");
 
 		inBC = 0;
 	}
@@ -220,14 +259,15 @@ public class MPMGridBCs {
 	// add velocity condition
 	// Velocity (x or y or z),type,<arg1>,<arg2>
 	// Velocity (skewed),type,arg1,arg2,angle1,<angle2>
-	public void AddVelocity(ArrayList<String> args) throws Exception {
-		// MPM only
+	public void AddVelocity(ArrayList<String> args) throws Exception
+	{	// MPM only
 		doc.requiresMPM(args);
 
 		if (inBC == 0)
-			throw new Exception(
+		{	throw new Exception(
 					"'Velocity' command must by in 'MoveLine', 'MoveArc', or 'MoveBox' block:\n"
 							+ args);
+		}
 
 		// always needs #1 and #2
 		if (args.size() < 3)
@@ -246,8 +286,9 @@ public class MPMGridBCs {
 		int dof = doc.readIntOption(args.get(1), options, "Velocity direction");
 
 		if (dof > 10 && args.size() < 6)
-			throw new Exception("Skewed 'Velocity' has too few parameters:\n"
+		{	throw new Exception("Skewed 'Velocity' has too few parameters:\n"
 					+ args);
+		}
 
 		// read style
 		options = new HashMap<String, Integer>(5);
@@ -268,30 +309,29 @@ public class MPMGridBCs {
 		boolean hasArg2 = false;
 
 		// arg1
-		if (args.size() > 3) {
-			if (style == 6)
+		if (args.size() > 3)
+		{	if (style == 6)
 				function = doc.readStringArg(args.get(3));
 			else
 				arg1 = doc.readDoubleArg(args.get(3));
 		}
 
 		// arg2
-		if (args.size() > 4) {
-			hasArg2 = true;
+		if (args.size() > 4)
+		{	hasArg2 = true;
 			arg2 = doc.readDoubleArg(args.get(4));
 		}
 
 		// angles
 		double angle1 = 0., angle2 = 0.;
-		if (dof > 10) {
-			angle1 = doc.readDoubleArg(args.get(5));
+		if (dof > 10)
+		{	angle1 = doc.readDoubleArg(args.get(5));
 			if (args.size() > 6)
 				angle2 = doc.readDoubleArg(args.get(6));
 		}
 
 		// add to xml
-		bcSettings.append("      <DisBC dir='" + dof + "' style='" + style
-				+ "'");
+		bcSettings.append("      <DisBC dir='" + dof + "' style='" + style + "'");
 		if (style == 6)
 			bcSettings.append(" function='" + function + "'");
 		else
@@ -310,22 +350,21 @@ public class MPMGridBCs {
 	}
 
 	// add velocity condition
-	public void AddTempConc(ArrayList<String> args, int theType)
-			throws Exception {
-		// MPM only
+	public void AddTempConc(ArrayList<String> args, int theType) throws Exception
+	{	// MPM only
 		doc.requiresMPM(args);
 
 		if (inBC == 0)
-			throw new Exception(
-					"'"
-							+ args.get(0)
+		{	throw new Exception("'"+ args.get(0)
 							+ "' command must by in 'MoveLine', 'MoveArc', or 'MoveBox' block:\n"
 							+ args);
+		}
 
 		// always needs #1 and #2
 		if (args.size() < 3)
-			throw new Exception("'" + args.get(0)
+		{	throw new Exception("'" + args.get(0)
 					+ "' has too few parameters:\n" + args);
+		}
 
 		// read style
 		HashMap<String, Integer> options = new HashMap<String, Integer>(5);
@@ -343,16 +382,16 @@ public class MPMGridBCs {
 		boolean hasArg2 = false;
 
 		// arg1
-		if (args.size() > 2) {
-			if (style == 6)
+		if (args.size() > 2)
+		{	if (style == 6)
 				function = doc.readStringArg(args.get(2));
 			else
 				arg1 = doc.readDoubleArg(args.get(2));
 		}
 
 		// arg2
-		if (args.size() > 3) {
-			hasArg2 = true;
+		if (args.size() > 3)
+		{	hasArg2 = true;
 			arg2 = doc.readDoubleArg(args.get(3));
 		}
 
@@ -374,23 +413,28 @@ public class MPMGridBCs {
 
 	// add velocity condition
 	// set boundary ID
-	public void SetBoundaryID(ArrayList<String> args) throws Exception {
-		// MPM only
+	public void SetBoundaryID(ArrayList<String> args) throws Exception
+	{	// MPM only
 		doc.requiresMPM(args);
 
 		// no arg reverts to 0
-		if (args.size() < 2) {
-			boundaryID = 0;
+		if (args.size() < 2)
+		{	boundaryID = 0;
 			return;
 		}
 
 		// set
 		boundaryID = doc.readIntArg(args.get(1));
 	}
+	
+	// add region pience
+	public void addPiece(RegionPiece newPiece)
+	{	pieces.add(newPiece);
+	}
 
 	// insert XML
-	public void AddXML(String rawXML) {
-		xmlbcs.append(rawXML);
+	public void AddXML(String rawXML)
+	{	xmlbcs.append(rawXML);
 	}
 
 	// ----------------------------------------------------------------------------
@@ -398,8 +442,19 @@ public class MPMGridBCs {
 	// ----------------------------------------------------------------------------
 
 	// return xml data
-	public String toXMLString() {
-		return xmlbcs.toString();
+	public String toXMLString()
+	{	return xmlbcs.toString();
+	}
+
+	public int getInBC()
+	{	return inBC;
+	}
+	
+	public boolean allowsShape(int level)
+	{	if(inBC!=GRID_BC) return false;
+		if(level>0) return true;  // it is checked later
+		if(pieces.size()==0) return true;
+		return false;
 	}
 
 }

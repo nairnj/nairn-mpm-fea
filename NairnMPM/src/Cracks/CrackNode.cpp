@@ -27,35 +27,28 @@ CrackNode *CrackNode::currentCNode = NULL;
 CrackNode::CrackNode(NodalPoint *nd,CrackNode *prev)
 {
 	theNode = nd;
-	prevBC = prev;
+	prevNode = prev;
 }
 
 #pragma mark CrackNode: Methods
 
-// Add internal force to all nodes with imperfect interfaces 
-CrackNode *CrackNode::InterfaceForceOnCrack(void)
-{
-	theNode->CrackInterfaceForce();
-	return prevBC;
-}
-
 // check contact on this node during update momentum taks
 CrackNode *CrackNode::NodalCrackContactAndForces(double deltime)
 {
-	theNode->CrackContact(TRUE,deltime,NULL,NULL);
-	return prevBC;
+	theNode->CrackContact(UPDATE_MOMENTUM_CALL,deltime,NULL,NULL);
+	return prevNode;
 }
 
 // check contact on this node during update strains last
 CrackNode *CrackNode::NodalCrackContact(void)
 {
-	theNode->CrackContact(FALSE,0.,NULL,NULL);
-	return prevBC;
+	theNode->CrackContact(UPDATE_STRAINS_LAST_CALL,0.,NULL,NULL);
+	return prevNode;
 }
 
 // next BC accessors
-void CrackNode::SetPrevBC(CrackNode *next) { prevBC=next; }
-CrackNode *CrackNode::GetPrevBC(void) { return prevBC; }
+void CrackNode::SetPrevNode(CrackNode *next) { prevNode=next; }
+CrackNode *CrackNode::GetPrevNode(void) { return prevNode; }
 
 #pragma mark CrackNode: Class methods
 
@@ -63,12 +56,12 @@ CrackNode *CrackNode::GetPrevBC(void) { return prevBC; }
 // currentCNode to NULL - called in Task 0 or initialization
 void CrackNode::RemoveCrackNodes(void)
 {
-	CrackNode *prevBC;
+	CrackNode *prevCNode;
 	
 	while(currentCNode!=NULL)
-	{	prevBC = currentCNode->GetPrevBC();
+	{	prevCNode = currentCNode->GetPrevNode();
 		delete currentCNode;
-		currentCNode = prevBC;
+		currentCNode = prevCNode;
 	}
 }
 
@@ -76,28 +69,16 @@ void CrackNode::RemoveCrackNodes(void)
 // If yes, change momentum again and change total force
 void CrackNode::CrackContactTask4(double deltime)
 {
-	CrackNode *prevBC = currentCNode;
-	while(prevBC!=NULL)
-		prevBC = prevBC->NodalCrackContactAndForces(deltime);
+	CrackNode *prevCNode = currentCNode;
+	while(prevCNode!=NULL)
+		prevCNode = prevCNode->NodalCrackContactAndForces(deltime);
 }
 
 // On last pass (for USAVG or SZS), will already know which
 // nodes are crack nodes and now need to adjust forces
 void CrackNode::ContactOnKnownNodes(void)
 {
-	CrackNode *prevBC = currentCNode;
-	while(prevBC!=NULL)
-		prevBC = prevBC->NodalCrackContact();
+	CrackNode *prevCNode = currentCNode;
+	while(prevCNode!=NULL)
+		prevCNode = prevCNode->NodalCrackContact();
 }
-	
-// When there are imperfect interfaces, add to nodal internal force
-void CrackNode::CrackInterfaceOnKnownNodes(void)
-{
-	CrackNode *prevBC = currentCNode;
-	while(prevBC!=NULL)
-		prevBC = prevBC->InterfaceForceOnCrack();
-}
-
-	
-
-

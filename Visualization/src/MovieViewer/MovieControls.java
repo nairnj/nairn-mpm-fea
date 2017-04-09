@@ -202,6 +202,7 @@ public class MovieControls extends JPanel
 	
 	public int getArchiveIndex() { return selectTime!=null ? selectTime.getArchiveIndex() : 0; }
 	public boolean incrementArchiveIndex() { return selectTime!=null ? selectTime.incrementArchiveIndex() : false; }
+	public boolean decrementArchiveIndex() { return selectTime!=null ? selectTime.decrementArchiveIndex() : false; }
 	
 	// called when movie started or stopped
 	public void setPlaying(boolean playing)
@@ -216,6 +217,8 @@ public class MovieControls extends JPanel
 	{
 		PlotMenuItem pm=(PlotMenuItem)pquant.getSelectedItem();
 		if(pm==null) return;
+		
+		int numItems = pcmpnt.getItemCount();
 		switch(pm.getTag())
 		{   case PlotQuantity.MPMSIGMAX:
 			case PlotQuantity.MPMEPSX:
@@ -224,7 +227,7 @@ public class MovieControls extends JPanel
 			case PlotQuantity.MESHSIGMAX:
 			case PlotQuantity.MESHSTRAINX:
 			case PlotQuantity.MESHELEMSIGMAX:
-				if(!pcmpnt.getItemAt(0).equals(xchar+xchar))
+				if(numItems!=4 || !pcmpnt.getItemAt(0).equals(xchar+xchar))
 				{	pcmpnt.removeAllItems();
 					pcmpnt.addItem(xchar+xchar);
 					pcmpnt.addItem(ychar+ychar);
@@ -238,7 +241,7 @@ public class MovieControls extends JPanel
 			case PlotQuantity.MPMDISPX:
 			case PlotQuantity.MESHDISPX:
 			case PlotQuantity.MESHFORCEX:
-				if(!pcmpnt.getItemAt(0).equals(xchar))
+				if(numItems!=2 || !pcmpnt.getItemAt(0).equals(xchar))
 				{	pcmpnt.removeAllItems();
 					pcmpnt.addItem(xchar);
 					pcmpnt.addItem(ychar);
@@ -249,7 +252,7 @@ public class MovieControls extends JPanel
 			case PlotQuantity.MPMSPINVELOCITYX:
 			case PlotQuantity.MPMSPINMOMENTUMX:
 				if(resDoc.is3D())
-				{	if(!pcmpnt.getItemAt(0).equals(xchar))
+				{	if(numItems!=3 || !pcmpnt.getItemAt(0).equals(xchar))
 					{	pcmpnt.removeAllItems();
 						pcmpnt.addItem(xchar);
 						pcmpnt.addItem(ychar);
@@ -257,7 +260,7 @@ public class MovieControls extends JPanel
 					}
 				}
 				else
-				{	if(!pcmpnt.getItemAt(0).equals(zchar))
+				{	if(numItems!=1 || !pcmpnt.getItemAt(0).equals(zchar))
 					{	pcmpnt.removeAllItems();
 						pcmpnt.addItem(zchar);
 					}
@@ -266,7 +269,7 @@ public class MovieControls extends JPanel
 				break;
 				
 			case PlotQuantity.MPMDCDX:
-				if(!pcmpnt.getItemAt(0).equals("dc/d"+xchar))
+				if(numItems!=2 || !pcmpnt.getItemAt(0).equals("dc/d"+xchar))
 				{	pcmpnt.removeAllItems();
 					pcmpnt.addItem("dc/d"+xchar);
 					pcmpnt.addItem("dc/d"+ychar);
@@ -275,7 +278,7 @@ public class MovieControls extends JPanel
 				break;
 				
 			case PlotQuantity.INTERFACETRACTION_N:
-				if(!pcmpnt.getItemAt(0).equals("normal"))
+				if(numItems!=2 || !pcmpnt.getItemAt(0).equals("normal"))
 				{	pcmpnt.removeAllItems();
 					pcmpnt.addItem("normal");
 					pcmpnt.addItem("tangential");

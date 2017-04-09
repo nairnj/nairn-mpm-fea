@@ -70,6 +70,7 @@ public class NFMAnalysis  implements Runnable
 		
 		// read command file name
 		File inFile=doc.getFile();
+		System.out.println("Launching Analysis for file: "+inFile.getPath());
 		
 		// get shell command (if needed) and set command style
 		int commandStyle = MAC_UNIX;
@@ -180,9 +181,11 @@ public class NFMAnalysis  implements Runnable
 		
 			// get current output file from the output console object
 			outFile = soutConsole.getFile();
+			System.out.println("...output: "+outFile.getPath());
 			
 			// write temporary file to the selected output folder
-			tmpFile = saveCopyOfCommands(new File(outFile.getParent()+pathDelim+inFile.getName()));
+			String tmpName = outFile.getParent()+pathDelim+inFile.getName();
+			tmpFile = saveCopyOfCommands(new File(tmpName));
 		}
 		else if(scriptInfo!=null)
 		{	// REMOTE_ACCESS script mode -----------------
@@ -304,6 +307,7 @@ public class NFMAnalysis  implements Runnable
 		
 		// if did not write to file, then exit
 		if(tmpFile==null) return;
+		System.out.println("...tmp commands: "+tmpFile.getPath());
 			
 		// set commands and options
 		// bashcmds - list of commands to launch bash shell for cygwin or mac in background
@@ -427,19 +431,26 @@ public class NFMAnalysis  implements Runnable
 			if(commandStyle!=WINDOWS_CYGWIN && !doBackground)
 			{	builder = new ProcessBuilder(pbcmds);
 				builder.directory(outFile.getParentFile());
-				System.out.println(pbcmds);
+				displayCommands(pbcmds);
 			}
 			else
 			{	builder = new ProcessBuilder(bashcmds);
-				System.out.println(bashcmds);
+				displayCommands(bashcmds);
 			}
-			builder.redirectErrorStream(true);
+			//builder.redirectErrorStream(true);
 			
 			runThread=new Thread(this);
 			running=true;
 			wasSubmitted=doBackground;
 			runThread.start();
 		}		
+	}
+	
+	// display commands
+	public void displayCommands(ArrayList<String> cmds)
+	{	System.out.println("Launch Commands:");
+		for(int i=0;i<cmds.size();i++)
+			System.out.println("  "+i+": "+cmds.get(i));
 	}
 	
 	// insert DTD path into commands
@@ -571,11 +582,29 @@ public class NFMAnalysis  implements Runnable
 				InputStreamReader isr = new InputStreamReader(is);
 				BufferedReader br = new BufferedReader(isr);
 				
+				InputStream es = process.getErrorStream();
+				InputStreamReader esr = new InputStreamReader(es);
+				BufferedReader ebr = new BufferedReader(esr);
+
 				soutConsole.clear();
 				String line;
+				String errMsg = "";
+				//boolean isFinished = false;
+				//boolean isErrorFinished = false;
+				
+				// read standard output
 				while((line = br.readLine()) != null)
 				{	soutConsole.appendLine(line);
 					if(!running) break;
+				}
+				
+				// if still running, check for error message
+				if(running)
+				{	while((line = ebr.readLine()) != null)
+					{	if(errMsg.length()>0) errMsg = errMsg + "\n";
+						errMsg = errMsg+line;
+						if(!running) break;
+					}
 				}
 				
 				// get results code
@@ -586,7 +615,8 @@ public class NFMAnalysis  implements Runnable
 						result = process.exitValue();
 					}
 					catch(InterruptedException e)
-					{	result = 1;
+					{	errMsg = e.getLocalizedMessage();
+						result = 1;
 					}
 				}
 				
@@ -601,10 +631,16 @@ public class NFMAnalysis  implements Runnable
 						{	newResults.checkMeshNow();
 						}
 					}
+					else
+					{	if(errMsg=="") errMsg = "Unknown error (perhaps Windows exe failed to launch)";
+						JNApplication.appBeep();
+						JOptionPane.showMessageDialog(doc,"Error: "+errMsg);
+					}
 				}
 				
 				// close all
 				is.close();
+				es.close();
 				process.destroy();
 			}
 			catch(Exception tpe)

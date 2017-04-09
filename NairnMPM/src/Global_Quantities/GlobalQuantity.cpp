@@ -23,6 +23,7 @@
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "System/UnitsController.hpp"
+#include "Elements/ElementBase.hpp"
 
 // Single global contact law object
 GlobalQuantity *firstGlobal=NULL;
@@ -521,7 +522,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// fricitonal work (J in Legacy)
 		case FRICTION_WORK:
-			value = NodalPoint::frictionWork*UnitsController::Scaling(1.e-9);;
+			value = NodalPoint::frictionWork*UnitsController::Scaling(1.e-9);
 			break;
 			
 		// energies (Volume*energy) (J in Legacy)

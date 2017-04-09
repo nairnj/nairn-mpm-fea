@@ -5,15 +5,18 @@
 	Created by John Nairn on July 22, 2010
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
  
-	Check if any particles have left their element and if yes, find the new
-		element. If particle reaches edge of the grid either stop the analysis
-		or push it back and try to continue.
+	The tasks are:
+	--------------
+	* Update alpha for feedback damping. Wanted to have this at the end
+      of time step for both USF and USAVG. This update used to be in the
+      UpdateParticlesTask, but that had problems when using grid kinetic
+      energy of cohesive zones. Here is betters, especially when using
+      USAVG mode.
+	* Check if any particles have left their element and if yes, find the new
+      element.
+	* If particle reaches edge of the grid either stop the analysis
+	  or push it back and try to continue.
  
-	Also update alpha for feedback damping. Wanted to have this at the end
-		of time step fro both USF and USAVG. This update used to be in the
-		UpdateParticlesTask, but that had problems when using grid kinetic
-		energy of cohesive zones. Here is betters, especially when using
-		USAVG mode.
 ********************************************************************************/
 
 #include "stdafx.h"

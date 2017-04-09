@@ -23,25 +23,24 @@ class CrackNode
 
         // constructors and destructors
         CrackNode(NodalPoint *,CrackNode *);
-		
-		// methods
-		CrackNode *NodalCrackContact(void);
-		CrackNode *NodalCrackContactAndForces(double);
-		void SetPrevBC(CrackNode *);
-		CrackNode *GetPrevBC(void);
-		CrackNode *InterfaceForceOnCrack(void);
-        
+	
+		// common methods
+		void SetPrevNode(CrackNode *);
+		CrackNode *GetPrevNode(void);
+	
+		// interface and contact methods
+		virtual CrackNode *NodalCrackContact(void);
+		virtual CrackNode *NodalCrackContactAndForces(double);
+
 		// class methods
 		static void RemoveCrackNodes(void);
 		static void CrackContactTask4(double);
 		static void ContactOnKnownNodes(void);
-		static void CrackInterfaceOnKnownNodes(void);
 		
-	private:
+	protected:
 		// variables (changed in MPM time step)
-        Vector pk[MAX_FIELDS_FOR_CRACKS];
 		NodalPoint *theNode;
-        CrackNode *prevBC;
+        CrackNode *prevNode;
 };
 
 #endif

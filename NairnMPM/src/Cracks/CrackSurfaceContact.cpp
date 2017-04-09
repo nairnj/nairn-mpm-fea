@@ -212,16 +212,13 @@ void CrackSurfaceContact::MaterialContactPairs(int maxFields)
 // return TRUE if any contact being done
 short CrackSurfaceContact::HasContact(int number) { return (short)(!crackContactLaw[number]->IgnoreContact()); }
 
-// return TRUE if imperfect interface
-short CrackSurfaceContact::IsImperfect(int number) { return (short)(crackContactLaw[number]->IsImperfectInterface()); }
-
 /*	Calculate change in momentum when there is contact. Return true or false if an adjustment was calculated
 	If BC at the node, the delta momemtum should be zero in fixed direction
 	Only called if both verified are verified and have 1 or more particles
 	This method should ignore material that are ignoring cracks
 */
 bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVelocityField *cva,CrackVelocityField *cvb,
-											Vector *normin,int number,bool postUpdate,double deltime,int *inContact)
+											Vector *normin,int number,int callType,double deltime,int *inContact)
 {
 	// first determine if there is contact
 	*inContact=IN_CONTACT;
@@ -242,35 +239,43 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	CopyScaleVector(delPa,&pkb,massa*mnode);
 	AddScaledVector(delPa,&pka,-massb*mnode);
 	
-	// get normalized normal vector and find Delta p_a . n (actual (vb-va).n = dotn*(ma+mb)/(ma*mb))
+	// get normalized normal vector and find dPDotn = Delta p_a . n (actual (vb-va).n = dPDotn*(ma+mb)/(ma*mb))
 	Vector norm;
 	CopyScaleVector(&norm,normin,1./sqrt(DotVectors2D(normin,normin)));
-	double dotn=DotVectors2D(delPa,&norm);
+	double dPDotn = DotVectors2D(delPa,&norm);
 	
-	// With the first check, any movement apart will be taken as noncontact
-	// Also, frictional contact assume dvel<0.
-	if(dotn>=0.)
-		*inContact=SEPARATED;
-	else
-	{	// if approaching, check displacements
-        // (Note: to use only velocity, skip the following displacement check)
+	// will need to get displacements if doing displacement check or
+	// if contact is imperfect interface
+	double deltaDotn=0.;
+	Vector delta = MakeVector(0.,0.,0.);
+	if(dPDotn<0. || crackContactLaw[number]->IsImperfectInterface())
+	{	// displacement calculations
 		Vector dispa=cva->GetCMDisplacement(np,true);
 		dispa.x/=massa;
 		dispa.y/=massa;
+		dispa.z = 0.;
 		Vector dispb=cvb->GetCMDisplacement(np,true);
 		dispb.x/=massb;
 		dispb.y/=massb;
-		
-		// normal cod
-		double dnorm=(dispb.x-dispa.x)*norm.x + (dispb.y-dispa.y)*norm.y
-                        - mpmgrid.GetNormalCODAdjust(&norm,np);
-		if(postUpdate)
-		{	double dvel=(massa+massb)*dotn/(massa*massb);
-			dnorm+=dvel*deltime;
+		dispb.z = 0.;
+		delta = dispb;
+		SubVector(&delta,&dispa);
+		deltaDotn = MaterialSeparation(&delta,&dispa,&dispb,&norm,np);
+	}
+	
+	// With the first check, any movement apart will be taken as noncontact
+	// Also, frictional contact assume dvel<0.
+	if(dPDotn >= 0.)
+		*inContact=SEPARATED;
+	else
+	{	// on post update, adjust by normal velocity difference
+		if(callType!=MASS_MOMENTUM_CALL)
+		{	double dvel=(massa+massb)*dPDotn/(massa*massb);
+			deltaDotn += dvel*deltime;
 		}
 		
 		// if current displacement positive then no contact
-		if(dnorm >= 0.) *inContact=SEPARATED;
+		*inContact = (deltaDotn >= 0.) ? SEPARATED : IN_CONTACT ;
 	}
 	
 	// if separated, then no contact unless possibly needed for an imperfect interface
@@ -278,12 +283,12 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	
 	// Now need to change momentum. For imperfect interface, change only for perfect directions
 	double mredDE;
+	double mred = (massa*massb)/(massa+massb);
 	if(crackContactLaw[number]->IsFrictionalContact())
-	{	bool getHeating = postUpdate && ConductionTask::crackContactHeating;
-		double mred = (massa*massb)/(massa+massb);
+	{	bool getHeating = (callType==UPDATE_MOMENTUM_CALL) && ConductionTask::crackContactHeating;
 		double contactArea = 1.;
-		if(crackContactLaw[number]->FrictionLawNeedsContactArea())
-		{	// Angled path correction (2D only)
+		if(crackContactLaw[number]->ContactLawNeedsContactArea())
+		{	// Angled path correction (cracks are only 2D)
 			Vector dist = mpmgrid.GetPerpendicularDistance(&norm,np);
 			
 			// Area correction method (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
@@ -305,7 +310,7 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 			atPtr = &at;
 		}
 		
-		if(!crackContactLaw[number]->GetFrictionalDeltaMomentum(delPa,&norm,dotn,&mredDE,mred,
+		if(!crackContactLaw[number]->GetFrictionalDeltaMomentum(delPa,&norm,dPDotn,&mredDE,mred,
 										getHeating,contactArea,*inContact==IN_CONTACT,deltime,atPtr))
 		{	return false;
 		}
@@ -319,87 +324,96 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		}
 	}
 	else
-	{
-		// Contact handled here only perfect interface (Dt or Dn < 0)
-		// Imperfect interfaces are handled as forces later
-		if(crackContactLaw[number]->IsPerfectTangentialInterface())
-		{	if(!crackContactLaw[number]->IsPerfectNormalInterface(*inContact==IN_CONTACT))
-			{	// prefect in tangential, but imperfect in normal direction
-				// make stick in tangential direction only
-				AddScaledVector(delPa,&norm,-dotn);
-			}
-			// else perfect in both so return with the stick conditions already in delPa
-		}
-		else if(crackContactLaw[number]->IsPerfectNormalInterface(*inContact==IN_CONTACT))
-		{	// perfect in normal direction, but imperfect in tangential direction
-			// make stick in normal direction only
-			CopyScaleVector(delPa,&norm,dotn);
+	{	// get tangDel and deltaDott
+		Vector tangDel;
+		double deln = DotVectors(&delta,&norm);			// delta.n, but not same as correct deltaDotn from above
+		CopyVector(&tangDel,&delta);
+		AddScaledVector(&tangDel,&norm,-deln);				// delta - deln (n) = deltaDott (t)
+		
+		// by normalizing to positive delt, hat t always points in positive direction
+		double deltaDott=sqrt(DotVectors(&tangDel,&tangDel));
+		if(!DbleEqual(deltaDott,0.)) ScaleVector(&tangDel,1./deltaDott);
+		
+		// get contact area - angled path correction (cracks are only 2D)
+		Vector dist = mpmgrid.GetPerpendicularDistance(&norm,np);
+		
+		// Area correction method (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
+		// dist weightings to allow for Tartan grid
+		double vola = cva->GetVolumeNonrigid(true),volb = cvb->GetVolumeNonrigid(true),voltot=vola+volb;
+		double contactArea = sqrt(2.0*fmin(vola*dist.y,volb*dist.z)*voltot)/dist.x;
+		if(fmobj->IsAxisymmetric()) contactArea *= np->x;
+		
+		// get input force if needed and then call for interface force and energy
+		// Find delFi = (ma Fb - mb Fa)/Mc (when needed)
+		Vector fImp;
+		if(callType==UPDATE_MOMENTUM_CALL)
+		{	Vector Fb = cvb->GetCMatFtot();
+			Vector Fa = cva->GetCMatFtot();
+			CopyScaleVector(&fImp,&Fb,massa*mnode);
+			AddScaledVector(&fImp,&Fa,-massb*mnode);
 		}
 		else
-		{	// no change in momentum, just imperfect interface forces later and nothing changed here
-			return false;
-		}
+			ZeroVector(&fImp);
+		double rawEnergy;
+		crackContactLaw[number]->GetInterfaceForces(&norm,&fImp,&rawEnergy,
+													contactArea,delPa,dPDotn,mred,&tangDel,deltaDotn,deltaDott,dist.x);
 		
+#ifndef MANDMIMPINT
+		if(callType==UPDATE_MOMENTUM_CALL)
+		{	// add force (if any) to momentum change
+			AddScaledVector(delPa, &fImp, timestep);
+			
+			// Add interface energy. (Legacy units g-mm^2/sec^2 or multiply by 1e-9 to get J - kg-m^2/sec^2)
+			NodalPoint::interfaceEnergy += rawEnergy;
+		}
+#else
+		if(callType==MASS_MOMENTUM_CALL)
+		{	// add only prior to update and add to forces
+			cva->AddFtotSpreadTask3(&fImp);
+			ScaleVector(&fImp,-1.);
+			cvb->AddFtotSpreadTask3(&fImp);
+			
+			// Add interface energy. (Legacy units g-mm^2/sec^2 or multiply by 1e-9 to get J - kg-m^2/sec^2)
+			NodalPoint::interfaceEnergy += rawEnergy;
+		}
+#endif
+		
+		// If no interface force, then should stick with returned momentum
+		// If has force, still may need to change using returned altered momentum (although it could be zero)
 	}
 	
 	return true;
 }
 
-// Calculate forces at imperfect interfaces and both CrackVelocityFields are present and have particles
-// Return TRUE if imperfect interface or FALSE if not
-// Only for cracks as imperfect interfaces
-bool CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,CrackVelocityField *cva,
-				CrackVelocityField *cvb,Vector *unnorm,int number,double *rawEnergy,double nodalx)
+// Return dispbma.n
+// If extraplated position correct for edge effects
+// Input displacement from material a and material b, their difference, norm, and ndptr
+//		norm assummed to be normalized
+double CrackSurfaceContact::MaterialSeparation(Vector *dispbma,Vector *dispa,Vector *dispb,Vector *norm,NodalPoint *ndptr)
 {
-	// no forces needed if really perfect, was handled by contact momentum change
-	if(crackContactLaw[number]->IsPerfectTangentialInterface() && crackContactLaw[number]->IsPerfectNormalInterface())
-	{	return false;
+	// get dnorm and correct if needed
+	double dnorm;
+	if(mpmgrid.GetContactByDisplacements())
+		dnorm = dispbma->x*norm->x + dispbma->y*norm->y + dispbma->z*norm->z;
+	else
+	{	double r = mpmgrid.positionCutoff;
+		Vector dist = mpmgrid.GetPerpendicularDistance(norm,ndptr);
+		if(r>0.)
+		{	dnorm = dispbma->x*norm->x + dispbma->y*norm->y + dispbma->z*norm->z;
+			dnorm -= r * dist.x;
+		}
+		else
+		{	r = -r;
+			double pa = (dispa->x-ndptr->x)*norm->x + (dispa->y-ndptr->y)*norm->y + (dispa->z-ndptr->z)*norm->z;
+			double da = pa>0. ? 2.*pow(pa/(1.25*dist.x),r) - 1. : 1 - 2.*pow(-pa/(1.25*dist.x),r);
+			double pb = (dispb->x-ndptr->x)*norm->x + (dispb->y-ndptr->y)*norm->y + (dispb->z-ndptr->z)*norm->z;
+			double db = pb>0. ? 2.*pow(pb/(1.25*dist.x),r) - 1. : 1 - 2.*pow(-pb/(1.25*dist.x),r);
+			dnorm = (db-da)*dist.x;
+			//cout << "# (" << ndptr->x << "," << ndptr->y << ") " << pa << "," << pb << "," << da << "," << db << "," << dnorm << endl;
+		}
 	}
 	
-	// displacement or position
-	Vector da,db;
-	double mnode=1./cva->GetTotalMass(true);
-	Vector dispa=cva->GetCMDisplacement(np,true);
-	da.x=dispa.x*mnode;
-	da.y=dispa.y*mnode;
-	mnode=1./cvb->GetTotalMass(true);
-	Vector dispb=cvb->GetCMDisplacement(np,true);
-	db.x=dispb.x*mnode;
-	db.y=dispb.y*mnode;
-	
-	// normal vector (assumes 2D because this is for cracks only)
-	Vector norm = *unnorm;
-	ScaleVector(&norm,1./sqrt(norm.x*norm.x+norm.y*norm.y));
-			
-    // Angled path correction (2D only)
-	Vector dist = mpmgrid.GetPerpendicularDistance(&norm,np);
-    
-	// Area correction method (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
-	// dist weightings to allow for Tartan grid
-	double vola = cva->GetVolumeNonrigid(true),volb = cvb->GetVolumeNonrigid(true),voltot=vola+volb;
-	double surfaceArea = sqrt(2.0*fmin(vola*dist.y,volb*dist.z)*voltot)/dist.x;
-	
-    // If axisymmetric, multiply by radial position (vola, volb above were areas)
-    if(fmobj->IsAxisymmetric()) surfaceArea *= nodalx;
-	
-	// pass to imperfect interface law
-	return crackContactLaw[number]->GetCrackInterfaceForce(&da,&db,&norm,surfaceArea,dist.x,fImp,rawEnergy);
-}
-
-// return SEPARATED if not in contact or IN_CONTACT if now in contact
-// displacement is from a to b (i.e. dispbma = db-da)
-// norm assummed to be normalized, dvel assumed found using normalized norm too
-short CrackSurfaceContact::MaterialContact(Vector *dispbma,Vector *norm,double dvel,bool postUpdate,double deltime,NodalPoint *ndptr)
-{
-	// normal cod
-	double dnorm=(dispbma->x*norm->x + dispbma->y*norm->y + dispbma->z*norm->z)
-                    - mpmgrid.GetNormalCODAdjust(norm,ndptr);
-	
-	// on post update, adjust by normal velocity difference
-	if(postUpdate) dnorm+=dvel*deltime;
-	
-	// if current displacement positive then no contact
-	return (dnorm >= 0.) ? SEPARATED : IN_CONTACT ;
+	return dnorm;
 }
 
 #pragma mark ACCESSORS

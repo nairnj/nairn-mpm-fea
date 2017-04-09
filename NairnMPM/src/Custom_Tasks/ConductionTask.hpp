@@ -25,26 +25,28 @@ class ConductionTask : public TransportTask
 		static bool active,activeRamp,crackTipHeating,adiabatic,AVHeating;
 		static bool crackContactHeating,matContactHeating;
 		
+		// Task methods
+		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double,short,int);
+		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *,short,int);
+		virtual TransportTask *IncrementTransportRate(const NodalPoint *,double,double &,short,int) const;
+		virtual double IncrementValueExtrap(NodalPoint *,double,short,int) const;
+	
         // standard methods
 		virtual const char *TaskName(void);
 		virtual TransportTask *Initialize(void);
 		virtual TransportTask *TransportTimeStep(int,double,double *);
-		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double);
 		virtual TransportTask *Task1Reduction(NodalPoint *,NodalPoint *);
 		virtual TransportTask *GetNodalValue(NodalPoint *);
 		virtual void ImposeValueBCs(double);
 		virtual TransportTask *GetGradients(double);
-		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *);
 		virtual TransportTask *CopyForces(NodalPoint *,NodalPoint *);
 		virtual TransportTask *SetTransportForceBCs(double);
 		virtual void AddFluxCondition(NodalPoint *,double,bool);
 		virtual TransportTask *TransportRates(NodalPoint *,double);
-		virtual TransportTask *IncrementTransportRate(const NodalPoint *,double,double &) const;
 		virtual TransportTask *MoveTransportValue(MPMBase *,double,double) const;
 		virtual TransportTask *UpdateNodalValues(double);
-		virtual double IncrementValueExtrap(NodalPoint *,double) const;
 		virtual double GetDeltaValue(MPMBase *,double) const;
-		
+	
 		// custom methods
 		void AddCrackTipHeating(void);
 		void StartCrackTipHeating(CrackSegment *,Vector &,double);
@@ -52,6 +54,10 @@ class ConductionTask : public TransportTask
         // class methods
         static void ThermodynamicsOutput(void);
         static bool IsSystemIsolated(void);
+	
+	protected:
+		// contact heat flow
+		int crackGradT,materialGradT;
 };
 
 // globals

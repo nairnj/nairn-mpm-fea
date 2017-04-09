@@ -5,7 +5,10 @@
 	Created by John Nairn on May 12, 2016
 	Copyright (c) 2016 John A. Nairn, All rights reserved.
 
-	If there are rigid contact particles find there velocity in each time step
+	The tasks are:
+	* Check all rigid contact materials (nmpmsNR to nmpmsRC)
+	* Set the velocity only if a direction is controlled by a user-defined functions
+	  (those not by function can only be constant velocity and no need to change)
 ********************************************************************************/
 
 #include "stdafx.h"
@@ -27,10 +30,11 @@ SetRigidContactVelTask::SetRigidContactVelTask(const char *name) : MPMTask(name)
 //	and find grid momenta
 void SetRigidContactVelTask::Execute(void)
 {
-    // Set rigid BC contact material velocities separated (so mass and momentum loop can be parallel)
+    // Set rigid BC contact material velocities separately (so mass and momentum loop can be parallel)
 	// GetVectorSetting() uses globals and therefore can't be parallel
 	Vector newvel;
 	bool hasDir[3];
+//#pragma omp parallel for
 	for(int p=nmpmsNR;p<nmpmsRC;p++)
 	{   MPMBase *mpmptr = mpm[p];
 		const RigidMaterial *matID = (RigidMaterial *)theMaterials[mpm[p]->MatID()];

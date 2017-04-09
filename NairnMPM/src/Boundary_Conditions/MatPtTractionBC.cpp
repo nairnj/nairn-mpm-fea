@@ -12,6 +12,8 @@
 #include "Elements/ElementBase.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 #ifdef LOG_PROGRESS
 #include "System/ArchiveData.hpp"
 #endif
@@ -55,6 +57,11 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
     // condition value
 	MPMBase *mpmptr = mpm[ptNum-1];
 	double tmag = BCValue(bctime);
+	Vector theFrc;
+
+	// Particle information about field
+	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
+	int matfld = matID->GetField();									// material velocity field
 	
 	// get corners and direction from material point
 	// note 3D has four corners on face and 2D has 2
@@ -74,10 +81,6 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 #endif
     int numCnds = CompactCornerNodes(numDnds,corners,cElem,ratio,nds,fn);
     
-    // Particle information about field
-	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
-	int matfld = matID->GetField();									// material velocity field
-		
 	// get crack velocity fields, if they are needed
 	int numnds = 0,*snds=NULL;
 #ifdef CONST_ARRAYS
@@ -88,24 +91,25 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 	if(firstCrack!=NULL)
 	{	const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
 #ifdef CONST_ARRAYS
-		double fn[MAX_SHAPE_NODES];
+		double fnDummy[MAX_SHAPE_NODES];
 #else
-		double fn[maxShapeNodes];
+		double fnDummy[maxShapeNodes];
 #endif	
+		// The list of GIMP nodes will let code below associate a node with a velocity field
+		// Actually shape functions are not needed (but function needs them to find non-zero nodes)
 		snds = sndsArray;
-		elref->GetShapeFunctions(fn,&snds,mpmptr);
+		elref->GetShapeFunctions(fnDummy,&snds,mpmptr);
 		numnds = snds[0];
 	}
 		
     // add force to each node
-    Vector theFrc;
     for(int i=1;i<=numCnds;i++)
     {   // skip empty nodes
         if(nd[nds[i]]->NodeHasNonrigidParticles())
         {   // external force vector - tscaled has direction, surface area, and factor 1/2 (2D) or 1/4 (3D) to average the nodes
             CopyScaleVector(&theFrc,&tscaled,tmag*fn[i]);
 			
-			// Find the matching field
+			// Find the matching velocity field
 			if(firstCrack!=NULL)
 			{	for(int ii=1;ii<=numnds;ii++)
 				{	if(nds[i] == snds[ii])

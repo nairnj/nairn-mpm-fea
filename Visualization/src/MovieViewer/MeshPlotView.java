@@ -124,6 +124,8 @@ public class MeshPlotView extends JPanel
 			{	for(i=0;i<resDoc.gridBCs.size();i++)
 				{	(resDoc.gridBCs.get(i)).stroke(this,resDoc);
 				}
+				g2Loc.setColor(meshLineColor);
+				setLineWidth(ElementBase.lineWidth);
 			}
 		}
 		
@@ -175,6 +177,7 @@ public class MeshPlotView extends JPanel
 		{	for(i=0;i<resDoc.particleBCs.size();i++)
 			{	(resDoc.particleBCs.get(i)).stroke(this,resDoc);
 			}
+			setLineWidth((float)1.);
 		}
 		
 		// material point numbers

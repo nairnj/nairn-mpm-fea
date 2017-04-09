@@ -14,6 +14,8 @@
 
 #define _DATA_TYPES_
 
+class Matrix3;
+
 // vector 3D
 typedef struct {
     double x;
@@ -165,12 +167,22 @@ double DotVectors(const Vector *,const Vector *);
 double DotVectors2D(const Vector *,const Vector *);
 void PrintVector(const char *,const Vector *);
 
+Tensor MakeTensor(double, double, double, double, double, double);
+Tensor MakeTensor2D(double, double, double, double);
 Tensor *ZeroTensor(Tensor *);
 Tensor *AddTensor(Tensor *,Tensor *);
 Tensor *ScaleTensor(Tensor *,double);
+double DotTensors2D(const Tensor *, const Tensor *);
 double Tensor_i(Tensor *,int);
 double Tensor_ij(Tensor *,int,int);
 void PrintTensor(const char *,Tensor *);
+
+#ifdef MPM_CODE
+double DotTensors(const Tensor *, const Tensor *);
+Vector TensorEigenvalues(Tensor *,bool,bool);
+Matrix3 TensorToMatrix(Tensor *,bool);
+Matrix3 TensorToMatrix2D(Tensor *,bool);
+#endif
 
 unsigned charConvertToLower(unsigned char);
 int CIstrcmp(const char *, const char *);

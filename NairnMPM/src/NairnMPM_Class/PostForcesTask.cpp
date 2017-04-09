@@ -5,16 +5,15 @@
 	Created by John Nairn on March 8, 2015
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
 
-	This task has various task that are done after extrapolating
-	forces to the grid:
-
-	1. Add traction BC nodal forces
-	2. Add crack tractions to nodal forces
-	3. Add crack tip heating
-	4. Add imperfectinterface forces to nodes
-	5. Add gravity and body forces
-	6. Make nodes with velocity BCs have consistent forces
-	7. Make transport tasks forces consistent with transport nodal BCs
+	Tasks done after extrapolating forces to the grid:
+	-------------------------------------------------
+	* Add traction BC nodal forces
+	* Add crack tractions to nodal forces
+	* Add crack tip heating to conduction force
+	* Add imperfectinterface forces to nodes
+	* Add gravity and body forces
+	* Make nodes with velocity BCs have consistent forces
+	* Make transport tasks forces consistent with transport nodal BCs
 ********************************************************************************/
 
 #include "stdafx.h"
@@ -23,8 +22,6 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
-#include "Nodes/MaterialInterfaceNode.hpp"
-#include "Cracks/CrackNode.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
@@ -56,11 +53,6 @@ void PostForcesTask::Execute(void)
 	// Add crack tip heating adds to conduction force
 	if(conduction) conduction->AddCrackTipHeating();
 	
-	// Add interface forces to velocity fields and track total interface energy
-    NodalPoint::interfaceEnergy=0.;
-    CrackNode::CrackInterfaceOnKnownNodes();
-    MaterialInterfaceNode::MaterialInterfaceOnKnownNodes();
-    
 	// Add gravity and body forces (if any are present)
 	// Note: If ever need to implement body force that depend on particle state (stress, strain, etc.)
 	//			then move the body force addition into GridForcesTask loop where gravity is commented out
@@ -72,6 +64,12 @@ void PostForcesTask::Execute(void)
 			bodyFrc.GetGridBodyForce(&gridBodyForce,ndptr,mtime);
 			ndptr->AddGravityAndBodyForceTask3(&gridBodyForce);
 		}
+	}
+
+	// restore nodal momenta
+	for(int i=1;i<=nnodes;i++)
+	{	NodalPoint *ndptr = nd[i];
+		ndptr->RestoreMomenta();
 	}
 	
     // Impose BCs on ftot to get correct grid BCs for velocity

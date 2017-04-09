@@ -61,7 +61,7 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 	// Since F is constant, only need integral which is done by CPDI methods
 	//		which has be generalized to work for GIMP too
 	// We use X_DIRECTION for bcDIR for efficiency. For Silent BC, change to
-	//      Normal direction to all caculation of n
+	//      Normal direction to all calculation of n
 	Vector fluxMag;
 	ZeroVector(&fluxMag);
     int bcDir=X_DIRECTION;

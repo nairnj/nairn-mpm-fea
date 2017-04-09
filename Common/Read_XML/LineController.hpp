@@ -16,13 +16,16 @@
 #include "Read_XML/ShapeController.hpp"
 
 class CommonReadHandler;
+#ifdef MPM_CODE
+	class MPMBase;
+#endif
 
 class LineController : public ShapeController
 {
     public:
 	
 		// contructors
-		LineController(int);
+		LineController(int,bool);
 		LineController(int,double,double,double,double,double);
 	
         // initialize

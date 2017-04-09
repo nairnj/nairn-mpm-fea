@@ -5,7 +5,7 @@
 	Base class for all contact laws and itselt if subcalss of material
 	By itself handle ignore contact
 
-	Created by John Nairn, Oct 24, 3015.
+	Created by John Nairn, Oct 24, 2015.
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
@@ -15,7 +15,7 @@
 #include "Materials/CoulombFriction.hpp"
 #include "Materials/LinearInterface.hpp"
 
-#pragma mark NewMaterial::Constructors and Destructors
+#pragma mark ContactLaw::Constructors and Destructors
 
 // Constructors
 ContactLaw::ContactLaw() {}
@@ -32,14 +32,19 @@ ContactLaw::ContactLaw(char *matName) : MaterialBase(matName)
 	autoID = -1;
 }
 
-#pragma mark NewMaterial::Initialization
+#pragma mark ContactLaw::Initialization
 
 // Read material properties by name (in xName). Set input to variable type
 // (DOUBLE_NUM or INT_NUM) and return pointer to the class variable
 // (cast as a char *)
 char *ContactLaw::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
-	// This has no material properties
+	// This has no material properties, but ignore rho if there
+	// ignore rho if there
+	if(strcmp(xName,"rho")==0)
+	{	input = NO_INPUT;
+		return (char *)&rho;
+	}
 	
 	// does not all any from MaterialBase
     return((char *)NULL);
@@ -91,29 +96,16 @@ bool ContactLaw::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double do
 // Imperfect interfaces are calculated and always check if force is too high as determined by whether or not
 //      the material's position is forced to pass the center of mass position by the calculated force
 // Outputs are fImp, rawEnergy, and possible changed depPi. Rest are inputs, tandDel, deln, delt refer to cod vector
-bool ContactLaw::GetInterfaceForcesForNode(Vector *norm,Vector *fImp,double *rawEnergy,
-								double surfaceArea,Vector *delPi,double dotn,bool inContact,bool postUpdate,double mred,
-								Vector *tangDel,double deln,double delt) const
-{
-	return false;
-}
-
-// Get interface force for crack with internal interface
-// da and db are displacements above and below the crack, and norm is normal vector (normalized)
-// surfaceArea is contact surface area
-// Output is force is fImp and renerge in rawEnergy
-bool ContactLaw::GetCrackInterfaceForce(Vector *da,Vector *db,Vector *norm,double surfaceArea,double dist,
-											 Vector *fImp,double *rawEnergy) const
-{
-	return false;
-}
+void ContactLaw::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEnergy,double surfaceArea,Vector *delPi,
+										   double dotn,double mred,Vector *tangDel,double deln,double delt,double hperp) const
+{}
 
 // Return Sslide Ac dt = f(N) Ac dt
 // For use by frictional contact only
-// contactArea only provided is law reports it needs it in FrictionLawNeedsContactArea()
+// contactArea only provided is law reports it needs it in ContactLawNeedsContactArea()
 // inContact will be true unless the law request to here about non-contact conditions
-double ContactLaw::GetSslideAcDt(double NAcDt,double SStickAcDt,double Ac,
-								 double mred,double contactArea,bool &inContact,double deltime) const
+double ContactLaw::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred,
+								 double contactArea,bool &inContact,double deltime) const
 {	return 0.;
 }
 
@@ -135,16 +127,17 @@ bool ContactLaw::ContactIsDone(bool inContact) const
 	return false;
 }
 
-// Give details aobut frictional contact
+// Give details about frictional contact
 bool ContactLaw::IsFrictionalContact(void) const { return !IsImperfectInterface(); }
-bool ContactLaw::FrictionLawNeedsContactArea(void) const { return false; }
+
+// All interfaces need the law, if friction law needs it, must override and return true
+bool ContactLaw::ContactLawNeedsContactArea(void) const { return IsImperfectInterface(); }
+
+// only this base law, rest should override and return false
 bool ContactLaw::IgnoreContact(void) const { return true; }
 
-// Describee type of imperfect interface
+// Describe type of imperfect interface
 bool ContactLaw::IsImperfectInterface(void) const { return false; }
-bool ContactLaw::IsPerfectTangentialInterface(void) const { return false; }
-bool ContactLaw::IsPerfectNormalInterface(bool inContact) const { return false; }
-bool ContactLaw::IsPerfectNormalInterface(void) const { return false; }
 
 #pragma mark ContactLaw::Class Methods
 

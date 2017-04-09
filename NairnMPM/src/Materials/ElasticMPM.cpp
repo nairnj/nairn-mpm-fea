@@ -126,7 +126,7 @@ void Elastic::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 // When stress are found, they are rotated back to the global axes (using Rtot and dR)
 // Similar, strain increments are rotated back to find work energy (done in global system)
 void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matrix3 Rtot,Matrix3 dR,
-									   Matrix3 *Rnmatot,int np,void *properties,ResidualStrains *res) const
+									   Matrix3 *Rnm1tot,int np,void *properties,ResidualStrains *res) const
 {
 	// effective strains
 	double dvxxeff = de(0,0)-er(0,0);
@@ -136,31 +136,27 @@ void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matri
 	
     // save initial stresses
 	Tensor *sp=mptr->GetStressTensor();
-    //Tensor st0=*sp;
-	
+ 
 	// stress increments
 	// cast pointer to material-specific data
 	ElasticProperties *p = GetElasticPropertiesPointer(properties);
+	Tensor dsig;
 	if(np==THREED_MPM)
 	{	double dgamyz = 2.*de(1,2);
 		double dgamxz = 2.*de(0,2);
 		
+		// get dsigma
+		dsig.xx = p->C[0][0] * dvxxeff + p->C[0][1] * dvyyeff + p->C[0][2] * dvzzeff;
+		dsig.yy = p->C[1][0] * dvxxeff + p->C[1][1] * dvyyeff + p->C[1][2] * dvzzeff;
+		dsig.zz = p->C[2][0] * dvxxeff + p->C[2][1] * dvyyeff + p->C[2][2] * dvzzeff;
+		dsig.yz = p->C[3][3]*dgamyz;
+		dsig.xz = p->C[4][4]*dgamxz;
+		dsig.xy = p->C[5][5]*dgamxy;
+
 		// update sigma = dR signm1 dRT + Rtot dsigma RtotT
-		double dsigyz = p->C[3][3]*dgamyz;
-		double dsigxz = p->C[4][4]*dgamxz;
-		double dsigxy = p->C[5][5]*dgamxy;
-		Matrix3 dsig(p->C[0][0]*dvxxeff + p->C[0][1]*dvyyeff + p->C[0][2]*dvzzeff, dsigxy, dsigxz,
-					 dsigxy, p->C[1][0]*dvxxeff + p->C[1][1]*dvyyeff + p->C[1][2]*dvzzeff, dsigyz,
-					 dsigxz, dsigyz, p->C[2][0]*dvxxeff + p->C[2][1]*dvyyeff + p->C[2][2]*dvzzeff);
-		Matrix3 dsigrot = dsig.RMRT(Rtot);
-		Matrix3 stn(sp->xx,sp->xy,sp->xz,sp->xy,sp->yy,sp->yz,sp->xz,sp->yz,sp->zz);
-		Matrix3 str = stn.RMRT(dR);
-		sp->xx = str(0,0) + dsigrot(0,0);
-		sp->yy = str(1,1) + dsigrot(1,1);
-		sp->zz = str(2,2) + dsigrot(2,2);
-		sp->xy = str(0,1) + dsigrot(0,1);
-		sp->xz = str(0,2) + dsigrot(0,2);
-		sp->yz = str(1,2) + dsigrot(1,2);
+		dsig = Rtot.RVoightRT(&dsig, true, false);
+		*sp = dR.RVoightRT(sp, true, false);
+		AddTensor(sp, &dsig);
 		
 		// stresses are in global coordinates so need to rotate strain and residual
 		// strain to get work energy increment per unit mass (dU/(rho0 V0))
@@ -170,35 +166,25 @@ void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matri
 											  + 2.*(sp->yz*derot(1,2) + sp->xz*derot(0,2) + sp->xy*derot(0,1)),
 											 sp->xx*errot(0,0) + sp->yy*errot(1,1) + sp->zz*errot(2,2)
 											  + 2.*(sp->yz*errot(1,2) + sp->xz*errot(0,2) + sp->xy*errot(0,1)) );
-		//mptr->AddWorkEnergyAndResidualEnergy(0.5*((st0.xx+sp->xx)*derot(0,0) + (st0.yy+sp->yy)*derot(1,1)
-		//										  + (st0.zz+sp->zz)*derot(2,2)) + (st0.yz+sp->yz)*derot(1,2)
-		//										  + (st0.xz+sp->xz)*derot(0,2) + (st0.xy+sp->xy)*derot(0,1),
-		//									 0.5*((st0.xx+sp->xx)*errot(0,0) + (st0.yy+sp->yy)*errot(1,1)
-		//										  + (st0.zz+sp->zz)*errot(2,2)) + (st0.yz+sp->yz)*errot(1,2)
-		//										  + (st0.xz+sp->xz)*errot(0,2) + (st0.xy+sp->xy)*errot(0,1));
 	}
 	else
 	{	// find stress increment
 		// this does xx, yy, and xy only. zz done later if needed
-		double dsxx,dsyy;
 		if(np==AXISYMMETRIC_MPM)
-		{	dsxx = p->C[1][1]*dvxxeff + p->C[1][2]*dvyyeff + p->C[4][1]*dvzzeff ;
-			dsyy = p->C[1][2]*dvxxeff + p->C[2][2]*dvyyeff + p->C[4][2]*dvzzeff;
+		{	dsig.xx = p->C[1][1]*dvxxeff + p->C[1][2]*dvyyeff + p->C[4][1]*dvzzeff ;
+			dsig.yy = p->C[1][2]*dvxxeff + p->C[2][2]*dvyyeff + p->C[4][2]*dvzzeff;
 		}
 		else
-		{	dsxx = p->C[1][1]*dvxxeff + p->C[1][2]*dvyyeff;
-			dsyy = p->C[1][2]*dvxxeff + p->C[2][2]*dvyyeff;
+		{	dsig.xx = p->C[1][1]*dvxxeff + p->C[1][2]*dvyyeff;
+			dsig.yy = p->C[1][2]*dvxxeff + p->C[2][2]*dvyyeff;
 		}
-		double dsxy = p->C[3][3]*dgamxy;
+		dsig.xy = p->C[3][3]*dgamxy;
+		dsig.zz = 0.;
 		
 		// update sigma = dR signm1 dRT + Rtot dsigma RtotT
-		Matrix3 dsig(dsxx,dsxy,dsxy,dsyy,0.);
-		Matrix3 dsigrot = dsig.RMRT(Rtot);
-		Matrix3 stn(sp->xx,sp->xy,sp->xy,sp->yy,sp->zz);
-		Matrix3 str = stn.RMRT(dR);
-		sp->xx = str(0,0) + dsigrot(0,0);
-		sp->yy = str(1,1) + dsigrot(1,1);
-		sp->xy = str(0,1) + dsigrot(0,1);
+		dsig = Rtot.RVoightRT(&dsig, true, true);
+		*sp = dR.RVoightRT(sp, true, true);
+		AddTensor(sp, &dsig);
 		
 		// stresses are in global coordinate so need to rotate strain and residual
 		// strain to get work energy increment per unit mass (dU/(rho0 V0))
@@ -209,15 +195,12 @@ void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matri
 		// work and residual strain energy increments and sigma or F in z direction
 		double workEnergy = sp->xx*derot(0,0) + sp->yy*derot(1,1) + 2.0*sp->xy*derot(0,1);
 		double resEnergy = sp->xx*errot(0,0) + sp->yy*errot(1,1) + 2.*sp->xy*errot(0,1);
-		//double workEnergy = 0.5*((st0.xx+sp->xx)*derot(0,0) + (st0.yy+sp->yy)*derot(1,1)) + (st0.xy+sp->xy)*derot(0,1);
-		//double resEnergy = 0.5*((st0.xx+sp->xx)*errot(0,0) + (st0.yy+sp->yy)*errot(1,1)) + (st0.xy+sp->xy)*errot(0,1);
 		if(np==PLANE_STRAIN_MPM)
 		{	// need to add back terms to get from reduced cte to actual cte
 			sp->zz += p->C[4][1]*(dvxxeff+p->alpha[5]*ezzr) + p->C[4][2]*(dvyyeff+p->alpha[6]*ezzr) - p->C[4][4]*ezzr;
 			
 			// extra residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
 			resEnergy += sp->zz*ezzr;
-			//resEnergy += 0.5*(st0.zz+sp->zz)*ezzr;
 		}
 		else if(np==PLANE_STRESS_MPM)
 		{	// zz deformation
@@ -230,8 +213,6 @@ void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matri
 			// extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
 			workEnergy += sp->zz*de(2,2);
 			resEnergy += sp->zz*ezzr;
-			//workEnergy += 0.5*(st0.zz+sp->zz)*de(2,2);
-			//resEnergy += 0.5*(st0.zz+sp->zz)*ezzr;
 		}
 		mptr->AddWorkEnergyAndResidualEnergy(workEnergy, resEnergy);
 		

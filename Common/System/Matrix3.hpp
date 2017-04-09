@@ -29,6 +29,8 @@ class Matrix3
         // read only methods
         Matrix3 Transpose(void) const;
 		Matrix3 RMRT(Matrix3 &) const;
+		Tensor RVoightRT(Tensor *,bool,bool) const;
+		Tensor RTVoightR(Tensor *,bool,bool) const;
 		Matrix3 RTMR(Matrix3 &) const;
 		Matrix3 Exponential(int) const;
 		Vector Times(Vector *) const;

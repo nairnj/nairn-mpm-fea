@@ -22,7 +22,6 @@
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "Nodes/CrackVelocityFieldMulti.hpp"
 #include "Nodes/MatVelocityField.hpp"
-#include "Nodes/MaterialInterfaceNode.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
 #include "Materials/RigidMaterial.hpp"
@@ -71,12 +70,14 @@ void NodalPoint::InitializeForTimeStep(void)
 			cvf[i]->Zero(0,0,TRUE);
 	}
 	
-	// for conduction and diffusion
+	// for diffusion
 	gVolume=0.;
 	gConcentration=0.;
+	fdiff=0.;
+	
+	// for conduction
 	gTemperature=0.;
 	gMpCp=0.;
-	fdiff=0.;
 	fcond=0.;
 }
 
@@ -394,7 +395,7 @@ void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shap
 			cvf[vfld]->AddDisplacement(matfld,fnmp,&mptr->pos);
 		}
 		
-		// add dilated volume, only used by transport tasks, contact, and imperfect interfaces
+		// add dilated volume, only used for contact calculations
 		if(nonRigid)
 			cvf[vfld]->AddVolume(matfld,shape*mptr->GetVolume(DEFORMED_AREA));
 		else
@@ -413,7 +414,7 @@ void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shap
         // transport calculations
         TransportTask *nextTransport=transportTasks;
         while(nextTransport!=NULL)
-            nextTransport=nextTransport->Task1Extrapolation(this,mptr,shape);
+            nextTransport=nextTransport->Task1Extrapolation(this,mptr,shape,vfld,matfld);
 	}
 	else
 	{	// for rigid particles, let the crack velocity field know
@@ -499,6 +500,16 @@ void NodalPoint::CalcTotalMassAndCount(void)
 	for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
 			nodalMass += cvf[i]->GetTotalMassAndCount();
+	}
+}
+
+// After extrapolating forces, restore the initially extrapoloated momenta so
+// the momentum update will correspond to force need to move particle from
+// current position to position determined by BCs, contact, and interfaces
+void NodalPoint::RestoreMomenta(void)
+{	for(int i=0;i<maxCrackFields;i++)
+	{	if(CrackVelocityField::ActiveField(cvf[i]))
+			cvf[i]->RestoreMomenta();
 	}
 }
 
@@ -598,7 +609,7 @@ void NodalPoint::CopyGridForces(NodalPoint *real)
 }
 
 // Add to internal force spread out over materials for same acceleration on each
-// Only called by AddTractionForce() and CrackInterfaceForce()
+// Only called by AddTractionForce()
 void NodalPoint::AddFtotSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFtotSpreadTask3(&f); }
 
 // Add to traction force (g-mm/sec^2)
@@ -1295,16 +1306,13 @@ void NodalPoint::AddGetContactForce(bool clearForces,Vector *forces,double stepS
 #pragma mark MATERIAL CONTACT
 
 // Called in multimaterial mode to check contact at nodes with multiple materials
-// On first call in time step, first and last on pointers to MaterialInterfaceNode * because those
-//		objects are created for later interface calculations
-// postUpdate is TRUE when called between momentum update and particle update and otherwise is FALSE
 // throws std::bad_alloc
-void NodalPoint::MaterialContactOnNode(double deltime,int callType,MaterialInterfaceNode **first,MaterialInterfaceNode **last)
+void NodalPoint::MaterialContactOnNode(double deltime,int callType)
 {
 	// check each crack velocity field on this node
 	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->MaterialContactOnCVF(this,deltime,callType,first,last);
+			cvf[i]->MaterialContactOnCVF(this,deltime,callType);
 	}
 }
 
@@ -1325,30 +1333,6 @@ void NodalPoint::GetMatVolumeGradient(int matnum,Vector *grad) const
     }
 }
 
-// This node is known to have imperfect interface with forces in cvf[vfld] from material mati
-// to matipaired (second material with the max volume)
-void NodalPoint::MaterialInterfaceForce(MaterialInterfaceNode *mmnode)
-{	
-    // recall interface response from material interface node
-    Vector fImpInt;
-    double energy = mmnode->GetInterfaceTraction(&fImpInt);
-    
-    // add total force (in g mm/sec^2) to material field
-    int vfld,mati,matipaired;
-    mmnode->GetFieldInfo(&vfld, &mati, &matipaired);
-    cvf[vfld]->AddFtotTask3(mati,&fImpInt);
-    
-    // add negative force to paired material (in a pair)
-    if(matipaired>=0)
-    {   ScaleVector(&fImpInt, -1.);
-        cvf[vfld]->AddFtotTask3(matipaired,&fImpInt);
-    }
-    
-    // add interface energy in units g-mm^2/sec^2 (multiply by 1e-9 to get J - kg-m^2/sec^2)
-    // but only once for pair of interface nodes
-    interfaceEnergy+=energy;
-}
-
 #pragma mark CRACK SURFACE CONTACT
 
 // Look for crack contact and adjust accordingly.
@@ -1357,7 +1341,7 @@ void NodalPoint::MaterialInterfaceForce(MaterialInterfaceNode *mmnode)
 // poastUpdate is only TRUE when called in the momentum update (and the expectation is that
 //      the forces at that time are the contact forces and used for friction)
 // throws std::bad_alloc
-void NodalPoint::CrackContact(bool postUpdate,double deltime,CrackNode **first,CrackNode **last)
+void NodalPoint::CrackContact(int callType,double deltime,CrackNode **first,CrackNode **last)
 {	// Nothing to do if not near a crack contact surface: Possible fields are
 	//  1. Those with no contacts: [0], [1], [3], [0]&[3], [1]&[2]
 	//  2. Those with contacts: [0]&[1], [1]&[3], [0]&[1]&[2], [0]&[1]&[3], [1]&[2]&[3], and [0]&[1]&[2]&[3]
@@ -1385,7 +1369,7 @@ void NodalPoint::CrackContact(bool postUpdate,double deltime,CrackNode **first,C
 	{	cnum=cvf[1]->crackNumber(FIRST_CRACK);
 		if(contact.HasContact(cnum))
 		{	cabove=(cvf[1]->location(FIRST_CRACK)==ABOVE_CRACK) ? 1 : 0;
-			AdjustContact(cabove,1-cabove,&(cvf[1]->norm[FIRST_CRACK]),cnum,postUpdate,deltime);
+			AdjustContact(cabove,1-cabove,&(cvf[1]->norm[FIRST_CRACK]),cnum,callType,deltime);
 		}
 	}
 	
@@ -1394,17 +1378,17 @@ void NodalPoint::CrackContact(bool postUpdate,double deltime,CrackNode **first,C
 	{	cnum=cvf[2]->crackNumber(FIRST_CRACK);
 		if(contact.HasContact(cnum))
 		{	cabove=(cvf[2]->location(FIRST_CRACK)==ABOVE_CRACK) ? 2 : 0;
-			AdjustContact(cabove,2-cabove,&(cvf[2]->norm[FIRST_CRACK]),cnum,postUpdate,deltime);
+			AdjustContact(cabove,2-cabove,&(cvf[2]->norm[FIRST_CRACK]),cnum,callType,deltime);
 		}
 	}
 	
 	// with [3]
 	if(has3)
 	{	// between [1] & [3]
-		if(has1) CrackContactThree(1,postUpdate,deltime);
+		if(has1) CrackContactThree(1,callType,deltime);
 
 		// between [2] & [3]
-		if(has2) CrackContactThree(2,postUpdate,deltime);
+		if(has2) CrackContactThree(2,callType,deltime);
 	}
 	
 }
@@ -1415,7 +1399,7 @@ void NodalPoint::CrackContact(bool postUpdate,double deltime,CrackNode **first,C
 //    crack in [single]. In other words, [single] acts like field [0] relative
 //    to field [3] crossing that other crack
 // Caller must verify that [3] is not empty
-void NodalPoint::CrackContactThree(int single,bool postUpdate,double deltime)
+void NodalPoint::CrackContactThree(int single,int callType,double deltime)
 {
 	// get common crack
 	int cnum=cvf[single]->crackNumber(FIRST_CRACK);
@@ -1447,27 +1431,24 @@ void NodalPoint::CrackContactThree(int single,bool postUpdate,double deltime)
 	}
 	
 	// adjust contact
-	AdjustContact(cabove,cbelow,&(cvf[3]->norm[otherCrack]),otherCrack,postUpdate,deltime);
+	AdjustContact(cabove,cbelow,&(cvf[3]->norm[otherCrack]),otherCrack,callType,deltime);
 }
 
 // Look for crack contact and adjust accordingly - a for field above and b for field below and both
 // fields must be verified as present (1 or more points)
-void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,bool postUpdate,double deltime)
+void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,int callType,double deltime)
 {
 	// see if in contact and get change in momentum
     Vector delP;
 	int inContact;
-	bool changeMomentum = contact.GetDeltaMomentum(this,&delP,cvf[a],cvf[b],norm,crackNumber,postUpdate,deltime,&inContact);
+	bool changeMomentum = contact.GetDeltaMomentum(this,&delP,cvf[a],cvf[b],norm,crackNumber,callType,deltime,&inContact);
+	bool postUpdate = (callType==UPDATE_MOMENTUM_CALL);
 	
 	// exit if no momentum change
 	if(!changeMomentum) return;
 	
-	// on post update contact, do not change nodes with boundary conditions
-	if(postUpdate && (fixedDirection&XYZ_SKEWED_DIRECTION))
-	{	if(fixedDirection&X_DIRECTION) delP.x=0.;
-		if(fixedDirection&Y_DIRECTION) delP.y=0.;
-		if(fixedDirection&Z_DIRECTION) delP.z=0.;
-	}
+	// do not change nodes with boundary conditions (used to only do if postUpdate true too)
+	AdjustDelPiForBCs(&delP);
 	
     // change momenta
 	cvf[a]->ChangeCrackMomentum(&delP,postUpdate,deltime);
@@ -1475,109 +1456,24 @@ void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,bool
     cvf[b]->ChangeCrackMomentum(CopyScaleVector(&delPb,&delP,-1.),postUpdate,deltime);
 }
 
-// Look for crack contact and adjust accordingly
-void NodalPoint::CrackInterfaceForce(void)
-{	// Nothing to do if not near a crack contact surface: Possible fields are
-	//  1. Those with no contacts: [0], [1], [3], [0]&[3], [1]&[2]
-	//  2. Those with contacts: [0]&[1], [1]&[3], [0]&[1]&[2], [0]&[1]&[3], [1]&[2]&[3], and [0]&[1]&[2]&[3]
-	//  3. Never occurs [2], [0]&[2], [2]&[3], [0]&[2]&[3]
-	
-	// skip those with no contact
-	// SCWarning - has2 and has3 should be set to false in single crack mode
-	bool has1=CrackVelocityField::ActiveNonrigidField(cvf[1]);
-	bool has2=CrackVelocityField::ActiveNonrigidField(cvf[2]);
-	if(!has1 && !has2) return;		// True for [0], [3], and [0]&[3]
-	bool has0=CrackVelocityField::ActiveNonrigidField(cvf[0]);
-	bool has3=CrackVelocityField::ActiveNonrigidField(cvf[3]);
-	if(!has0 && !has3) return;	// True for [1] and [1]&[2]
-    
-	
-	// between [0] and [1] across first crack
-	int cnum,cabove;
-	if(has0 && has1)
-	{	cnum=cvf[1]->crackNumber(FIRST_CRACK);
-		if(contact.IsImperfect(cnum))
-		{	cabove=(cvf[1]->location(FIRST_CRACK)==ABOVE_CRACK) ? 1 : 0;
-			AddInterfaceForceOnCrack(cabove,1-cabove,&(cvf[1]->norm[FIRST_CRACK]),cnum);
-		}
-	}
-			
-	// between [0] and [2] across second crack
-	if(has2 && has0)
-	{	cnum=cvf[2]->crackNumber(FIRST_CRACK);
-		if(contact.IsImperfect(cnum))
-		{	cabove=(cvf[2]->location(FIRST_CRACK)==ABOVE_CRACK) ? 2 : 0;
-			AddInterfaceForceOnCrack(cabove,2-cabove,&(cvf[2]->norm[FIRST_CRACK]),cnum);
-		}
-	}
-	
-	// with [3]
-	if(has3)
-	{	// between [1] & [3]
-		if(has1) InterfaceForceInteractingCracks(1);
-	
-		// between [2] & [3]
-		if(has2) InterfaceForceInteractingCracks(2);
-	}
-}
-
-// Interface force between field [single] and field [3] when both fields are present
-// We expect [3] to be on same side as the crack for [single], thus do contact
-//    between [single] and [3] for the crack in [3] that does not match the
-//    crack in [single]. In other words, [single] acts like field [0] relative
-//    to field [3] crossing that other crack
-// Caller must verify that [3] is not emptuy
-void NodalPoint::InterfaceForceInteractingCracks(int single)
+// Adjust a momentum change to not change momentum in the direction of a grid velocity boundary conditions
+// If node has BC in nBC direction, it would better to set only that direction to zero or to use:
+//      delPi (adjust) = delPi - delPi.nBC
+// But we do not know nBC from node info only and the same node may have more than one
+//   BC in different directions (although multiple BCs should be orthogonal). The following
+//   changes is correct for any combination of BCs only in cartesian directions (i.e., it assumes
+//   nBc = (1,0,0), (0,1,0), or (0,0,1). This code will not be correct for skewed conditions on
+//   node that have dome different nBC.
+// Any option is to set skew BC flags too (if ever needed), but skewedBCs are uncommon
+void NodalPoint::AdjustDelPiForBCs(Vector *delPi) const
 {
-	// get common crack
-	int cnum=cvf[single]->crackNumber(FIRST_CRACK);
+	// exit if no velocity BCs
+	if(!fixedDirection&XYZ_SKEWED_DIRECTION) return;
 	
-	// We expect [3] to be on opposite side of crack that DOES NOT match [single]
-	// find the other crack
-	int otherCrack;
-	if(cnum == cvf[3]->crackNumber(FIRST_CRACK))
-		otherCrack = SECOND_CRACK;
-	else if(cnum == cvf[3]->crackNumber(SECOND_CRACK))
-		otherCrack = FIRST_CRACK;
-	else
-	{	// Field [3] for two other cracks, so skip this calculation
-		return;
-	}
-	
-	// skip if otherCrack not an interface
-	if(!contact.IsImperfect(otherCrack)) return;
-	
-	// get above field
-	int cabove,cbelow;
-	if(cvf[3]->location(otherCrack)==ABOVE_CRACK)
-	{	cabove = 3;
-		cbelow = single;
-	}
-	else
-	{	cabove=single;
-		cbelow=3;
-	}
-	
-	// do interface force
-	AddInterfaceForceOnCrack(cabove,cbelow,&(cvf[3]->norm[otherCrack]),otherCrack);
-}
-
-// Look for cracks as imperfect interfaces and adjust accordingly - a for field above and b for field below
-// fields must be verified as present (1 or more points)
-void NodalPoint::AddInterfaceForceOnCrack(short a,short b,Vector *norm,int crackNumber)
-{	Vector fImpInt;
-	
-    // Use contact laws to change momenta - returns TRUE or FALSE if adjustment was made
-	double rawEnergy;
-	if(!contact.GetInterfaceForceOnCrack(this,&fImpInt,cvf[a],cvf[b],norm,crackNumber,&rawEnergy,x))
-		return;
-	
-	// add total force (in g mm/sec^2)
-	AddFtotSpreadTask3(a,MakeVector(fImpInt.x,fImpInt.y,0.));
-	AddFtotSpreadTask3(b,MakeVector(-fImpInt.x,-fImpInt.y,0.));
-	
-	// add interface energy in units g-mm^2/sec^2 (multiply by 1e-9 to get J - kg-m^2/sec^2)
-	interfaceEnergy += rawEnergy;
+	// subtraction delPi.n for three possible BC normals
+	if(fixedDirection&X_DIRECTION) delPi->x = 0.;
+	if(fixedDirection&Y_DIRECTION) delPi->y = 0.;
+	if(fixedDirection&Z_DIRECTION) delPi->z = 0.;
 }
 
 #pragma mark ACCESSORS

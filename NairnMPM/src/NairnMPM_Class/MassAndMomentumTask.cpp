@@ -5,17 +5,22 @@
 	Created by John Nairn on July 22, 2010
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
  
-	This first MPM task projects mass and momentum to grid
- 
-	For each non-rigid particle:
-		1. Update dilated volume on the particle (if needed)
-		2. Extrapolate mass and momentum to the grid
-		3. If needed extrapolate displacement and unscaled volume
-		4. For multimaterial mode, extrapolate mass gradient
- 
-	For rigid multimaterial particles
-		1. Find their current velocity
-		2. Other the same (except mass treated different and transport is skipped)
+	The tasks are:
+	--------------
+	* For each non-rigid particle:
+		- Extrapolate mass and momentum to the grid
+		- If cracks or multimaterial mode
+			+ Extrapolation position or displacement
+			+ Extrapolate deformed area volume
+			+ It multimaterial extrapolate volume gradient
+		- Transport tasks
+			+ Extrpolate gTemperature, gMpCP, gConcentration, gVolume
+			+ If contact extrapolate corresponding CVF and MVF terms
+		- If particle spin extrapolate more momentum
+	* For each rigid contact material
+		- Similar to above except no mass, no transport, and volume
+		  if undeformed
+	* Reduction to copy ghost to real nodes
  ********************************************************************************/
 
 #include "stdafx.h"
@@ -120,7 +125,6 @@ void MassAndMomentumTask::Execute(void)
 	{	for(int pn=0;pn<totalPatches;pn++)
 			patches[pn]->MassAndMomentumReduction();
 	}
-    
 }
 
 // Get Particle functions and constants

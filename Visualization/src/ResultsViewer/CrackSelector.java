@@ -22,6 +22,9 @@ public class CrackSelector extends PlotControl
 	private JLabel crackLabel=new JLabel("Crack Number:",JLabel.RIGHT);
 	private JTextField crackNumberText=new JTextField("1");
 	
+	private static String crackNumber = "1";
+	private static int tip = 0;
+	
 	// initialize
 	CrackSelector(DocViewer dc)
 	{   super(ControlPanel.WIDTH,60,dc);
@@ -29,6 +32,8 @@ public class CrackSelector extends PlotControl
 		GridBagConstraints c = new GridBagConstraints();
 		//setLayout(new GridLayout(2,2));
 		setLayout(gridbag);
+		
+		crackNumberText.setText(crackNumber);
 
 		c.fill = GridBagConstraints.BOTH;
 		
@@ -55,13 +60,14 @@ public class CrackSelector extends PlotControl
 		c.insets.set(0,3,6,0);
 		c.weightx = 2.0;
 		gridbag.setConstraints(startTip, c);
-		startTip.setSelected(true);
 		whichEnd.add(startTip);
+		if(tip==0) startTip.setSelected(true);
 		add(startTip);
 		
 		c.insets.set(0,0,6,3);
 		gridbag.setConstraints(endTip, c);
 		whichEnd.add(endTip);
+		if(tip==1) endTip.setSelected(true);
 		add(endTip);
 		
 		setEnabled(LoadArchive.NO_PLOT,0);
@@ -127,15 +133,20 @@ public class CrackSelector extends PlotControl
 	{	int crack=ControlPanel.readInteger(crackNumberText,"crack number");
 		if(crack<1)
 			throw new Exception("The crack number must be a positive integer");
+		crackNumber = crackNumberText.getText();
 		return crack;
 	}
 	
 	// get particle number option for time plots
 	public int getCrackTip()
 	{	if(startTip.isSelected())
+		{	tip = 0;
 			return CRACK_START;
+		}
 		else
+		{	tip=1;
 			return CRACK_END;
+		}
 	}
 
 }

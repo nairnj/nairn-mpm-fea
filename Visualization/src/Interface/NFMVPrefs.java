@@ -93,6 +93,10 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	public static Color meshNodesColorDef = new Color(212, 212, 212); // 0.83f,0.83f,0.83f
 	public static String textColorKey = "Text Label Color";
 	public static Color textColorDef = new Color(255, 255, 255); // 1.f,1.f,1.f
+	public static String tempBCColorKey = "Temperature BC Color";
+	public static Color tempBCColorDef = Color.red;
+	public static String concBCColorKey = "Temperature BC Color";
+	public static Color concBCColorDef = Color.blue;
 
 	private JTextField mpmCodePath = new JTextField();
 	private JTextField mpmDTDPath = new JTextField();

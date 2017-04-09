@@ -30,6 +30,12 @@ public class TimePlotOptions extends PlotControl
 	private static final int left=3,mid=3,right=3;
 	private static final int top=6,rows=1,bottom=6;
 	
+	private static String prevPtNumber = "1";
+	private static String prevMatNumber = "1";
+	private static int prevPlotWhat = 0;
+	private static String prevFxnText = "1";
+	private static String prevRange = "";
+	
 	// initialize
 	TimePlotOptions(DocViewer dc)
 	{   super(ControlPanel.WIDTH,top+bottom+5*26+4*rows,dc);
@@ -38,6 +44,12 @@ public class TimePlotOptions extends PlotControl
 		//setLayout(new GridLayout(5,2));
 		setLayout(gridbag);
 		
+		// initial text
+		ptNumberText.setText(prevPtNumber);
+		matNumberText.setText(prevMatNumber);
+		functionText.setText(prevFxnText);
+		rangeText.setText(prevRange);
+		
 		c.fill = GridBagConstraints.BOTH;
 
 		// pt number RB and text field
@@ -45,13 +57,14 @@ public class TimePlotOptions extends PlotControl
 		c.gridwidth = 2;
 		c.weightx = 0.0;
 		gridbag.setConstraints(plotPoint, c);
-		plotPoint.setSelected(true);
+		if(prevPlotWhat==0) plotPoint.setSelected(true);
 		plotWhat.add(plotPoint);
 		add(plotPoint);
 		plotPoint.addActionListener(new ActionListener()
 		{	public void actionPerformed(ActionEvent e)
 			{	ptNumberText.setEnabled(true);
 				matNumberText.setEnabled(false);
+				prevPlotWhat = 0;
 		}
 		});
 		
@@ -66,10 +79,12 @@ public class TimePlotOptions extends PlotControl
 		c.gridwidth = 2;
 		c.weightx = 0.0;
 		gridbag.setConstraints(plotAll, c);
+		if(prevPlotWhat==1) plotAll.setSelected(true);
 		plotAll.addActionListener(new ActionListener()
 		{	public void actionPerformed(ActionEvent e)
 			{	ptNumberText.setEnabled(false);
 				matNumberText.setEnabled(false);
+				prevPlotWhat = 1;
 			}
 		});
 		plotWhat.add(plotAll);
@@ -87,10 +102,12 @@ public class TimePlotOptions extends PlotControl
 		c.gridwidth = 2;
 		c.weightx = 0.0;
 		gridbag.setConstraints(plot1Mat, c);
+		if(prevPlotWhat==2) plot1Mat.setSelected(true);
 		plot1Mat.addActionListener(new ActionListener()
 		{	public void actionPerformed(ActionEvent e)
 			{	ptNumberText.setEnabled(false);
 				matNumberText.setEnabled(true);
+				prevPlotWhat = 2;
 			}
 		});
 		plotWhat.add(plot1Mat);
@@ -247,26 +264,42 @@ public class TimePlotOptions extends PlotControl
 	//		<0 to plot that material number (- the setting)
 	public int getParticleNumber() throws Exception
 	{	if(plotPoint.isSelected())
+		{	prevPtNumber = ptNumberText.getText();
 			return ControlPanel.readInteger(ptNumberText,"point number");
+		}
 		else if(plotAll.isSelected())
 			return 0;
 		else
+		{	prevMatNumber = matNumberText.getText();
 			return -ControlPanel.readInteger(matNumberText,"material number");
+		}
 	}
 	
 	// get selected item for contour menu options
 	public int getContour() { return xyContour.getSelectedIndex(); }
 	
 	// get contour expression
-	public String getContourFunction() { return functionText.getText(); }
+	public String getContourFunction()
+	{	prevFxnText = functionText.getText();
+		return functionText.getText();
+	}
 	
 	// get contour +/- range (or zero if empty)
 	public double getPlusMinus() throws Exception
 	{
 		String xyRange=rangeText.getText();
-		if(xyRange.length()==0) return 0.d;
+		if(xyRange.length()==0)
+		{	prevRange = "";
+			return 0.d;
+		}
 		Scanner validate=new Scanner(xyRange);		// will use user's locale
-		if(validate.hasNextDouble()) return validate.nextDouble();
+		if(validate.hasNextDouble())
+		{	double val = validate.nextDouble();
+			validate.close();
+			prevRange = xyRange;
+			return val;
+		}
+		validate.close();
 		throw new Exception("The optional '+/-' field must be a valid number or be empty");
 	}
 

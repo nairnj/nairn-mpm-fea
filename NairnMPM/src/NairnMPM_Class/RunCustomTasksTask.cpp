@@ -5,8 +5,14 @@
 	Created by John Nairn on July 22, 2010
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
  
-	Run all custom tasks, but first run loop that allows then to extrapolate
-		to the grid
+	Run all custom tasks. The tasks area:
+	------------------------------------
+	* If any tasks needs extrapolations, all them to extrapolate to the grid
+		- Each custom tasks uses BeginExtrapolations(), NodalExtrapolation(),
+		  and Extrapolations().
+	* Call StepCalculation() for each custom task
+	* Call FinishForStep() for each custom task
+	  (a task can delete itself if all done)
 ********************************************************************************/
 
 #include "stdafx.h"

@@ -9,6 +9,7 @@
 import java.awt.*;
 import java.io.*;
 import javax.swing.*;
+
 import geditcom.JNFramework.*;
 
 public class ConsolePane extends JNConsolePane
@@ -63,9 +64,19 @@ public class ConsolePane extends JNConsolePane
 				chooser.setSelectedFile(outputFile);
 			
 			// REMOTE_ACCESS - customize to get path on server or a local file
-			int result = chooser.showSaveDialog(this);
-			if(result != JFileChooser.APPROVE_OPTION) return false;
-			outputFile=chooser.getSelectedFile();
+			System.out.println("...debug get file from chooser "+chooser);
+			try
+			{	int result = chooser.showSaveDialog(this);
+				if(result != JFileChooser.APPROVE_OPTION) return false;
+				outputFile=chooser.getSelectedFile();
+			}
+			catch(HeadlessException e)
+			{	String msg = "The Java file chooser failed to launch.\n";
+				msg = msg+e.getLocalizedMessage();
+				JNApplication.appBeep();
+				JOptionPane.showMessageDialog(null,msg);
+				return false;
+			}
 		}
 		else
 			outputFile = useOutput;
@@ -111,7 +122,7 @@ public class ConsolePane extends JNConsolePane
 			JOptionPane.showMessageDialog(fileWindow,"Error writing analysis results: " + fe);
 			return false;
 		}
-		
+
 		return true;
 	}
 	

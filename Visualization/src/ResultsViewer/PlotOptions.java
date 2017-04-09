@@ -54,6 +54,10 @@ public class PlotOptions extends PlotControl
 	public JSlider mpmParticleSize=new JSlider(JSlider.HORIZONTAL,0,200,5);
 	int particleSize=100;
 	
+	// store settings
+	private static boolean [] previousFlags = null;
+	private static int previousSize = 100;
+	
 	PlotOptions(DocViewer dc)
 	{   super(ControlPanel.WIDTH,142,dc);
 		setLayout(new GridLayout(7,2));
@@ -87,11 +91,14 @@ public class PlotOptions extends PlotControl
 		sizePanel.add(sizeSelected);
 
 		mpmParticleSize.setValue(particleSize);
-		mpmParticleSize.setToolTipText("Scale particle size as percent of cell size (default is 50%)");
+		mpmParticleSize.setToolTipText("Scale particle size as percent of cell size (default is 100%)");
+		mpmParticleSize.setValue(previousSize);
+		particleSize = previousSize;
 		mpmParticleSize.addChangeListener(new ChangeListener()
 		{   public void stateChanged(ChangeEvent e)
 			{	particleSize=mpmParticleSize.getValue();
 				sizeSelected.setText(""+particleSize);
+				previousSize = particleSize;
 			}
 		});
 		c.insets=new Insets(0,0,0,0);
@@ -104,6 +111,23 @@ public class PlotOptions extends PlotControl
 		setEnabled(LoadArchive.NO_PLOT);
 		sizeSelected.setMinimumSize(sizeSelected.getPreferredSize());
 		sizeSelected.setText(""+particleSize);
+		
+		if(previousFlags!=null)
+		{	showMesh.setSelected(previousFlags[SHOW_MESH]);
+			showMeshBCs.setSelected(previousFlags[SHOW_MESHBCS]);
+			showNodeNums.setSelected(previousFlags[SHOW_NODENUMS]);
+			showElemNums.setSelected(previousFlags[SHOW_ELEMNUMS]);
+			showPts.setSelected(previousFlags[SHOW_MATPTS]);
+			showCrackPlanes.setSelected(previousFlags[SHOW_CRACKPLANES]);
+			showCrackSurf.setSelected(previousFlags[SHOW_CRACKSURFACES]);
+			showSquarePts.setSelected(previousFlags[SHOW_SQUAREPTS]);
+			showPtNums.setSelected(previousFlags[SHOW_MATPTNUMS]);
+			showNodes.setSelected(previousFlags[SHOW_NODES]);
+			showDispMesh.setSelected(previousFlags[SHOW_DISPLACEDMESH]);
+			transformPts.setSelected(previousFlags[TRANSFORM_PTS]);
+			clipParticles.setSelected(previousFlags[CLIP_TO_PARTICLES]);
+		}
+
 	}
 
 	// enable or disable check boxes
@@ -184,6 +208,11 @@ public class PlotOptions extends PlotControl
 		flags[SHOW_DISPLACEDMESH]=showDispMesh.isSelected();
 		flags[TRANSFORM_PTS]=transformPts.isSelected();
 		flags[CLIP_TO_PARTICLES]=clipParticles.isSelected();
+		
+		if(previousFlags==null) previousFlags = new boolean[NUM_OPTIONS];
+		{	for(int i=0;i<NUM_OPTIONS;i++)
+				previousFlags[i] = flags[i];
+		}
 		return flags;
 	}
 }

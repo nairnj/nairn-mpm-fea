@@ -11,7 +11,6 @@
 #include "stdafx.h"
 #include "Materials/LinearInterface.hpp"
 #include "System/UnitsController.hpp"
-#include "NairnMPM_Class/MeshInfo.hpp"
 
 extern double timestep;
 
@@ -59,8 +58,11 @@ char *LinearInterface::InputMaterialProperty(char *xName,int &input,double &gSca
 // Don't pass on to material base
 const char *LinearInterface::VerifyAndLoadProperties(int np)
 {
-	// set Dnc if needed
-	if(!hasSetDnc) Dnc = Dnt;
+	// set Dnc if needed or check if same
+	if(!hasSetDnc)
+		Dnc = Dnt;
+	else if(DbleEqual(Dnc,Dnt))
+		hasSetDnc = false;
 	
 	// must call super class
 	return ContactLaw::VerifyAndLoadProperties(np);
@@ -79,152 +81,239 @@ void LinearInterface::PrintContactLaw(void) const
 #pragma mark LinearInterface:Step Methods
 
 // Contact handled here only for perfect interface parts (Dt or Dn < 0) by changing delPi
-//		if done return false (but no used now?)
+//		if done return false (i.e., if perfect interface with trn=trt=0
 // Imperfect interfaces are calculated and always check if force is too high as determined by whether or not
 //      the material's position is forced to pass the center of mass position by the calculated force
-// Outputs are fImp, rawEnergy, and possible changed depPi. Rest are inputs, tandDel, deln, delt refer to cod vector
-bool LinearInterface::GetInterfaceForcesForNode(Vector *norm,Vector *fImp,double *rawEnergy,
-								double surfaceArea,Vector *delPi,double dotn,bool inContact,bool postUpdate,double mred,
-								Vector *tangDel,double deln,double delt) const
+// On input, fImp = Delta f_a = ma Fc/Mc - Fa
+// Inputs are: tangDel, deltaDotn, deltaDott and they refer to cod vector
+// Outputs are fImp, rawEnergy, and possibly changed depPi.
+void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEnergy,double surfaceArea,Vector *delPi,
+												double dPDotn,double mred,Vector *tangDel,double deltaDotn,double deltaDott,double hperp) const
 {
-	// initialize interfacial forces
+	// initialize interfacial forces and energy
     double trn=0.,trt=0.;
+	*rawEnergy = 0.;
+	double m = mred/timestep;
+	double sineTerm,sincosTerm;
 	
-    // Convert delPi to shear momentum only (delPi - dotn (n) = dott (t)), then
+    // Convert delPi to shear momentum only (delPi - dPDotn (n) = dPDott (t)), then
 	//   if shear force limited leave alone, otherwise set to zero
 	//   if normal force limited, add normal back, otherwise leave alone
-    AddScaledVector(delPi,norm,-dotn);
-    
-    // get shear (which is will always be positive because sign of tangent changes to accomodate it)
-	// in g/(mm sec^2)
+    AddScaledVector(delPi,norm,-dPDotn);
+
+    // Get shear (which is will always be positive because sign of tangent changes to accomodate it)
+	// Legacy units for force microN and displacement mm
     if(Dt>=0.)
 	{	// get force and compare to maximum force
-		trt = Dt*delt*surfaceArea;
-		double dott=sqrt(DotVectors(delPi,delPi));
-		double maxFt = 2.*dott/timestep + 2.*mred*delt/(timestep*timestep);
-        if(trt > maxFt)
-		{	// limit force and retain delPi (which is for shear now)
-            trt = 0.;
-		}
-        else
-		{	// force OK, so remove shear momentum change now
-            ZeroVector(delPi);
-		}
-    }
-	// no 'else' needed because trt is zero, which means shear direction is flagged as perfect
-	//     and retain delPi (which is already for shear stick)
-    
-	// get normal traction in g/(mm sec^2) - but different separated or in contact
-	double maxFn;
-	if(deln>0.)
-	{	if(Dnt>=0.)
-		{   // normal direction in tension is imperfect
-			trn = Dnt*deln*surfaceArea;
-			maxFn = 2.*dotn/timestep + 2.*mred*deln/(timestep*timestep);
-			if(trn > maxFn)
-			{	// limit force and add normal momentum change back into delPi
-				trn = 0;
-				AddScaledVector(delPi,norm,dotn);
-			}
+
+		// The following code is documented in contactetc.tex in OSParticulas
+		double dPDott=sqrt(DotVectors(delPi,delPi));
+		double d = Dt*surfaceArea*timestep;
+		
+		// we limit to phi = sqrt(d/m) to less than pi/2 (pi^2/4 = 2.467401100272340)
+		// May prefer to limit even futher, but never higher
+		if(d > 2.467401100272340*m)
+		{	// acceleration looks too high for stability, so revert to stick
+			trt = 0.;
+			// keep delPi at stick conditions
 		}
 		else
-		{   // normal direction in tension flagged perfect
-			// limit forces (trn already 0) and add normal momentum change back into delPi
-			AddScaledVector(delPi,norm,dotn);
+		{	// exact solution method
+			double phi = GetTerms(d,m,sineTerm,sincosTerm);
+			double delFt = DotVectors(fImp,tangDel);
+
+			// get force and final discontinuity
+			trt = (2./timestep)*(m*deltaDott*(1-cos(phi)) + dPDott*sineTerm) + delFt*(2.*sincosTerm - 1.);
+			double dut = deltaDott*cos(phi) + dPDott*(1.-sineTerm)/m - delFt*timestep*sincosTerm/m;
+
+			// get total energy, because incremental approach does not seem to work
+			*rawEnergy = 0.5*Dt*surfaceArea*dut*dut;
+			
+			// interface handled, so remove transverse stick condition
+			ZeroVector(delPi);
+		}
+    }
+	
+	// Get normal traction - but different separated or in contact
+	// Legacy units for force microN and displacement mm
+	
+	// if current perfect, stays perfect
+	if((Dnt<0. && deltaDotn>=0.) || (Dnc<0. && deltaDotn<0.))
+	{	// perfect interface
+		trn = 0;
+		// Add normal momentum change back into delPi to make it perfect
+		AddScaledVector(delPi,norm,dPDotn);
+	}
+	
+	else
+	{	// extract initial properties
+		double Di, Df;
+		if(deltaDotn>=0.)
+		{	// initially opened
+			Di = Dnt;
+			Df = Dnc;
+		}
+		else
+		{	Di = Dnc;
+			Df = Dnt;
+		}
+		double d = Di*surfaceArea*timestep;
+		
+		// we limit to phi = sqrt(d/m) to less than pi/2 (pi^2/4 = 2.467401100272340)
+		if(d > 2.467401100272340*m || Di<0.)
+		{	// acceleration looks too high for stability, so revert to stick
+			trn = 0.;
+			// Add normal momentum change back into delPi to make it perfect
+			AddScaledVector(delPi,norm,dPDotn);
+		}
+		else
+		{	// exact solution method
+			double phi = GetTerms(d,m,sineTerm,sincosTerm);
+			double delFn = DotVectors(fImp,norm);
+			
+			// get force and final displacememt
+			trn = (2./timestep)*(m*deltaDotn*(1-cos(phi)) + dPDotn*sineTerm) + delFn*(2.*sincosTerm - 1.);
+			double dun = deltaDotn*cos(phi) + dPDotn*(1.-sineTerm)/m - delFn*timestep*sincosTerm/m;
+			
+			// done if no sign change
+			if(dun*deltaDotn>=0. || !hasSetDnc)
+			{	// get energy
+				*rawEnergy += 0.5*Di*surfaceArea*dun*dun;
+			}
+			else
+			{	// contact happens in the time step, we need to find the contact time
+				double dn = dPDotn - delFn*timestep;
+				double kap2 = Di*surfaceArea/mred;
+				double kap = sqrt(kap2);
+				
+				// Find tc
+				double A,B,C,tc,q,rootTerm;
+				if(phi<1.e-5)
+				{	// need special case for small phi
+					A = delFn;
+					B = 2.*dn;
+					C = 2.*mred*deltaDotn;
+					rootTerm = B*B-4.*A*C;
+					if(rootTerm<0.)
+					{	// assume must be zero, but round off error
+						q = -0.5*B;
+					}
+					else
+						q= B>0 ? -0.5*(B+sqrt(rootTerm)) : -0.5*(B-sqrt(rootTerm));
+
+					// we need root between 0 and timestep
+					tc = q/A;
+					if(tc<0. || tc>timestep) tc = C/q;
+					if(tc<0. || tc>timestep) tc = 0.;
+				}
+				
+				else
+				{	// could it ever be negative in square root?
+					double arg = deltaDotn - delFn/(mred*kap2);
+					A = arg*arg + dn*dn/(mred*mred*kap2);
+					B = 2.*delFn*dn/(mred*mred*kap*kap2);
+					C = (delFn/(mred*kap2)+arg)*(delFn/(mred*kap2)-arg);
+					//double arg = mred*kap2*deltaDotn - delFn;
+					//A = arg*arg + kap2*dn*dn;
+					//B = 2.*kap*delFn*dn;
+					//C = (delFn+arg)*(delFn-arg);
+					rootTerm = B*B-4.*A*C;
+					if(rootTerm<0.)
+					{	// we assume it should be zero? But never observed in calculatinos
+						q = -0.5*B;
+					}
+					else
+						q= B>0 ? -0.5*(B+sqrt(rootTerm)) : -0.5*(B-sqrt(rootTerm));
+					
+					// we need root between 0 and 1
+					double sinkt = q/A;
+					if(sinkt<0. || sinkt>1.)
+					{	// first invalid, try the second
+						sinkt = C/q;
+					}
+					else
+					{	double optSinkt = C/q;
+						if(optSinkt>=0. && optSinkt<=1.)
+						{	// two possible roots, used second if first too large
+							if(sinkt > sin(phi))
+								sinkt = optSinkt;
+						}
+					}
+						
+					if(sinkt<0. || sinkt>1.)
+					{	// Never observed in calculations, but exit with one choice
+						tc = 0.;
+					}
+					else
+						tc = asin(sinkt)/kap;
+				}
+				
+				// find dn^(c) = dPDotn to stick after contact
+				phi = kap*tc;
+				sineTerm = (phi<0.02) ? 1.-phi*phi/6 : sin(phi)/phi;
+				dPDotn = dn*cos(phi) - mred*kap*deltaDotn*sin(phi) + delFn*tc*sineTerm;
+				
+				// post contact terms using Df
+				kap2 = Df*surfaceArea/mred;
+				kap = sqrt(kap2);
+				
+				// check is opposite direction is perfect
+				if(Df<0. || kap2>2.467401100272340)
+				{	// effective force to reach contact, but no energy because final discontinity is zero
+					trn = (2./timestep)*(m*deltaDotn + dn) + delFn;
+					
+					// add momentum for post-contact stick
+					AddScaledVector(delPi,norm,dPDotn);
+				}
+				else
+				{	// effective force for bilinear case
+					phi = kap*timestep;
+					if(phi<1.e-5)
+					{	// for nearly debonded
+						double dtTerm = 1. - tc/timestep;
+						trn = (2./timestep)*(m*deltaDotn + dn - dPDotn*dtTerm) + delFn*(1 - dtTerm*dtTerm);
+						
+						// final discontinuity
+						dtTerm = timestep - tc;
+						dun = (dtTerm/mred)*(dPDotn + 0.5*delFn*dtTerm);
+					}
+					else
+					{	// otherwise
+						trn = (2./timestep)*(m*deltaDotn + dn - dPDotn*sin(kap*(timestep-tc))/phi)
+									+ delFn*(1 - 2.*(1.-cos(kap*(timestep-tc)))/(phi*phi));
+						
+						// final discontinuity
+						dun = (1./(mred*kap))*(dPDotn*sin(kap*(timestep-tc)) + delFn*(1-cos(kap*(timestep-tc)))/kap);
+					}
+					
+					// energy from final dun
+					*rawEnergy += 0.5*Df*surfaceArea*dun*dun;
+				}
+			}
 		}
 	}
-	else if(Dnc>=0.)
-	{	// normal direction in compression is imperfect
-		trn = Dnc*deln*surfaceArea;
-		maxFn = 2.*dotn/timestep + 2.*mred*deln/(timestep*timestep);
-		if(trn < maxFn)
-		{	// limit negative force and add normal momentum change back into delPi
-			trn = 0;
-			AddScaledVector(delPi,norm,dotn);
-		}	
-	}
-    else
-    {   // normal direction is compression flagged as perfect
-		// limit forces (trn already 0) and add normal momentum change back into delPi
-        AddScaledVector(delPi,norm,dotn);
-    }
-    
-    // find (trn n + trt t)*Ai for force in cartesian coordinates
+	
+    // find (trn n + trt t) for force in cartesian coordinates
     CopyScaleVector(fImp, norm, trn);
     AddScaledVector(fImp, tangDel, trt);
-    
-	// linear elastic energy
-    *rawEnergy = 0.5*(trn*deln + trt*delt);
-	
-	return true;
 }
 
-// Get interface force for crack with internal interface
-// da and db are displacements above and below the crack, and norm is normal vector (normalized)
-// surfaceArea is contact surface area
-// Output is force is fImp and renerge in rawEnergy
-bool LinearInterface::GetCrackInterfaceForce(Vector *da,Vector *db,Vector *norm,double surfaceArea,double hperp,
-												Vector *fImp,double *rawEnergy) const
+// Get phi, 1-sin phi/phi and sin phi/phi -  (1-cos phi)/phi^2 stable even for phi near zero
+// return phi
+double LinearInterface::GetTerms(double d,double m,double &sineTerm,double &sincosTerm) const
 {
-	double dn,dt,trn = 0.,trt = 0.;
-	
-	if(Dnt>=0. || Dnc>=0.)
-	{	// normal displacement
-		dn = (db->x-da->x)*norm->x + (db->y-da->y)*norm->y;
-		if(!mpmgrid.GetContactByDisplacements())
-		{	// for efficiency used calculated dist
-			dn -= mpmgrid.positionCutoff*hperp;
-		}
-		
-		// Normal traction in g/(mm sec^2) - but different separated or in contact
-		if(dn>0.)
-		{	// normal direction in tension
-			if(Dnt>=0.)
-				trn = Dnt*dn*surfaceArea;
-			else
-			{	// interface perfect in tension, if also perfect in shear can exit
-				if(Dt<0.) return false;
-				dn = 0.;
-			}
-		}
-		else
-		{	// normal direction in compression
-			if(Dnc>=0.)
-				trn = Dnc*dn*surfaceArea;
-			else
-			{	// interface perfect in compression, if also perfect in shear can exit
-				if(Dt<0.) return false;
-				dn = 0.;
-			}
-		}
+	double phi = sqrt(d/m);
+	if(phi<0.02)
+	{	double phi2 = phi*phi;
+		sineTerm = phi2/6.;				// = 1-sin phi/phi within 1e-10
+		sincosTerm = 0.5 - 0.125*phi2;	// = sin phi/phi - (1-cos phi)/phi^2) within 1e-10
 	}
 	else
-	{	// perfect in normal direction
-		dn = 0.;
+	{	double sineRatio = sin(phi)/phi;
+		sineTerm = 1. - sineRatio;
+		sincosTerm = sineRatio - (1.-cos(phi))/(phi*phi);
 	}
-	
-	if(Dt>=0.)
-	{	// transverse force
-		dt = (db->x-da->x)*norm->y - (db->y-da->y)*norm->x;
-		
-		// transverse traction in g/(mm sec^2)
-		trt = Dt*dt*surfaceArea;
-	}
-	else
-	{	// perfect in normal direction
-		dt = 0.;
-	}
-	
-	// find trn n + trt t and finally normalize
-	fImp->x = trn*norm->x + trt*norm->y;
-	fImp->y = trn*norm->y - trt*norm->x;
-	
-	// total energy (not increment) is (1/2)(trn dnunnorm + trt dtunnorm)/(norm2*norm2) in g/sec^2
-	// Use norm2 because |norm| for trn and trt and |norm| for dnunnorm and dtunnorm
-	// units wiill be g/sec^2
-	*rawEnergy = (trn*dn + trt*dt)/2.;
-	
-	return true;
+	return phi;
 }
 
 #pragma mark LinearInterface::Accessors
@@ -245,13 +334,6 @@ bool LinearInterface::IgnoreContact(void) const { return false; }
 
 // True if model interface with tractions or false if handling contact
 bool LinearInterface::IsImperfectInterface(void) const { return true; }
-bool LinearInterface::IsPerfectTangentialInterface(void) const { return Dt<0.; }
-bool LinearInterface::IsPerfectNormalInterface(bool inContact) const
-{	if( (!inContact && Dnt<0.) || (inContact && Dnc<0.) )
-		return true;
-	return false;
-}
-bool LinearInterface::IsPerfectNormalInterface(void) const { return Dnt<0. && Dnc>0.; }
 
 
 

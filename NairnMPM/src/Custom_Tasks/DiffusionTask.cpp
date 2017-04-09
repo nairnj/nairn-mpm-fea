@@ -70,7 +70,7 @@ TransportTask *DiffusionTask::TransportTimeStep(int matid,double dcell,double *t
 // potential from 0 to 1 where 1 means concentration is equal to that materials saturation
 // concentration. (units are mm^3)
 // Only called for non-rigid materials
-TransportTask *DiffusionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
+TransportTask *DiffusionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape,short vfld,int matfld)
 {   double Vp = mptr->GetVolume(DEFORMED_VOLUME);
 	ndpt->gConcentration += mptr->pConcentration*Vp*shape;
 	ndpt->gVolume += Vp*shape;
@@ -187,7 +187,7 @@ TransportTask *DiffusionTask::GetGradients(double stepTime)
 
 // find forces for diffusion calculation (mm^3/sec) (non-rigid particles only)
 TransportTask *DiffusionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double sh,double dshdx,
-										double dshdy,double dshdz,TransportProperties *t)
+										double dshdy,double dshdz,TransportProperties *t,short vfld,int matfld)
 {
 	// internal force
 	ndptr->fdiff += mptr->FDiff(dshdx,dshdy,dshdz,t);
@@ -274,7 +274,7 @@ TransportTask *DiffusionTask::TransportRates(NodalPoint *ndptr,double deltime)
 #pragma mark UPDATE PARTICLES TASK
 
 // increment concentration rate on the particle
-TransportTask *DiffusionTask::IncrementTransportRate(const NodalPoint *ndpt,double shape,double &rate) const
+TransportTask *DiffusionTask::IncrementTransportRate(const NodalPoint *ndpt,double shape,double &rate,short vfld,int matfld) const
 {	rate += ndpt->fdiff*shape;			// fdiff are concentration rates from TransportRates()
 	return nextTask;
 }
@@ -306,7 +306,7 @@ TransportTask *DiffusionTask::UpdateNodalValues(double concTime)
 #pragma mark UPDATE PARTICLE STRAIN TASK
 
 // increment transport rate
-double DiffusionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape) const
+double DiffusionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape,short vfld,int matfld) const
 {	return ndpt->gConcentration*shape;
 }
 

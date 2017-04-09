@@ -17,6 +17,7 @@
 
 #ifdef MPM_CODE
 extern char rotationAxes[4];
+extern char angleAxes[4];
 #endif
 
 // file type allowed in BMP command
@@ -26,7 +27,7 @@ enum { BMP_INPUT_FILE=0,FPG_INPUT_FILE,UNKNOWN_INPUT_FILE};
 // Check for bmp element, return false if not
 // throws std::bad_alloc, SAXException()
 //-----------------------------------------------------------
-short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,int expectedBlock)
+short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,int expectedBlock,bool is3D)
 {
     char *aName,*value;
     int i,numAttr;
@@ -40,14 +41,19 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
         block=BMPBLOCK;
 		bwidth=bheight=-1.e9;		// < -1.e8 means dimension was not specified
 		bmpFileName[0]=0;
-		bmpAngleFileName[0]=0;
+		bmpAngleFileName[0][0]=0;
+		bmpAngleFileName[1][0]=0;
+		bmpAngleFileName[2][0]=0;
+		numAngles=0;
 		orig = MakeVector(0.,0.,-1.e9);		// //  < -1.e8 means zlevel was not specified
         yflipped=false;
 		aScaling=ReadUnits(attrs,LENGTH_UNITS);
         numAttr=(int)attrs.getLength();
 #ifdef MPM_CODE
+		angleAxes[0]=0;					// no angle files yet
 		rotationAxes[0]=0;				// no rotations yet
 #endif
+		int maxRotations = is3D ? 3 : 1 ;
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -57,8 +63,30 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
                 sscanf(value,"%lf",&bheight);
             else if(strcmp(aName,"name")==0)
 				strcpy(bmpFileName,value);
-            else if(strcmp(aName,"angles")==0)
-				strcpy(bmpAngleFileName,value);
+#ifdef MPM_CODE
+			// MPM allows up to three angle files
+            else if(strcmp(aName,"angles")==0 || strcmp(aName,"anglesZ")==0)
+			{	int rotNum = (int)strlen(angleAxes);
+				if(rotNum==maxRotations)
+					throw SAXException("Maximum of three angle files (for 3D) or one (for 2D) allowed in single BMP region.");
+				strcpy(bmpAngleFileName[rotNum],value);
+				strcat(angleAxes,"Z");
+			}
+            else if(strcmp(aName,"anglesX")==0 || strcmp(aName,"anglesY")==0)
+			{	if(!is3D)
+					throw SAXException("X and Y angle files only allowed for BMP regions in 3D simulations.");
+				int rotNum = (int)strlen(angleAxes);
+				if(rotNum==maxRotations)
+					throw SAXException("Maximum of three angle files allowed in single BMP region.");
+				strcpy(bmpAngleFileName[rotNum],value);
+				angleAxes[rotNum]=aName[6];
+				angleAxes[rotNum+1]=0;
+			}
+#else
+			// FEA is 2D and can only rotate about z
+            else if(strcmp(aName,"angles")==0 || strcmp(aName,"anglesZ")==0)
+				strcpy(bmpAngleFileName[0],value);
+#endif
             delete [] aName;
             delete [] value;
         }
@@ -110,8 +138,7 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 		int mat=-1;
 		int imin=-1;
 		int imax=-1;
-		minAngle=0.;
-		double maxAngle=0.;
+		double thisMinAngle=0.,maxAngle=0.;
 		char matname[200];
 		matname[0]=0;
         for(i=0;i<numAttr;i++)
@@ -128,7 +155,7 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
             else if(strcmp(aName,"imax")==0)
                 sscanf(value,"%d",&imax);
             else if(strcmp(aName,"minAngle")==0)
-                sscanf(value,"%lf",&minAngle);
+                sscanf(value,"%lf",&thisMinAngle);
             else if(strcmp(aName,"maxAngle")==0)
                 sscanf(value,"%lf",&maxAngle);
             delete [] aName;
@@ -151,8 +178,11 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 			block=INTENSITYBLOCK;
 		}
 		else
-		{	angleScale=(maxAngle-minAngle)/((double)imax-(double)imin);
-			minIntensity=(double)imin;
+		{	if(numAngles==2)
+				throw SAXException(BMPError("Too many <Intensity> commands to set angle mappings.",bmpFileName));
+			angleScale[numAngles]=(maxAngle-thisMinAngle)/((double)imax-(double)imin);
+			minIntensity[numAngles]=(double)imin;
+			numAngles++;
 		}
 	}
 	

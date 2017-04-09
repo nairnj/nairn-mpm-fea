@@ -12,14 +12,19 @@
 
 #pragma mark LineController: Constructors and Destructor
 
-LineController::LineController(int block) : ShapeController(block)
+// Create, may be 2D or 3D line
+LineController::LineController(int block,bool is2D) : ShapeController(block)
 {
+	tolerance = 0.;
+	twoDShape = is2D;
 }
 
+// used in FEA and always 2D
 LineController::LineController(int block,double x1,double x2,double y1,double y2,double tolerate)
-		: ShapeController(block,x1,x2,y1,y2,tolerance)
+		: ShapeController(block,x1,x2,y1,y2)
 {
 	// globals for length and tolerance
+	tolerance = tolerate;
 	distanceSq=(xmax-xmin)*(xmax-xmin)+(ymax-ymin)*(ymax-ymin);
 	dtolerance=sqrt(distanceSq)*tolerate;
 }
@@ -28,7 +33,10 @@ LineController::LineController(int block,double x1,double x2,double y1,double y2
 bool LineController::FinishSetup(void)
 {
 	// globals for length and tolerance
-	distanceSq=(xmax-xmin)*(xmax-xmin)+(ymax-ymin)*(ymax-ymin);
+	if(twoDShape)
+		distanceSq=(xmax-xmin)*(xmax-xmin)+(ymax-ymin)*(ymax-ymin);
+	else
+		distanceSq=(xmax-xmin)*(xmax-xmin)+(ymax-ymin)*(ymax-ymin)+(zmax-zmin)*(zmax-zmin);
 	dtolerance=sqrt(distanceSq)*tolerance;
     return TRUE;
 }
@@ -40,17 +48,43 @@ bool LineController::FinishSetup(void)
 //   distance tolerance from the line in all directions 
 bool LineController::ContainsPoint(Vector& v)
 {
-    double ypr=(xmax-xmin)*(v.y-ymin)-(ymax-ymin)*(v.x-xmin);
-    
-    if(ypr>dtolerance) return FALSE;
-    if(ypr<-dtolerance) return FALSE;
-    
-    double xpr=(xmax-xmin)*(v.x-xmin)+(ymax-ymin)*(v.y-ymin);
-    
-    if(xpr<-dtolerance) return FALSE;
-    if(xpr>distanceSq+dtolerance) return FALSE;
-    
-    return TRUE;
+	double dx = xmax-xmin, dy = ymax-ymin;
+	double px = v.x-xmin, py = v.y-ymin;
+	
+	if(twoDShape)
+	{	// Let t = (-dy,dx)/len be tangent unit vector, then (t.p)*len
+		// is distance tangent to line*len. Compare to tolerance
+		double ypr = -dy*px + dx*py;
+ 		if(ypr>dtolerance) return false;
+		if(ypr<-dtolerance) return false;
+		
+		// Let n = (dx,xy)/len be unit vector along the line, then (len*n).p
+		// must be between -tolerance and len+tolerance
+		double xpr = dx*px + dy*py;
+		if(xpr<0.) return false;
+		if(xpr>distanceSq) return false;
+	}
+	
+	else
+	{	double dz = zmax-zmin, pz = v.z-zmin;
+		
+		// Let n = (dx,xy,dz)/len be unit vector along the line, then (len*n).p
+		// must be between 0 and len^2
+		double xpr = dx*px + dy*py + dz*pz;
+		if(xpr<0.) return false;
+		if(xpr>distanceSq) return false;
+		
+		// now get distance to the line d = |p - (p.n)n| = |p - xpr(dx,dy,dz)/distanceSq|
+		xpr /= distanceSq;
+		px -= xpr*dx;
+		py -= xpr*dy;
+		pz -= xpr*dz;
+		double tpr = sqrt(px*px + py*py + pz*pz);
+		if(tpr>tolerance) return false;
+		if(tpr<-tolerance) return false;
+	}
+	
+    return true;
 }
 
 // set a property

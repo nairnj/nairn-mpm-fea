@@ -13,6 +13,8 @@
 #include "Read_XML/RectController.hpp"
 #include "Read_XML/OvalController.hpp"
 #include "Read_XML/PolygonController.hpp"
+#include "Read_XML/LineController.hpp"
+#include "Read_XML/ArcController.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Read_XML/mathexpr.hpp"
 
@@ -73,7 +75,8 @@ short FEAReadHandler::MatRegionInput(char *xName,const Attributes& attrs)
 	
     // basic material region shapes
     // Rect and Oval done now, Polygon finished later
-    else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0)
+    else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0
+			|| strcmp(xName,"Line")==0 || strcmp(xName,"Arc")==0)
 	{	// only allowed in BODYPART or within a parent BODY_SHAPE
 		if(block!=MATREGIONBLOCK && block!=BODY_SHAPE)
 			ThrowCompoundErrorMessage(xName,"command found at invalid location","");
@@ -95,6 +98,14 @@ short FEAReadHandler::MatRegionInput(char *xName,const Attributes& attrs)
         else if(strcmp(xName,"Polygon")==0)
         {	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
             newShape = new PolygonController(MATREGIONBLOCK);
+        }
+        else if(strcmp(xName,"Line")==0)
+        {	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+            newShape = new LineController(MATREGIONBLOCK,true);
+        }
+        else if(strcmp(xName,"Arc")==0)
+        {	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+            newShape = new ArcController(MATREGIONBLOCK);
         }
 		else
 		{	// shape that contains no points
@@ -177,7 +188,8 @@ short FEAReadHandler::EndMatRegionInput(char *xName,int exitBlock)
     }
     
     // mesh shape now
-    else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0)
+    else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0
+				|| strcmp(xName,"Line")==0 || strcmp(xName,"Arc")==0)
 	{	if(strcmp(xName,"Polygon")==0)
 		{	if(!theShape->HasAllParameters())
 				throw SAXException("<Polygon> must have at least 3 subordinate <Ppt> commands.");

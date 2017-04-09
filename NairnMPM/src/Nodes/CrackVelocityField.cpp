@@ -40,7 +40,7 @@ CrackVelocityField::CrackVelocityField(int num,short theLoc,int cnum)
 	if(maxMaterialFields==1)
 	{	mvf[0] = CreateMatVelocityField(0);
 	}
-		
+	
 	// clear all data.
     // But creating it, implies it has points so set hasCrackPoints to TRUE
 	Zero(theLoc,cnum,FALSE);
@@ -317,9 +317,8 @@ bool CrackVelocityField::GetCMVelocityTask8(Vector *velCM) const
 #pragma mark MATERIAL CONTACT AND INTERFACES IN SUBCLASSES
 
 // Called in multimaterial mode to check contact at nodes with multiple materials
-void CrackVelocityField::MaterialContactOnCVF(NodalPoint *ndptr,double deltime,int callType,
-											  MaterialInterfaceNode **first,MaterialInterfaceNode **last)
-{ return;
+void CrackVelocityField::MaterialContactOnCVF(NodalPoint *ndptr,double deltime,int callType)
+{	return;
 }
 
 // retrieve volume gradient for matnum (1 based) in crack field only (or zero if

@@ -9,6 +9,8 @@
 #include "stdafx.h"
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
 
 // Nodal temperature BC global
 NodalTempBC *firstTempBC=NULL;
@@ -54,13 +56,17 @@ BoundaryCondition *NodalTempBC::PrintBC(ostream &os)
 // save nodal temperature and zero it
 NodalTempBC *NodalTempBC::CopyNodalTemperature(NodalPoint *nd)
 {
+	// copy global temperature
 	temperatureNoBC = nd->gTemperature;
+
+	// return next task
 	return (NodalTempBC *)GetNextObject();
 }
 
 // restore nodal temperature and get initial force to cancel no-BC result
 NodalTempBC *NodalTempBC::PasteNodalTemperature(NodalPoint *nd)
 {
+	// paste global temperature
 	nd->gTemperature = temperatureNoBC;
 	return (NodalTempBC *)GetNextObject();
 }

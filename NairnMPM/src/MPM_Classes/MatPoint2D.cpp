@@ -66,22 +66,25 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     // convert to strain increments (e.g., now dvxx = dvx/dx * dt = d/dx(du/dt) * dt = d/dt(du/dx) * dt = du/dx)
     dv.Scale(strainTime);
     
-	// find effective particle transport properties from grid results
+	// Extrapolate grid temperature (or concentration) to the particle
+	// Find delta value from previous extrapolated grid value on particle
+	// (and save this new one for use by others and next time step)
 	ResidualStrains res;
 	res.dT = 0;
 	res.dC = 0.;
 	if(!ConductionTask::active)
-	{	res.dT = pTemperature-pPreviousTemperature;
+	{	// just use and then reset previous temperature
+		res.dT = pTemperature-pPreviousTemperature;
 		pPreviousTemperature = pTemperature;
 	}
 	else
 	{	for(i=1;i<=numnds;i++)
-			res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i]);
+			res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
 		res.dT = conduction->GetDeltaValue(this,res.dT);
 	}
 	if(DiffusionTask::active)
 	{	for(i=1;i<=numnds;i++)
-			res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i]);
+			res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
 		res.dC = diffusion->GetDeltaValue(this,res.dC);
 	}
 	
@@ -546,7 +549,8 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 		ex = c2.x-c1.x;
 		ey = c2.y-c1.y;
     }
-    else
+	
+    else if(ElementBase::useGimp==LINEAR_CPDI)
     {   // get deformed corners, but get from element and natural coordinates
         //  from CPDI info because corners may have moved by here for any
         //  simulations that update strains between initial extrapolation
@@ -605,6 +609,11 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 		}
         
     }
+	
+	else
+	{	// Current not allowed
+		throw CommonException("Traction BCs in 2D require lCPDI or uGIMP shape functions.","MatPoint2D::GetTractionInfo");
+	}
 	
     // get traction normal vector by 1/2 the face area
     ZeroVector(tscaled);

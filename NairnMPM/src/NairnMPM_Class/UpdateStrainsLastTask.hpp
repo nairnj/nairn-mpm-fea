@@ -24,7 +24,6 @@ class UpdateStrainsLastTask : public MPMTask
 	
 		// required methods
 		virtual void Execute(void);
-	
 };
 
 #endif

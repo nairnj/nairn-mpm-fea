@@ -49,12 +49,17 @@
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
 double Xsym,Ysym,Zsym,Xsymmax,Ysymmax,Zsymmax;
 int xsymdir=0,ysymdir=0,zsymdir=0,xsymmaxdir=0,ysymmaxdir=0,zsymmaxdir=0;
-double pConc,pTempSet,Angle,Thick;
-int Nhoriz=0,Nvert=0,Ndepth=0,MatID;
+int Nhoriz=0,Nvert=0,Ndepth=0;
 double cellHoriz=-1.,cellVert=-1.,cellDepth=-1.;
-Vector Vel;
 char *angleExpr[3];
+char *vel0Expr[3];
+
+// Body and Hole globals
+int MatID;
+double pConc,pTempSet,Angle,Thick;
+Vector Vel;
 char rotationAxes[4];
+char angleAxes[4];
 
 // to allow new elements, add attribute or command to change this for grid
 // Create those element in ElementsController::MeshElement()
@@ -72,7 +77,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
     char *aName,*value;
     int i,numAttr;
 	double aScaling;
-
+	
     //-----------------------------------------------------------
     // Read into grid parameters (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax)
     //-----------------------------------------------------------
@@ -238,6 +243,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			pTempSet = thermal.reference;
             numAttr=(int)attrs.getLength();
 			rotationAxes[0]=0;			// no rotations yet
+            vel0Expr[0] = vel0Expr[1] = vel0Expr[2] = NULL;     // optional velocity functions
             for(i=0;i<numAttr;i++)
 			{	aName=XMLString::transcode(attrs.getLocalName(i));
                 value=XMLString::transcode(attrs.getValue(i));
@@ -326,19 +332,35 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		rotationAxes[0]=0;
 	}
     
-    else if(strcmp(xName,"vel0X")==0 || strcmp(xName,"vel0Y")==0 || strcmp(xName,"vel0Z")==0
-			|| strcmp(xName,"Lp0X")==0 || strcmp(xName,"Lp0Y")==0 || strcmp(xName,"Lp0Z")==0)
-    {   throw SAXException("<vel0(XYZ)> and <Lp0(XYZ)> commands require OSParticulas");
+    else if(strcmp(xName,"vel0X")==0 || strcmp(xName,"vel0Y")==0 || strcmp(xName,"vel0Z")==0)
+    {   if(block!=BODYPART)
+			ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
+		input=TEXT_BLOCK;
+        inputID=CHAR_ARRAY;
+		inputPtr=NULL;
+    }
+    
+    else if(strcmp(xName,"Lp0X")==0 || strcmp(xName,"Lp0Y")==0 || strcmp(xName,"Lp0Z")==0)
+    {   throw SAXException("<Lp0(XYZ)> commands require OSParticulas.");
     }
     
     //-----------------------------------------------------------
     // Read into geometry parameters for Body shape objects
     //-----------------------------------------------------------
-    else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0
-				|| strcmp(xName,"Sphere")==0 || strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0
+    else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0 || (strcmp(xName,"Line")==0 && block!=CRACKLIST)
+				|| strcmp(xName,"Sphere")==0 || strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0 || strcmp(xName,"Arc")==0
 				|| strcmp(xName,"Polyhedron")==0 || strcmp(xName,"Torus")==0 || strcmp(xName,"Shell")==0)
-	{	// only allowed in BODYPART or within a parent BODY_SHAPE
-		if(block!=BODYPART && block!=BODY_SHAPE)
+	{	// only allowed in BODYPART, BCSHAPE when current shape is empty, or within a parent BODY_SHAPE
+		int parentBlock = BODYPART;
+		if(block==BCSHAPE)
+		{	// must not have set the shape yet
+			if(theShape==NULL)
+				ThrowCompoundErrorMessage(xName,"command found at invalid location","");
+			else if(theShape->IsRealShape())
+				ThrowCompoundErrorMessage(xName,"command found in BC block that already has a shape","");
+			parentBlock = theShape->GetSourceBlock();		// parent of the BCSHAPE block
+		}
+		else if(block!=BODYPART && block!=BODY_SHAPE)
 			ThrowCompoundErrorMessage(xName,"command found at invalid location","");
 		
 		// only allowed if BODY_SHAPE has active shape
@@ -349,39 +371,48 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		ShapeController *newShape;
 		if(strcmp(xName,"Rect")==0)
 		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
-            newShape = new RectController(BODYPART);
+            newShape = (ShapeController *)new RectController(parentBlock);
  		}
 		else if(strcmp(xName,"Oval")==0)
 		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
-            newShape = new OvalController(BODYPART);
+            newShape = (ShapeController *)new OvalController(parentBlock);
 		}
 		else if(strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0)
 		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_3D);
-			newShape = new BoxController(BODYPART);
+			newShape = (ShapeController *)new BoxController(parentBlock);
 		}
  		else if(strcmp(xName,"Sphere")==0)
 		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_3D);
-			newShape = new SphereController(BODYPART);
+			newShape = (ShapeController *)new SphereController(parentBlock);
 		}
  		else if(strcmp(xName,"Torus")==0)
 		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_3D);
-			newShape = new TorusController(BODYPART);
+			newShape = (ShapeController *)new TorusController(parentBlock);
 		}
 		else if(strcmp(xName,"Polygon")==0)
 		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
-			newShape = new PolygonController(BODYPART);
+			newShape = (ShapeController *)new PolygonController(parentBlock);
 		}
 		else if(strcmp(xName,"Polyhedron")==0)
 		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_3D);
-			newShape = new PolyhedronController(BODYPART);
+			newShape = (ShapeController *)new PolyhedronController(parentBlock);
 		}
 		else if(strcmp(xName,"Shell")==0)
 		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_3D);
-			newShape = new ShellController(BODYPART);
+			newShape = (ShapeController *)new ShellController(parentBlock);
+		}
+		else if(strcmp(xName,"Line")==0)
+		{	ValidateCommand(xName,NO_BLOCK,ANY_DIM);
+			newShape = (ShapeController *)new LineController(parentBlock,!fmobj->IsThreeD());
+			((LineController *)newShape)->SetTolerance(ElementBase::gridTolerance);
+		}
+		else if(strcmp(xName,"Arc")==0)
+		{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+			newShape = (ShapeController *)new ArcController(parentBlock);
 		}
 		else
 		{	// shape that contains no points
-			newShape = new ShapeController(BODYPART);
+			newShape = new ShapeController(parentBlock);
 		}
 		
 		// atrributes
@@ -423,7 +454,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	//       Circle (xmin,ymin,xmax,ymax)
 	// Liping Xue
     //-----------------------------------------------------------
-    else if(strcmp(xName,"Line")==0 || strcmp(xName,"Circle")==0 )
+    else if((strcmp(xName,"Line")==0 && block==CRACKLIST) || strcmp(xName,"Circle")==0 )
 	{	ValidateCommand(xName,CRACKLIST,MUST_BE_2D);
 		int crackShape=LINE_SHAPE;
 		if(strcmp(xName,"Circle")==0)
@@ -544,12 +575,22 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		input=POLYHEDRON_BLOCK;
 	}
 	
+	// Initiate of BCShape (can use any available 2D or 3D shape)
+	// Can be in PARTICLEBCHEADER or GRIDBCHEADER
+	else if(strcmp(xName,"BCShape")==0)
+	{	if(block!=GRIDBCHEADER && block!=PARTICLEBCHEADER)
+			ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
+		// create empty shape to hold return block
+		theShape = new ShapeController(block);
+		block=BCSHAPE;
+	}
+	
     // Store a line and tolerance into the current BC shape
     else if(strcmp(xName,"BCLine")==0)
 	{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
     	if(block!=GRIDBCHEADER && block!=PARTICLEBCHEADER)
             ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
-		LineController *theLine=new LineController(block);
+		LineController *theLine=new LineController(block,!fmobj->IsThreeD());
         numAttr=(int)attrs.getLength();
 		theLine->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
 		theLine->SetTolerance(ElementBase::gridTolerance);
@@ -561,7 +602,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             delete [] value;
         }
 		theLine->FinishSetup();
-		theShape=theLine;
+		theShape=(ShapeController *)theLine;
         block=BCSHAPE;
     }
 
@@ -582,7 +623,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             delete [] value;
         }
 		theArc->FinishSetup();
-		theShape=theArc;
+		theShape=(ShapeController *)theArc;
         block=BCSHAPE;
     }
 
@@ -602,7 +643,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             delete [] value;
         }
         theBox->FinishSetup();
-		theShape=theBox;
+		theShape=(ShapeController *)theBox;
         block=BCSHAPE;
     }
 	
@@ -913,6 +954,10 @@ short MPMReadHandler::EndGenerator(char *xName)
 		for(i=0;i<numRotations;i++)
 		{	delete [] angleExpr[i];
 		}
+        for(i=0;i<3;i++)
+        {   if(vel0Expr[i]!=NULL)
+				delete [] vel0Expr[i];
+        }
     	block=POINTSBLOCK;
 	}
     
@@ -923,11 +968,32 @@ short MPMReadHandler::EndGenerator(char *xName)
 		angleExpr[rotationNum-1]=inputPtr;
 	}
 	
+	
+	else if(strcmp(xName,"vel0X")==0 || strcmp(xName,"vel0Y")==0 || strcmp(xName,"vel0Z")==0)
+	{	int vn = (int)(xName[4]-'X');
+		// delete current one and assign new one (unless empty)
+		if(vel0Expr[vn]!=NULL) delete [] vel0Expr[vn];
+		vel0Expr[vn] = NULL;
+		if(inputPtr!=NULL)
+		{	if(strlen(inputPtr)>0)
+				vel0Expr[vn] = inputPtr;
+			else
+			{	delete inputPtr;
+				if(vn==0)
+					Vel.x=0.;
+				else if(vn==1)
+					Vel.y=0.;
+				else
+					Vel.z=0.;
+			}
+		}
+	}
+	
 	else if(strcmp(xName,"Hole")==0)
     	block=POINTSBLOCK;
     
-	else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0
-			|| strcmp(xName,"Sphere")==0 || strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0
+	else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0 || (strcmp(xName,"Line")==0 && block!=CRACKLIST)
+			|| strcmp(xName,"Sphere")==0 || strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0 || strcmp(xName,"Arc")==0
 			|| strcmp(xName,"Polyhedron")==0 || strcmp(xName,"Torus")==0 || strcmp(xName,"Shell")==0)
 	{	// check shapes that require more parameters
 		if(strcmp(xName,"Polygon")==0 || strcmp(xName,"Polyhedron")==0)
@@ -938,10 +1004,18 @@ short MPMReadHandler::EndGenerator(char *xName)
 		// If parent shape then done
 		ShapeController *parentShape = theShape->GetParentShape();
 		if(parentShape==NULL)
-		{	MPMPts();
-			delete theShape;
-			theShape = NULL;
-			block=BODYPART;
+		{	// If shape in a region, then assign material points now
+			if(theShape->GetSourceBlock()==BODYPART)
+			{	MPMPts();
+				delete theShape;
+				theShape = NULL;
+				block=BODYPART;
+			}
+			
+			// if shape in BCShape, then keep shape and wait for BC commands
+			else
+			{	block=BCSHAPE;
+			}
 		}
 		
 		// if subordinate shape, add to parent shape
@@ -953,28 +1027,9 @@ short MPMReadHandler::EndGenerator(char *xName)
 		}
 	}
 	
-	/*
-    else if(strcmp(xName,"Polygon")==0)
-	{	if(!theShape->HasAllParameters())
-			throw SAXException("<Polygon> must have at least 3 subordinate <pt> commands.");
-		MPMPts();
-		delete theShape;
-		theShape = NULL;
-		block=BODYPART;
-	}
-    
-    else if(strcmp(xName,"Polyhedron")==0)
-	{	if(!theShape->HasAllParameters())
-            throw SAXException("<Polyhedron> must have at least 4 faces.");
-		MPMPts();
-		delete theShape;
-		theShape = NULL;
-		block=BODYPART;
-	}
-	*/
-
-    else if(strcmp(xName,"BCLine")==0 || strcmp(xName,"LdRect")==0 || strcmp(xName,"BCLine")==0 || strcmp(xName,"BCBox")==0)
-	{	block=theShape->GetSourceBlock();
+    else if(strcmp(xName,"BCLine")==0 || strcmp(xName,"LdRect")==0 || strcmp(xName,"BCArc")==0
+				|| strcmp(xName,"BCBox")==0 || strcmp(xName,"BCShape")==0)
+	{	block=theShape->GetSourceBlock();		// return from BCSHAPE to previous block
 		delete theShape;
 		theShape=NULL;
     }
@@ -1010,6 +1065,21 @@ void MPMReadHandler::MPMPts(void)
 		}
 	}
 
+	// velocity functions
+	int fnum = numRotations;
+	bool hasVelOrLp = false;
+	for(i=0;i<3;i++)
+	{	if(vel0Expr[i]!=NULL)
+		{	fnum++;
+			char *expr=new char[strlen(vel0Expr[i])+1];
+			strcpy(expr,vel0Expr[i]);
+			if(!CreateFunction(expr,fnum))
+				throw SAXException("Invalid velocity expression was provided in <vel0X(YZ))> command.");
+			delete [] expr;
+			hasVelOrLp = true;
+		}
+	}
+	
     try
     {   for(i=1;i<=nelems;i++)
 		{	theElements[i-1]->MPMPoints(fmobj->ptsPerElement,ppos);
@@ -1032,14 +1102,34 @@ void MPMReadHandler::MPMPts(void)
                         newMpt->SetPosition(&ppos[k]);
                         newMpt->SetOrigin(&ppos[k]);
  						newMpt->SetDimensionlessByPts(fmobj->ptsPerElement);
-                        newMpt->SetVelocity(&Vel);
+ 						
+						// velocity
+						if(hasVelOrLp)
+						{	fnum=numRotations;
+							if(vel0Expr[0]!=NULL)
+							{	fnum++;
+								Vel.x=FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
+							}
+							if(vel0Expr[1]!=NULL)
+							{	fnum++;
+								Vel.y=FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
+							}
+							if(vel0Expr[2]!=NULL)
+							{	fnum++;
+								Vel.z=FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
+							}
+						}
+						newMpt->SetVelocity(&Vel);
 						
 						// custom angles
-                        SetMptAnglesFromFunctions(numRotations,&ppos[k],newMpt);
+                        SetMptAnglesFromFunctions(rotationAxes,NULL,&ppos[k],newMpt);
+						
+						// add the point
                         mpCtrl->AddMaterialPoint(newMpt,pConc,pTempSet);
                     }
                     
-                    // mark as filled
+                    // mark as filled (note that ptFlag will be zero for deformed particles and therefore
+                    // no change occurs)
                     theElements[i-1]->filled|=ptFlag;
                 }
             }
@@ -1348,27 +1438,13 @@ void MPMReadHandler::grid()
 // Make sure axisymmetric has r=0 BCs
 //-----------------------------------------------------------
 void MPMReadHandler::CreateSymmetryBCs()
-{   // symmetry conditions require a structured grid
-    // maybe could revise if add option of variable element sizes
-    if(!mpmgrid.IsStructuredEqualElementsGrid()) return;
-
-	// If axisymmetric, automatrically put symmetry plane at r=0 with direction -1
+{  	// If axisymmetric, automatrically put symmetry plane at r=0 with direction -1
 	if(fmobj->IsAxisymmetric())
 	{	Xsym = 0.;				// only r=0 is allowed
 		xsymdir = -1;			// to left, but extra BCs not created
 		
 		// not needed if not in the grid
 		if(mpmgrid.xmin>0) return;
-
-		// verify grid passes through 0 or delta r if within 1.25 nodes of origin
-		/*
-		double nmin = mpmgrid.xmin/mpmgrid.GetCellXSize();
-		if(nmin<=1.25)
-		{	double ntest = int(fabs(nmin)+.1);			// int part as double (small number fo round off error)
-			if(!DbleEqual(ntest,fabs(nmin)))
-				throw SAXException("Axisymetric grid that includes r<1.25dr must have nodes at multiple of dr.");
-		}
-		*/
 	}
 	
 	// allow one plane in each direction
@@ -1590,125 +1666,181 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 // If just created a GIMP grid, make all border elements as holes
 // throws SAXException()
 //------------------------------------------------------------------
-void SetMptAnglesFromFunctions(int numRotations,Vector *mpos,MPMBase *newMpt)
+void SetMptAnglesFromFunctions(char *theAxes,double *theAngles,Vector *mpos,MPMBase *newMpt)
 {
+	int numRotations = (int)strlen(theAxes);
 	if(numRotations==0) return;
 	
 	// evaluate each angle
-	int i;
 	double rotAngle[3];
-	for(i=0;i<numRotations;i++)
-	{	rotAngle[i]=FunctionValue(i+1,mpos->x,mpos->y,mpos->z,0.,0.,0.);
+	if(theAngles==NULL)
+	{	for(int i=0;i<numRotations;i++)
+			rotAngle[i]=FunctionValue(i+1,mpos->x,mpos->y,mpos->z,0.,0.,0.);
+	}
+	else
+	{	for(int i=0;i<numRotations;i++)
+			rotAngle[i]=theAngles[i];
 	}
 	
 	// supported rotation schemes
 	
 	// Single angle is trivial
-	if(strcmp(rotationAxes,"Z")==0)
+	if(strcmp(theAxes,"Z")==0)
 	{	newMpt->SetAnglez0InDegrees(rotAngle[0]);
 	}
 	
-	else if(strcmp(rotationAxes,"Y")==0)
+	else if(strcmp(theAxes,"Y")==0)
 	{	newMpt->SetAngley0InDegrees(rotAngle[0]);
 	}
 	
-	else if(strcmp(rotationAxes,"X")==0)
+	else if(strcmp(theAxes,"X")==0)
 	{	newMpt->SetAnglex0InDegrees(rotAngle[0]);
 	}
 	
 	// all double angle options supported
 	
-	else if(strcmp(rotationAxes,"XY")==0)
-	{	double xx=rotAngle[0]*PI_CONSTANT/180.;
+	else if(strcmp(theAxes,"XY")==0)
+	{	// Find Rx.Ry
+		double xx=rotAngle[0]*PI_CONSTANT/180.;
 		double yy=rotAngle[1]*PI_CONSTANT/180.;
 		double R11=cos(yy);
-		double R12=sin(xx)*sin(yy);
-		double R13=cos(xx)*sin(yy);
-		double R21=0.;
+		double R12=0.;
+		double R13=-sin(yy);
+		double R21=sin(xx)*sin(yy);
 		double R22=cos(xx);
-		double R23=-sin(xx);
-		double R31=-sin(yy);
+		double R23=-sin(yy);
+		double R31=cos(xx)*sin(yy);
+		double R32=-sin(xx);
 		double R33=cos(xx)*cos(yy);
-		ConvertToZYX(newMpt,R11,R12,R13,R21,R22,R23,R31,R33);
+		// pass the transpose
+		ConvertToZYX(newMpt,R11,R21,R31,R12,R22,R32,R13,R23,R33);
 	}
 	
-	else if(strcmp(rotationAxes,"XZ")==0)
-	{	double xx=rotAngle[0]*PI_CONSTANT/180.;
+	else if(strcmp(theAxes,"XZ")==0)
+	{	// Find Rx.Rz
+		double xx=rotAngle[0]*PI_CONSTANT/180.;
 		double zz=rotAngle[1]*PI_CONSTANT/180.;
 		double R11=cos(zz);
-		double R12=-cos(xx)*sin(zz);
-		double R13=sin(xx)*sin(zz);
-		double R21=sin(zz);
+		double R12=sin(zz);
+		double R13=0.;
+		double R21=-cos(xx)*sin(zz);
 		double R22=cos(xx)*cos(zz);
-		double R23=-cos(zz)*sin(xx);
-		double R31=0.;
+		double R23=sin(xx);
+		double R31=sin(xx)*sin(zz);
+		double R32=-cos(zz)*sin(xx);
 		double R33=cos(xx);
-		ConvertToZYX(newMpt,R11,R12,R13,R21,R22,R23,R31,R33);
+		// pass the transpose
+		ConvertToZYX(newMpt,R11,R21,R31,R12,R22,R32,R13,R23,R33);
 	}
 	
-	else if(strcmp(rotationAxes,"YX")==0)
+	else if(strcmp(theAxes,"YX")==0)
 	{	newMpt->SetAngley0InDegrees(rotAngle[0]);
 		newMpt->SetAnglex0InDegrees(rotAngle[1]);
 	}
 	
-	else if(strcmp(rotationAxes,"YZ")==0)
-	{	double yy=rotAngle[0]*PI_CONSTANT/180.;
+	else if(strcmp(theAxes,"YZ")==0)
+	{	// Find Ry.Rz
+		double yy=rotAngle[0]*PI_CONSTANT/180.;
 		double zz=rotAngle[1]*PI_CONSTANT/180.;
 		double R11=cos(yy)*cos(zz);
-		double R12=-sin(zz);
-		double R13=cos(zz)*sin(yy);
-		double R21=cos(yy)*sin(zz);
+		double R12=cos(yy)*sin(zz);
+		double R13=-sin(yy);
+		double R21=-sin(zz);
 		double R22=cos(zz);
-		double R23=sin(zz)*sin(yy);
-		double R31=-sin(yy);
+		double R23=0.;
+		double R31=cos(zz)*sin(yy);
+		double R32=sin(zz)*sin(yy);
 		double R33=cos(yy);
-		ConvertToZYX(newMpt,R11,R12,R13,R21,R22,R23,R31,R33);
+		// pass the transpose
+		ConvertToZYX(newMpt,R11,R21,R31,R12,R22,R32,R13,R23,R33);
 	}
 	
-	else if(strcmp(rotationAxes,"ZX")==0)
+	else if(strcmp(theAxes,"ZX")==0)
 	{	newMpt->SetAnglez0InDegrees(rotAngle[0]);
 		newMpt->SetAnglex0InDegrees(rotAngle[1]);
 	}
 	
-	else if(strcmp(rotationAxes,"ZY")==0)
+	else if(strcmp(theAxes,"ZY")==0)
 	{	newMpt->SetAnglez0InDegrees(rotAngle[0]);
 		newMpt->SetAngley0InDegrees(rotAngle[1]);
 	}
 	
 	// Triple Angle options
+	// Not supported: YXY, YXZ, YZX, YZY, XYX, XYZ, XZX, XZY
+	// ... but never needed if one chooses z axis correctly
 	
-	else if(strcmp(rotationAxes,"ZYX")==0)
+	else if(strcmp(theAxes,"ZYX")==0)
 	{	newMpt->SetAnglez0InDegrees(rotAngle[0]);
 		newMpt->SetAngley0InDegrees(rotAngle[1]);
 		newMpt->SetAnglex0InDegrees(rotAngle[2]);
 	}
 	
-	else if(strcmp(rotationAxes,"ZYZ")==0)
-	{	double z=rotAngle[0]*PI_CONSTANT/180.;
+	else if(strcmp(theAxes,"ZYZ")==0)
+	{	// Find Rz.Ry.Rz
+		double z=rotAngle[0]*PI_CONSTANT/180.;
 		double y=rotAngle[1]*PI_CONSTANT/180.;
 		double x=rotAngle[2]*PI_CONSTANT/180.;		// second z
 		double R11 = cos(x)*cos(y)*cos(z) - sin(x)*sin(z);
-		double R12 = -cos(z)*sin(x) - cos(x)*cos(y)*sin(z);
-		double R13 = cos(x)*sin(y);
-		double R21 = cos(y)*cos(z)*sin(x) + cos(x)*sin(z);
+		double R12 = cos(y)*cos(z)*sin(x) + cos(x)*sin(z);
+		double R13 = -cos(z)*sin(y);
+		double R21 = -cos(z)*sin(x) - cos(x)*cos(y)*sin(z);
 		double R22 = cos(x)*cos(z) - cos(y)*sin(x)*sin(z);
-		double R23 = sin(x)*sin(y);
-		double R31 = -cos(z)*sin(y);
+		double R23 = sin(y)*sin(z);
+		double R31 = cos(x)*sin(y);
+		double R32 = sin(x)*sin(y);
 		double R33 = cos(y);
-		ConvertToZYX(newMpt,R11,R12,R13,R21,R22,R23,R31,R33);
+		// pass the transpose
+		ConvertToZYX(newMpt,R11,R21,R31,R12,R22,R32,R13,R23,R33);
+	}
+	
+	else if(strcmp(theAxes,"ZXZ")==0)
+	{	// Find Rz.Ry.Rz
+		double z=rotAngle[0]*PI_CONSTANT/180.;
+		double y=rotAngle[1]*PI_CONSTANT/180.;
+		double x=rotAngle[2]*PI_CONSTANT/180.;		// second z
+		double R11 = cos(x)*cos(z) - sin(x)*cos(y)*sin(z);
+		double R12 = cos(z)*sin(x) + cos(y)*cos(x)*sin(z);
+		double R13 = sin(y)*sin(z);
+		double R21 = -cos(y)*cos(z)*sin(x) - cos(x)*sin(z);
+		double R22 = cos(y)*cos(x)*cos(z) - sin(x)*sin(z);
+		double R23 = sin(y)*cos(z);
+		double R31 = sin(x)*sin(y);
+		double R32 = -cos(x)*sin(y);
+		double R33 = cos(y);
+		// pass the transpose
+		ConvertToZYX(newMpt,R11,R21,R31,R12,R22,R32,R13,R23,R33);
+	}
+	
+	else if(strcmp(theAxes,"ZXY")==0)
+	{	// Find Rz.Ry.Rz
+		double z=rotAngle[0]*PI_CONSTANT/180.;
+		double y=rotAngle[1]*PI_CONSTANT/180.;
+		double x=rotAngle[2]*PI_CONSTANT/180.;		// second z
+		double R11 = cos(x)*cos(z) + sin(x)*sin(y)*sin(z);
+		double R12 = cos(y)*sin(z);
+		double R13 = -cos(z)*sin(x) + cos(x)*sin(y)*sin(z);
+		double R21 = cos(z)*sin(y)*sin(x) - cos(x)*sin(z);
+		double R22 = cos(y)*cos(z);
+		double R23 = sin(y)*cos(x)*cos(z) + sin(x)*sin(z);
+		double R31 = sin(x)*cos(y);
+		double R32 = -sin(y);
+		double R33 = cos(x)*cos(y);
+		// pass the transpose
+		ConvertToZYX(newMpt,R11,R21,R31,R12,R22,R32,R13,R23,R33);
 	}
 	
 	else
 	{	char badAngles[200];
 		strcpy(badAngles,"'");
-		strcat(badAngles,rotationAxes);
+		strcat(badAngles,theAxes);
 		strcat(badAngles,"' is an unsupported rotation scheme for <RotateX(Y)(Z)> commands.");
 		throw SAXException(badAngles);
 	}
 }
 
 // Decompose matrix, input most elements (never need R32) but if R13 is 1, only need R12, R21, and R22 (may not be worth a check)
-void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,double R22,double R23,double R31,double R33)
+// Comparing to Transpose(Rz.Ry.Rz) where initial rotation matrix is R0 = Rz.Ry.Rz
+void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,double R22,double R23,double R31,double R32,double R33)
 {
 	// this as two roots (angle and PI-angle), but either one can be used (i.e., two solutions for
 	//	xyz are x,y,x and -PI+x,PI-y,-PI+z. Here we take the first one
@@ -1717,7 +1849,8 @@ void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,do
 	
 	// Special case for y=±pi/2
 	if(DbleEqual(fabs(R13),1))
-	{	// can only deterimine x+z, set x=0 and find z
+	{	// Remaining elements are cos(x+z) and sin(x+z)
+		// Can only determine the sum, so take x=0 and find z = z+z
 		x=0.;
 		z=asin(R21);
 		if(!DbleEqual(R22,cos(z))) z=PI_CONSTANT-z;
@@ -1737,6 +1870,7 @@ void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,do
 				z=-PI_CONSTANT/2.;		// Sin[z]=-1
 		}
 		
+		// y and z are know, find x
 		if(!DbleEqual(R33,0))
 		{	x=atan(-R23/R33);
 			if(!DbleEqual(R33,cos(y)*cos(x))) x-=PI_CONSTANT;

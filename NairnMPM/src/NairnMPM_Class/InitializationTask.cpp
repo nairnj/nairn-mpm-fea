@@ -4,13 +4,21 @@
 
 	Created by John Nairn on July 22, 2010
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
+ 
+	The tasks are:
+	--------------
+	* Zero nodal values (InitialiseForTimeStep) for real and ghost nodes
+		All MVF and CVF values
+		Global transport values on node and for contact flow on CVF and MVF
+	* Get shape function data (mostly CPDI, optionally for GIMP)
+	* Set particle external forces
+	* Clear out stored crack nodes and interface nodes
 ********************************************************************************/
 
 #include "stdafx.h"
 #include "NairnMPM_Class/InitializationTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/NodalPoint.hpp"
-#include "Nodes/MaterialInterfaceNode.hpp"
 #include "Exceptions/MPMWarnings.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 #include "Cracks/CrackNode.hpp"
@@ -82,5 +90,8 @@ void InitializationTask::Execute(void)
 	
 	// remove contact conditions
 	CrackNode::RemoveCrackNodes();
-	MaterialInterfaceNode::RemoveInterfaceNodes();
-}	
+	
+	// total interface energy
+	NodalPoint::interfaceEnergy=0.;
+
+}

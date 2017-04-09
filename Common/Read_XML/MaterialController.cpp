@@ -37,6 +37,7 @@
 	#include "Materials/ContactLaw.hpp"
 	#include "Materials/CoulombFriction.hpp"
 	#include "Materials/LinearInterface.hpp"
+	#include "Materials/NonlinearInterface.hpp"
 #else
 	#include "Materials/ImperfectInterface.hpp"
 #endif
@@ -166,6 +167,9 @@ int MaterialController::AddMaterial(int matID,char *matName)
 			break;
 		case LINEARINTERFACELAW:
 			newMaterial=new LinearInterface(matName);
+			break;
+		case NONLINEARINTERFACELAW:
+			newMaterial=new NonlinearInterface(matName);
 			break;
 #else
 		case INTERFACEPARAMS:

@@ -19,12 +19,8 @@ public class MPMParticleBCs
 	private String bcCmd;
 	private StringBuffer bcSettings;
 	private int inBC;
+	public ArrayList<RegionPiece> pieces;
 
-	public static final int LOADLINE_BC=1;
-	public static final int LOADARC_BC=2;
-	public static final int LOADRECT_BC=3;
-	public static final int LOADBOX_BC=4;
-	
 	public static final int ADD_LOAD=1;
 	public static final int ADD_TRACTION=2;
 	public static final int ADD_HEATFLUX=3;
@@ -42,6 +38,7 @@ public class MPMParticleBCs
 	public void initRunSettings()
 	{	inBC = 0;
 		xmlbcs = new StringBuffer("");
+		pieces=new ArrayList<RegionPiece>(20);
 	}
 	
 	//----------------------------------------------------------------------------
@@ -54,6 +51,7 @@ public class MPMParticleBCs
 		inBC = theType;
 		bcCmd = theCmd;
 		bcSettings = new StringBuffer("");
+		pieces.clear();
 	}
 
 	// start grid BC line
@@ -78,8 +76,9 @@ public class MPMParticleBCs
     	
 		bcAttrs = "<LdRect xmin='"+xmin+"' xmax='"+xmax+"' ymin='"+ymin+"' ymax='"+ymax+"'>\n";
 		bcSettings = new StringBuffer("");
-		inBC = LOADRECT_BC;
+		inBC = MPMGridBCs.LOADRECT_BC;
 		bcCmd = "LdRect";
+		pieces.clear();				// but never used
 	}
 
 	// LoadLine, LoadArc, LoadRect or LoadBox is done
@@ -88,8 +87,14 @@ public class MPMParticleBCs
 		if(inBC != endType)
 			throw new Exception("'"+args.get(0)+"' does not match current boundary condition block:\n"+args);
 		
+		// get shape
+		StringBuffer shapeXML = new StringBuffer("");
+		if(inBC == MPMGridBCs.PARTICLE_BC)
+		{	doc.regions.compilePieces(pieces, shapeXML);
+		}
+
 		// append block
-		xmlbcs.append("    "+bcAttrs+bcSettings+"    </"+bcCmd+">\n");
+		xmlbcs.append("    "+bcAttrs+ shapeXML + bcSettings+"    </"+bcCmd+">\n");
 		
 		inBC = 0;
 	}
@@ -239,6 +244,11 @@ public class MPMParticleBCs
 
 	}
 	
+	// add region pience
+	public void addPiece(RegionPiece newPiece)
+	{	pieces.add(newPiece);
+	}
+	
 	//----------------------------------------------------------------------------
 	// Accessors
 	//----------------------------------------------------------------------------
@@ -250,6 +260,13 @@ public class MPMParticleBCs
 	
 	public int getInBC()
 	{	return inBC;
+	}
+
+	public boolean allowsShape(int level)
+	{	if(inBC!=MPMGridBCs.PARTICLE_BC) return false;
+		if(level>0) return true;  // it is checked later
+		if(pieces.size()==0) return true;
+		return false;
 	}
 
 }
