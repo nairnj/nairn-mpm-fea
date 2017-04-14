@@ -22,7 +22,7 @@
 		the last 4 crack points. COD can be taken anywhere from tip to 3 point.
 		Normalized COD is from tangent direction to spline at that point.
 		If _CUBIC_INTERPOLATION_ is not defined then draws 3 Bezier curves
-		with crack points as control points. COD is similar by from different
+		with crack points as control points. COD is similar but from different
 		curves.
 */
 //#define _CUBIC_INTERPOLATION_

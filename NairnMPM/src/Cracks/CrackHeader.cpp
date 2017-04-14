@@ -625,7 +625,7 @@ void CrackHeader::GetCOD(CrackSegment *crkTip,Vector &cod,bool getModes)
 	Vector tipDir;
 	
 #ifdef _LINEAR_INTERPOLATION_
-
+	
 	CrackSegment *adjTip;
 	
 	if(crkTip==firstSeg)
@@ -655,9 +655,9 @@ void CrackHeader::GetCOD(CrackSegment *crkTip,Vector &cod,bool getModes)
 	if(getModes)
 	{	CrackSegment *newTip;
 		CrackTipAndDirection(whichTip,&newTip,tipDir);
-		double codx=cod.x,cody=cod.y;
-		cod.x=codx*tipDir.x+cody*tipDir.y;
-		cod.y=-codx*tipDir.y+cody*tipDir.x;
+		double codx=cod.x, cody=cod.y;
+		cod.x = codx*tipDir.x + cody*tipDir.y;
+		cod.y = -codx*tipDir.y + cody*tipDir.x;
 	}
 	
 #else
@@ -699,8 +699,8 @@ void CrackHeader::GetCOD(CrackSegment *crkTip,Vector &cod,bool getModes)
 		{	CrackSegment *newTip;
 			CrackTipAndDirection(whichTip,&newTip,tipDir);
 			double codx=cod.x,cody=cod.y;
-			cod.x=codx*tipDir.x+cody*tipDir.y;
-			cod.y=-codx*tipDir.y+cody*tipDir.x;
+			cod.x=codx*tipDir.x + cody*tipDir.y;
+			cod.y=-codx*tipDir.y + cody*tipDir.x;
 		}
 		return;
 	}
@@ -721,9 +721,9 @@ void CrackHeader::GetCOD(CrackSegment *crkTip,Vector &cod,bool getModes)
 	{	//InterpolatePosition(NO_CRACK,seg,tipDir,true);
 		CrackSegment *newTip;
 		CrackTipAndDirection(whichTip,&newTip,tipDir);
-		double codx=cod.x,cody=cod.y;
-		cod.x=codx*tipDir.x+cody*tipDir.y;
-		cod.y=-codx*tipDir.y+cody*tipDir.x;
+		double codx=cod.x, cody=cod.y;
+		cod.x = codx*tipDir.x + cody*tipDir.y;
+		cod.y = -codx*tipDir.y + cody*tipDir.x;
 	}
 	
 	return;
@@ -740,7 +740,7 @@ void CrackHeader::InterpolatePosition(int surface,CrackSegment **seg,Vector &pos
 	int i,j=surface-1;
 	
 #ifdef _CUBIC_INTERPOLATION_
-
+	
 	// for cubic interpolation, interpolant points are the crack poionts
 	for(i=0;i<4;i++)
 	{	if(surface==NO_CRACK)
@@ -764,7 +764,7 @@ void CrackHeader::InterpolatePosition(int surface,CrackSegment **seg,Vector &pos
 	//bpt[3].y=spt[3].y;
 	
 #else
-
+	
 	// for bezier curves, crack particles are control points
 	for(i=0;i<4;i++)
 	{	if(surface==NO_CRACK)
@@ -812,7 +812,10 @@ void CrackHeader::InterpolatePosition(int surface,CrackSegment **seg,Vector &pos
 		pos.y=-pos.y/ds;
 	}
 	else
-	{	for(i=0;i<4;i++)
+	{	// default implementation has codInterval=0, bezArg = {0,0,0,1}
+		// pos = bc[3] = spt[1] = (bpt[0]+4bpt[1]+bpt[2])/3
+		// Default method sets bpt to crack points, so pos is weighted average of two ends of first two segment.
+		for(i=0;i<4;i++)
 		{	pos.x+=bezArg[i]*bc[i].x;
 			pos.y+=bezArg[i]*bc[i].y;
 		}
@@ -1239,11 +1242,6 @@ void CrackHeader::JIntegral(void)
 						dvxdy=velGrad->xy;
 						dvydx=velGrad->zz;			// yx stored in zz
 						
-						// We want Vp*rho*() = mp*()
-						// increment the integrands g*(mm/sec^2) = uN
-						f2ForJx += mp*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx));
-						f2ForJy += mp*((ax*duxdy+ay*duydy)-(vx*dvxdy+vy*dvydy));
-						
 						// Add an area integral is axisymetric
 						if(fmobj->IsAxisymmetric())
 						{	// Theory has area integral so need new volume element and track separate area
@@ -1260,11 +1258,27 @@ void CrackHeader::JIntegral(void)
 							if(JContourType == AXISYM_BROBERG_J)
 							{	// See Broberg, Cracks and Fracture (1999), page 65
 								f2axisym += (Ap*rho0/Jp)*(sp.xx*duxdx - sp.zz*gradU(2,2) + sp.xy*duydx)/xp;
+								
+								// We want Vp*rho*() = mp*()
+								// increment the integrands g*(mm/sec^2) = uN
+								f2ForJx += mp*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx));
+								f2ForJy += mp*((ax*duxdy+ay*duydy)-(vx*dvxdy+vy*dvydy));
 							}
 							else
 							{	// Bergkvist and Huong called J3D/(a dphi)
 								f2axisym += (Ap*rho0/Jp)*(mptr->GetWorkEnergy() - sp.zz*gradU(2,2))/crackr;
+								
+								// We want Vp*rho*() = mp*()
+								// increment the integrands g*(mm/sec^2) = uN
+								f2ForJx += mptr->pos.x*mp*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx))/crackr;
+								f2ForJy += mptr->pos.x*mp*((ax*duxdy+ay*duydy)-(vx*dvxdy+vy*dvydy))/crackr;
 							}
+						}
+						else
+						{	// We want Vp*rho*() = mp*()
+							// increment the integrands g*(mm/sec^2) = uN
+							f2ForJx += mp*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx));
+							f2ForJy += mp*((ax*duxdy+ay*duydy)-(vx*dvxdy+vy*dvydy));
 						}
 					}
 				}
@@ -2316,6 +2330,11 @@ void CrackHeader::SetCodLocation(double t)
 	bezDer[1]=3.*(1.-t)*(1.-t) - 6.*t*(1.-t);
 	bezDer[2]=6.*t*(1-t) - 3.*t*t;
 	bezDer[3]=3.*t*t;
+	
+	// current code settings has t=1 on input or
+	// codLocation = 1, codInterval=0
+	// bezArg = {0,0,0,1}
+	// bezDer = {0,0,-3,3}
 }
 
 // Check is lines is within extent of leaf or segment

@@ -34,7 +34,7 @@ void SetRigidContactVelTask::Execute(void)
 	// GetVectorSetting() uses globals and therefore can't be parallel
 	Vector newvel;
 	bool hasDir[3];
-//#pragma omp parallel for
+//#pragma omp parallel for private(vewvel,hasDir)
 	for(int p=nmpmsNR;p<nmpmsRC;p++)
 	{   MPMBase *mpmptr = mpm[p];
 		const RigidMaterial *matID = (RigidMaterial *)theMaterials[mpm[p]->MatID()];

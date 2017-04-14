@@ -89,14 +89,17 @@ void PressureLaw::PrintMechanicalProperties(void) const
 	}
 }
 
-// evaluate pressure at current time
+// evaluate pressure at current time. If no function use input constant in stress 1
 // (Don't call in parallel code due to function)
 void PressureLaw::CalculateTimeFunction(void)
-{	// in Legacy units, convert to ms, in consistent units just use the time
-	varTime = mtime*UnitsController::Scaling(1000.);
-	
-	// in Legacy, convert MPa to Pa, in consisten units use the function
-	stress1 = function->Val()*UnitsController::Scaling(1.e6);
+{
+	if(function!=NULL)
+	{	// in Legacy units, convert to ms, in consistent units just use the time
+		varTime = mtime*UnitsController::Scaling(1000.);
+		
+		// in Legacy, convert MPa to Pa, in consisten units use the function
+		stress1 = function->Val()*UnitsController::Scaling(1.e6);
+	}
 	
 }
 

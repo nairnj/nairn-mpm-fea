@@ -1021,9 +1021,9 @@ Vector MaterialBase::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 // nuLS and GLS -- low strain Poisson's ratio and shear modulus (in Pa = uN/mm^2)
 Vector MaterialBase::IsotropicJToK(Vector d,Vector C,Vector J0,int np,double nuLS,double GLS)
 {
-    double Cs2,Cd2,C2;
-    double B1,B2,A1,A2,A3,A4,DC;
-    double term1,term2;
+    //double Cs2,Cd2,C2;
+    //double B1,B2,A1,A2,A3,A4,DC;
+    //double term1,term2;
     Vector SIF;
 	
     double dx = d.x;
@@ -1043,9 +1043,14 @@ Vector MaterialBase::IsotropicJToK(Vector d,Vector C,Vector J0,int np,double nuL
 	else
         kf=3.-4.*nuLS;
 	
+	// This code currently ignores crack velocity because it is not calculation
+	// The effect in generally small
+	// Future could evaulation velocity is use this code
+	
+	/*
     C2 = C.x*C.x+C.y*C.y;				// square of crack velocity
 	// dynamic or stationary crack
-    if(!DbleEqual(sqrt(C2),0.0)) 
+    if(!DbleEqual(sqrt(C2),0.0))
 	{	Cs2=GLS/rho;
         Cd2=Cs2*(kf+1.)/(kf-1.);
         B1=sqrt(1.-C2/Cd2);
@@ -1076,7 +1081,26 @@ Vector MaterialBase::IsotropicJToK(Vector d,Vector C,Vector J0,int np,double nuL
 		SIF.y = dx*sqrt(2*GLS*J0x*B1/A2/term2);
     }
     
-    return SIF;
+	return SIF;
+	*/
+
+	
+	// cod inmm^2
+	double cod2 = dy*dy + dx*dx;
+	double Aterm = cod2*(kf+1.)/4.;
+	
+	// special case for zero COD
+	if(DbleEqual(cod2,0.0))
+	{	SIF.x = 0.0;
+		SIF.y = 0.0;
+	}
+	else
+	{	// Units mm sqrt(uN/mm^2 uN/mm 1/mm^2) = uN/mm^2 sqrt(mm)
+		SIF.x = dy*sqrt(2*GLS*J0x/Aterm);			// KI
+		SIF.y = dx*sqrt(2*GLS*J0x/Aterm);			// KII
+	}
+	
+	return SIF;
 }
 
 // Determine what calculations are needed for the propagation criterion
