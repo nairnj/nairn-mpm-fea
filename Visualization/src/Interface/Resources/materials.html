@@ -1192,9 +1192,11 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 
 <ul>
 
-<li>yield  the initial yield stress (in MPa).</li>
-<li>Ep - the plastic modulus (in MPa). The default is 0.0 which results in an elastic-perfectly plastic material.</li>
+<li>yield - the initial yield stress (in MPa).</li>
+<li>Ep - the plastic modulus (in MPa). The default is 0.0 which results in an elastic-perfectly plastic material. Ep can only be non-negative. To modeling softening with negative Ep, omit this parameter and enter a negtative Khard instead.</li>
 <li>Khard - alternatively, you can enter this dimensionless parameter for hardening. It is only used if Ep is not entered.</li>
+<li>yieldMin - the minimum yield stress (in MPa with default of 0). A minimum stress is only used when modeling softening by entering <code>Khard</code> &lt; 0.</li>
+
 </ul>
 
 <h3>History Data for Linear Hardening</h3>
@@ -1220,6 +1222,7 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 <li>yield - the initial yield stress (in MPa).</li>
 <li>Khard - coefficient for nonlinear hardening (dimensionless).</li>
 <li>nhard - exponent parameter in the nonlinear hardening (dimensionless).</li>
+<li>yieldMin - the minimum yield stress (in MPa with default of 0). A minimum stress is only used when modeling softening by entering <code>Khard</code> &lt; 0.</li>
 </ul>
 
 <h3>History Data for Nonlinear Hardening</h3>
