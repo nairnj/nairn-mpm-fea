@@ -23,6 +23,7 @@ NonlinearHardening::NonlinearHardening(MaterialBase *pair) : HardeningLawBase(pa
 {
 	beta = 0.;
 	npow = 1.;
+	alphaMax = 1.e50;
 }
 
 #pragma mark LinearHardening::Initialize
@@ -45,6 +46,20 @@ char *NonlinearHardening::InputMaterialProperty(char *xName,int &input,double &g
     return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
 }
 
+// get reduced stress than done
+const char *NonlinearHardening::VerifyAndLoadProperties(int np)
+{
+	// call first to get reduced yield stress
+	HardeningLawBase::VerifyAndLoadProperties(np);
+	
+	// maximum alpha when softening
+	if(beta<0.)
+		alphaMax = (pow(yldredMin/yldred, 1./npow) - 1.)/beta;
+	
+	// base call above never has an error
+	return NULL;
+}
+
 // print just yield properties to output window
 void NonlinearHardening::PrintYieldProperties(void) const
 {
@@ -52,6 +67,8 @@ void NonlinearHardening::PrintYieldProperties(void) const
     MaterialBase::PrintProperty("yld",yield*UnitsController::Scaling(1.e-6),"");
     MaterialBase::PrintProperty("beta",beta,"");
     MaterialBase::PrintProperty("n",npow,"");
+	if(beta<0.)
+		MaterialBase::PrintProperty("yldMin",yieldMin*UnitsController::Scaling(1.e-6),"");
     cout << endl;
 }
 
@@ -60,7 +77,7 @@ void NonlinearHardening::PrintYieldProperties(void) const
 // Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
 double NonlinearHardening::GetYield(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {   
-	return yldred*pow(1.+beta*a->alpint,npow) ;
+	return a->alpint < alphaMax ? yldred*pow(1.+beta*a->alpint,npow) : yldredMin ;
 }
 
 // Get derivative of sqrt(2./3.)*yield with respect to lambda for plane strain and 3D
@@ -68,7 +85,7 @@ double NonlinearHardening::GetYield(MPMBase *mptr,int np,double delTime,Hardenin
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)lamda or depdot/dlambda = sqrt(2./3.)/delTime
 double NonlinearHardening::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return TWOTHIRDS*yldred*beta*npow*pow(1.+beta*a->alpint,npow-1) ;
+	return a->alpint < alphaMax ? TWOTHIRDS*yldred*beta*npow*pow(1.+beta*a->alpint,npow-1) : 0. ;
 }
 
 // Get derivative of (1./3.)*yield^2 with respect to lambda for plane stress only
@@ -77,7 +94,7 @@ double NonlinearHardening::GetKPrime(MPMBase *mptr,int np,double delTime,Hardeni
 // Also equal to sqrt(2./3.)*GetYield()*GetKPrime()*fnp1, but in separate call for efficiency
 double NonlinearHardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return SQRT_EIGHT27THS*yldred*yldred*beta*npow*pow(1.+beta*a->alpint,2.*npow-1)*fnp1;
+	return a->alpint < alphaMax ? SQRT_EIGHT27THS*yldred*yldred*beta*npow*pow(1.+beta*a->alpint,2.*npow-1)*fnp1 : 0. ;
 }
 
 #pragma mark NonlinearHardening::Accessors

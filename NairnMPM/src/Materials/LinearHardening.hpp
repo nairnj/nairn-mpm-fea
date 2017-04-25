@@ -42,7 +42,7 @@ class LinearHardening : public HardeningLawBase
         virtual const char *GetHardeningLawName(void) const;
     
     protected:
-        double Ep,beta,Epred;
+        double Ep,beta,Epred,alphaMax;
 };
 
 #endif

@@ -304,9 +304,13 @@ void MaterialBase::PrintCommonProperties(void) const
 		PrintProperty("AV-A2",avA2,"");
         cout << endl;
         if(ConductionTask::AVHeating)
-            PrintProperty("    AV heating on",FALSE);
+		{	PrintProperty("    AV heating on",FALSE);
+			cout << endl;
+		}
         else
-            PrintProperty("    AV heating off",FALSE);
+		{	PrintProperty("    AV heating off",FALSE);
+			cout << endl;
+		}
 	}
 	
 	// particle damping

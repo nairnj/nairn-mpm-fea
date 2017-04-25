@@ -153,7 +153,7 @@
 <!-- Define material properties -->
 
 <!ELEMENT	Material
-			( rho | E | nu | G | alpha | yield | beta | yieldMax
+			( rho | E | nu | G | alpha | yield | yieldMin | beta | yieldMax
 				| EA | ET | GA | nuA | nuT | alphaA | alphaT | betaA | betaT | Ep
 				| Ex | ER | Ey | EZ | Ez | Gxy | Gyx | GRZ | GZR | Gxz | Gzx
 				| GRT | GTR | Gyz | Gzy | GZT | GTZ
@@ -392,6 +392,7 @@
 <!ELEMENT	alpha (#PCDATA)>
 <!ELEMENT	beta (#PCDATA)>
 <!ELEMENT	yield (#PCDATA)>
+<!ELEMENT	yieldMin (#PCDATA)>
 <!ELEMENT	yldxx (#PCDATA)>
 <!ELEMENT	yldyy (#PCDATA)>
 <!ELEMENT	yldzz (#PCDATA)>

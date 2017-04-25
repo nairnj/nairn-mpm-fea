@@ -21,6 +21,8 @@ class Nonlinear2Hardening : public NonlinearHardening
 		Nonlinear2Hardening();
 		Nonlinear2Hardening(MaterialBase *);
     
+		const char *VerifyAndLoadProperties(int);
+	
 		// hardening law core methods
 		virtual double GetYield(MPMBase *,int,double,HardeningAlpha *,void *) const;
 		virtual double GetKPrime(MPMBase *,int,double,HardeningAlpha *,void *) const;

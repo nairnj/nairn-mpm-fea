@@ -29,6 +29,7 @@ LinearHardening::LinearHardening(MaterialBase *pair) : HardeningLawBase(pair)
 {
     beta = 0.;
     Ep = -1.;
+	alphaMax = 1.e50;
 }
 
 #pragma mark LinearHardening::Initialize
@@ -65,6 +66,10 @@ const char *LinearHardening::VerifyAndLoadProperties(int np)
 	// save some multiplies (it is reduced plastic modulus)
     Epred = yldred*beta;
 	
+	// maximum alpha when softening
+	if(beta<0.)
+		alphaMax = ((yldredMin/yldred) - 1.)/beta;
+	
 	// base call above never has an error
 	return NULL;
 }
@@ -76,6 +81,8 @@ void LinearHardening::PrintYieldProperties(void) const
     MaterialBase::PrintProperty("yld",yield*UnitsController::Scaling(1.e-6),"");
     MaterialBase::PrintProperty("K",beta,"");
     MaterialBase::PrintProperty("Ep",Ep*UnitsController::Scaling(1.e-6),"");
+	if(Ep<0.)
+		MaterialBase::PrintProperty("yldMin",yieldMin*UnitsController::Scaling(1.e-6),"");
     cout << endl;
 }
 
@@ -84,21 +91,21 @@ void LinearHardening::PrintYieldProperties(void) const
 // Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
 double LinearHardening::GetYield(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return yldred + Epred*a->alpint;
+	return fmax(yldred + Epred*a->alpint,yldredMin);
 }
 
 // Return (K(alpha)-K(0)), which is used in dissipated energy calculation
 double LinearHardening::GetYieldIncrement(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return Epred*a->alpint;
+	return fmax(Epred*a->alpint,yldredMin-yldred);
 }
 
 // Get derivative of sqrt(2./3.)*yield with respect to lambda for plane strain and 3D
 // ... and using dep/dlambda = sqrt(2./3.)
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)lamda or depdot/dlambda = sqrt(2./3.)/delTime
-double LinearHardening::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningAlpha *,void *properties) const
+double LinearHardening::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return TWOTHIRDS*Epred;
+	return a->alpint > alphaMax ? TWOTHIRDS*Epred : 0.;
 }
 
 // Get derivative of (1./3.)*yield^2 with respect to lambda for plane stress only
@@ -107,7 +114,7 @@ double LinearHardening::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningA
 // Also equal to sqrt(2./3.)*GetYield()*GetKPrime()*fnp1, but in separate call for efficiency
 double LinearHardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return SQRT_EIGHT27THS*(yldred + Epred*a->alpint)*Epred*fnp1;
+	return a->alpint > alphaMax ? SQRT_EIGHT27THS*(yldred + Epred*a->alpint)*Epred*fnp1 : 0.;
 }
 
 #pragma mark HardeningLawBase::Return Mapping
@@ -124,6 +131,14 @@ double LinearHardening::SolveForLambdaBracketed(MPMBase *mptr,int np,double stri
     
 	// closed form for plane strain and 3D
 	double lambdak = (strial - SQRT_TWOTHIRDS*(yldred + Epred*a->alpint))/(2.*(Gred + Epred/3.));
+	
+	// check for beyond limit
+	if(a->alpint+SQRT_TWOTHIRDS*lambdak > alphaMax)
+	{	// limit to constant yield stress
+		lambdak = (strial - SQRT_TWOTHIRDS*yldredMin)/(2.*Gred);
+	}
+	
+	// update and return result
 	UpdateTrialAlpha(mptr,np,lambdak,(double)1.,a,offset);
 	return lambdak;
 }

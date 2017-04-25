@@ -71,6 +71,7 @@ class HardeningLawBase
     
     protected:
         double yield,yldred;
+		double yieldMin,yldredMin;
         MaterialBase *parent;
 	
 		virtual void BracketSolution(MPMBase *,int,double,Tensor *,double,double,double,

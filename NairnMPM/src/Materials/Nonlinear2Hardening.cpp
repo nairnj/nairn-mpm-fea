@@ -22,12 +22,25 @@ Nonlinear2Hardening::Nonlinear2Hardening(MaterialBase *pair) : NonlinearHardenin
 {
 }
 
+// get reduced stress than done
+const char *Nonlinear2Hardening::VerifyAndLoadProperties(int np)
+{
+	// call first to get reduced yield stress
+	HardeningLawBase::VerifyAndLoadProperties(np);
+	
+	// maximum alpha when softening
+	if(beta<0.)
+		alphaMax = pow((yldredMin/yldred - 1.)/beta , 1./npow);
+	
+	// base call above never has an error
+	return NULL;
+}
 #pragma mark NonlinearHardening::Law Methods
 
 // Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
 double Nonlinear2Hardening::GetYield(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return yldred*(1.+beta*pow(a->alpint,npow)) ;
+	return a->alpint < alphaMax ? yldred*(1.+beta*pow(a->alpint,npow)) : yldredMin ;
 }
 
 // Get derivative of sqrt(2./3.)*yield with respect to lambda for plane strain and 3D
@@ -35,7 +48,7 @@ double Nonlinear2Hardening::GetYield(MPMBase *mptr,int np,double delTime,Hardeni
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)lamda or depdot/dlambda = sqrt(2./3.)/delTime
 double Nonlinear2Hardening::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return TWOTHIRDS*yldred*beta*npow*pow(a->alpint,npow-1.) ;
+	return a->alpint < alphaMax ? TWOTHIRDS*yldred*beta*npow*pow(a->alpint,npow-1.) : 0. ;
 }
 
 // Get derivative of (1./3.)*yield^2 with respect to lambda for plane stress only
@@ -45,8 +58,12 @@ double Nonlinear2Hardening::GetKPrime(MPMBase *mptr,int np,double delTime,Harden
 double Nonlinear2Hardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime,HardeningAlpha *a,void *properties) const
 {
     if(DbleEqual(a->alpint,0.)) return 0.;
-    double alphan = pow(a->alpint,npow);
-	return SQRT_EIGHT27THS*yldred*yldred*beta*npow*(1.+beta*alphan)*alphan*fnp1/a->alpint;
+	if(a->alpint < alphaMax)
+	{	double alphan = pow(a->alpint,npow);
+		return SQRT_EIGHT27THS*yldred*yldred*beta*npow*(1.+beta*alphan)*alphan*fnp1/a->alpint;
+	}
+	else
+		return 0.;
 }
 
 #pragma mark NonlinearHardening::Accessors

@@ -22,6 +22,7 @@ class NonlinearHardening : public HardeningLawBase
         NonlinearHardening(MaterialBase *);
     
         virtual char *InputMaterialProperty(char *,int &,double &);
+		const char *VerifyAndLoadProperties(int);
         virtual void PrintYieldProperties(void) const;
     
         // hardening law core methods
@@ -33,7 +34,7 @@ class NonlinearHardening : public HardeningLawBase
         virtual const char *GetHardeningLawName(void) const;
     
     protected:
-        double beta,npow;
+        double beta,npow,alphaMax;
 };
 
 #endif

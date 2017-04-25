@@ -24,6 +24,7 @@ HardeningLawBase::HardeningLawBase(MaterialBase *pair)
 {
     yield = 1.e50;
     parent = pair;
+	yieldMin = 0.;			// only needed for softening
 }
 
 HardeningLawBase::~HardeningLawBase() {}
@@ -39,6 +40,12 @@ char *HardeningLawBase::InputMaterialProperty(char *xName,int &input,double &gSc
 		return UnitsController::ScaledPtr((char *)&yield,gScaling,1.e6);
     }
     
+	// minimum yield stress
+	else if(strcmp(xName,"yieldMin")==0)
+	{   input=DOUBLE_NUM;
+		return UnitsController::ScaledPtr((char *)&yieldMin,gScaling,1.e6);
+	}
+	
     // is not a hardening law property
     return NULL;
 }
@@ -48,6 +55,9 @@ const char *HardeningLawBase::VerifyAndLoadProperties(int np)
 {
 	// reduced yield stress
     yldred = yield/parent->GetRho(NULL);
+	
+	// reduced minimum yield stress
+	yldredMin = yieldMin/parent->GetRho(NULL);
 	
 	return NULL;
 }
