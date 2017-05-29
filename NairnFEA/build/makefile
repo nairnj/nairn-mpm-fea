@@ -4,12 +4,12 @@
 # cd to directory with this 'makefile'
 # give the command 'make SYSTEM=system' where the lower case system is where
 #    you are compiling. Supported systems are:
-#       mac - MacOS X
+#       mac - MacOS X using gcc
+#       mac-clang - MacOS X using clang-mp
 #       carbon - OSU carbon/hedera cluster (the default)
 #		mpm - OSU machine
 #       cygwin - Standard cygwin install in Windows
 #       cygwinbin - Standard cygwin install using cygwin binary xerces
-#       inferno - C-SAFE cluster at U of Utah
 #       zia - A Debian linux machine
 # Other options are
 #    make clean - to remove all compiled objects
@@ -38,6 +38,9 @@ xercesSo= /usr/local/lib/libxerces-c.so
 ifeq ($(SYSTEM),mac)
 	xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
+ifeq ($(SYSTEM),mac-clang)
+	xercesSo = /usr/local/lib/libxerces-c.dylib
+endif
 ifeq ($(SYSTEM),carbon)
 	xercesSo = /usr/local/xerces3/lib/libxerces-c.so
 endif
@@ -49,9 +52,6 @@ ifeq ($(SYSTEM),cygwin)
 endif
 ifeq ($(SYSTEM),cygwinbin)
 	xercesSo = -L/lib -lxerces-c
-endif
-ifeq ($(SYSTEM),inferno)
-	xercesSo = /usr/sci/projects/SCIRun/Thirdparty/1.22/Linux/gcc-3.2-32bit/lib/libxerces-c.so
 endif
 ifeq ($(SYSTEM),zia)
 	xercesSo = /usr/lib/libxerces-c.so
@@ -68,9 +68,6 @@ endif
 ifeq ($(SYSTEM),cygwinbin)
 	headersPath= /usr/include
 endif
-ifeq ($(SYSTEM),inferno)
-	headersPath = /usr/sci/projects/SCIRun/Thirdparty/1.22/Linux/gcc-3.2-32bit/include
-endif
 ifeq ($(SYSTEM),zia)
 	headersPath = /usr/include/xercesc
 endif
@@ -85,6 +82,9 @@ ifeq ($(SYSTEM),carbon)
 endif
 ifeq ($(SYSTEM),mac)
     CC= /opt/local/bin/g++-mp-4.9
+endif
+ifeq ($(SYSTEM),mac-clang)
+    CC= /opt/local/bin/clang-mp-4.0
 endif
 RM= rm
 CP= cp
@@ -105,6 +105,9 @@ CP= cp
 #       must match the xerces library used for linking
 CFLAGS= -c -O3 -fopenmp
 LFLAGS= -fopenmp
+ifeq ($(SYSTEM),mac-clang)
+    LFLAGS= -fopenmp -lc++
+endif
 
 # 5. Define executable destination
 #     output = relative or full path to save executable or to find it for a subsequent make install
@@ -125,6 +128,9 @@ std = ../../Common/Headers
 
 # Macros for headers and all files
 headers = -I$(src) -I$(std) -I$(com) -I$(headersPath)
+ifeq ($(SYSTEM),mac-clang)
+    headers = -I$(src) -I$(std) -I$(com) -I$(headersPath) -I/opt/local/include/libomp
+endif
 ArcController = $(com)/Read_XML/ArcController
 Area = $(src)/Read_FEA/Area
 BitMapFilesCommon = $(com)/Read_XML/BitMapFilesCommon

@@ -412,7 +412,8 @@ Matrix3 MPMBase::GetRtot(void)
 	
 	// Decompose for R
     Matrix3 R;
-	Matrix3 U = pF.RightDecompose(&R,NULL);
+	//Matrix3 U = pF.RightDecompose(&R,NULL);
+    pF.RightDecompose(&R,NULL);
 	
 	// apply initial rotation total rotation from initial material axes
 	Matrix3 R0 = GetInitialRotation();

@@ -2207,12 +2207,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
+				CC = "/opt/local/bin/clang-mp-4.0";
 				CODE_SIGN_IDENTITY = "";
-				ENABLE_OPENMP_SUPPORT = YES;
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_PREFIX_HEADER = ../../NairnMPM/src/System/MPMPrefix.hpp;
-				GCC_VERSION = 4.9;
+				GCC_VERSION = "";
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				HEADER_SEARCH_PATHS = (
@@ -2220,11 +2220,12 @@
 					../Headers,
 					..,
 					/usr/local/include,
+					/opt/local/include/libomp,
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				OTHER_CFLAGS = "";
+				OTHER_CFLAGS = "-fopenmp";
 				OTHER_LDFLAGS = "-fopenmp";
 				PRODUCT_NAME = NairnMPM;
 				SDKROOT = macosx;
@@ -2237,12 +2238,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
+				CC = "/opt/local/bin/clang-mp-4.0";
 				CODE_SIGN_IDENTITY = "";
-				ENABLE_OPENMP_SUPPORT = YES;
+				ENABLE_OPENMP_SUPPORT = "";
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_PREFIX_HEADER = ../../NairnFEA/src/System/FEAPrefix.hpp;
-				GCC_VERSION = 4.9;
+				GCC_VERSION = "";
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				HEADER_SEARCH_PATHS = (
@@ -2250,11 +2252,12 @@
 					../Headers,
 					..,
 					/usr/local/include,
+					/opt/local/include/libomp,
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				OTHER_CFLAGS = "";
+				OTHER_CFLAGS = "-fopenmp";
 				OTHER_LDFLAGS = "-fopenmp";
 				PRODUCT_NAME = NairnFEA;
 				SECTORDER_FLAGS = "";
@@ -2268,8 +2271,8 @@
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
 				CODE_SIGN_IDENTITY = "";
-				ENABLE_OPENMP_SUPPORT = YES;
-				GCC_VERSION = 4.9;
+				ENABLE_OPENMP_SUPPORT = "";
+				GCC_VERSION = "";
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_LDFLAGS = "-fopenmp";

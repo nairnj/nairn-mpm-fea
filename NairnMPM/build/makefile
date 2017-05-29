@@ -4,12 +4,12 @@
 # cd to directory with this 'makefile'
 # give the command 'make SYSTEM=system' where the lower case system is where
 #    you are compiling. Supported systems are:
-#       mac - MacOS X
+#       mac - MacOS X using gcc
+#       mac-clang - MacOS X using clang-mp
 #       carbon - OSU carbon/hedera cluster (the default)
 #       mpm - OSU machine
 #       cygwin - Standard cygwin install in Windows
 #		cygwinbin - Standard cygwin install using binary xerces
-#       inferno - C-SAFE cluster at U of Utah
 #       zia - A Debian linux machine
 # Other options are
 #    make clean - to remove all compiled objects
@@ -21,8 +21,8 @@
 # 1. $(xercesSo) is path to directory with the compiled Xerces library
 # 2. $(headersPath) topath to directory with Xerces include files
 # 3. $(CC) is the gcc compiler, $(RM) is the rm command, $(CP) is copy for install
-# 4. $(CFLAGS) is the gcc compiler options
-#    $(LFLAGS) is the gcc linking options
+# 4. $(CFLAGS) is the c++ compiler options
+#    $(LFLAGS) is the c++ linking options
 # 5. $(output) is path to save executable
 #    $(dtdpath) is path to save DTD file
 # 6. $(ioutput) is path to install executable
@@ -39,6 +39,9 @@ xercesSo= /usr/local/lib/libxerces-c.so
 ifeq ($(SYSTEM),mac)
     xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
+ifeq ($(SYSTEM),mac-clang)
+    xercesSo = /usr/local/lib/libxerces-c.dylib
+endif
 ifeq ($(SYSTEM),carbon)
 	xercesSo = /usr/local/xerces3/lib/libxerces-c.so
 endif
@@ -50,9 +53,6 @@ ifeq ($(SYSTEM),cygwin)
 endif
 ifeq ($(SYSTEM),cygwinbin)
 	xercesSo = -L/lib -lxerces-c
-endif
-ifeq ($(SYSTEM),inferno)
-	xercesSo = /usr/sci/projects/SCIRun/Thirdparty/1.22/Linux/gcc-3.2-32bit/lib/libxerces-c.so
 endif
 ifeq ($(SYSTEM),zia)
 	xercesSo = /usr/lib/libxerces-c.so
@@ -69,9 +69,6 @@ endif
 ifeq ($(SYSTEM),cygwinbin)
 	headersPath= /usr/include
 endif
-ifeq ($(SYSTEM),inferno)
-	headersPath = /usr/sci/projects/SCIRun/Thirdparty/1.22/Linux/gcc-3.2-32bit/include
-endif
 ifeq ($(SYSTEM),zia)
 	headersPath = /usr/include/xercesc
 endif
@@ -86,6 +83,9 @@ ifeq ($(SYSTEM),carbon)
 endif
 ifeq ($(SYSTEM),mac)
     CC= /opt/local/bin/g++-mp-4.9
+endif
+ifeq ($(SYSTEM),mac-clang)
+    CC= /opt/local/bin/clang-mp-4.0
 endif
 RM= rm
 CP= cp
@@ -106,6 +106,9 @@ CP= cp
 #       must match the xerces library used for linking
 CFLAGS= -c -O3 -fopenmp
 LFLAGS= -fopenmp
+ifeq ($(SYSTEM),mac-clang)
+    LFLAGS= -fopenmp -lc++
+endif
 
 # 5. Define executable destination
 #     output = relative or full path to save executable or to find it for a subsequent make install
@@ -125,6 +128,9 @@ std = ../../Common/Headers
 #com = ../Common
 
 headers = -I$(src) -I$(std) -I$(com) -I$(headersPath)
+ifeq ($(SYSTEM),mac-clang)
+    headers = -I$(src) -I$(std) -I$(com) -I$(headersPath) -I/opt/local/include/libomp
+endif
 
 # NairnMPM file abbreviations
 AdjustTimeStepTask = $(src)/Custom_Tasks/AdjustTimeStepTask

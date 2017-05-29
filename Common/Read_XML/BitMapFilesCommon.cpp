@@ -52,8 +52,8 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 #ifdef MPM_CODE
 		angleAxes[0]=0;					// no angle files yet
 		rotationAxes[0]=0;				// no rotations yet
+        int maxRotations = is3D ? 3 : 1 ;
 #endif
-		int maxRotations = is3D ? 3 : 1 ;
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));

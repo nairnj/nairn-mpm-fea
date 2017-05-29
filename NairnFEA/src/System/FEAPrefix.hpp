@@ -11,6 +11,9 @@
 
 #define FEA_CODE
 
+// To compile with OpenMP
+#define USE_OPENMP
+
 // C includes
 #ifdef WINDOWS_EXE
 #include <stdio.h>
@@ -21,7 +24,9 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#ifdef USE_OPENMP
 #include <omp.h>
+#endif
 #include <ctime>
 
 // For c++89 compliance

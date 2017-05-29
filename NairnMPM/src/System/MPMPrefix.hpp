@@ -11,6 +11,9 @@
 
 #define MPM_CODE
 
+// To compile with OpenMP
+#define USE_OPENMP
+
 // include this to write tasks to a .log file during the calculation
 // If a crash occurs, the log file can be consulted to see where it
 // crashed in the time step
@@ -35,7 +38,9 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#ifdef USE_OPENMP
 #include <omp.h>
+#endif
 #include <ctime>
 
 // For c++89 compliance

@@ -1468,7 +1468,7 @@ void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,int 
 void NodalPoint::AdjustDelPiForBCs(Vector *delPi) const
 {
 	// exit if no velocity BCs
-	if(!fixedDirection&XYZ_SKEWED_DIRECTION) return;
+	if(!(fixedDirection&XYZ_SKEWED_DIRECTION)) return;
 	
 	// subtraction delPi.n for three possible BC normals
 	if(fixedDirection&X_DIRECTION) delPi->x = 0.;
