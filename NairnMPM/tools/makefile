@@ -4,7 +4,8 @@
 # cd to directory with this 'makefile'
 # give the command 'make SYSTEM=system' where the lower case system is where
 #    you are compiling. Supported systems are:
-#       mac - MacOS X
+#       mac - MacOS X using gcc
+#       mac-clang - MacOS X using clang-mp
 #       mpm - OSU machine
 #       cygwin - Standard cygwin install in Windows
 #		cygwinbin - Standard cygwin install using binary xerces
@@ -41,6 +42,9 @@ endif
 ifeq ($(SYSTEM),mac)
     CC= /opt/local/bin/g++-mp-4.9
 endif
+ifeq ($(SYSTEM),mac-clang)
+    CC= /opt/local/bin/clang-mp-4.0
+endif
 RM= rm
 CP= cp
 
@@ -59,6 +63,9 @@ CP= cp
 #       must match the xerces library used for linking
 CFLAGS= -c -O3
 LFLAGS=
+ifeq ($(SYSTEM),mac-clang)
+    LFLAGS= -lc++
+endif
 
 # 3. Define executable destination
 #     output = relative or full path to save executable or to find it for a subsequent make install

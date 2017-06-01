@@ -460,6 +460,7 @@
 		08FB7796FE84155DC02AAC07 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; tabWidth = 4; };
 		5209AD5C1D4690CE002EDC42 /* SetRigidContactVelTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SetRigidContactVelTask.cpp; sourceTree = "<group>"; };
 		5209AD5D1D4690CE002EDC42 /* SetRigidContactVelTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SetRigidContactVelTask.hpp; sourceTree = "<group>"; };
+		524A4A691EE0B1F600DE607E /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; name = makefile; path = ../../NairnMPM/tools/makefile; sourceTree = "<group>"; };
 		67005609163AFC3600FFE145 /* HistoryArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HistoryArchive.hpp; sourceTree = "<group>"; };
 		6700560B163AFC6B00FFE145 /* HistoryArchive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HistoryArchive.cpp; sourceTree = "<group>"; };
 		67083425171717FB007AD581 /* GhostNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GhostNode.cpp; path = Patches/GhostNode.cpp; sourceTree = "<group>"; };
@@ -578,7 +579,6 @@
 		A72A90C90CD2ADA5001DCFA8 /* ExtractMPM */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ExtractMPM; sourceTree = BUILT_PRODUCTS_DIR; };
 		A72A90CF0CD2ADFB001DCFA8 /* ExtractMPM.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = ExtractMPM.cpp; path = ../../NairnMPM/tools/ExtractMPM.cpp; sourceTree = SOURCE_ROOT; };
 		A72A90D00CD2ADFB001DCFA8 /* ExtractMPM.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; name = ExtractMPM.hpp; path = ../../NairnMPM/tools/ExtractMPM.hpp; sourceTree = SOURCE_ROOT; };
-		A72A90EE0CD2BDE9001DCFA8 /* ExtractMPM.1 */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.man; name = ExtractMPM.1; path = ../../NairnMPM/tools/ExtractMPM.1; sourceTree = SOURCE_ROOT; };
 		A72F0A3D0D943D02003426B3 /* CohesiveZone.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CohesiveZone.hpp; sourceTree = "<group>"; };
 		A72F0A3E0D943D02003426B3 /* CohesiveZone.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CohesiveZone.cpp; sourceTree = "<group>"; };
 		A7313F9807CF77F90074510B /* CrackNode.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = CrackNode.cpp; sourceTree = "<group>"; };
@@ -1144,7 +1144,7 @@
 			children = (
 				A72A90D00CD2ADFB001DCFA8 /* ExtractMPM.hpp */,
 				A72A90CF0CD2ADFB001DCFA8 /* ExtractMPM.cpp */,
-				A72A90EE0CD2BDE9001DCFA8 /* ExtractMPM.1 */,
+				524A4A691EE0B1F600DE607E /* makefile */,
 			);
 			name = ExtractMPM;
 			sourceTree = "<group>";
