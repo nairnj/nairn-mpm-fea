@@ -494,6 +494,7 @@ void NodalPoint::CopyVolumeGradient(short vfld,int matfld,Vector *grad)
 //    mvf that ignore cracks, but deos get that material in field [0]).
 // This is called after mirror fields so the mass will double count non-rigid materials
 //    that ignore cracks. Rigid materials are never added to mass
+// Copy momenta to be restored after force extrapolation
 void NodalPoint::CalcTotalMassAndCount(void)
 {	int i;
 	nodalMass = 0.;

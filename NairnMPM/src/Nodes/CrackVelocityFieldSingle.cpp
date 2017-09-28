@@ -36,7 +36,7 @@ void CrackVelocityFieldSingle::ZeroMatFields(void)
 #pragma mark TASK 1 METHODS
 
 // Delete empty velocity fields, count number of materials, and return total mass
-// Make copy of momentu, to be restored after strain update and forces
+// Make copy of momenta, to be restored after strain update and forces
 // Note: never have materials that ignore cracks when this class is active
 double CrackVelocityFieldSingle::GetTotalMassAndCount(void)
 {	if(mvf[0]->numberPoints<1) return 0.;

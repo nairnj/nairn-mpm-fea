@@ -64,7 +64,9 @@ void PostExtrapolationTask::Execute(void)
             {	// combine rigid fields if necessary
                 if(combineRigid)
                     ndptr->CopyRigidParticleField();
+
 				// Get total nodal masses and count materials if multimaterial mode
+				// copy momenta
 				ndptr->CalcTotalMassAndCount();
 				
 				// multimaterial contact and interfaces
