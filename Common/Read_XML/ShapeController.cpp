@@ -283,7 +283,7 @@ int ShapeController::nextParticle(void)
 		{	particleNum=i+1;
 			return i;
 		}
-	}
+ 	}
 	particleNum=nmpms;
 	return -1;
 }

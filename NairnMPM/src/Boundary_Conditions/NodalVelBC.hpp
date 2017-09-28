@@ -25,7 +25,7 @@ class NodalVelBC : public BoundaryCondition
         
         // constructors and destructors
         NodalVelBC(int,int,int,double,double,double,double);
-		virtual BoundaryCondition *UnsetDirection(void);
+        virtual int GetSetDirection(void) const;
 		virtual BoundaryCondition *SetRigidProperties(int,int,int,double);
         
         // virtual methods

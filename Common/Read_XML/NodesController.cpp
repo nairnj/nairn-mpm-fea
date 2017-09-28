@@ -23,8 +23,20 @@ NodesController *theNodes=NULL;
 	NodesController: methods
 ********************************************************************************/
 
+#ifdef MPM_CODE
+
 // MPM does not need temperature
-void NodesController::AddNode(double x,double y,double z) { AddNode(x,y,z,(double)0.0); }
+void NodesController::AddNode(double x,double y,double z)
+{
+	NodalPoint *newNode;
+	if(fmobj->IsThreeD())
+		newNode=new NodalPoint3D(numObjects+1,x,y,z);
+	else
+		newNode=new NodalPoint2D(numObjects+1,x,y);
+	AddObject(newNode);
+}
+
+#else
 
 // add new keypoint - assumes keyName is valid and unique
 // throws std::bad_alloc
@@ -38,6 +50,8 @@ void NodesController::AddNode(double x,double y,double z,double temp)
 	AddObject(newNode);
 	newNode->gTemperature = temp;
 }
+
+#endif
 
 // assemble into array used in the code
 int NodesController::SetNodeArray(double *xmin,double *xmax,double *ymin,double *ymax,double *zmin,double *zmax)

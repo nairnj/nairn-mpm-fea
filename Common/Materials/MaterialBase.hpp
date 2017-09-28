@@ -186,6 +186,13 @@ class MaterialBase : public LinkedObject
 		// material damping
 		virtual void SetDamping(double,double);
 		virtual double GetMaterialDamping(double &,double &,double,double) const;
+    
+        // for liquid contact
+        virtual double GetViscosity(double) const;
+        virtual double BracketContactLawShearRate(double,double,double &,double &,double &,double &) const;
+    
+        // material in cracks
+        virtual int AllowsCracks(void) const;
 #endif
 	
 		// class methods
@@ -212,6 +219,7 @@ class MaterialBase : public LinkedObject
 		double matPdamping,matFractionPIC;		// particle damping
 		bool matUsePDamping;                // true it particle damping or PIC damping changed in this material
 		bool matUsePICDamping;              // true if PIC damping was set
+        int allowsCracks;					// false to ignore cracks (option ignored in multimaterial mode)
 #endif
 	
 		// constants (changed in MPM time step)

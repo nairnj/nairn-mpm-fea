@@ -27,6 +27,8 @@
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalConcBC.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -83,13 +85,13 @@ void ExtrapolateRigidBCsTask::Execute(void)
 		}
 		
 		// get rigid particle temperature
-		if(rigid->RigidTemperature())
+		if(rigid->RigidTemperature() && ConductionTask::active)
 		{	setFlags += CONTROL_TEMPERATURE;
 			if(rigid->GetValueSetting(&tempValue,mtime,&mpmptr->pos)) mpmptr->pTemperature = tempValue;
 		}
 		
 		// concentration
-		if(rigid->RigidConcentration())
+		if(rigid->RigidConcentration() && DiffusionTask::active)
 		{	setFlags += CONTROL_CONCENTRATION;
 			if(rigid->GetValueSetting(&concValue,mtime,&mpmptr->pos)) mpmptr->pConcentration = concValue;
 		}

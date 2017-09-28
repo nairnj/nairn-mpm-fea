@@ -13,30 +13,33 @@
 
 #define _NODALTEMPBC_
 
-#include "Boundary_Conditions/BoundaryCondition.hpp"
+#include "Boundary_Conditions/NodalValueBC.hpp"
 
 class NodalPoint;
 
-class NodalTempBC: public BoundaryCondition
+class NodalTempBC: public NodalValueBC
 {
     public:
-		double temperatureNoBC;
+		double *temperatureNoBC;
         
         // constructors and destructors
         NodalTempBC(int,int,double,double);
-		virtual BoundaryCondition *UnsetDirection(void);
-		virtual BoundaryCondition *SetRigidProperties(int,int,int,double);
-        
+    
         // methods
-        BoundaryCondition *PrintBC(ostream &);
-		NodalTempBC *CopyNodalTemperature(NodalPoint *);
-		NodalTempBC *PasteNodalTemperature(NodalPoint *);
+ 		NodalTempBC *CopyNodalValue(NodalPoint *);
+		NodalTempBC *PasteNodalValue(NodalPoint *);
+    
+        // reaction heat calculation
 		void InitQReaction(void);
 		void SuperposeQReaction(double);
 		NodalTempBC *AddHeatReaction(double *,int);
 	
 		// class methods
 		static double TotalHeatReaction(int);
+    
+        // accessors
+        virtual int GetSetDirection(void) const;
+        virtual TransportField *GetTransportFieldPtr(NodalPoint *) const;
 	
 	protected:
 		double qreaction;

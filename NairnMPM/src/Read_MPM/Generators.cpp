@@ -956,7 +956,7 @@ short MPMReadHandler::EndGenerator(char *xName)
 		}
         for(i=0;i<3;i++)
         {   if(vel0Expr[i]!=NULL)
-				delete [] vel0Expr[i];
+                delete [] vel0Expr[i];
         }
     	block=POINTSBLOCK;
 	}
@@ -967,7 +967,6 @@ short MPMReadHandler::EndGenerator(char *xName)
 		int rotationNum=(int)strlen(rotationAxes);
 		angleExpr[rotationNum-1]=inputPtr;
 	}
-	
 	
 	else if(strcmp(xName,"vel0X")==0 || strcmp(xName,"vel0Y")==0 || strcmp(xName,"vel0Z")==0)
 	{	int vn = (int)(xName[4]-'X');
@@ -1064,7 +1063,7 @@ void MPMReadHandler::MPMPts(void)
 			delete [] expr;
 		}
 	}
-
+	
 	// velocity functions
 	int fnum = numRotations;
 	bool hasVelOrLp = false;

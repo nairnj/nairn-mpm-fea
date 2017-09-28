@@ -84,12 +84,12 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	}
 	else
 	{	for(i=1;i<=numnds;i++)
-		res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
+			res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
 		res.dT = conduction->GetDeltaValue(this,res.dT);
 	}
 	if(DiffusionTask::active)
 	{	for(i=1;i<=numnds;i++)
-		res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
+			res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
 		res.dC = diffusion->GetDeltaValue(this,res.dC);
 	}
 

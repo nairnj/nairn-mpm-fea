@@ -156,7 +156,7 @@ void GhostNode::GridForcesReduction(void)
 		// transport forces
 		TransportTask *nextTransport=transportTasks;
 		while(nextTransport!=NULL)
-			nextTransport=nextTransport->CopyForces(real,ghost);
+			nextTransport=nextTransport->ForcesReduction(real,ghost);
 	}
 }
 

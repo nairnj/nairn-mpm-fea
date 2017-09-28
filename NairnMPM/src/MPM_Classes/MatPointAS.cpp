@@ -88,12 +88,12 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	}
 	else
 	{	for(i=1;i<=numnds;i++)
-		res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
+			res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
 		res.dT = conduction->GetDeltaValue(this,res.dT);
 	}
 	if(DiffusionTask::active)
 	{	for(i=1;i<=numnds;i++)
-		res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
+			res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
 		res.dC = diffusion->GetDeltaValue(this,res.dC);
 	}
 	
@@ -305,7 +305,7 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
     
 	else
 	{	// Currently not allowed
-		throw CommonException("Traction BCs in axisymmetri require lCPDI or uGIMP shape functions.","MatPoint2D::GetTractionInfo");
+		throw CommonException("Traction BCs in axisymmetric require lCPDI or uGIMP shape functions.","MatPoint2D::GetTractionInfo");
 	}
 	
     // Find corners

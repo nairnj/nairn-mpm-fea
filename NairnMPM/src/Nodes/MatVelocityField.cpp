@@ -144,6 +144,13 @@ void MatVelocityField::CopyGridForces(NodalPoint *real,int vfld,int matfld)
 	real->AddFtotTask3(vfld,matfld,&ftot);
 }
 
+// Restore momenta
+void MatVelocityField::RestoreMomenta(void)
+{
+	// paste the extrapolated momenta back and zero storage location
+	pk = xpic[PK_COPY];
+}
+
 // in response to contact, change the momentum
 // for a single point, calculate the velocity
 // if postUpdate is true, then adjust ftot as well to keep in sync with momentum change

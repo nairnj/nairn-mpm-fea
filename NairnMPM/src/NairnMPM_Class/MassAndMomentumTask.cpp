@@ -14,7 +14,7 @@
 			+ Extrapolate deformed area volume
 			+ It multimaterial extrapolate volume gradient
 		- Transport tasks
-			+ Extrpolate gTemperature, gMpCP, gConcentration, gVolume
+			+ Extrapolate gTValue and gMTp for transport tasks
 			+ If contact extrapolate corresponding CVF and MVF terms
 		- If particle spin extrapolate more momentum
 	* For each rigid contact material

@@ -71,7 +71,7 @@ int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
 NairnMPM::NairnMPM()
 {
 	version=12;						// main version
-	subversion=0;					// subversion (must be < 10)
+	subversion=1;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 
 	mpmApproach=USAVG_METHOD;		// mpm method
@@ -426,8 +426,8 @@ void NairnMPM::PreliminaryCalcs(void)
 
         // check mechanics time step
         double crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p]);			// in mm/sec
-		double tst=FractCellTime*dcell/crot;                                   // in sec
-        if(tst<timeStepMinMechanics) timeStepMinMechanics=tst;
+		double tst=FractCellTime*dcell/crot;                                    // in sec
+        if(tst<timeStepMinMechanics) timeStepMinMechanics = tst;
         
         // propagation time (in sec)
         tst=PropFractCellTime*dcell/crot;
@@ -438,7 +438,10 @@ void NairnMPM::PreliminaryCalcs(void)
 		TransportTask *nextTransport=transportTasks;
 		while(nextTransport!=NULL)
 		{	numTransport++;
-			nextTransport=nextTransport->TransportTimeStep(matid,dcell,&timeStepMinTransport);
+			double diffCon;
+			nextTransport=nextTransport->TransportTimeStepFactor(matid,&diffCon);
+			tst = (dcell*dcell)/(4.*diffCon);						// factor 2 shorter than minimum
+			if(tst<timeStepMinTransport) timeStepMinTransport = tst;
 		}
 		
         // CPDI orGIMP domain data for nonrigid particles
@@ -446,7 +449,7 @@ void NairnMPM::PreliminaryCalcs(void)
             throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
 		
 	}
-	
+    
 	// reorder NonRigid followed by (Rigid Contact and Rigid BCs intermized)
 	if(firstRigidPt<nmpmsNR && firstRigidPt>=0)
 	{	p = firstRigidPt;
@@ -657,7 +660,7 @@ void NairnMPM::PreliminaryCalcs(void)
 		// let all cracks do prelimnary calcs
 		CrackHeader *nextCrack=firstCrack;
 		while(nextCrack!=NULL)
-		{	nextCrack->PreliminaryCrackCalcs();
+		{	nextCrack->PreliminaryCrackCalcs(dcell);
 			if(nextCrack->GetHasTractionLaws())
 				hasTractionCracks=TRUE;
 			nextCrack=(CrackHeader *)nextCrack->GetNextObject();

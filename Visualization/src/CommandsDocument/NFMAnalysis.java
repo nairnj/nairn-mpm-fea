@@ -181,7 +181,7 @@ public class NFMAnalysis  implements Runnable
 		
 			// get current output file from the output console object
 			outFile = soutConsole.getFile();
-			System.out.println("...output: "+outFile.getPath());
+			//System.out.println("...output: "+outFile.getPath());
 			
 			// write temporary file to the selected output folder
 			String tmpName = outFile.getParent()+pathDelim+inFile.getName();
@@ -307,15 +307,13 @@ public class NFMAnalysis  implements Runnable
 		
 		// if did not write to file, then exit
 		if(tmpFile==null) return;
-		System.out.println("...tmp commands: "+tmpFile.getPath());
+		///System.out.println("...tmp commands: "+tmpFile.getPath());
 			
 		// set commands and options
 		// bashcmds - list of commands to launch bash shell for cygwin or mac in background
 		ArrayList<String> bashcmds=new ArrayList<String>(20);
-		// pbcmds for process building
-		ArrayList<String> pbcmds=new ArrayList<String>(20);
 		
-		// start login bash shell (only used in cygwin or mac in backgorund)
+		// start login bash shell (only used in cygwin or Mac when in backgorund)
 		if(commandStyle!=WINDOWS_EXE)
 		{	bashcmds.add(NFMVPrefs.prefs.get(NFMVPrefs.ShellKey,NFMVPrefs.ShellDef));
 			bashcmds.add("--login");
@@ -323,6 +321,9 @@ public class NFMAnalysis  implements Runnable
 		}
 		
 		// build shell command which will be
+		// Windows: C: & CD "(parent folder DOS path)" & "app.exe" (options) "(input file)"
+		// Cygwin : cd '(parent folder cygwin path)' ; 'app' (options) '(input file)'
+		// Mac    : cd '(parent folder path)' ; 'app' (options) '(input file)'
 		// cd (parent folder); (executable)
 		StringBuffer shell=new StringBuffer();
 		
@@ -349,9 +350,11 @@ public class NFMAnalysis  implements Runnable
 			shell.append(commandSep+" ");
 		}
 
-		// executable (Mac and Exe to process builder, all to shell)
-		// pbcmds will be [(cmd),[options],(input)]
-		// shell will be cd (parent) ; (cmd) (options) (input)
+		// Executable (Mac and Exe to process builder, all to shell)
+		// pbcmds will be [(app),[options],(input file)] (but not for cygwin)
+		ArrayList<String> pbcmds=new ArrayList<String>(20);
+		
+		// shell will add path to the app in myCmd
 		if(commandStyle==WINDOWS_CYGWIN)
 		{	myCmd=PathToCygwin(myCmd);
 		}
@@ -370,19 +373,19 @@ public class NFMAnalysis  implements Runnable
 		else
 			shell.append(myCmd);
 					
-		// shell options (-a to abort after setup, -v to validate, -np processors)
+		// shell add options (-a to abort after setup, -v to validate, -np processors)
 		if(runType==RUN_CHECK_MESH) shell.append(" -a");
 		if(doValidate) shell.append(" -v");
 		if(processors>1) shell.append(" -np "+processors); 
 		
-		// input file name to shell command
+		// shell add input file name to shell command
 		String inName = tmpFile.getName();
 		if(inName.indexOf(' ')>=0)
 			shell.append(" "+bracket+inName+bracket);
 		else
 			shell.append(" "+inName);
 		
-		// and to direct file name command
+		// and input file command to pbcmds
 		if(commandStyle!=WINDOWS_CYGWIN)
 			pbcmds.add(inName);
 		

@@ -734,7 +734,7 @@ void IsoPlasticity::SRPlasticityConstLaw2D(MPMBase *mptr,Matrix3 du,double delTi
     // plastic strain work
     double plastEnergy = lambdak*(sp->xx*dfds.xx + sp->yy*dfds.yy + sp->zz*dfds.zz + 2.*sp->xy*dfds.xy);
     
-    // dand subtract q dalpha to get dissipated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
+    // and subtract q dalpha to get dissipated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
     dispEnergy += plastEnergy - qdalphaTerm;
     

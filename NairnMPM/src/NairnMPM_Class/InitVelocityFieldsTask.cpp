@@ -89,7 +89,7 @@ void InitVelocityFieldsTask::Execute(void)
 				
 				// Only need to decipher crack velocity field if has cracks (firstCrack!=NULL)
 				//      and if this material allows cracks.
-				bool decipherCVF = firstCrack!=NULL && block!=FIRST_RIGID_CONTACT;
+				bool decipherCVF = firstCrack!=NULL && matID->AllowsCracks();
 				
 				// Check each node
 				for(int i=1;i<=numnds;i++)

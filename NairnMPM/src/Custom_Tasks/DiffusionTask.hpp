@@ -17,35 +17,37 @@
 
 class MPMBase;
 class NodalPoint;
+class MatVelocityField;
 
 class DiffusionTask : public TransportTask
 {
     public:
 		static bool active;
 		static double reference;
-	
-		// Task methods
-		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double,short,int);
-		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *,short,int);
-		virtual TransportTask *IncrementTransportRate(const NodalPoint *,double,double &,short,int) const;
-		virtual double IncrementValueExtrap(NodalPoint *,double,short,int) const;
-		
-        // standard methods
+
+		// initialize
 		virtual TransportTask *Initialize(void);
-		virtual const char *TaskName(void);
-		virtual TransportTask *TransportTimeStep(int,double,double *);
-		virtual TransportTask *Task1Reduction(NodalPoint *,NodalPoint *);
-		virtual TransportTask *GetNodalValue(NodalPoint *);
-		virtual void ImposeValueBCs(double);
-		virtual TransportTask *GetGradients(double);
-		virtual TransportTask *CopyForces(NodalPoint *,NodalPoint *);
-		virtual TransportTask *SetTransportForceBCs(double);
-		virtual void AddFluxCondition(NodalPoint *,double,bool);
-		virtual TransportTask *TransportRates(NodalPoint *,double);
+	
+		// mass and momentum
+		virtual void ZeroTransportGradients(MPMBase *);
+		virtual void AddTransportGradients(MPMBase *,Vector *,NodalPoint *,short);
+	
+		// grid forces
+		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *,short,int);
+	
+		// update particles task
 		virtual TransportTask *MoveTransportValue(MPMBase *,double,double) const;
-		virtual TransportTask *UpdateNodalValues(double);
-		virtual double GetDeltaValue(MPMBase *,double) const;
-		
+	
+        // accessors
+        virtual const char *TaskName(void);
+        virtual TransportTask *TransportTimeStepFactor(int,double *);
+        virtual double GetTransportMassAndValue(MPMBase *,double *);
+        virtual TransportField *GetTransportFieldPtr(NodalPoint *) const;
+        virtual NodalValueBC *GetFirstBCPtr(void) const;
+		virtual MatPtLoadBC *GetFirstFluxBCPtr(void) const;
+        virtual double *GetParticleValuePtr(MPMBase *mptr) const;
+        virtual double *GetPrevParticleValuePtr(MPMBase *mptr) const;
+	
     private:
 };
 

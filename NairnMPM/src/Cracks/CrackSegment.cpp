@@ -756,6 +756,9 @@ bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool thereIsAnothe
 // return tru unless collapsed position is out of the grid
 bool CrackSegment::CollapseSurfaces(void)
 {
+    // Current disabled (and always returns true. To bring back uncomment following code
+    
+    /*****
 	// make sure no traction on this segment or its neighbors
 	if(MatID()>=0) return true;
 	if(nextSeg!=NULL)
@@ -778,6 +781,8 @@ bool CrackSegment::CollapseSurfaces(void)
 		surfInElem[0]=surfInElem[1]=planeInElem;
 		SetMatID(-1);								// marks as collapsed
 	}
+    *****/
+    
 	return true;
 }
 

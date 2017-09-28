@@ -148,6 +148,12 @@ void NairnMPM::MyStartResultsOutput(void)
 		// contact output and allocations
 		contact.Output();
 		
+        // location for COD calculation - range is 0 to 3 segments from crack tip
+        // future may want to read this as parameter
+        // Only used to partition J or to implement COD-based criteria
+        CrackHeader::SetCodLocation(2.);
+        cout << "Crack COD found (when needed) " << 2 << " segments from crack tip" << endl;
+        
 		// crack details
 		cout << "Number of cracks = " << numberOfCracks << endl;
 		CrackHeader *nextCrack=firstCrack;

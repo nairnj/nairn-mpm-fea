@@ -61,11 +61,12 @@ class BoundaryCondition : public LinkedObject
 		// constructors
 		BoundaryCondition(int,double,double);
 		virtual ~BoundaryCondition();
-		virtual BoundaryCondition *UnsetDirection(void);
+        virtual int GetSetDirection(void) const;
+        virtual BoundaryCondition *UnsetDirection(void);
 		virtual BoundaryCondition *SetRigidProperties(int,int,int,double);
 		
 		// pure virtual
-        virtual BoundaryCondition *PrintBC(ostream &) = 0;
+        virtual BoundaryCondition *PrintBC(ostream &);
 		
 		// virtual methods
 		virtual double BCValue(double);

@@ -16,6 +16,9 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "System/UnitsController.hpp"
 #include "Elements/ElementBase.hpp"
+#include "Nodes/NodalPoint.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
 
 // globals
 MPMBase **mpm;		// list of material points
@@ -58,8 +61,10 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
     
     // zero energies
     plastEnergy=0.;
-	prev_dTad=0.;
-	buffer_dTad=0.;
+#ifndef NEW_HEAT_METHOD
+    prev_dTad=0.;
+#endif
+    buffer_dTad=0.;
     workEnergy=0.;
     resEnergy=0.;
     heatEnergy=0.;
@@ -91,22 +96,6 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	
 	// rotation matrix (when tracked)
 	Rtot = NULL;
-}
-
-// allocation diffusion data if needed in this calculations
-// throws std::bad_alloc
-void MPMBase::AllocateTemperature(int gradTwo,int gradThree)
-{	int size = 3;
-	pTemp = new double[size];
-	for(int i=0;i<size;i++) pTemp[i] = 0.;
-}
-
-// allocation diffusion data if need in this calculations
-// throws std::bad_alloc
-void MPMBase::AllocateDiffusion(bool contactSolventFlow)
-{	int size = 3;
-	pDiffusion = new double[size];
-	for(int i=0;i<size;i++) pDiffusion[i] = 0.;
 }
 
 // allocation velGrad tensor data if need in this calculations (non rigid only)
@@ -410,7 +399,7 @@ Matrix3 MPMBase::GetRtot(void)
 	// get deformation gradient
 	Matrix3 pF = GetDeformationGradientMatrix();
 	
-	// Decompose for R
+	// Decompose for R (U is not needed)
     Matrix3 R;
 	//Matrix3 U = pF.RightDecompose(&R,NULL);
     pF.RightDecompose(&R,NULL);
@@ -489,25 +478,37 @@ Matrix3 MPMBase::GetInitialRotation(void)
 double MPMBase::GetPlastEnergy(void) { return plastEnergy; }
 void MPMBase::AddPlastEnergy(double energyInc) { plastEnergy+=energyInc; }
 
+#ifdef NEW_HEAT_METHOD
+
+// return buffer_dTad and clear it too
+double MPMBase::GetClear_dTad(void)
+{	double dTad = buffer_dTad;
+    buffer_dTad = 0.;
+    return dTad;
+}
+
+#else
+
 // Get only in UpdateParticles task to add adiabiatic temperature rise to the particles
 // Buffer amount for next heat increment and clear it too
 double MPMBase::GetBufferClear_dTad(void)
 {	prev_dTad = buffer_dTad;
-	buffer_dTad = 0.;
-	return prev_dTad;
+    buffer_dTad = 0.;
+    return prev_dTad;
 }
 
 // Only called in IncrementHeatEnergy()
 double MPMBase::GetClearPrevious_dTad(void)
 {	double dTad = prev_dTad;
-	prev_dTad = 0.;
-	return dTad;
+    prev_dTad = 0.;
+    return dTad;
 }
+
+#endif
 
 // Only called in IncrementHeatEnergy()
 // a material should never call this directly
 void MPMBase::Add_dTad(double dTInc) { buffer_dTad+=dTInc; }
-
 
 double MPMBase::GetWorkEnergy(void) { return workEnergy; }
 void MPMBase::SetWorkEnergy(double energyTot) { workEnergy=energyTot; }

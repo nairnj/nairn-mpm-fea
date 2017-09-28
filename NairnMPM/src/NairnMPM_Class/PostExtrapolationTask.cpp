@@ -12,7 +12,7 @@
 	* Get total mass and count particles
 	* Multimaterial contact (save the nodes for imperfect interfaces)
 	* Crack contact (save the crack nodes)
-	* Transport tasks get value (e.g., gTemperature/gMpVp)
+	* Transport tasks get value
 	  (also do for CVF and MVF if contact flow activated)
 	* After main loop
 		- Extrapolate temperature and concentration gradients to the grid
@@ -78,7 +78,7 @@ void PostExtrapolationTask::Execute(void)
 				// get transport values on nodes
 				TransportTask *nextTransport=transportTasks;
 				while (nextTransport != NULL)
-					nextTransport = nextTransport->GetNodalValue(ndptr);
+					nextTransport = nextTransport->GetTransportNodalValue(ndptr);
 			}
 			catch(std::bad_alloc&)
 			{	if(massErr==NULL)

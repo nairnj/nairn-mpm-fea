@@ -52,7 +52,7 @@ BoundaryCondition *MatPtTractionBC::PrintBC(ostream &os)
 
 // increment external load on a particle
 // input is analysis time in seconds
-MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
+MatPtLoadBC *MatPtTractionBC::AddMPFluxBC(double bctime)
 {
     // condition value
 	MPMBase *mpmptr = mpm[ptNum-1];
@@ -135,8 +135,8 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 // Calculate traction forces applied to particles and add to nodal force
 void MatPtTractionBC::SetParticleSurfaceTractions(double stepTime)
 {
-    MatPtTractionBC *nextLoad=firstTractionPt;
+    MatPtLoadBC *nextLoad = firstTractionPt;
     while(nextLoad!=NULL)
-    	nextLoad=nextLoad->AddMPTraction(stepTime);
+    	nextLoad = nextLoad->AddMPFluxBC(stepTime);
 }
 

@@ -169,13 +169,13 @@
 				| D | DA | DT | Dx | Dy | Dz | DR | DZ | D0 | Dd | csat | constantTip | logshearrate
 				| SettingFunction | SettingFunction2 | SettingFunction3 | IdealRubber
 				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration | mirrored
-				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0
+				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0 | Kmax
                 | kCondR | kCondZ | Hardening | C1SL | C2SL | UJOption | ArtificialVisc | avA1 | avA2
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
 				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | S3 | GPpG0 | GTpG0 | gamma0 | pressureLaw
-				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2
+				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2 | LiquidPhase
                 | tayM | rhoW | rhoC | fo | flim | fsto | sto | m | n | alp | burg | K1 | alpstar
-                | betastar | k0 | Atd | Btd | tempDepend | MMG | PDamping | order )* >
+                | betastar | k0 | Atd | Btd | tempDepend | MMG | PDamping | order | Sa | Na | kmu | vhalf )* >
 <!ATTLIST	Material
 			Type CDATA #REQUIRED
 			Name CDATA #REQUIRED>
@@ -912,6 +912,13 @@
 			units CDATA #IMPLIED>
 <!ELEMENT	Temperature (#PCDATA)>
 <!ELEMENT	Concentration (#PCDATA)>
+
+<!ELEMENT	Kmax (#PCDATA)>
+<!ELEMENT	Sa (#PCDATA)>
+<!ELEMENT	Na (#PCDATA)>
+<!ELEMENT	kmu (#PCDATA)>
+<!ELEMENT	vhalf (#PCDATA)>
+<!ELEMENT	LiquidPhase (#PCDATA)>
 
 <!-- ==============================================
 		DEPRECATED ELEMENTS (with no children)

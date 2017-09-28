@@ -126,6 +126,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("TimeSliderChanged",gDocView,this);
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("PlotQuantityChanged",gDocView,this);
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("ParticleSizeChanged",gDocView,this);
+		JNNotificationCenter.getInstance().addNameAndObjectForTarget("MaxElongChanged",gDocView,this);
 		
 		finishFrameworkWindow(false);
 	}
@@ -449,7 +450,11 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 				movieControls.syncPlotQuantityMenus();
 				((DocViewer)document).startNewPlot(getPlotType());
 			}
-
+		}
+	
+		else if(obj.getName().equals("MaxElongChanged"))
+		{	if(!movieControls.disableStartPlot)
+				((DocViewer)document).startNewPlot(getPlotType());
 		}
 	}
 	// export current frame to saveFile and return true of false if done OK

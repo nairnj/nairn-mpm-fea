@@ -21,53 +21,37 @@ NodalTempBC *reuseRigidTempBC=NULL;
 #pragma mark NodalTempBC: Constructors and Destructors
 
 NodalTempBC::NodalTempBC(int num,int setStyle,double temperature,double argTime)
-		: BoundaryCondition(setStyle,temperature,argTime)
+		: NodalValueBC(num,setStyle,temperature,argTime)
 {
-    nodeNum=num;
-	nd[nodeNum]->SetFixedDirection(TEMP_DIRECTION);
-}
-
-// Reuse Rigid BC
-BoundaryCondition *NodalTempBC::SetRigidProperties(int num,int dof,int setStyle,double temperature)
-{	// set direction
-	nd[num]->SetFixedDirection(TEMP_DIRECTION);
-	// finish in base class
-	return BoundaryCondition::SetRigidProperties(num,dof,setStyle,temperature);
-}
-
-// just unset condition, because may want to reuse it, return next one to unset
-BoundaryCondition *NodalTempBC::UnsetDirection(void)
-{	nd[nodeNum]->UnsetFixedDirection(TEMP_DIRECTION);
-	return (BoundaryCondition *)GetNextObject();
+	temperatureNoBC = NULL;
 }
 
 #pragma mark NodalTempBC: Methods
 
-// print it
-BoundaryCondition *NodalTempBC::PrintBC(ostream &os)
-{
-    char nline[200];
-	sprintf(nline,"%7d %2d %15.7e %15.7e",nodeNum,style,GetBCValueOut(),GetBCFirstTimeOut());
-    os << nline;
-	PrintFunction(os);
-	return (BoundaryCondition *)GetNextObject();
-}
-
 // save nodal temperature and zero it
-NodalTempBC *NodalTempBC::CopyNodalTemperature(NodalPoint *nd)
+// throws std::bad_alloc
+NodalTempBC *NodalTempBC::CopyNodalValue(NodalPoint *nd)
 {
-	// copy global temperature
-	temperatureNoBC = nd->gTemperature;
+	// create vector to hold options
+	if(temperatureNoBC==NULL)
+	{
+		temperatureNoBC = new double[1];
+	}
+	
+	// copy global one first
+	temperatureNoBC[0] = nd->gCond.gTValue;
 
 	// return next task
 	return (NodalTempBC *)GetNextObject();
 }
 
 // restore nodal temperature and get initial force to cancel no-BC result
-NodalTempBC *NodalTempBC::PasteNodalTemperature(NodalPoint *nd)
+NodalTempBC *NodalTempBC::PasteNodalValue(NodalPoint *nd)
 {
 	// paste global temperature
-	nd->gTemperature = temperatureNoBC;
+	nd->gCond.gTValue = temperatureNoBC[0];
+	
+	// return next task
 	return (NodalTempBC *)GetNextObject();
 }
 
@@ -84,6 +68,14 @@ NodalTempBC *NodalTempBC::AddHeatReaction(double *totalReaction,int matchID)
 		*totalReaction += qreaction;
 	return (NodalTempBC *)GetNextObject();
 }
+
+#pragma mark ACCESSORS
+
+// get set direction
+int NodalTempBC::GetSetDirection(void) const { return TEMP_DIRECTION; }
+
+// return point on node to transport field
+TransportField *NodalTempBC::GetTransportFieldPtr(NodalPoint *ndpt) const { return &(ndpt->gCond); }
 
 /**********************************************************
 	Sum all reaction heat forces for all temperature BCs

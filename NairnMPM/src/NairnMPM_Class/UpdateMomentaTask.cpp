@@ -10,9 +10,8 @@
 	* Updates momenta on the nodes using
 		pk(i+1) = pk(i) + ftot(i)*dt
 	  for each velocity field on each node.
-	* If transport activated, find transpotr rate by dividing
-	  transport force by analog of mass (e.g., for conduction):
-		fcond(i) /= gMpCp
+	* If transport activated, find transport rate by dividing
+	  transport flow by transport mass
 	* Once get new momenta, check for material contact. Crack contact
 	  is checked in a separate step outside the main loop. The material
 	  contact checks all nodes. The crack contact	looks only at nodes known
@@ -53,7 +52,7 @@ void UpdateMomentaTask::Execute(void)
 		// do first so both material and crack contact will have actual rates
 		TransportTask *nextTransport=transportTasks;
 		while(nextTransport!=NULL)
-			nextTransport=nextTransport->TransportRates(ndptr,timestep);
+			nextTransport = nextTransport->GetTransportRates(ndptr,timestep);
 
 		// material contact
 		if(fmobj->multiMaterialMode)

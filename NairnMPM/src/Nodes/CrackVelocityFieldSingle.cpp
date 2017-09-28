@@ -51,7 +51,7 @@ double CrackVelocityFieldSingle::GetTotalMassAndCount(void)
 
 // Add to force spread out over the materials so each has same extra accelerations = f/M_i
 // Only called by AddTractionForce()
-// Only addes force to fields that see cracks (not relevant in single material mode)
+// Only adds force to fields that see cracks (not relevant in single material mode)
 void CrackVelocityFieldSingle::AddFtotSpreadTask3(Vector *f)
 {	if(mvf[0]->numberPoints>0)
 		mvf[0]->AddFtot(f);
@@ -67,9 +67,7 @@ void CrackVelocityFieldSingle::AddGravityAndBodyForceTask3(Vector *gridBodyForce
 // for velocity BCs
 void CrackVelocityFieldSingle::RestoreMomenta(void)
 {	if(mvf[0]->numberPoints>0)
-	{	// paste the extrapolated momenta back and zero storage location
-		mvf[0]->pk = mvf[0]->xpic[PK_COPY];
-		ZeroVector(&mvf[0]->xpic[PK_COPY]);
+	{	mvf[0]->RestoreMomenta();
 	}
 }
 

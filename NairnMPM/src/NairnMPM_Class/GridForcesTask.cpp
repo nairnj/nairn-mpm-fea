@@ -109,7 +109,8 @@ void GridForcesTask::Execute(void)
 					// transport forces
 					TransportTask *nextTransport=transportTasks;
 					while(nextTransport!=NULL)
-						nextTransport=nextTransport->AddForces(ndptr,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],&t,vfld,matfld);
+					{	nextTransport=nextTransport->AddForces(ndptr,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],&t,vfld,matfld);
+					}
 				}
 
 				// next material point

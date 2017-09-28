@@ -38,7 +38,7 @@ void FEAReadHandler::TranslateBMPFiles(void)
 	
 	// read image file
 	char *bmpFullPath=archiver->ExpandOutputPath(bmpFileName);
-	ReadBMPFile(bmpFullPath,info,&rows);
+	rows = (unsigned char **)ReadXYFile(bmpFullPath,info,BYTE_DATA);
 	delete [] bmpFullPath;
 	
 	// angle file name
@@ -46,16 +46,16 @@ void FEAReadHandler::TranslateBMPFiles(void)
 	if(bmpAngleFileName[0][0]>0)
 	{	setAngles=true;
 		char *bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[0]);
-		ReadBMPFile(bmpFullAnglePath,angleInfo,&angleRows);
+		angleRows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA);
 		if(info.height!=angleInfo.height || info.width!=angleInfo.width)
-			throw SAXException(BMPError("The image file and angle file sizes do not match.",bmpFileName));
+			throw SAXException(XYFileError("The image file and angle file sizes do not match.",bmpFileName));
 		delete [] bmpFullAnglePath;
 	}
 	
 	// get final image width, height, and size per pixel
 	Vector pw;
 	const char *msg = CommonReadHandler::DecodeBMPWidthAndHeight(info,bwidth,bheight,orig.z,pw,false);
-	if(msg != NULL) throw SAXException(BMPError(msg,bmpFileName));
+	if(msg != NULL) throw SAXException(XYFileError(msg,bmpFileName));
 	pw.z = yflipped ? -1. : 1. ;
 	
 	// scan all elements - fill those that are in the area and have no material yet

@@ -20,8 +20,11 @@ class NodesController : public ParseController
     public:
 	
 		// methods
+#ifdef MPM_CODE
 		void AddNode(double,double,double);
+#else
 		void AddNode(double,double,double,double);
+#endif
 		int SetNodeArray(double *,double *,double *,double *,double *,double *);
 		int SetNodeArray(int *);
 		int NextNodeNumber(void);

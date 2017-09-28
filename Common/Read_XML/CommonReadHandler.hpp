@@ -74,6 +74,10 @@ enum { SEC_UNITS=0,LENGTH_UNITS,VELOCITY_UNITS,MASS_UNITS };
 // dimension requirement
 enum { ANY_DIM=0,MUST_BE_2D,MUST_BE_3D };
 
+// data type for input files
+// For image or other file input
+enum { BYTE_DATA=0,SHORT_DATA,INT_DATA,FLOAT_DATA,DOUBLE_DATA };
+
 class CommonReadHandler : public DefaultHandler
 {
     public:
@@ -119,8 +123,8 @@ class CommonReadHandler : public DefaultHandler
 	
 		// class methods
 		static bool GetFreeFormatNumbers(char *,vector<double> &,double);
-		static void ReadBMPFile(char *,XYInfoHeader &,unsigned char ***);
-		static char *BMPError(const char *,const char *);
+		static void *ReadXYFile(char *,XYInfoHeader &,int);
+		static char *XYFileError(const char *,const char *);
 		static const char *DecodeBMPWidthAndHeight(XYInfoHeader,double &,double &,double &,Vector &,bool);
 		static bool MapDomainToImage(XYInfoHeader,Vector,Vector,Vector,Vector,double,double,DomainMap &);
 		static int BMPIndex(double,int);

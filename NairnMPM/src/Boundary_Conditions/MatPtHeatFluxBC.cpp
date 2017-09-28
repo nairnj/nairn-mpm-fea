@@ -50,7 +50,7 @@ BoundaryCondition *MatPtHeatFluxBC::PrintBC(ostream &os)
 // increment external heat flux on a particle
 // input is analysis time in seconds
 // (only called when conduction is active)
-MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
+MatPtLoadBC *MatPtHeatFluxBC::AddMPFluxBC(double bctime)
 {	
     // condition value
 	// flux BC in nW/mm^2

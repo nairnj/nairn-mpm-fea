@@ -27,16 +27,21 @@ class MatPtLoadBC: public BoundaryCondition
     
         // virtual methods
         virtual BoundaryCondition *PrintBC(ostream &);
-		virtual void GetPosition(double *,double *,double *,double *);
-		
-		// specific methods
+	
+		// specific methods (not overridden)
         MatPtLoadBC *ZeroMPLoad(void);
         MatPtLoadBC *AddMPLoad(double);
         MatPtLoadBC *ReverseLinearLoad(double,double *,bool);
         MatPtLoadBC *MakeConstantLoad(double);
         int CompactCornerNodes(int,Vector *,int *,double,int *,double *);
+	
+		// accessors
+		virtual void GetPosition(double *,double *,double *,double *);
 		virtual void SetBCValue(double);
     
+		// overridden by flux sub classes
+		virtual MatPtLoadBC *AddMPFluxBC(double);
+	
 		// class methods
 		static void SetParticleFext(double);
     

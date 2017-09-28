@@ -25,7 +25,9 @@ class MatPtFluxBC : public MatPtLoadBC
 		
 		// methods
 		BoundaryCondition *PrintBC(ostream &);
-        MatPtFluxBC *AddMPFlux(double);
+        MatPtLoadBC *AddMPFluxBC(double);
+	
+		// accessors
 		virtual void SetBCValue(double);
 		virtual void SetBCFirstTime(double);
 		virtual double GetBCFirstTimeOut(void);

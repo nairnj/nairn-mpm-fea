@@ -59,7 +59,7 @@ class CrackHeader : public LinkedObject
         // constructors and destructors
         CrackHeader();
         ~CrackHeader();
-		void PreliminaryCrackCalcs(void);
+		void PreliminaryCrackCalcs(double);
         
         // methods
         short add(CrackSegment *);

@@ -38,6 +38,13 @@ PostForcesTask::PostForcesTask(const char *name) : MPMTask(name)
 //	and find grid momenta
 void PostForcesTask::Execute(void)
 {
+	// restore nodal momenta
+#pragma omp parallel for
+	for(int i=1;i<=nnodes;i++)
+	{	NodalPoint *ndptr = nd[i];
+		ndptr->RestoreMomenta();
+	}
+	
 	// Add traction BCs on particles
 	MatPtTractionBC::SetParticleSurfaceTractions(mtime);
 	
@@ -66,12 +73,6 @@ void PostForcesTask::Execute(void)
 		}
 	}
 
-	// restore nodal momenta
-	for(int i=1;i<=nnodes;i++)
-	{	NodalPoint *ndptr = nd[i];
-		ndptr->RestoreMomenta();
-	}
-	
     // Impose BCs on ftot to get correct grid BCs for velocity
     NodalVelBC::ConsistentGridForces();
 	

@@ -58,7 +58,8 @@ class ArchiveData : public CommonArchiveData
 		void ArchiveVTKFile(double,vector< int >,vector< int >,vector< char * >,vector< int >,double **);
 		void ArchiveHistoryFile(double,vector< int >);
 		void FileError(const char *,const char *,const char *);
-		
+		char *CreateFileInArchiveFolder(char *);
+	
 		// log file methods
 #ifdef LOG_PROGRESS
 		void ClearLogFile(void);

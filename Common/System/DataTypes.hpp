@@ -101,6 +101,13 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 		Tensor kCondTensor;
 	} TransportProperties;
 
+	// variables for multimaterial conduction calculations
+	typedef struct {
+		double gTValue;		  // material transport value
+		double gMTp;		  // transport mass
+		double gQ;			  // transport force
+	} TransportField;
+
 	// For residual strains in constitutive laws
 	typedef struct {
 		double dT;
@@ -192,6 +199,9 @@ char *MakeDOSPath(char *);
 #ifdef MPM_CODE
 TensorAntisym *ZeroTensorAntisym(TensorAntisym *);
 #endif
+
+double NormalCDFInverse(double p);
+double RationalApproximation(double t);
 
 #include "System/CommonAnalysis.hpp"
 #include "System/LinkedObject.hpp"

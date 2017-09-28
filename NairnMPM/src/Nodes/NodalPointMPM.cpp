@@ -71,14 +71,14 @@ void NodalPoint::InitializeForTimeStep(void)
 	}
 	
 	// for diffusion
-	gVolume=0.;
-	gConcentration=0.;
-	fdiff=0.;
+	gDiff.gMTp=0.;
+	gDiff.gTValue=0.;
+	gDiff.gQ=0.;
 	
 	// for conduction
-	gTemperature=0.;
-	gMpCp=0.;
-	fcond=0.;
+	gCond.gTValue=0.;
+	gCond.gMTp=0.;
+	gCond.gQ=0.;
 }
 
 #pragma mark TASK 0 METHODS
@@ -516,7 +516,8 @@ void NodalPoint::RestoreMomenta(void)
 // In mass and momentum task
 // 1. Add momentum (if any set) (uses mvf[0]->pk and mvf[0]->disp)
 // 2. Add temperture and concentration (if either set)
-//			(uses gTemperature, fcond, gConcentration, fdiff temporariily)
+//			(uses gCond.gTValue, gCond.gQ, gDiff.gTValue, gDiff.gQ temporariily, zeroed when BC are set)
+//			(only allowed if transport tasks is active)
 // 3. Track setting flags (uses numberPoints in field [0])
 // This only used when extrapolating rigid BCs before setting those BCs
 void NodalPoint::AddRigidBCInfo(MPMBase *mptr,double shape,int setFlags,Vector *rvel)
@@ -533,14 +534,14 @@ void NodalPoint::AddRigidBCInfo(MPMBase *mptr,double shape,int setFlags,Vector *
 	
 	// controlled temperature
 	if(setFlags&CONTROL_TEMPERATURE)
-	{	gTemperature += fnmp*mptr->pTemperature;
-		fcond += fnmp;
+	{	gCond.gTValue += fnmp*mptr->pTemperature;
+		gCond.gQ += fnmp;
 	}
 		
 	// controlled concentration
 	if(setFlags&CONTROL_CONCENTRATION)
-	{	gConcentration += fnmp*mptr->pConcentration;
-		fdiff += fnmp;
+	{	gDiff.gTValue += fnmp*mptr->pConcentration;
+		gDiff.gQ += fnmp;
 	}
 	
 	// save flags and veocity
@@ -557,16 +558,16 @@ int NodalPoint::ReadAndZeroRigidBCInfo(Vector *rvel,double *tempValue,double *co
 	
 	// controlled temperature
 	if(setFlags&CONTROL_TEMPERATURE)
-	{	*tempValue = gTemperature/fcond;
-		gTemperature = 0.;
-		fcond = 0.;
+	{	*tempValue = gCond.gTValue/gCond.gQ;
+		gCond.gTValue = 0.;
+		gCond.gQ = 0.;
 	}
 	
 	// controlled concentration
 	if(setFlags&CONTROL_CONCENTRATION)
-	{	*concValue = gConcentration/fdiff;
-		gConcentration = 0.;
-		fdiff = 0.;
+	{	*concValue = gDiff.gTValue/gDiff.gQ;
+		gDiff.gTValue = 0.;
+		gDiff.gQ = 0.;
 	}
 
 	return setFlags;

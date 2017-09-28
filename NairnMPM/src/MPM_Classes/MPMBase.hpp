@@ -13,6 +13,10 @@
 
 #define _MPM_BASE_
 
+// to activate simplifed heat energy and entropy calculations
+// When permanent, delete dT from IncrementHeatEnergy() arguments
+#define NEW_HEAT_METHOD
+
 #define DEFORMED_VOLUME 0
 #define DEFORMED_AREA 1
 #define DEFORMED_AREA_FOR_GRADIENT 2
@@ -33,11 +37,13 @@ class MPMBase : public LinkedObject
     public:
 		//  variables (changed in MPM time step)
 		Vector pos,vel;
-		double pTemperature,pPreviousTemperature;
-		double pConcentration,pPreviousConcentration;	// conc potential (0 to 1) (archived * concSaturation)
 		char *vfld;
-		double *pTemp;
-		double *pDiffusion;
+	
+		// for conduction, pTemp have 3, 6, or 9 depending on gradient needs
+		double pTemperature,pPreviousTemperature,*pTemp;
+	
+		// conc potential (0 to 1) (archived * concSaturation)
+		double pConcentration,pPreviousConcentration,*pDiffusion;
 	
 		// constants (not changed in MPM time step)
         double mp;
@@ -47,8 +53,6 @@ class MPMBase : public LinkedObject
         MPMBase();
         MPMBase(int,int,double);
 		virtual ~MPMBase();
-		void AllocateDiffusion(bool);
-		void AllocateTemperature(int,int);
 		void AllocateJStructures(void);
         bool AllocateCPDIorGIMPStructures(int,bool);
 		bool AllocateGIMPStructures(int,bool);
@@ -154,9 +158,13 @@ class MPMBase : public LinkedObject
 		Tensor *GetVelGrad(void);
 		double GetPlastEnergy(void);
 		void AddPlastEnergy(double);
-		double GetBufferClear_dTad(void);
-		double GetClearPrevious_dTad(void);
-		void Add_dTad(double);
+#ifdef NEW_HEAT_METHOD
+    	double GetClear_dTad(void);
+#else
+    	double GetClearPrevious_dTad(void);
+    	double GetBufferClear_dTad(void);
+#endif
+   		void Add_dTad(double);
 		double GetWorkEnergy(void);
 		void SetWorkEnergy(double);
 		void AddWorkEnergy(double);
@@ -203,8 +211,10 @@ class MPMBase : public LinkedObject
 		Tensor eplast;				// plastic strain tensor (init 0)
 		TensorAntisym wrot;			// rotation strain tensor (init 0)
 		double plastEnergy;			// total plastic energy
-		double prev_dTad;			// adiabatic temperature rise in previous step
-		double buffer_dTad;			// adiabatic temperature rise current step
+#ifndef NEW_HEAT_METHOD
+    	double prev_dTad;			// adiabatic temperature rise in previous step
+#endif
+    	double buffer_dTad;			// adiabatic temperature rise current step
 		double workEnergy;			// total work energy  sigma.de
         double heatEnergy;          // total heat flow on the particle
         double entropy;             // total entropy on the particle

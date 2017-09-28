@@ -37,6 +37,9 @@ public class MovieControls extends JPanel
 	private JLabel sizeSelected=new JLabel("PS: 100",JLabel.LEFT);
 	public JSlider mpmParticleSize=new JSlider(JSlider.HORIZONTAL,0,200,5);
 	int particleSize=100;
+	
+	private JLabel elongSelected=new JLabel("Max F: 20",JLabel.LEFT);
+	public JSlider maxElongSlider=new JSlider(JSlider.HORIZONTAL,0,20,1);
 
 	// axes
 	private String xchar="x";
@@ -183,6 +186,35 @@ public class MovieControls extends JPanel
 			particleSize=(int)gResDoc.docCtrl.controls.getParticleSize();
 			mpmParticleSize.setValue(particleSize);
 			mpmParticleSize.setToolTipText("Scale particle size as percent of cell size (default is 100%)");
+			
+			maxElongSlider.setSize(new Dimension(80,15));
+			maxElongSlider.setLocation(hpos,6);
+			maxElongSlider.setBackground(Color.lightGray);
+			maxElongSlider.setFocusable(false);
+			add(maxElongSlider);
+			
+			elongSelected.setFont(new Font("sanserif",Font.PLAIN,10));
+			elongSelected.setSize(elongSelected.getPreferredSize());
+			elongSelected.setLocation(hpos+(maxElongSlider.getWidth()-elongSelected.getWidth())/2,
+						HEIGHT-elongSelected.getHeight()-6);
+			add(elongSelected);
+			hpos+=maxElongSlider.getWidth()+3;
+			
+			maxElongSlider.addChangeListener(new ChangeListener()
+			{   public void stateChanged(ChangeEvent e)
+				{	int newMaxElong=maxElongSlider.getValue();
+					elongSelected.setText("Max F: "+newMaxElong);
+					NFMVPrefs.prefs.putDouble(NFMVPrefs.maxElongKey,(double)newMaxElong);
+					if(!maxElongSlider.getValueIsAdjusting())
+						JNNotificationCenter.getInstance().postNotification("MaxElongChanged",resDoc.docCtrl,mpmParticleSize);
+				}
+			});
+			double maxElong = NFMVPrefs.prefs.getDouble(NFMVPrefs.maxElongKey,
+					NFMVPrefs.maxElongDef);
+			maxElongSlider.setValue((int)(maxElong+0.5));
+			elongSelected.setText("Max F: "+(int)(maxElong+0.5));
+			maxElongSlider.setToolTipText("Set maximum elongation plot (=0 to for no limit)");
+			
 		}
 
 	}

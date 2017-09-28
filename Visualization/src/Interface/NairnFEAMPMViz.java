@@ -21,8 +21,8 @@ public class NairnFEAMPMViz extends JNApplication
 	//----------------------------------------------------------------------------
 	
 	public NairnFEAMPMViz()
-	{	super("NairnFEAMPMViz","Version 7.0.0",
-				"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
+	{	super("NairnFEAMPMViz-nfm","Version 7.0.0",
+				"Java application for running and visualizing OSParticulas and NairnFEA calculations.");
 		NFMVPrefs.setWorkspace(chooser);
 		
 		// path to folder containing this jar file ending in slash

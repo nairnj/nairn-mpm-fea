@@ -97,6 +97,10 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	public static Color tempBCColorDef = Color.red;
 	public static String concBCColorKey = "Temperature BC Color";
 	public static Color concBCColorDef = Color.blue;
+	
+	// plot settings
+	public static String maxElongKey = "Max Elongation Plotted";
+	public static double maxElongDef = 5.0;									// <1 for no limit
 
 	private JTextField mpmCodePath = new JTextField();
 	private JTextField mpmDTDPath = new JTextField();

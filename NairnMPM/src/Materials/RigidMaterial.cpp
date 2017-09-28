@@ -55,6 +55,7 @@ RigidMaterial::RigidMaterial(char *matName) : MaterialBase(matName)
     Vfunction=NULL;
 	rho=1.;
 	mirrored=0;
+	allowsCracks=false;			// rigid material default to ignoring cracks
 	useControlVelocity = false;
 }
 
@@ -309,7 +310,9 @@ char *RigidMaterial::InputMaterialProperty(char *xName,int &input,double &gScali
 int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid,int &activeNum)
 {	// not used if rigid bpundary condition
 	if(setDirection!=RIGID_MULTIMATERIAL_MODE)
-	{	return fieldNum;
+	{	// treat as if a material that ignores cracks
+		allowsCracks = true;
+		return fieldNum;
 	}
 	
 	// not allowed unless in multimaterial mode
@@ -391,23 +394,24 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
 	
     // contact rigid materials
     // false if no functions or 1 to 3 values set
-	if(setDirection==RIGID_MULTIMATERIAL_MODE)
-    {   if(function==NULL && function2==NULL && function3==NULL)
-		{	if(useControlVelocity)
-			{	if(controlDirection==1)
-				{	vel->x=controlVelocity;
-					hasDir[0]=true;
+	if(setDirection == RIGID_MULTIMATERIAL_MODE)
+    {   if(function == NULL && function2 == NULL && function3 == NULL)
+        {   if(useControlVelocity)
+            {   if(controlDirection == 1)
+                {   vel->x = controlVelocity;
+                    hasDir[0] = true;
 				}
-				else if(controlDirection==2)
-				{	vel->y = controlVelocity;
-					hasDir[1]=true;
+				else if (controlDirection == 2)
+                {   vel->y = controlVelocity;
+					hasDir[1] = true;
 				}
-				else if(controlDirection==3)
-				{	vel->z = controlVelocity;
-					hasDir[2]=true;
+				else if (controlDirection == 3)
+                {   vel->z = controlVelocity;
+					hasDir[2] = true;
 				}
 				else
 					return false;
+				return true;
 			}
 			else
 				return false;
@@ -436,12 +440,31 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
         
         return true;
 	}
-    
-    // if no functions, then done
-    if(function==NULL) return false;
-    
+	
 	// set one to three components (in order of functions and set directions)
 	hasDir[0] = hasDir[1] = hasDir[2] = false;
+	
+	// control velocity of rigid BC mode
+	if(function == NULL && function2 == NULL && function3 == NULL && useControlVelocity)
+    {   if(controlDirection == 1)
+        {   vel->x = controlVelocity;
+			hasDir[0] = true;
+		}
+		else if(controlDirection == 2)
+        {   vel->y = controlVelocity;
+			hasDir[1] = true;
+		}
+		else if(controlDirection == 3)
+        {   vel->z = controlVelocity;
+			hasDir[2] = true;
+		}
+		else
+			return false;
+		return true;
+	}
+	
+    // if no functions, then done
+    if(function==NULL) return false;
     
     // set variables
     varTime = theTime*UnitsController::Scaling(1.e3);

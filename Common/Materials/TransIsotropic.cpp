@@ -539,8 +539,7 @@ void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecif
 #ifdef MPM_CODE
 
 // Called before analysis, material can fill in things that never change during the analysis
-// Note: no angle, because can not depend on material angle
-// Here fills in isotropic properties, materials with different anisotropic properties should override
+// Note: no angle, because cannot depend on material angle
 void TransIsotropic::FillTransportProperties(TransportProperties *t)
 {
 	if(AxialDirection()==AXIAL_Z)
@@ -586,12 +585,16 @@ void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties 
 		double cssn=cs*sn;
 		
 		// diffusion and conductivity tensors = R.Tens.RT
-		t->diffusionTensor.xx = diffA*s2 + diffT*c2;
-		t->diffusionTensor.yy = diffA*c2 + diffT*s2;
-		t->diffusionTensor.xy = (diffT-diffA)*cssn;
-		t->kCondTensor.xx = kCondA*s2 + kCondT*c2;
-		t->kCondTensor.yy = kCondA*c2 + kCondT*s2;
-		t->kCondTensor.xy = (kCondT-kCondA)*cssn;
+		if(DiffusionTask::active)
+		{	t->diffusionTensor.xx = diffA*s2 + diffT*c2;
+			t->diffusionTensor.yy = diffA*c2 + diffT*s2;
+			t->diffusionTensor.xy = (diffT-diffA)*cssn;
+		}
+		if(ConductionTask::active)
+		{	t->kCondTensor.xx = kCondA*s2 + kCondT*c2;
+			t->kCondTensor.yy = kCondA*c2 + kCondT*s2;
+			t->kCondTensor.xy = (kCondT-kCondA)*cssn;
+		}
 	}
 	
 	else
@@ -600,21 +603,25 @@ void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties 
 		Matrix3 *Rtot = mptr->GetRtotPtr();
 		Rtot->GetRStress(R);
 		
-		double diffz = GetDiffZ();
-		t->diffusionTensor.xx = R[0][0]*diffT + R[0][1]*diffA + R[0][2]*diffz;
-		t->diffusionTensor.yy = R[1][0]*diffT + R[1][1]*diffA + R[1][2]*diffz;
-		t->diffusionTensor.zz = R[2][0]*diffT + R[2][1]*diffA + R[2][2]*diffz;
-		t->diffusionTensor.yz = R[3][0]*diffT + R[3][1]*diffA + R[3][2]*diffz;
-		t->diffusionTensor.xz = R[4][0]*diffT + R[4][1]*diffA + R[4][2]*diffz;
-		t->diffusionTensor.xy = R[5][0]*diffT + R[5][1]*diffA + R[5][2]*diffz;
+		if(DiffusionTask::active)
+		{	double diffz = GetDiffZ();
+			t->diffusionTensor.xx = R[0][0]*diffT + R[0][1]*diffA + R[0][2]*diffz;
+			t->diffusionTensor.yy = R[1][0]*diffT + R[1][1]*diffA + R[1][2]*diffz;
+			t->diffusionTensor.zz = R[2][0]*diffT + R[2][1]*diffA + R[2][2]*diffz;
+			t->diffusionTensor.yz = R[3][0]*diffT + R[3][1]*diffA + R[3][2]*diffz;
+			t->diffusionTensor.xz = R[4][0]*diffT + R[4][1]*diffA + R[4][2]*diffz;
+			t->diffusionTensor.xy = R[5][0]*diffT + R[5][1]*diffA + R[5][2]*diffz;
+		}
 		
-		double kz = GetKcondZ();
-		t->kCondTensor.xx = R[0][0]*kCondT + R[0][1]*kCondA + R[0][2]*kz;
-		t->kCondTensor.yy = R[1][0]*kCondT + R[1][1]*kCondA + R[1][2]*kz;
-		t->kCondTensor.zz = R[2][0]*kCondT + R[2][1]*kCondA + R[2][2]*kz;
-		t->kCondTensor.yz = R[3][0]*kCondT + R[3][1]*kCondA + R[3][2]*kz;
-		t->kCondTensor.xz = R[4][0]*kCondT + R[4][1]*kCondA + R[4][2]*kz;
-		t->kCondTensor.xy = R[5][0]*kCondT + R[5][1]*kCondA + R[5][2]*kz;
+		if(ConductionTask::active)
+		{	double kz = GetKcondZ();
+			t->kCondTensor.xx = R[0][0]*kCondT + R[0][1]*kCondA + R[0][2]*kz;
+			t->kCondTensor.yy = R[1][0]*kCondT + R[1][1]*kCondA + R[1][2]*kz;
+			t->kCondTensor.zz = R[2][0]*kCondT + R[2][1]*kCondA + R[2][2]*kz;
+			t->kCondTensor.yz = R[3][0]*kCondT + R[3][1]*kCondA + R[3][2]*kz;
+			t->kCondTensor.xz = R[4][0]*kCondT + R[4][1]*kCondA + R[4][2]*kz;
+			t->kCondTensor.xy = R[5][0]*kCondT + R[5][1]*kCondA + R[5][2]*kz;
+		}
 	}
 }
 

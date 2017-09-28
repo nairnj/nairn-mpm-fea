@@ -13,25 +13,21 @@
 
 #define _NODALCONCBC_
 
-#include "Boundary_Conditions/BoundaryCondition.hpp"
+#include "Boundary_Conditions/NodalValueBC.hpp"
 
 class NodalPoint;
 
-class NodalConcBC: public BoundaryCondition
+class NodalConcBC: public NodalValueBC
 {
     public:
-		double concentrationNoBC;
-        
+    
         // constructors and destructors
         NodalConcBC(int,int,double,double);
-		virtual BoundaryCondition *UnsetDirection(void);
-		virtual BoundaryCondition *SetRigidProperties(int,int,int,double);
-        
-        // methods
-        BoundaryCondition *PrintBC(ostream &);
-		NodalConcBC *CopyNodalConcentration(NodalPoint *);
-		NodalConcBC *PasteNodalConcentration(NodalPoint *);
-
+    
+        // Accessors
+        virtual int GetSetDirection(void) const;
+        virtual TransportField *GetTransportFieldPtr(NodalPoint *) const;
+ 
 };
 
 // variables (changed in MPM time step)

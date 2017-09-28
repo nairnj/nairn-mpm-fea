@@ -83,7 +83,8 @@ public class MaterialPoint
 		Vector3 pradius = getParticleRadius(resDoc);
 		double radiix = 0.01*mpDiam*pradius.x*scale;
 		double radiiy = 0.01*mpDiam*pradius.y*scale;
-		double maxElong = 5.;		// make a preference
+		double maxElong = NFMVPrefs.prefs.getDouble(NFMVPrefs.maxElongKey,
+													NFMVPrefs.maxElongDef);
 		
 		if(showSquarePts)
 		{	if(transformPts)

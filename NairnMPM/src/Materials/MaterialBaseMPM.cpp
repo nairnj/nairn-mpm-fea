@@ -274,28 +274,41 @@ const char *MaterialBase::VerifyAndLoadProperties(int np)
 // print any properties common to all MPM material types
 void MaterialBase::PrintCommonProperties(void) const
 {
-	if(Rigid() || MaterialStyle()==TRACTION_MAT) return;
+	if(MaterialStyle()==TRACTION_MAT) return;
+	
+	// rigid only allow cracks option
+	if(Rigid())
+	{	if(AllowsCracks())
+			cout << "Sees cracks" << endl;
+		else
+			cout << "Ignores cracks" << endl;
+		return;
+	}
 	
 	// print density
 	PrintProperty("rho",rho*UnitsController::Scaling(1000.),"");
 	cout << endl;
 	
-	// print growth criterion and relevant material properties for crack growth
-	cout << "Crack Growth Criterion: ";
-	PrintCriterion(criterion[0],matPropagateDirection[0]);
+	if(AllowsCracks())
+	{	// print growth criterion and relevant material properties for crack growth
+		cout << "Crack Growth Criterion: ";
+		PrintCriterion(criterion[0],matPropagateDirection[0]);
 	
-	// traction mat
-	if(criterion[0]!=NO_PROPAGATION && tractionMat[0]>0)
-		cout << "   New crack surface has traction material " << tractionMat[0] << endl;
-	
-	if(criterion[0]!=NO_PROPAGATION && criterion[1]!=NO_PROPAGATION)
-	{	cout << "Alternate Crack Growth Criterion: ";
-		PrintCriterion(criterion[1],matPropagateDirection[1]);
-		
 		// traction mat
-		if(tractionMat[1]>0)
-			cout << "   New crack surface has traction material " << tractionMat[1] << endl;
+		if(criterion[0]!=NO_PROPAGATION && tractionMat[0]>0)
+			cout << "   New crack surface has traction material " << tractionMat[0] << endl;
+	
+		if(criterion[0]!=NO_PROPAGATION && criterion[1]!=NO_PROPAGATION)
+		{	cout << "Alternate Crack Growth Criterion: ";
+			PrintCriterion(criterion[1],matPropagateDirection[1]);
+		
+			// traction mat
+			if(tractionMat[1]>0)
+				cout << "   New crack surface has traction material " << tractionMat[1] << endl;
+		}
 	}
+	else
+		cout << "Ignores cracks" << endl;
 	   
     // artificial visconsity
     if(artificialViscosity)
@@ -455,7 +468,7 @@ const char *MaterialBase::PreferredDirection(int style)
 // Here fills in isotropic properties, materials with different anisotropic properties should override
 void MaterialBase::FillTransportProperties(TransportProperties *t)
 {
-	// diffusion tensor (xx, yy, xy order)
+	// diffusion tensor
 	t->diffusionTensor.xx=diffusionCon;
 	t->diffusionTensor.yy=diffusionCon;
 	t->diffusionTensor.zz=diffusionCon;
@@ -463,7 +476,7 @@ void MaterialBase::FillTransportProperties(TransportProperties *t)
 	t->diffusionTensor.xz=0.;
 	t->diffusionTensor.yz=0.;
 	
-	// conductivity tensor (xx, yy, xy order) normalized to rho
+	// conductivity tensor normalized to rho
 	t->kCondTensor.xx = kCond;
 	t->kCondTensor.yy = kCond;
 	t->kCondTensor.zz = kCond;
@@ -529,7 +542,13 @@ void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np,int offset) cons
 // throws CommonException()
 int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activeNum)
 {	if(!multiMaterials)
-	{	// for first particle using this material, add to active material IDs and check required
+	{	if(!AllowsCracks())
+		{	// Cannot ignore cracks in single material mode. Rather than an error, just
+			// reset to see cracks here
+			allowsCracks = true;
+		}
+		
+		// for first particle using this material, add to active material IDs and check required
 		// material buffer sizes
 		if(field<0)
 		{	field=0;
@@ -550,10 +569,14 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activ
 				{	throw CommonException("Material class trying to share velocity field with an undefined material type",
 										  "MaterialBase::SetField");
 				}
-			
-				// must match for rigid feature
+				
+				// must match for rigid, allowing cracks, and membrane features
 				MaterialBase *matRef = theMaterials[shareMatField-1];
 				if(matRef->Rigid() != Rigid())
+				{	throw CommonException("Material class trying to share velocity field with an incompatible material type",
+										  "MaterialBase::SetField");
+				}
+				if(matRef->AllowsCracks() != AllowsCracks())
 				{	throw CommonException("Material class trying to share velocity field with an incompatible material type",
 										  "MaterialBase::SetField");
 				}
@@ -858,12 +881,15 @@ void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffe
 }
 
 // Get transport property tensors (if change with particle state)
+// only called when there are transport tasks
 void MaterialBase::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t) const { *t = tr; }
 
 // Get Cv heat capacity (with option for parent to add excess heat capacity)
 // Implemented in case heat capacity changes with particle state
 // Legacy Units nJ/(g-K)
-double MaterialBase::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
+double MaterialBase::GetHeatCapacity(MPMBase *mptr) const
+{   return heatCapacity;
+}
 
 // For Cp heat capacity in nJ/(g-K)
 double MaterialBase::GetCpHeatCapacity(MPMBase *mptr) const { return GetHeatCapacity(mptr)+GetCpMinusCv(mptr); }
@@ -880,7 +906,29 @@ double MaterialBase::GetCpMinusCv(MPMBase *mptr) const { return 0; }
 void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,double dPhi) const
 {
 	double Cv = GetHeatCapacity(mptr);					// in nJ/(g-K)
-	
+
+#ifdef NEW_HEAT_METHOD
+    // Adiabatic temperature change dT_{ad} = dTq0+dPhi/Cv
+    if(ConductionTask::adiabatic)
+    {   // temperature increased bt dT_{ad}
+        mptr->Add_dTad(dTq0+dPhi/Cv);
+        
+        // no heat here because adiabatic
+        
+        // entropy
+        mptr->AddEntropy(dPhi/mptr->pPreviousTemperature);
+    }
+    else
+    {   // no temperature change because isotherman
+        
+        // temperature rise switched to heat
+        double baseHeat = -Cv*dTq0;
+        mptr->AddHeatEnergy(baseHeat-dPhi);
+        
+        // for entropy dS = -Cv dTad/T + dPhi/T = - Cv dTq0/T
+        mptr->AddEntropy(baseHeat/mptr->pPreviousTemperature);
+    }
+#else
 	// Isolated means no conduction and no thermal ramp (and in future if have other ways
 	//		to change particle temperature, those are not active either)
 	// In this mode, adiabatic has dq=0 and isothermal releases all as heat
@@ -926,6 +974,7 @@ void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,doubl
 			mptr->AddEntropy(baseHeat/mptr->pPreviousTemperature);
         }
 	}
+#endif
 }
 
 // Correct stress update for rotations using hypoelasticity approach
@@ -1570,6 +1619,7 @@ int MaterialBase::GetMVFFlags(int matfld)
 	
 	MaterialBase *matID = theMaterials[fieldMatIDs[matfld]];
 	int flags = matID->Rigid() ? RIGID_FIELD_BIT : 0 ;
+	if(!matID->AllowsCracks()) flags += IGORE_CRACKS_BIT;
 	return flags;
 }
 
@@ -1615,3 +1665,25 @@ int MaterialBase::AltStrainContains(void) const { return NOTHING; }
 
 // concentraion saturation (mptr cannot be NULL)
 double MaterialBase::GetConcSaturation(MPMBase *mptr) const { return concSaturation; }
+
+// lquids return shear-rate dependent viscosity. Only used in liquid contact.
+double MaterialBase::GetViscosity(double shearRate) const { return -1.; }
+
+// This method has several options (and only used in liquid contact):
+//	1. If can solve x(1+k*eta(x*gmaxdot)) - 1 = 0 on interval 0 < x < 1, then return eta(g(dot))
+//		Note: x = g(dot)/gmaxdot
+//  2. If solution not possible, bracket the solution to y = x(1+k*eta(x*gmaxdot)) - 1 = 0
+//		Such that y1(x1)<0 and y(x2)>0 and return -1
+//	3. If can't help, set brackets to (0,-1) and (1,k*viscosity) and return -1.
+double MaterialBase::BracketContactLawShearRate(double gmaxdot,double k,double &x1,double &y1,double &x2,double &y2) const
+{	x1 = 0.;
+    y1 = -1.;
+    x2 = 1.;
+    y2 = k*GetViscosity(gmaxdot);
+    return -1;
+}
+
+// True to see cracks or false to ignore cracks and use single velocity field
+// Can only ignore cracks in multimaterial mode.
+int MaterialBase::AllowsCracks(void) const { return allowsCracks; }
+

@@ -51,7 +51,7 @@ short MPMReadHandler::BMPFileInput(char *xName,const Attributes& attrs)
 }
 
 //-----------------------------------------------------------
-// Subroutine to translate BMP file into material point
+// Subroutine to translate BMP file into material points
 // throws std::bad_alloc, SAXException()
 //-----------------------------------------------------------
 void MPMReadHandler::TranslateBMPFiles(void)
@@ -62,7 +62,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	
 	// read image file
 	char *bmpFullPath=archiver->ExpandOutputPath(bmpFileName);
-	ReadBMPFile(bmpFullPath,info,&rows);
+	rows = (unsigned char **)ReadXYFile(bmpFullPath,info,BYTE_DATA);
 	delete [] bmpFullPath;
 	
 	// angle file name (overrides other angle settings)
@@ -75,20 +75,20 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		// first file always there
 		XYInfoHeader angleInfo;
 		char *bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[0]);
-		ReadBMPFile(bmpFullAnglePath,angleInfo,&angleRows);
+		angleRows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA);
 		if(info.height!=angleInfo.height || info.width!=angleInfo.width)
-			throw SAXException(BMPError("The image file and first angle file sizes do not match.",bmpFileName));
+			throw SAXException(XYFileError("The image file and first angle file sizes do not match.",bmpFileName));
 		delete [] bmpFullAnglePath;
 		
 		// was angle mapping set
 		if(numAngles==0)
-			throw SAXException(BMPError("No mapping of pixels to angles for angle file were provided.",bmpFileName));
+			throw SAXException(XYFileError("No mapping of pixels to angles for angle file were provided.",bmpFileName));
 		
 		if(fileRotations>1)
 		{	bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[1]);
-			ReadBMPFile(bmpFullAnglePath,angleInfo,&angle2Rows);
+			angle2Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA);
 			if(info.height!=angleInfo.height || info.width!=angleInfo.width)
-				throw SAXException(BMPError("The image file and second angle file sizes do not match.",bmpFileName));
+				throw SAXException(XYFileError("The image file and second angle file sizes do not match.",bmpFileName));
 			delete [] bmpFullAnglePath;
 			if(numAngles<2)
 			{	minAngle[1] = minAngle[0];
@@ -100,9 +100,9 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		
 		if(fileRotations>2)
 		{	bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[2]);
-			ReadBMPFile(bmpFullAnglePath,angleInfo,&angle3Rows);
+			angle3Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA);
 			if(info.height!=angleInfo.height || info.width!=angleInfo.width)
-				throw SAXException(BMPError("The image file and second angle file sizes do not match.",bmpFileName));
+				throw SAXException(XYFileError("The image file and second angle file sizes do not match.",bmpFileName));
 			delete [] bmpFullAnglePath;
 			if(numAngles<3)
 			{	minAngle[2] = minAngle[1];
@@ -127,7 +127,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	Vector pw;
 	const char *msg = CommonReadHandler::DecodeBMPWidthAndHeight(info,bwidth,bheight,orig.z,pw,fmobj->IsThreeD());
 	if(msg != NULL)
-		throw SAXException(BMPError("<BMP> command must specify width and/or height as size or pixels per mm.",bmpFileName));
+		throw SAXException(XYFileError("<BMP> command must specify width and/or height as size or pixels per mm.",bmpFileName));
 	pw.z = yflipped ? -1. : 1. ;
 	
 	// Length/semiscale is half particle with

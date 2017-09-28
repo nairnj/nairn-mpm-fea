@@ -81,7 +81,7 @@ CrackHeader::~CrackHeader()
 
 // preliminary calculations (throw CommonException on problem)
 // throws CommonException()
-void CrackHeader::PreliminaryCrackCalcs(void)
+void CrackHeader::PreliminaryCrackCalcs(double dcell)
 {
     // it does not make sense unless there are two segments (and at least one line)
     if(firstSeg==NULL)
@@ -89,12 +89,26 @@ void CrackHeader::PreliminaryCrackCalcs(void)
     else if(firstSeg->nextSeg==NULL)
         throw CommonException("All cracks must have at least two particles","CrackHeader::PreliminaryCrackCalcs");
     
-	// check traction laws and set history variables
-	if(hasTractionLaws)
-	{	CrackSegment *scrk=firstSeg;
-		while(scrk!=NULL)
-		{	// check traction law
-			int matid=scrk->MatID();
+	// loop through segments
+	CrackSegment *scrk=firstSeg;
+    double lastx = scrk->x;
+    double lasty = scrk->y;
+	bool tooShort = false, tooLong = false;
+	while(scrk!=NULL)
+	{	// check segment length
+		if(scrk!=firstSeg)
+		{	double x = scrk->x;
+			double y = scrk->y;
+			double segLength = sqrt((x-lastx)*(x-lastx)+(y-lasty)+(y-lasty));
+			if(segLength<0.1*dcell) tooShort = true;
+			if(segLength>4.*dcell) tooLong = true;
+			lastx = x;
+			lasty = y;
+		}
+		
+		// check check traction laws and set history variables
+		if(hasTractionLaws)
+		{	int matid=scrk->MatID();
 			if(matid>=0)
 			{	if(matid>=nmat)
 					throw CommonException("Crack segment with an undefined traction law material","CrackHeader::PreliminaryCrackCalcs");
@@ -106,10 +120,23 @@ void CrackHeader::PreliminaryCrackCalcs(void)
 				// allow traction law to have history dependent data
 				scrk->SetHistoryData(theMaterials[matid]->InitHistoryData(NULL));
 			}
-			
-			// next segment
-			scrk=scrk->nextSeg;
 		}
+		
+		// next segment
+		scrk=scrk->nextSeg;
+	}
+	
+	// warning if too short or too long
+	if(tooShort || tooLong)
+	{	cout << "\nWARNING: At least one crack segment is ";
+		if(tooShort) cout << "less than 1/10 a cell";
+		if(tooLong)
+		{	if(tooShort) cout << " and one is ";
+			cout << "longer than 4 cells";
+		}
+		cout << "." << endl;
+		cout << "         The simulation will run, but crack calculations may be inefficient" << endl;;
+		cout << "         or inaccurate and crack CODs may be invalid." << endl;
 	}
 		
 	// check crack tip materials to be valid and to not be a traction law material
@@ -135,7 +162,7 @@ void CrackHeader::PreliminaryCrackCalcs(void)
 // need to add this one
 short CrackHeader::add(CrackSegment *cs)
 {
-    if(cs==NULL) return FALSE;		// not created
+    if(cs==NULL) return false;		// not created
     if(lastSeg==NULL)
     {	firstSeg=cs;
     }
@@ -147,9 +174,9 @@ short CrackHeader::add(CrackSegment *cs)
 				lastSeg->tipMatnum=cs->tipMatnum;
             if(cs->MatID()>=0)
             {   lastSeg->SetMatID(cs->MatID()+1);
-                hasTractionLaws=TRUE;
+                hasTractionLaws=true;
             }
-			return TRUE;
+			return true;
 		}
     	lastSeg->nextSeg=cs;
 		cs->prevSeg=lastSeg;
@@ -159,12 +186,12 @@ short CrackHeader::add(CrackSegment *cs)
 	
     // determine element for new crack particles
     cs->FindInitialElement();
-	if(cs->planeElemID()<0) return FALSE;
+	if(cs->planeElemID()<0) return false;
 	
 	// has it put traction laws on this crack
-	if(cs->MatID()>=0) hasTractionLaws=TRUE;
+	if(cs->MatID()>=0) hasTractionLaws=true;
 	
-   return TRUE;
+   return true;
 }
 
 /* add new crack segment for crack propagation 
@@ -181,7 +208,7 @@ short CrackHeader::add(CrackSegment *cs,int whichTip)
     CrackSegment *prevSeg;
     double dx,dy;
     
-    if(cs==NULL) return FALSE;		// not created
+    if(cs==NULL) return false;		// not created
 	
 	// find the element first (problem if not in the mesh)
     cs->FindInitialElement();
@@ -193,7 +220,7 @@ short CrackHeader::add(CrackSegment *cs,int whichTip)
         else
 			firstSeg->tipMatnum=-1;
 		delete cs;
-		return FALSE;
+		return false;
 	}
 
     // we can assume lastSeg!=NULL because calculations will not start
@@ -243,7 +270,7 @@ short CrackHeader::add(CrackSegment *cs,int whichTip)
     
     ExtendHierarchy(cs);
     
-    return TRUE;
+    return true;
 }
 
 // output crack info and evaluate contact law
@@ -279,9 +306,6 @@ void CrackHeader::Output(void)
 	CrackSegment *crkTip;
 	CrackTipAndDirection(START_OF_CRACK,&crkTip,initialDirection[START_OF_CRACK]);
 	CrackTipAndDirection(END_OF_CRACK,&crkTip,initialDirection[END_OF_CRACK]);
-	
-	// future may want to read this as parameter
-	SetCodLocation(1.);
 	
 	// check thickness
 	double gridThickness=mpmgrid.GetThickness();
@@ -760,8 +784,8 @@ void CrackHeader::InterpolatePosition(int surface,CrackSegment **seg,Vector &pos
 	bpt[1].y=(-4.*spt[0].y+24.*spt[1].y-6.*spt[2].y+spt[3].y)/15.;
 	bpt[2].x=(spt[0].x-6.*spt[1].x+24.*spt[2].x-4.*spt[3].x)/15.;
 	bpt[2].y=(spt[0].y-6.*spt[1].y+24.*spt[2].y-4.*spt[3].y)/15.;
-	//bpt[3].x=spt[3].x;
-	//bpt[3].y=spt[3].y;
+	bpt[3].x=spt[3].x;
+	bpt[3].y=spt[3].y;
 	
 #else
 	
@@ -784,13 +808,14 @@ void CrackHeader::InterpolatePosition(int surface,CrackSegment **seg,Vector &pos
 	spt[1].y=(bpt[0].y+4.*bpt[1].y+bpt[2].y)/6.;
 	spt[2].x=(bpt[1].x+4.*bpt[2].x+bpt[3].x)/6.;
 	spt[2].y=(bpt[1].y+4.*bpt[2].y+bpt[3].y)/6.;
-	//spt[3].x=bpt[3].x;
-	//spt[3].y=bpt[3].y;
+	spt[3].x=bpt[3].x;
+	spt[3].y=bpt[3].y;
 	
 #endif
 	
 	// control points for bezier curve between spt[codInterval] and spt[codInterval+1]
-	// codInterval is zero ot one, thus never needs bpt[3] or spt[3]
+	// codInterval is 0 to 2 for which B spline to use with 0 being the one
+	//   that starts at the crack tip (and the default setting)
 	bc[0].x=spt[codInterval].x;
 	bc[0].y=spt[codInterval].y;
 	bc[1].x=(2.*bpt[codInterval].x+bpt[codInterval+1].x)/3.;
@@ -2100,7 +2125,7 @@ bool CrackHeader::SegmentsCross(CrackSegment *scrk1,double x1,double y1,double x
     if(scrk2 == NULL) return false;
     
     // check extents this segment, return NULL if not
-	if(!LineIsInExtents(x1,y1,x2,y2,scrk1->cnear,scrk1->cfar)) return NULL;
+	if(!LineIsInExtents(x1,y1,x2,y2,scrk1->cnear,scrk1->cfar)) return false;
 
     // find intersection and see if in the contour
     double dx,dy;
@@ -2308,24 +2333,40 @@ double *CrackHeader::GetThicknessPtr(void) { return &thickness; }
 #pragma mark CrackHeader: Class methods
 
 // Find location for spline interpolation on crack surfaces
+// We fit the first four crack particle to a B spline. The value of t (from 0 to 4)
+//   is location relative to crack tip used to find crack opening displacement. The spline
+//   curve has four curves defined by these particles. The default method is to use
+//   the crack particles as the control points. An option called CUBIC_INTERPOLATION changes
+//   crack particle to interpolation points (and control points are found. An options
+//   called LINEAR_INTERPOLATION does not use splines (or setting below
+// The B spline curve used depends on t (0 to 1 for first, to 2 for second, to 3 for third)
 void CrackHeader::SetCodLocation(double t)
 {
+	// we do not allow t outside 0 to 3
 	if(t<0.) t=0.;
-	if(t>2.) t=2.;
+	if(t>3.) t=3.;
 	
+	// Pick one of first three B spline curves
 	if(t<=1.)
 		codInterval=0;
-	else
+	else if(t<=2.)
 	{	codInterval=1;
-		t-=1.;
+		t-=1.;				// range 0 to 1 in the interval
 	}
-	codLocation=t;
+	else
+	{	codInterval=2;
+		t-=2.;				// range 0 to 1 in the interval
+	}
+	codLocation=t;			// location 0 to 1 in the choosen curvne
 	
+	// coefficients to P(t) curve
 	bezArg[0]=(1.-t)*(1.-t)*(1.-t);
 	bezArg[1]=3.*t*(1.-t)*(1.-t);
 	bezArg[2]=3.*t*t*(1.-t);
 	bezArg[3]=t*t*t;
 	
+	// coefficient for P'(t)
+	// These could be used to find crack tangent and normal, but current is not used.
 	bezDer[0]=-3.*(1.-t)*(1.-t);
 	bezDer[1]=3.*(1.-t)*(1.-t) - 6.*t*(1.-t);
 	bezDer[2]=6.*t*(1-t) - 3.*t*t;

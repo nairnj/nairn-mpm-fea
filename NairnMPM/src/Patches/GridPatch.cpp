@@ -354,7 +354,7 @@ NodalPoint *GridPatch::GetNodePointer(int num)
         
 		// is it out of this patch
 		if(row<-ghostRows || row>yn+ghostRows || col<-ghostRows || col>xn+ghostRows || rank<-ghostRows || rank>zn+ghostRows)
-        {   cout << num << " to (" << row << "," << col << "," << rank << ")" << endl;
+        {   cout << "# ghost for node " << num << " to (" << row << "," << col << "," << rank << ") outside patch" << endl;
 			throw CommonException("Need ghost node that is outside this patch (i.e., increase ghost rows)","GridPatch::GetNodePointer");
         }
         
@@ -393,7 +393,7 @@ NodalPoint *GridPatch::GetNodePointer(int num)
 	// if ghosts[g] has ghost node return it, otherwise return real node
 	// a ghosts[g] with no nodes should not reach here
 	if(g<0 || g>=numGhosts)
-	{	cout << "ghost for node " << num << " out of range (" << g << ") for (" << row << "," << col << ")"
+	{	cout << "# ghost for node " << num << " out of range (" << g << ") for (" << row << "," << col << ")"
 				<< ") from (" << y0 << "," << x0 << ")" << endl;
 		throw CommonException("ghost index out of range","GridPatch::GetNodePointer");
 	}
@@ -469,7 +469,7 @@ NodalPoint *GridPatch::GetNodePointer(int num,bool debug)
         
 		// is it out of this patch
 		if(row<-ghostRows || row>yn+ghostRows || col<-ghostRows || col>xn+ghostRows || rank<-ghostRows || rank>zn+ghostRows)
-        {   cout << num << " to (" << row << "," << col << "," << rank << ")" << endl;
+        {   cout << "# ghost for node " << num << " to (" << row << "," << col << "," << rank << ") outside patch" << endl;
 			throw CommonException("Need ghost node that is outside this patch (i.e., increase ghost rows)","GridPatch::GetNodePointer");
         }
         

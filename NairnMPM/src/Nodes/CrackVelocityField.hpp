@@ -45,7 +45,7 @@ class CrackVelocityField
         virtual ~CrackVelocityField();
 		virtual MatVelocityField *CreateMatVelocityField(int);
 		virtual void Zero(short,int,bool);
-		virtual void ZeroMatFields() = 0;
+		virtual void ZeroMatFields(void) = 0;
 		virtual void AddMatVelocityField(int);
         virtual bool NeedsMatVelocityField(int) const;
 		virtual void MatchRealFields(CrackVelocityField *);

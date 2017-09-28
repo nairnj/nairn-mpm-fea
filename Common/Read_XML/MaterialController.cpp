@@ -38,6 +38,8 @@
 	#include "Materials/CoulombFriction.hpp"
 	#include "Materials/LinearInterface.hpp"
 	#include "Materials/NonlinearInterface.hpp"
+	#include "Materials/AdhesionFriction.hpp"
+	#include "Materials/LiquidContact.hpp"
 #else
 	#include "Materials/ImperfectInterface.hpp"
 #endif
@@ -171,6 +173,12 @@ int MaterialController::AddMaterial(int matID,char *matName)
 		case NONLINEARINTERFACELAW:
 			newMaterial=new NonlinearInterface(matName);
 			break;
+        case ADHESIONFRICTIONLAW:
+            newMaterial=new AdhesionFriction(matName);
+            break;
+        case LIQUIDCONTACT:
+            newMaterial=new LiquidContact(matName);
+            break;
 #else
 		case INTERFACEPARAMS:
 			newMaterial=new ImperfectInterface(matName);

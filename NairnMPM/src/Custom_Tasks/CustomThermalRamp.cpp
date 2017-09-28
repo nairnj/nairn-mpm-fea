@@ -16,6 +16,7 @@
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Read_XML/BMPLevel.hpp"
+#include "Materials/MaterialBase.hpp"
 
 extern double timestep;
 
@@ -207,7 +208,7 @@ void CustomThermalRamp::SetTextParameter(char *fxn,char *ptr)
 		strcpy(bmpFile,fxn);
 	}
 	
-	else
+	else if(ptr == (char *)&scaleFxn)
 	{	// scale function
 		if(scaleFxn!=NULL)
 			ThrowSAXException("Duplicate ramp scale function was entered");
@@ -229,6 +230,9 @@ void CustomThermalRamp::SetTextParameter(char *fxn,char *ptr)
 		if(scaleFxn->HasError())
 			ThrowSAXException("Ramp scale function is not valid");
 	}
+	
+	else
+		CustomTask::SetTextParameter(fxn,ptr);
 }
 
 #pragma mark GENERIC TASK METHODS
@@ -280,7 +284,7 @@ CustomTask *CustomThermalRamp::Initialize(void)
 		XYInfoHeader info;
 		unsigned char **rows;
 		char *bmpFullPath = archiver->ExpandOutputPath(bmpFile);
-		CommonReadHandler::ReadBMPFile(bmpFullPath,info,&rows);
+		rows = (unsigned char **)CommonReadHandler::ReadXYFile(bmpFullPath,info,BYTE_DATA);
 		delete [] bmpFullPath;
 		
 		// validate
@@ -307,7 +311,7 @@ CustomTask *CustomThermalRamp::Initialize(void)
 		{	cout << "      0 to 255 linearly mapped to dT = " << deltaTmin << " to " << deltaTmax << endl;
 		}
 		
-		// loop over nonrigid material points and find those needed thermal ramp
+		// loop over nonrigid material points and find those needing thermal ramp
 		DomainMap map;
 		for(int p=0;p<nmpmsNR;p++)
 		{	// get box
@@ -395,15 +399,23 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 		
 		// loop over nonrigid material points and update temperature
 		for(int p=0;p<nmpmsNR;p++)
-		{	if(scaleFxn==NULL)
-				mpm[p]->pTemperature += deltaT;
-			else
+        {   double dTp = deltaT;
+            if(scaleFxn!=NULL)
 			{	varTime = mtime*UnitsController::Scaling(1000.);
 				varXValue = mpm[p]->pos.x;
 				varYValue = mpm[p]->pos.y;
 				varZValue = mpm[p]->pos.y;
-				mpm[p]->pTemperature += deltaT*scaleFxn->Val();
+				dTp = deltaT*scaleFxn->Val();
 			}
+            mpm[p]->pTemperature += dTp;
+
+#ifdef NEW_HEAT_METHOD
+            // heat and entropy
+            const MaterialBase *matRef=theMaterials[mpm[p]->MatID()];
+            double dqp = matRef->GetHeatCapacity(mpm[p]);
+            mpm[p]->AddHeatEnergy(dqp);
+            mpm[p]->AddEntropy(dqp/mpm[p]->pPreviousTemperature);
+#endif
 		}
 	}
 	
@@ -418,6 +430,14 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 			nextMatPt->currentDeltaT = newDeltaT;
 			MPMBase *mptr = (MPMBase *)nextMatPt->GetContextInfo();
 			mptr->pTemperature += deltaT;
+            
+#ifdef NEW_HEAT_METHOD
+            // heat and entropy
+            const MaterialBase *matRef=theMaterials[mptr->MatID()];
+            double dqp = matRef->GetHeatCapacity(mptr);
+            mptr->AddHeatEnergy(dqp);
+            mptr->AddEntropy(dqp/mptr->pPreviousTemperature);
+#endif
 			
 			// next one
 			nextMatPt = (BMPLevel *)nextMatPt->GetNextObject();

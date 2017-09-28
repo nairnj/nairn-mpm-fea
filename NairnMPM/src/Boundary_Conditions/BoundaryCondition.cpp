@@ -37,7 +37,11 @@ BoundaryCondition::BoundaryCondition(int bcStyle,double bcValue,double bcTime)
 // Reuse Rigid properties (subclass set other properties) and return this for calling function use
 // Set using internal units so no need for legacy scaling and always using CONSTANT_VALUE
 BoundaryCondition *BoundaryCondition::SetRigidProperties(int num,int dof,int bcStyle,double bcValue)
-{	nodeNum = num;
+{	// set direction
+    nd[num]->SetFixedDirection(dof);
+    
+    // set other properties
+    nodeNum = num;
     style = bcStyle;
     value = bcValue;
 	ftime = 0.;
@@ -50,13 +54,26 @@ BoundaryCondition::~BoundaryCondition()
 {	if(function!=NULL) delete function;
 }
 
+// get set direction
+int BoundaryCondition::GetSetDirection(void) const { return 0; }
+
 // just unset condition, because may want to reuse it, return next one to unset
 BoundaryCondition *BoundaryCondition::UnsetDirection(void)
-{	// return next one
+{	nd[nodeNum]->UnsetFixedDirection(GetSetDirection());
 	return (BoundaryCondition *)GetNextObject();
 }
 
 #pragma mark BoundaryCondition: Methods
+
+// print it (if can be used)
+BoundaryCondition *BoundaryCondition::PrintBC(ostream &os)
+{
+    char nline[200];
+    sprintf(nline,"%7d %2d %15.7e %15.7e",nodeNum,style,GetBCValueOut(),GetBCFirstTimeOut());
+    os << nline;
+    PrintFunction(os);
+    return (BoundaryCondition *)GetNextObject();
+}
 
 // Calculate value at stepTime
 double BoundaryCondition::BCValue(double stepTime)

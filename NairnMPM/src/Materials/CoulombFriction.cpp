@@ -174,6 +174,7 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
 					*mredDE = 0.5*Vs*Vs/AsDt;
 				else
 					*mredDE = Vs - 0.5*AsDt;
+				//*mredDE = Vs;							// revert to first order heating
 			}
 		}
     }

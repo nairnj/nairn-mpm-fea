@@ -207,6 +207,20 @@ and rubber elastic materials as special cases.</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
+<tr>
+<td><a href="#transisosoft"><code>TransIsoSoftening 1</code></a></td>
+<td>51</td>
+<td width="50%">Small-strain transversely material with anisotropic damage mechanics using four softening laws. Unrotated axial direction along the z axis.</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td><a href="#transisosoft"><code>TransIsoSoftening 2</code></a></td>
+<td>51</td>
+<td width="50%">Small-strain transversely material with anisotropic damage mechanics using four softening laws. Unrotated axial direction along the y axis.</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
 </table>
 
 <h3>Hyperelastic-Plastic Materials</h3>
@@ -438,6 +452,12 @@ and rubber elastic materials as special cases.</td>
 <td>Maximum principle stress or maximum shear stress</td>
 </tr>
 
+<tr>
+<td><a href="#tiFailure"><code>TIFailure</code></a></td>
+<td>1</td>
+<td>Damage initiation law specfic for various failure modes in transverely isotropic materials.</td>
+</tr>
+
 </table>
 
 <h3><a name="softening"></a>Softening Laws</h3>
@@ -458,6 +478,12 @@ and rubber elastic materials as special cases.</td>
 <td><a href="#expSoft"><code>Exponential</code></a></td>
 <td>2</td>
 <td>Exponential softening law</td>
+</tr>
+
+<tr>
+<td><a href="#cubicStep"><code>CubicStep</code></a></td>
+<td>3</td>
+<td>Cubic step function softening law</td>
 </tr>
 
 </table>
@@ -872,12 +898,14 @@ where h is height of liquid above the position (x, y, z).</li>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
+<!-- Material  Section -->
+
 <h2><a name="isosoft"></a>Isotropic, Small-Strain Material with Anisotropic Damage (Type=50)</h2>
 
-<p>The material is an isotropic, small strain material and currently only in OSParticulas. Once damage initiates (using any available <a href="#initiation">initiation law</a>), the material develops a crack and propagates damage using anisotropic damage mechanics. The damage process is controlled by any available <a href="#softening">softening law</a>. The properties are:</p>
+<p>The material is an isotropic, small strain material and currently only in OSParticulas. Once damage initiates (using any available <a href="#initiation">initiation law</a>), the material develops a crack and propagates damage using anisotropic damage mechanics. The damage process is controlled by any available <a href="#softening">softening law</a>. For more details see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Isotropic_Softening_Material">OSUPDocs wiki</a>.The properties are:</p>
 
 <ul>
-<li>Initiation - this property selects the <a href="#initiation">damage initiation law</a>. It should be followed by entering all properties required by the damage initiation law within the material's definition block. The default is <a href="#maxPS">maximum principle stresses law</a>.</li>
+<li>Initiation - this property selects the <a href="#initiation">damage initiation law</a>. It should be followed by entering all properties required by the damage initiation law within the material's definition block. The default is <a href="#maxPS"><code>MaxPrinciple</code></a>.</li>
 <li>SofteningI - this property selects the mode I <a href="#softening">softening law</a>. It should be followed by entering all properties required by the softening law within the material's definition block. Each property should be prefaced with "I-". For example, to enter mode I law toughness for "Gc", enter it ias "I-Gc". The default is <a href="#linearSoft">linear softening law</a>.</li>
 <li>SofteningII - this property is same as "SofteningI" except it selects the mode II <a href="#softening">softening law</a> and properties for this law should be prefaced with "II-".</li>
 <li>(other) - see <a href="#iso">Isotropic</a> material for all properties of the underlying small-strain, isotropic material, except this softening material requires use of <a href="#cmn1"><code>largeRotation</code> property</a> set to 1.</li>
@@ -888,18 +916,67 @@ where h is height of liquid above the position (x, y, z).</li>
 <h3>History Data for Isotropic, Small-Strain Materials with Anisotropic Damage</h3>
 
 <ol>
-<li>The maximum crack opening strain</li>
-<li>The maximum crack shear strain</li>
-<li>The current d<sub>n</sub> or normal damage parameter</li>
-<li>The current d<sub>t</sub> or normal damage parameter</li>
-<li>cos(&alpha;) in 2D or &alpha; in 3D for normal to the crack plane</li>
-<li>sin(&alpha;) in 2D or &beta; in 3D for normal to the crack plane</li>
-<li>0 in 2D or &gamma; in 3D for normal to the crack plane</li>
-<li>0, 1, or 2 to indicate undamaged, damage propagation, or post failure (decohesion) state of the particle.</li>
-<li>A scaling factor used internally to scale softening law response depending on particle volume, crack plane orientation, and initiation stress.</li>
+<li>0, 0.9, 1.1, 1.9, or 2.1 to indicate undamaged (0), damage propagation (0.9 or 1.1), or post failure (decohesion) state of the particle (1.9 or 2.1). 0.9 and 1.9 indicate the failure initiated by tensile strength while 1.1 and 2.1 indicate failure initiated by shear strength.</li>
+<li>The maximum normal cracking strain.</li>
+<li>The maximum x-y shear cracking strain.</li>
+<li>The maximum x-z cracking strain (zero for 2D).</li>
+<li>d<sub>n</sub> or damage variable for normal loading.</li>
+<li>d<sub>xy</sub> or damage variable for x-y shear loading.</li>
+<li>d<sub>xz</sub> or damage variable for x-z shear loading (zero for 2D).</li>
+<li>For 2D it is cos(&alpha;), but for 3D it is Euler angle &alpha;.</li>
+<li>For 2D it is sin(&alpha;), but for 3D it is Euler angle  &beta;.</li>
+<li>For 2D it is not used, but for 3D it is Euler angle &gamma;.</li>
+<li>A<sub>c</sub>/V<sub>p</sub> where A<sub>c</sub> is crack area within the particle and V<sub>p</sub> is particle volume.</li>
+<li>Relative strength derived at the start by <code>strengthCoefVariation</code> property.</li>
 </ol>
 
-<p>History variables 3-5 are storing Euler angles &alpha;, &beta;, and &gamma; (in radians) for a Z-Y-Z rotation scheme; only &alpha; is needed for 2D and it is stored as cos(&alpha;) and sin(&alpha;) instead of as angles.</p>
+<p>History variables 8-10 are storing Euler angles &alpha;, &beta;, and &gamma; (in radians) for a Z-Y-Z rotation scheme; only &alpha; is needed for 2D and it is stored as cos(&alpha;) and sin(&alpha;) instead of as angles.</p>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- Material  Section -->
+
+<h2><a name="transisosoft"></a>Transversely isotropic, Small-Strain Material with Anisotropic Damage 1 and 2 (Types=51 and 52)</h2>
+
+<p>The material is an transversely isotropic, small strain material and currently only in OSParticulas. Once damage initiates (using any appropriate <a href="#initiation">initiation law</a>), the material develops a crack and propagates damage using anisotropic damage mechanics. The damage process is controlled by available <a href="#softening">softening laws</a>. Type 1 has the unique axis in the <code>z</code> direction; this material is isotropic in the <code>x-y</code> plane when running 2D analyses. Type 2 has the unique axis in the <code>y</code> direction. Any other orientation is achieved by rotating from these initial orientations. For more details see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Transversely_Isotropic_Softening_Material">OSUPDocs wiki</a>.The properties are:</p>
+
+<ul>
+<li>Initiation - this property selects a <a href="#initiation">damage initiation law</a> appropriate for transversely isotropic materials. It should be followed by entering all properties required by the damage initiation law within the material's definition block. The default is <a href="#tiFailure"><code>TIFailure</code></a>.</li>
+<li>SofteningEA</li>
+<li>SofteningGA</li>
+<li>SofteningET</li>
+<li>SofteningGT - these four properties select the <a href="#softening">softening law</a> for propagation of damage that changes EA, GA, ET, and GT, respectively. After one is attached (and all four are needed), it should be followed by properties required by the softening law within the material's definition by prefacing the property "EA-", "GA-", "ET-", or "GT-", respectively. The default is <a href="#linearSoft">linear softening law</a>.</li>
+<li>shearFailureSurface - select failure surface assumed when modeling shear damage in 3D calculations. Use 1 for an elliptical failure criterion or 0 for a rectangular failure surface (default is 1).</li>
+<li>strengthCoefVariation - this property assigns a coefficient of variation to all strength properties. Each particle's strength is set at the start of the simulation to have the same Gaussian distribution of values about their means, but will have no spatial correlations.</li>
+<li>(other) - see <a href="#isotropic">Isotropic</a> material for all properties of the underlying small-strain, isotropic material, except this softening material requires use of <a href="#cmn1"><code>largeRotation</code> property</a> set to 1.</li>
+</ul>
+
+<p>The particle plastic strain will archive the total cracking strain in the global axis system. The plastic energy will archive the total amount of energy released by damage to the particle.</p>
+
+<h3>History Data for Isotropic, Small-Strain Materials with Anisotropic Damage</h3>
+
+<ol>
+<li>0, 0.75, 0.8, 0.85, 0.95, 1.05, 1.15, 1.25, or 1 higher than previous 7 to indicate undamaged (0), damage propagation (0.75, 0.8, 0.85, 0.95, 1.05, 1.15, 1.25), or post failure (decohesion) state of the particle.
+<ul>
+<li>0.75, 0.8, or 0.85 indicate failure by transverse tension (0.75), axial shear (0.8), or rolling shear (0.85) and material axial direction along z axis in the crack axis system</li>
+<li>0.95 or 1.05 indicate failure by axial tension (0.95) or transverse shear (1.05) and material axial direction along x axis in the crack axis system</li>
+<li>1.15 or 1.25 indicate failure by axial shear (1.15) or transverse tension (1.25) and material axial direction along y axis in the crack axis system</li>
+</ul>
+</li>
+<li>δ<sub>n</sub> or the maximum normal cracking strain.</li>
+<li>δ<sub>xy</sub> or the maximum x-y shear cracking strain.</li>
+<li>δ<sub>xz</sub> or the maximum x-z cracking strain (zero for 2D).</li>
+<li>d<sub>n</sub> or damage variable for normal loading.</li>
+<li>d<sub>xy</sub> or damage variable for x-y shear loading.</li>
+<li>d<sub>xz</sub> or damage variable for x-z shear loading (zero for 2D).</li>
+<li>For 2D it is cos(&alpha;), but for 3D it is Euler angle &alpha;.</li>
+<li>For 2D it is sin(&alpha;), but for 3D it is Euler angle  &beta;.</li>
+<li>For 2D it is not used, but for 3D it is Euler angle &gamma;.</li>
+<li>A<sub>c</sub>/V<sub>p</sub> where A<sub>c</sub> is crack area within the particle and V<sub>p</sub> is particle volume.</li>
+<li>Relative strength derived at the start by <code>strengthCoefVariation</code> property.</li>
+</ol>
+
+<p>History variables 8-10 are storing Euler angles &alpha;, &beta;, and &gamma; (in radians) for a Z-Y-Z rotation scheme; only &alpha; is needed for 2D and it is stored as cos(&alpha;) and sin(&alpha;) instead of as angles.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
@@ -1165,6 +1242,10 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 <p>Although an interface becomes perfect as the interface parameters approach infinity, high interfacial stiffness make the problem numerically unstable. To model a perfect interface in any direction, set the interface parameter to -1, instead of using a high value.
 </p>
 
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- Material  Section -->
+
 <a name="nonlinearimp"></a><h2>Nonlinear Imperfect Interface Contact Law (Type=65)</h2>
 
 <p>This law implements an imperfect interface with tractions that depend on displacement discontinuities at the interface. It is currently the same as the <a href="#linearimp">linear interface law</a> except the implementation is done differently. It is more approximate, but likely very close to linear law and possibly faster. The parameters are:</p>
@@ -1175,6 +1256,7 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 </ul>
 
 <p>In the future, this law (or subclasses of this law) will add actual non-linear traction laws.</p>
+
 <p>|<a href="#tables">Material Tables</a>|</p>
 
 <!-- Material  Section -->
@@ -1348,6 +1430,8 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
+<!-- Material  Section -->
+
 <h2><a name="maxPS"></a>Maximum Principle Stress (number=1)</h2>
 
 <p>The damage initiates when either the maximum principle stress exceeds the tensile strength or the maximum shear stress exceeds the shear strength. The input properties are:</p>
@@ -1357,6 +1441,24 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 <li>sigmac - the tensile strength (in MPa). The default is very large number which means the material will not fail in tension.</li>
 <li>tauc - the shear strength (in MPa). The default is very large number which means the material will not fail in shear.</li>
 </ul>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- Material  Section -->
+
+<h2><a name="tiFailure"></a>Transversely Isotropic Failure Initiation (number=2)</h2>
+
+<p>The damage initiates when axial stress exceeds axial tensile strength, axial shear stress exceeds axial shear strength, principle stress in the transverse plane exceeds transverse shear strength, or maximum shear stress in transverse plane exceeds the shear strength.</p>
+
+<ul>
+<li>sigmacA - critical axial strength (inMPa) for failure in the axial direction</li>
+<li>sigmac - critical transverse tensile strength (in MPa) for tensile failure in the isotropic plane</li>
+<li>taucA - critical shear strength (in MPa) for failure due to axial shear stress with failure parallel to the axial direction</li>
+<li>taucT - Critical shear strength (in MPa) for failure due to axial shear stress with failure through the axial direction</li>
+<li>tauc  - critical transverse shear strength (in MPa) for shear failure in the isotropic plane</li>
+</ul>
+
+<p>All strength values default to a large number, which means failure will not occur in that mode.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
@@ -1373,6 +1475,10 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <p>Note that you do not enter &delta;<sub>max</sub>. It is determined at run time because it is affected by particle volume, initiation stress, and crack orientation.</p>
 
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- Material  Section -->
+
 <h2><a name="expSoft"></a>Exponential Softening (number=2)</h2>
 
 <p>The exponential softening law is f(&delta;) = exp(-k&delta;). The input property is:</p>
@@ -1386,6 +1492,20 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
+<!-- Material  Section -->
+
+<h2><a name="cubicStep"></a>Cubic Step Function Softening (number=3)</h2>
+
+<p>The cubic step function softening law is f(&delta;) = 1 + (&delta;/&delta;<sub>max</sub>)<sup>2</sup>(2(&delta;/&delta;<sub>max</sub>)-3.). The input property is:</p>
+
+<ul>
+
+<li>Gc - the toughness of the material is this law's failure mode (in J/m<sup>2</sup>). The default is very large number which means the material will not soften after initiation of damage.</li>
+</ul>
+
+<p>Note that you do not enter &delta;<sub>max</sub>. It is determined at run time because it is affected by particle volume, initiation stress, and crack orientation.</p>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
 <!-- Material  Section -->
 
 <h2><a name="common"></a>Material Properties Common For All Material Types</h2>

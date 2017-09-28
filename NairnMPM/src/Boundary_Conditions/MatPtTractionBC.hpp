@@ -25,7 +25,7 @@ class MatPtTractionBC: public MatPtLoadBC
 	
 		// virtual methods
 		virtual BoundaryCondition *PrintBC(ostream &);
-		MatPtTractionBC *AddMPTraction(double);
+		MatPtLoadBC *AddMPFluxBC(double);
 	
 		// class methods
 		static void SetParticleSurfaceTractions(double);

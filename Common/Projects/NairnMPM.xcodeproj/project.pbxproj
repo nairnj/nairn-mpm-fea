@@ -27,6 +27,10 @@
 		671514DB1547035D005F33A9 /* PolygonController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671514D71547035D005F33A9 /* PolygonController.hpp */; };
 		6715DFD116C567350042F15C /* Nonlinear2Hardening.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6715DFCF16C567350042F15C /* Nonlinear2Hardening.cpp */; };
 		6715DFD216C567350042F15C /* Nonlinear2Hardening.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6715DFD016C567350042F15C /* Nonlinear2Hardening.hpp */; };
+		671FD59C1F7B427C00B150C5 /* AdhesionFriction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671FD5981F7B427C00B150C5 /* AdhesionFriction.cpp */; };
+		671FD59D1F7B427C00B150C5 /* AdhesionFriction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671FD5991F7B427C00B150C5 /* AdhesionFriction.hpp */; };
+		671FD59E1F7B427C00B150C5 /* LiquidContact.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671FD59A1F7B427C00B150C5 /* LiquidContact.cpp */; };
+		671FD59F1F7B427C00B150C5 /* LiquidContact.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671FD59B1F7B427C00B150C5 /* LiquidContact.hpp */; };
 		6727B3D019E19853006D93EC /* CrossedCrack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6727B3CE19E19853006D93EC /* CrossedCrack.cpp */; };
 		6727B3D119E19853006D93EC /* CrossedCrack.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6727B3CF19E19853006D93EC /* CrossedCrack.hpp */; };
 		6736CBF11AB74C5B0009A663 /* UnitsController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6736CBEF1AB74C5B0009A663 /* UnitsController.cpp */; };
@@ -37,6 +41,8 @@
 		673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */; };
 		6741B24817EDFF1300CFADC7 /* PressureLaw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6741B24617EDFF1300CFADC7 /* PressureLaw.cpp */; };
 		6741B24917EDFF1300CFADC7 /* PressureLaw.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6741B24717EDFF1300CFADC7 /* PressureLaw.hpp */; };
+		674762C61F7ABA16008B7A91 /* NodalValueBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 674762C41F7ABA16008B7A91 /* NodalValueBC.cpp */; };
+		674762C71F7ABA16008B7A91 /* NodalValueBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 674762C51F7ABA16008B7A91 /* NodalValueBC.hpp */; };
 		6749250A1DF401430004916F /* stdafx.h in Headers */ = {isa = PBXBuildFile; fileRef = 674925091DF401430004916F /* stdafx.h */; };
 		6749250B1DF401430004916F /* stdafx.h in Headers */ = {isa = PBXBuildFile; fileRef = 674925091DF401430004916F /* stdafx.h */; };
 		675181671DF146F1009E72FF /* XYBMPImporter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 675181631DF146F1009E72FF /* XYBMPImporter.cpp */; };
@@ -475,6 +481,10 @@
 		671514D71547035D005F33A9 /* PolygonController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PolygonController.hpp; sourceTree = "<group>"; };
 		6715DFCF16C567350042F15C /* Nonlinear2Hardening.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Nonlinear2Hardening.cpp; sourceTree = "<group>"; };
 		6715DFD016C567350042F15C /* Nonlinear2Hardening.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Nonlinear2Hardening.hpp; sourceTree = "<group>"; };
+		671FD5981F7B427C00B150C5 /* AdhesionFriction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AdhesionFriction.cpp; sourceTree = "<group>"; };
+		671FD5991F7B427C00B150C5 /* AdhesionFriction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = AdhesionFriction.hpp; sourceTree = "<group>"; };
+		671FD59A1F7B427C00B150C5 /* LiquidContact.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LiquidContact.cpp; sourceTree = "<group>"; };
+		671FD59B1F7B427C00B150C5 /* LiquidContact.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LiquidContact.hpp; sourceTree = "<group>"; };
 		6727B3CE19E19853006D93EC /* CrossedCrack.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CrossedCrack.cpp; sourceTree = "<group>"; };
 		6727B3CF19E19853006D93EC /* CrossedCrack.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CrossedCrack.hpp; sourceTree = "<group>"; };
 		6736CBEF1AB74C5B0009A663 /* UnitsController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UnitsController.cpp; sourceTree = "<group>"; };
@@ -485,6 +495,8 @@
 		673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CarnotCycle.hpp; sourceTree = "<group>"; };
 		6741B24617EDFF1300CFADC7 /* PressureLaw.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PressureLaw.cpp; sourceTree = "<group>"; };
 		6741B24717EDFF1300CFADC7 /* PressureLaw.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PressureLaw.hpp; sourceTree = "<group>"; };
+		674762C41F7ABA16008B7A91 /* NodalValueBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NodalValueBC.cpp; sourceTree = "<group>"; };
+		674762C51F7ABA16008B7A91 /* NodalValueBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NodalValueBC.hpp; sourceTree = "<group>"; };
 		674925091DF401430004916F /* stdafx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = stdafx.h; path = Headers/stdafx.h; sourceTree = "<group>"; };
 		675181631DF146F1009E72FF /* XYBMPImporter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = XYBMPImporter.cpp; sourceTree = "<group>"; };
 		675181641DF146F1009E72FF /* XYBMPImporter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = XYBMPImporter.hpp; sourceTree = "<group>"; };
@@ -938,6 +950,10 @@
 				67B6B7E61C31BF3A00CFA1EA /* ContactLaw.hpp */,
 				67B6B7E71C31BF3A00CFA1EA /* CoulombFriction.cpp */,
 				67B6B7E81C31BF3A00CFA1EA /* CoulombFriction.hpp */,
+				671FD5981F7B427C00B150C5 /* AdhesionFriction.cpp */,
+				671FD5991F7B427C00B150C5 /* AdhesionFriction.hpp */,
+				671FD59A1F7B427C00B150C5 /* LiquidContact.cpp */,
+				671FD59B1F7B427C00B150C5 /* LiquidContact.hpp */,
 				67B6B7E91C31BF3A00CFA1EA /* LinearInterface.cpp */,
 				67B6B7EA1C31BF3A00CFA1EA /* LinearInterface.hpp */,
 				67BF96B91E95D14A007A9F25 /* NonlinearInterface.cpp */,
@@ -1472,6 +1488,8 @@
 				A7D62D2717557EE0008FA00A /* MatPtHeatFluxBC.cpp */,
 				A78BCA64061C76F1009232A2 /* NodalVelBC.hpp */,
 				A78BCA65061C76F1009232A2 /* NodalVelBC.cpp */,
+				674762C41F7ABA16008B7A91 /* NodalValueBC.cpp */,
+				674762C51F7ABA16008B7A91 /* NodalValueBC.hpp */,
 				A78BCB6D061CA059009232A2 /* NodalConcBC.hpp */,
 				A78BCB6E061CA059009232A2 /* NodalConcBC.cpp */,
 				A7B5ECA8072437850027119D /* NodalTempBC.hpp */,
@@ -1623,9 +1641,11 @@
 				A766702A05862EB600F56460 /* CrackHeader.hpp in Headers */,
 				A766702B05862EB600F56460 /* CrackSegment.hpp in Headers */,
 				A766702D05862EB600F56460 /* TransIsotropic.hpp in Headers */,
+				674762C71F7ABA16008B7A91 /* NodalValueBC.hpp in Headers */,
 				A766702E05862EB600F56460 /* Orthotropic.hpp in Headers */,
 				A766703005862EB600F56460 /* DataTypes.hpp in Headers */,
 				A766703205862EB600F56460 /* StrX.hpp in Headers */,
+				671FD59D1F7B427C00B150C5 /* AdhesionFriction.hpp in Headers */,
 				A766703305862EB600F56460 /* Viscoelastic.hpp in Headers */,
 				A766703405862EB600F56460 /* ContourPoint.hpp in Headers */,
 				A766703505862EB600F56460 /* Mooney.hpp in Headers */,
@@ -1746,6 +1766,7 @@
 				6736CBF31AB74C5B0009A663 /* UnitsController.hpp in Headers */,
 				67D198401B0ED97D00FD5726 /* ProjectRigidBCsTask.hpp in Headers */,
 				67D198441B0EDA9100FD5726 /* PostExtrapolationTask.hpp in Headers */,
+				671FD59F1F7B427C00B150C5 /* LiquidContact.hpp in Headers */,
 				67D198481B0EE17700FD5726 /* PostForcesTask.hpp in Headers */,
 				67D1984C1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.hpp in Headers */,
 				67B6B7EC1C31BF3A00CFA1EA /* ContactLaw.hpp in Headers */,
@@ -1983,8 +2004,10 @@
 				A7731E3F05B44C5800294E25 /* CrackSurfaceContact.cpp in Sources */,
 				A7731E4105B44C5800294E25 /* ThermalRamp.cpp in Sources */,
 				A7C4D0BE05FD149800277573 /* DiffusionTask.cpp in Sources */,
+				674762C61F7ABA16008B7A91 /* NodalValueBC.cpp in Sources */,
 				A77CBDEC0608C15600FDE1D6 /* MatPtFluxBC.cpp in Sources */,
 				A7BD09A80618D90C0006BA43 /* BoundaryCondition.cpp in Sources */,
+				671FD59C1F7B427C00B150C5 /* AdhesionFriction.cpp in Sources */,
 				A78BCA67061C76F1009232A2 /* NodalVelBC.cpp in Sources */,
 				A78BCB70061CA059009232A2 /* NodalConcBC.cpp in Sources */,
 				A79115C60720554600B81ECA /* ConductionTask.cpp in Sources */,
@@ -2000,6 +2023,7 @@
 				A767E04408B14CAA004540AB /* ElementsController.cpp in Sources */,
 				A767E04608B14CAA004540AB /* LineController.cpp in Sources */,
 				A767E04808B14CAA004540AB /* MaterialController.cpp in Sources */,
+				671FD59E1F7B427C00B150C5 /* LiquidContact.cpp in Sources */,
 				A767E04A08B14CAA004540AB /* MpsController.cpp in Sources */,
 				A767E04C08B14CAA004540AB /* NodesController.cpp in Sources */,
 				A767E04E08B14CAA004540AB /* ParseController.cpp in Sources */,
@@ -2198,6 +2222,7 @@
 				ENABLE_OPENMP_SUPPORT = NO;
 				GCC_MODEL_TUNING = G5;
 				INSTALL_PATH = "$(HOME)/bin";
+				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = ExtractMPM;
 				ZERO_LINK = NO;
 			};

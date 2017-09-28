@@ -71,6 +71,7 @@ MaterialBase::MaterialBase(char *matName)
 	matFractionPIC=0.;
 	matUsePDamping=false;
 	matUsePICDamping=false;
+    allowsCracks= true;
 #endif
 }
 

@@ -31,7 +31,7 @@ MatPtLoadBC::MatPtLoadBC(int num,int dof,int sty)
 }
 
 // When particles reordered, fix point num if needed
-// norigid particle p2+1 just moved to p1+1 and rigid particle
+// nonrigid particle p2+1 just moved to p1+1 and rigid particle
 //		p1+1 moved to p2+1
 MatPtLoadBC *MatPtLoadBC::ReorderPtNum(int p1, int p2)
 {	if(ptNum==p2+1)
@@ -241,6 +241,14 @@ int MatPtLoadBC::CompactCornerNodes(int numDnds,Vector *corners,int *cElem,doubl
     
     return count;
 }
+
+#pragma mark MatPtLoadBC:Flux method in sub classes
+
+// add "flux" condition - must override in sub class flux BCx
+MatPtLoadBC *MatPtLoadBC::AddMPFluxBC(double bctime)
+{	return (MatPtLoadBC *)GetNextObject();
+}
+
 
 #pragma mark MatPtLoadBC:Accessors
 

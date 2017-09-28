@@ -5,8 +5,15 @@
 	Created by John Nairn on July 22, 2010
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
  
-	Using new grid results to update particle velocity, position, temperature
-		and concentration. For rigid particles, however, just update postion
+	The tasks are:
+	-------------
+	* Extrpolate acceleration, velocity, and spin terms from grid
+	  to the particle
+	* When activated, extrapolate transport rates to particle
+	* Update particle position, velocity, and spin
+	* Update particle temperature and concentration
+	  (if an adiabatic heating term, add to particle temperature)
+	* After main loop, update position of all rigid particles
 ********************************************************************************/
 
 #include "stdafx.h"
@@ -93,7 +100,7 @@ void UpdateParticlesTask::Execute(void)
 			// Loop over nodes
 			for(int i=1;i<=numnds;i++)
 			{	// increment velocity and acceleraton
-				const NodalPoint *ndptr = nd[nds[i]];
+				NodalPoint *ndptr = nd[nds[i]];
                 short vfld = (short)mpmptr->vfld[i];
 				
 				// increment
@@ -130,18 +137,42 @@ void UpdateParticlesTask::Execute(void)
 			
 			// update velocity in mm/sec
 			mpmptr->MoveVelocity(timestep,&accExtra);
-			
-			// update transport values
-			nextTransport=transportTasks;
-			task=0;
-			while(nextTransport!=NULL)
-				nextTransport=nextTransport->MoveTransportValue(mpmptr,timestep,rate[task++]);
-			
-			// energy coupling here adds adiabtic temperature rise
-			if(ConductionTask::adiabatic)
-			{	double dTad = mpmptr->GetBufferClear_dTad();			// in K
-				mpmptr->pTemperature += dTad;							// in K
-			}
+
+#ifdef NEW_HEAT_METHOD
+            // update transport values
+            double dTcond = 0.;
+            nextTransport=transportTasks;
+            task=0;
+            while(nextTransport!=NULL)
+            {	if(nextTransport == conduction) dTcond = rate[task]*timestep;
+                nextTransport=nextTransport->MoveTransportValue(mpmptr,timestep,rate[task++]);
+            }
+            
+            // for heat energy and entropy
+            if(ConductionTask::active)
+            {   double dq = matRef->GetHeatCapacity(mpmptr)*dTcond;
+                mpmptr->AddHeatEnergy(dq);
+                mpmptr->AddEntropy(dq/mpmptr->pPreviousTemperature);
+            }
+            
+            // energy coupling here adds adiabtic temperature rise
+            if(ConductionTask::adiabatic)
+            {	double dTad = mpmptr->GetClear_dTad();					// in K
+                mpmptr->pTemperature += dTad;							// in K
+            }
+#else
+            // update transport values
+            nextTransport=transportTasks;
+            task=0;
+            while(nextTransport!=NULL)
+                nextTransport=nextTransport->MoveTransportValue(mpmptr,timestep,rate[task++]);
+            
+            // energy coupling here adds adiabtic temperature rise
+            if(ConductionTask::adiabatic)
+            {	double dTad = mpmptr->GetBufferClear_dTad();			// in K
+                mpmptr->pTemperature += dTad;							// in K
+            }
+#endif
 			
 			// delete grid to particle extrap data
 			delete gp;

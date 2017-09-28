@@ -32,18 +32,18 @@ class NodalPoint : public LinkedObject
 {
     public:
 		// variables (changed in MPM time step)
-		double gTemperature;		// absolute T in MPM, delta T in FEA
 #ifdef MPM_CODE
 		CrackVelocityField **cvf;	// crack velocity fields
-		double gVolume;
-		double gConcentration;
-		double fdiff;				// diffusion
-		double gMpCp;
-		double fcond;				// conduction
+		TransportField gCond;		// conduction
+		//double gTemperature,gMpCp,fcond;		// conduction
+		TransportField gDiff;		// diffusion
+		//double gConcentration,gVolume,fdiff;	// diffusion
 		unsigned short fixedDirection;
 	
 		static double interfaceEnergy;		// total tracked each time step
 		static double frictionWork;			// cumulative friction work
+#else
+		double gTemperature;		// delta T in FEA
 #endif
 	
 		// constants (not changed in MPM time step)
@@ -83,7 +83,7 @@ class NodalPoint : public LinkedObject
         void CopyMassAndMomentumLast(NodalPoint *);
         void RezeroNodeTask6(double);
         void AddMomentumTask6(short,int,double,Vector *);
-
+	
 		void AddFtotTask3(short,int,Vector *);
 		void AddFtotSpreadTask3(short,Vector);
 		void AddTractionTask3(MPMBase *,short,int,Vector *);

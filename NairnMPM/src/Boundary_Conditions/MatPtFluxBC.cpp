@@ -50,7 +50,7 @@ BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
 // increment external load on a particle
 // input is analysis time in seconds
 // (only called when diffusion is active)
-MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
+MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 {
     // condition value is g/(mm^2-sec), Divide by rho*csat to get potential flux in mm/sec
 	// find this flux and then add (times area) to get mm^3-potential/sec

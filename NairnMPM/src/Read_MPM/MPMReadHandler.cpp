@@ -1139,7 +1139,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		mpHeatFluxCtrl=new ParseController();
     }
 
-    // Loads on material points
+    // Loads on material points (deprecated method)
     else if(strcmp(xName,"LoadBCs")==0)
 	{	ValidateCommand(xName,PARTICLEBCHEADER,ANY_DIM);
 	    block=LOADEDPOINTS;

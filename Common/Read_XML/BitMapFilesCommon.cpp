@@ -165,9 +165,9 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 		if(strlen(matname)>0)
 			mat = matCtrl->GetIDFromNewName(matname);
 		if(imin<0 || imax<0)
-			throw SAXException(BMPError("<Intensity> has incomplete set of attributes.",bmpFileName));
+			throw SAXException(XYFileError("<Intensity> has incomplete set of attributes.",bmpFileName));
 		if(imin>imax)
-			throw SAXException(BMPError("<Intensity> range is not valid.",bmpFileName));
+			throw SAXException(XYFileError("<Intensity> range is not valid.",bmpFileName));
 		if(mat>=0)
 		{	BMPLevel *newLevel=new BMPLevel(mat,imin,imax);
 			if(currentLevel==NULL)
@@ -179,7 +179,7 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 		}
 		else
 		{	if(numAngles==2)
-				throw SAXException(BMPError("Too many <Intensity> commands to set angle mappings.",bmpFileName));
+				throw SAXException(XYFileError("Too many <Intensity> commands to set angle mappings.",bmpFileName));
 			angleScale[numAngles]=(maxAngle-thisMinAngle)/((double)imax-(double)imin);
 			minIntensity[numAngles]=(double)imin;
 			numAngles++;
@@ -231,7 +231,7 @@ short CommonReadHandler::EndBMPInput(char *xName,int exitBlock)
     if(strcmp(xName,"BMP")==0)
 	{	// make last intensity hole material
 		if(currentLevel==NULL)
-			throw SAXException(BMPError("No intensity levels for materials were defined for <BMP> file",bmpFileName));
+			throw SAXException(XYFileError("No intensity levels for materials were defined for <BMP> file",bmpFileName));
 		
 		// add level to grab left over intensities
 		BMPLevel *newLevel=new BMPLevel(0,0,255);
@@ -251,7 +251,7 @@ short CommonReadHandler::EndBMPInput(char *xName,int exitBlock)
 
     else if(strcmp(xName,"Intensity")==0)
 	{	if(currentLevel->concentration<0. || currentLevel->concentration>1.)
-			throw SAXException(BMPError("Particle concentration potential for an intensity level must be from 0 to 1",bmpFileName));
+			throw SAXException(XYFileError("Particle concentration potential for an intensity level must be from 0 to 1",bmpFileName));
         block=BMPBLOCK;
 	}
 		
@@ -289,7 +289,7 @@ int CommonReadHandler::BMPIndex(double value,int indexMax)
 // Subroutine to read BMP file
 // throws std::bad_alloc, SAXException()
 //-----------------------------------------------------------
-void CommonReadHandler::ReadBMPFile(char *bmpFullPath,XYInfoHeader &info,unsigned char ***theData)
+void *CommonReadHandler::ReadXYFile(char *bmpFullPath,XYInfoHeader &info,int dataType)
 {
 	// get file extension
 	char ext[11];
@@ -300,35 +300,44 @@ void CommonReadHandler::ReadBMPFile(char *bmpFullPath,XYInfoHeader &info,unsigne
 	if(CIstrcmp(ext,"bmp")==0)
 		xyFile = (XYFileImporter *)new XYBMPImporter(bmpFullPath);
 	else
-		throw SAXException(BMPError("The bit mapped file type is not recognized.",bmpFullPath));
+		throw SAXException(XYFileError("The bit mapped file type is not recognized.",bmpFullPath));
 	
 	// Read the file header
 	xyFile->GetXYFileHeader(info);
 
 	// buffer to read the file
-	unsigned char **rows=new (nothrow) unsigned char *[info.height];
-	*theData=rows;
-	if(rows==NULL)
-	{	delete xyFile;
-		throw SAXException(BMPError("Out of memory reading bit mapped file file.",bmpFullPath));
-	}
-	for(int row=0;row<info.height;row++)
-	{	rows[row]=new (nothrow) unsigned char[info.width];
-		if(rows[row]==NULL)
+	if(dataType==BYTE_DATA)
+	{	unsigned char **rows=new (nothrow) unsigned char *[info.height];
+		if(rows==NULL)
 		{	delete xyFile;
-			throw SAXException(BMPError("Out of memory reading bit mapped file file.",bmpFullPath));
+			throw SAXException(XYFileError("Out of memory reading bit mapped file file.",bmpFullPath));
 		}
+		for(int row=0;row<info.height;row++)
+		{	rows[row]=new (nothrow) unsigned char[info.width];
+			if(rows[row]==NULL)
+			{	delete xyFile;
+				throw SAXException(XYFileError("Out of memory reading bit mapped file file.",bmpFullPath));
+			}
+		}
+		
+		// read the data
+		xyFile->ReadXYFileData(rows,info);
+	
+		// close the file
+		delete xyFile;
+	
+		// return the data pointer
+		return rows;
 	}
 	
-	// read the data
-	xyFile->ReadXYFileData(rows,info);
-	
-	// close the file
-	delete xyFile;
+	else
+	{	delete xyFile;
+		throw SAXException(XYFileError("Unable to read requested type of data.",bmpFullPath));
+	}
 }
 
 // create error message with bmp file name
-char *CommonReadHandler::BMPError(const char *msg,const char *fileName)
+char *CommonReadHandler::XYFileError(const char *msg,const char *fileName)
 {
 	char *error=new (nothrow) char[strlen(msg)+strlen(fileName)+10];
 	if(error != NULL)
@@ -396,10 +405,11 @@ const char *CommonReadHandler::DecodeBMPWidthAndHeight(XYInfoHeader info,double 
 	return NULL;
 }
 
-// Input: info is from the bit mapper file reading
+// Input: info is from the bit mapped file reading
+//		Need: height, width
 // spot is position to inspect
 // orig = (xorigin,yorigin,zlevel)
-// del = (deltax,deltay,deltaz) (deltaz<0 for 3D)
+// del = (deltax,deltay,deltaz) (deltaz>0 for 3D)
 // pw = (xpw,ypw,+/-1) - pixel width, last is -1 to flip
 // width and height of image
 // return row and column ranges and weights of first and last one

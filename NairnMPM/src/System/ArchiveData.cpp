@@ -495,6 +495,31 @@ abort:
 	FileError("Global archive file creation failed",globalFile,"ArchiveData::CreateGlobalFile");
 }
 
+// Create file in archive folder (outputDir)/(rootName)(fileName)
+// throws std::bad_alloc
+char *ArchiveData::CreateFileInArchiveFolder(char *fileName)
+{
+	FILE *fp;
+	
+	// get relative path name to the file
+	char *newFile = new char[strlen(outputDir)+strlen(archiveRoot)+strlen(fileName)+1];
+	GetFilePath(newFile,"%s%s");
+	strcat(newFile,fileName);
+	
+	// create and open the file
+	if((fp=fopen(newFile,"w"))==NULL) goto abort;
+	
+	// close the file
+	if(fclose(fp)!=0) goto abort;
+	
+	return newFile;
+	
+abort:
+	FileError("Create of file in acrhive folder failed",newFile,"ArchiveData::CreateFileInArchiveFolder");
+	return NULL;
+}
+
+
 #pragma mark ARCHIVING METHODS
 
 // Nodal velocity conditions
@@ -1333,7 +1358,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
                     break;
 				
 				case VTK_TEMPERATURE:
-					afile << nd[i]->gTemperature << endl;
+					afile << nd[i]->gCond.gTValue << endl;
 					break;
 				
 				case VTK_RIGIDCONTACTFORCES:

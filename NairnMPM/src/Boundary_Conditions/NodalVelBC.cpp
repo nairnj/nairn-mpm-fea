@@ -51,29 +51,18 @@ BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,d
     SetNormalVector();                  // get normal vector depending on dir and angles
     
     // old dir==0 was skewed condition, now do by setting two velocities, thus never 0 here
-    nd[num]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
+    // direct set in parent lass		// x, y, or z (1,2,4) directions
     
     // not reflected yet
     reflectedNode = -1;
     mirrorSpacing = 0;                      // +1 shift higher nodes, -1 shift lower, 0 no mirroring
 	
 	// finish in base class (nodenum set there)
-	return BoundaryCondition::SetRigidProperties(num,dof,setStyle,velocity);
+	return BoundaryCondition::SetRigidProperties(num,dir,setStyle,velocity);
 }
 
-// just unset condition, because may want to reuse it, return next one to unset
-BoundaryCondition *NodalVelBC::UnsetDirection(void)
-{	nd[nodeNum]->UnsetFixedDirection(dir);		// x, y, or z (1,2,4) directions
-	/*
-	if(dir==X_DIRECTION)
-		nd[nodeNum]->UnsetFixedDirection(XSYMMETRYPLANE_DIRECTION);
-	else if(dir==Y_DIRECTION)
-		nd[nodeNum]->UnsetFixedDirection(YSYMMETRYPLANE_DIRECTION);
-	else if(dir==Z_DIRECTION)
-		nd[nodeNum]->UnsetFixedDirection(ZSYMMETRYPLANE_DIRECTION);
-	*/
-	return (BoundaryCondition *)GetNextObject();
-}
+// get set direction
+int NodalVelBC::GetSetDirection(void) const { return dir; }
 
 // convert input dof to dir as bits x=1, y=2, z=4
 // input options as 1,2,3,12,13,23,123 and changes to bitwise settings

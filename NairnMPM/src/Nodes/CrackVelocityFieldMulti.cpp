@@ -226,9 +226,7 @@ void CrackVelocityFieldMulti::CopyGridForces(NodalPoint *real)
 void CrackVelocityFieldMulti::RestoreMomenta(void)
 {	for(int i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	// paste the extrapolated momenta back and zero storage location
-			mvf[i]->pk = mvf[i]->xpic[PK_COPY];
-			ZeroVector(&mvf[i]->xpic[PK_COPY]);
+		{	mvf[i]->RestoreMomenta();
 		}
 	}
 }
