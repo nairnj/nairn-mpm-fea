@@ -167,7 +167,7 @@ public class Materials
 			if(matDamping>-1.e12 || matPIC>=0.)
 			{	xmldata.append("    <PDamping");
 				if(matPIC>=0.)
-					xmldata.append(" PIC='"+matPIC+"'");
+					xmldata.append(" PIC='"+doc.formatDble(matPIC)+"'");
 				if(matDamping>-1.e12)
 					xmldata.append(">"+doc.formatDble(matDamping)+"</PDamping>\n");
 				else

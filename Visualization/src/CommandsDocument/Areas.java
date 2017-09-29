@@ -115,7 +115,7 @@ public class Areas
 		// is it acceptable?
 	    
 	    // create XML for the current path
-		xmlareas.append("    <Area mat='"+matnum+"' thick='"+thickness+"'");
+		xmlareas.append("    <Area mat='"+matnum+"' thick='"+doc.formatDble(thickness)+"'");
 		xmlareas.append(" type='"+elType+"' flip='"+flipTriangles+"'");
 		if(angle!=null)
 			xmlareas.append(" angle='"+angle+"'");
@@ -205,7 +205,7 @@ public class Areas
 	    
 	    // create XML for the current path
 		xmlpaths.append("    <Path id='"+pathID+"' intervals='"+intervals+"'");
-		if(ratio!=1.) xmlpaths.append(" ratio='"+ratio+"'");
+		if(ratio!=1.) xmlpaths.append(" ratio='"+doc.formatDble(ratio)+"'");
 		xmlpaths.append(">\n");
 		
 		int i;
@@ -313,7 +313,7 @@ public class Areas
 			if(inPath) keys.add(keyID);
 		
 			// add to XML
-			xmlkeys.append("      <pt x='"+x+"' y = '"+y+"' id='"+keyID+"'/>\n");
+			xmlkeys.append("      <pt x='"+doc.formatDble(x)+"' y = '"+doc.formatDble(y)+"' id='"+keyID+"'/>\n");
 		}
 	}
 

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 
 public class RegionPiece
 {
+	private CmdViewer doc;
 	private int type;
 	private String xmlStart;
 	private String shapeName;
@@ -29,8 +30,9 @@ public class RegionPiece
 	//----------------------------------------------------------------------------
 	
 	// num is type, xmlData is string up to initial attribute
-	public RegionPiece(int num,String xmlData,String shape)
-	{	type = num;
+	public RegionPiece(int num,String xmlData,String shape,CmdViewer cmdDoc)
+	{	doc = cmdDoc;
+		type = num;
 		xmlStart = xmlData;
 		shapeName = shape;
 		level = 0;
@@ -80,7 +82,7 @@ public class RegionPiece
 				// arc angles
 				if(arcStart>=0.)
 				{	xmlText.append(indent+levelIndent+"    ");
-					xmlText.append("<arc start='"+arcStart+"' end='"+arcEnd+"'/>\n");
+					xmlText.append("<arc start='"+doc.formatDble(arcStart)+"' end='"+doc.formatDble(arcEnd)+"'/>\n");
 				}
 				
 				// add children

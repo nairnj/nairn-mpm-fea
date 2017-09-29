@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -1954,21 +1955,21 @@ public class CmdViewer extends JNCmdTextDocument
 			if(matnum<=0)
 				throw new Exception("'"+args.get(0)+"' as material property has unknown material ID:\n"+args);
 			
-			cmd = "    <Friction Dt='"+Dt+"' Dnt='"+Dnt+"' Dnc='"+Dnc+
+			cmd = "    <Friction Dt='"+formatDble(Dt)+"' Dnt='"+formatDble(Dnt)+"' Dnc='"+formatDble(Dnc)+
 					"' mat='"+matnum+"'>11</Friction>\n";
 		}
 		else if(MMMode==3)
 		{	if(args.size()>3)
-				cracks.setCrackFriction(args," Dt='"+Dt+"' Dnt='"+Dnt+"' Dnc='"+Dnc+"'");
+				cracks.setCrackFriction(args," Dt='"+formatDble(Dt)+"' Dnt='"+formatDble(Dnt)+"' Dnc='"+formatDble(Dnc)+"'");
 			else
-				cracks.setCrackFriction(args," Dt='"+Dt+"' Dnt='"+Dnt+"'");
+				cracks.setCrackFriction(args," Dt='"+formatDble(Dt)+"' Dnt='"+formatDble(Dnt)+"'");
 			return null;
 		}
 		else
 		{	if(args.size()>3)
-				cmd = "      <Friction Dt='"+Dt+"' Dnt='"+Dnt+"' Dnc='"+Dnc+"'>11</Friction>\n";
+				cmd = "      <Friction Dt='"+formatDble(Dt)+"' Dnt='"+formatDble(Dnt)+"' Dnc='"+formatDble(Dnc)+"'>11</Friction>\n";
 			else
-				cmd = "      <Friction Dt='"+Dt+"' Dn='"+Dnt+"'>11</Friction>\n";
+				cmd = "      <Friction Dt='"+formatDble(Dt)+"' Dn='"+formatDble(Dnt)+"'>11</Friction>\n";
 		
 			if(MMMode==1)
 				FrictionMM = cmd;
@@ -2073,7 +2074,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 
 		// the command
-		diffusion = "    <Diffusion reference='"+ref+"'/>\n";
+		diffusion = "    <Diffusion reference='"+formatDble(ref)+"'/>\n";
 	}
 	
 	// Conduction (yes or no),<adibatic (or mechanical energy) or isothermal or "Crack Tips">
@@ -2501,12 +2502,12 @@ public class CmdViewer extends JNCmdTextDocument
 			// Subordinate friction and contact position
 			if(MMNormals>=0)
 			{	if(MMNormals==4)
-				{	xml.append("    <MultiMaterialMode Vmin='"+MMVmin+"' Dcheck='"+MMDcheck+
-						"' Normals='"+MMNormals+"' Azimuth='"+MMAzimuth+"' Polar='"+MMPolar+"'>\n");
+				{	xml.append("    <MultiMaterialMode Vmin='"+formatDble(MMVmin)+"' Dcheck='"+MMDcheck+
+						"' Normals='"+MMNormals+"' Azimuth='"+formatDble(MMAzimuth)+"' Polar='"+formatDble(MMPolar)+"'>\n");
 				}
 				else
-				{	xml.append("    <MultiMaterialMode Vmin='"+MMVmin+"' Dcheck='"+MMDcheck+
-								"' Normals='"+MMNormals+"' RigidBias='"+MMRigidBias+"'>\n");
+				{	xml.append("    <MultiMaterialMode Vmin='"+formatDble(MMVmin)+"' Dcheck='"+MMDcheck+
+								"' Normals='"+MMNormals+"' RigidBias='"+formatDble(MMRigidBias)+"'>\n");
 				}
 				if(FrictionMM!=null) xml.append(FrictionMM);
 				if(ContactPosition!=null) xml.append(ContactPosition);
@@ -2743,7 +2744,7 @@ public class CmdViewer extends JNCmdTextDocument
 	// format double and remove trailing zeros from number string (unless has e)
 	public String formatDble(double dval)
 	{
-		String dstr = String.format("%g", dval);
+		String dstr = String.format(Locale.US,"%g", dval);
 		if(dstr.indexOf('e')>0 || dstr.indexOf('E')>0) return dstr;
 		if(dstr.indexOf('.')<0) return dstr;
 		

@@ -171,7 +171,7 @@ public class Cracks
 		}
 		
 		// start current crack XML
-		currentCrack.append("    <pt x='"+ptx+"' y='"+pty+"'");
+		currentCrack.append("    <pt x='"+doc.formatDble(ptx)+"' y='"+doc.formatDble(pty)+"'");
 		if(tip!=-1) currentCrack.append(" tip='"+tip+"'");
 		if(mat!=-1) currentCrack.append(" mat='"+mat+"'");
 		currentCrack.append("/>\n");
@@ -258,18 +258,18 @@ public class Cracks
 		
 		// grow current crack XML
 		if(option==0)
-		{	currentCrack.append("    <pt x='"+ptx+"' y='"+pty+"'");
+		{	currentCrack.append("    <pt x='"+doc.formatDble(ptx)+"' y='"+doc.formatDble(pty)+"'");
 			if(tip!=-1) currentCrack.append(" tip='"+tip+"'");
 		}
 		else if(option==1)
-		{	currentCrack.append("    <Line xmin='"+cx+"' ymin='"+cy+"'");
-			currentCrack.append(" xmax='"+ptx+"' ymax='"+pty+"' resolution='"+segs+"'");
+		{	currentCrack.append("    <Line xmin='"+doc.formatDble(cx)+"' ymin='"+doc.formatDble(cy)+"'");
+			currentCrack.append(" xmax='"+doc.formatDble(ptx)+"' ymax='"+doc.formatDble(pty)+"' resolution='"+segs+"'");
 			if(tip!=-1) currentCrack.append(" end_tip='"+tip+"'");
 		}
 		else
-		{	currentCrack.append("    <Circle xmin='"+ptx+"' ymin='"+pty+"'");
-			currentCrack.append(" xmax='"+ptx2+"' ymax='"+pty2+"' resolution='"+segs+"'");
-			currentCrack.append(" start_angle='"+ang1+"' end_angle='"+ang2+"'");
+		{	currentCrack.append("    <Circle xmin='"+doc.formatDble(ptx)+"' ymin='"+doc.formatDble(pty)+"'");
+			currentCrack.append(" xmax='"+doc.formatDble(ptx2)+"' ymax='"+doc.formatDble(pty2)+"' resolution='"+segs+"'");
+			currentCrack.append(" start_angle='"+doc.formatDble(ang1)+"' end_angle='"+doc.formatDble(ang2)+"'");
 			if(tip!=-1) currentCrack.append(" end_tip='"+tip+"'");
 		}
 		if(mat!=-1) currentCrack.append(" mat='"+mat+"'");

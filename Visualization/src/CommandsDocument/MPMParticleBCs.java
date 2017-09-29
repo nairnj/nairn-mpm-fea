@@ -74,7 +74,8 @@ public class MPMParticleBCs
 		double ymin = doc.readDoubleArg(args.get(3));
 		double ymax = doc.readDoubleArg(args.get(4));
     	
-		bcAttrs = "<LdRect xmin='"+xmin+"' xmax='"+xmax+"' ymin='"+ymin+"' ymax='"+ymax+"'>\n";
+		bcAttrs = "<LdRect xmin='"+doc.formatDble(xmin)+"' xmax='"+doc.formatDble(xmax)
+					+"' ymin='"+doc.formatDble(ymin)+"' ymax='"+doc.formatDble(ymax)+"'>\n";
 		bcSettings = new StringBuffer("");
 		inBC = MPMGridBCs.LOADRECT_BC;
 		bcCmd = "LdRect";
@@ -182,7 +183,7 @@ public class MPMParticleBCs
 			if(style==6)
 				bcSettings.append(" function='"+function+"'");
 			else
-				bcSettings.append(" load='"+arg1+"'");
+				bcSettings.append(" load='"+doc.formatDble(arg1)+"'");
 		}
 		else if(theType==ADD_TRACTION)
 		{	// <TractionBC dir="2" face="3" style="1" stress="1" time='0.0' function='x*t'/>
@@ -190,7 +191,7 @@ public class MPMParticleBCs
 			if(style==6)
 				bcSettings.append(" function='"+function+"'");
 			else
-				bcSettings.append(" stress='"+arg1+"'");
+				bcSettings.append(" stress='"+doc.formatDble(arg1)+"'");
 		}
 		else if(theType==ADD_HEATFLUX)
 		{	// <HeatFluxBC dir='1' face='1' style='1' value='0' time='0.0' function='sinh(t)'/>
@@ -200,7 +201,7 @@ public class MPMParticleBCs
 			if(style==6)
 				bcSettings.append(" function='"+function+"'");
 			else
-				bcSettings.append(" value='"+arg1+"'");
+				bcSettings.append(" value='"+doc.formatDble(arg1)+"'");
 			
 		}
 		else
@@ -211,11 +212,11 @@ public class MPMParticleBCs
 			if(style==6)
 				bcSettings.append(" function='"+function+"'");
 			else
-				bcSettings.append(" value='"+arg1+"'");
+				bcSettings.append(" value='"+doc.formatDble(arg1)+"'");
 		}
 		
 		// time arg
-		if(hasArg2) bcSettings.append(" time='"+arg2+"'");
+		if(hasArg2) bcSettings.append(" time='"+doc.formatDble(arg2)+"'");
 		
 		// end command
 		bcSettings.append("/>\n");

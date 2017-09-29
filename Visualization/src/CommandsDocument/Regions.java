@@ -473,7 +473,7 @@ public class Regions
 		}
 		
 		// add piece
-		RegionPiece newPiece = new RegionPiece(RegionPiece.RECT_OR_OVAL,newShape.toString(),shape);
+		RegionPiece newPiece = new RegionPiece(RegionPiece.RECT_OR_OVAL,newShape.toString(),shape,doc);
 		if(arcStart>=0.) newPiece.setArcAngles(arcStart,arcEnd);
 		
 		// add to BC block or current region
@@ -511,7 +511,7 @@ public class Regions
 		
 		// end the polygon
 		if(args.size()==1)
-		{	newPiece = new RegionPiece(RegionPiece.END_POLYGON,"","");
+		{	newPiece = new RegionPiece(RegionPiece.END_POLYGON,"","",doc);
 		}
 		
 		else
@@ -523,7 +523,7 @@ public class Regions
 			
 			// add it
 			String ptStr = "    <pt x='"+doc.formatDble(x)+"' y='"+doc.formatDble(y)+"'/>\n";
-			newPiece = new RegionPiece(RegionPiece.POLY_PT,ptStr,"Polygon");
+			newPiece = new RegionPiece(RegionPiece.POLY_PT,ptStr,"Polygon",doc);
 		}
 		
 		// add to BC block or current region
@@ -593,7 +593,7 @@ public class Regions
 		}
 		
 		// add piece
-		RegionPiece newPiece = new RegionPiece(RegionPiece.SHAPE_3D,newShape.toString(),shape);
+		RegionPiece newPiece = new RegionPiece(RegionPiece.SHAPE_3D,newShape.toString(),shape,doc);
 		
 		// add to BC block or current region
 		if(doc.mpmGridBCs.getInBC()!=0)
@@ -619,7 +619,7 @@ public class Regions
 		if(reset.equals("reset"))
 		{	String rotStr = indent+"  <Unrotate/>\n";
 			if(inRegion == REGION_BLOCK)
-			{	RegionPiece newPiece = new RegionPiece(RegionPiece.COMMAND_PIECE,rotStr,"");
+			{	RegionPiece newPiece = new RegionPiece(RegionPiece.COMMAND_PIECE,rotStr,"",doc);
 				pieces.add(newPiece);
 			}
 			else
@@ -662,7 +662,7 @@ public class Regions
 			else
 				newShape = indent+"  <RotateZ>"+angle+"</RotateZ>\n";
 			if(inRegion == REGION_BLOCK)
-			{	RegionPiece newPiece = new RegionPiece(RegionPiece.COMMAND_PIECE,newShape,"");
+			{	RegionPiece newPiece = new RegionPiece(RegionPiece.COMMAND_PIECE,newShape,"",doc);
 				pieces.add(newPiece);
 			}
 			else

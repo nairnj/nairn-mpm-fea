@@ -118,10 +118,10 @@ public class MPMGridBCs
 				if (args.size() > 5)
 					tolerance = doc.readDoubleArg(args.get(5));
 				if (theType == MOVELINE_BC)
-				{	bcAttrs = "<BCLine x1='" + x1 + "' y1='" + y1 + "' x2='" + x2
-							+ "' y2='" + y2 + "'";
+				{	bcAttrs = "<BCLine x1='" + doc.formatDble(x1) + "' y1='" + doc.formatDble(y1) +
+								"' x2='" + doc.formatDble(x2) + "' y2='" + doc.formatDble(y2) + "'";
 					if (tolerance > 0.)
-						bcAttrs = bcAttrs + " tolerance='" + tolerance + "'>\n";
+						bcAttrs = bcAttrs + " tolerance='" + doc.formatDble(tolerance) + "'>\n";
 					else
 						bcAttrs = bcAttrs + ">\n";
 					bcSettings = new StringBuffer("");
@@ -129,8 +129,8 @@ public class MPMGridBCs
 					bcCmd = "BCLine";
 				}
 				else
-				{	String theAttrs = "<BCLine x1='" + x1 + "' y1='" + y1
-							+ "' x2='" + x2 + "' y2='" + y2 + "'";
+				{	String theAttrs = "<BCLine x1='" + doc.formatDble(x1) + "' y1='" + doc.formatDble(y1)
+							+ "' x2='" + doc.formatDble(x2) + "' y2='" + doc.formatDble(y2) + "'";
 					if (tolerance > 0.)
 						theAttrs = theAttrs + " tolerance='" + tolerance + "'>\n";
 					else
@@ -145,11 +145,11 @@ public class MPMGridBCs
 				if (args.size() > 7)
 					tolerance = doc.readDoubleArg(args.get(7));
 				if (theType == MOVEARC_BC)
-				{	bcAttrs = "<BCArc x1='" + x1 + "' y1='" + y1 + "' x2='" + x2
-							+ "' y2='" + y2 + "' start='" + startAng + "' end='"
-							+ endAng + "'";
+				{	bcAttrs = "<BCArc x1='" + doc.formatDble(x1) + "' y1='" + doc.formatDble(y1)
+							+ "' x2='" + doc.formatDble(x2) + "' y2='" + doc.formatDble(y2)
+							+ "' start='" + doc.formatDble(startAng) + "' end='" + doc.formatDble(endAng) + "'";
 					if (tolerance > 0.)
-						bcAttrs = bcAttrs + " tolerance='" + tolerance + "'>\n";
+						bcAttrs = bcAttrs + " tolerance='" + doc.formatDble(tolerance) + "'>\n";
 					else
 						bcAttrs = bcAttrs + ">\n";
 					bcSettings = new StringBuffer("");
@@ -157,11 +157,11 @@ public class MPMGridBCs
 					bcCmd = "BCArc";
 				}
 				else
-				{	String theAttrs = "<BCArc x1='" + x1 + "' y1='" + y1 + "' x2='"
-							+ x2 + "' y2='" + y2 + "' start='" + startAng
-							+ "' end='" + endAng + "'";
+				{	String theAttrs = "<BCArc x1='" + doc.formatDble(x1) + "' y1='" + doc.formatDble(y1)
+							+ "' x2='" + doc.formatDble(x2) + "' y2='" + doc.formatDble(y2)
+							+ "' start='" + doc.formatDble(startAng) + "' end='" + doc.formatDble(endAng) + "'";
 					if (tolerance > 0.)
-						theAttrs = theAttrs + " tolerance='" + tolerance + "'>\n";
+						theAttrs = theAttrs + " tolerance='" + doc.formatDble(tolerance) + "'>\n";
 					else
 						theAttrs = theAttrs + ">\n";
 					doc.mpmParticleBCs.SetLoadLine(theAttrs,LOADARC_BC, "BCArc");
@@ -214,8 +214,9 @@ public class MPMGridBCs
 		}
 
 		if (theType == MOVEBOX_BC)
-		{	bcAttrs = "<BCBox xmin='" + x1 + "' ymin='" + y1 + "' zmin='" + z1
-					+ "' xmax='" + x2 + "' ymax='" + y2 + "' zmax='" + z2 + "'";
+		{	bcAttrs = "<BCBox xmin='" + doc.formatDble(x1) + "' ymin='" + doc.formatDble(y1)
+					+ "' zmin='" + doc.formatDble(z1) + "' xmax='" + doc.formatDble(x2)
+					+ "' ymax='" + doc.formatDble(y2) + "' zmax='" + doc.formatDble(z2) + "'";
 			if (axis > 0)
 				bcAttrs = bcAttrs + " axis='" + axis + "'>\n";
 			else
@@ -225,9 +226,9 @@ public class MPMGridBCs
 			bcCmd = "BCBox";
 		}
 		else
-		{	String theAttrs = "<BCBox xmin='" + x1 + "' ymin='" + y1
-					+ "' zmin='" + z1 + "' xmax='" + x2 + "' ymax='" + y2
-					+ "' zmax='" + z2 + "'";
+		{	String theAttrs = "<BCBox xmin='" + doc.formatDble(x1) + "' ymin='" + doc.formatDble(y1)
+					+ "' zmin='" + doc.formatDble(z1) + "' xmax='" + doc.formatDble(x2)
+					+ "' ymax='" + doc.formatDble(y2) + "' zmax='" + doc.formatDble(z2) + "'";
 			if (axis > 0)
 				theAttrs = theAttrs + " axis='" + axis + "'>\n";
 			else
@@ -335,14 +336,14 @@ public class MPMGridBCs
 		if (style == 6)
 			bcSettings.append(" function='" + function + "'");
 		else
-			bcSettings.append(" vel='" + arg1 + "'");
+			bcSettings.append(" vel='" + doc.formatDble(arg1) + "'");
 		if (hasArg2)
-			bcSettings.append(" time='" + arg2 + "'");
+			bcSettings.append(" time='" + doc.formatDble(arg2) + "'");
 
 		if (dof > 10)
-			bcSettings.append(" angle='" + angle1 + "'");
+			bcSettings.append(" angle='" + doc.formatDble(angle1) + "'");
 		if (dof > 100)
-			bcSettings.append(" angle2='" + angle2 + "'");
+			bcSettings.append(" angle2='" + doc.formatDble(angle2) + "'");
 
 		if (boundaryID != 0)
 			bcSettings.append(" id='" + boundaryID + "'");
@@ -404,9 +405,9 @@ public class MPMGridBCs
 		if (style == 6)
 			bcSettings.append(" function='" + function + "'");
 		else
-			bcSettings.append(" value='" + arg1 + "'");
+			bcSettings.append(" value='" + doc.formatDble(arg1) + "'");
 		if (hasArg2)
-			bcSettings.append(" time='" + arg2 + "'");
+			bcSettings.append(" time='" + doc.formatDble(arg2) + "'");
 
 		bcSettings.append("/>\n");
 	}

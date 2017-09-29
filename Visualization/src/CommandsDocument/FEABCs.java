@@ -88,7 +88,8 @@ public class FEABCs
 	    	if(args.size()>5)
 	    		tolerance = doc.readDoubleArg(args.get(5));
 	    	
-	    	bcAttrs = "x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"'";
+	    	bcAttrs = "x1='"+doc.formatDble(x1)+"' y1='"+doc.formatDble(y1)
+	    				+"' x2='"+doc.formatDble(x2)+"' y2='"+doc.formatDble(y2)+"'";
 	    	if(tolerance > 0.)
 	    		bcAttrs = bcAttrs + " tolerance='" + tolerance + "'";
 	    	
@@ -141,7 +142,7 @@ public class FEABCs
 	    	double x = doc.readDoubleArg(args.get(1));
 	    	double y = doc.readDoubleArg(args.get(2));
 	    	
-	    	bcAttrs = "x='"+x+"' y='"+y+"'";
+	    	bcAttrs = "x='"+doc.formatDble(x)+"' y='"+doc.formatDble(y)+"'";
 	    }
 	    
 	    // now in a BC
@@ -184,7 +185,9 @@ public class FEABCs
 		if(args.size()>2)
 		{	Object dispArg = doc.readStringOrDoubleArg(args.get(2));
 			if(dispArg.getClass().equals(Double.class))
-				bcSettings.append(" disp='"+dispArg+"'");
+			{	double dd = ((Double)dispArg).doubleValue();
+				bcSettings.append(" disp='"+doc.formatDble(dd)+"'");
+			}
 			else
 				bcSettings.append(" function='"+dispArg+"'");
 		}
@@ -214,7 +217,7 @@ public class FEABCs
 		// read value
 		try
 		{	double value = doc.readDoubleArg(args.get(2));
-			bcSettings.append(" load='"+value+"'");
+			bcSettings.append(" load='"+doc.formatDble(value)+"'");
 		}
 		catch(Exception e)
 		{	String func = doc.readStringArg(args.get(2));
@@ -264,11 +267,11 @@ public class FEABCs
 		String prefix = periodic==null ? "    <Periodic dof='"+dof+"'" :
 							periodic+"    <Periodic dof='"+dof+"'";
 		if(hasDelta && hasSlope)
-			periodic = prefix + " delta='"+delta+"' slope='"+slope+"'/>\n";
+			periodic = prefix + " delta='"+doc.formatDble(delta)+"' slope='"+doc.formatDble(slope)+"'/>\n";
 		else if(hasDelta)
-			periodic = prefix + " delta='"+delta+"'/>\n";
+			periodic = prefix + " delta='"+doc.formatDble(delta)+"'/>\n";
 		else if(hasSlope)
-			periodic = prefix + " slope='"+slope+"'/>\n";
+			periodic = prefix + " slope='"+doc.formatDble(slope)+"'/>\n";
 		else
 			periodic = prefix + "/>\n";
 	}
@@ -300,11 +303,11 @@ public class FEABCs
 		bcSettings.append(" stress='"+value);
 		if(args.size()>3)
 		{	value = doc.readDoubleArg(args.get(3));
-			bcSettings.append(","+value);
+			bcSettings.append(","+doc.formatDble(value));
 		}
 		if(args.size()>4)
 		{	value = doc.readDoubleArg(args.get(4));
-			bcSettings.append(","+value);
+			bcSettings.append(","+doc.formatDble(value));
 		}
 		bcSettings.append("'/>\n");
 	}
@@ -328,7 +331,7 @@ public class FEABCs
 		
 		// read value
 		double value = doc.readDoubleArg(args.get(2));
-		bcSettings.append("      <rotate axis='3' angle='"+value+"'/>\n");
+		bcSettings.append("      <rotate axis='3' angle='"+doc.formatDble(value)+"'/>\n");
 	}
 	
 	// select this block
@@ -383,7 +386,7 @@ public class FEABCs
 	    {	// get x,y
 	    	double cx = doc.readDoubleArg(args.get(1));
 	    	double cy = doc.readDoubleArg(args.get(2));
-	    	cracktip = "    <Cracktip x='"+cx+"' y='"+cy+"'/>\n";
+	    	cracktip = "    <Cracktip x='"+doc.formatDble(cx)+"' y='"+doc.formatDble(cy)+"'/>\n";
 	    }
 	}
 	
@@ -419,7 +422,7 @@ public class FEABCs
 		if(rsKeyID!=null)
 		{	String reseq;
 			if(rsKeyID.length()==0)
-				reseq = "\n    <Resequence x='"+rsx+"' y='"+rsy+"'/>\n";
+				reseq = "\n    <Resequence x='"+doc.formatDble(rsx)+"' y='"+doc.formatDble(rsy)+"'/>\n";
 			else
 				reseq = "\n    <Resequence keypt='"+rsKeyID+"'/>\n";
 			xml.append(reseq);
