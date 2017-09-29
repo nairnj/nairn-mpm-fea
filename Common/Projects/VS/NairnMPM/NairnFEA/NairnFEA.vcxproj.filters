@@ -76,9 +76,6 @@
     <ClInclude Include="..\..\..\..\System\LinkedObject.hpp">
       <Filter>Common\System</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\System\Matrix3.hpp">
-      <Filter>Common\System</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\System\UnitsController.hpp">
       <Filter>Common\System</Filter>
     </ClInclude>
@@ -277,9 +274,6 @@
       <Filter>Common\System</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\System\main.cpp">
-      <Filter>Common\System</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\System\Matrix3.cpp">
       <Filter>Common\System</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\System\svninfo.cpp">

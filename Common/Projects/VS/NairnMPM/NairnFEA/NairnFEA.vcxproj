@@ -156,7 +156,6 @@
     <ClInclude Include="..\..\..\..\System\CommonTask.hpp" />
     <ClInclude Include="..\..\..\..\System\DataTypes.hpp" />
     <ClInclude Include="..\..\..\..\System\LinkedObject.hpp" />
-    <ClInclude Include="..\..\..\..\System\Matrix3.hpp" />
     <ClInclude Include="..\..\..\..\System\UnitsController.hpp" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
@@ -232,7 +231,6 @@
     <ClCompile Include="..\..\..\..\System\CommonUtilities.cpp" />
     <ClCompile Include="..\..\..\..\System\LinkedObject.cpp" />
     <ClCompile Include="..\..\..\..\System\main.cpp" />
-    <ClCompile Include="..\..\..\..\System\Matrix3.cpp" />
     <ClCompile Include="..\..\..\..\System\svninfo.cpp" />
     <ClCompile Include="..\..\..\..\System\UnitsController.cpp" />
     <ClCompile Include="stdafx.cpp">

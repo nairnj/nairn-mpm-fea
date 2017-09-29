@@ -410,9 +410,6 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldSingle.hpp">
       <Filter>NairnMPM_src\Nodes</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MaterialInterfaceNode.hpp">
-      <Filter>NairnMPM_src\Nodes</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityField.hpp">
       <Filter>NairnMPM_src\Nodes</Filter>
     </ClInclude>
@@ -532,6 +529,18 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\System\MPMPrefix.hpp">
       <Filter>NairnMPM_src\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalValueBC.hpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\AdhesionFriction.hpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LiquidContact.hpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\NonlinearInterface.hpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -883,9 +892,6 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldSingle.cpp">
       <Filter>NairnMPM_src\Nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\MaterialInterfaceNode.cpp">
-      <Filter>NairnMPM_src\Nodes</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityField.cpp">
       <Filter>NairnMPM_src\Nodes</Filter>
     </ClCompile>
@@ -1005,6 +1011,18 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\VTKArchive.cpp">
       <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalValueBC.cpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\AdhesionFriction.cpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LiquidContact.cpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\NonlinearInterface.cpp">
+      <Filter>NairnMPM_src\Contact_Laws</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
