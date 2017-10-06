@@ -53,6 +53,7 @@ class ClampedNeohookean : public Neohookean
 	protected:
 		double critComp,critTens,hardening;
 		int elasticModel;
+    	bool omitClamping;
 	
 		double lamMin2,lamMax2;
 	

@@ -26,6 +26,7 @@ ClampedNeohookean::ClampedNeohookean(char *matName) : Neohookean(matName)
 	critTens = 0.0075;
 	hardening = 10;
 	elasticModel = ELASTIC_DISNEY;
+    omitClamping = false;
 }
 
 #pragma mark ClampedNeohookean::Initialization
@@ -55,14 +56,20 @@ char *ClampedNeohookean::InputMaterialProperty(char *xName,int &input,double &gS
 // print mechanical properties output window
 void ClampedNeohookean::PrintMechanicalProperties(void) const
 {
-	PrintProperty("Cc",critComp,"");
-	PrintProperty("Tc",critTens,"");
-	PrintProperty("xi",hardening,"");
-	cout << endl;
+    if(omitClamping)
+    {	cout << "Clamping Properties: none" << endl;
+    }
+    else
+    {	cout << "Clamping Properties:" << endl;
+        PrintProperty("Cc",critComp,"");
+        PrintProperty("Tc",critTens,"");
+        PrintProperty("xi",hardening,"");
+        cout << endl;
+    }
 	
 	cout << "Elastic Model: ";
 	if(elasticModel==ELASTIC_DISNEY)
-		cout << "Disney" << endl;
+		cout << "Co-Rotated Neo-Hookean" << endl;
 	else
 		cout << "Neo-Hookean" << endl;
 	
@@ -75,7 +82,7 @@ const char *ClampedNeohookean::VerifyAndLoadProperties(int np)
 {
 	// must enter critical value
 	if(critComp<0. || critTens<0.)
-	{	return "Clamped Neohookean material requires both CritComp and CritTens to be non-negative";
+    {	omitClamping = true;
 	}
 	
 	// find elongation ranged (squared values)
@@ -156,8 +163,10 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 	
 	// clamp eigenvalues if needed
 	bool clamped = false;
-	if(lam2.x<lamMin2 || lam2.x>lamMax2 || lam2.y<lamMin2 || lam2.y>lamMax2 || lam2.z<lamMin2 || lam2.z>lamMax2)
-		clamped = true;
+    if(!omitClamping && (lam2.x<lamMin2 || lam2.x>lamMax2 || lam2.y<lamMin2 || lam2.y>lamMax2
+           			|| lam2.z<lamMin2 || lam2.z>lamMax2))
+    {	clamped = true;
+    }
 	
 	// Get Je and Jp, adjusting if clamped
 	double Je,Jp;
@@ -183,13 +192,14 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 		Matrix3 LamUcolT = Lam*UcolT;
 		Belas = Ucol*LamUcolT;
 		
-		// get Je and Jp
+		// Find Je and change Jp
 		Je = sqrt(lam2.x*lam2.y*lam2.z);
 		Jp = J/Je;
 		mptr->SetHistoryDble(JP_HISTORY,Jp,historyOffset);
 	}
 	else
-	{	Jp = mptr->GetHistoryDble(JP_HISTORY,historyOffset);
+	{	// Read Jp to Find Je
+        Jp = mptr->GetHistoryDble(JP_HISTORY,historyOffset);
 		Je = J/Jp;
 		if(elasticModel==ELASTIC_DISNEY)
 			Ucol = Belas.Eigenvectors(lam2);
@@ -208,9 +218,16 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 	}
 	
 	// change mechanical properties by hardening
-	double arg = exp(hardening*(1.-Jp));
-	double altGsp = pr.Gsp*arg;
-	double altLamesp = pr.Lamesp*arg;
+    double altGsp,altLamesp;
+    if(omitClamping)
+    {	altGsp = pr.Gsp;
+        altLamesp = pr.Lamesp;
+    }
+    else
+    {	double arg = exp(hardening*(1.-Jp));
+        altGsp = pr.Gsp*arg;
+        altLamesp = pr.Lamesp*arg;
+    }
 
 	// account for residual stresses
 	double dJres = GetIncrementalResJ(mptr,res);

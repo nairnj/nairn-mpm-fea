@@ -36,6 +36,7 @@ class AdjustTimeStepTask : public CustomTask
         int verbose;            // 0 or 1 to report changes
         double lastReportedTimeStep;
 		double velocityCFL;
+    	double reportRatio;
     
 };
 

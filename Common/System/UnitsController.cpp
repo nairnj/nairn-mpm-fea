@@ -233,7 +233,7 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 	}
 	else if(strcmp(tm,"us")==0)
 		timeExp = -6;
-	else if(strcmp(ms,"T")==0)
+	else if(strcmp(tm,"T")==0)
 	{	timeExp = 0;
 		unitsType = USER_UNITS;
 	}
@@ -329,7 +329,7 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 	strcat(heatCapacity,mass);
 	strcat(heatCapacity,"-K)");
 	
-	// heat fusion
+	// heat of fusion
 	strcpy(heatFusion,energy);
 	strcat(heatFusion,"/");
 	strcat(heatFusion,mass);
@@ -349,7 +349,7 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 	
 	// conductivity
 	if(unitsType==USER_UNITS)
-		strcpy(conductivity,"F-L/(m-s-K)");
+		strcpy(conductivity,"F/(T-K)");
 	else
 	{	strcpy(conductivity,power);
 		strcat(conductivity,"/(");
@@ -359,7 +359,7 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 
 	// convection
 	if(unitsType==USER_UNITS)
-		strcpy(convection,"F-L/(m^2-s-K)");
+		strcpy(convection,"F/(L-T-K)");
 	else
 	{	strcpy(convection,power);
 		strcat(convection,"/(");
@@ -369,7 +369,7 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 	
 	// heat flux
 	if(unitsType==USER_UNITS)
-		strcpy(heatFlux,"F-L/(m^2-s)");
+		strcpy(heatFlux,"F/(L-T)");
 	else
 	{	strcpy(heatFlux,power);
 		strcat(heatFlux,"/");
@@ -377,19 +377,19 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 		strcat(heatFlux,"^2");
 	}
 	
-	// bcarg
-	strcpy(bcarg,timeu);
-	strcat(bcarg,"/");
-	strcat(bcarg,timeu);
-	strcat(bcarg,"^-1");
+	// bcarg (two options)
+    strcpy(bcarg,timeu);
+    strcat(bcarg,"/");
+    strcat(bcarg,timeu);
+    strcat(bcarg,"^-1");
 	
 	// concentration flux
-	strcpy(concFlux,mass);
-	strcat(concFlux,"/(");
-	strcat(concFlux,length);
-	strcat(concFlux,"^-2-");
-	strcat(concFlux,timeu);
-	strcat(concFlux,")");
+    strcpy(concFlux,mass);
+    strcat(concFlux,"/(");
+    strcat(concFlux,length);
+    strcat(concFlux,"^-2-");
+    strcat(concFlux,timeu);
+    strcat(concFlux,")");
 	
 	return true;
 }

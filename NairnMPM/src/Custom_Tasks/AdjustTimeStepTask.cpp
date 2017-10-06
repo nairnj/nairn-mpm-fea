@@ -26,6 +26,7 @@ AdjustTimeStepTask::AdjustTimeStepTask()
     verbose = 0;
     lastReportedTimeStep = -1;
 	velocityCFL = -1.;
+    reportRatio = 0.;
 }
 
 // Return name of this task
@@ -41,8 +42,8 @@ char *AdjustTimeStepTask::InputParam(char *pName,int &input,double &gScaling)
     }
 		
     else if(strcmp(pName,"verbose")==0)
-    {	input=INT_NUM;
-        return (char *)&verbose;
+    {	input=DOUBLE_NUM;
+        return (char *)&reportRatio;
     }
 	
     else if(strcmp(pName,"velocityCFL")==0)
@@ -78,8 +79,17 @@ CustomTask *AdjustTimeStepTask::Initialize(void)
 	else
 		velocityCFL = 1.;
 	
+    // set verbose from entered reportRatio
+    // To support all mode, 0 is not verbose, 1 is verbose with reportRatio 2
+    if(reportRatio<=0.99)
+        verbose = 0;
+    else
+    {	verbose = 1;
+         if(reportRatio<1.01) reportRatio = 2.;
+    }
+    
     if(verbose!=0)
-        cout << "   Verbose: yes" << endl;
+        cout << "   Verbose: yes (reporting " << reportRatio << "X changes)" << endl;
     else
         cout << "   Verbose: no" << endl;
 	
@@ -154,19 +164,18 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
 	// propagation time step (no less than timestep)
     if(propTime<timestep) propTime = timestep;
     
-    // report if changed by 5% since last reported change
+    // report if changed by reportRatio since last reported change
     if(verbose!=0)
     {   double ratio = timestep/lastReportedTimeStep;
-        if(ratio < 0.95 || ratio>1.05)
-		{	if(timestep<lastReportedTimeStep)
-				cout << "# time step reduced to " << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS);
-			else
-				cout << "# time step increased to " << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS);
+        if(ratio>reportRatio || ratio<1./reportRatio)
+		{	cout << "# time step changed " << ratio << "X to "
+            		<< timestep*UnitsController::Scaling(1.e3) << " "
+            		<< UnitsController::Label(ALTTIME_UNITS);
 			if(Max_Velocity_Condition)
 				cout << " (some velocities exceed wave speed)";
 			cout << endl;
+            lastReportedTimeStep = timestep;
 		}
-        lastReportedTimeStep = timestep;
     }
 
     return nextTask;
