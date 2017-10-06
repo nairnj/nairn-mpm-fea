@@ -316,7 +316,7 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     double Gterm = pr.Gsp*(1. - Jeff1third*Jeff1third + 2./(3.*Jeff1third));
 	switch(UofJOption)
 	{   case J_MINUS_1_SQUARED:
-			Kratio = pr.Lamesp+Jeff + Gterm;
+			Kratio = pr.Lamesp*Jeff + Gterm;
 			break;
 			
 		case LN_J_SQUARED:
@@ -325,7 +325,7 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 			
 		case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
 		default:
-			Kratio = 0.5*(Jeff + 1./Jeff);
+			Kratio = 0.5*pr.Lamesp*(Jeff + 1./Jeff) + Gterm;
 			break;
 	}
     Kratio /= pr.Ksp;
@@ -409,5 +409,28 @@ double Neohookean::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const
 {   return mptr->GetHistoryDble(J_History,offset);
 }
 
+// Calculate current wave speed. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
+// Adjusts K, but not sure how to change G
+double Neohookean::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
+{	double Jeff = mptr->GetHistoryDble(J_History,offset)/mptr->GetHistoryDble(J_History+1,offset);
+	double Jeff1third = pow(Jeff,1./3.);
+	double Gterm = G*(1. - Jeff1third*Jeff1third + 2./(3.*Jeff1third));
+	double Kcurrent;
+	switch(UofJOption)
+	{   case J_MINUS_1_SQUARED:
+			Kcurrent = Lame*Jeff + Gterm;
+			break;
+			
+		case LN_J_SQUARED:
+			Kcurrent = Lame*(1-log(Jeff))/(Jeff*Jeff) + Gterm;
+			break;
+			
+		case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
+		default:
+			Kcurrent = 0.5*Lame*(Jeff + 1./Jeff) + Gterm;
+			break;
+	}
+	return sqrt((Kcurrent+4.*G/3.)/rho);
+}
 
 

@@ -333,9 +333,36 @@ const char *ClampedNeohookean::MaterialType(void) const { return "Clamped Neohoo
 // if a subclass material supports artificial viscosity, override this and return TRUE
 bool ClampedNeohookean::SupportsArtificialViscosity(void) const { return false; }
 
-//	calculate current wave speed in L/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
+// Calculate current wave speed in L/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
 double ClampedNeohookean::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
-{	double Jp = mptr->GetHistoryDble(JP_HISTORY,offset);
+{	// get plastic change in properties
+	double Jp = mptr->GetHistoryDble(JP_HISTORY,offset);
 	double arg = exp(hardening*(1.-Jp));
-    return sqrt(arg*(Kbulk+4.*G/3.)/rho);
+	
+	// Get elastic Jeff = Je/Jres = J/(Jp*Jres)
+	double Jeff = mptr->GetHistoryDble(J_History,offset)/(Jp*mptr->GetHistoryDble(J_History+1,offset));
+	
+	// get Kcurrent from elastic
+	double Jeff1third = pow(Jeff,1./3.),Gterm;
+	if(elasticModel==ELASTIC_DISNEY)
+		Gterm = 2.*G*(2-Jeff1third)/(3.*Jeff1third*Jeff1third);
+	else
+		Gterm = G*(1. - Jeff1third*Jeff1third + 2./(3.*Jeff1third));
+	double Kcurrent;
+	switch(UofJOption)
+	{   case J_MINUS_1_SQUARED:
+			// Elastic Disney is always here
+			Kcurrent = Lame*Jeff + Gterm;
+			break;
+			
+		case LN_J_SQUARED:
+			Kcurrent = Lame*(1-log(Jeff))/(Jeff*Jeff) + Gterm;
+			break;
+			
+		case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
+		default:
+			Kcurrent = 0.5*Lame*(Jeff + 1./Jeff) + Gterm;
+			break;
+	}
+    return sqrt(arg*(Kcurrent+4.*G/3.)/rho);
 }
