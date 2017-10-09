@@ -181,8 +181,7 @@ public class MaterialPoint
 			if(has3D) origz=bb.getDouble()*units.lengthScale();
 		}
 
-		// velocity (length units/time units), but archive has mm/sec so need to
-		// divide by 1000 to get default units here which are ms
+		// velocity (length units/time units)
 		if(mpmOrder[ReadArchive.ARCH_Velocity]=='Y')
 		{	velx=bb.getDouble()*units.velocityScale();
 			vely=bb.getDouble()*units.velocityScale();

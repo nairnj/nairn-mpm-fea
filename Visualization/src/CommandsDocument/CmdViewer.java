@@ -44,6 +44,7 @@ public class CmdViewer extends JNCmdTextDocument
 	private String username;
 	private StringBuffer header;
 	private int np;
+	private String consistentUnits;
 	private boolean plusSpin;
 	private int processors=1;
 	private int lnameEl;
@@ -323,6 +324,7 @@ public class CmdViewer extends JNCmdTextDocument
 		username = null;
 		header = new StringBuffer("");
 		np = -1;
+		consistentUnits = null;
 		processors = 1;
 		plusSpin = false;
 		lnameEl = NO_ELEMENT;
@@ -447,6 +449,9 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("analysis"))
 			doAnalysis(args);
+		
+		else if(theCmd.equals("consistentunits"))
+			doConsistentUnits(args);
 		
 		else if(theCmd.equals("mpmmethod"))
 			doMPMMethod(args);
@@ -1236,6 +1241,54 @@ public class CmdViewer extends JNCmdTextDocument
         }
 	}
 	
+	// ConsistentUnits Length,mass,time
+	public void doConsistentUnits(ArrayList<String> args) throws Exception
+    {	
+		if(np>=0)
+			throw new Exception("'ConsistentUnits' command should come before analysis command.");
+		
+		if(consistentUnits!=null)
+			throw new Exception("Only one 'ConsistentUnits' command is allowed.");
+
+		// length, mass, and time (they have to be nil if got here)
+		String lengthU="",massU="",timeU="";
+		if(args.size()<2)
+		{	lengthU = "m";
+        	massU = "kg";
+        	timeU = "s";
+		}
+		else
+		{	if(args.size()<4)
+				throw new Exception("ConsistentUnits command must have 0 or 3 arguments");
+        
+			lengthU = readStringArg(args.get(1)).toLowerCase();
+			massU = readStringArg(args.get(2)).toLowerCase();
+			timeU = readStringArg(args.get(3)).toLowerCase();
+        
+			// km, m, dm cm, mm um (or microns), or nm
+			if(!lengthU.equals("km") && !lengthU.equals("m") && !lengthU.equals("dm")
+           		&& !lengthU.equals("cm") && !lengthU.equals("mm") && !lengthU.equals("um")
+           		&& !lengthU.equals("micron") && !lengthU.equals("nm"))
+			{	throw new Exception("Length (#1) in ConsistentUnits command must be km, m, dm cm, mm um (or microns), or nm.");
+			}
+        
+			// kg, g, mg, or ug
+			if(!massU.equals("kg") && !massU.equals("g") && !massU.equals("mg")
+					&& !massU.equals("ug"))
+			{	throw new Exception("Mass (#1) in ConsistentUnits command must be kg, g, mg, or ug.");
+			}
+        
+			// s (or sec), ms (or msec), or us
+			if(!timeU.equals("s") && !timeU.equals("sec") && !timeU.equals("ms")
+			         && !timeU.equals("msec") && !timeU.equals("us"))
+			{	throw new Exception("Time (#3) in ConsistentUnits command must be s (or sec), ms (or msec), or us.");
+			}
+		}
+		
+		consistentUnits = "    <ConsistentUnits length='"+lengthU+"' mass='"+massU
+							+ "' time='"+timeU+"'/>\n";
+    }
+		
 	// MPMMethd #1,#2
 	public void doMPMMethod(ArrayList<String> args) throws Exception
 	{
@@ -1400,12 +1453,12 @@ public class CmdViewer extends JNCmdTextDocument
 			throw new Exception("'TimeStep' has too few parameters:\n"+args);
 		
 		// archive time (in sec)
-		double aTime = readDoubleArg(args.get(1))*1.e-3;
+		double aTime = readDoubleArg(args.get(1))*legacyUnitScaling(1.e-3);
 		timeStep = "    <TimeStep>"+formatDble(aTime)+"</TimeStep>\n";
 		
 		// max time (in sec)
 		if(args.size()>2)
-		{	aTime = readDoubleArg(args.get(2))*1.e-3;
+		{	aTime = readDoubleArg(args.get(2))*legacyUnitScaling(1.e-3);
 			maxTime = "    <MaxTime>"+formatDble(aTime)+"</MaxTime>\n";
 		}
 		
@@ -2245,6 +2298,8 @@ public class CmdViewer extends JNCmdTextDocument
 			else
 				gravity = gravity + "    <GridBodyYForce>"+(String)gyarg+"</GridBodyYForce>\n";
 		}
+		else if(consistentUnits!=null)
+			gravity = gravity + "    <BodyYForce>-9.80565</BodyYForce>\n";
 		else
 			gravity = gravity + "    <BodyYForce>-9805.65</BodyYForce>\n";
 		
@@ -2435,6 +2490,8 @@ public class CmdViewer extends JNCmdTextDocument
 		if(header != null)
 			xml.append(header);
 		xml.append("    </Description>\n");
+		if(consistentUnits!=null)
+			xml.append(consistentUnits);
 		xml.append("    <Analysis>"+np+"</Analysis>\n");
 		if(outFlags!=null) xml.append("    <Output>"+outFlags+"</Output>\n");
 		more = xmldata.get("header");
@@ -2717,6 +2774,7 @@ public class CmdViewer extends JNCmdTextDocument
 	}
 	
 	// return String of Double, String of entity, or Integer object
+	// If number, scale by scaleNum if Legacy units
 	public Object readNumberOrEntityArg(String text,boolean isInt,double scaleNum) throws Exception
 	{	Object arg = readStringOrDoubleArg(text);
 		if(arg.getClass().equals(Double.class))
@@ -2727,7 +2785,7 @@ public class CmdViewer extends JNCmdTextDocument
 			
 			//Double newarg = new Double(((Double)arg).doubleValue()*scaleNum);
 			double newValue = ((Double)arg).doubleValue();
-			return formatDble(newValue*scaleNum);
+			return formatDble(newValue*legacyUnitScaling(scaleNum));
 		}
 		
 		// Strip & and ; if there
@@ -2740,6 +2798,14 @@ public class CmdViewer extends JNCmdTextDocument
 			throw new Exception("The argument '"+text+"'\nis neither a number nor a valid entity");
 		return "&"+ent+";";
 	}
+	
+	// return number if Legacy units or 1 if consistent units
+	public double legacyUnitScaling(double scaling)
+	{
+		if(consistentUnits!=null) return 1.;
+		return scaling;
+	}
+
 	
 	// format double and remove trailing zeros from number string (unless has e)
 	public String formatDble(double dval)

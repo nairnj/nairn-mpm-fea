@@ -495,9 +495,9 @@ and rubber elastic materials as special cases.</td>
 <p>This material is small-strain, isotropic material. The material properties are:</p>
 
 <ul>
-<li>E - modulus (in MPa)</li>
+<li>E - modulus (in <a href="commands.html#units">pressure units</a>)</li>
 <li>nu - Poisson's ratio</li>
-<li>alpha - thermal expansion coefficient (in ppm/C)</li>
+<li>alpha - thermal expansion coefficient (in ppm/K)</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
 
@@ -510,13 +510,13 @@ and rubber elastic materials as special cases.</td>
 <p>This material is small-strain, transversely isotropic with the isotropic plane in the <code>x-y</code> plane. The properties are:</p>
 
 <ul>
-<li>EA or ET - axial or transverse modulus (in MPa)</li>
-<li>GA - axial shear modulus (in MPa)</li>
+<li>EA or ET - axial or transverse modulus (in <a href="commands.html#units">pressure units</a>)</li>
+<li>GA - axial shear modulus (in <a href="commands.html#units">pressure units</a>)</li>
 <li>nuA or nuT - axial or transverse Poisson's ratio</li>
-<li>alphaA or alphaT - axial or transverse thermal expansion coefficient (in ppm/C)</li>
+<li>alphaA or alphaT - axial or transverse thermal expansion coefficient (in ppm/K)</li>
 <li>betaA or betaT - axial or transverse concentration expansion coefficient (in strain/wt fraction) (MPM only)</li>
-<li>DA or DT - axial or transverse diffusion constant (in mm<sup>2</sup>/sec) (MPM only)</li>
-<li>kCondA or kCondT - axial or transverse thermal conductivity (in W/(m-K)) (MPM only)</li>
+<li>DA or DT - axial or transverse diffusion constant (in <a href="commands.html#units">diffusion units</a>) (MPM only)</li>
+<li>kCondA or kCondT - axial or transverse thermal conductivity (in <a href="commands.html#units">conductivity units</a>) (MPM only)</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
 
@@ -537,13 +537,13 @@ and rubber elastic materials as special cases.</td>
 <p>The material is small-strain, orthotropic with the input axes corresponding to the analysis <code>x-y-z</code> axes. The material properties can be changed by rotation about the axes:</p>
 
 <ul>
-<li>Ex, Ey, or ET - x, y, or z direction modulus (in MPa)</li>
-<li>Gxy, Gxz, or Gyz -x-y, x-z, or y-z plane shear modulus (in MPa)</li>
+<li>Ex, Ey, or ET - x, y, or z direction modulus (in <a href="commands.html#units">pressure units</a>)</li>
+<li>Gxy, Gxz, or Gyz -x-y, x-z, or y-z plane shear modulus (in <a href="commands.html#units">pressure units</a>)</li>
 <li>nuxy, nuyx, nuxz, nuzx, nuyz, or nuzy - various Poisson's ratios (enter one of each pair with matching axes)</li>
-<li>alphaz, alphay, or alphaz - x, y, or z direction thermal expansion coefficient (in ppm/C)</li>
+<li>alphaz, alphay, or alphaz - x, y, or z direction thermal expansion coefficient (in ppm/K)</li>
 <li>betaz, betay, or or betaz - x, y, or z direction concentration expansion coefficient (in strain/wt fraction) (MPM only)</li>
-<li>Dx, Dy, or Dz - x, y, or z direction diffusion constant (in mm<sup>2</sup>/sec) (MPM only)</li>
-<li>kCondx, kCOndy, or kCondz - x, y, or z direction thermal conductivity (in W/(m-K)) (MPM only)</li>
+<li>Dx, Dy, or Dz - x, y, or z direction diffusion constant (in <a href="commands.html#units">diffusion units</a>) (MPM only)</li>
+<li>kCondx, kCOndy, or kCondz - x, y, or z direction thermal conductivity (in <a href="commands.html#units">conductivity units</a>) (MPM only)</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
   
@@ -556,8 +556,8 @@ and rubber elastic materials as special cases.</td>
 <p>This material is used to model imperfect interfaces in FEA.  The input properties are</p>
 
 <ul>
-<li>Dn - stiffness for loading the interface in the normal direction (in MPa/mm)</li>
-<li>Dt - stiffness for loading the interface in the tangential direction (in MPa/mm)</li>
+<li>Dn - stiffness for loading the interface in the normal direction (in <a href="commands.html#units">pressure units/length units</a>)</li>
+<li>Dt - stiffness for loading the interface in the tangential direction (in <a href="commands.html#units">pressure units</a>/length units)</li>
 </ul>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
@@ -570,17 +570,17 @@ and rubber elastic materials as special cases.</td>
 
 <ul>
 <li>pressureLaw - set to 0 to use small strain method (with provided K) or 1 to use MGEOS (with all its properties)</li>
-<li>K - the time-independent bulk modulus (in MPa) (when pressureLaw=0)</li>
-<li>C0 - the bulk wave speed in MGEOS (in m/sec) (when pressureLaw=1)</li>
+<li>K - the time-independent bulk modulus (in <a href="commands.html#units">pressure units</a>) (when pressureLaw=0)</li>
+<li>C0 - the bulk wave speed in MGEOS (in <a href="commands.html#units">alt velocity units</a>) (when pressureLaw=1)</li>
 <li>S1 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
 <li>S2 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
 <li>S3 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
 <li>gamma0 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
 <li>Kmax - maximum increase allowed in bulk modulus (by ratio and dimensionless) (OSParticulas only) (default is 20).</li>
-<li>G0 - the steady-state (or long time) shear modulus (in MPa)</li>
-<li>Gk - the shear modulus for the next relaxation time (in MPa)</li>
-<li>tauk - the next relaxation time (in sec)</li>
-<li>alpha - the thermal expansion coefficient (in ppm/C) (ignored for MGEOS when pressureLaw=1)</li>
+<li>G0 - the steady-state (or long time) shear modulus (in <a href="commands.html#units">pressure units</a>)</li>
+<li>Gk - the shear modulus for the next relaxation time (in <a href="commands.html#units">pressure units</a>)</li>
+<li>tauk - the next relaxation time (in <a href="commands.html#units">time units</a>)</li>
+<li>alpha - the thermal expansion coefficient (in ppm/K) (ignored for MGEOS when pressureLaw=1)</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
 
@@ -600,16 +600,16 @@ G<sub>ntaus</sub>exp(-t/tau<sub>n</sub>), where n is the number of relation time
 <p>The material type is a large-deformation, isotropic, hyperelastic material. The material properties are</p>
 
 <ul>
-<li>G1 or G2 - the Mooney-Rivlin shear energy depends on two shear moduli (in MPa). Their sum in the low-strain shear modulus.
+<li>G1 or G2 - the Mooney-Rivlin shear energy depends on two shear moduli (in <a href="commands.html#units">pressure units</a>). Their sum in the low-strain shear modulus.
 If G2=0 (which is its default), the material is a Neohookean material.</li>
-<li>K - the K modulus (in MPa), which is equal to the low-strain bulk modulus.</li>
-<li>E an nu - alternative enter E (in MPa) and nu. These are converted to K and G=G1+G2; you can pick G2 (if not zero) to get G1=G-G2</li>
+<li>K - the K modulus (in <a href="commands.html#units">pressure units</a>), which is equal to the low-strain bulk modulus.</li>
+<li>E an nu - alternative enter E (in <a href="commands.html#units">pressure units</a>) and nu. These are converted to K and G=G1+G2; you can pick G2 (if not zero) to get G1=G-G2</li>
 <li>UJOption - selects the dilational energy term U(J) and the possible integer values mean:<br />
 	&#160;&#160;&#160;&#160;0: U(J) = (K/2)((1/2)(J<sup>2</sup>-1) - ln J) (the default)<br />
 	&#160;&#160;&#160;&#160;1: U(J) = (K/2)(J-1)<sup>2</sup><br />
 	&#160;&#160;&#160;&#160;2: U(J) = (K/2)(ln J)<sup>2</sup><br />
 </li>
-<li>alpha - the thermal expansion coefficient (in ppm/C)</li>
+<li>alpha - the thermal expansion coefficient (in ppm/K)</li>
 <li>IdealRubber -  this property should by 0 or 1 where 1 makes the material an ideal rubber elastic material.</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
@@ -632,13 +632,13 @@ If G2=0 (which is its default), the material is a Neohookean material.</li>
 
 <ul>
 <li>K, G, Lame, E, and nu - these are the low-strain elastic properties for the material.
-You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
+You must enter K and G, E and nu, or Lame and G  (moduli in <a href="commands.html#units">pressure units</a>).</li>
 <li><code>UJOption</code> for an integer to select the an energy term U(J) and the possible options are:<br />
 &#160;&#160;&#160;&#160;0: U(J) = (Lame/2)((1/2)(J<sup>2</sup>-1) - ln J) (the default)<br />
 &#160;&#160;&#160;&#160;1: U(J) = (Lame/2)(J-1)<sup>2</sup><br />
 &#160;&#160;&#160;&#160;2: U(J) = (Lame/2)(ln J)<sup>2</sup><br />
 </li>
-<li><code>alpha</code> for thermal expansion coefficient in ppm/degree C.</li>
+<li><code>alpha</code> for thermal expansion coefficient in ppm/K.</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
 
@@ -659,9 +659,9 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 <p>The material type is a large-deformation, isotropic, hyperelastic material. It yields when the tensile and/or compression elongation reaches critical values of 1+&theta;<sub>s</sub> and/or 1-&theta;<sub>c</sub>. The underlying elastic component of the deformation is a neo-Hookean material. After yielding, the mechanical properties soften in tension or harden in compression according to an entered hardening coefficient. The material properties are</p>
 	
 <ul>
-<li>CritTens and CritComp - enter critical strains &theta;<sub>s</sub> and &theta;<sub>c</sub> for critical strains for tension and compression.</li>
+<li>CritTens and CritComp - enter critical strains &theta;<sub>s</sub> and &theta;<sub>c</sub> for critical strains for tension and compression. If either is less than zero, clamping is prevented and the material will use the choosen hyperelastic, neo-Hookean model (see "Elastic" property).</li>
 <li>xihard - hardening parameter &xi;. The neo-Hookean moduli are scaled by exp(&xi;(1-J<sub>P</sub>)) where J<sub>P</sub> is the plastic volume ratio.</li>
-<li>Elastic - enter 0 to use neo-Hookean potential energy defined in paper that proposed this material or enter 1 to use <a href="#neoh">Neo-Hookean material</a> potential energy. This potential energy applies to elastic component of the deformation.</li>
+<li>Elastic - enter 0 to use a modified, corotated, neo-Hookean potential energy defined in paper that proposed this material or enter 1 to use <a href="#neoh">Neo-Hookean material</a> potential energy. This potential energy applies to elastic component of the deformation.</li>
 <li>(other) - enter properties for the underlying <a href="#neoh">Neo-Hookean material</a> (note that the UJOption can only be changed when Elastic is 1; UJOption is always 1 when Elastic is 0).</li>
 </ul>
 	
@@ -702,14 +702,14 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 <p>This material has two small-strain, isotopic states. You need to enter properties of the initial and deformed states and pick rule for state transformations:</p>
 
 <ul>
-<li>K0 and Kd - bulk modulus of initial state and transformed state (in MPa).</li>
-<li>G0 and Gd - shear modulus of initial state and transformed state (in MPa).</li>
-<li>alpha0 and alphad - thermal expansion coefficient of initial state and transformed state (in ppm/degree C).</li>
+<li>K0 and Kd - bulk modulus of initial state and transformed state (in <a href="commands.html#units">pressure units</a>).</li>
+<li>G0 and Gd - shear modulus of initial state and transformed state (in <a href="commands.html#units">pressure units</a>).</li>
+<li>alpha0 and alphad - thermal expansion coefficient of initial state and transformed state (in ppm/K).</li>
 <li>beta0 and betad - concentration expansion coefficient of initial state and transformed state (in strain/(wt fraction)).</li>
-<li>D0 and Dd - diffusion constant of initial state and transformed state (in mm<sup>2</sup>/sec).</li>
-<li>kCond0 and kCondd - thermal conductivity of initial state and transformed state (in W/(m-K)).</li>
+<li>D0 and Dd - diffusion constant of initial state and transformed state (in <a href="commands.html#units">diffusion units</a>).</li>
+<li>kCond0 and kCondd - thermal conductivity of initial state and transformed state (in <a href="commands.html#units">conductivity units</a>).</li>
 <li>transition - set state transition to be by a dilation rule (if 1), a distortion rule (if 2), or Von Mises stress rule (if 3) (the default is dilation).</li>
-<li>critical - critical value for the transition. The value is volumetric or deviatoric strain (in % for dilation or distortion rule) or stress (in MPa for Von Mises stress rule).</li>
+<li>critical - critical value for the transition. The value is volumetric or deviatoric strain (in % for dilation or distortion rule) or stress (in <a href="commands.html#units">pressure units</a>) for Von Mises stress rule.</li>
 <li>DeltaVOffset - offset volumetric strain in the transformed state. This property only applies for dilation rule (see above); it is ignored for distortion rule.</li>
 <li>reversible - set to "yes" (or 1) to make the transition reversible and "no" (or 0) to make it irreversible (the default is reversible).</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
@@ -734,9 +734,9 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 <li>direction - values 0 through 7 (binary 0 through 0x111) create dynamic velocity boundary conditions in the x, y, and/or z axis according to three bits in the binary value (<i>e.g.</i>,1 or binary 0x001 to set velocity in the x direction). A setting of 8 creates rigid particles that can implement multimaterial contact contact.</li>
 <li>temperature - set to 1 to create dynamic temperature boundary conditions (it requires direction 0 to 7).</li>
 <li>concentration - set to 1 to create dynamic concentration boundary conditions (it requires direction 0 to 7).</li>
-<li>SettingFunction, SettingFunction2, or SettingFunction3 - by providing <a href="commands.html#function">user-defined functions</a> of time, position, and time step, the rigid particle velocity setting can vary. The functions should evaluate to the velocity in mm/s. For SetDirection 1 to 7 the functions must be given in order and apply to the set velocities in order. For SetDirection of 8, the three functions are for setting <code>x</code>, <code>y</code>, and <code>z</code> directions and zero to three can be used.</li>
+<li>SettingFunction, SettingFunction2, or SettingFunction3 - by providing <a href="commands.html#function">user-defined functions</a> of time, position, and time step, the rigid particle velocity setting can vary. The functions should evaluate to the velocity in <a href="commands.html#units">velocity units</a>. For SetDirection 1 to 7 the functions must be given in order and apply to the set velocities in order. For SetDirection of 8, the three functions are for setting <code>x</code>, <code>y</code>, and <code>z</code> directions and zero to three can be used.</li>
 <li>SettingFunctionX, SettingFunctionY, or SettingFunctionY - synonyms for SettingFunction, SettingFunction2, or SettingFunction3, respectively.</li> 
-<li>ValueFunction - by entering <a href="commands.html#function">user-defined functions</a> of time, time step, and position, the rigid particle temperature and concentration can vary. The function should evaluate to the temperature or concentration potential.</li>
+<li>ValueFunction - by entering <a href="commands.html#function">user-defined functions</a> of time, time step, and position, the rigid particle temperature and concentration can vary. The function should evaluate to the temperature (in K) or concentration potential.</li>
 <li><code>mirrored</code> should be set to -1 or +1 to indicate that rigid particles with SetDirection = 1 to 7 are setting a velocity on the minimum edge (-1) or maximum edge (+1) of the object along the moving direction. This property can improve the performance of velocity boundary conditions as explained on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Rigid_Material#Mirrored_Velocity_Property">OSUPdocs wiki</a>. The default setting of 0 means to not use mirroring. Note that when <a href="commands.html#mhother">ExtrapolateRigid</a> option is activated, this property is ignored.</li>
 
 </ul>
@@ -757,12 +757,12 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 
 <ul>
 
-<li>yldxx - yield stress from uniaxial tension test the material's <code>x</code> direction (in MPa)</li>
-<li>yldyy - yield stress from uniaxial tension test the material's <code>y</code> direction (in MPa)</li>
-<li>yldzz - yield stress from uniaxial tension test the material's <code>z</code> direction (in MPa)</li>
-<li>yldxy - yield stress from pure shear test in the material's <code>x-y</code> plane (in MPa)</li>
-<li>yldyz - yield stress from pure shear test in the material's <code>y-z</code> plane (in MPa)</li>
-<li>yldxz - yield stress from pure shear test in the material's <code>x-z</code> plane (in MPa)</li>
+<li>yldxx - yield stress from uniaxial tension test the material's <code>x</code> direction (in <a href="commands.html#units">pressure units</a>)</li>
+<li>yldyy - yield stress from uniaxial tension test the material's <code>y</code> direction (in <a href="commands.html#units">pressure units</a>)</li>
+<li>yldzz - yield stress from uniaxial tension test the material's <code>z</code> direction (in <a href="commands.html#units">pressure units</a>)</li>
+<li>yldxy - yield stress from pure shear test in the material's <code>x-y</code> plane (in <a href="commands.html#units">pressure units</a>)</li>
+<li>yldyz - yield stress from pure shear test in the material's <code>y-z</code> plane (in <a href="commands.html#units">pressure units</a>)</li>
+<li>yldxz - yield stress from pure shear test in the material's <code>x-z</code> plane (in <a href="commands.html#units">pressure units</a>)</li>
 <li>khard - hardening term (see above)</li>
 <li>nhard - exponent on cumulative plastic strain in hardening term (see above)</li>
 <li>(other) - see <a href="#ortho">Linear Elastic, Orthotropic</a> material for all other properties.</li>
@@ -786,13 +786,13 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 </p>
 
 <ul>
-<li>C0 - the bulk wave speed (in m/sec).</li>
+<li>C0 - the bulk wave speed (in <a href="commands.html#units">alt velocity units</a>).</li>
 <li>S1 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
 <li>S2 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
 <li>S3 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
 <li>gamma0 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
 <li>Kmax - maximum increase allowed in bulk modulus (by ratio and dimensionless) (OSParticulas only) (default is 20).</li>
-<li>G - the shear modulus at zero pressure and the reference temperature (in MPa).</li>
+<li>G - the shear modulus at zero pressure and the reference temperature (in <a href="commands.html#units">pressure units</a>).</li>
 <li>Hardening - this property selects the <a href="#hardening">hardening law</a>. It should be followed by entering all yielding properties required by the hardening law within the material's definition block.</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a>. This material requires <a href="#common">heat capacity <code>Cv</code></a> and a <a href="commands.html#thermal"><code>StressFreeTemp</code></a> in K.</li>
 </ul>
@@ -838,9 +838,9 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 <p>The material type is an ideal gas, implemented as a large-deformation, isotropic, hyperelastic material. The possible input properties are:</p>
 
 <ul>
-<li>P0 - the reference pressure (in MPa) at reference temperature and reference density.</li>
-<li>T0 - the reference temperature (in Kelvin)</li>
-<li>rho - the reference density (in g/cm<sup>3</sup>) at reference temperature.</li>
+<li>P0 - the reference pressure (in <a href="commands.html#units">pressure units</a>) at reference temperature and reference density.</li>
+<li>T0 - the reference temperature (in K)</li>
+<li>rho - the reference density (in <a href="commands.html#units">density units</a>) at reference temperature.</li>
 <li>Cv - if heat capacity is omitted or is less than or equal 1, C<sub>V</sub> is set to (3/2)R for a monotonic gas. If the entered value is greater than 1, C<sub>V</sub> is set to (5/2)R for a diatomic gas.</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
@@ -874,12 +874,12 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 <p>This material models a Newtonian fluid as a hyperelastic material. The pressure is found from the Tait equation. The properties are:</p>
 
 <ul>
-<li>K - the zero-pressure, bulk modulus (in MPa)</li>
-<li>viscosity - liquid viscosity at one shear rate (in cP)</li>
-<li>logshearrate - log of shear rate corresponding to a viscosity (in 1/sec).</li>
+<li>K - the zero-pressure, bulk modulus (in <a href="commands.html#units">pressure units</a>)</li>
+<li>viscosity - liquid viscosity at one shear rate (in <a href="commands.html#units">viscosity units</a>)</li>
+<li>logshearrate - log of shear rate corresponding to a viscosity (in <a href="commands.html#units">1/time units</a>).</li>
 <li>alpha - the thermal expansion coefficient (in ppm/K)</li>
 <li>InitialPressure - set initial pressure to <a href="commands.html#function">user-defined function</a> of
-position that evaluates to a pressure in MPa.
+position that evaluates to a pressure in <a href="commands.html#units">pressure units</a>.
 When liquids are modeled in gravity, the function can set to &rho;gh,
 where h is height of liquid above the position (x, y, z).</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
@@ -991,11 +991,11 @@ where h is height of liquid above the position (x, y, z).</li>
 
 <ul>
 
-<li>sigmaI and sigmaII - the peak stress or cohesive stress of the traction law (&sigma;) (in MPa).</li>
-<li>JIc and JIIc - the toughness of the traction law or area under the traction law curve (J<sub>c</sub>) (in J/m<sup>2</sup>)</li>
-<li>delIc and delIIc - the maximum or critical opening displacement (&delta;<sub>c</sub>) at which debonding occurs (in mm)</li>
+<li>sigmaI and sigmaII - the peak stress or cohesive stress of the traction law (&sigma;) (in <a href="commands.html#units">pressure units</a>).</li>
+<li>JIc and JIIc - the toughness of the traction law or area under the traction law curve (J<sub>c</sub>) (in <a href="commands.html#units">energy release units</a>)</li>
+<li>delIc and delIIc - the maximum or critical opening displacement (&delta;<sub>c</sub>) at which debonding occurs (in <a href="commands.html#units">length units</a>)</li>
 <li>delpkI and delpkII - the relative displacement at the location of the peak in the triangular law (relative to &delta;<sub>c</sub> and therefore dimensionless from 0 to 1).</li>
-<li>kIe and kIIe - the initial elastic slope (k) (in MPa/mm).</li>
+<li>kIe and kIIe - the initial elastic slope (k) (in <a href="commands.html#units">pressure units/length units</a>).</li>
 <li>nmix - the exponent used in the mixed-mode failure criterion Enter nmix&lt;=0 to choose infinity, which is decoupled failure criterion (see <a href="#mixedmode">below</a>).</li>
 </ul>
 
@@ -1021,7 +1021,7 @@ where h is height of liquid above the position (x, y, z).</li>
 
 <ul>
 
-<li>kIe and kIIe - the slope of the linear elastic tractional law (k) (in MPa/mm).</li>
+<li>kIe and kIIe - the slope of the linear elastic tractional law (k) (in <a href="commands.html#units">pressure units/length units</a>).</li>
 
 </ul>
 
@@ -1045,9 +1045,9 @@ where h is height of liquid above the position (x, y, z).</li>
 
 <ul>
 
-<li>sigmaI and sigmaII - the peak stress or cohesive stress of the traction law (&sigma;) (in MPa).</li>
-<li>JIc and JIIc - the toughness of the traction law or area under the traction law curve (J<sub>c</sub>) (in J/m<sup>2</sup>).</li>
-<li>delIc and delIIc - the maximum or critical opening displacement (&delta;<sub>c</sub>) at which debonding occurs (in mm).</li>
+<li>sigmaI and sigmaII - the peak stress or cohesive stress of the traction law (&sigma;) (in <a href="commands.html#units">pressure units</a>).</li>
+<li>JIc and JIIc - the toughness of the traction law or area under the traction law curve (J<sub>c</sub>) (in <a href="commands.html#units">energy release units</a>).</li>
+<li>delIc and delIIc - the maximum or critical opening displacement (&delta;<sub>c</sub>) at which debonding occurs (in <a href="commands.html#units">length units</a>).</li>
 <li>nmix - the exponent used in the <a href="#mixedmode">mixed-mode failure criterion</a>. Enter nmix&lt;=0 to choose infinity, which is decoupled failure criterion.</li>
 </ul>
 
@@ -1067,7 +1067,7 @@ where h is height of liquid above the position (x, y, z).</li>
 
 <ul>
 <li>sigmaI, sigmaII, JIc, JIIc, delIc, delIIc, kIe, kIIe, delpkI, delpkII, and nmix - these properties are defined in the <a href="#traction">Triangular Traction Law</a> and they all mean the same thing for this traction law, except that they now apply to the first break point in the trilinear law at (&delta;<sub>1</sub>,&sigma;<sub>1</sub>).</li>
-<li>sigmaI2 and sigmaII2 - the stress at the second break point in the traction traction law (&sigma;<sub>2</sub>) (in MPa).</li>
+<li>sigmaI2 and sigmaII2 - the stress at the second break point in the traction traction law (&sigma;<sub>2</sub>) (in <a href="commands.html#units">pressure units</a>).</li>
 <li>delpkI2 and delpkII2 - the relative displacement at the location of the second peak in the trilinear law (relative to &delta;<sub>c</sub> and therefore dimensionless from 0 to 1).</li>
 </ul>
 
@@ -1109,9 +1109,9 @@ The stress can be entered in one of two ways:
 
 <ul>
 
-<li>stress - enter constant normal stress; use negative stress for a pressure loaded crack (in MPa).</li>
-<li>function - Alternatively, the stress can be entered as a <a href="commands.html#function">user-defined function</a> of time (in MPa).</li>
-<li>minCOD - specify a minimum, normal, crack opening displacement below which no pressure is applied (in mm).
+<li>stress - enter constant normal stress; use negative stress for a pressure loaded crack (in <a href="commands.html#units">pressure units</a>).</li>
+<li>function - Alternatively, the stress can be entered as a <a href="commands.html#function">user-defined function</a> of time (in <a href="commands.html#units">pressure units</a>).</li>
+<li>minCOD - specify a minimum, normal, crack opening displacement below which no pressure is applied (in <a href="commands.html#units">length units</a>).
 It is ignored if it is negative (default is -1)</li>
 </ul>
 
@@ -1182,10 +1182,10 @@ the frictional sliding force is
 <ul>
 <li><code>coeff</code> for the dynamic coefficient of friction (default is 0).</li>
 <li><code>coeffStatic</code> for the static coefficient of friction (default is -1).</li>
-<li><code>Sa</code> for tangential adhesion strength (in MPa) (default is 0).</li>
-<li><code>Na</code> for normal adhesion strength (in MPa) (default is 0).</li>
-<li>kmu - slope of coefficient of friction vs. velocity (in sec/mm) (default is 0).</li>
-<li>vhalf - velocity at which µ is half way from µ<sub>s</sub> to µ<sub>d</sub> (in mm/sec) (default is 0).</li>
+<li><code>Sa</code> for tangential adhesion strength (in <a href="commands.html#units">pressure units</a>) (default is 0).</li>
+<li><code>Na</code> for normal adhesion strength (in <a href="commands.html#units">pressure units</a>) (default is 0).</li>
+<li>kmu - slope of coefficient of friction vs. velocity (in <a href="commands.html#units">1/velocity units</a>) (default is 0).</li>
+<li>vhalf - velocity at which µ is half way from µ<sub>s</sub> to µ<sub>d</sub> (in <a href="commands.html#units">velocity units</a>) (default is 0).</li>
 </ul>
 
 <p>If the optional static coefficient of friction is changed to a positive number,
@@ -1210,7 +1210,7 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 <p>where <i>k</i> is a scaling factor (with units 1/length) and &eta; is viscosity of a fluid (which may depend on shear rate). Note that k = 0 leads to zero sliding traction or pure slipe; k large approaches stick contact; all other values of k give partial-slip boundary conditions that depend on the liquid's viscosity and could be tailored to match experimental results. The properties for this law are:</p>
 
 <ul>
-<li><code>coeff</code> for the scaling factor <i>k</i> in the contact law (default is 2 mm<sup>-1</sup>).</li>
+<li><code>coeff</code> for the scaling factor <i>k</i> in the contact law (default is 2 <a href="commands.html#units">(length units)<sup>-1</sup></a>).</li>
 <li><code>LiquidPhase</code> for the liquid phase material by ID (default is none).</li>
 </ul>
 
@@ -1234,9 +1234,9 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 <p>The properties are the three interface parameters:</p>
 
 <ul>
-<li>Dnt - the interfacial stiffness in tension (in MPa/mm) (default -1)</li>
-<li>Dnc - the interfacial stiffness in compression (in MPa/mm). This property is optional and lets you specify a different stiffness for compression (interfaces in contact) then for tension (interfaces separated). If <code>Dnc</code> is omitted, the stiffnesses will be the same in tension and compression (<i>i.e.</i>,  <code>Dnc</code> equal to <code>Dnt</code>).</li>
-<li>Dt - the interfacial stiffness in shear (in MPa mm) (default -1)</li>
+<li>Dnt - the interfacial stiffness in tension (in <a href="commands.html#units">pressure units/length units</a>) (default -1)</li>
+<li>Dnc - the interfacial stiffness in compression (in <a href="commands.html#units">pressure units/length units</a>). This property is optional and lets you specify a different stiffness for compression (interfaces in contact) then for tension (interfaces separated). If <code>Dnc</code> is omitted, the stiffnesses will be the same in tension and compression (<i>i.e.</i>,  <code>Dnc</code> equal to <code>Dnt</code>).</li>
+<li>Dt - the interfacial stiffness in shear (in <a href="commands.html#units">pressure units/length units</a>) (default -1)</li>
 </ul>
 
 <p>Although an interface becomes perfect as the interface parameters approach infinity, high interfacial stiffness make the problem numerically unstable. To model a perfect interface in any direction, set the interface parameter to -1, instead of using a high value.
@@ -1274,10 +1274,10 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 
 <ul>
 
-<li>yield - the initial yield stress (in MPa).</li>
-<li>Ep - the plastic modulus (in MPa). The default is 0.0 which results in an elastic-perfectly plastic material. Ep can only be non-negative. To modeling softening with negative Ep, omit this parameter and enter a negtative Khard instead.</li>
+<li>yield - the initial yield stress (in <a href="commands.html#units">pressure units</a>).</li>
+<li>Ep - the plastic modulus (in <a href="commands.html#units">pressure units</a>). The default is 0.0 which results in an elastic-perfectly plastic material. Ep can only be non-negative. To modeling softening with negative Ep, omit this parameter and enter a negtative Khard instead.</li>
 <li>Khard - alternatively, you can enter this dimensionless parameter for hardening. It is only used if Ep is not entered.</li>
-<li>yieldMin - the minimum yield stress (in MPa with default of 0). A minimum stress is only used when modeling softening by entering <code>Khard</code> &lt; 0.</li>
+<li>yieldMin - the minimum yield stress (in <a href="commands.html#units">pressure units</a> with default of 0). A minimum stress is only used when modeling softening by entering <code>Khard</code> &lt; 0.</li>
 
 </ul>
 
@@ -1301,10 +1301,10 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 <p>where <code>K</code> and <code>n</code> are dimensionless hardening parameters. The input properties are:</p>
 
 <ul>
-<li>yield - the initial yield stress (in MPa).</li>
+<li>yield - the initial yield stress (in <a href="commands.html#units">pressure units</a>).</li>
 <li>Khard - coefficient for nonlinear hardening (dimensionless).</li>
 <li>nhard - exponent parameter in the nonlinear hardening (dimensionless).</li>
-<li>yieldMin - the minimum yield stress (in MPa with default of 0). A minimum stress is only used when modeling softening by entering <code>Khard</code> &lt; 0.</li>
+<li>yieldMin - the minimum yield stress (in <a href="commands.html#units">pressure units</a> with default of 0). A minimum stress is only used when modeling softening by entering <code>Khard</code> &lt; 0.</li>
 </ul>
 
 <h3>History Data for Nonlinear Hardening</h3>
@@ -1344,12 +1344,12 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 <p> and T<sub>0</sub> is the current <a href="commands.html#thermal">stress free temperature</a>. The law properties are:</p>
 
 <ul>
-<li>Ajc - the initial yield stress at reference rate and temperature (in MPa).</li>
-<li>Bjc - hardening term in the yield stress (in MPa).</li>
+<li>Ajc - the initial yield stress at reference rate and temperature (in <a href="commands.html#units">pressure units</a>).</li>
+<li>Bjc - hardening term in the yield stress (in <a href="commands.html#units">pressure units</a>).</li>
 <li>njc - exponent for power-law hardening term (dimensionless).</li>
 <li>Cjc - coefficient for rate-dependent term (dimensionless).</li>
-<li>ep0jc - reference strain rate for reference yield stress in <code>Ajc</code> (in sec<sup>-1</sup>).</li>
-<li>Tmjc - the material's melting point (in degrees K).</li>
+<li>ep0jc - reference strain rate for reference yield stress in <code>Ajc</code> (in <a href="commands.html#units">1/time units</a>).</li>
+<li>Tmjc - the material's melting point (in K).</li>
 <li>mjc - exponent in the thermal term (dimensionless).</li>
 </ul>
 
@@ -1380,12 +1380,12 @@ This yield stress is given by:
 The properties for this law are:</p>
 
 <ul>
-<li>yield - the initial yield stress (&sigma;<sub>0</sub>) at zero pressure and the reference temperature (in MPa).</li>
-<li>yieldMax - maximum yield stress (in MPa).</li>
+<li>yield - the initial yield stress (&sigma;<sub>0</sub>) at zero pressure and the reference temperature (in <a href="commands.html#units">pressure units</a>).</li>
+<li>yieldMax - maximum yield stress (in <a href="commands.html#units">pressure units</a>).</li>
 <li>betahard - yield stress hardening term (dimensionless).</li>
 <li>nhard - exponent on cumulative plastic strain in hardening term (dimensionless).</li>
-<li>GPpG0 - G<sub>p</sub>'/G<sub>0</sub> term for pressure dependence of shear modulus (in units MPa<sup>-1</sup> or 0 to omit pressure dependence in shear modulus).</li>
-<li>GTpG0 - G<sub>T</sub>'/G<sub>0</sub> term for temperature dependence of shear modulus (in units K<sup>-1</sup> or 0 to omit temperature dependence in shear modulus).</li>
+<li>GPpG0 - G<sub>p</sub>'/G<sub>0</sub> term for pressure dependence of shear modulus (in units <a href="commands.html#units">1/pressure units</a> or 0 to omit pressure dependence in shear modulus).</li>
+<li>GTpG0 - G<sub>T</sub>'/G<sub>0</sub> term for temperature dependence of shear modulus (in units K<sup>-1</sup>) or 0 to omit temperature dependence in shear modulus.</li>
 </ul>
 
 <h3>History Data for SCGL Hardening Law</h3>
@@ -1413,10 +1413,10 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 </p>
 
 <ul>
-<li>C1SL - hardening law constant (C<sub>1</sub>) (in sec<sup>-1</sup>).</li>
-<li>C2SL - hardening law constant (C<sub>2</sub>) (in MPa sec).</li>
-<li>YP - the Peierls stress and also the maximum rate-dependent yield stress (in MPa).</li>
-<li>UkOverk - an energy associated with forming kinks (enter Uk/k in degrees K).</li>
+<li>C1SL - hardening law constant (C<sub>1</sub>) (in <a href="commands.html#units">1/time units</a>).</li>
+<li>C2SL - hardening law constant (C<sub>2</sub>) (in <a href="commands.html#units">pressure units-time units</a>c).</li>
+<li>YP - the Peierls stress and also the maximum rate-dependent yield stress (in <a href="commands.html#units">pressure units</a>).</li>
+<li>UkOverk - an energy associated with forming kinks (enter Uk/k in K).</li>
 <li><a href="#SCGL">(other)</a> - enter all other properties required for a <a href="#SCGL">SCGL Hardening Law</a></li>
 </ul>
 
@@ -1424,7 +1424,7 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <ol>
 <li>The cumulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>.</li>
-<li>The current rate- and temperature-dependent yield stress (Y<sub>T</sub>) in MPa.</li>
+<li>The current rate- and temperature-dependent yield stress (Y<sub>T</sub>) in <a href="commands.html#units">pressure units</a>.</li>
 <li>The current equivalent plastic strain rate (d&epsilon;<sub>p</sub>/dt in 1/sec).</li>
 </ol>
 
@@ -1438,8 +1438,8 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <ul>
 
-<li>sigmac - the tensile strength (in MPa). The default is very large number which means the material will not fail in tension.</li>
-<li>tauc - the shear strength (in MPa). The default is very large number which means the material will not fail in shear.</li>
+<li>sigmac - the tensile strength (in <a href="commands.html#units">pressure units</a>). The default is very large number which means the material will not fail in tension.</li>
+<li>tauc - the shear strength (in <a href="commands.html#units">pressure units</a>). The default is very large number which means the material will not fail in shear.</li>
 </ul>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
@@ -1452,10 +1452,10 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <ul>
 <li>sigmacA - critical axial strength (inMPa) for failure in the axial direction</li>
-<li>sigmac - critical transverse tensile strength (in MPa) for tensile failure in the isotropic plane</li>
-<li>taucA - critical shear strength (in MPa) for failure due to axial shear stress with failure parallel to the axial direction</li>
-<li>taucT - Critical shear strength (in MPa) for failure due to axial shear stress with failure through the axial direction</li>
-<li>tauc  - critical transverse shear strength (in MPa) for shear failure in the isotropic plane</li>
+<li>sigmac - critical transverse tensile strength (in <a href="commands.html#units">pressure units</a>) for tensile failure in the isotropic plane</li>
+<li>taucA - critical shear strength (in <a href="commands.html#units">pressure units</a>) for failure due to axial shear stress with failure parallel to the axial direction</li>
+<li>taucT - Critical shear strength (in <a href="commands.html#units">pressure units</a>) for failure due to axial shear stress with failure through the axial direction</li>
+<li>tauc  - critical transverse shear strength (in <a href="commands.html#units">pressure units</a>) for shear failure in the isotropic plane</li>
 </ul>
 
 <p>All strength values default to a large number, which means failure will not occur in that mode.</p>
@@ -1470,7 +1470,7 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <ul>
 
-<li>Gc - the toughness of the material is this law's failure mode (in J/m<sup>2</sup>). The default is very large number which means the material will not soften after initiation of damage.</li>
+<li>Gc - the toughness of the material is this law's failure mode (in <a href="commands.html#units">energy release units</a>). The default is very large number which means the material will not soften after initiation of damage.</li>
 </ul>
 
 <p>Note that you do not enter &delta;<sub>max</sub>. It is determined at run time because it is affected by particle volume, initiation stress, and crack orientation.</p>
@@ -1485,7 +1485,7 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <ul>
 
-<li>Gc - the toughness of the material is this law's failure mode (in J/m<sup>2</sup>). The default is very large number which means the material will not soften after initiation of damage.</li>
+<li>Gc - the toughness of the material is this law's failure mode (in <a href="commands.html#units">energy release units</a>). The default is very large number which means the material will not soften after initiation of damage.</li>
 </ul>
 
 <p>Note that you do not enter <i>k</i>. It is determined at run time because it is affected by particle volume, initiation stress, and crack orientation.</p>
@@ -1500,7 +1500,7 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <ul>
 
-<li>Gc - the toughness of the material is this law's failure mode (in J/m<sup>2</sup>). The default is very large number which means the material will not soften after initiation of damage.</li>
+<li>Gc - the toughness of the material is this law's failure mode (in <a href="commands.html#units">energy release units</a>). The default is very large number which means the material will not soften after initiation of damage.</li>
 </ul>
 
 <p>Note that you do not enter &delta;<sub>max</sub>. It is determined at run time because it is affected by particle volume, initiation stress, and crack orientation.</p>
@@ -1527,12 +1527,12 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 <p>These are basic material properties</p>
 
 <ul>
-<li>rho - the density (in g/cm<sup>3</sup>)</li>
-<li>Cv - the constant strain heat capacity (in J/(kg-K)). You do not need to enter a constant pressure heat capacity (C<sub>p</sub>) because it is not needed. Some materials will output C<sub>p</sub> by using thermodynamic relations for the difference between C<sub>p</sub> and C<sub>v</sub>, but C<sub>p</sub> is never needed in calculations.</li>
-<li>kCond - the thermal conductivity for isotropic materials (in W/(m-K)) </li>
+<li>rho - the density (in <a href="commands.html#units">density units</a>)</li>
+<li>Cv - the constant strain heat capacity (in <a href="commands.html#units">heat capacity units</a>). You do not need to enter a constant pressure heat capacity (C<sub>p</sub>) because it is not needed. Some materials will output C<sub>p</sub> by using thermodynamic relations for the difference between C<sub>p</sub> and C<sub>v</sub>, but C<sub>p</sub> is never needed in calculations.</li>
+<li>kCond - the thermal conductivity for isotropic materials (in <a href="commands.html#units">conductivity units</a>) </li>
 <li>csat - the saturation concentration entered as a weight fraction</li>
 <li>beta - the concentration expansion coefficient for isotropic materials (in strain/(wt fraction))</li>
-<li>D - the diffusion constant for isotropic materials (in mm<sup>2</sup>/sec)</li>
+<li>D - the diffusion constant for isotropic materials (in <a href="commands.html#units">diffusion units</a>)</li>
 <li>largeRotation - to use (1) or not use (0, the default) polar decomposition when evaluating rotations. This option is only allowed for linear elastic and elastic-plastic small strain materials. Option 1 uses polar decomposition to evaluate incremental rotation and uses that rotation to update strains and stresses. Option 0 use approximations of polar decomposition to rotate strain and stress updates (standard hypoelasticity). Both methods work for large rotations (provided the rotations are incrementally small). Option 1 may be more accurate while options 0 is more efficient.</li>
 <li>matDamping - sets custom particle damping to apply only to particles of this material. Its value replaces global <a href="commands.html#mhother">particle damping</a> setting and must be a constant (function of time not allowed).</li>
 <li>matPIC - sets custom PIC damping to apply only to particles of this material. Its value replaces the global <a href="commands.html#mhdamp">PIC damping</a> setting. Note that to use custom <a href="commands.html#mhdamp">XPIC damping</a> in materials, the global settings must activate XPIC and then the <code>matPIC</code> property can change a material to use a different amount of XPIC or switch to FLIP. If the global settings are 100% FLIP, the <code>matPIC</code> property can implement PIC, but not XPIC.</li>
@@ -1544,13 +1544,13 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 <p>These properties set material properties that determine the fracture toughness of the material and control various aspects of crack propagation. Note that whether or not the properties are used depends on the <a href="commands.html#cracks">selected criterion for crack growth</a>.</p>
 
 <ul>
-<li>JIc or JIc - critical mode I or mode II energy release rate (in J/m<sup>2</sup>).</li>
-<li>KIc or KIIc - critical mode I or mode II stress intensity factor (in MPa m<sup>0.5</sup>).</li>
+<li>JIc or JIc - critical mode I or mode II energy release rate (in <a href="commands.html#units">energy release units</a>).</li>
+<li>KIc or KIIc - critical mode I or mode II stress intensity factor (in <a href="commands.html#units">stress intensity units</a>).</li>
 <li>KIexp or KIIexp - the exponent p or q in the elliptical criteria for crack growth.</li>
 <li>delIc or delIIc - critical crack opening displacements in mode I and mode II.</li>
-<li>initTime - time to start crack growth (in ms).</li>
-<li>speed - define the constant crack speed (in m/sec).</li>
-<li>maxLength - define the maximum length of the crack (in mm). The crack growth will stop when this length is reached.</li>
+<li>initTime - time to start crack growth (in <a href="commands.html#units">alt time units</a>).</li>
+<li>speed - define the constant crack speed (in <a href="commands.html#units">velocity units</a>).</li>
+<li>maxLength - define the maximum length of the crack (in <a href="commands.html#units">length units</a>). The crack growth will stop when this length is reached.</li>
 <li>nmix - a parameter used in some mixed-mode failure laws.</li>
 <li>gamma, p, or gain - still in development and not meant for general use.</li>
 </ul>

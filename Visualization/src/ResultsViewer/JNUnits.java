@@ -110,14 +110,17 @@ public class JNUnits
 		else
 		{	// length (to m)
 			int lexp = 0;
+			if(parts[0].equals("L")) parts[0] = "m";
 			if(parts[0].length()>1) lexp = readPrefix(parts[0].charAt(0));
 			
 			// mass (to g)
 			int mexp = 0;
+			if(parts[1].equals("M")) parts[1] = "kg";
 			if(parts[1].length()>1) mexp = readPrefix(parts[1].charAt(0));
 
 			// time (to s)
 			int texp = 0;
+			if(parts[2].equals("L")) parts[2] = "s";
 			if(parts[2].length()>1) texp = readPrefix(parts[2].charAt(0));
 			
 			// get scale to convert file to defauilt viz units
