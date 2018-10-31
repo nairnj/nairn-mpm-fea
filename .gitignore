@@ -1,1 +1,31 @@
+# Build results
+Simulation/
+Archive/
+*.mpm
+
+# =========================
+# Temporary Files
+# =========================
+*.tmp
+*.temp
+[Tt]emp/
+
+# =========================
+# Operating System Files
+# =========================
+
+# Mac OS X
+# =========================
 **/.DS_Store
+
+# WINDOW
+# =========================
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
