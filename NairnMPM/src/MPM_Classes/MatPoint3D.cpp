@@ -164,6 +164,9 @@ void MatPoint3D::SetPosition(Vector *pt) { pos=*pt; }
 // set position (3D) (in mm/sec)
 void MatPoint3D::SetVelocity(Vector *v) { vel=*v; }
 
+// set position (3D) (in mm/sec)
+void MatPoint3D::SetStress(Tensor *ss) { sp = *ss; }
+
 // no thickness
 double MatPoint3D::thickness() { return -1.; }
 

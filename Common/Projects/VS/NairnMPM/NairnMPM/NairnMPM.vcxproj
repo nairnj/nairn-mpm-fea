@@ -224,6 +224,7 @@
     <ClInclude Include="..\..\..\..\Read_XML\BoxController.hpp" />
     <ClInclude Include="..\..\..\..\Read_XML\CommonReadHandler.hpp" />
     <ClInclude Include="..\..\..\..\Read_XML\ElementsController.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\HashString.hpp" />
     <ClInclude Include="..\..\..\..\Read_XML\LineController.hpp" />
     <ClInclude Include="..\..\..\..\Read_XML\MaterialController.hpp" />
     <ClInclude Include="..\..\..\..\Read_XML\mathexpr.hpp" />
@@ -384,6 +385,12 @@
     <ClCompile Include="..\..\..\..\Read_XML\BoxController.cpp" />
     <ClCompile Include="..\..\..\..\Read_XML\CommonReadHandler.cpp" />
     <ClCompile Include="..\..\..\..\Read_XML\ElementsController.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\HashString.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\Read_XML\LineController.cpp" />
     <ClCompile Include="..\..\..\..\Read_XML\MaterialController.cpp" />
     <ClCompile Include="..\..\..\..\Read_XML\mathexpr.cpp" />

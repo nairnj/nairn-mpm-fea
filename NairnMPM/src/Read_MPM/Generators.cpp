@@ -44,6 +44,7 @@
 #include "Read_XML/mathexpr.hpp"
 #include "Read_XML/ElementsController.hpp"
 #include "Read_XML/MaterialController.hpp"
+#include "Read_XML/HashString.hpp"
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
@@ -53,6 +54,10 @@ int Nhoriz=0,Nvert=0,Ndepth=0;
 double cellHoriz=-1.,cellVert=-1.,cellDepth=-1.;
 char *angleExpr[3];
 char *vel0Expr[3];
+
+//Linhl Modify for Read Initial Stress
+Tensor Stress;
+char *ss0Expr[6];
 
 // Body and Hole globals
 int MatID;
@@ -244,6 +249,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             numAttr=(int)attrs.getLength();
 			rotationAxes[0]=0;			// no rotations yet
             vel0Expr[0] = vel0Expr[1] = vel0Expr[2] = NULL;     // optional velocity functions
+            for (i = 0; i < 6; i++) ss0Expr[i] = NULL;
             for(i=0;i<numAttr;i++)
 			{	aName=XMLString::transcode(attrs.getLocalName(i));
                 value=XMLString::transcode(attrs.getValue(i));
@@ -340,6 +346,17 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		inputPtr=NULL;
     }
     
+    // Linhl Adding function for Initial Stress
+    else if (strcmp(xName, "ss0XX") == 0 || strcmp(xName, "ss0YY") == 0 || strcmp(xName, "ss0ZZ") == 0||
+             strcmp(xName, "ss0XY") == 0 || strcmp(xName, "ss0YZ") == 0 || strcmp(xName, "ss0XZ") == 0)
+    {
+      if (block != BODYPART)
+        ValidateCommand(xName, BAD_BLOCK, ANY_DIM);
+      input = TEXT_BLOCK;
+      inputID = CHAR_ARRAY;
+      inputPtr = NULL;
+    }
+
     else if(strcmp(xName,"Lp0X")==0 || strcmp(xName,"Lp0Y")==0 || strcmp(xName,"Lp0Z")==0)
     {   throw SAXException("<Lp0(XYZ)> commands require OSParticulas.");
     }
@@ -988,6 +1005,42 @@ short MPMReadHandler::EndGenerator(char *xName)
 		}
 	}
 	
+  // Linhl Adding function for Initial Stress
+  else if ( strcmp(xName, "ss0XX") == 0 || strcmp(xName, "ss0YY") == 0 || strcmp(xName, "ss0ZZ") == 0 ||
+            strcmp(xName, "ss0XY") == 0 || strcmp(xName, "ss0YZ") == 0 || strcmp(xName, "ss0XZ") == 0 ) 
+  {
+    int ssIndex;
+    switch (hash_(xName)) {
+    case "ss0XX"_hash:
+      ssIndex = 0;
+      break;
+    case "ss0YY"_hash:
+      ssIndex = 1;
+      break;
+    case "ss0ZZ"_hash:
+      ssIndex = 2;
+      break;
+    case "ss0XY"_hash:
+      ssIndex = 3;
+      break;
+    case "ss0YZ"_hash:
+      ssIndex = 4;
+      break;
+    case "ss0XZ"_hash:
+      ssIndex = 5;
+      break;
+    default:
+      throw SAXException("Error in the ss0 Elements");
+    }
+    
+    if (inputPtr != NULL && strlen(inputPtr) > 0) {
+      if (ss0Expr[ssIndex] != NULL) delete[] ss0Expr[ssIndex];
+      ss0Expr[ssIndex] = inputPtr;
+    }
+    else
+      throw SAXException("No expression was provided in <ss0> command.");
+  }
+	
 	else if(strcmp(xName,"Hole")==0)
     	block=POINTSBLOCK;
     
@@ -1079,6 +1132,22 @@ void MPMReadHandler::MPMPts(void)
 		}
 	}
 	
+  // initial stress functions
+  bool hasSSFunction = false;
+  for (i = 0; i<6; i++)
+  {
+    if (ss0Expr[i] != NULL)
+    {
+      fnum++;
+      char *expr = new char[strlen(ss0Expr[i]) + 1];
+      strcpy(expr, ss0Expr[i]);
+      if (!CreateFunction(expr, fnum))
+        throw SAXException("Invalid initial stress expression was provided in <ss0X(YZ))> command.");
+      delete[] expr;
+      hasSSFunction = true;
+    }
+  }
+
     try
     {   for(i=1;i<=nelems;i++)
 		{	theElements[i-1]->MPMPoints(fmobj->ptsPerElement,ppos);
@@ -1102,9 +1171,12 @@ void MPMReadHandler::MPMPts(void)
                         newMpt->SetOrigin(&ppos[k]);
  						newMpt->SetDimensionlessByPts(fmobj->ptsPerElement);
  						
+                        if (hasVelOrLp || hasSSFunction)
+                            fnum = numRotations;
+
 						// velocity
 						if(hasVelOrLp)
-						{	fnum=numRotations;
+						{	
 							if(vel0Expr[0]!=NULL)
 							{	fnum++;
 								Vel.x=FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
@@ -1120,6 +1192,42 @@ void MPMReadHandler::MPMPts(void)
 						}
 						newMpt->SetVelocity(&Vel);
 						
+            // Linhl Adding Initial Stress Modify from newMpt->SetVelocity(&Vel);
+            if (hasSSFunction)
+            {
+              if (ss0Expr[0] != NULL)
+              {
+                fnum++;
+                Stress.xx = FunctionValue(fnum, ppos[k].x, ppos[k].y, ppos[k].z, 0., 0., 0.);
+              }
+              if (ss0Expr[1] != NULL)
+              {
+                fnum++;
+                Stress.yy = FunctionValue(fnum, ppos[k].x, ppos[k].y, ppos[k].z, 0., 0., 0.);
+              }
+              if (ss0Expr[2] != NULL)
+              {
+                fnum++;
+                Stress.zz = FunctionValue(fnum, ppos[k].x, ppos[k].y, ppos[k].z, 0., 0., 0.);
+              }
+              if (ss0Expr[3] != NULL)
+              {
+                fnum++;
+                Stress.xy = FunctionValue(fnum, ppos[k].x, ppos[k].y, ppos[k].z, 0., 0., 0.);
+              }
+              if (ss0Expr[4] != NULL)
+              {
+                fnum++;
+                Stress.yz = FunctionValue(fnum, ppos[k].x, ppos[k].y, ppos[k].z, 0., 0., 0.);
+              }
+              if (ss0Expr[5] != NULL)
+              {
+                fnum++;
+                Stress.xz = FunctionValue(fnum, ppos[k].x, ppos[k].y, ppos[k].z, 0., 0., 0.);
+              }
+            }
+            newMpt->SetStress(&Stress);
+
 						// custom angles
                         SetMptAnglesFromFunctions(rotationAxes,NULL,&ppos[k],newMpt);
 						
@@ -1846,7 +1954,7 @@ void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,do
 	double y=asin(R13);
 	double x,z;
 	
-	// Special case for y=±pi/2
+	// Special case for y=+-pi/2
 	if(DbleEqual(fabs(R13),1))
 	{	// Remaining elements are cos(x+z) and sin(x+z)
 		// Can only determine the sum, so take x=0 and find z = z+z
@@ -1855,14 +1963,14 @@ void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,do
 		if(!DbleEqual(R22,cos(z))) z=PI_CONSTANT-z;
 	}
 	
-	// assume y is not ±pi/2
+	// assume y is not +-pi/2
 	else
 	{	if(!DbleEqual(R11,0))
 		{	z=atan(-R12/R11);
 			if(!DbleEqual(R11,cos(y)*cos(z))) z-=PI_CONSTANT;
 		}
 		else
-		{	// Cos[z]=0, Sin[z]=±1, Cos[y]­0
+		{	// Cos[z]=0, Sin[z]=+-1, Cos[y]!=0
 			if(DbleEqual(R12,-cos(y)))
 				z=PI_CONSTANT/2.;		// Sin[z]=1
 			else
@@ -1875,7 +1983,7 @@ void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,do
 			if(!DbleEqual(R33,cos(y)*cos(x))) x-=PI_CONSTANT;
 		}
 		else
-		{	// Cos[x]=0, Sin[x]=±1, Cos[y]­0
+		{	// Cos[x]=0, Sin[x]=+-1, Cos[y]!=0
 			if(DbleEqual(R23,-cos(y)))
 				x=PI_CONSTANT/2.;		// Sin[x]=1
 			else

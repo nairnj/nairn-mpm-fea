@@ -165,6 +165,19 @@ void MatPoint2D::SetVelocity(Vector *pt)
 	vel.z=0.;
 }
 
+// set stress (2D) (in Pa)
+void MatPoint2D::SetStress( Tensor *ss )
+{
+  sp.xx = ss->xx;
+  sp.yy = ss->yy;
+  sp.zz = ss->zz;
+  sp.xy = ss->xy;
+  sp.yz = ss->yz;
+  sp.xz = ss->xz;
+  
+}
+
+
 // thickness (in mm)
 double MatPoint2D::thickness() { return thick; }
 
