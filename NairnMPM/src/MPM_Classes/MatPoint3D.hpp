@@ -28,6 +28,7 @@ class MatPoint3D : public MPMBase
 		virtual void SetOrigin(Vector *);
         virtual void SetPosition(Vector *);
         virtual void SetVelocity(Vector *);
+        virtual void SetStress(Tensor *);
         virtual double thickness(void);
 		virtual void UpdateStrain(double,int,int,void *,int);
 		virtual void PerformConstitutiveLaw(Matrix3,double,int,void *,ResidualStrains *);

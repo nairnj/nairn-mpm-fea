@@ -62,6 +62,7 @@ class MPMBase : public LinkedObject
         virtual void SetOrigin(Vector *) = 0;
         virtual void SetPosition(Vector *) = 0;
         virtual void SetVelocity(Vector *) = 0;
+        virtual void SetStress(Tensor *) = 0;
 		virtual void UpdateStrain(double,int,int,void *,int) = 0;
 		virtual void GetFintPlusFext(Vector *,double,double,double,double) = 0;
 		virtual void MovePosition(double,Vector *,Vector *,double) = 0;
