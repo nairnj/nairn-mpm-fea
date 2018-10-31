@@ -1846,7 +1846,7 @@ void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,do
 	double y=asin(R13);
 	double x,z;
 	
-	// Special case for y=±pi/2
+	// Special case for y=+-pi/2
 	if(DbleEqual(fabs(R13),1))
 	{	// Remaining elements are cos(x+z) and sin(x+z)
 		// Can only determine the sum, so take x=0 and find z = z+z
@@ -1855,14 +1855,14 @@ void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,do
 		if(!DbleEqual(R22,cos(z))) z=PI_CONSTANT-z;
 	}
 	
-	// assume y is not ±pi/2
+	// assume y is not +-pi/2
 	else
 	{	if(!DbleEqual(R11,0))
 		{	z=atan(-R12/R11);
 			if(!DbleEqual(R11,cos(y)*cos(z))) z-=PI_CONSTANT;
 		}
 		else
-		{	// Cos[z]=0, Sin[z]=±1, Cos[y]­0
+		{	// Cos[z]=0, Sin[z]=+-1, Cos[y]!=0
 			if(DbleEqual(R12,-cos(y)))
 				z=PI_CONSTANT/2.;		// Sin[z]=1
 			else
@@ -1875,7 +1875,7 @@ void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,do
 			if(!DbleEqual(R33,cos(y)*cos(x))) x-=PI_CONSTANT;
 		}
 		else
-		{	// Cos[x]=0, Sin[x]=±1, Cos[y]­0
+		{	// Cos[x]=0, Sin[x]=+-1, Cos[y]!=0
 			if(DbleEqual(R23,-cos(y)))
 				x=PI_CONSTANT/2.;		// Sin[x]=1
 			else
