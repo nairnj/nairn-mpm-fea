@@ -74,7 +74,7 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 }
 
 // decode quant it to quantity ID and subcode (used for history variables)
-int GlobalQuantity::DecodeGlobalQuantity(char *quant,int *hcode)
+int GlobalQuantity::DecodeGlobalQuantity(const char *quant,int *hcode)
 {
 	int theQuant;
 	
@@ -188,9 +188,9 @@ int GlobalQuantity::DecodeGlobalQuantity(char *quant,int *hcode)
 	else if(strcmp(quant,"dispz")==0)
 		theQuant=AVG_DISPZ;
 	
-	else if(strcmp(quant,"temp")==0)
+	else if(strcmp(quant,"temp")==0 || strcmp(quant,"Temp")==0 || strcmp(quant,"Temperature")==0 || strcmp(quant,"temperature")==0)
 		theQuant=AVG_TEMP;
-	else if(strcmp(quant,"concentration")==0)
+	else if(strcmp(quant,"concentration")==0 || strcmp(quant,"porepressure")==0)
 		theQuant=WTFRACT_CONC;
 	else if(strcmp(quant,"Step number")==0)
 		theQuant=STEP_NUMBER;
@@ -482,11 +482,12 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 				if(IncludeThisMaterial(matid))
 				{	switch(quantity)
                     {   case KINE_ENERGY:
-							value += 0.5*mpm[p]->mp*(mpm[p]->vel.x*mpm[p]->vel.x
+						{	value += 0.5*mpm[p]->mp*(mpm[p]->vel.x*mpm[p]->vel.x
 																+ mpm[p]->vel.y*mpm[p]->vel.y);
 							if(threeD)
 								value += 0.5*mpm[p]->mp*(mpm[p]->vel.z*mpm[p]->vel.z);
                             break;
+						}
 						case WORK_ENERGY:
 							value += mpm[p]->mp*mpm[p]->GetWorkEnergy();
 							break;
@@ -642,16 +643,19 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			break;
 		
 		case WTFRACT_CONC:
-		{	double totalWeight=0.;
-			for(p=0;p<nmpms;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
-				{	double csat = mpm[p]->GetConcSaturation();
-					value += mpm[p]->pPreviousConcentration*csat*mpm[p]->mp;
-					totalWeight += mpm[p]->mp;
-				}
+		{	if(fmobj->HasDiffusion())
+			{	// get total solvent content divided by total mass for total weight fraction
+					double totalWeight=0.;
+					for(p=0;p<nmpms;p++)
+					{	matid = mpm[p]->MatID();
+						if(IncludeThisMaterial(matid))
+						{	double csat = mpm[p]->GetConcSaturation();
+							value += mpm[p]->pPreviousConcentration*csat*mpm[p]->mp;
+							totalWeight += mpm[p]->mp;
+						}
+					}
+					if(totalWeight>0.) value /= totalWeight;
 			}
-			if(totalWeight>0.) value /= totalWeight;
 			break;
 		}
 		
@@ -694,53 +698,56 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		case TOT_FCONX:
 		case TOT_FCONY:
 		case TOT_FCONZ:
-        {   // Three options
-            //   1. VTK active, but not doing contact
-            //   2. VTK inactive
-            //   3. VTK active and archiving contact
-            // When 1 and 2, all contact stuff here, which means must
-            //     a. update lastArchiveContactStep, which is done in GetArchiveContactStepInterval
-            //     b. clear force after reading
-            //     c. Store last contact force in case another component is called next
-            //     d. totalSteps will never be zero, so no need to track last contact force
-            // When 3
-            //     a. VTK archiving tracks lastArchiveContactStep
-            //     b. Do not clear force (it is cleared on each VTK archive)
-            //     c. VTK archiving will also save contact forces in case get here just after VTK archiving
-            //          (since global archiving done after step is done
-			
-			// time steps since last cleared
-			int totalSteps = archiver->GetArchiveContactStepInterval();
-			
-			// true if VTK archve inactive or it is not archiving contact on the grid
-			bool clearForces = !archiver->GetDoingArchiveContact();
-			
-			// get array of vectors to store contact force for each material
-			Vector *forces = archiver->GetLastContactForcePtr();
-			
-			// this vector will be filled
+		{	// this vector will be filled
 			Vector ftotal;
 			ZeroVector(&ftotal);
+			bool hasForce = false;
 			
-			// if needed sum forces on all nodes
-			if(totalSteps>0)
-			{	// non-zero steps, may or may not be doing VTKArchive
-				for(int im=0;im<maxMaterialFields;im++) ZeroVector(&forces[im]);
-				double scale = -1./(double)totalSteps;
-				for(p=1;p<=nnodes;p++)
-				{	nd[p]->AddGetContactForce(clearForces,forces,scale,NULL);
+			if(!hasForce)
+			{	// Three options
+				//   1. VTK active, but not doing contact
+				//   2. VTK inactive
+				//   3. VTK active and archiving contact
+				// When 1 and 2, all contact stuff here, which means must
+				//     a. update lastArchiveContactStep, which is done in GetArchiveContactStepInterval
+				//     b. clear force after reading
+				//     c. Store last contact force in case another component is called next
+				//     d. totalSteps will never be zero, so no need to track last contact force
+				// When 3
+				//     a. VTK archiving tracks lastArchiveContactStep
+				//     b. Do not clear force (it is cleared on each VTK archive)
+				//     c. VTK archiving will also save contact forces in case get here just after VTK archiving
+				//          (since global archiving done after step is done
+				
+				// time steps since last cleared
+				int totalSteps = archiver->GetArchiveContactStepInterval();
+				
+				// true if VTK archve inactive or it is not archiving contact on the grid
+				bool clearForces = !archiver->GetDoingArchiveContact();
+				
+				// get array of vectors to store contact force for each material
+				Vector *forces = archiver->GetLastContactForcePtr();
+				
+				// if needed sum forces on all nodes
+				if(totalSteps>0)
+				{	// non-zero steps, may or may not be doing VTKArchive
+					for(int im=0;im<maxMaterialFields;im++) ZeroVector(&forces[im]);
+					double scale = -1./(double)totalSteps;
+					for(p=1;p<=nnodes;p++)
+					{	nd[p]->AddGetContactForce(clearForces,forces,scale,NULL);
+					}
 				}
-			}
-			
-			// extract proper force (sum or one value
-			for(int im=0;im<maxMaterialFields;im++)
-			{	if(whichMat==0)
-				{	AddVector(&ftotal,&forces[im]);
+				
+				// extract proper force (sum or one value)
+				for(int im=0;im<maxMaterialFields;im++)
+				{	if(whichMat==0)
+					{	AddVector(&ftotal,&forces[im]);
+					}
+					else if(whichMat==MaterialBase::GetFieldMatID(im)+1)
+					{	AddVector(&ftotal,&forces[im]);
+						break;
+				   }
 				}
-				else if(whichMat==MaterialBase::GetFieldMatID(im)+1)
-				{	AddVector(&ftotal,&forces[im]);
-					break;
-			   }
 			}
 				
  			// pick the component
@@ -771,7 +778,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		}
 		
 		case TOT_REACTQ:
-		{	// find heat flow for BCs with provided ID (J in Legacy)
+		{	// find heat flow for BCs with provided ID (J/sec in Legacy)
 			double qreaction = NodalTempBC::TotalHeatReaction(whichMat);
 			value = qreaction*UnitsController::Scaling(1.e-9);
 			break;
@@ -911,7 +918,7 @@ bool GlobalQuantity::IncludeThisMaterial(int matid)
 	if(matid+1==whichMat) return (bool)true;
 	
 	// otherwise only allow non-rigid materials
-	if(whichMat==0 && !theMaterials[matid]->Rigid()) return (bool)true;
+	if(whichMat==0 && !theMaterials[matid]->IsRigid()) return (bool)true;
 	
 	return (bool)false;
 }

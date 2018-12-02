@@ -26,7 +26,7 @@ CalcJKTask *theJKTask=NULL;
 
 // Constructors
 CalcJKTask::CalcJKTask()
-{	theJKTask=this;
+{	
 	// allocate J integral data on each particle
     int p;
 	for(p=0;p<nmpmsNR;p++)

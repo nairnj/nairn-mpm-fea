@@ -13,12 +13,15 @@ EndHeader
 #analysis$="Plane Strain MPM"
 Analysis #analysis$
 MPMMethod USF,lCPDI
+Processors 4
 
 ! ********** Parameters Section **********
 #matID$="idealgas"		! can be "idealgas" or "liquid"
-#strain=0				! strain
-#room=50				! extra strain room for thermal expansion
-#tmult=100
+#mode$="Adiabatic"		! Isothermal or Adiabatic
+
+#strain=-40				! strain
+#room=40				! extra strain room for thermal expansion
+#tmult=20				! load in this multiple of wave transits
 
 #cell=5                 ! cell size (cubic cells)
 #ywidth=40              ! width in the y direction (mult of cell)
@@ -29,24 +32,48 @@ StressFreeTemp 288.15
 #startTemp=288.15
 
 ! calculate wave speed (mm/sec)
-if #matID$="idealgas"
-  #P0=.101
-  #T0=288.15
-  #rho0=0.001164
-  #speed=1000000*sqrt(5000*#P0*#startTemp*#rho0/(3*#T0))
-else
-  #Kbulk=2200
-  #rho0=1
-  #speed=1000*sqrt(1000*#Kbulk/#rho0)	     
-endif
+#P0=.101
+#T0=288.15
+#rho0=0.001164
+#speed=1000000*sqrt(5000*#P0*#startTemp*#rho0/(3*#T0))
+
 #transit=1000*#length/#speed             ! transit time in ms
 #time=#tmult*#transit                    ! time to peak load in ms
 #disp=#strain*#length/100                ! mm of displacement
 #disprate=1000*#disp/#time               ! displacement rate mm/s
 
-#totalHeat=8							 ! total heat applied as flux on the edges
-#constP=#P0							 ! <0 to ignore
-conduction "Yes","Adiabatic"
+! To get Cv: give heat, set disprate=0 and constP<0
+! To get Cp: give heat, set disprate=0 and pick constP
+#totalHeat=-1							 ! total heat applied as flux on the edges
+if #totalHeat>0
+  #disprate=0
+  #constP=1							     ! <0 to ignore
+else
+  #constP=-1
+endif
+conduction "Yes",#mode$
+
+if #constP<0
+    Comment "Displacement rate = "&(#disprate/1000)&" m/s"
+    Comment "Strain (%) = "&(100*#disprate/#length/1000)&"*x (x is time in ms)"
+endif
+
+! Print some theories for gas only (do not apply to liquids yet and assumed monotonic)
+! strain vs time
+#et=#disprate/(1000*#length)
+if #mode$="Isothermal"
+  Comment "Temperature = "&#T0
+  Comment "Stress = "&(-#P0)&"/(1+("&#et&")*x) (x is time in ms)"
+  Comment "Work = "&(-#P0*#length*#ywidth*#zwidth/1000)&"*log(1+("&#et&")*x) (x is time in ms)"
+  Comment "Heat = -Work"
+  Comment "Entropy = "&(#P0*#length*#ywidth*#zwidth/(1000*#T0))&"*log(1+("&#et&")*x) (x is time in ms)"
+else
+  Comment "Temperature = "&#T0&"/(1+("&#et&")*x)^(2/3) (x is time in ms)"
+  Comment "Stress = "&(-#P0)&"/(1+("&#et&")*x)^(5/3) (x is time in ms)"
+  Comment "Work = "&(1.5*#P0*#length*#ywidth*#zwidth/1000)&"*(1/(1+("&#et&")*x)^(2/3)-1) (x is time in ms)"
+  Comment "Heat = 0"
+  Comment "Entropy = 0"
+endif
 
 ! Archiving
 Archive "Results/"&#matID$
@@ -64,17 +91,7 @@ if #matID$="idealgas"
   Done
 endif
 
-XMLData Material,"liquid"
-  <Material Type="27" Name="Water">
-    <K>2200</K>
-    <viscosity>1</viscosity>
-    <rho>1</rho>
-    <kCond>0</kCond>
-    <Cv>418.13</Cv>
-    <alpha>70</alpha>
-  </Material>
-EndXMLData
-
+! Pistonc
 Material "rigid","Loading Clamp","Rigid"
   direction 1
   SettingFunction #disprate
@@ -96,10 +113,10 @@ Done
 
 if #constP>0
   Material "plug","Isotropic","Isotropic"
-    E 1
+    E 100
     nu .33
     alpha 0
-    rho .1
+    rho 10
   Done
 endif
 
@@ -111,6 +128,7 @@ GlobalArchive "Entropy",#matID$
 GlobalArchive "Heat Energy",#matID$
 GlobalArchive "Work Energy",#matID$
 GlobalArchive "Internal Energy",#matID$
+GlobalArchive "temp",#matID$
 GlobalArchiveTime #time/100
 
 ! ********** Grid and Material Points Section **********
@@ -169,6 +187,7 @@ else
     Rect 0,#length+#excess,#ywidth,#ywidth+#cell
   EndRegion
 
+  ! Load by traction for constant P or load witgh strain rate
   if #constP>0
     Region "plug",0,0,#zwidth
       Rect #length,#length+2*#cell,0,#ywidth
@@ -183,20 +202,24 @@ else
   endif
   
   if #totalHeat>0
-     #area=2*(#length+#ywidth)*#zwidth/1e6
-  	 #dQ=1000*#totalHeat/(#time*#area)
-     LoadLine #cell/4,0,#cell/4,#ywidth
+     #area=2*(#length+#ywidth)*#zwidth/1e6   ! in m^2
+  	 #dQ=1000*#totalHeat/(#time*#area)		  ! J/(m^2-s)
+  	 ParticleBC
+       Line #cell/4,#cell/4,0,#ywidth
        HeatFlux "external",4,"constant",#dQ
-     EndLoadLine
-     LoadLine #length-#cell/4,0,#length-#cell/4,#ywidth
+     EndParticleBC
+     ParticleBC
+       Line #length-#cell/4,#length-#cell/4,0,#ywidth
        HeatFlux "external",2,"constant",#dQ
-     EndLoadLine
-     LoadLine 0,#cell/4,#length,#cell/4
+     EndParticleBC
+     ParticleBC
+       Line 0,#length,#cell/4,#cell/4
        HeatFlux "external",1,"constant",#dQ
-     EndLoadLine
-     LoadLine 0,#ywidth-#cell/4,#length,#ywidth-#cell/4
+     EndParticleBC
+     ParticleBC
+       Line 0,#length,#ywidth-#cell/4,#ywidth-#cell/4
        HeatFlux "external",3,"constant",#dQ
-     EndLoadLine
+     EndParticleBC
   endif
 endif
 

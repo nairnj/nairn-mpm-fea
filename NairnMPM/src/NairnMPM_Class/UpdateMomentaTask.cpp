@@ -27,6 +27,8 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Cracks/CrackNode.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Nodes/MaterialContactNode.hpp"
+#include "Boundary_Conditions/NodalVelBC.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -40,45 +42,31 @@ UpdateMomentaTask::UpdateMomentaTask(const char *name) : MPMTask(name)
 // throws CommonException()
 void UpdateMomentaTask::Execute(void)
 {
-	CommonException *umErr = NULL;
-	
 #pragma omp parallel for
-	for(int i=1;i<=nnodes;i++)
-	{	NodalPoint *ndptr = nd[i];
+	for(int i=1;i<=*nda;i++)
+	{	NodalPoint *ndptr = nd[nda[i]];
 		
+		// update nodal momenta
 		ndptr->UpdateMomentaOnNode(timestep);
 		
-		// get grid transport rates (update transport properties when particle state updated)
-		// do first so both material and crack contact will have actual rates
-		TransportTask *nextTransport=transportTasks;
-		while(nextTransport!=NULL)
-			nextTransport = nextTransport->GetTransportRates(ndptr,timestep);
-
-		// material contact
-		if(fmobj->multiMaterialMode)
-		{	try
-			{	ndptr->MaterialContactOnNode(timestep,UPDATE_MOMENTUM_CALL);
-			}
-			catch(std::bad_alloc&)
-			{	if(umErr==NULL)
-				{
-#pragma omp critical (error)
-					umErr = new CommonException("Memory error","UpdateMomentaTask::Execute");
-				}
-			}
-			catch(...)
-			{	if(umErr==NULL)
-				{
-#pragma omp critical (error)
-					umErr = new CommonException("Unexpected error","UpdateMomentaTask::Execute");
-				}
-			}
-		}
+		// get grid transport rates
+		TransportTask::GetTransportRatesOnNode(ndptr);
 	}
 	
-	// throw error now
-	if(umErr!=NULL) throw *umErr;
+	// contact and BCs
+	ContactAndMomentaBCs(UPDATE_MOMENTUM_CALL);
+}
 
+// do contact calculations and impose momenta conditions
+void UpdateMomentaTask::ContactAndMomentaBCs(int passType)
+{
+	// material contact
+	MaterialContactNode::ContactOnKnownNodes(timestep,passType);
+	
 	// adjust momenta and forces for crack contact on known nodes
-	CrackNode::CrackContactTask4(timestep);
+	CrackNode::ContactOnKnownNodes(timestep,passType);
+
+	// Impose velocity BCs
+	NodalVelBC::GridMomentumConditions(passType);
+
 }

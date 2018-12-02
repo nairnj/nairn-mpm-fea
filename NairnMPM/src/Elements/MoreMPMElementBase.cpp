@@ -30,6 +30,7 @@ ElementBase::ElementBase(int eNum,int *eNode)
     for(i=0;i<MaxElNd;i++) nodes[i]=eNode[i];
 	neighbors=NULL;
     filled=0;
+	// PHCNew
 }
 
 ElementBase::~ElementBase()
@@ -47,49 +48,18 @@ ElementBase::~ElementBase()
 void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
 {
     switch(useGimp)
-    {
-#ifdef LOAD_GIMP_INFO
+	{	case UNIFORM_GIMP:
+        case UNIFORM_GIMP_AS:
+		case BSPLINE_GIMP:
+		case BSPLINE:
 		case POINT_GIMP:
 			GetXiPos(&mpmptr->pos,mpmptr->GetNcpos());
 			break;
 			
-        case UNIFORM_GIMP:
-        case UNIFORM_GIMP_AS:
-		{	// during initialization, find dimensionless position, and nodes for non-zero shape function
-			Vector *xipos = mpmptr->GetNcpos();
-            GetXiPos(&mpmptr->pos,xipos);
-			Vector lp;
-            mpmptr->GetDimensionlessSize(lp);
-			GIMPNodes *gimp = mpmptr->GetGIMPInfo();
-            GetGimpNodes(gimp->nds,gimp->nds,gimp->ndIDs,xipos,lp);
-			double fn[maxShapeNodes];
-            GimpShapeFunction(xipos,gimp->nds[0],gimp->ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
-			
-			// compact the nodes and ndIDs
-			int local=NumberNodes();
-			int found=local;
-			for(int i=local+1;i<=gimp->nds[0];i++)
-			{	if(fn[i]<=0.0) continue;
-				gimp->ndIDs[found] = gimp->ndIDs[i-1];
-				found++;
-				gimp->nds[found]=gimp->nds[i];
-				fn[found]=fn[i];
-			}
-			gimp->nds[0]=found;
-            break;
-		}
-			
-#else
-		case POINT_GIMP:
-        case UNIFORM_GIMP:
-        case UNIFORM_GIMP_AS:
-			GetXiPos(&mpmptr->pos,mpmptr->GetNcpos());
-			break;
-			
-#endif
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
+		case BSPLINE_CPDI:
 			mpmptr->GetCPDINodesAndWeights(useGimp);
             break;
     }
@@ -101,50 +71,45 @@ void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
   NOTE: crackParticleSize=0 should be classic, could special case it if
 	see numerical issues
 */
-void ElementBase::GetShapeFunctionsForCracks(double *fn,int *nds,Vector *pos) const
+void ElementBase::GetShapeFunctionsForCracks(double *fn,int *nds,const Vector &pos) const
 {
 	// Get position
 	Vector xipos;
-	GetXiPos(pos,&xipos);
+	GetXiPos(&pos,&xipos);
 
-#ifdef CRACK_GIMP
 	switch(useGimp)
-    {   case POINT_GIMP:
+	{	case BSPLINE:
+		case BSPLINE_GIMP:
+		case BSPLINE_CPDI:
+			SplineShapeFunction(nds,&xipos,false,&fn[1],NULL,NULL,NULL);
+			break;
+		
+		default:
 			// Load element noodes, dimensionless position, and shape functions
 			GetNodes(&nds[0],nds);
 			ShapeFunction(&xipos,false,&fn[1],NULL,NULL,NULL);
 			break;
-			
-        case LINEAR_CPDI:
-        case QUADRATIC_CPDI:
-			// since no material point, CPDI uses GIMP method
-        case UNIFORM_GIMP:
-		{	// GIMP analysis
-			unsigned char ndIDs[maxShapeNodes];
-			Vector lp = MakeVector(mpmgrid.crackParticleSize,mpmgrid.crackParticleSize,mpmgrid.crackParticleSize);
-			GetGimpNodes(&nds[0],nds,ndIDs,&xipos,lp);
-			GimpShapeFunction(&xipos,nds[0],ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
-			GimpCompact(&nds[0],nds,fn,NULL,NULL,NULL);
+	}
+}
+
+/* Find shape functions for traction BC calculations given dimensionless position
+	Finds nodes (if needed) and then calls simple function
+*/
+void ElementBase::GetShapeFunctionsForTractions(double *fn,int *nds,Vector *xipos) const
+{
+	switch(useGimp)
+	{	case BSPLINE:
+		case BSPLINE_GIMP:
+		case BSPLINE_CPDI:
+			SplineShapeFunction(nds,xipos,false,&fn[1],NULL,NULL,NULL);
 			break;
-		}
 			
-		case LINEAR_CPDI_AS:
-			// since no material point, CPDI uses GIMP method
-        case UNIFORM_GIMP_AS:
-		{	// GIMP analysis
-			unsigned char ndIDs[maxShapeNodes];
-			Vector lp = MakeVector(mpmgrid.crackParticleSize,mpmgrid.crackParticleSize,mpmgrid.crackParticleSize);
-			GetGimpNodes(&nds[0],nds,ndIDs,&xipos,lp);
-			GimpShapeFunctionAS(&xipos,nds[0],ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
-			GimpCompact(&nds[0],nds,fn,NULL,NULL,NULL);
+		default:
+			// Load element noodes, dimensionless position, and shape functions
+			GetNodes(&nds[0],nds);
+			ShapeFunction(xipos,false,&fn[1],NULL,NULL,NULL);
 			break;
-		}
-     }
-#else
-	// Load element noodes, dimensionless position, and shape functions
-	GetNodes(&nds[0],nds);
-	ShapeFunction(&xipos,false,&fn[1],NULL,NULL,NULL);
-#endif
+	}
 }
 
 /*
@@ -162,67 +127,43 @@ void ElementBase::GetShapeFunctions(double *fn,int **ndsHandle,MPMBase *mpmptr) 
 {
     Vector lp;
 	int *nds = *ndsHandle;
-    
+	
     switch(useGimp)
     {   case POINT_GIMP:
 			// load coordinates if not already done
             GetNodes(&nds[0],nds);
             ShapeFunction(mpmptr->GetNcpos(),false,&fn[1],NULL,NULL,NULL);
             break;
+			
+		case BSPLINE:
+			SplineShapeFunction(nds,mpmptr->GetNcpos(),false,&fn[1],NULL,NULL,NULL);
+			break;
 
-#ifdef LOAD_GIMP_INFO
         case UNIFORM_GIMP:
         {	// GIMP analysis
-            Vector *xipos = mpmptr->GetNcpos();
-            mpmptr->GetDimensionlessSize(lp);
-			GIMPNodes *gimp = mpmptr->GetGIMPInfo();
-            GimpShapeFunction(xipos,gimp->nds[0],gimp->ndIDs,false,&fn[1],NULL,NULL,NULL,lp);
-			*ndsHandle = gimp->nds;
+			Vector *xipos = mpmptr->GetNcpos();
+			mpmptr->GetDimensionlessSize(lp);
+			GimpShapeFunction(xipos,nds,false,&fn[1],NULL,NULL,NULL,lp);
             break;
         }
             
         case UNIFORM_GIMP_AS:
         {	// GIMP analysis
-            Vector *xipos = mpmptr->GetNcpos();
-            mpmptr->GetDimensionlessSize(lp);
-			GIMPNodes *gimp = mpmptr->GetGIMPInfo();
-            GimpShapeFunctionAS(xipos,gimp->nds[0],gimp->ndIDs,false,&fn[1],NULL,NULL,NULL,lp);
-			*ndsHandle = gimp->nds;
-            break;
-        }
-            
-#else
-        case UNIFORM_GIMP:
-        {	// GIMP analysis
-#ifdef CONST_ARRAYS
-			unsigned char ndIDs[MAX_SHAPE_NODES];
-#else
-            unsigned char ndIDs[maxShapeNodes];
-#endif
-            Vector *xipos = mpmptr->GetNcpos();
-            mpmptr->GetDimensionlessSize(lp);
-            GetGimpNodes(&nds[0],nds,ndIDs,xipos,lp);
-            GimpShapeFunction(xipos,nds[0],ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
-            GimpCompact(&nds[0],nds,fn,NULL,NULL,NULL);
-            break;
-        }
-            
-        case UNIFORM_GIMP_AS:
-        {	// GIMP analysis
-#ifdef CONST_ARRAYS
-			unsigned char ndIDs[MAX_SHAPE_NODES];
-#else
-            unsigned char ndIDs[maxShapeNodes];
-#endif
-            Vector *xipos = mpmptr->GetNcpos();
-            mpmptr->GetDimensionlessSize(lp);
-			GetGimpNodes(&nds[0],nds,ndIDs,xipos,lp);
-            GimpShapeFunctionAS(xipos,nds[0],ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
-            GimpCompact(&nds[0],nds,fn,NULL,NULL,NULL);
+			Vector *xipos = mpmptr->GetNcpos();
+			mpmptr->GetDimensionlessSize(lp);
+			GimpShapeFunctionAS(xipos,nds,false,&fn[1],NULL,NULL,NULL,lp);
 			break;
         }
             
-#endif
+		case BSPLINE_GIMP:
+		{	// B2GIMP analysis
+			Vector *xipos = mpmptr->GetNcpos();
+			mpmptr->GetDimensionlessSize(lp);
+			BGimpShapeFunction(xipos,nds,FALSE,&fn[1],NULL,NULL,NULL,lp);
+			break;
+		}
+
+		case BSPLINE_CPDI:
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
@@ -267,59 +208,35 @@ void ElementBase::GetShapeGradients(double *fn,int **ndsHandle,
             }
             break;
             
-#ifdef LOAD_GIMP_INFO
-        case UNIFORM_GIMP:
-        {	// GIMP analysis
-            Vector *xipos = mpmptr->GetNcpos();
-            mpmptr->GetDimensionlessSize(lp);
-			GIMPNodes *gimp = mpmptr->GetGIMPInfo();
-			GimpShapeFunction(xipos,gimp->nds[0],gimp->ndIDs,true,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
-			*ndsHandle = gimp->nds;
-            break;
-        }
-            
-        case UNIFORM_GIMP_AS:
-        {	// GIMP analysis
-            Vector *xipos = mpmptr->GetNcpos();
-            mpmptr->GetDimensionlessSize(lp);
-			GIMPNodes *gimp = mpmptr->GetGIMPInfo();
-            GimpShapeFunctionAS(xipos,gimp->nds[0],gimp->ndIDs,true,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
-			*ndsHandle = gimp->nds;
-            break;
-        }
-            
-#else
+		case BSPLINE:
+			SplineShapeFunction(nds,mpmptr->GetNcpos(),true,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+			break;
+			
         case UNIFORM_GIMP:
         {	// uGIMP analysis
-#ifdef CONST_ARRAYS
-			unsigned char ndIDs[MAX_SHAPE_NODES];
-#else
-			unsigned char ndIDs[maxShapeNodes];
-#endif
-            Vector *xipos = mpmptr->GetNcpos();
-            mpmptr->GetDimensionlessSize(lp);
-            GetGimpNodes(&nds[0],nds,ndIDs,xipos,lp);
-            GimpShapeFunction(xipos,nds[0],ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
-            GimpCompact(&nds[0],nds,fn,xDeriv,yDeriv,zDeriv);
+			Vector *xipos = mpmptr->GetNcpos();
+			mpmptr->GetDimensionlessSize(lp);
+			GimpShapeFunction(xipos,nds,true,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
             break;
         }
             
         case UNIFORM_GIMP_AS:
         {	// uGIMP analysis
-#ifdef CONST_ARRAYS
-			unsigned char ndIDs[MAX_SHAPE_NODES];
-#else
-			unsigned char ndIDs[maxShapeNodes];
-#endif
-            Vector *xipos = mpmptr->GetNcpos();
-            mpmptr->GetDimensionlessSize(lp);
-            GetGimpNodes(&nds[0],nds,ndIDs,xipos,lp);
-            GimpShapeFunctionAS(xipos,nds[0],ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
-            GimpCompact(&nds[0],nds,fn,xDeriv,yDeriv,zDeriv);
+			Vector *xipos = mpmptr->GetNcpos();
+			mpmptr->GetDimensionlessSize(lp);
+			GimpShapeFunctionAS(xipos,nds,true,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
             break;
         }
             
-#endif
+		case BSPLINE_GIMP:
+		{	// uGIMP analysis
+			Vector *xipos = mpmptr->GetNcpos();
+			mpmptr->GetDimensionlessSize(lp);
+			BGimpShapeFunction(xipos,nds,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
+			break;
+		}
+
+		case BSPLINE_CPDI:
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
 		case QUADRATIC_CPDI:
@@ -335,7 +252,7 @@ void ElementBase::GetShapeGradients(double *fn,int **ndsHandle,
 	output: xipos is dimensionless position
 	only used in MPM and only here if non-rectangular elements
 */
-void ElementBase::GetXiPos(Vector *pos,Vector *xipos) const
+void ElementBase::GetXiPos(const Vector *pos,Vector *xipos) const
 {
     double xt,yt,dxxi,dxeta,dyxi,dyeta;
     double deter,dxi,deta,dist;
@@ -539,50 +456,33 @@ void ElementBase::MPMPoints(short numPerElement,Vector *mpos) const
     }
 }
 
-// Get GIMP nodes around an element #num, but only where shape functions is non zero
-// assumed to be properly numbered regular array
-// load nodes into nds[1]... and node IDs (0-15) into ndIDs[0]...
-// Elements that support GIMP must override
-void ElementBase::GetGimpNodes(int *numnds,int *nds,unsigned char  *ndIDs,Vector *xipos,Vector &lp) const
-{
-}
-
 // get GIMP shape functions and optionally derivatives wrt x and y
 // assumed to be properly numbered regular array
-// input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
+// input *xi position in element coordinate
+// Output number of nodes in nds[0] and nodes in nds[1] to nds[nds[0]]
 // Elements that support GIMP must override
-void ElementBase::GimpShapeFunction(Vector *xi,int numnds,unsigned char *ndIDs,int getDeriv,double *sfxn,
-										 double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
-{
-}
-
-// get GIMP shape functions and optionally derivatives wrt x and y
-// assumed to be properly numbered regular array
-// input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
-// Only that elements that support axisymmetric GIMP must override
-void ElementBase::GimpShapeFunctionAS(Vector *xi,int numnds,unsigned char *ndIDs,int getDeriv,double *sfxn,
+void ElementBase::GimpShapeFunction(Vector *xi,int *nds,int getDeriv,double *sfxn,
 									double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
 }
 
-// Ignore zero shape functions in GIMP, but only need to check remote nodes
-void ElementBase::GimpCompact(int *numnds,int *nds,double *sfxn,double *xDeriv,double *yDeriv,double *zDeriv) const
+// get GIMP shape functions and optionally derivatives wrt x and y
+// assumed to be properly numbered regular array
+// input *xi position in element coordinate
+// output number of nodes in nds[0] and nodes in nds[1] to nds[nds[0]]
+// Only that elements that support axisymmetric GIMP must override
+void ElementBase::GimpShapeFunctionAS(Vector *xi,int *nds,int getDeriv,double *sfxn,
+									  double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
-	int local=NumberNodes();
-	int i,found=local;
-	for(i=local+1;i<=*numnds;i++)
-	{	if(sfxn[i]>0.0)
-		{	found++;
-			nds[found]=nds[i];
-			sfxn[found]=sfxn[i];
-			if(xDeriv!=NULL)
-			{	xDeriv[found]=xDeriv[i];
-				yDeriv[found]=yDeriv[i];
-				if(zDeriv!=NULL) zDeriv[found]=zDeriv[i];
-			}
-		}
-	}
-	*numnds=found;
+}
+
+// get GIMP shape functions and optionally derivatives wrt x and y
+// assumed to be properly numbered regular array
+// input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
+// Elements that support GIMP must override
+void ElementBase::BGimpShapeFunction(Vector *xi,int *nds,int getDeriv,double *sfxn,
+									double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
+{
 }
 
 // check if this GIMP element is on the edge of the grid
@@ -604,17 +504,26 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 	int i,j,numnds;
 	CPDIDomain **cpdi = mpmptr->GetCPDIInfo();
     
-	// Need 8X8 for linear CPDI in 3D, 8X4 for linear in 2D and 9X4 for quadratic in 2D (max is 64)
-	int cnodes[64],ncnds=0;         // corner nodes and counter for those nodes
-	double wsSi[64];				// hold ws * Si(xa)
-	Vector wgSi[64];				// hold wg * Si(xa)
+	// For grid shape functions having non values
+	// Array may need gridNiNodes*numCPDINodes elements
+	// Worst case (3D/splines on grid) is 8*27 = 216
+#ifdef CONST_ARRAYS
+	int cnodes[216],ncnds=0;         	// corner nodes and counter for those nodes
+	double wsSi[216];					// hold ws * Si(xa)
+	Vector wgSi[216];					// hold wg * Si(xa)
+#else
+	int worstCase = numCPDINodes*gridNiNodes;
+	int cnodes[worstCase],ncnds=0;         	// corner nodes and counter for those nodes
+	double wsSi[worstCase];					// hold ws * Si(xa)
+	Vector wgSi[worstCase];					// hold wg * Si(xa)
+#endif
 	
 	// loop over the domain nodes
 	for(i=0;i<numCPDINodes;i++)
 	{	// get straight grid shape functions
 		ElementBase *elem = theElements[cpdi[i]->inElem];
-		elem->GetNodes(&numnds,nds);
-		elem->ShapeFunction(&cpdi[i]->ncpos,false,&fn[1],NULL,NULL,NULL);
+		elem->GetShapeFunctionsForTractions(fn,nds,&cpdi[i]->ncpos);
+		numnds = nds[0];
 		
 		// loop over shape grid shape functions and collect in arrays
 		for(j=1;j<=numnds;j++)
@@ -699,10 +608,8 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 				if(count>=maxShapeNodes)
                 {
 #pragma omp critical (output)
-					{	cout << "# Found " << count-1 << " nodes; need room for remaining nodes:" << endl;
-						for(j=i;j<ncnds;j++)
-						{   cout << "#   node = " << cnodes[j] << ", ws*Si = " << endl;
-						}
+					{	cout << "# Found " << count-1 << " nodes; only room for "
+									<< maxShapeNodes << " nodes." << endl;
 						throw CommonException("Too many CPDI nodes found; increase maxShapeNodes in source code by at least number of remaining nodes","ElementBase::GetCPDIFunctions");
 					}
 				}
@@ -721,13 +628,6 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 	if(fn[count]<=1.e-10) count--;
 	
 	return count;
-}
-
-// by non-element methods that need access to grid shape functions only, and those methods are protected
-void ElementBase::GridShapeFunctions(int *numnds,int *nds,Vector *xipos,double *fn) const
-{
-    GetNodes(numnds,nds);
-    ShapeFunction(xipos,FALSE,&fn[1],NULL,NULL,NULL);
 }
 
 #pragma mark ElementBase: MPM Only Methods
@@ -792,7 +692,7 @@ int ElementBase::NearestNode(double x,double y,int *secondChoice)
 	if(distNextMin<distMin)
 	{	dist=distMin;
 		distMin=distNextMin;
-		distNextMin=distMin;
+		distNextMin=dist;
 		nearest=nodes[1];
 		nextNearest=nodes[0];
 	}
@@ -915,6 +815,19 @@ void ElementBase::GetPosition(Vector *xipos,Vector *xyzpos)
 		xyzpos->z += fn[i]*nd[nodes[i-1]]->z;
 	}
 }
+
+// Describe the element
+void ElementBase::Describe(void) const
+{
+	cout << "# Element " << num << " nodes: ";
+	int numnds = NumberNodes();
+	for(int i=0;i<numnds;i++)
+	{	cout << nodes[i];
+		if(i<numnds-1) cout << ", ";
+	}
+	cout << endl;
+}
+
 
 #pragma mark CLASS METHODS
 

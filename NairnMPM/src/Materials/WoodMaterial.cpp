@@ -13,11 +13,8 @@
 
 #pragma mark WoodMaterial::Constructors and Destructors
 
-// Constructors
-WoodMaterial::WoodMaterial() {}
-
-// Constructors
-WoodMaterial::WoodMaterial(char *matName) : HillPlastic(matName)
+// Constructor
+WoodMaterial::WoodMaterial(char *matName,int matID) : HillPlastic(matName,matID)
 {
 	tempC1=100.;
 	tempC2=0.;
@@ -79,7 +76,7 @@ void *WoodMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffe
 	int i,j;
 	for(i=0;i<6;i++)
 		for(j=0;j<6;j++)
-			p->ep.C[i][j] *= newRatio;
+			p->ep->C[i][j] *= newRatio;
 	
 	return p;
 }

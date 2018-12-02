@@ -8,7 +8,8 @@
 	Conduction calculations
    -------------------------
 	See TransportTask.cpp comments with
-		gTValue, gMTp,gQ in gCond
+		gTValue, gVCT, and gQ in gCond
+		gV is used only in revised heat method
  
 	Unique things
     --------------
@@ -65,6 +66,14 @@ TransportTask *ConductionTask::Initialize(void)
 	
 	// print task details
 	cout << "Coupled " << TaskName() << endl;
+	
+	// time step
+	char fline[256];
+	sprintf(fline,"   Conduction time step (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),transportTimeStep*UnitsController::Scaling(1.e3));
+	cout << fline << endl;
+	cout << "   Time step factor: " << fmobj->GetTransCFLCondition() << endl;
+	
+	// features
 	if(crackTipHeating)
 		cout << "   Crack tip heating activated" << endl;
 	if(crackContactHeating)
@@ -86,6 +95,26 @@ TransportTask *ConductionTask::Initialize(void)
 }
 
 #pragma mark MASS AND MOMENTUM EXTRAPOLATIONS
+
+// Task 1 Extrapolation of temperature to the grid
+// Only called for non-rigid materials
+TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape,short vfld,int matfld)
+{
+	double Cv = theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);		// nJ/(g-K) using Cv is correct
+	double CTShape = mptr->mp*Cv*shape;
+	TransportField *gTrans = GetTransportFieldPtr(ndpt);
+	double mTpTValueShape = mptr->pTemperature*CTShape;
+	gTrans->gTValue += mTpTValueShape;
+	gTrans->gVCT += CTShape;
+	Task1ContactExtrapolation(ndpt,vfld,matfld,mTpTValueShape,CTShape);
+	return nextTask;
+}
+
+// Get Vp * CTp
+double ConductionTask::GetVpCTp(MPMBase *mptr)
+{	double Cv = theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);		// nJ/(g-K) using Cv is correct
+	return mptr->mp*Cv;
+}
 
 // Zero gradients on the particles
 void ConductionTask::ZeroTransportGradients(MPMBase *mptr)
@@ -129,34 +158,42 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
     {   i=nextBC->GetNodeNum(mtime);
 		if(i!=0)
 		{	nextBC->PasteNodalValue(nd[i]);
-			nd[i]->gCond.gQ = 0.;
 			nextBC->InitQReaction();
+			double qflow = -nd[i]->gCond.gQ;
+			nextBC->SuperposeQReaction(qflow);
+			nd[i]->gCond.gQ = 0.;
 		}
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
 	}
-    
-    // Set force to - mp Cp T(no BC)/timestep (only once per node)
+
+    // Set force to - T(no BC)/timestep (only once per node)
     nextBC=firstTempBC;
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mtime);
 		if(i!=0)
-		{	if(nd[i]->gCond.gQ==0.)
-			{	double qflow = -nd[i]->gCond.gMTp*nd[i]->gCond.gTValue/deltime;
+		{	// but only once per node in case more than on Temperature BC on the node
+			if(nd[i]->gCond.gQ==0.)
+			{	// Power (energy/time)
+				double qflow = -nd[i]->gCond.gVCT*nd[i]->gCond.gTValue/deltime;
 				nd[i]->gCond.gQ = qflow;
-				nextBC->SuperposeQReaction(qflow);								// for global archive of boundary flow
+				// for global archive of boundary heat
+				nextBC->SuperposeQReaction(qflow);
 			}
 		}
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
 	}
     
-    // Now add each superposed temperature (* mp Cp) BC at incremented time
+    // Now add each superposed temperature BC at incremented time
+	// Can superpose T, but one should be absolute T and others as T increments
     nextBC=firstTempBC;
     while(nextBC!=NULL)
     {	i=nextBC->GetNodeNum(mtime);
 		if(i!=0)
-		{	double qflow = nd[i]->gCond.gMTp*nextBC->BCValue(mtime)/deltime;
+		{	// Power (energy/time)
+			double qflow = nd[i]->gCond.gVCT*nextBC->BCValue(mtime)/deltime;
 			nd[i]->gCond.gQ += qflow;
-			nextBC->SuperposeQReaction(qflow);			// for global archive of boundary flow
+			// for global archive of boundary flow
+			nextBC->SuperposeQReaction(qflow);
 		}
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
     }
@@ -198,13 +235,6 @@ void ConductionTask::StartCrackTipHeating(CrackSegment *crkTip,Vector &grow,doub
 TransportTask *ConductionTask::TransportTimeStepFactor(int matid,double *diffCon)
 {	*diffCon = theMaterials[matid]->MaximumDiffusivity();
     return nextTask;
-}
-
-// Get transport mass, mTp in notes, which here is m_p C_v and get particle value
-double ConductionTask::GetTransportMassAndValue(MPMBase *mptr,double *pTValue)
-{	double Cp = theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);		// nJ/(g-K) using Cv is correct
-    *pTValue = mptr->pTemperature;
-    return mptr->mp*Cp;
 }
 
 // return point on node to transport field

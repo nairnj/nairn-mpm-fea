@@ -23,11 +23,8 @@ int HEMGEOSMaterial::warnExcessiveX = -1;
 
 #pragma mark HEMGEOSMaterial::Constructors and Destructors
 
-// Constructors
-HEMGEOSMaterial::HEMGEOSMaterial() {}
-
-// Constructors
-HEMGEOSMaterial::HEMGEOSMaterial(char *matName) : HEIsotropic(matName)
+// Constructor
+HEMGEOSMaterial::HEMGEOSMaterial(char *matName,int matID) : HEIsotropic(matName,matID)
 {
 	gamma0=1.64;		// dimensionless
 	C0=4004000.;		// mm/sec
@@ -105,7 +102,7 @@ const char *HEMGEOSMaterial::VerifyAndLoadProperties(int np)
 	double effAlpha = (heatCapacity*gamma0)/C0squared;
 	CTE1 = effAlpha/3.;
 	
-	// this material not coupled to moisture expansion
+	// this material not coupled to moisture expansion or poroelasticity
 	betaI = 0.;
 	CME1 = 0.;
     
@@ -338,4 +335,6 @@ double HEMGEOSMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) c
     return sqrt((KcurrRed + 4.*GcurrRed/3.));
 }
 
+// not supported because moisture swelling may change MGEOS law (doe not work in Diffusion either)
+bool HEMGEOSMaterial::SupportsDiffusion(void) const { return false; }
 

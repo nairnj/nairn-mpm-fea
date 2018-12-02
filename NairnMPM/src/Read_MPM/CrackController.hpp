@@ -17,6 +17,8 @@
 
 class CrackHeader;
 class CrackSegment;
+class NodalPoint;
+class ElementBase;
 
 class CrackController : public ParseController
 {
@@ -24,8 +26,8 @@ class CrackController : public ParseController
 	
 		// methods
 		void AddCrack(CrackHeader *);
-		int AddSegment(CrackSegment *);
-        bool FinishCrack(void);
+		int AddSegment(CrackSegment *,bool);
+		bool FinishCrack(void);
         int SetCracksArray(void);
 };
 

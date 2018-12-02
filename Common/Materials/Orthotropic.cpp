@@ -16,11 +16,8 @@
 
 #pragma mark Orthotropic::Constructors and Destructors
 
-// Constructors
-Orthotropic::Orthotropic() {}
-
-// Constructors
-Orthotropic::Orthotropic(char *matName) : TransIsotropic(matName,ORTHO)
+// Constructor
+Orthotropic::Orthotropic(char *matName,int matID) : TransIsotropic(matName,matID)
 {
 #ifdef MPM_CODE
 	Dz=0.;
@@ -64,7 +61,7 @@ void Orthotropic::PrintTransportProperties(void) const
     char mline[200];
 	
 	// Diffusion constants
-	if(DiffusionTask::active)
+	if(DiffusionTask::HasFluidTransport())
 	{   sprintf(mline,"D1 =%12.3g   D2 =%12.3g   D3 =%12.3g mm^2/sec  csat = %9.5lf",diffT,diffA,Dz,concSaturation);
 		cout << mline << endl;
 	    sprintf(mline,"b1 =%12.6g   b2 =%12.6g   b3 =%12.6g 1/wt fr",betax,betay,betaz);

@@ -20,7 +20,7 @@ class BoundaryCondition;
 class MatPtLoadBC;
 
 // global variables
-extern double mtime,propTime,timestep,strainTimestep;
+extern double mtime,propTime,timestep,strainTimestepFirst,strainTimestepLast,fractionUSF;
 extern int maxCrackFields,maxMaterialFields,numActiveMaterials;
 
 class NairnMPM : public CommonAnalysis
@@ -36,12 +36,10 @@ class NairnMPM : public CommonAnalysis
 		double maxtime;					// maximum time for analysis
 		int warnParticleLeftGrid;		// warning ID
 		bool multiMaterialMode;			// TRUE to use separate velocity fields for each material
-		bool hasRigidContactParticles;	// TRUE if some particles in multimaterial mode or rigid (direction=8)
+		bool hasNoncrackingParticles;	// TRUE is some particles are ignoring the cracks
 		bool skipPostExtrapolation;		// Skip post update extrapolation
+		double timeStepMinMechanics;	// time step for  mechanics
 	
-		// parameters only active for ADD_PARTICLE_SPIN, TRACK_GRADV or EXACT_TRACTIONS
-		bool plusParticleSpin;			// MPM+PS mode
-		
         //  Constructors and Destructor
 		NairnMPM();
 		
@@ -65,14 +63,19 @@ class NairnMPM : public CommonAnalysis
 		virtual bool ValidAnalysisType(void);
 		virtual void SetHasTractionCracks(bool);
         double *GetCFLPtr(void);
-        void SetCFLCondition(double);
-        double GetCFLCondition(void);
+		double *GetTransCFLPtr(void);
+		double GetCFLCondition(void);
+		double GetTransCFLCondition(void);
         double GetPropagationCFLCondition(void);
 		virtual const char *MPMAugmentation(void);
+		bool HasDiffusion(void);
+		bool HasPoroelasticity(void);
+		bool HasFluidTransport(void);
 	
     protected:
         double FractCellTime;			// fraction of cell crossed at wave speed (<1)
         double PropFractCellTime;       // separate fraction of cell crossed for propagation time steps (currently not settable)
+		double TransFractCellTime;		// fraction used for finding transport time step (<1)
 };
 
 extern NairnMPM *fmobj;

@@ -33,10 +33,9 @@ class MatPtLoadBC: public BoundaryCondition
         MatPtLoadBC *AddMPLoad(double);
         MatPtLoadBC *ReverseLinearLoad(double,double *,bool);
         MatPtLoadBC *MakeConstantLoad(double);
-        int CompactCornerNodes(int,Vector *,int *,double,int *,double *);
 	
 		// accessors
-		virtual void GetPosition(double *,double *,double *,double *);
+		virtual void GetPosition(unordered_map<string,double>);
 		virtual void SetBCValue(double);
     
 		// overridden by flux sub classes

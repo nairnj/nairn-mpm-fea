@@ -12,14 +12,14 @@
 #pragma mark XYBMPImporter: Constructors and Destructors
 
 // create an instance
-XYBMPImporter::XYBMPImporter(char *filePath)  : XYFileImporter(filePath)
+XYBMPImporter::XYBMPImporter(char *filePath,bool isReadingXML)  : XYFileImporter(filePath,isReadingXML)
 {
 }
 
 #pragma mark XYBMPImporter: Methods
 
 // Get the file header
-// throws SAXException
+// throws SAXException or CommonException
 void XYBMPImporter::GetXYFileHeader(XYInfoHeader &info)
 {
 	// read and check the header (individual reads due to Windows alignment issues)
@@ -30,7 +30,7 @@ void XYBMPImporter::GetXYFileHeader(XYInfoHeader &info)
 	if(fread(&header.reserved1,2,1,fp)<1) status=false;
 	if(fread(&header.reserved2,2,1,fp)<1) status=false;
 	if(fread(&header.offset,4,1,fp)<1) status=false;
-	if(!status) XYFileError("Error reading the specified <BMP> file.");
+	if(!status) XYFileImportError("Error reading the specified <BMP> file.");
 	if(mustReverse)
 	{	Reverse((char *)&header.size,sizeof(int));
 		Reverse((char *)&header.offset,sizeof(int));
@@ -43,7 +43,7 @@ void XYBMPImporter::GetXYFileHeader(XYInfoHeader &info)
 	
 	// exit if does not look like BMP file
 	if(header.type[0]!='B' || header.type[1]!='M')
-		XYFileError("<BMP> file is not a valid bit map file.");
+		XYFileImportError("<BMP> file is not a valid bit map file.");
 	
 	// read information (40 byte header)
 	unsigned int unusedSize;
@@ -58,7 +58,7 @@ void XYBMPImporter::GetXYFileHeader(XYInfoHeader &info)
 	if(fread(&header.yresolution,4,1,fp)<1) status=false;
 	if(fread(&header.ncolors,4,1,fp)<1) status=false;
 	if(fread(&header.importantcolors,4,1,fp)<1) status=false;
-	if(!status) XYFileError("Error reading the specified <BMP> file.");
+	if(!status) XYFileImportError("Error reading the specified <BMP> file.");
 	if(mustReverse)
 	{	Reverse((char *)&unusedSize,sizeof(int));
 		Reverse((char *)&info.width,sizeof(int));
@@ -80,10 +80,10 @@ void XYBMPImporter::GetXYFileHeader(XYInfoHeader &info)
 		header.ncolors=ncolors;
 	
 	// can I read this BMP file
-	if(header.planes!=1) XYFileError("Cannot read <BMP> files with more than 1 color plane.");
-	if(header.compression!=0) XYFileError("Cannot read compressed <BMP> files.");
+	if(header.planes!=1) XYFileImportError("Cannot read <BMP> files with more than 1 color plane.");
+	if(header.compression!=0) XYFileImportError("Cannot read compressed <BMP> files.");
 	if(header.ncolors!=ncolors || (ncolors!=2 && ncolors!=16 && ncolors!=256))
-		XYFileError("<BMP> files does not appear to be 1, 4, or 8 bit grayscale image.");
+		XYFileImportError("<BMP> files does not appear to be 1, 4, or 8 bit grayscale image.");
 	
 	// read the 2, 16, or 256 colors
 	unsigned char blueByte,greenByte,redByte,junkByte;
@@ -92,7 +92,7 @@ void XYBMPImporter::GetXYFileHeader(XYInfoHeader &info)
 		if(fread(&greenByte,1,1,fp)<1) status=false;
 		if(fread(&redByte,1,1,fp)<1) status=false;
 		if(fread(&junkByte,1,1,fp)<1) status=false;
-		if(!status) XYFileError("<BMP> color table is corrupted.");
+		if(!status) XYFileImportError("<BMP> color table is corrupted.");
 		intensity[i]=((int)blueByte+(int)greenByte+(int)blueByte)/3;
 	}
 	
@@ -114,11 +114,11 @@ void XYBMPImporter::GetXYFileHeader(XYInfoHeader &info)
 	// check size
 	unsigned int expectSize=(unsigned int)(info.height*info.rowBytes);
 	if(header.imagesize<expectSize)
-		XYFileError("BMP file size does not match expected data size.");
+		XYFileImportError("BMP file size does not match expected data size.");
 }
 
 // Read all XY data into an array
-// throws SAXException
+// throws SAXException or CommonException
 void XYBMPImporter::ReadXYFileData(unsigned char **rows,XYInfoHeader &info)
 {	unsigned char dataByte,mask;
 	int colByte,row,col;
@@ -130,7 +130,7 @@ void XYBMPImporter::ReadXYFileData(unsigned char **rows,XYInfoHeader &info)
 		for(colByte=0;colByte<info.rowBytes;colByte++)
 		{	// read one byte at a time
 			if(fread(&dataByte,1,1,fp)<1)
-				XYFileError("Error reading bit mapped file data.");
+				XYFileImportError("Error reading bit mapped file data.");
 			if(col>=info.width) continue;
 			switch(header.ncolors)
 			{	case 256:		// each byte is an index

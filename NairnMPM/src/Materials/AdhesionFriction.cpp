@@ -16,10 +16,8 @@
 
 #pragma mark AdhesionFriction::Constructors and Destructors
 
-// Constructors
-AdhesionFriction::AdhesionFriction() {}
-
-AdhesionFriction::AdhesionFriction(char *matName) : CoulombFriction(matName)
+// Constructor
+AdhesionFriction::AdhesionFriction(char *matName,int matID) : CoulombFriction(matName,matID)
 {
 	Sa = 0.;
 	Na = 0.;
@@ -33,7 +31,7 @@ AdhesionFriction::AdhesionFriction(char *matName) : CoulombFriction(matName)
 // Read material properties by name (in xName). Set input to variable type
 // (DOUBLE_NUM or INT_NUM) and return pointer to the class variable
 // (cast as a char *)
-char *AdhesionFriction::InputMaterialProperty(char *xName,int &input,double &gScaling)
+char *AdhesionFriction::InputContactProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"Sa")==0)
 	{	input=DOUBLE_NUM;
@@ -59,7 +57,7 @@ char *AdhesionFriction::InputMaterialProperty(char *xName,int &input,double &gSc
 	}
 	
 	// does not all any from MaterialBase
-    return CoulombFriction::InputMaterialProperty(xName,input,gScaling);
+    return CoulombFriction::InputContactProperty(xName,input,gScaling);
 }
 
 // Verify input properties do calculations; if problem return string with an error message
@@ -74,7 +72,11 @@ const char *AdhesionFriction::VerifyAndLoadProperties(int np)
 	// must call super class
 	const char *err = CoulombFriction::VerifyAndLoadProperties(np);
 	
-	// reset if was changed
+	// Do not allow stick or frictionless
+	if(frictionStyle==STICK)
+		return "AdhesiveFriction contact law does allow stick option";
+	
+	// reset if was changed to frictionless
 	frictionStyle = FRICTIONAL;
 	
 	// skip smooth transition if not needed
@@ -88,16 +90,9 @@ const char *AdhesionFriction::VerifyAndLoadProperties(int np)
 // print contact law details to output window
 void AdhesionFriction::PrintContactLaw(void) const
 {
+	CoulombFriction::PrintContactLaw();
+	
 	char hline[200];
-	
-	sprintf(hline,"Contact by friction and adhesion with coefficient of friction: %.6f",frictionCoeff);
-	cout << hline << endl;
-	
-	if(frictionCoeffStatic>0.)
-	{	sprintf(hline,"                           and static coefficient of friction: %.6f",frictionCoeffStatic);
-		cout << hline << endl;
-	}
-	
 	const char *label = UnitsController::Label(PRESSURE_UNITS);
 	PrintProperty("Sa",Sa*UnitsController::Scaling(1.e-6),label);
 	PrintProperty("Na",Na*UnitsController::Scaling(1.e-6),label);
@@ -113,60 +108,97 @@ void AdhesionFriction::PrintContactLaw(void) const
 #pragma mark AdhesionFriction:Step Methods
 
 // Return Sslide Ac dt = f(N) Ac dt
-// Input is N Ac dt (and is always positive when in contact)
+// Input is N Ac dt (and is always positive for compression)
 // If needed in the friction law, Ac is the contact area
 // The relative sliding speed after correcting the momentum will be (SStickAcDt-SslideAcDt)/mred
 double AdhesionFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred,
 									   double contactArea,bool &inContact,double deltime) const
 {
-	// check for adhesion not exceeded
-	if(!inContact)
-	{	// if not failed, then it sticks (needs contact area)
-		// note: never gets here unless Sa and Na are > 0
-		double shear = SStickAcDt/(Sa*contactArea*deltime);
-		double normal = NAcDt/(Na*contactArea*deltime);
-		double surface = shear*shear + normal*normal;
+	// check for adhesive failure when not in contact
+	if(!inContact || NAcDt<0.)
+	{	// If displacementOnly>0.1, then deln>0 and NAcDt may be + or -
+		// otherwise either deln>0 or N<displacementOnly or both
+		double surface = 2.;
+		if(Sa>0. && Na>0.)
+		{	double shear = SStickAcDt/(Sa*contactArea*deltime);
+			// only look at tension (NAcDt<0)
+			double normal = fmin(NAcDt,0.)/(Na*contactArea*deltime);
+			surface = shear*shear + normal*normal;
+		}
+		
+		// If surface<1 than should stick
 		if(surface<1.)
-		{	// adhesion not exceeded, so make it stick
-			inContact = true;
+		{	inContact = true;
 			return SStickAcDt+1.;
 		}
 		
-		// adhesion failure: leave inContact as false and return with any number
-		return 0.;
-	}
-
-	// if in contact, return frictional sliding
-	// Sslide = Sa + mu N or Sslide Ac dt = mu N Ac dt + Sa Ac dt
-	// and mu = mu0 + kmu*vrel
-	double Sslide = Sa>0. ? Sa*contactArea*deltime : 0. ;
-	if(frictionCoeffStatic>0.)
-	{	double Stest = Sslide + frictionCoeffStatic*NAcDt;
-		if(SStickAcDt<Stest) return Stest;			// it will stick
+		// It has failed, exit if was determined not in contact
+		if(!inContact) return 0;
+		
+		// Here means displacementOnly = 1 or < 0 with NAcDt>displacementOnly
+		// Fall through to code, which accounts for possibly negative NAcDt
 	}
 	
-	// add friction terms as needed needed
-	if(smoothStaticToDynamic)
-	{	// smooth static dynamicand optionally adhesion and velocity dependent dynamic
-		double kprime = kmu/mred;
-		double Aterm = 1.+kprime*NAcDt;
-		double Bterm = frictionCoeff + kprime*SStickAcDt + Sslide/NAcDt;
+	// Here inContact is true and NAcDt>do (which may be negative)
+	double Sslide = Sa>0. ? Sa*contactArea*deltime : 0. ;
+	
+	// Return frictional sliding
+	// Sslide = Sa + mu(eff) N or Sslide Ac dt = mu(eff) N Ac dt + Sa Ac dt
+	// and mu(eff) = mu(trans) + kmu*vrel where mu(trans) is smooth static to dynamic transition
+	
+	// if static check for stick (here vrel=0)
+	if(frictionCoeffStatic>0.)
+	{	double Stest = Sslide + fmax(frictionCoeffStatic*NAcDt,0.);
+		if(Stest>SStickAcDt) return Stest;			// it will stick
+	}
+	
+	// or add velocity dependent friction terms as needed needed
+	if(smoothStaticToDynamic && NAcDt>0.)
+	{	// smooth static dynamic and optionally adhesion and velocity dependent dynamic
+		// See notes on Contact Laws Paper and only solved for NAcDt>0.
+		// If NAcDt<0 (i.e. displacmentOnly =1 or <0), ignores smooth transition
 		double kstar = vhalf*mred;
 		double Dstar = SStickAcDt + kstar;
-		double arg0 = Bterm*NAcDt/Aterm;
+		double arg0 = Sslide + frictionCoeff*NAcDt;
 		double arg1 = 0.5*(Dstar + arg0);
 		double arg2 = 0.5*(Dstar - arg0);
-		Sslide = arg1 - sqrt(arg2*arg2 - kstar*NAcDt*(frictionCoeffStatic-frictionCoeff)/Aterm);
-		
+		double scale = 1.;
+		double Aterm = 0.;
+		if(kmu!=0.)
+		{	double kmred = kmu/mred;
+			arg1 += 0.5*kmred*NAcDt*(Dstar-kstar);
+			scale = 1 + kmred*NAcDt;
+			Aterm = kmred*(Dstar-kstar-Sslide-NAcDt*frictionCoeffStatic);
+		}
+		if(scale > 0.)
+			Sslide = (arg1 - sqrt(arg2*arg2 + Aterm - kstar*NAcDt*(frictionCoeffStatic-frictionCoeff)))/scale;
+		else if(kmu<0.)
+		{	// stick if beyond the limit
+			Sslide = SStickAcDt+1.;
+		}
+		else
+		{	// slip if too low
+			Sslide = 0.;
+		}
 	}
 	else if(kmu!=0.)
-	{	// sharp static/dynamic but linear velocity dependence and maybe adhesion
+	{	// sharp static/dynamic but linear velocity dependence and adhesion
+		// Note: published paper as 1+kmed*dn = 1 -rmred*NAcDt, but that is a misprint. Sign correct here
 		double kmred = kmu/mred;
-		Sslide = (Sslide + (frictionCoeff+kmred*SStickAcDt)*NAcDt)/(1. + kmred*NAcDt);
+		if(1.+kmred*NAcDt > 0.)
+			Sslide = fmax((Sslide + (frictionCoeff+kmred*SStickAcDt)*NAcDt)/(1. + kmred*NAcDt),0.);
+		else if(kmu<0.)
+		{	// stick if beyond the limit
+			Sslide = SStickAcDt+1.;
+		}
+		else
+		{	// slip if too low
+			Sslide = 0.;
+		}
 	}
 	else
-	{	// sharp static/dynamic and possibly adhesion
-		Sslide += frictionCoeff*NAcDt;
+	{	// sharp static/dynamic with adhesion
+		Sslide += fmax(frictionCoeff*NAcDt,0.);
 	}
 		
 	// return result
@@ -178,13 +210,10 @@ double AdhesionFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double mre
 // return unique, short name for this material
 const char *AdhesionFriction::MaterialType(void) const { return "Adhesion and Friction"; }
 
-// Continue to frictional calculation, even if not in contact, but only if has some separation adhesion
-bool AdhesionFriction::ContactIsDone(bool inContact) const
-{	if(inContact || (Sa>0. && Na>0.) ) return false;
-	return true;
-}
-
 // needs area
-bool AdhesionFriction::ContactLawNeedsContactArea(void) const { return Sa>0.; }
+bool AdhesionFriction::ContactLawNeedsContactArea(void) const
+{	if(Sa>0. && Na>0.) return true;
+	return CoulombFriction::ContactLawNeedsContactArea();
+}
 
 

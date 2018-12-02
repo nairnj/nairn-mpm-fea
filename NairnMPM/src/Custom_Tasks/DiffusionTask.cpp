@@ -8,7 +8,7 @@
     Diffusion calculations
    -------------------------
 	See TransportTask.cpp comments with
-		gTValue, gMTp, gQ in gDiff
+		gTValue, gVCT, gQ in gDiff
  
     Update Particles Task
         cut off particle potential to range 0 to 1
@@ -29,10 +29,12 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "System/UnitsController.hpp"
 
 // global
-bool DiffusionTask::active=FALSE;
+int DiffusionTask::active = NO_DIFFUSION;
 double DiffusionTask::reference = 0.;				// zero-strain concentration
+double DiffusionTask::viscosity = 0.001;			// poroelasticity viscosity
 DiffusionTask *diffusion=NULL;
 
 #pragma mark STANDARD METHODS
@@ -48,14 +50,55 @@ TransportTask *DiffusionTask::Initialize(void)
 	}
 	
 	cout << "Coupled " << TaskName() << endl;
-	char mline[100];
-	sprintf(mline,"   Reference concentration =%8.4lf",reference);
-	cout << mline << endl;
+	
+	// time step
+	char fline[256];
+	sprintf(fline,"time step (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),transportTimeStep*UnitsController::Scaling(1.e3));
+	if(active==POROELASTICITY_DIFFUSION)
+		cout << "   Poroelasticity " << fline << endl;
+	else
+		cout << "   Diffusion " << fline << endl;
+	cout << "   Time step factor: " << fmobj->GetTransCFLCondition() << endl;
+	
+	// featrues
+	if(active==POROELASTICITY_DIFFUSION)
+	{	cout << "   Reference pore pressure = " << reference*UnitsController::Scaling(1.e-6)
+					<< " " << UnitsController::Label(PRESSURE_UNITS) << endl;
+		cout << "   Fluid viscosity = " << viscosity*UnitsController::Scaling(1.e3)
+					 << " " << UnitsController::Label(VISCOSITY_UNITS);
+	}
+	else
+	{	char mline[100];
+		sprintf(mline," =%8.4lf",reference);
+		cout << "   Reference concentration" << mline;
+	}
+	cout << endl;
 	
 	return nextTask;
 }
 
 #pragma mark MASS AND MOMENTUM EXTRAPOLATIONS
+
+// Task 1 Extrapolation of temperature to the grid
+// Only called for non-rigid materials
+TransportTask *DiffusionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape,short vfld,int matfld)
+{
+	double diffCT = theMaterials[mptr->MatID()]->GetDiffusionCT();
+	double VpShape = mptr->GetVolume(DEFORMED_VOLUME)*diffCT*shape;
+	double VpValueShape = mptr->pConcentration*VpShape;
+	TransportField *gTrans = GetTransportFieldPtr(ndpt);
+	gTrans->gTValue += VpValueShape;
+	gTrans->gVCT += VpShape;
+	Task1ContactExtrapolation(ndpt,vfld,matfld,VpValueShape,VpShape);
+	return nextTask;
+}
+
+// Get Vp * CTp
+double DiffusionTask::GetVpCTp(MPMBase *mptr)
+{
+	double diffCT = theMaterials[mptr->MatID()]->GetDiffusionCT();
+	return mptr->GetVolume(DEFORMED_VOLUME)*diffCT;
+}
 
 // zero gradients on the particle
 void DiffusionTask::ZeroTransportGradients(MPMBase *mptr)
@@ -82,34 +125,36 @@ TransportTask *DiffusionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double s
 
 #pragma mark UPDATE PARTICLES TASK
 
-// increment particle concentration with check in valud range
+// increment particle concentration with check in valid range
 TransportTask *DiffusionTask::MoveTransportValue(MPMBase *mptr,double deltime,double rate) const
-{	mptr->pConcentration += deltime*rate;
-    if(mptr->pConcentration<0.)
-        mptr->pConcentration = 0.;
-    else if(mptr->pConcentration>1.)
-        mptr->pConcentration = 1.;
+{
+	mptr->pConcentration += deltime*rate;
+	
+	// limit concentration to 0 to 1
+	if(mptr->pConcentration<0.)
+		mptr->pConcentration = 0.;
+	else if(mptr->pConcentration>1.)
+		mptr->pConcentration = 1.;
+	
 	return nextTask;
 }
 
 #pragma mark ACCESSORS
 
 // Return name of this task
-const char *DiffusionTask::TaskName(void) { return "diffusion calculations"; }
+const char *DiffusionTask::TaskName(void)
+{	if(active==POROELASTICITY_DIFFUSION)
+		return "pore pressure calculations";
+	return "diffusion calculations";
+}
 
 // adjust time for given cell size if needed
 TransportTask *DiffusionTask::TransportTimeStepFactor(int matid,double *diffCon)
-{	*diffCon = theMaterials[matid]->MaximumDiffusion();
+{	*diffCon = theMaterials[matid]->MaximumDiffusion()/(theMaterials[matid]->GetDiffusionCT());
     return nextTask;
 }
 
-// Get transport mass, mTp in notes, which here is V_p and get particle value
-double DiffusionTask::GetTransportMassAndValue(MPMBase *mptr,double *pTValue)
-{	*pTValue = mptr->pConcentration;
-    return mptr->GetVolume(DEFORMED_VOLUME);
-}
-
-// return point on node to transport field
+// return pointer on node to transport field
 TransportField *DiffusionTask::GetTransportFieldPtr(NodalPoint *ndpt) const { return &(ndpt->gDiff); }
 
 // return first boundary condition
@@ -120,4 +165,19 @@ MatPtLoadBC *DiffusionTask::GetFirstFluxBCPtr(void) const { return firstFluxPt; 
 double *DiffusionTask::GetParticleValuePtr(MPMBase *mptr) const { return &(mptr->pConcentration); }
 double *DiffusionTask::GetPrevParticleValuePtr(MPMBase *mptr) const { return &(mptr->pPreviousConcentration); }
 
-		
+// to check on diffusion or poroelasticity
+bool DiffusionTask::HasDiffusion(void) { return active==MOISTURE_DIFFUSION; }
+bool DiffusionTask::HasPoroelasticity(void) { return active==POROELASTICITY_DIFFUSION; }
+bool DiffusionTask::HasFluidTransport(void) { return active!=NO_DIFFUSION; }
+
+// convert poroelasticity MPa to Pa but no change to concentration potentions
+double DiffusionTask::RescalePotential(void)
+{	return active==POROELASTICITY_DIFFUSION ? UnitsController::Scaling(1.e6) : 1 ;
+}
+
+// convert poroelasticity MPa/time to Pa/time and SI flux units to Legacy flux units
+double DiffusionTask::RescaleFlux(void)
+{	return active==POROELASTICITY_DIFFUSION ? UnitsController::Scaling(1.e6) :
+			UnitsController::Scaling(1.e-3);
+}
+

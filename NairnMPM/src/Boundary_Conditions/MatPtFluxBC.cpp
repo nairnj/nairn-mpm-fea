@@ -12,10 +12,16 @@
 #include "Materials/MaterialBase.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
-#include "Read_XML/mathexpr.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "System/UnitsController.hpp"
+#include "Exceptions/CommonException.hpp"
+#include "Read_XML/Expression.hpp"
+#include "Elements/ElementBase.hpp"
+
+// Local globals for BCs
+// c1 starts with c12i[1] and c2 starts with c12i[o]
+static double c12i[5]={1.,1.,-1.,-1.,1.};
 
 // global
 MatPtFluxBC *firstFluxPt=NULL;
@@ -34,15 +40,24 @@ MatPtFluxBC::MatPtFluxBC(int num,int dof,int sty,int edge) : MatPtLoadBC(num,dof
 BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
 {
     char nline[200];
-    
+	
+	double rescale = 1./DiffusionTask::RescaleFlux();
     sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,
-			UnitsController::Scaling(1.e3)*GetBCValueOut(),GetBCFirstTimeOut());
+			rescale*GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
 	PrintFunction(os);
 	
-	// for function input scale for Legacy units
+	// not allowed on rigid particles
+	MaterialBase *matref = theMaterials[mpm[ptNum-1]->MatID()];
+	if(matref->IsRigid())
+	{	throw CommonException("Cannot set solvent/pore pressure flux on rigid particles",
+							  "MatPtFluxBC::PrintBC");
+	}
+	
+	// for function input scale for Legacy units if needed
 	if(style==FUNCTION_VALUE)
-		scale = UnitsController::Scaling(1.e-3);
+	{	scale = DiffusionTask::RescaleFlux();
+	}
 	
     return (BoundaryCondition *)GetNextObject();
 }
@@ -52,7 +67,8 @@ BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
 // (only called when diffusion is active)
 MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 {
-    // condition value is g/(mm^2-sec), Divide by rho*csat to get potential flux in mm/sec
+    // Moisture: condition value is g/(mm^2-sec), Divide by rho*csat to get potential flux in mm/sec
+	// Poroelasticity: condition value is Pa/sec = µN/(mm^2-sec) - does  not account for area (could if needed)
 	// find this flux and then add (times area) to get mm^3-potential/sec
 	MPMBase *mpmptr = mpm[ptNum-1];
     MaterialBase *matptr = theMaterials[mpmptr->MatID()];
@@ -70,8 +86,9 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 	{	TransportProperties t;
 		matptr->GetTransportProps(mpmptr,fmobj->np,&t);
 		Tensor *D = &(t.diffusionTensor);
-        
-        // D in mm^2/sec, Dc in 1/mm
+		
+		// D in L^2/T (moisture) or L^2/(P-T) (poroelasticity), grad C in 1/L (moisture), P/L (poroelasticity)
+		// Flux is L/T (both)
 		if(fmobj->IsThreeD())
 		{	fluxMag.x = D->xx*mpmptr->pDiffusion[gGRADx] + D->xy*mpmptr->pDiffusion[gGRADy] + D->xz*mpmptr->pDiffusion[gGRADz];
 			fluxMag.y = D->xy*mpmptr->pDiffusion[gGRADx] + D->yy*mpmptr->pDiffusion[gGRADy] + D->yz*mpmptr->pDiffusion[gGRADz];
@@ -81,66 +98,111 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 		{	fluxMag.x = D->xx*mpmptr->pDiffusion[gGRADx] + D->xy*mpmptr->pDiffusion[gGRADy];
 			fluxMag.y = D->xy*mpmptr->pDiffusion[gGRADx] + D->yy*mpmptr->pDiffusion[gGRADy];
 		}
+		
+		// scale by volume to get 1/(L^2-T)
+		ScaleVector(&fluxMag,1./mpmptr->GetVolume(DEFORMED_VOLUME));
+		
         bcDir = N_DIRECTION;
 	}
 	else if(direction==EXTERNAL_FLUX)
-	{	// csatrho = rho0 V0 csat/V (units g/mm^3)
-		double csatrho = mpmptr->GetRho()*mpmptr->GetConcSaturation()/mpmptr->GetRelativeVolume();
-		fluxMag.x = BCValue(bctime)/csatrho;
+	{	if(fmobj->HasPoroelasticity())
+		{	// provided value in P/(L^2-T), scale by 1/Q for get 1/(L^2-T)
+			fluxMag.x = BCValue(bctime)*mpmptr->GetDiffusionCT();
+		}
+		else
+		{	// provided value in M/(L^2-T), scale by mass to get 1/(L^2-T)
+			fluxMag.x = BCValue(bctime)/mpmptr->mp;
+		}
 	}
 	else
-    {   // coupled surface flux and ftime is bath concentration
-		// time variable (t) is replaced by c-cbath, where c is the particle potential and cbath is bath potential
-		varTime = mpmptr->pPreviousConcentration-GetBCFirstTime();
-		GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
-		double currentValue = fabs(scale*function->Val());
-		if(varTime>0.) currentValue=-currentValue;
+    {	// moisture f(c-cres) (units potential) and function should give flux in M/(L^2-T)
+		// poroelasticity f(p-pres) (units P) and function should give flux in P/(L^2-T)
 		
-		// csatrho = rho0 V0 csat/V (units g/mm^3)
-		double csatrho = mpmptr->GetRho()*mpmptr->GetConcSaturation()/mpmptr->GetRelativeVolume();
-		fluxMag.x = currentValue/csatrho;
+		// time variable (t) is replaced by c-cres, where c is the particle value and cres is reservoir
+		// Poroelasticity used particle value to support changed flux when void space
+		double cmcres;
+		if(fmobj->HasPoroelasticity())
+			cmcres = mpmptr->pConcentration-GetBCFirstTime();
+		else
+			cmcres = mpmptr->pPreviousConcentration-GetBCFirstTime();
+		unordered_map<string, double> vars;
+		GetPosition(vars);
+		vars["t"] = cmcres;
+		
+		// scaling only used when in Legacy units
+		double currentValue = fabs(scale*function->EvaluateFunction(vars));
+		
+		// change direction to match sign of the difference
+		if(cmcres>0.) currentValue=-currentValue;
+		
+		if(fmobj->HasPoroelasticity())
+		{	// function value in P/(L^2-T), scale by 1/Q for get 1/(L^2-T)
+			fluxMag.x = currentValue*mpmptr->GetDiffusionCT();
+		}
+		else
+		{	// function value in M/(L^2-T), scale by mass to get flux in 1/(L^2-T)
+			fluxMag.x = currentValue/mpmptr->mp;
+		}
 	}
 	
-	// get corners and direction from material point
+	// get corners and radii from deformed material point (2 in 2D and 4 in 3D)
+	// Not that bcDir will be X_DIRECTION to scale fluxMag, but if silent, it will be N_DIRECTION
 	int cElem[4],numDnds;
-	Vector corners[4],tscaled;
-	double ratio = mpmptr->GetTractionInfo(face,bcDir,cElem,corners,&tscaled,&numDnds);
+	Vector corners[4],radii[3];
+	double redge;
+	Vector wtNorm = mpmptr->GetSurfaceInfo(face,bcDir,cElem,corners,radii,&numDnds,&redge);
 	
-    // compact CPDI nodes into list of nodes (nds) and final shape function term (fn)
-    // May need up to 8 (in 3D) for each of the numDnds (2 in 2D or 4 in 3D)
 #ifdef CONST_ARRAYS
-	int nds[8*4+1];
-	double fn[8*4+1];
+	int nds[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES];
 #else
-	int nds[8*numDnds+1];
-    double fn[8*numDnds+1];
+	int nds[maxShapeNodes];
+	double fn[maxShapeNodes];
 #endif
-    int numnds = CompactCornerNodes(numDnds,corners,cElem,ratio,nds,fn);
-	
-    // add force to each node
-	int i;
-    for(i=1;i<=numnds;i++)
-		diffusion->AddFluxCondition(nd[nds[i]],DotVectors(&fluxMag,&tscaled)*fn[i],false);
+		
+	for(int c=0;c<numDnds;c++)
+	{	// get straight grid shape functions
+		theElements[cElem[c]]->GetShapeFunctionsForTractions(fn,nds,&corners[c]);
+		int numnds = nds[0];
+			
+		// add flux to each node
+		double flux;
+		for(int i=1;i<=numnds;i++)
+		{	if(fmobj->IsAxisymmetric())
+			{	// wtNorm has direction and |r1|. Also scale by axisymmetric term
+				flux = DotVectors(&fluxMag,&wtNorm)*(redge-c12i[c+1]*radii[0].x/3.)*fn[i];
+			}
+			else
+			{	// wtNorm has direction and Area/2 (2D) or Area/4 (3D) to average the nodes
+				flux = DotVectors(&fluxMag,&wtNorm)*fn[i];
+			}
+			diffusion->AddFluxCondition(nd[nds[i]],flux,false);
+		}
+	}
 	
     return (MatPtFluxBC *)GetNextObject();
 }
 
 #pragma mark MatPtFluxBC:Accessors
 
-// set value (and scale legacy kg/(m^2-sec) to g/(mm^2-sec))
+// set value (and scale legacy kg/(m^2-sec) to g/(mm^2-sec) for concentration or MPa/sec to Pa/sec for pore pressure)
 void MatPtFluxBC::SetBCValue(double bcvalue)
-{	BoundaryCondition::SetBCValue(UnitsController::Scaling(1.e-3)*bcvalue);
+{	double rescale = DiffusionTask::RescaleFlux();
+	BoundaryCondition::SetBCValue(rescale*bcvalue);
 }
 
 // check coupled flux which uses first time as unscaled concentration potential
+//		or reservoir pressure (Legacy MPa or stress units)
 void MatPtFluxBC::SetBCFirstTime(double bcftime)
 {	if(direction==COUPLED_FLUX)
-		BoundaryCondition::SetBCFirstTimeCU(bcftime);
+{	double rescale = DiffusionTask::RescalePotential();
+		BoundaryCondition::SetBCFirstTimeCU(rescale*bcftime);
+	}
 	else
 		BoundaryCondition::SetBCFirstTime(bcftime);
 }
 
-// check coupled flux which uses first time as unscaled concentration potential
+// check coupled flux which uses first time as concentration potential or reservoir pressure
 double MatPtFluxBC::GetBCFirstTimeOut(void)
 {	if(direction==COUPLED_FLUX)
 		return BoundaryCondition::GetBCFirstTime();

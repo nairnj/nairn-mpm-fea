@@ -12,7 +12,7 @@ EndHeader
 #analysis$="Plane Strain MPM"
 
 ! Strain update method "USAVG" or "USF"
-#update$="USAVG"
+#update$="USAVG+"
 
 ! Shape functions "uGIMP" or "lCPDI"
 #method$="uGIMP"

@@ -45,6 +45,10 @@ class MPMReadHandler : public CommonReadHandler
 		char *LastBC(char *);
 		void CreateSymmetryBCs();
 		void CreateSymmetryBCPlane(int,double,int,int);
+	
+		// custom tasks
+		void ScheduleCustomTask(const Attributes&);
+		void SetCustomTasksParameter(const Attributes&);
    
     private:
         //  Private data members

@@ -14,7 +14,7 @@
 			+ Extrapolate deformed area volume
 			+ It multimaterial extrapolate volume gradient
 		- Transport tasks
-			+ Extrapolate gTValue and gMTp for transport tasks
+			+ Extrapolate gTValue and gVCT for transport tasks
 			+ If contact extrapolate corresponding CVF and MVF terms
 		- If particle spin extrapolate more momentum
 	* For each rigid contact material
@@ -32,10 +32,6 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Patches/GridPatch.hpp"
-
-#ifdef LOG_PROGRESS
-#include "System/ArchiveData.hpp"
-#endif
 
 #pragma mark CONSTRUCTORS
 
@@ -75,7 +71,7 @@ void MassAndMomentumTask::Execute(void)
 			NodalPoint *ndptr;
 			int i,numnds,matfld,*nds;
 			
-			// Loop of non-rigid and rigid contact particles
+			// Loop over non-rigid, rigid block, and rigid contact particles in patch
 			for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
 			{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
 				while(mpmptr!=NULL)
@@ -92,7 +88,7 @@ void MassAndMomentumTask::Execute(void)
 						// add mass and momentum (and maybe contact stuff) to this node
 						vfld = mpmptr->vfld[i];
 						ndptr->AddMassMomentum(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],
-											   1,block==FIRST_NONRIGID);
+												1,block==FIRST_NONRIGID);
 					}
 					
 					// next material point

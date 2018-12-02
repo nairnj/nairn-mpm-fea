@@ -14,10 +14,12 @@
 #include "Nodes/NodalPoint.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
-#ifdef LOG_PROGRESS
-#include "System/ArchiveData.hpp"
-#endif
 #include "System/UnitsController.hpp"
+#include "Exceptions/CommonException.hpp"
+
+// Local globals for BCs
+// xi1 starts with x12i[1] and xi2 starts with x12i[0]]
+static double x12i[5]={-1.,-1.,1.,1.,-1.};
 
 // global
 MatPtTractionBC *firstTractionPt=NULL;
@@ -44,6 +46,13 @@ BoundaryCondition *MatPtTractionBC::PrintBC(ostream &os)
     os << nline;
 	PrintFunction(os);
 	
+	// not allowed on rigid particles
+	MaterialBase *matref = theMaterials[mpm[ptNum-1]->MatID()];
+	if(matref->IsRigid())
+	{	throw CommonException("Cannot set traction force on rigid particles",
+							  "MatPtTractionBC::PrintBC");
+	}
+	
  	// scale function output
 	if(style==FUNCTION_VALUE) scale = UnitsController::Scaling(1.e6);
 	
@@ -63,69 +72,98 @@ MatPtLoadBC *MatPtTractionBC::AddMPFluxBC(double bctime)
 	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
 	int matfld = matID->GetField();									// material velocity field
 	
-	// get corners and direction from material point
-	// note 3D has four corners on face and 2D has 2
-	// direction is x, y, z, N, or T1 (T1 not allowed in 3D)
+    // get corners and radii from deformed material point (2 in 2D and 4 in 3D)
 	int cElem[4],numDnds;
-	Vector corners[4],tscaled;
-	double ratio = mpmptr->GetTractionInfo(face,direction,cElem,corners,&tscaled,&numDnds);
-    
-    // compact CPDI nodes into list of nodes (nds) and final shape function term (fn)
-    // May need up to 8 (in 3D) for each of the numDnds (2 in 2D or 4 in 3D)
+	Vector corners[4],radii[3];
+	double redge;
+	Vector wtNorm = mpmptr->GetSurfaceInfo(face,direction,cElem,corners,radii,&numDnds,&redge);
+	
 #ifdef CONST_ARRAYS
-	int nds[8 * 4 + 1];
-	double fn[8 * 4 + 1];
+	int nds[MAX_SHAPE_NODES],sndsArray[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES];
 #else
-    int nds[8*numDnds+1];
-    double fn[8*numDnds+1];
+	int nds[maxShapeNodes],sndsArray[maxShapeNodes];
+	double fn[maxShapeNodes];
 #endif
-    int numCnds = CompactCornerNodes(numDnds,corners,cElem,ratio,nds,fn);
-    
+	int numnds;
+	
 	// get crack velocity fields, if they are needed
-	int numnds = 0,*snds=NULL;
-#ifdef CONST_ARRAYS
-	int sndsArray[MAX_SHAPE_NODES];
-#else
-    int sndsArray[maxShapeNodes];
-#endif
+	int cnumnds,*snds=NULL;
 	if(firstCrack!=NULL)
 	{	const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
-#ifdef CONST_ARRAYS
-		double fnDummy[MAX_SHAPE_NODES];
-#else
-		double fnDummy[maxShapeNodes];
-#endif	
+
 		// The list of GIMP nodes will let code below associate a node with a velocity field
 		// Actually shape functions are not needed (but function needs them to find non-zero nodes)
 		snds = sndsArray;
-		elref->GetShapeFunctions(fnDummy,&snds,mpmptr);
+		elref->GetShapeFunctions(fn,&snds,mpmptr);
 		numnds = snds[0];
 	}
+
+	double efffn;
+	for(int c=0;c<numDnds;c++)
+	{	// get straight grid shape functions
+		theElements[cElem[c]]->GetShapeFunctionsForTractions(fn,nds,&corners[c]);
+		cnumnds = nds[0];
 		
-    // add force to each node
-    for(int i=1;i<=numCnds;i++)
-    {   // skip empty nodes
-        if(nd[nds[i]]->NodeHasNonrigidParticles())
-        {   // external force vector - tscaled has direction, surface area, and factor 1/2 (2D) or 1/4 (3D) to average the nodes
-            CopyScaleVector(&theFrc,&tscaled,tmag*fn[i]);
-			
-			// Find the matching velocity field
-			if(firstCrack!=NULL)
-			{	for(int ii=1;ii<=numnds;ii++)
-				{	if(nds[i] == snds[ii])
-					{	short vfld = mpmptr->vfld[ii];
-						nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
-						break;
+		// track total force due to each corner and rescale in a second pass if needed
+		double netshape = 0.;
+		double shapeScale = 1.;
+		for(int pass=0;pass<1;pass++)
+		{	// add force to each node
+			short vfld = 0;
+			for(int i=1;i<=cnumnds;i++)
+			{   // skip empty nodes
+				if(nd[nds[i]]->NodeHasNonrigidParticles())
+				{   // external force vector
+					if(fmobj->IsAxisymmetric())
+					{	// wtNorm has direction and |r1|. Also scale by axisymmetric term
+						efffn = fn[i]*shapeScale;
+						CopyScaleVector(&theFrc,&wtNorm,(redge-x12i[c+1]*radii[0].x/3.)*tmag*efffn);
 					}
+					else
+					{	// wtNorm has direction and Area/2 (2D) or Area/4 (3D) to average the nodes
+						efffn = fn[i]*shapeScale;
+						CopyScaleVector(&theFrc,&wtNorm,tmag*efffn);
+					}
+					netshape += efffn;
+				
+					// Find the matching velocity field
+					if(firstCrack!=NULL)
+					{	vfld = -1;
+						for(int ii=1;ii<=numnds;ii++)
+						{	if(nds[i] == snds[ii])
+							{	vfld = mpmptr->vfld[ii];
+								nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
+								break;
+							}
+						}
+						
+						// no field possible if highly deformed particle with uGIMP shape functions
+						//  add force to field 0 in this case
+						if(vfld<0)
+						{	vfld = 0;
+							nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
+						}
+					}
+					else
+						nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
 				}
 			}
-			else
-			{	short vfld = 0;
-				nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
-			}
-        }
-    }
-   
+			
+			// skip second pass if caught them on first pass
+			if(fabs(netshape-1.0)<1.e-6) break;
+			
+			// normalize to get correct total force from this corner
+			// redo each one with effn/netshape so new sum will be 1
+			// but we already added effn, so now add effn/netshape - effn = (1/netshape-1)*effn
+			shapeScale = 1./netshape - 1.;
+			
+			// should write this as a warning
+			//cout << "# rescale corner " << c << " of particle at (" << mpmptr->pos.x << "," << mpmptr->pos.y << ")"
+			//			" by " << shapeScale << endl;
+		}
+	}
+	
     // next boundary condition
     return (MatPtTractionBC *)GetNextObject();
 }

@@ -40,7 +40,7 @@ int MaterialBase::maxPropertyBufferSize = 0;            // maximum buffer size n
 int MaterialBase::maxAltBufferSize = 0;                 // maximum optional buffer size needed for more properties (e.g., hardenling law)
 bool MaterialBase::extrapolateRigidBCs = false;			// rigid BCs extrapolated (new) or projected (old)
 
-#pragma mark MaterialBase::Initialization
+#pragma mark MaterialBase::Initialization (required)
 
 // Read material properties common to all MPM materials
 char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScaling)
@@ -185,65 +185,7 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
     return (char *)NULL;
 }
 
-// Material that allow hardening laws must accept
-// the final call and use if supported
-// Newly created laws should be added here
-// throws std::bad_alloc, SAXException()
-void MaterialBase::SetHardeningLaw(char *lawName)
-{
-    HardeningLawBase *pLaw = NULL;
-    int lawID = 0;
-    
-    // check options
-    if(strcmp(lawName,"Linear")==0 || strcmp(lawName,"1")==0)
-    {   pLaw = new LinearHardening(this);
-        lawID = 1;
-    }
-    
-    else if(strcmp(lawName,"Nonlinear")==0 || strcmp(lawName,"2")==0)
-    {   pLaw = new NonlinearHardening(this);
-        lawID = 2;
-    }
-    
-    else if(strcmp(lawName,"Nonlinear2")==0 || strcmp(lawName,"6")==0)
-    {   pLaw = new Nonlinear2Hardening(this);
-        lawID = 6;
-    }
-    
-    else if(strcmp(lawName,"JohnsonCook")==0 || strcmp(lawName,"3")==0)
-    {   pLaw = new JohnsonCook(this);
-        lawID = 3;
-    }
-    
-    else if(strcmp(lawName,"SCGL")==0 || strcmp(lawName,"4")==0)
-    {   pLaw = new SCGLHardening(this);
-        lawID = 4;
-    }
-
-    else if(strcmp(lawName,"SL")==0 || strcmp(lawName,"5")==0)
-    {   pLaw = new SLMaterial(this);
-        lawID = 5;
-    }
-    
-    else if(strcmp(lawName,"DDB-PPM")==0 || strcmp(lawName,"7")==0)
-    {   pLaw = new DDBHardening(this);
-      lawID = 7;
-    }
-    
-    // was it found
-    if(pLaw==NULL)
-        ThrowSAXException("The hardening law '%s' is not valid",lawName);
-    
-    // pass on to the material
-    if(!AcceptHardeningLaw(pLaw,lawID))
-        ThrowSAXException("The hardening law '%s' is not allowed by material",lawName);
-}
-
-// A Material that allows hardening laws should accept this one or it can
-// veto the choice by returning FALSE
-bool MaterialBase::AcceptHardeningLaw(HardeningLawBase *pLaw,int lawID) { return false; }
-
-/*	Verify andcCalculate properties used in analyses. If error, return string with an error message.
+/*	Verify and calculate properties used in analyses. If error, return string with an error message.
  This is called once at start of the calculation just before the material properties
  are printined to the output file and before any calculations. It is called for
  every material defined in the input file, even if it is not used by any
@@ -252,8 +194,8 @@ bool MaterialBase::AcceptHardeningLaw(HardeningLawBase *pLaw,int lawID) { return
  */
 const char *MaterialBase::VerifyAndLoadProperties(int np)
 {
-    // make conductivity specific (nJ mm^2/(sec-K-g))
-    kCond /= rho;
+	// make conductivity specific (nJ mm^2/(sec-K-g))
+	kCond /= rho;
 	
 	// in case only need to load some things once, load those mechanical properties now
 	FillTransportProperties(&tr);
@@ -271,17 +213,103 @@ const char *MaterialBase::VerifyAndLoadProperties(int np)
 	return NULL;
 }
 
+#pragma mark MaterialBase::Initialization (optional)
+
+/* This is called after PreliminaryCalcs() and just before first MPM time step and it
+ is only called if the material is actually in use by one or more particles
+	If material cannot be used in current analysis type throw an exception
+	Subclass that overrides must pass on to super class
+	throws CommonException()
+ */
+void MaterialBase::ValidateForUse(int np) const
+{	int i;
+	
+	for(i=0;i<=1;i++)
+	{	if(i==1 && criterion[i]==NO_PROPAGATION) break;		// skip if no alternate criterion
+		if(tractionMat[i]>0)
+		{	if(tractionMat[i]>nmat)
+			{	throw CommonException("Material with undefined traction law material for propagation",
+									  "MaterialBase::ValidateForUse");
+			}
+			if(theMaterials[tractionMat[i]-1]->MaterialStyle()!=TRACTION_MAT)
+			{	throw CommonException("Material with propagation material that is not a traction law",
+									  "MaterialBase::ValidateForUse");
+			}
+		}
+	}
+	
+	// check for unsupported alternate propagation criterion
+	if(criterion[1]==STEADYSTATEGROWTH)
+	{	throw CommonException("The alternate propagation criterion cannot be steady state crack growth.",
+							  "MaterialBase::ValidateForUse");
+	}
+	
+	if(ConductionTask::active || ConductionTask::adiabatic)
+	{	if(heatCapacity<=0. && !IsRigid())
+		{	throw CommonException("Thermal conduction and/or mechanical energy cannot be done using materials that have zero heat capacity.",
+								  "MaterialBase::ValidateForUse");
+		}
+	}
+	
+	// Check diffusion options, but don't ask if supports diffusion unless activated
+	if(fmobj->HasDiffusion())
+	{	if(!SupportsDiffusion())
+		{	throw CommonException("Diffusion activated for a material that does not support it.",
+								  "MaterialBase::ValidateForUse");
+		}
+	}
+}
+
+// Called before analysis, material can fill in things that never change during the analysis
+// Note: no angle, because cannot depend on material angle
+// Here fills in isotropic properties, materials with different anisotropic properties should override
+void MaterialBase::FillTransportProperties(TransportProperties *t)
+{
+	// diffusion tensor
+	t->diffusionTensor.xx=diffusionCon;
+	t->diffusionTensor.yy=diffusionCon;
+	t->diffusionTensor.zz=diffusionCon;
+	t->diffusionTensor.xy=0.;
+	t->diffusionTensor.xz=0.;
+	t->diffusionTensor.yz=0.;
+	
+	// conductivity tensor normalized to rho
+	t->kCondTensor.xx = kCond;
+	t->kCondTensor.yy = kCond;
+	t->kCondTensor.zz = kCond;
+	t->kCondTensor.xy = 0.;
+	t->kCondTensor.xz = 0.;
+	t->kCondTensor.yz = 0.;
+}
+
+// If needed, a material can initialize particle state
+// For example, ideal gas initializes to base line pressure
+// Such a class must pass on the super class after its own initializations
+// The offset is to allow relocatable history data in child materials (e.g., phases)
+void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
+{
+	if(isolatedSystemAndParticles)
+	{   // need to add initial heat energy, because special cases in this mode
+		// will ignore the Cv dT term
+		double Cv = GetHeatCapacity(mptr);            // in nJ/(g-K)
+		mptr->AddHeatEnergy(Cv*(mptr->pTemperature-thermal.reference));
+		// initial entropy kept to zero, could add something here if ever needed
+	}
+}
+
+#pragma mark MaterialBase::Printing Properties
+
 // print any properties common to all MPM material types
 void MaterialBase::PrintCommonProperties(void) const
 {
 	if(MaterialStyle()==TRACTION_MAT) return;
 	
 	// rigid only allow cracks option
-	if(Rigid())
+	if(IsRigid())
 	{	if(AllowsCracks())
-			cout << "Sees cracks" << endl;
-		else
-			cout << "Ignores cracks" << endl;
+		cout << "Sees cracks" << endl;
+	else
+		cout << "Ignores cracks" << endl;
 		return;
 	}
 	
@@ -293,15 +321,15 @@ void MaterialBase::PrintCommonProperties(void) const
 	{	// print growth criterion and relevant material properties for crack growth
 		cout << "Crack Growth Criterion: ";
 		PrintCriterion(criterion[0],matPropagateDirection[0]);
-	
+		
 		// traction mat
 		if(criterion[0]!=NO_PROPAGATION && tractionMat[0]>0)
 			cout << "   New crack surface has traction material " << tractionMat[0] << endl;
-	
+		
 		if(criterion[0]!=NO_PROPAGATION && criterion[1]!=NO_PROPAGATION)
 		{	cout << "Alternate Crack Growth Criterion: ";
 			PrintCriterion(criterion[1],matPropagateDirection[1]);
-		
+			
 			// traction mat
 			if(tractionMat[1]>0)
 				cout << "   New crack surface has traction material " << tractionMat[1] << endl;
@@ -309,18 +337,18 @@ void MaterialBase::PrintCommonProperties(void) const
 	}
 	else
 		cout << "Ignores cracks" << endl;
-	   
-    // artificial visconsity
-    if(artificialViscosity)
+	
+	// artificial visconsity
+	if(artificialViscosity)
 	{	PrintProperty("Artificial viscosity on",FALSE);
 		PrintProperty("AV-A1",avA1,"");
 		PrintProperty("AV-A2",avA2,"");
-        cout << endl;
-        if(ConductionTask::AVHeating)
+		cout << endl;
+		if(ConductionTask::AVHeating)
 		{	PrintProperty("    AV heating on",FALSE);
 			cout << endl;
 		}
-        else
+		else
 		{	PrintProperty("    AV heating off",FALSE);
 			cout << endl;
 		}
@@ -329,7 +357,7 @@ void MaterialBase::PrintCommonProperties(void) const
 	// particle damping
 	if(matUsePDamping)
 	{	cout << "Particle damping: " << matPdamping << " /sec";
-        if(matUsePICDamping)
+		if(matUsePICDamping)
 		{	cout << ", PIC damping fraction: " << matFractionPIC;
 		}
 		cout << endl;
@@ -391,13 +419,13 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 			break;
 			
 		case STRAINENERGYDENSITY:
-			cout << "Minmum strain energy density" << PreferredDirection(thisDirection) << endl;  
+			cout << "Minmum strain energy density" << PreferredDirection(thisDirection) << endl;
 			PrintProperty("KIc",KIc*UnitsController::Scaling(31.62277660168379e-9),UnitsController::Label(STRESSINTENSITY_UNITS));
 			cout << endl;
 			break;
 			
 		case EMPIRICALCRITERION:
-			cout << "Empirical criterion" << PreferredDirection(thisDirection) << endl;  
+			cout << "Empirical criterion" << PreferredDirection(thisDirection) << endl;
 			sprintf(mline,"KIc=%12.3f %s  KIIc=%12.3f %s KIexp=%12.3f KIIexp=%12.3f",
 					KIc*UnitsController::Scaling(31.62277660168379e-9),UnitsController::Label(STRESSINTENSITY_UNITS),
 					KIIc*UnitsController::Scaling(31.62277660168379e-9),UnitsController::Label(STRESSINTENSITY_UNITS),
@@ -413,34 +441,6 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 			
 		default:
 			cout << "Unknown" << endl;
-	}
-}	
-
-// print transport properties to output window - default is isotropic properties
-// aniostropic materials must override it
-void MaterialBase::PrintTransportProperties(void) const
-{
-	if(Rigid()) return;
-	
-	// Diffusion constants
-	if(DiffusionTask::active)
-	{	PrintProperty("D",diffusionCon,"mm^2/sec");
-		PrintProperty("csat",concSaturation,"");
-		cout << endl;
-		PrintProperty("b",betaI,"1/wt fr");
-		cout << endl;
-	}
-	// Conductivity constants
-	if(ConductionTask::active)
-	{	PrintProperty("k",rho*kCond*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS));
-		PrintProperty("Cv",heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
-		PrintProperty("Cp",(heatCapacity+GetCpMinusCv(NULL))*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
-		cout << endl;
-	}
-	else if(ConductionTask::adiabatic)
-	{	PrintProperty("Cv",heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
-        // Cp only used in conduction so not printed here when conduction is off
-		cout << endl;
 	}
 }
 
@@ -463,79 +463,102 @@ const char *MaterialBase::PreferredDirection(int style)
 	return " in default criterion direction";
 }
 
-// Called before analysis, material can fill in things that never change during the analysis
-// Note: no angle, because cannot depend on material angle
-// Here fills in isotropic properties, materials with different anisotropic properties should override
-void MaterialBase::FillTransportProperties(TransportProperties *t)
+// print transport properties to output window - default is isotropic properties
+// aniostropic materials must override it
+// This is called just after VerifyAndLoadProperties
+void MaterialBase::PrintTransportProperties(void) const
 {
-	// diffusion tensor
-	t->diffusionTensor.xx=diffusionCon;
-	t->diffusionTensor.yy=diffusionCon;
-	t->diffusionTensor.zz=diffusionCon;
-	t->diffusionTensor.xy=0.;
-	t->diffusionTensor.xz=0.;
-	t->diffusionTensor.yz=0.;
+	if(IsRigid()) return;
 	
-	// conductivity tensor normalized to rho
-	t->kCondTensor.xx = kCond;
-	t->kCondTensor.yy = kCond;
-	t->kCondTensor.zz = kCond;
-	t->kCondTensor.xy = 0.;
-	t->kCondTensor.xz = 0.;
-	t->kCondTensor.yz = 0.;
-}
-
-/* This is called after PreliminaryCalcs() and just before first MPM time step and it
-		is only called if the material is actually in use by one or more particles
-	If material cannot be used in current analysis type throw an exception
-	Subclass that overrides must pass on to super class
-	throws CommonException()
- */
-void MaterialBase::ValidateForUse(int np) const
-{	int i;
-	
-	for(i=0;i<=1;i++)
-	{	if(i==1 && criterion[i]==NO_PROPAGATION) break;		// skip if no alternate criterion
-		if(tractionMat[i]>0)
-		{	if(tractionMat[i]>nmat)
-			{	throw CommonException("Material with undefined traction law material for propagation",
-									  "MaterialBase::ValidateForUse");
-			}
-			if(theMaterials[tractionMat[i]-1]->MaterialStyle()!=TRACTION_MAT)
-			{	throw CommonException("Material with propagation material that is not a traction law",
-									  "MaterialBase::ValidateForUse");
-			}
-		}
+	// Diffusion constants
+	if(fmobj->HasDiffusion())
+	{	PrintProperty("D",diffusionCon,UnitsController::Label(DIFFUSION_UNITS));
+		PrintProperty("csat",concSaturation,"");
+		cout << endl;
+		PrintProperty("b",betaI,"1/wt fr");
+		cout << endl;
 	}
 	
-	// check for unsupported alternate propagation criterion
-	if(criterion[1]==STEADYSTATEGROWTH)
-	{	throw CommonException("The alternate propagation criterion cannot be steady state crack growth.",
-							  "MaterialBase::ValidateForUse");
+	// Conductivity constants
+	if(ConductionTask::active)
+	{	PrintProperty("k",rho*kCond*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS));
+		PrintProperty("Cv",heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
+		PrintProperty("Cp",(heatCapacity+GetCpMinusCv(NULL))*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
+		cout << endl;
 	}
-	
-	if(ConductionTask::active || ConductionTask::adiabatic)
-	{	if(heatCapacity<=0. && !Rigid())
-		{	throw CommonException("Thermal conduction and/or mechanical energy cannot be done using materials that have zero heat capacity.",
-								  "MaterialBase::ValidateForUse");
-		}
+	else if(ConductionTask::adiabatic)
+	{	PrintProperty("Cv",heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
+		// Cp only used in conduction so not printed here when conduction is off
+		cout << endl;
 	}
 }
 
-// If needed, a material can initialize particle state
-// For example, ideal gas initializes to base line pressure
-// Such a class must pass on the super class after its own initializations
-// The offset is to allow relocatable history data in child materials (e.g., phases)
-void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
+#pragma mark MaterialBase::Setting Internal Laws
+
+// Material that allow hardening laws must accept
+// the final call and use if supported
+// Newly created laws should be added here
+// throws std::bad_alloc, SAXException()
+void MaterialBase::SetHardeningLaw(char *lawName)
 {
-	if(isolatedSystemAndParticles)
-    {   // need to add initial heat energy, because special cases in this mode
-        // will ignore the Cv dT term
-		double Cv = GetHeatCapacity(mptr);            // in nJ/(g-K)
-		mptr->AddHeatEnergy(Cv*(mptr->pTemperature-thermal.reference));
-        // initial entropy kept to zero, could add something here if ever needed
+    HardeningLawBase *pLaw = NULL;
+    int lawID = 0;
+    
+    // check options
+    if(strcmp(lawName,"Linear")==0 || strcmp(lawName,"1")==0)
+    {   pLaw = new LinearHardening(this);
+        lawID = 1;
+    }
+    
+    else if(strcmp(lawName,"Nonlinear")==0 || strcmp(lawName,"2")==0)
+    {   pLaw = new NonlinearHardening(this);
+        lawID = 2;
+    }
+    
+    else if(strcmp(lawName,"Nonlinear2")==0 || strcmp(lawName,"6")==0)
+    {   pLaw = new Nonlinear2Hardening(this);
+        lawID = 6;
+    }
+    
+    else if(strcmp(lawName,"JohnsonCook")==0 || strcmp(lawName,"3")==0)
+    {   pLaw = new JohnsonCook(this);
+        lawID = 3;
+    }
+    
+    else if(strcmp(lawName,"SCGL")==0 || strcmp(lawName,"4")==0)
+    {   pLaw = new SCGLHardening(this);
+        lawID = 4;
+    }
+
+    else if(strcmp(lawName,"SL")==0 || strcmp(lawName,"5")==0)
+    {   pLaw = new SLMaterial(this);
+        lawID = 5;
+    }
+    
+    else if(strcmp(lawName,"DDB-PPM")==0 || strcmp(lawName,"7")==0)
+    {   pLaw = new DDBHardening(this);
+		lawID = 7;
+    }
+    
+    // was it found
+    if(pLaw==NULL)
+	{	ThrowSAXException("The hardening law '%s' is not valid",lawName);
+		return;
+	}
+    
+    // pass on to the material
+    if(!AcceptHardeningLaw(pLaw,lawID))
+	{	delete pLaw;
+		ThrowSAXException("The hardening law '%s' is not allowed by material",lawName);
+		return;
 	}
 }
+
+// A Material that allows hardening laws should accept this one or it can
+// veto the choice by returning FALSE
+bool MaterialBase::AcceptHardeningLaw(HardeningLawBase *pLaw,int lawID) { return false; }
+
+#pragma mark MaterialBase:velocities fields
 
 // when set, return total number of materials if this is a new one, or 1 if not in multimaterial mode
 // not thread safe due to push_back()
@@ -572,7 +595,7 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activ
 				
 				// must match for rigid, allowing cracks, and membrane features
 				MaterialBase *matRef = theMaterials[shareMatField-1];
-				if(matRef->Rigid() != Rigid())
+				if(matRef->IsRigid() != IsRigid())
 				{	throw CommonException("Material class trying to share velocity field with an incompatible material type",
 										  "MaterialBase::SetField");
 				}
@@ -631,12 +654,7 @@ int MaterialBase::GetShareMatField(void) const { return shareMatField-1; }
 // -1 if material not in use, otherwise zero-based field number from 0 to numActiveMaterials
 int MaterialBase::GetActiveField(void) const { return activeField; }
 
-// maximum diffusion coefficient in mm^2/sec (anisotropic must override) (diff in mm^2/sec)
-double MaterialBase::MaximumDiffusion(void) const { return diffusionCon; }
-
-// maximum diffusivity in mm^2/sec  (anisotropic must override)
-// specific ks is nJ mm^2/(sec-K-g) and Cp is nJ/(g-K) so ks/Cp = mm^2 / sec 
-double MaterialBase::MaximumDiffusivity(void) const { return kCond/heatCapacity; }
+#pragma mark MaterialBase:Contact and damping
 
 // material-to-material contact
 void MaterialBase::SetFriction(int lawID,int matID)
@@ -681,18 +699,18 @@ void MaterialBase::SetDamping(double matDamping,double matPIC)
 
 // Change damping if this material requests it
 // On input, particleAlpha and gridAlpha should be the global settings
-// if material has particle damping
-//	 Changes PIC fraction (including to zero), change to
+// if material has particle damping (matUsePDamping)
+//	 Changes PIC fraction (including to zero) (matUsePICDamping), change to
 //      particleAlpha   = matFractionPIC/dt + matPdamping(t)
 //      gridAlpha       = -m*matFractionPIC/dt + damping(t)
 //		localXPIC		= m*matFractionPIC/dt
 //   Uses global PIC fraction, change to
 //      particleAlpha   = globalPIC + matPdamping(t)
 //		localXPIC		= m*globalPIC
-// if material has no damping, but wants to change PIC fraction (including to zero)
-//      particleAlpha   = matPIC/dt + pdamping(t) = matPIC/dt + (particleAlpha - globalPIC)
-//      gridAlpha       = -m*matPIC/dt + damping(t)
-//		localXPIC		= m*matPIC/dt
+// if material has no damping, but wants to change PIC fraction (including to zero) (matUsePICDamping)
+//      particleAlpha   = matFractionPIC/dt + pdamping(t) = matFractionPIC/dt + (particleAlpha - globalPIC)
+//      gridAlpha       = -m*matFractionPIC/dt + damping(t)
+//		localXPIC		= m*matFractionPIC/dt
 // if material has no damping return
 //		localXPIC		= m*globalPIC
 double MaterialBase::GetMaterialDamping(double &particleAlpha,double &gridAlpha,double nonPICGridAlpha,double globalPIC) const
@@ -750,7 +768,7 @@ int MaterialBase::GetContactLawNum(int readID)
 	// check if already a real ID
 	if(readID<1000) return readID-1;
 	
-	// look for out ID in defined amterials
+	// look for other ID in defined amterials
 	int clmat=nmat-1;
 	while(clmat>=0)
 	{	ContactLaw *matLaw = (ContactLaw *)theMaterials[clmat];
@@ -760,59 +778,7 @@ int MaterialBase::GetContactLawNum(int readID)
 	return -1;
 }
 
-// Find the compression needed for bulk modulus to increase Kmax fold
-double MaterialBase::GetMGEOSXmax(double gamma0,double S1,double S2,double S3,double &Kmax)
-{
-	// increase until passes kmax or become negative
-	double xl = 0.,xr = 0.;
-	double step = 0.05,denom,kr,kl=1.;
-	while(true)
-	{	xr += step;
-		denom = 1./(1. - xr*(S1 + xr*(S2 + xr*S3)));
-		
-		// if less then zero, went too far
-		if(denom<=0.)
-		{	xr -= step;
-			step /= 2.;
-			continue;
-		}
-		
-		// check ratio
-		kr = (1.-0.5*gamma0*xr)*denom*denom;
-		if(kr>Kmax) break;
-		
-		// did it pass a maximum
-		if(kr<kl)
-		{	Kmax = kl;
-			return xl;
-		}
-		
-		// update and continue
-		kl = kr;
-		xl = xr;
-	}
-	
-	// bisect to improve
-	double xmid;
-	for(int i=0;i<15;i++)
-	{	xmid = (xl+xr)/2.;
-		denom = 1./(1. - xmid*(S1 + xmid*(S2 + xmid*S3)));
-		kr = (1.-0.5*gamma0*xmid)*denom*denom;
-		if(kr<Kmax)
-			xl = xmid;
-		else
-			xr = xmid;
-	}
-	
-	return xmid;
-}
-
 #pragma mark MaterialBase::History Data Methods
-
-// return number of bytes needed for history data
-// a negative number means this material does not support combined history
-//	data that might be offset from particle history pointer
-int MaterialBase::SizeOfHistoryData(void) const { return -1; }
 
 // create and return pointer to material-specific data on a particle
 //	using this material. Called once at start of analysis for each
@@ -825,8 +791,25 @@ int MaterialBase::SizeOfHistoryData(void) const { return -1; }
 char *MaterialBase::InitHistoryData(char *pchr,MPMBase *mptr) { return NULL; }
 char *MaterialBase::InitHistoryData(char *pchr) { return NULL; }
 
-// archive material data for this material type when requested.
-double MaterialBase::GetHistory(int num,char *historyPtr) const { return (double)0.; }
+// Number of history variables (used by some materials when creating array of doubles)
+int MaterialBase::NumberOfHistoryDoubles(void) const { return 0; }
+
+// archive material data for this material type when requested
+// assumes materials using simple array of doubles
+double MaterialBase::GetHistory(int num,char *historyPtr) const
+{	double history=0.;
+    if(num>0 && num<=NumberOfHistoryDoubles())
+    {	double *soft = (double *)historyPtr;
+        history = soft[num-1];
+    }
+    return history;
+}
+
+// return number of bytes needed for history data
+// a negative number means this material does not support combined history
+//	data that might be offset from particle history pointer
+// Only used by Phase Transition Material
+int MaterialBase::SizeOfHistoryData(void) const { return -1; }
 
 // if pchr==NULL, create buffer for material data with the requested number of double
 //		otherwise assume it already exists and is big enough
@@ -852,18 +835,63 @@ double *MaterialBase::CreateAndZeroDoubles(char *pchr,int numDoubles) const
 	return p;
 }
 
-// Damage zero normal vector - damage material will override
-Vector MaterialBase::GetDamageNormal(MPMBase *mptr,bool threeD) const
-{	Vector dnorm;
-	ZeroVector(&dnorm);
-	return dnorm;
-}
-
 #pragma mark MaterialBase::Methods
 
 // All maternal classes must override to handle their constitutive law
 void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res,int historyOffset) const
 {
+}
+
+// Using small-strain, large rotation method to find incremental strain
+// Tasks
+// 1. find dF, increment and save new deformation on the particle
+// 2. Find incremental rotation tensor
+// R0 must be provided for MATERIAL_CONFIGURATION, but otherwise can be NULL
+// If Rnm1 or Rn are not NULL, that rotation matrix is returned (rotation to
+//		initial, but not to material axes)
+Matrix3 MaterialBase::LRGetStrainIncrement(int axes,MPMBase *mptr,Matrix3 du,Matrix3 *dR,Matrix3 *R0,
+                                           Matrix3 *Rnm1out,Matrix3 *Rnout) const
+{
+    // current previous deformation gradient and stretch
+    Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
+    
+    // get incremental deformation gradient and decompose it
+    const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
+    
+    // Update total deformation gradient
+    Matrix3 pF = dF*pFnm1;
+    mptr->SetDeformationGradientMatrix(pF);
+    
+    // decompose to get previous Rn and Rn-1
+    Matrix3 Rnm1,Rn;
+    Matrix3 *Rnm1Ptr = (Rnm1out==NULL) ? &Rnm1 : Rnm1out ;
+    Matrix3 *RnPtr = (Rnout==NULL) ? &Rn : Rnout ;
+    
+    // two decompositions
+    pFnm1.RightDecompose(Rnm1Ptr,NULL);
+    pF.LeftDecompose(RnPtr,NULL);
+    *dR = (*RnPtr)*Rnm1Ptr->Transpose();
+    
+    // get strain increments in
+    // 1. current configuration (dF-dR)F(n-1) Rn^T
+    // 2. initial configuration Rn^T (dF-dR)F(n-1)
+	// 3. material configuration R0^T (initial) R0
+    Matrix3 dFmdR = dF - *dR;
+    Matrix3 de;
+    switch(axes)
+    {	case CURRENT_CONFIGURATION:
+            de = dFmdR*(pFnm1*RnPtr->Transpose());
+            break;
+        case INITIAL_CONFIGURATION:
+            de = RnPtr->Transpose()*(dFmdR*pFnm1);
+            break;
+		default:
+            de = RnPtr->Transpose()*(dFmdR*pFnm1);
+            de = de.RTMR(*R0);
+            break;
+    }
+    
+    return de;
 }
 
 // get incremental residual voluje change (needed for phase change materials
@@ -882,13 +910,16 @@ void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffe
 
 // Get transport property tensors (if change with particle state)
 // only called when there are transport tasks
-void MaterialBase::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t) const { *t = tr; }
+void MaterialBase::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t) const
+{	*t = tr;
+}
 
 // Get Cv heat capacity (with option for parent to add excess heat capacity)
 // Implemented in case heat capacity changes with particle state
 // Legacy Units nJ/(g-K)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) const
-{   return heatCapacity;
+{
+    return heatCapacity;
 }
 
 // For Cp heat capacity in nJ/(g-K)
@@ -899,113 +930,54 @@ double MaterialBase::GetCpHeatCapacity(MPMBase *mptr) const { return GetHeatCapa
 // (if mptr==NULL, can use stress free temperature instead)
 double MaterialBase::GetCpMinusCv(MPMBase *mptr) const { return 0; }
 
-// Increment heat energy using Cv(dT-dTq0) - dPhi, where Cv*dTq0 + dPhi = Cv dTad is total
-//		dispated energy
+// For eta/Q in poroelasticity, otherwise it is 1
+double MaterialBase::GetDiffusionCT(void) const { return diffusionCT; }
+
+// Increment heat energy - call whenever dTq0 or dPhi changes
 // dTq0 is temperature rise due to material mechanisms if the process was adiabatic and reversible
 // dPhi is dissipated energy that is converted to temperature rise (it is irreverisble)
-void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,double dPhi) const
+// If adiabatic: add dTq0+dPhi/CV to adiabatice temperature rise and dPhi/T to entropy
+// If isothermal: heat energy decrease by Cv*dTqo+dPhi to mantain constant temperature
+//			Entropy change -Cv dTq0/T which is reverisble exchange with exterior
+void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dTq0,double dPhi) const
 {
 	double Cv = GetHeatCapacity(mptr);					// in nJ/(g-K)
-
-#ifdef NEW_HEAT_METHOD
+ 
     // Adiabatic temperature change dT_{ad} = dTq0+dPhi/Cv
     if(ConductionTask::adiabatic)
-    {   // temperature increased bt dT_{ad}
-        mptr->Add_dTad(dTq0+dPhi/Cv);
-        
+    {   // temperature increased to buffered dT_{ad}
+		double dTad = dTq0+dPhi/Cv;
+        mptr->Add_dTad(dTad);
+		
         // no heat here because adiabatic
         
         // entropy
-        mptr->AddEntropy(dPhi/mptr->pPreviousTemperature);
+		mptr->AddEntropy(dPhi,mptr->pPreviousTemperature);
     }
     else
-    {   // no temperature change because isotherman
+    {   // no temperature change because isothermal
         
         // temperature rise switched to heat
         double baseHeat = -Cv*dTq0;
         mptr->AddHeatEnergy(baseHeat-dPhi);
         
         // for entropy dS = -Cv dTad/T + dPhi/T = - Cv dTq0/T
-        mptr->AddEntropy(baseHeat/mptr->pPreviousTemperature);
+        mptr->AddEntropy(baseHeat,mptr->pPreviousTemperature);
     }
-#else
-	// Isolated means no conduction and no thermal ramp (and in future if have other ways
-	//		to change particle temperature, those are not active either)
-	// In this mode, adiabatic has dq=0 and isothermal releases all as heat
-    if(isolatedSystemAndParticles)
-    {   // Here dText = 0
-		if(ConductionTask::adiabatic)
-		{	// dq = 0 (nothing to add)
-			
-			// but dissipated energy is treated as irreversible entropy
-			mptr->AddEntropy(dPhi/mptr->pPreviousTemperature);
-			
-			// add so particle temperature will rise
-			mptr->Add_dTad(dTq0+dPhi/Cv);
-		}
-		else
-        {	// If isothermal dq = -Cv dTad = -Cv dTq0 - dPhi
-			double baseHeat = -Cv*dTq0;
-			mptr->AddHeatEnergy(baseHeat-dPhi);
-			
-			// for entropy dS = -Cv dTad/T + dPhi/T = - Cv dTq0/T
-            mptr->AddEntropy(baseHeat/mptr->pPreviousTemperature);
-        }
-    }
-	else
-	{	// Here dText is not zero
-        if(ConductionTask::adiabatic)
-        {   // For adiabatic use dq = Cv(dT-dTad(n-1)) where Cv dTad(n-1) has been buffered
-			double revHeat = Cv*(dT - mptr->GetClearPrevious_dTad());
-			mptr->AddHeatEnergy(revHeat);
-			
-			// entropy add irreversible term
-			mptr->AddEntropy((revHeat + dPhi)/mptr->pPreviousTemperature);
-			
-			// add so particle temperature will rise
-			mptr->Add_dTad(dTq0+dPhi/Cv);
-        }
-        else
-		{	// for isothermal, all of dT is dText and no buffer dTad
-			double baseHeat = Cv*(dT - dTq0);
-			mptr->AddHeatEnergy(baseHeat-dPhi);
-			
-			// entropy
-			mptr->AddEntropy(baseHeat/mptr->pPreviousTemperature);
-        }
-	}
-#endif
 }
 
 // Correct stress update for rotations using hypoelasticity approach
 // dwrotxy of rotation tensor (or twice tensorial rotation, i.e. dvyx-dvxy)
 // dsxx, dsyy, and dtxy are unrotated updates to sxx, syy, and txy
-// This methods increments in-plane stresses
-void MaterialBase::Hypo2DCalculations(MPMBase *mptr,double dwrotxy,double dexxPlusdeyy,double dsxx,double dsyy,double dtxy) const
+// This methods increments in-plane stresses only
+void MaterialBase::Hypo2DCalculations(MPMBase *mptr,double dwrotxy,double dsxx,double dsyy,double dtxy) const
 {
 	Tensor *sp=mptr->GetStressTensor();
-	double dwxy2 = dwrotxy*dwrotxy/4.;					// dwxy^2/4
-	double shearD = dwrotxy*(1.-0.5*dexxPlusdeyy);		// dwxy*(1-(dexx+deyy)/2)
-	double diff = sp->xx-sp->yy;
-	double dnorm = shearD*sp->xy + dwxy2*diff;
+	double dnorm = dwrotxy*sp->xy;
+	double dshear =  0.5*dwrotxy*(sp->xx-sp->yy);
 	sp->xx += dsxx - dnorm;
 	sp->yy += dsyy + dnorm;
-	double dshear =  0.5*shearD*diff - 2.*dwxy2*sp->xy;
 	sp->xy += dtxy + dshear;
-	
-	/* (old method)
-	 double rotD = -dwrotxy
-	 dsxx+=sp->xy*rotD;
-	 dsyy-=sp->xy*rotD;
-	 dtxy-=0.5*(sp->xx-sp->yy)*rotD;
-	 
-	 rotD*=0.5;					// comment out for midpoint rule to have rotD=D (endpoint rule) or D/2 (midpoint rule)
-	 double rotD2=rotD*rotD;		// D^2 (endpoint rule) or D^2/4 (midpoint rule)
-	 double det=1.+rotD2;		// 1+D^2 (endpoint rule) or 1+D^2/4 (midpoint rule)
-	 sp->xx+=((1.+0.5*rotD2)*dsxx + 0.5*rotD2*dsyy + rotD*dtxy)/det;
-	 sp->yy+=(0.5*rotD2*dsxx + (1.+0.5*rotD2)*dsyy - rotD*dtxy)/det;
-	 sp->xy+=(0.5*rotD*(dsyy-dsxx) + dtxy)/det;
-	 */
 }
 
 // Correct stress update for rotations using hypoelasticity approach
@@ -1033,15 +1005,13 @@ void MaterialBase::Hypo3DCalculations(MPMBase *mptr,double dwxy,double dwxz,doub
 	sp->yz += dsig[YZ] + st.yz;
 	sp->xz += dsig[XZ] + st.xz;
 	sp->xy += dsig[XY] + st.xy;
-	
-	/* old method
-	sp->xx+=dsig[XX] + st.xx - 0.5*dsig[XY]*dwxy - 0.5*dsig[XZ]*dwxz;
-	sp->yy+=dsig[YY] + st.yy + 0.5*dsig[XY]*dwxy - 0.5*dsig[YZ]*dwyz;
-	sp->zz+=dsig[ZZ] + st.zz + 0.5*dsig[XZ]*dwxz + 0.5*dsig[YZ]*dwyz;
-	sp->yz+=dsig[YZ] + st.yz + 0.25*( +dsig[XZ]*dwxy + dsig[XY]*dwxz + (dsig[YY]-dsig[ZZ])*dwyz );
-	sp->xz+=dsig[XZ] + st.xz + 0.25*( -dsig[YZ]*dwxy + (dsig[XX]-dsig[ZZ])*dwxz + dsig[XY]*dwyz  );
-	sp->xy+=dsig[XY] + st.xy + 0.25*( +(dsig[XX]-dsig[YY])*dwxy - dsig[YZ]*dwxz - dsig[XZ]*dwyz  );
-	*/
+}
+
+// Damage zero normal vector - damage material will override
+Vector MaterialBase::GetDamageNormal(MPMBase *mptr,bool threeD) const
+{	Vector dnorm;
+	ZeroVector(&dnorm);
+	return dnorm;
 }
 
 #pragma mark MaterialBase::Fracture Calculations
@@ -1555,16 +1525,7 @@ bool MaterialBase::ControlCrackSpeed(CrackSegment *crkTip,double &waitTime)
     return false;
 }
 
-#pragma mark MaterialBase::Accessors
-
-/* Calculate maximum wave speed for material in mm/sec. WaveSpeed() is called
-	once for each material point at beginning of calculation. If variable wave
-	speed, be conservative and return the maximum possible save speed.
-	It is also called by crack propagation, for which threeD is always FALSE
-		and mptr is NULL
-	The method is abstract (in MaterialBase.hpp) so all sub classes must implement
-*/
-//double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) { }
+#pragma mark MaterialBase::Accessors (optional)
 
 /* Calculate shear wave speed for material in mm/sec. This is only called for silent
 	boundary conditions. This base class return CurrentWaveSpeed()/sqrt(3). A new
@@ -1591,21 +1552,103 @@ double MaterialBase::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) cons
 {	return WaveSpeed(threeD,mptr);
 }
 
-// return TRUE if rigid particle (for contact or for BC)
-bool MaterialBase::Rigid(void) const { return false; }
+// maximum diffusion coefficient in mm^2/sec (anisotropic must override) (diff in mm^2/sec)
+double MaterialBase::MaximumDiffusion(void) const { return diffusionCon; }
 
-// return TRUE is rigid BC particle (not rigid for contact)
-short MaterialBase::RigidBC(void) const { return false; }
+// maximum diffusivity in mm^2/sec  (anisotropic must override)
+// specific ks is nJ mm^2/(sec-K-g) and Cp is nJ/(g-K) so ks/Cp = mm^2 / sec
+double MaterialBase::MaximumDiffusivity(void) const { return kCond/heatCapacity; }
 
-// return TRUE is rigid BC particle (not rigid for contact)
-short MaterialBase::RigidContact(void) const { return false; }
+// Get current relative volume change - only used to convert speific results to actual values when archiving
+// Materials with explicit treatment of large deformation will need it (e.g., Hyperelastic)
+// offset version if for phase transition materials
+double MaterialBase::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const { return 1.; }
 
-// check if membrane material
-int MaterialBase::MaterialStyle(void) const { return SOLID_MAT; }
+// Copy stress to a read-only tensor variable
+// Subclass material can override, such as to combine pressure and deviatory stress into full stress
+Tensor MaterialBase::GetStress(Tensor *sp,double pressure,MPMBase *) const
+{   Tensor stress = *sp;
+	return stress;
+}
+
+// Copy stress to a read-only tensor variable
+// Subclass material can override, such as to combine pressure and deviatory stress into full stress
+Tensor MaterialBase::GetStressPandDev(Tensor *sp,double pressure,MPMBase *mptr) const
+{	Tensor stress = *sp;
+	stress.xx -= pressure;
+	stress.yy -= pressure;
+	stress.zz -= pressure;
+	return stress;
+}
+
+// store a new total stress on a particle's stress and pressure variables
+void MaterialBase::SetStress(Tensor *spnew,MPMBase *mptr) const
+{	Tensor *sp = mptr->GetStressTensor();
+	*sp = *spnew;
+}
+
+// store a new total stress on a particle's stress and pressure variables
+void MaterialBase::SetStressPandDev(Tensor *spnew,MPMBase *mptr) const
+{	double newP = -(spnew->xx+spnew->yy+spnew->zz)/3.;
+	Tensor *sp = mptr->GetStressTensor();
+	*sp = *spnew;
+	sp->xx += newP;
+	sp->yy += newP;
+	sp->zz += newP;
+	mptr->SetPressure(newP);
+}
+
+// For generalized plane stress, increment thickness (zz) stress
+void MaterialBase::IncrementThicknessStress(double dszz,MPMBase *mptr) const
+{	Tensor *sp = mptr->GetStressTensor();
+	sp->zz += dszz;
+}
+
+// For generalized plane stress, increment thickness (zz) stress through deviatoric stress and pressure
+void MaterialBase::IncrementThicknessStressPandDev(double dszz,MPMBase *mptr) const
+{	double delP = -dszz/3.;
+	Tensor *sp = mptr->GetStressTensor();
+	sp->xx += delP;
+	sp->yy += delP;
+	sp->zz -= 2.*delP;
+	double newP = mptr->GetPressure() + delP;
+	mptr->SetPressure(newP);
+}
+
+// if a subclass material supports artificial viscosity, override this and return true
+bool MaterialBase::SupportsArtificialViscosity(void) const { return false; }
+
+// if a material does not support diffusion or poroelasticity, override and return false
+// only called when diffusion is active
+bool MaterialBase::SupportsDiffusion(void) const { return true; }
+
+// return code indicated what is store in the "plastic strain" on the material, which can
+// only be a symmetrix tensor
+int MaterialBase::AltStrainContains(void) const { return NOTHING; }
+
+// concentration saturation (mptr cannot be NULL)
+double MaterialBase::GetMaterialConcentrationSaturation(MPMBase *mptr) const { return concSaturation; }
 
 // density (NULL is allowed as long as material not using child materials)
 // in MPM use a MPMBase *, in FEA always use NULL
 double MaterialBase::GetRho(MPMBase *mptr) const { return rho; }
+
+#pragma mark Material Base:Other Accessors
+
+// return true if any rigid particle
+bool MaterialBase::IsRigid(void) const { return false; }
+
+// return true is rigid BC particle
+bool MaterialBase::IsRigidBC(void) const { return false; }
+
+// return true is rigid contact particle
+bool MaterialBase::IsRigidContact(void) const { return false; }
+
+// return true is rigid black particle
+bool MaterialBase::IsRigidBlock(void) const { return false; }
+
+// check if membrane material
+int MaterialBase::MaterialStyle(void) const { return SOLID_MAT; }
 
 // check if keeps crack tip
 int MaterialBase::KeepsCrackTip(void) const { return constantTip; }
@@ -1618,7 +1661,11 @@ int MaterialBase::GetMVFFlags(int matfld)
 	if(matfld>=(int)fieldMatIDs.size()) return 0;
 	
 	MaterialBase *matID = theMaterials[fieldMatIDs[matfld]];
-	int flags = matID->Rigid() ? RIGID_FIELD_BIT : 0 ;
+	int flags = 0;
+	if(matID->IsRigid())
+	{	flags = RIGID_FIELD_BIT;
+		if(matID->IsRigidBlock()) flags += RIGID_BLOCK_BIT;
+	}
 	if(!matID->AllowsCracks()) flags += IGORE_CRACKS_BIT;
 	return flags;
 }
@@ -1631,40 +1678,66 @@ int MaterialBase::GetFieldMatID(int matfld) { return fieldMatIDs[matfld]; }
 // These are no rigid only
 int MaterialBase::GetActiveMatID(int matfld) { return activeMatIDs[matfld]; }
 
-// Get current relative volume change - only used to convert speific results to actual values when archiving
-// Materials with explicit treatment of large deformation will need it (e.g., Hyperelastic)
-// offset version if for phase transition materials
-double MaterialBase::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const { return 1.; }
-
-// Copy stress to a read-only tensor variable
-// Subclass material can override, such as to combine pressure and deviatory stress into full stress
-Tensor MaterialBase::GetStress(Tensor *sp,double pressure,MPMBase *) const
-{   Tensor stress = *sp;
-    return stress;
-}
-
 // Calculate artficial damping where Dkk is the relative volume change rate = (V(k+1)-V(k))/(V(k+1)dt)
-// and c is the current wave speed in mm/sec
+// and c is the current wave speed in current units
+// WARNING - only call this method after verifyting Dkk<0 && artificialViscosity
 double MaterialBase::GetArtificalViscosity(double Dkk,double c,MPMBase *mptr) const
 {
-    double avred = 0.;
-    if(Dkk<0 && artificialViscosity)
-    {   double divuij = fabs(Dkk);                                  // T^-1
-        double dcell = mpmgrid.GetAverageCellSize(mptr);                // L
-        avred = dcell*divuij*(avA1*c + avA2*dcell*divuij);			// L^2/T^2 = F L/M = Pressure/rho = Kirchoff Pressure/rho0
-    }
-    return avred;
+    double divuij = fabs(Dkk);                                  // T^-1
+	double dcell = mpmgrid.GetAverageCellSize(mptr);            // L
+	return dcell*divuij*(avA1*c + avA2*dcell*divuij);			// L^2/T^2 = F L/M = Pressure/rho = Kirchoff Pressure/rho0
 }
 
-// if a subclass material supports artificial viscosity, override this and return TRUE
-bool MaterialBase::SupportsArtificialViscosity(void) const { return false; }
+// True to see cracks or false to ignore cracks and use single velocity field
+// Can only ignore cracks in multimaterial mode.
+int MaterialBase::AllowsCracks(void) const { return allowsCracks; }
 
-// return code indicated what is store in the "plastic strain" on the material, which can
-// only be a symmetrix tensor
-int MaterialBase::AltStrainContains(void) const { return NOTHING; }
-
-// concentraion saturation (mptr cannot be NULL)
-double MaterialBase::GetConcSaturation(MPMBase *mptr) const { return concSaturation; }
+// Find the compression needed for bulk modulus to increase Kmax fold
+double MaterialBase::GetMGEOSXmax(double gamma0,double S1,double S2,double S3,double &Kmax)
+{
+	// increase until passes kmax or become negative
+	double xl = 0.,xr = 0.;
+	double step = 0.05,denom,kr,kl=1.;
+	while(true)
+	{	xr += step;
+		denom = 1./(1. - xr*(S1 + xr*(S2 + xr*S3)));
+		
+		// if less then zero, went too far
+		if(denom<=0.)
+		{	xr -= step;
+			step /= 2.;
+			continue;
+		}
+		
+		// check ratio
+		kr = (1.-0.5*gamma0*xr)*denom*denom;
+		if(kr>Kmax) break;
+		
+		// did it pass a maximum
+		if(kr<kl)
+		{	Kmax = kl;
+			return xl;
+		}
+		
+		// update and continue
+		kl = kr;
+		xl = xr;
+	}
+	
+	// bisect to improve
+	double xmid;
+	for(int i=0;i<15;i++)
+	{	xmid = (xl+xr)/2.;
+		denom = 1./(1. - xmid*(S1 + xmid*(S2 + xmid*S3)));
+		kr = (1.-0.5*gamma0*xmid)*denom*denom;
+		if(kr<Kmax)
+			xl = xmid;
+		else
+			xr = xmid;
+	}
+	
+	return xmid;
+}
 
 // lquids return shear-rate dependent viscosity. Only used in liquid contact.
 double MaterialBase::GetViscosity(double shearRate) const { return -1.; }
@@ -1677,13 +1750,8 @@ double MaterialBase::GetViscosity(double shearRate) const { return -1.; }
 //	3. If can't help, set brackets to (0,-1) and (1,k*viscosity) and return -1.
 double MaterialBase::BracketContactLawShearRate(double gmaxdot,double k,double &x1,double &y1,double &x2,double &y2) const
 {	x1 = 0.;
-    y1 = -1.;
-    x2 = 1.;
-    y2 = k*GetViscosity(gmaxdot);
-    return -1;
+	y1 = -1.;
+	x2 = 1.;
+	y2 = k*GetViscosity(gmaxdot);
+	return -1;
 }
-
-// True to see cracks or false to ignore cracks and use single velocity field
-// Can only ignore cracks in multimaterial mode.
-int MaterialBase::AllowsCracks(void) const { return allowsCracks; }
-

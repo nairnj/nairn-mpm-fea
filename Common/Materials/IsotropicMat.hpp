@@ -22,8 +22,7 @@ class IsotropicMat : public Elastic
     public:
         
         // constructors and destructors
-        IsotropicMat();
-        IsotropicMat(char *);
+        IsotropicMat(char *,int);
 		
 		// initialize
         virtual char *InputMaterialProperty(char *,int &,double &);
@@ -42,6 +41,8 @@ class IsotropicMat : public Elastic
 		// accessors
 		virtual const char *MaterialType(void) const;
 #ifdef MPM_CODE
+		virtual double GetMagnitudeSFromDev(Tensor *,int) const;
+		virtual double GetMagnitudeSFromTotal(Tensor *,int) const;
 		virtual double WaveSpeed(bool,MPMBase *) const;
         virtual double ShearWaveSpeed(bool,MPMBase *,int) const;
 #endif

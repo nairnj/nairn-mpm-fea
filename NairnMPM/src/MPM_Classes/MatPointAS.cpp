@@ -14,6 +14,7 @@
 ********************************************************************************/
 
 #include "stdafx.h"
+#include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MatPointAS.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Elements/ElementBase.hpp"
@@ -71,33 +72,12 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     // save velocity gradient (if needed for J integral calculation)
     SetVelocityGradient(dv(0,0),dv(1,0),dv(0,1),dv(1,0),secondPass);
     
-    // convert to strain increments
+	// convert to strain increments
     // e.g., now dvrr = dvr/dr * dt = d/dr(du/dt) * dt = d/dt(du/dr) * dt = du/dr)
     dv.Scale(strainTime);
     
-	// Extrapolate grid temperature (or concentration) to the particle
-	// Find delta value from previous extrapolated grid value on particle
-	// (and save this new one for use by others and next time step)
-	ResidualStrains res;
-	res.dT = 0;
-	res.dC = 0.;
-	if(!ConductionTask::active)
-	{	// just use then reset previous temperature
-		res.dT = pTemperature-pPreviousTemperature;
-		pPreviousTemperature = pTemperature;
-	}
-	else
-	{	for(i=1;i<=numnds;i++)
-			res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
-		res.dT = conduction->GetDeltaValue(this,res.dT);
-	}
-	if(DiffusionTask::active)
-	{	for(i=1;i<=numnds;i++)
-			res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
-		res.dC = diffusion->GetDeltaValue(this,res.dC);
-	}
-	
 	// pass on to material class to handle
+	ResidualStrains res = ScaledResidualStrains(secondPass);
 	PerformConstitutiveLaw(dv,strainTime,np,props,&res);
 }
 
@@ -248,158 +228,3 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
         faceArea->y = sqrt(r2.x*r2.x+r2.y*r2.y)*mpmgrid.GetThickness();			// edges 2 and 4
     }
 }
-
-// Note: Handled by MatPoint2D parent class when doing exact tractions
-// To support traction boundary conditions, find the deformed edge, natural coordinates of
-// the corners along the edge, elements for those edges, and a normal vector in direction
-// of the traction
-// return ratio of second nodal weight to first one
-// throws CommonException() if traction edge has left the grid
-double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
-{
-    *numDnds = 2;
-    double faceWt,ratio=1.,r1mag,r2mag;
-    double rp=pos.x;
-    Vector r1,r2;
-    
-    if(ElementBase::useGimp==UNIFORM_GIMP_AS)
-    {   double r1x,r2y;
-        GetUndeformedSemiSides(&r1x,&r2y,NULL);
-        r1.x = r1x;
-        r1.y = 0.;
-        r2.x = 0.;
-        r2.y = r2y;
-
-        // truncate if extends into r<0
-        if(pos.x-r1.x<0.)
-        {   r1.x = 0.5*(pos.x+r1.x);
-            rp = r1.x;
-        }
-        
-        // get magnitudes
-        r1mag = r1.x;
-        r2mag = r2.y;
-    }
-    
-    else if(ElementBase::useGimp==LINEAR_CPDI_AS)
-    {   // always LINEAR_CPDI_AS
-	
-        // get polygon vectors - these are from particle to edge
-        //      and generalize semi width lp in 1D GIMP
-        GetSemiSideVectors(&r1,&r2,NULL);
-        
-        // truncate by shrinking domain if any have x < 0, but keep particle in the middle
-        if(pos.x-fabs(r1.x+r2.x)<0.)
-        {	// make pos.x-shrink*fabs(r1.x+r2.x) very small and positive
-            double shrink = (pos.x-theElements[ElemID()]->GetDeltaX()*1.e-10)/fabs(r1.x+r2.x);
-            r1.x *= shrink;
-            r1.y *= shrink;
-            r2.x *= shrink;
-            r2.y *= shrink;
-        }
-        
-        // get magnitudes
-        r1mag = sqrt(r1.x*r1.x + r1.y*r1.y);
-        r2mag = sqrt(r2.x*r2.x + r2.y*r2.y);
-    }
-    
-	else
-	{	// Currently not allowed
-		throw CommonException("Traction BCs in axisymmetric require lCPDI or uGIMP shape functions.","MatPoint2D::GetTractionInfo");
-	}
-	
-    // Find corners
-	Vector c1,c2;
-	switch(face)
-	{	case 1:
-			// lower edge
-			c1.x = rp-r1.x-r2.x;         // node 1
-			c1.y = pos.y-r1.y-r2.y;
-			c2.x = rp+r1.x-r2.x;         // node 2
-            c2.y = pos.y+r1.y-r2.y;
-			faceWt = r1mag*(rp - r2.x - r1.x/3.);			// node 1, node 2 should be plus
-			ratio = r1mag*(rp - r2.x + r1.x/3.)/faceWt;		// find the ratio
-			break;
-			
-		case 2:
-			// right edge
-			c1.x = rp+r1.x-r2.x;         // node 2
-			c1.y = pos.y+r1.y-r2.y;
-			c2.x = rp+r1.x+r2.x;         // node 3
-			c2.y = pos.y+r1.y+r2.y;
-			faceWt = r2mag*(rp + r1.x - r2.x/3.);			// node 2, node 3 should be plus
-			ratio = r2mag*(rp + r1.x + r2.x/3.)/faceWt;		// find the ratio
-			break;
-			
-		case 3:
-			// top edge
-			c1.x = rp+r1.x+r2.x;         // node 3
-			c1.y = pos.y+r1.y+r2.y;
-			c2.x = rp-r1.x+r2.x;         // node 4
-			c2.y = pos.y-r1.y+r2.y;
-			faceWt = r1mag*(rp + r2.x + r1.x/3.);			// node 3, node 4 should be minus
-			ratio = r1mag*(rp + r2.x - r1.x/3.)/faceWt;		// find the ratio
-			break;
-			
-		default:
-			// left edge
-			c1.x = rp-r1.x+r2.x;         // node 4
-			c1.y = pos.y-r1.y+r2.y;
-			c2.x = rp-r1.x-r2.x;         // node 1
-			c2.y = pos.y-r1.y-r2.y;
-			faceWt = r2mag*(rp - r1.x + r2.x/3.);			// node 4, node 1 should be minus
-			ratio = r2mag*(rp - r1.x - r2.x/3.)/faceWt;		// find the ratio
-			break;
-	}
-	
-	// get elements
-	try
-	{	cElem[0] = mpmgrid.FindElementFromPoint(&c1,this)-1;
-		theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
-		
-		cElem[1] = mpmgrid.FindElementFromPoint(&c2,this)-1;
-		theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
-	}
-    catch(CommonException& err)
-    {   char msg[200];
-        sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
-        throw CommonException(msg,"MatPointAS::GetTractionInfo");
-    }
-	
-    // get traction normal vector by radial integral for first node no the edge
-    ZeroVector(tscaled);
-	double ex,ey,enorm;
-	switch(dof)
-	{	case 1:
-			// normal is x direction
-			tscaled->x = faceWt;
-			break;
-        case 2:
-            // normal is y direction
-            tscaled->y = faceWt;
-            break;
-		case N_DIRECTION:
-			// cross product of edge vector with (0,0,1) = (ey, -ex)
-			ex = c2.y-c1.y;
-			ey = c1.x-c2.x;
-		case T1_DIRECTION:
-			if(dof==T1_DIRECTION)
-			{	ex = c2.x-c1.x;
-				ey = c2.y-c1.y;
-			}
-			// load in direction specified by normalized (ex,ey)
-			enorm = sqrt(ex*ex+ey*ey);
-			tscaled->x = ex*faceWt/enorm;
-			tscaled->y = ey*faceWt/enorm;
-			break;
-		default:
-			// normal is z direction (not used here)
-            tscaled->z = faceWt;
-			break;
-	}
-	
-	// return ratio of second nodal weight to first one
-	return ratio;
-}
-
-

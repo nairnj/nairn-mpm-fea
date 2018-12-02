@@ -14,13 +14,8 @@
 
 #pragma mark Neohookean::Constructors and Destructors
 
-// Constructors
-Neohookean::Neohookean()
-{
-}
-
-// Constructors with arguments
-Neohookean::Neohookean(char *matName) : HyperElastic(matName)
+// Constructor
+Neohookean::Neohookean(char *matName,int matID) : HyperElastic(matName,matID)
 {
 	G = -1.;			// Must enter K and G OR Etens and nu OR Lame and G
 	Etens = -1.;
@@ -161,15 +156,8 @@ char *Neohookean::InitHistoryData(char *pchr,MPMBase *mptr)
 	return (char *)p;
 }
 
-// archive material data for this material type when requested.
-double Neohookean::GetHistory(int num,char *historyPtr) const
-{   double history=0.;
-    if(num>0 && num<=2)
-    {	double *J=(double *)historyPtr;
-        history = J[num-1];
-    }
-    return history;
-}
+// Number of history variables
+int Neohookean::NumberOfHistoryDoubles(void) const { return 2; }
 
 #pragma mark Neohookean::Methods
 
@@ -332,42 +320,7 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     double dTq0 = -J*Kratio*gamma0*mptr->pPreviousTemperature*delV;
     
     // thermodynamics heat and temperature
-	IncrementHeatEnergy(mptr,res->dT,dTq0,QAVred);
-}
-
-// When becomes active update J, set pressure deviatoric stress from current elastic B
-void Neohookean::BeginActivePhase(MPMBase *mptr,int np,int historyOffset) const
-{	double J = mptr->GetRelativeVolume();
-	mptr->SetHistoryDble(J_History,J,historyOffset);
-	
-    // account for residual stresses
-	double Jres = mptr->GetHistoryDble(J_History+1,historyOffset);
-	double resStretch = pow(Jres,1./3.);
-	double Jres23 = resStretch*resStretch;
-	double Jeff = J/Jres;
-	
-	// get pointer to new left Cauchy strain
-    Tensor *B = mptr->GetAltStrainTensor();
-	
-    // update pressure
-	double Pterm = J*GetVolumetricTerms(Jeff,pr.Lamesp) + Jres*pr.Gsp*((B->xx+B->yy+B->zz)/(3.*Jres23) - 1.);
-    mptr->SetPressure(-Pterm);
-	
-    // Account for density change in specific stress
-    // i.e.. Get (Kirchoff Stress)/rho0
-	double GJeff = resStretch*pr.Gsp;		// = J*(Jres^(1/3) G/J) to get Kirchoff
-    
-	// find deviatoric (Cauchy stress)J/rho0 = deviatoric (Kirchoff stress)/rho0
-	Tensor *sp=mptr->GetStressTensor();
-    double I1third = (B->xx+B->yy+B->zz)/3.;
-	sp->xx = GJeff*(B->xx-I1third);
-	sp->yy = GJeff*(B->yy-I1third);
-	sp->zz = GJeff*(B->zz-I1third);
-	sp->xy = GJeff*B->xy;
-    if(np==THREED_MPM)
-	{	sp->xz = GJeff*B->xz;
-        sp->yz = GJeff*B->yz;
-    }
+	IncrementHeatEnergy(mptr,dTq0,AVEnergy);
 }
 
 #pragma mark Mooney::Accessors
@@ -380,12 +333,18 @@ Vector Neohookean::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 
 // Copy stress to a read-only tensor variable
 // Subclass material can override, such as to combine pressure and deviatory stress into full stress
-Tensor Neohookean::GetStress(Tensor *sp,double pressure,MPMBase *) const
-{   Tensor stress = *sp;
-    stress.xx -= pressure;
-    stress.yy -= pressure;
-    stress.zz -= pressure;
-    return stress;
+Tensor Neohookean::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
+{	return GetStressPandDev(sp,pressure,mptr);
+}
+
+// store a new total stress on a particle's stress and pressure variables
+void Neohookean::SetStress(Tensor *spnew,MPMBase *mptr) const
+{	SetStressPandDev(spnew,mptr);
+}
+
+// Increment thickness (zz) stress through deviatoric stress and pressure
+void Neohookean::IncrementThicknessStress(double dszz,MPMBase *mptr) const
+{	IncrementThicknessStressPandDev(dszz,mptr);
 }
 
 // Calculate wave speed in L/sec (because G in mass/(L sec^2) and rho in mass/L^3)

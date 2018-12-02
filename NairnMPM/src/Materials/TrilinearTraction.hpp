@@ -20,15 +20,15 @@ class TrilinearTraction : public CohesiveZone
     public:
 		
 		// constructors and destructors
-        TrilinearTraction(char *);
+        TrilinearTraction(char *,int);
 		
 		// methods
-		virtual char *InputMaterialProperty(char *,int &,double &);
+		virtual char *InputTractionLawProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintMechanicalProperties(void) const;
 		
 		// the traction law
-		virtual void CrackTractionLaw(CrackSegment *,double,double,double,double,double);
+		virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);
 		virtual double CrackTractionEnergy(CrackSegment *,double,double,bool);
 		
 		// accessors

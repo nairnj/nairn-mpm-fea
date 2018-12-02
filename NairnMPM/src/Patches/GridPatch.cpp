@@ -45,6 +45,7 @@ GridPatch::GridPatch(int xmin,int xmax,int ymin,int ymax,int zmin,int zmax)
 	
 	// particle pointers
 	firstNR = NULL;
+	firstRB = NULL;
 	firstRC = NULL;
 	firstRBC = NULL;
 	
@@ -230,13 +231,20 @@ void GridPatch::AddParticle(MPMBase *mptr)
 {
 	const MaterialBase *matref = theMaterials[mptr->MatID()];		// material object for this particle
 	
-	if(matref->RigidBC())
-	{	mptr->SetNextObject(firstRBC);
-		firstRBC = mptr;
-	}
-	else if(matref->Rigid())
-	{	mptr->SetNextObject(firstRC);
-		firstRC = mptr;
+	if(matref->IsRigid())
+	{	// if it BC, contact, or block
+		if(matref->IsRigidBC())
+		{	mptr->SetNextObject(firstRBC);
+			firstRBC = mptr;
+		}
+		else if(matref->IsRigidContact())
+		{	mptr->SetNextObject(firstRC);
+			firstRC = mptr;
+		}
+		else
+		{	mptr->SetNextObject(firstRB);
+			firstRB = mptr;
+		}
 	}
 	else
 	{	mptr->SetNextObject(firstNR);
@@ -254,21 +262,31 @@ void GridPatch::RemoveParticleAfter(MPMBase *mptr,MPMBase *prevMptr)
 	// removing the first particle, but have to verify it is still first
 	if(prevMptr==NULL)
 	{	const MaterialBase *matref = theMaterials[mptr->MatID()];		// material object for this particle
-		if(matref->RigidBC())
-		{	if(mptr == firstRBC)
-			{	// still first, switch to next one as new first
-				firstRBC = nextMptr;
-				return;
+		if(matref->IsRigid())
+		{	if(matref->IsRigidBC())
+			{	if(mptr == firstRBC)
+				{	// still first, switch to next one as new first
+					firstRBC = nextMptr;
+					return;
+				}
+				prevMptr = firstRBC;
 			}
-			prevMptr = firstRBC;
-		}
-		else if(matref->Rigid())
-		{	if(mptr == firstRC)
-			{	// still first, switch to next one as new first
-				firstRC = nextMptr;
-				return;
+			else if(matref->IsRigid())
+			{	if(mptr == firstRC)
+				{	// still first, switch to next one as new first
+					firstRC = nextMptr;
+					return;
+				}
+				prevMptr = firstRC;
 			}
-			prevMptr = firstRC;
+			else
+			{	if(mptr == firstRB)
+				{	// still first, switch to next one as new first
+					firstRB = nextMptr;
+					return;
+				}
+				prevMptr = firstRB;
+			}
 		}
 		else
 		{	if(mptr == firstNR)
@@ -523,7 +541,8 @@ NodalPoint *GridPatch::GetNodePointer(int num,bool debug)
 }
 
 
-// return material point pointer by ID 0 to 2  or FIRST_NONRIGID=0,FIRST_RIGID_CONTACT,FIRST_RIGID_BC
+// return material point pointer by ID 0 to 3 for FIRST_NONRIGID=0,
+// FIRST_RIGID_BLOCK, FIRST_RIGID_CONTACT, FIRST_RIGID_BC
 MPMBase *GridPatch::GetFirstBlockPointer(int block)
 {
 	switch(block)
@@ -533,9 +552,16 @@ MPMBase *GridPatch::GetFirstBlockPointer(int block)
 			return firstRC;
 		case FIRST_RIGID_BC:
 			return firstRBC;
+		case FIRST_RIGID_BLOCK:
+			return firstRB;
 		default:
 			break;
 	}
 	return NULL;
 }
 
+// return private variables
+GhostNode **GridPatch::GetGhosts(int *getNum)
+{	*getNum = numGhosts;
+	return ghosts;
+}

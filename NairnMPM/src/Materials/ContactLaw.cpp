@@ -14,13 +14,13 @@
 #include "Read_XML/MaterialController.hpp"
 #include "Materials/CoulombFriction.hpp"
 #include "Materials/LinearInterface.hpp"
+#include "Nodes/CrackVelocityField.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark ContactLaw::Constructors and Destructors
 
-// Constructors
-ContactLaw::ContactLaw() {}
-
-ContactLaw::ContactLaw(char *matName) : MaterialBase(matName)
+// Constructor
+ContactLaw::ContactLaw(char *matName,int matID) : MaterialBase(matName,matID)
 {
 	// initialized and only used to support old style contact input
 	contactProps.friction=0.;				// crack contact friction
@@ -37,7 +37,11 @@ ContactLaw::ContactLaw(char *matName) : MaterialBase(matName)
 // Read material properties by name (in xName). Set input to variable type
 // (DOUBLE_NUM or INT_NUM) and return pointer to the class variable
 // (cast as a char *)
+// It gets called as a material, but really setting contact properties
 char *ContactLaw::InputMaterialProperty(char *xName,int &input,double &gScaling)
+{	return InputContactProperty(xName,input,gScaling);
+}
+char *ContactLaw::InputContactProperty(char *xName,int &input,double &gScaling)
 {
 	// This has no material properties, but ignore rho if there
 	// ignore rho if there
@@ -77,16 +81,24 @@ void ContactLaw::PrintContactLaw(void) const
 
 #pragma mark ContactLaw:Step Methods
 
-// Adjust change in momentum for frictional contact in tangential direction
-// If has component of tangential motion, calculate force depending on whether it is sticking or sliding
-// When frictional sliding, find tangential force (times dt) and set flag, if not set flag false
-// When friction heating is on, set Ftdt term and set hasFriction to true
-//     (hasFriction (meaning has frictional heating value) must be initialized to false when called)
-// contactArea only provided if frictional law needs it
-// Normally in contact when called, but some laws might want call even when not in contact. If return
-//		value is false, the contact should be treated as no contact
-bool ContactLaw::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double *mredDE,double mred,
-											bool getHeating,double contactArea,bool inContact,double deltime,Vector *at) const
+// Change input momentum for stick (in delPi) to reflect frictional sliding contact law
+//		(this called both my material contact and crack surface contact
+// Input parameters (besides delPi)
+//		norm = normal vector from material i to j
+//		dotn = delPi.norm (precalculated)
+//		deltaDotn = initial normal opening cod precalculated (=delta.norm)
+//		mred = reduced mass
+//		getHeating = true to calculated frictional heating term
+//		contactArea = contact area, which is only needed by some laws
+//		deltime = time step
+//		delFi = force changed needed in post update calculations (only non-NULL in UPDATE_MOMENTUM_CALL)
+//				and needed when frictional heating is activated
+// Output
+//		delPi change to reflect contact law
+//		true is returned or false if decide now not in contact
+//		*mredDelWf set to heat energy (actually mred*heat energy) (only if getHeating is true)
+bool ContactLaw::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double deltaDotn,double *mredDelWf,double mred,
+											bool getHeating,double contactArea,double deltime,Vector *delFi) const
 {
 	return false;
 }
@@ -102,11 +114,35 @@ void ContactLaw::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEnergy,
 
 // Return Sslide Ac dt = f(N) Ac dt
 // For use by frictional contact only
-// contactArea only provided is law reports it needs it in ContactLawNeedsContactArea()
+// contactArea only provided if law reports it needs it in ContactLawNeedsContactArea()
 // inContact will be true unless the law request to here about non-contact conditions
 double ContactLaw::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred,
 								 double contactArea,bool &inContact,double deltime) const
-{	return 0.;
+{
+	// law can change whether or not in contact, but most laws exit here if not in contact
+	if(!inContact) return 0;
+	
+	// in contact, but no frictional force in contact law
+	return 0.;
+}
+
+// Used by imperfect interfaces and maybe contact laws
+// Get sineTerm = 1-sin phi/phi and sincosTerm = sin phi/phi -  (1-cos phi)/phi^2 stable even for phi near zero
+// return phi
+double ContactLaw::GetTerms(double d,double m,double &sineTerm,double &sincosTerm) const
+{
+	double phi = sqrt(d/m);
+	if(phi<0.02)
+	{	double phi2 = phi*phi;
+		sineTerm = phi2/6.;				// = 1-sin phi/phi within 1e-10
+		sincosTerm = 0.5 - 0.125*phi2;	// = sin phi/phi - (1-cos phi)/phi^2) within 1e-10
+	}
+	else
+	{	double sineRatio = sin(phi)/phi;
+		sineTerm = 1. - sineRatio;
+		sincosTerm = sineRatio - (1.-cos(phi))/(phi*phi);
+	}
+	return phi;
 }
 
 #pragma mark ContactLaw::Accessors
@@ -120,15 +156,11 @@ const char *ContactLaw::MaterialType(void) const { return "Contact Law Material"
 // Calculate maximum wave speed for material in mm/sec.
 double ContactLaw::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; }
 
-// Are calculations done depending on if found to be inContact
-bool ContactLaw::ContactIsDone(bool inContact) const
+// Is frictional contact and not ignoring contact
+bool ContactLaw::IsFrictionalContact(void) const
 {	if(IsImperfectInterface()) return false;
-	if(!inContact) return true;
-	return false;
+	return !IgnoreContact();
 }
-
-// Give details about frictional contact
-bool ContactLaw::IsFrictionalContact(void) const { return !IsImperfectInterface(); }
 
 // All interfaces need the law, if friction law needs it, must override and return true
 bool ContactLaw::ContactLawNeedsContactArea(void) const { return IsImperfectInterface(); }
@@ -139,13 +171,19 @@ bool ContactLaw::IgnoreContact(void) const { return true; }
 // Describe type of imperfect interface
 bool ContactLaw::IsImperfectInterface(void) const { return false; }
 
+// Return true is frictionless contact and no adhesion
+bool ContactLaw::IsFrictionless(void) const { return false; }
+
+// Return true is stick contact
+bool ContactLaw::IsStick(void) const { return false; }
+
 #pragma mark ContactLaw::Class Methods
 
 // Given old style input for friction,Dn, Dnc, and Dt, create appropriate contact law,
 // add to contact law cache on material controller, and return a temporary ID
 // if contactProps==NULL, create friction law with useFriction (cannot be for interface)
 // throws std::bad_alloc
-int ContactLaw::ConvertOldStyleToContactLaw(MaterialController *matCtrl,ContactInput *contactProps,double useFriction)
+int ContactLaw::ConvertOldStyleToContactLaw(MaterialController *matCtrl,ContactInput *contactProps,double useFriction,const char *why)
 {	// reading old style input
 	
 	// create contact law to recreate old style parameters
@@ -154,27 +192,29 @@ int ContactLaw::ConvertOldStyleToContactLaw(MaterialController *matCtrl,ContactI
 	int numLaw = matCtrl->NumAutoContactLaws()+1;
 	double newFriction = contactProps!=NULL ? contactProps->friction : useFriction;
 	if(newFriction<-10.)
-	{	sprintf(tempName,"Ignore Contact (Auto %d)",numLaw);
-		newContactLaw = new ContactLaw(tempName);
+	{	sprintf(tempName,"Ignore Contact (Auto %d for %s)",numLaw,why);
+		newContactLaw = new ContactLaw(tempName,CONTACTLAW);
 	}
 	else if(newFriction<0.)
-	{	sprintf(tempName,"Stick Contact (Auto %d)",numLaw);
-		newContactLaw = new CoulombFriction(tempName);
+	{	sprintf(tempName,"Stick Contact (Auto %d for %s)",numLaw,why);
+		newContactLaw = new CoulombFriction(tempName,COULOMBFRICTIONLAW);
 		((CoulombFriction *)newContactLaw)->SetFrictionCoeff(-1.);
 	}
 	else if(newFriction<10.)
-	{	sprintf(tempName,"Frictional Contact (Auto %d)",numLaw);
-		newContactLaw = new CoulombFriction(tempName);
+	{	sprintf(tempName,"Frictional Contact (Auto %d for %s)",numLaw,why);
+		newContactLaw = new CoulombFriction(tempName,COULOMBFRICTIONLAW);
 		((CoulombFriction *)newContactLaw)->SetFrictionCoeff(newFriction);
 	}
 	else
 	{	// Better have contactProps here
-		sprintf(tempName,"Imperfect Interface (Auto %d)",numLaw);
-		newContactLaw = new LinearInterface(tempName);
-		if(contactProps->Dnc<-100.e6)
-			contactProps->Dnc=contactProps->Dn;
-		((LinearInterface *)newContactLaw)->SetParameters(contactProps->Dn,
-														contactProps->Dnc,contactProps->Dt);
+		sprintf(tempName,"Imperfect Interface (Auto %d for %s)",numLaw,why);
+		newContactLaw = new LinearInterface(tempName,LINEARINTERFACELAW);
+		if(contactProps!=NULL)
+		{	if(contactProps->Dnc<-100.e6)
+				contactProps->Dnc=contactProps->Dn;
+			((LinearInterface *)newContactLaw)->SetParameters(contactProps->Dn,
+															  contactProps->Dnc,contactProps->Dt);
+		}
 	}
 	
 	// cache to be new material and set finalLawID

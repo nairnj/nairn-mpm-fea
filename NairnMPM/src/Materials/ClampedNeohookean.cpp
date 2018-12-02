@@ -14,19 +14,16 @@
 
 #pragma mark ClampedNeohookean::Constructors and Destructors
 
-// Constructors
-ClampedNeohookean::ClampedNeohookean()
-{
-}
-
-// Constructors with arguments
-ClampedNeohookean::ClampedNeohookean(char *matName) : Neohookean(matName)
+// Constructor
+ClampedNeohookean::ClampedNeohookean(char *matName,int matID) : Neohookean(matName,matID)
 {
 	critComp = 0.025;
 	critTens = 0.0075;
 	hardening = 10;
 	elasticModel = ELASTIC_DISNEY;
     omitClamping = false;
+	
+	materialID = CLAMPEDNEOHOOKEAN;
 }
 
 #pragma mark ClampedNeohookean::Initialization
@@ -123,15 +120,8 @@ char *ClampedNeohookean::InitHistoryData(char *pchr,MPMBase *mptr)
 	return (char *)p;
 }
 
-// archive material data for this material type when requested.
-double ClampedNeohookean::GetHistory(int num,char *historyPtr) const
-{   double history=0.;
-    if(num>0 && num<=3)
-    {	double *J=(double *)historyPtr;
-        history=J[num-1];
-    }
-    return history;
-}
+// Number of history variables
+int ClampedNeohookean::NumberOfHistoryDoubles(void) const { return 3; }
 
 #pragma mark ClampedNeohookean::Methods
 
@@ -322,7 +312,7 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 	
 	// thermodynamics heat and temperature
 	// Should find energy dissipated by plasticity and add in third term
-	IncrementHeatEnergy(mptr,res->dT,0.,0.);
+	//IncrementHeatEnergy(mptr,0.,get dissipated here);
 }
 	
 #pragma mark ClampedNeohookean::Accessors

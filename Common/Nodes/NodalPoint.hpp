@@ -13,16 +13,12 @@
 
 #define _NODALPOINT_
 
-// To do imperfect interface force after mass and momentum (OK to first order) define this term
-// Undefine to do after momentum update, which should be second order
-// Make sure all code includes NodalPoint.hpp
-//#define MANDMIMPINT
-
 #ifdef MPM_CODE
 
 class CrackSegment;
 class CrackNode;
 class TransportTask;
+class MaterialContactNode;
 #include "Nodes/CrackVelocityField.hpp"
 #include "Cracks/CrackHeader.hpp"
 
@@ -31,7 +27,7 @@ class TransportTask;
 class NodalPoint : public LinkedObject
 {
     public:
-		// variables (changed in MPM time step)
+		// variables
 #ifdef MPM_CODE
 		CrackVelocityField **cvf;	// crack velocity fields
 		TransportField gCond;		// conduction
@@ -39,6 +35,7 @@ class NodalPoint : public LinkedObject
 		TransportField gDiff;		// diffusion
 		//double gConcentration,gVolume,fdiff;	// diffusion
 		unsigned short fixedDirection;
+		MaterialContactNode *contactData;
 	
 		static double interfaceEnergy;		// total tracked each time step
 		static double frictionWork;			// cumulative friction work
@@ -55,14 +52,16 @@ class NodalPoint : public LinkedObject
 #endif
        
         // constructors and destructors
-        NodalPoint(int);
+		NodalPoint(int,double,double);
+		NodalPoint(int,double,double,double);
+		void CreateNodalPoint(int,double,double,double);
 #ifdef MPM_CODE
 		NodalPoint(NodalPoint *);
 #endif
 		virtual ~NodalPoint();
         
         // methods - general and abstract
-        virtual void PrintNodalPoint(ostream &) = 0;
+        virtual void PrintNodalPoint(ostream &);
 
 #ifdef MPM_CODE
         // methods - MPM only
@@ -91,14 +90,14 @@ class NodalPoint : public LinkedObject
 		void CopyGridForces(NodalPoint *);
 		void UpdateMomentaOnNode(double);
 		void IncrementDelvaTask5(short,int,double,GridToParticleExtrap *) const;
-	
-		bool IncrementDelvSideTask8(short,int,double,Vector *,double *,CrackSegment *) const;
+
+		bool IncrementDelvSideTask8(short,int,double,Vector *,Vector *,double *,CrackSegment *,double) const;
+		bool GetCMVelocityTask8(Vector *,Vector *) const;
 		short GetFieldForSurfaceParticle(short,int,CrackSegment *) const;
-		void SurfaceCrossesCracks(double,double,double,double,CrackField *) const;
-		int SurfaceCrossesOneCrack(double,double,double,double,int) const;
-		int SurfaceCrossesOtherCrack(double,double,double,double,int) const;
+		void SurfaceCrossesCracks(Vector *,Vector *,CrackField *) const;
+		int SurfaceCrossesOneCrack(Vector *,Vector *,int) const;
+		int SurfaceCrossesOtherCrack(Vector *,Vector *,int) const;
 		void CalcCMVelocityTask8(void);
-		bool GetCMVelocityTask8(Vector *) const;
 	
 		// specific task methods
 		void PrepareForFields(void);
@@ -109,10 +108,12 @@ class NodalPoint : public LinkedObject
         void DeleteDisp(void);
         void DeleteDisp(NodalPoint *);
 		int NumberParticles(void);
+		bool NeedsParticleListed(short vfld);
 		int NumberNonrigidCracks(void);
 		bool NodeHasNonrigidParticles(void) const;
+		bool NodeHasParticles(void) const;
 		double GetNodalMass(bool) const;
-		void Describe(void) const;
+		void Describe(bool) const;
 		void AddDisplacement(short,int,double,Vector *);
 		void AddVolume(short,int,double);
         void AddUGradient(short,double,double,double,double,double,int,double);
@@ -127,41 +128,40 @@ class NodalPoint : public LinkedObject
         short GetCMVelocity(Vector *);
         void CalcStrainField(void);
 		void Interpolate(NodalPoint *,NodalPoint *,double,int);
-        void CrackContact(int,double,CrackNode **,CrackNode **);
-		void AdjustDelPiForBCs(Vector *) const;
+		int HasCrackContact(void);
+		void CrackContact(int,double,int);
 		void CrackContactThree(int,int,double);
-		void MaterialContactOnNode(double,int);
+		void MaterialContactOnNode(double,int,MaterialContactNode *);
         void GetMatVolumeGradient(int,Vector *) const;
-        void SetMomVel(Vector *);
-        void AddMomVel(Vector *,double);
-		void ReflectMomVel(Vector *,NodalPoint *,double);
+        void SetMomVel(Vector *,int);
+        void AddMomVel(Vector *,double,int);
+		void ReflectMomVel(Vector *,NodalPoint *,double,double,int);
         void SetFtotDirection(Vector *,double,Vector *);
         void AddFtotDirection(Vector *,double,double,Vector *);
-		void ReflectFtotDirection(Vector *,double,NodalPoint *,double,Vector *);
+		void ReflectFtotDirection(Vector *,double,NodalPoint *,double,double,Vector *);
 		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);
-		void CalcTotalMassAndCount(void);
+		bool CalcTotalMassAndCount(void);
 		void RestoreMomenta(void);
 		void AddGetContactForce(bool,Vector *,double,Vector *);
 		void AddRigidBCInfo(MPMBase *,double,int,Vector *);
 		int ReadAndZeroRigidBCInfo(Vector *,double *,double *);
+		void MirrorIgnoredCrackFields(void);
 #else
         void InitForceField(void);
         void PrintAvgStress(void);
 #endif
 	
-		// NairnMPM methods
-#ifdef MPM_CODE
-		void CopyRigidParticleField(void);
-#endif
-
 		// class methods
 #ifdef MPM_CODE
 		static void PreliminaryCalcs(void);
-		static void GetGridVelocitiesForStrainUpdate(void);
-		static void GetGridCMVelocitiesTask8(void);
+		static NodalPoint *CreateGhostFromReal(NodalPoint *);
+#endif
+		static NodalPoint *Create2DNode(int,double,double);
+		static NodalPoint *Create3DNode(int,double,double,double);
 	
 	protected:
+#ifdef MPM_CODE
 		double nodalMass;				// total mass
 #endif
     
@@ -178,5 +178,6 @@ class NodalPoint : public LinkedObject
 // List of nodes stored as nd[1] to nd[nnodes]
 extern NodalPoint **nd;
 extern int nnodes;
+extern int *nda;
 
 #endif

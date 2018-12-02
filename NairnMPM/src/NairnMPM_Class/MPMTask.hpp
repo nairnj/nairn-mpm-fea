@@ -27,6 +27,7 @@ class MPMTask : public CommonTask
 		// methods
 #ifdef LOG_PROGRESS
 		void WriteLogFile(void);
+		void WriteLogFile(const char *);
 #endif
 	
 		void WriteProfileResults(int,double,double);

@@ -68,14 +68,13 @@ class DDBHardening : public HardeningLawBase
 		DDBHardening(MaterialBase *);
 		
 		// initialize
-        virtual char *InputMaterialProperty(char *,int &,double &);
+        virtual char *InputHardeningProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintYieldProperties(void) const;
 	
 		// history data
 		virtual int HistoryDoublesNeeded(void) const;
 		virtual void InitPlasticHistoryData(double *) const;
-		virtual double GetHistory(int,char *) const;
 		
 		// methods
 		virtual int SizeOfHardeningProps(void) const;

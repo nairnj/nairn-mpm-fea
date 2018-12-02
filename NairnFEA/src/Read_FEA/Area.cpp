@@ -16,7 +16,7 @@
 #include "Read_FEA/Keypoint.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Elements/EightNodeIsoparam.hpp"
-#include "Read_XML/mathexpr.hpp"
+#include "Read_XML/Expression.hpp"
 
 Area *theArea=NULL;
 
@@ -141,10 +141,10 @@ const char *Area::MeshElements(void)
 	// Check ccw
 	if(SignedArea()<0.)
 		return "The paths must circumnavigate the area in a counter-clockwise direction";
-	
+
 	// create function if being used
 	if(angleExpr!=NULL)
-	{	if(!CreateFunction(angleExpr))
+	{	if(!Expression::CreateFunction(angleExpr,1))
 			return "The expression for material angle is not a valid function";
 	}
 	
@@ -698,7 +698,7 @@ const char *Area::MeshArea(void)
 			{	int imax= theElems->HasMidsideNodes() ? 4 : 8 ;
 				Vector midPt;
 				theNodes->MidPoint(&eNode[1],imax,&midPt);
-				angle=FunctionValue(1,midPt.x,midPt.y,0.,0.,0.,0.);
+				angle=Expression::FunctionValue(1,midPt.x,midPt.y,0.,0.,0.,0.);
 			}
 			
 			if(!theElems->MeshElement(eNode,mat,angle,thick))

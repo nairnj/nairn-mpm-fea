@@ -11,12 +11,6 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "System/ArchiveData.hpp"
 #include "Read_MPM/MPMReadHandler.hpp"
-#include "Custom_Tasks/CalcJKTask.hpp"
-#include "Custom_Tasks/ReverseLoad.hpp"
-#include "Custom_Tasks/VTKArchive.hpp"
-#include "Custom_Tasks/HistoryArchive.hpp"
-#include "Custom_Tasks/AdjustTimeStepTask.hpp"
-#include "Custom_Tasks/CarnotCycle.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
@@ -50,10 +44,9 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "System/UnitsController.hpp"
 #include "Materials/ContactLaw.hpp"
-#include "Custom_Tasks/CustomThermalRamp.hpp"
-
-// Element types
 #include "Elements/FourNodeIsoparam.hpp"
+
+int cracksDim = MUST_BE_2D;
 
 /********************************************************************************
 	MPMReadHandler: Constructors and Destructor
@@ -119,6 +112,9 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             if(strcmp(aName,"CFL")==0)
 			{	sscanf(value,"%lf",fmobj->GetCFLPtr());
             }
+			else if(strcmp(aName,"TransCFL")==0)
+			{	sscanf(value,"%lf",fmobj->GetTransCFLPtr());
+			}
             else if(strcmp(aName,"step")==0)
 			{	sscanf(value,"%lf",&timestep);
 				timestep *= gScaling;					// convert to sec
@@ -139,6 +135,13 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         inputPtr=(char *)fmobj->GetCFLPtr();
     }
     
+	else if(strcmp(xName,"TransTimeFactor")==0)
+	{	// Deprecated - use Timing instead
+		ValidateCommand(xName,MPMHEADER,ANY_DIM);
+		input=DOUBLE_NUM;
+		inputPtr=(char *)fmobj->GetTransCFLPtr();
+	}
+	
     else if(strcmp(xName,"MaxTime")==0)
 	{	// Deprecated - use Timing instead
 		ValidateCommand(xName,MPMHEADER,ANY_DIM);
@@ -324,17 +327,23 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     }
 
 	// XPIC option - get order (1=PIC, 2 is XPIC, <1 invalid)
-    else if(strcmp(xName,"XPIC")==0)
-	{	throw SAXException("You must recompile using OSParticulas with ADD_XPIC defined in MPMPrefix.hpp to use the XPIC feature.");
-    }
+	else if(strcmp(xName,"XPIC")==0)
+	{	throw SAXException("<XPIC> command requires OSParticulas.");
+	}
 
     else if(strcmp(xName,"Diffusion")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
-		DiffusionTask::active=TRUE;
+		if(fmobj->HasDiffusion())
+			throw SAXException("Only one 'Diffusion' command allowed in an analysis.");
+		DiffusionTask::active = MOISTURE_DIFFUSION;
 		DiffusionTask::reference=ReadNumericAttribute("reference",attrs,(double)0.0);
 		if(DiffusionTask::reference<0.) DiffusionTask::reference=0.;
 		if(DiffusionTask::reference>1.) DiffusionTask::reference=1.;
     }
+	
+	else if(strcmp(xName,"Poroelasticity")==0)
+	{	throw SAXException("<Poroelasticity> command requires OSParticulas.");
+	}
 	
 	else if(strcmp(xName,"DefGradTerms")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
@@ -351,28 +360,41 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
 		fmobj->skipPostExtrapolation = true;
 	}
-	
-	else if(strcmp(xName,"TrackParticleSpin")==0)
-	{
-		throw SAXException("You must recompile using OSParticulas with ADD_PARTICLE_SPIN defined in MPMPrefix.hpp to use particle spin.");
+
+	else if(strcmp(xName,"TrackParticleSpin")==0 || strcmp(xName,"TrackGradV")==0)
+	{	throw SAXException("<TrackParticleSpin> command requires OSParticulas.");
 	}
 	
-	else if(strcmp(xName,"TrackGradV")==0)
-	{
-		throw SAXException("You must recompile using OSParticulas with TRACK_VGRAD defined in MPMPrefix.hpp to track particle grad V.");
+	else if(strcmp(xName,"TransportOnly")==0)
+	{	// future may want to programmatically active this mode
+		throw SAXException("<TransportOnly> command requires OSParticulas.");
+	}
+	
+	else if(strcmp(xName,"NeedsMechanics")==0)
+	{	// future may want to programmatically active this mode
+		// ignore because always doing mechanics
 	}
 
-	else if(strcmp(xName,"ExactTractions")==0)
-	{
-		throw SAXException("You must recompile using OSParticulas with EXACT_TRACTIONS defined in MPMPrefix.hpp to use exact traction BCs.");
+	else if(strcmp(xName,"ExactTractions")==0 )
+	{	throw SAXException("<ExactTractions> command requires OSParticulas.");
 	}
 	
 	else if(strcmp(xName,"GIMP")==0)
     {   // no attribute or empty implies uGIMP (backward compatibility) or look for key words
 		ValidateCommand(xName,MPMHEADER,ANY_DIM);
+		
+		// default to uGIMP
 		ElementBase::useGimp = UNIFORM_GIMP;
-		ElementBase::analysisGimp = UNIFORM_GIMP;
-		maxShapeNodes = fmobj->np==THREED_MPM ? 28 : 10 ;
+		if(fmobj->np==THREED_MPM)
+		{	ElementBase::gridNiNodes = 8;
+			maxShapeNodes = 28;
+		}
+		else
+		{	ElementBase::gridNiNodes = 4;
+			maxShapeNodes = 28;
+		}
+		
+		// look at attributes
         numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -380,26 +402,41 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			{	value=XMLString::transcode(attrs.getValue(i));
                 if(strcmp(value,"Dirac")==0 || strcmp(value,"Classic")==0 || strcmp(value,"0")==0)
                 {   ElementBase::useGimp = POINT_GIMP;
-                    ElementBase::analysisGimp = POINT_GIMP;
 					maxShapeNodes = fmobj->np==THREED_MPM ? 9 : 5 ;
+					ElementBase::gridNiNodes = fmobj->np==THREED_MPM ? 8 : 4 ;
                 }
                 else if(strcmp(value,"uGIMP")==0 || strcmp(value,"GIMP")==0 || strcmp(value,"1")==0)
                 {   ElementBase::useGimp = UNIFORM_GIMP;
-                    ElementBase::analysisGimp = UNIFORM_GIMP;
 					maxShapeNodes = fmobj->np==THREED_MPM ? 28 : 10 ;
+					ElementBase::gridNiNodes = fmobj->np==THREED_MPM ? 8 : 4 ;
                 }
                 else if(strcmp(value,"lCPDI")==0 || strcmp(value,"CPDI")==0 || strcmp(value,"2")==0)
                 {   ElementBase::useGimp = LINEAR_CPDI;
-                    ElementBase::analysisGimp = LINEAR_CPDI;
-					maxShapeNodes = fmobj->np==THREED_MPM ? 40 : 17 ;		// 3D could need 65
+					maxShapeNodes = fmobj->np==THREED_MPM ? 40 : 17 ;
+					ElementBase::gridNiNodes = fmobj->np==THREED_MPM ? 8 : 4 ;
                 }
                 else if(strcmp(value,"qCPDI")==0 || strcmp(value,"3")==0)
                 {   ElementBase::useGimp = QUADRATIC_CPDI;
-                    ElementBase::analysisGimp = QUADRATIC_CPDI;
-					maxShapeNodes = fmobj->np==THREED_MPM ? 40 : 36 ;		// 3D not allowed for qCPDI
+					maxShapeNodes = fmobj->np==THREED_MPM ? 40 : 37 ;
+					ElementBase::gridNiNodes = fmobj->np==THREED_MPM ? 8 : 4 ;
                 }
+				else if(strcmp(value,"B2GIMP")==0 || strcmp(value,"5")==0)
+				{   ElementBase::useGimp = BSPLINE_GIMP;
+					maxShapeNodes = fmobj->np==THREED_MPM ? 65 : 17 ;
+					ElementBase::gridNiNodes = fmobj->np==THREED_MPM ? 27 : 9 ;
+				}
+				else if(strcmp(value,"B2SPLINE")==0 || strcmp(value,"6")==0)
+				{   ElementBase::useGimp = BSPLINE;
+					maxShapeNodes = fmobj->np==THREED_MPM ? 28 : 10 ;
+					ElementBase::gridNiNodes = fmobj->np==THREED_MPM ? 27 : 9 ;
+				}
+				else if(strcmp(value,"B2CPDI")==0 || strcmp(value,"7")==0)
+				{   ElementBase::useGimp = BSPLINE_CPDI;
+					maxShapeNodes = fmobj->np==THREED_MPM ? 100 : 37 ;
+					ElementBase::gridNiNodes = fmobj->np==THREED_MPM ? 27 : 9 ;
+				}
                 else
-                    throw SAXException("GIMP type must be Classic, uGIMP, lCPDI, or qCPDI.");
+                    throw SAXException("GIMP type must be Classic, uGIMP, lCPDI, qCPDI, B2SPLINE, B2GIMP, or B2CPDI");
 				delete [] value;
 			}
 			delete [] aName;
@@ -416,18 +453,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
 			sscanf(value,"%lf",&scanInput);
-            if(strcmp(aName,"Vmin")==0)
-			{	contact.materialContactVmin=scanInput;
-			}
-            else if(strcmp(aName,"Dcheck")==0)
-            {   if(scanInput<0.5 && scanInput>-0.5)
-                    contact.displacementCheck=FALSE;                // 0
-				else if(scanInput<1.5)
-					contact.displacementCheck=TRUE;                 // 1  
-				else
-                    throw SAXException("Dcheck attribute on MultiMaterialMode must be 0 or 1.");
-			}
-            else if(strcmp(aName,"Normals")==0)
+            if(strcmp(aName,"Normals")==0)
  			{	if(scanInput<0.5 && scanInput>-0.5)
 					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;           // 0 - MAXG
 				else if(scanInput<1.5)
@@ -438,8 +464,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 					contact.materialNormalMethod=EACH_MATERIALS_MASS_GRADIENT;		// 3 - OWNG
 				else if(scanInput<4.5)
 					contact.materialNormalMethod=SPECIFIED_NORMAL;					// 4 - SN
-                else
-                    throw SAXException("Normals attribute on MultiMaterialMode must be 0 to 4.");
+				else
+					throw SAXException("Normals attribute on MultiMaterialMode must be 0 to 4.");
 			}
             else if(strcmp(aName,"RigidBias")==0)
 			{	contact.rigidGradientBias=scanInput;
@@ -450,6 +476,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             else if(strcmp(aName,"Azimuth")==0)
 			{	azimuthAngle=scanInput;
 			}
+			// Note old Vmin and Dcheck are now ignored
 			delete [] aName;
             delete [] value;
         }
@@ -516,7 +543,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 					archByte = ARCH_SpinVelocity;
 				else if(CIstrcmp(value,"temperature")==0)
 					archByte = ARCH_DeltaTemp;
-				else if(CIstrcmp(value,"concentration")==0)
+				else if(CIstrcmp(value,"concentration")==0 || CIstrcmp(value,"porepressure")==0)
 					archByte = ARCH_Concentration;
 				else if( CIstrcmp(value,"history1")==0 || CIstrcmp(value,"history2")==0
 							|| CIstrcmp(value,"history3")==0 || CIstrcmp(value,"history4")==0 )
@@ -583,7 +610,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 
     // Cracks in MPM Header
     else if(strcmp(xName,"Cracks")==0)
-	{	ValidateCommand(xName,MPMHEADER,MUST_BE_2D);
+	{	ValidateCommand(xName,MPMHEADER,cracksDim);
         block=CRACKHEADER;
     }
     
@@ -595,7 +622,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		
 		char tempName[20];
 		strcpy(tempName,"Input Only");
-		currentContact = new ContactLaw(tempName);
+		currentContact = new ContactLaw(tempName,CONTACTLAW);
     	input=DOUBLE_NUM;
 		inputPtr=(char *)&(currentContact->contactProps.friction);
 		char othername[200],lawname[200];
@@ -654,7 +681,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"Propagate")==0 || strcmp(xName,"AltPropagate")==0)
     {	if(block!=CRACKHEADER && block!=MATERIAL)
 			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
-		ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+		ValidateCommand(xName,NO_BLOCK,cracksDim);
     	numAttr=(int)attrs.getLength();
 		
 		// get which to set
@@ -701,13 +728,13 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     }
     
     else if(strcmp(xName,"PropagateLength")==0)
-	{	ValidateCommand(xName,CRACKHEADER,ANY_DIM);
+	{	ValidateCommand(xName,CRACKHEADER,cracksDim);
     	input=DOUBLE_NUM;
         inputPtr=(char *)&PropagateTask::cellsPerPropagationStep;
     }
     
     else if(strcmp(xName,"MovePlane")==0)
-	{	ValidateCommand(xName,CRACKHEADER,MUST_BE_2D);
+	{	ValidateCommand(xName,CRACKHEADER,cracksDim);
     	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -739,18 +766,11 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	
 	else if(strcmp(xName,"CrackParticleSize")==0)
 	{
-#ifdef CRACK_GIMP
-		if(block!=CRACKHEADER)
-			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
-		input=DOUBLE_NUM;
-		inputPtr=(char *)&mpmgrid.crackParticleSize;
-#else
-		throw SAXException("You must recompile with CRACK_GIMP defined to use CrackParticleSize feature.");
-#endif
+		throw SAXException("<CrackParticleSize> command requires OSParticulas.");
 	}
 	
     else if(strcmp(xName,"JContour")==0)
-	{	ValidateCommand(xName,CRACKHEADER,MUST_BE_2D);
+	{	ValidateCommand(xName,CRACKHEADER,cracksDim);
     	numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -771,10 +791,10 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     //-------------------------------------------------------
     // <Mesh> section
 	
-	// Start Mesh section
+	// Start Mesh section - may be at root level or in a 3D crack list
     else if(strcmp(xName,"Mesh")==0)
 	{	ValidateCommand(xName,NO_BLOCK,ANY_DIM);
-		block=MESHBLOCK;
+		block = MESHBLOCK;
 		archiver->SetArchiveMesh(false);
 		value=ReadTagValue("output",attrs);
 		if(value!=NULL)
@@ -784,13 +804,14 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	}
 	
     else if(strcmp(xName,"elem")==0)
-	{	ValidateCommand(xName,ELEMENTLIST,ANY_DIM);
+	{
+		ValidateCommand(xName,ELEMENTLIST,ANY_DIM);
     	input=NODE_BLOCK;
 		value=ReadTagValue("type",attrs);
 		if(value==NULL)
             throw SAXException("<elem> does not specify element type.");
-		if(!theElems->SetElemIDStr(value))
-            throw SAXException("Invalid or incompatible element type.");
+		if(!theElems->SetElemIDStr(value, block))
+			throw SAXException("Invalid or incompatible element type.");
         delete [] value;
     }
     
@@ -815,7 +836,11 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	block=MATLPTS;
     }
 	
-	// <GRIDBLOCK is to distiguish from pt used in generators called below (must be below)
+	// <pt> may be in:
+	//  a. <NodeList> for node in a mesh (which might be 3D crack mesh too)
+	//  b. MATLPTS to define a material point (XML only and subordinate to <mp> defining only point location)
+	//  c. 2D <CrackList> for point in 2D crack
+	// <pt> also be in shape commands, but those are in generators (and <GRIDBLOCK skips them here)
     else if((strcmp(xName,"pt")==0 || strcmp(xName,"vel")==0) && (block<GRIDBLOCK))
 	{	ValidateCommand(xName,NO_BLOCK,ANY_DIM);
 		double aScaling;
@@ -848,9 +873,9 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             else if(strcmp(aName,"z")==0)
             	sscanf(value,"%lf",&xp.z);
             else if(strcmp(aName,"tip")==0)
-            	sscanf(value,"%d",&tipMatnum);		// <CrackList> only
+            	sscanf(value,"%d",&tipMatnum);		// 2D <CrackList> only
             else if(strcmp(aName,"mat")==0)
-            	sscanf(value,"%d",&matid);			// <CrackList> only, 1-based ID or following name use
+            	sscanf(value,"%d",&matid);			// 2D <CrackList> only, 1-based ID or following name use
 			else if(strcmp(aName,"matname")==0)
 			{	if(strlen(value)>199) value[200]=0;
 				strcpy(matname,value);
@@ -870,8 +895,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 				throw SAXException("A material point in an <mp> command is not within the grid.");
         }
         else if(block==CRACKLIST)
-		{	if(!crackCtrl->AddSegment(new CrackSegment(xp.x,xp.y,tipMatnum,matid)))
-                throw SAXException("Crack not in the mesh or out of memory adding a crack segment.");
+		{	if(!crackCtrl->AddSegment(new CrackSegment(&xp,tipMatnum,matid),false))
+                throw SAXException("Crack point not in the mesh or out of memory adding a crack segment.");
         }
 		else if(block==INTENSITYBLOCK)
 			SetLevelVelocity(xp.x,xp.y,xp.z);
@@ -883,7 +908,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,MATLPTS,ANY_DIM);
 		int elemNum=1;
     	int matl=0;
-        double angle=0.,pConcentration=0.,dval;
+        double angle=0.,pConcInitial=diffusion->reference,dval;
 		double thick=mpmgrid.GetDefaultThickness();
 		double pTempInitial=thermal.reference;
     	numAttr=(int)attrs.getLength();
@@ -907,14 +932,20 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             else if(strcmp(aName,"thick")==0)
                 thick=dval;
             else if(strcmp(aName,"conc")==0)
-			{	pConcentration=dval;
-				if(pConcentration<0. || pConcentration>1.)
-					throw SAXException("Material point concentration potential must be from 0 to 1");
+			{	// only used if diffusion is active
+				if(fmobj->HasDiffusion())
+				{	pConcInitial=dval;
+					if(pConcInitial<0. || pConcInitial>1.)
+						throw SAXException("Material point concentration potential must be from 0 to 1");
+				}
 			}
-            else if(strcmp(aName,"wtconc")==0)
-			{	pConcentration=-dval;
-				if(pConcentration>0.)
-					throw SAXException("Material point weight fraction concentration must be >= 0");
+			else if(strcmp(aName,"wtconc")==0)
+			{	// only used if diffusion is active
+				if(fmobj->HasDiffusion())
+				{	pConcInitial=-dval;
+					if(pConcInitial>0.)
+						throw SAXException("Material point weight fraction concentration must be >= 0");
+				}
 			}
             else if(strcmp(aName,"temp")==0)
                 pTempInitial=dval;
@@ -936,18 +967,18 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         // create object for 3D or 2D analysis
 		if(fmobj->IsThreeD())
 		{	MatPoint3D *newMpt=new MatPoint3D(elemNum,matl,angle);
-			mpCtrl->AddMaterialPoint(newMpt,pConcentration,pTempInitial);
+			mpCtrl->AddMaterialPoint(newMpt,pConcInitial,pTempInitial);
 			newMpt->SetDimensionlessSize(&lp);
 		}
 		else if(fmobj->IsAxisymmetric())
 		{	// thickness set to x position in pt command by SetPtOrVel() when it calls SetOrigin()
 			MatPointAS *newMpt=new MatPointAS(elemNum,matl,angle,1.);
-			mpCtrl->AddMaterialPoint(newMpt,pConcentration,pTempInitial);
+			mpCtrl->AddMaterialPoint(newMpt,pConcInitial,pTempInitial);
 			newMpt->SetDimensionlessSize(&lp);
 		}
 		else
 		{	MatPoint2D *newMpt=new MatPoint2D(elemNum,matl,angle,thick);
-			mpCtrl->AddMaterialPoint(newMpt,pConcentration,pTempInitial);
+			mpCtrl->AddMaterialPoint(newMpt,pConcInitial,pTempInitial);
 			newMpt->SetDimensionlessSize(&lp);
 		}
     }
@@ -974,17 +1005,19 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     //-------------------------------------------------------
     // Crack List
     else if(strcmp(xName,"CrackList")==0)
-	{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+	{	ValidateCommand(xName,NO_BLOCK,cracksDim);
     	block=CRACKLIST;
 		CrackHeader *newCrack=new CrackHeader();
 		crackCtrl->AddCrack(newCrack);
+		
+		// only needed for 2D
 		double gridThickness=mpmgrid.GetThickness();
 		if(gridThickness>0.) newCrack->SetThickness(gridThickness);
 		
 		// to hold custom contact law
 		char tempName[20];
 		strcpy(tempName,"Input Only");
-		currentContact = new ContactLaw(tempName);
+		currentContact = new ContactLaw(tempName,CONTACTLAW);
 		char lawname[200];
 		lawname[0]=0;
 		bool hasCustomContact = false;
@@ -1001,35 +1034,39 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 				else
 					newCrack->SetFixedCrack(FALSE);
 			}
-			else if(strcmp(aName,"friction")==0)
-            {	sscanf(value,"%lf",&dval);
-				currentContact->contactProps.friction = dval;
-				hasCustomContact = true;
-			}
-            else if(strcmp(aName,"Dn")==0 || strcmp(aName,"Dnt")==0)
-            {	sscanf(value,"%lf",&dval);
-				currentContact->contactProps.Dn = dval*UnitsController::Scaling(1.e6);
-				currentContact->contactProps.friction = 11.;
-				hasCustomContact = true;
-			}
-            else if(strcmp(aName,"Dnc")==0)
-            {	sscanf(value,"%lf",&dval);
-				currentContact->contactProps.Dnc = dval*UnitsController::Scaling(1.e6);
-				currentContact->contactProps.friction = 11.;
-				hasCustomContact = true;
-			}
-            else if(strcmp(aName,"Dt")==0)
-            {	sscanf(value,"%lf",&dval);
-				currentContact->contactProps.Dt = dval*UnitsController::Scaling(1.e6);
-				currentContact->contactProps.friction = 11.;
-				hasCustomContact = true;
-			}
 			else if(strcmp(aName,"law")==0)
 			{	sscanf(value,"%d",&(currentContact->contactProps.contactLawID));
 			}
 			else if(strcmp(aName,"lawname")==0)
 			{	if(strlen(value)>199) value[200]=0;
 				strcpy(lawname,value);
+			}
+			else if(strcmp(aName,"friction")==0)
+            {	// deprecated - use law or lawname instead
+				sscanf(value,"%lf",&dval);
+				currentContact->contactProps.friction = dval;
+				hasCustomContact = true;
+			}
+            else if(strcmp(aName,"Dn")==0 || strcmp(aName,"Dnt")==0)
+            {	// deprecated - use law or lawname instead
+				sscanf(value,"%lf",&dval);
+				currentContact->contactProps.Dn = dval*UnitsController::Scaling(1.e6);
+				currentContact->contactProps.friction = 11.;
+				hasCustomContact = true;
+			}
+            else if(strcmp(aName,"Dnc")==0)
+            {	// deprecated - use law or lawname instead
+				sscanf(value,"%lf",&dval);
+				currentContact->contactProps.Dnc = dval*UnitsController::Scaling(1.e6);
+				currentContact->contactProps.friction = 11.;
+				hasCustomContact = true;
+			}
+            else if(strcmp(aName,"Dt")==0)
+            {	// deprecated - use law or lawname instead
+				sscanf(value,"%lf",&dval);
+				currentContact->contactProps.Dt = dval*UnitsController::Scaling(1.e6);
+				currentContact->contactProps.friction = 11.;
+				hasCustomContact = true;
 			}
             delete [] aName;
             delete [] value;
@@ -1039,10 +1076,13 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		if(lawname[0])
 			currentContact->contactProps.contactLawID = matCtrl->GetIDFromNewName(lawname);
 		
-		// convert to the final contact law
+		// If use old method to create contact or interface properties, convert to contact law now
 		int finalLawID = currentContact->contactProps.contactLawID;
 		if(finalLawID<0 && hasCustomContact)
-			finalLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,&(currentContact->contactProps),0.);
+		{	char ccName[100];
+			sprintf(ccName,"Crack #%d",newCrack->GetNumber());
+			finalLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,&(currentContact->contactProps),0,ccName);
+		}
 		
 		// If has a law, put on the crack
 		if(finalLawID>=0)
@@ -1208,17 +1248,17 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 
 	// Turn on crack tip heating
     else if(strcmp(xName,"CrackTipHeating")==0)
-	{	ValidateCommand(xName,THERMAL,MUST_BE_2D);
+	{	ValidateCommand(xName,THERMAL,cracksDim);
 		ConductionTask::crackTipHeating = true;
 	}
 	
-	// Turn on crack tip heating
+	// Turn on crack contact heating by friction
     else if(strcmp(xName,"CrackContactHeating")==0)
-	{	ValidateCommand(xName,THERMAL,MUST_BE_2D);
+	{	ValidateCommand(xName,THERMAL,cracksDim);
 		ConductionTask::crackContactHeating = true;
 	}
 	
-	// Turn on crack tip heating
+	// Turn on material contact heating by friction
     else if(strcmp(xName,"ContactHeating")==0)
 	{	ValidateCommand(xName,THERMAL,ANY_DIM);
 		ConductionTask::matContactHeating=true;
@@ -1237,7 +1277,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	}
 
 	else if(strcmp(xName,"ContactHeatFlow")==0)
-	{	throw SAXException("Contact heat flow feature is not available in NairnMPM. It requires OSParticulas.");
+	{	throw SAXException("<ContactHeatFlow> command requires OSParticulas.");
 	}
 	
     //-------------------------------------------------------
@@ -1301,72 +1341,12 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 
 	// Schedule a custom task
     else if(strcmp(xName,"Schedule")==0)
-	{	CustomTask *nextTask=NULL;
-    	numAttr=(int)attrs.getLength();
-        for(i=0;i<numAttr;i++)
-        {   aName=XMLString::transcode(attrs.getLocalName(i));
-            if(strcmp(aName,"name")==0)
-            {   value=XMLString::transcode(attrs.getValue(i));
-                if(strcmp(value,"ReverseLoad")==0)
-                {   nextTask=(CustomTask *)(new ReverseLoad());
-                    if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
-                }
-				else if(strcmp(value,"VTKArchive")==0)
-                {   if(vtkArchiveTask!=NULL) throw SAXException("Only one VTKArchive custom task is allowed.");
-                    vtkArchiveTask = new VTKArchive();
-                    nextTask=(CustomTask *)vtkArchiveTask;
-                    if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
-                }
-				else if(strcmp(value,"HistoryArchive")==0)
-                {   nextTask=(CustomTask *)(new HistoryArchive());
-                    if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
-                }
-				else if(strcmp(value,"AdjustTimeStep")==0)
-                {   nextTask=(CustomTask *)(new AdjustTimeStepTask());
-                    if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
-                }
-				else if(strcmp(value,"CarnotCycle")==0)
-                {   nextTask=(CustomTask *)(new CarnotCycle());
-                    if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
-                }
-				else if(strcmp(value,"ThermalRamp")==0)
-				{   nextTask=(CustomTask *)(new CustomThermalRamp());
-					if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
-					ConductionTask::activeRamp = true;
-				}
-                else
-                    throw SAXException("Unknown custom task requested for scheduling.");
-                delete [] value;
-            }
-            delete [] aName;
-            if(nextTask!=NULL) break;
-        }
-        if(nextTask!=NULL)
-        {   block=TASKPARAMETERS;
-            if(currentTask==NULL)
-                theTasks=nextTask;
-            else
-                ((CustomTask *)currentTask)->nextTask=nextTask;
-            currentTask=(char *)nextTask;
-        }
+	{	ScheduleCustomTask(attrs);
     }
     
 	// Set Custom Task parameter
     else if(strcmp(xName,"Parameter")==0)
-	{	inputPtr=NULL;
-    	numAttr=(int)attrs.getLength();
-        for(i=0;i<numAttr;i++)
-        {   aName=XMLString::transcode(attrs.getLocalName(i));
-            if(strcmp(aName,"name")==0)
-            {   value=XMLString::transcode(attrs.getValue(i));
-                inputPtr=((CustomTask *)currentTask)->InputParam(value,input,gScaling);
-                delete [] value;
-            }
-            delete [] aName;
-            if(inputPtr!=NULL) break;
-        }
-        if(inputPtr==NULL)
-            throw SAXException("Unrecognized task parameter was found.");
+	{	SetCustomTasksParameter(attrs);
     }
 
 	//-------------------------------------------------------
@@ -1387,7 +1367,7 @@ void MPMReadHandler::myEndElement(char *xName)
     
     else if(strcmp(xName,"CrackList")==0)
     {   if(!crackCtrl->FinishCrack())
-            throw SAXException("All cracks must have at least one segement");
+            throw SAXException("All cracks must have at least one segement or surface element");
         block = NO_BLOCK;
     }
 	
@@ -1444,7 +1424,7 @@ void MPMReadHandler::myEndElement(char *xName)
     else if(strcmp(xName,"Cracks")==0)
     {	// install frictionless if not provded
 		if(contact.crackContactLawID<0)
-		{	contact.crackContactLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,NULL,0.);
+		{	contact.crackContactLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,NULL,0.,"Cracks default");
 		}
     	block=MPMHEADER;
     }
@@ -1452,7 +1432,7 @@ void MPMReadHandler::myEndElement(char *xName)
     else if(strcmp(xName,"MultiMaterialMode")==0)
     {	// install frictionless if not provded
 		if(contact.materialContactLawID<0)
-		{	contact.materialContactLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,NULL,0.);
+		{	contact.materialContactLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,NULL,0.,"MultiMaterialMode default");
 		}
 		block=MPMHEADER;
     }
@@ -1467,7 +1447,7 @@ void MPMReadHandler::myEndElement(char *xName)
 		// convert to the final contact law
 		int finalLawID = currentContact->contactProps.contactLawID;
 		if(finalLawID<0)
-			finalLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,&(currentContact->contactProps),0.);
+			finalLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,&(currentContact->contactProps),0.,"deprecated Friction");
 		
 		// assign law to appropriate place
 		if(block==CRACKHEADER)
@@ -1583,7 +1563,7 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
         case HARDENING_LAW_SELECTION:
             ((MaterialBase *)inputPtr)->SetHardeningLaw(xData);
             break;
-		
+
 		case TEXT_PARAMETER:
 			// must be in active custom tasks
 			((CustomTask *)currentTask)->SetTextParameter(xData,inputPtr);

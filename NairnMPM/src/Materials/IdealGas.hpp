@@ -24,8 +24,7 @@ class IdealGas : public HyperElastic
     public:
 	
         // constructors and destructors
-        IdealGas();
-        IdealGas(char *);
+        IdealGas(char *,int);
         
         // initialize
         virtual char *InputMaterialProperty(char *,int &,double &);
@@ -43,7 +42,9 @@ class IdealGas : public HyperElastic
 		// accessors
 		virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual const char *MaterialType(void) const;
- 		
+		virtual bool SupportsDiffusion(void) const;
+		virtual bool SupportsArtificialViscosity(void) const;
+	
     private:
 		double P0;    // initial pressure
 		double T0;    // initial temperature in Kelvin

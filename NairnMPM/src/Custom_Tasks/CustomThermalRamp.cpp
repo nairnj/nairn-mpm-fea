@@ -11,20 +11,15 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "System/UnitsController.hpp"
-#include "Read_XML/mathexpr.hpp"
 #include "System/ArchiveData.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Read_XML/BMPLevel.hpp"
 #include "Materials/MaterialBase.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
+#include "Read_XML/Expression.hpp"
 
 extern double timestep;
-
-double CustomThermalRamp::varTime=0.;
-double CustomThermalRamp::varXValue=0.;
-double CustomThermalRamp::varYValue=0.;
-double CustomThermalRamp::varZValue=0.;
-PRVar rampVarArray[4] = { NULL, NULL, NULL, NULL };
 
 #pragma mark Constructors and Destructors
 
@@ -32,6 +27,7 @@ PRVar rampVarArray[4] = { NULL, NULL, NULL, NULL };
 CustomThermalRamp::CustomThermalRamp()
 {
 	isoRampTime = -1.;
+	property = RAMP_TEMP;
 	rampStart = 0.;
 	isoDeltaT = 0.;
 	sigmoidal = 0;
@@ -53,13 +49,8 @@ CustomThermalRamp::CustomThermalRamp()
 
 // Destructor (and it is virtual)
 CustomThermalRamp::~CustomThermalRamp()
-{	if(scaleFxn!=NULL)
-	{	delete rampVarArray[0];
-		delete rampVarArray[1];
-		delete rampVarArray[2];
-		delete rampVarArray[3];
-		delete scaleFxn;
-	}
+{
+	if(scaleFxn!=NULL) delete scaleFxn;
 	if(bmpFile!=NULL) delete [] bmpFile;
 	
 	// delete defined levels
@@ -79,8 +70,10 @@ CustomThermalRamp::~CustomThermalRamp()
 	currentMatPt=NULL;
 }
 
-// Return name of this task
-const char *CustomThermalRamp::TaskName(void) { return "Ramp particle temperatures"; }
+// Return name of this task (not user)
+const char *CustomThermalRamp::TaskName(void)
+{	return "Ramp particle temperature, fluid, or out-of-plane property";
+}
 
 // Read task parameter - if pName is valid, set input for type
 //    and return pointer to the class variable
@@ -91,7 +84,12 @@ char *CustomThermalRamp::InputParam(char *pName,int &input,double &gScaling)
 		return UnitsController::ScaledPtr((char *)&isoRampTime,gScaling,1.e-3);
 	}
 	
-	else if(strcmp(pName,"DeltaT")==0)
+	else if(strcmp(pName,"property")==0)
+	{	input=INT_NUM;
+		return (char *)&property;
+	}
+	
+	else if(strcmp(pName,"DeltaT")==0 || strcmp(pName,"Delta")==0)
 	{	input=DOUBLE_NUM;
 		return (char *)&isoDeltaT;
 	}
@@ -141,12 +139,12 @@ char *CustomThermalRamp::InputParam(char *pName,int &input,double &gScaling)
 		return (char *)&height;
 	}
 	
-	else if(strcmp(pName,"DeltaTmin")==0)
+	else if(strcmp(pName,"DeltaTmin")==0 || strcmp(pName,"DeltaMin")==0)
 	{	input=DOUBLE_NUM;
 		return (char *)&deltaTmin;
 	}
 	
-	else if(strcmp(pName,"DeltaTmax")==0)
+	else if(strcmp(pName,"DeltaTmax")==0 || strcmp(pName,"DeltaMax")==0)
 	{	input=DOUBLE_NUM;
 		return (char *)&deltaTmax;
 	}
@@ -197,11 +195,17 @@ void CustomThermalRamp::SetTextParameter(char *fxn,char *ptr)
 	if(ptr == (char *)&bmpFile)
 	{	// bmp file name
 		if(bmpFile!=NULL)
-			ThrowSAXException("Duplicate bit mapped file name for thermal ramp");
+		{	ThrowSAXException("Duplicate bit mapped file name for ramp");
+			return;
+		}
 		if(fxn==NULL)
-			ThrowSAXException("Bit mapped file name is missing");
+		{	ThrowSAXException("Bit mapped file name is missing");
+			return;
+		}
 		if(strlen(fxn)==0)
-			ThrowSAXException("Bit mapped file name is missing");
+		{	ThrowSAXException("Bit mapped file name is missing");
+			return;
+		}
 		
 		// save is
 		bmpFile = new char[strlen(fxn)+1];
@@ -211,24 +215,19 @@ void CustomThermalRamp::SetTextParameter(char *fxn,char *ptr)
 	else if(ptr == (char *)&scaleFxn)
 	{	// scale function
 		if(scaleFxn!=NULL)
-			ThrowSAXException("Duplicate ramp scale function was entered");
-		if(fxn==NULL)
-			ThrowSAXException("Ramp scale function is missing");
-		if(strlen(fxn)==0)
-			ThrowSAXException("Ramp scale function is missing");
-		
-		// create variable
-		if(rampVarArray[0]==NULL)
-		{	rampVarArray[0]=new RVar("t",&varTime);
-			rampVarArray[1]=new RVar("x",&varXValue);
-			rampVarArray[2]=new RVar("y",&varYValue);
-			rampVarArray[3]=new RVar("z",&varZValue);
+		{	ThrowSAXException("Duplicate ramp scale function was entered");
+			return;
 		}
-		
-		// create function
-		scaleFxn = new ROperation(fxn,4,rampVarArray);
-		if(scaleFxn->HasError())
-			ThrowSAXException("Ramp scale function is not valid");
+		if(fxn==NULL)
+		{	ThrowSAXException("Ramp scale function is missing");
+			return;
+		}
+		if(strlen(fxn)==0)
+		{	ThrowSAXException("Ramp scale function is missing");
+			return;
+		}
+
+		scaleFxn =  Expression::CreateExpression(fxn,"Ramp scale function is not valid");
 	}
 	
 	else
@@ -256,16 +255,67 @@ CustomTask *CustomThermalRamp::Initialize(void)
 	// current Delta T
 	currentDeltaT = 0.;
 	
-	cout << "Ramp particle temperatures:" << endl;
+	// convert to ramp type
+	if(property==RAMP_FLUID)
+	{	if(fmobj->HasDiffusion())
+			property = RAMP_CONC;
+		else
+		{	throw CommonException(
+						"Cannot ramp particle fluid unless doing diffusion or poroelasticity calculations.",
+						"CustomThermalRamp::Initialize");
+		}
+	}
+	else if(property==RAMP_OOPSE)
+	{	if(fmobj->np==PLANE_STRESS_MPM)
+			property = RAMP_SZZ;
+		else if(fmobj->np==PLANE_STRAIN_MPM)
+			property = RAMP_EZZ;
+		else
+		{	throw CommonException(
+								  "Cannot ramp out-of-plane stress or strain unless doing plane stress or strain calculations.",
+								  "CustomThermalRamp::Initialize");
+		}
+	}
+	else if(property!=RAMP_TEMP)
+		throw CommonException("Invalid property select for custom thermal ramp task.","CustomThermalRamp::Initialize");
+	
+	// verify property is allowed
+	char rampValue[100],rampUnits[20];
+	if(property==RAMP_TEMP)
+	{	strcpy(rampValue,"isothermal temperature");
+		cout << "Ramp particle temperatures:" << endl;
+		strcpy(rampUnits,"K");
+	}
+	else if(property==RAMP_CONC)
+	{	strcpy(rampValue,"concentration");
+		cout << "Ramp particle concentration:" << endl;
+		rampUnits[0] = 0;
+	}
+	else if(property==RAMP_PP)
+	{	strcpy(rampValue,"pore pressure");
+		cout << "Ramp particle pore pressure:" << endl;
+		strcpy(rampUnits,UnitsController::Label(PRESSURE_UNITS));
+	}
+	else if(property==RAMP_SZZ)
+	{	strcpy(rampValue,"sigma(zz)");
+		cout << "Ramp particle sigma(zz):" << endl;
+		strcpy(rampUnits,UnitsController::Label(PRESSURE_UNITS));
+	}
+	else if(property==RAMP_EZZ)
+	{	strcpy(rampValue,"strain(zz)");
+		cout << "Ramp particle strain(zz):" << endl;
+		strcpy(rampUnits,"");
+	}
+	
 	
 	// Two options
-	// 1. Ramp to isoDeltaT, optionally scalled by scaleFxn (when bmpFile is NULL)
+	// 1. Ramp to isoDeltaT, optionally scaled by scaleFxn (when bmpFile is NULL)
 	// 2. Ramp to bit mapped file settings
 	
 	char hline[200];
 	
 	if(bmpFile==NULL)
-	{	sprintf(hline,"   Final isothermal temperature difference: %g C",isoDeltaT);
+	{	sprintf(hline,"   Final %s difference: %g %s",rampValue,isoDeltaT,rampUnits);
 		cout << hline << endl;
 		sprintf(hline,"   Ramped between %g and %g %s",rampStart*UnitsController::Scaling(1.e3),
 					(rampStart+isoRampTime)*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
@@ -274,17 +324,14 @@ CustomTask *CustomThermalRamp::Initialize(void)
 		if(sigmoidal)
 			cout << "      (use sigmoidal ramp)" << endl;
 		if(scaleFxn!=NULL)
-		{	char *expr = scaleFxn->Expr('#');
-			cout << "   Scaling function =  " << expr << endl;
-			delete [] expr;
-		}
+			cout << "   Scaling function =  " << scaleFxn->GetString() << endl;
 	}
 	else
 	{	// Read the File
 		XYInfoHeader info;
 		unsigned char **rows;
 		char *bmpFullPath = archiver->ExpandOutputPath(bmpFile);
-		rows = (unsigned char **)CommonReadHandler::ReadXYFile(bmpFullPath,info,BYTE_DATA);
+		rows = (unsigned char **)CommonReadHandler::ReadXYFile(bmpFullPath,info,BYTE_DATA,false);
 		delete [] bmpFullPath;
 		
 		// validate
@@ -390,7 +437,9 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 	// Adjust particle temperatures
 	double newDeltaT,deltaT;
 	if(firstMatPt == NULL)
-	{	// to current particles
+	{	// This section is calculated ramp applied to all particles
+		
+		// to current particles
 		newDeltaT = rampFraction*isoDeltaT;
 		
 		// get temperature change
@@ -400,27 +449,51 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 		// loop over nonrigid material points and update temperature
 		for(int p=0;p<nmpmsNR;p++)
         {   double dTp = deltaT;
-            if(scaleFxn!=NULL)
-			{	varTime = mtime*UnitsController::Scaling(1000.);
-				varXValue = mpm[p]->pos.x;
-				varYValue = mpm[p]->pos.y;
-				varZValue = mpm[p]->pos.y;
-				dTp = deltaT*scaleFxn->Val();
+			if(scaleFxn!=NULL)
+				dTp = deltaT*scaleFxn->XYZTValue(&mpm[p]->pos,mtime*UnitsController::Scaling(1000.));
+			
+			if(property==RAMP_TEMP)
+			{	mpm[p]->pTemperature += dTp;
+				// heat and entropy (per unit mass)
+				const MaterialBase *matRef=theMaterials[mpm[p]->MatID()];
+				double dqp = matRef->GetHeatCapacity(mpm[p])*dTp;
+				mpm[p]->AddHeatEnergy(dqp);
+				mpm[p]->AddEntropy(dqp,mpm[p]->pPreviousTemperature);
 			}
-            mpm[p]->pTemperature += dTp;
-
-#ifdef NEW_HEAT_METHOD
-            // heat and entropy
-            const MaterialBase *matRef=theMaterials[mpm[p]->MatID()];
-            double dqp = matRef->GetHeatCapacity(mpm[p]);
-            mpm[p]->AddHeatEnergy(dqp);
-            mpm[p]->AddEntropy(dqp/mpm[p]->pPreviousTemperature);
-#endif
+			else if(property==RAMP_SZZ)
+			{	// for generalized plane stress convert to specific stress units
+				dTp *= UnitsController::Scaling(1.e6)/mpm[p]->GetRho();
+			
+				// set particle sigma(zz) and store increment for res.doopse
+				mpm[p]->StoreThicknessStressIncrement(dTp);
+			}
+			else if(property==RAMP_EZZ)
+			{	// for generalized plane strain convert to absolute strain
+				dTp *= 0.01;
+				
+				// set particle sigma(zz) and store increment for res.doopse
+				mpm[p]->StoreThicknessStrainIncrement(dTp);
+			}
+			else if(property==RAMP_PP)
+			{	// convert to MPa to Pa in Legacy
+				dTp*=UnitsController::Scaling(1.e6);
+				mpm[p]->pConcentration += dTp;
+			}
+			else
+			{	// add concentration, contrained to 0 to 1
+				mpm[p]->pConcentration += dTp;
+				if(mpm[p]->pConcentration<0.)
+					mpm[p]->pConcentration = 0.;
+				else if(mpm[p]->pConcentration>1.)
+					mpm[p]->pConcentration = 1.;
+			}
 		}
 	}
 	
 	else
-	{	// to list of material points
+	{	// This section maps image to particle change
+		
+		// to list of material points
 		BMPLevel *nextMatPt = firstMatPt;
 		while(nextMatPt!=NULL)
 		{	newDeltaT = rampFraction*nextMatPt->temperature;
@@ -429,15 +502,42 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 			deltaT = newDeltaT - nextMatPt->currentDeltaT;
 			nextMatPt->currentDeltaT = newDeltaT;
 			MPMBase *mptr = (MPMBase *)nextMatPt->GetContextInfo();
-			mptr->pTemperature += deltaT;
-            
-#ifdef NEW_HEAT_METHOD
-            // heat and entropy
-            const MaterialBase *matRef=theMaterials[mptr->MatID()];
-            double dqp = matRef->GetHeatCapacity(mptr);
-            mptr->AddHeatEnergy(dqp);
-            mptr->AddEntropy(dqp/mptr->pPreviousTemperature);
-#endif
+			
+			if(property==RAMP_TEMP)
+			{	mptr->pTemperature += deltaT;
+				// heat and entropy (per unit mass)
+				const MaterialBase *matRef=theMaterials[mptr->MatID()];
+				double dqp = matRef->GetHeatCapacity(mptr);
+				mptr->AddHeatEnergy(dqp);
+				mptr->AddEntropy(dqp,mptr->pPreviousTemperature);
+			}
+			else if(property==RAMP_SZZ)
+			{	// for generalized plane stress convert to specific stress units
+				deltaT *= UnitsController::Scaling(1.e6)/mptr->GetRho();
+				
+				// set particle sigma(zz) and store increment for res.doopse
+				mptr->StoreThicknessStressIncrement(deltaT);
+			}
+			else if(property==RAMP_EZZ)
+			{	// for generalized plane strain convert to absolute strain
+				deltaT *= 0.01;
+				
+				// set particle sigma(zz) and store increment for res.doopse
+				mptr->StoreThicknessStrainIncrement(deltaT);
+			}
+			else if(property==RAMP_PP)
+			{	// Convert MPa to Pa in Legacy
+				deltaT *= UnitsController::Scaling(1.e6);
+				mptr->pConcentration += deltaT;
+			}
+			else
+			{	// add temperature contrained to 0 to 1
+				mptr->pConcentration += deltaT;
+				if(mptr->pConcentration<0.)
+					mptr->pConcentration = 0.;
+				else if(mptr->pConcentration>1.)
+					mptr->pConcentration = 1.;
+			}
 			
 			// next one
 			nextMatPt = (BMPLevel *)nextMatPt->GetNextObject();

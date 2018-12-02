@@ -42,8 +42,10 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Cracks/CrackNode.hpp"
+#include "Nodes/MaterialContactNode.hpp"
 #include "Patches/GridPatch.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "NairnMPM_Class/UpdateMomentaTask.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -140,24 +142,9 @@ void UpdateStrainsLastContactTask::Execute(void)
 			patches[pn]->MassAndMomentumReductionLast();
 	}
 	
-	// grid temperature is never updated unless needed here
-	// update nodal values for transport properties (when coupled to strain)
-	TransportTask *nextTransport=transportTasks;
-	while(nextTransport!=NULL)
-		nextTransport=nextTransport->UpdateNodalValues(timestep);
-	
-	// adjust momenta for multimaterial contact
-	if(fmobj->multiMaterialMode)
-	{	for(int i=1;i<=nnodes;i++)
-			nd[i]->MaterialContactOnNode(timestep,UPDATE_STRAINS_LAST_CALL);
-	}
-	
-	// adjust momenta for crack contact
-	if(firstCrack!=NULL) CrackNode::ContactOnKnownNodes();
-	
-	// impose grid boundary conditions
-	NodalVelBC::GridMomentumConditions();
-	
+	// contact and mnomenta BCs
+	UpdateMomentaTask::ContactAndMomentaBCs(UPDATE_STRAINS_LAST_CALL);
+
 	// update strains based on current velocities
-	UpdateStrainsFirstTask::FullStrainUpdate(strainTimestep,(fmobj->mpmApproach==USAVG_METHOD),fmobj->np);
+	UpdateStrainsFirstTask::FullStrainUpdate(strainTimestepLast,(fmobj->mpmApproach==USAVG_METHOD),fmobj->np);
 }

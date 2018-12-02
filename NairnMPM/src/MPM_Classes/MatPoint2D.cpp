@@ -7,6 +7,7 @@
 ********************************************************************************/
 
 #include "stdafx.h"
+#include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MatPoint2D.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Elements/ElementBase.hpp"
@@ -62,33 +63,12 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	    
     // save velocity gradient (if needed for J integral calculation)
     SetVelocityGradient(dv(0,0),dv(1,1),dv(0,1),dv(1,0),secondPass);
-    
+
     // convert to strain increments (e.g., now dvxx = dvx/dx * dt = d/dx(du/dt) * dt = d/dt(du/dx) * dt = du/dx)
     dv.Scale(strainTime);
-    
-	// Extrapolate grid temperature (or concentration) to the particle
-	// Find delta value from previous extrapolated grid value on particle
-	// (and save this new one for use by others and next time step)
-	ResidualStrains res;
-	res.dT = 0;
-	res.dC = 0.;
-	if(!ConductionTask::active)
-	{	// just use and then reset previous temperature
-		res.dT = pTemperature-pPreviousTemperature;
-		pPreviousTemperature = pTemperature;
-	}
-	else
-	{	for(i=1;i<=numnds;i++)
-			res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
-		res.dT = conduction->GetDeltaValue(this,res.dT);
-	}
-	if(DiffusionTask::active)
-	{	for(i=1;i<=numnds;i++)
-			res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
-		res.dC = diffusion->GetDeltaValue(this,res.dC);
-	}
 	
 	// pass on to material class to handle
+	ResidualStrains res = ScaledResidualStrains(secondPass);
 	PerformConstitutiveLaw(dv,strainTime,np,props,&res);
 }
 
@@ -101,31 +81,41 @@ void MatPoint2D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void
 }
 
 // Move position (2D) (in mm)
-// First finish accExtra by adding ap*Vp(n)
-// Then Update using dx = (Vpg(n+1) - (dt/2)(Agp(n) + accExtra))*dt
+// First finish accEeff by subtracting ap*Vp(n), then update
 // Must be called BEFORE velocity update, because is needs vp(n) at start of timestep
-void MatPoint2D::MovePosition(double delTime,Vector *vgpnp1,Vector *accExtra,double particleAlpha)
+void MatPoint2D::MovePosition(double delTime,Vector *vgpn,Vector *accEff,double particleAlpha)
 {
-	// finish extra acceleration terms by adding ap*Vp(n)
-	accExtra->x += particleAlpha*vel.x;
-	accExtra->y += particleAlpha*vel.y;
+	// finish extra acceleration terms by subtractinh ap*Vp(n)
+	accEff->x -= particleAlpha*vel.x;
+	accEff->y -= particleAlpha*vel.y;
 	
-	// position change
-	pos.x += delTime*(vgpnp1->x - 0.5*delTime*(acc.x + accExtra->x));
-    pos.y += delTime*(vgpnp1->y - 0.5*delTime*(acc.y + accExtra->y));
+	// position change (in this code, vgpn = vgpnp1)
+	pos.x += delTime*(vgpn->x - 0.5*delTime*(acc.x - accEff->x));
+	pos.y += delTime*(vgpn->y - 0.5*delTime*(acc.y - accEff->y));
+	
+	// finish acceleration
+	acc.x += accEff->x;
+	acc.y += accEff->y;
+	
+//#define ADD_DAMPING_TO_HEAT
+#ifdef ADD_DAMPING_TO_HEAT
+	// If works: Add to all MPM classes, add option to convert damping to heat, and add to Adams-Bashforth method too
+	// This gets energy per unit mass, which I think is what is needed (otherwise, multiple Edisp by mp)
+	Vector vdamp = MakeVector(vgpnp1->x - 0.5*accExtra->x*delTime, vgpnp1->y - 0.5*accExtra->y*delTime, 0.);
+	double Edisp = delTime*(vdamp.x*accExtra->x + vdamp.y*accExtra->y);
+	const MaterialBase *matRef = theMaterials[MatID()];
+	matRef->IncrementHeatEnergy(this,,0.,Edisp);
+#endif
 }
 
 // Move velocity (3D) (in mm/sec)
 // First get final acceleration on the particle
 //		accEff = acc - accExtra
 // Then update using Vp(n+1) = Vp(n) + accEff*dt
-void MatPoint2D::MoveVelocity(double delTime,Vector *accExtra)
+void MatPoint2D::MoveVelocity(double delTime)
 {
-	acc.x -= accExtra->x;
-	acc.y -= accExtra->y;
-	
 	vel.x += delTime*acc.x;
-    vel.y += delTime*acc.y;
+	vel.y += delTime*acc.y;
 }
 
 // Move rigid particle by new current velocity
@@ -185,7 +175,7 @@ void MatPoint2D::AddTemperatureGradient(int offset,Vector *grad)
     pTemp[offset+1]+=grad->y;
 }
 
-// return conduction force = -Vp Grad T . Grad S = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units nJ/sec)
+// return conduction force = -Vp [k/rho0] Grad T . Grad S = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units nJ/sec)
 // and k/rho0 is stored in k in units (nJ mm^2/(sec-K-g))
 //  (non-rigid particles only)
 double MatPoint2D::FCond(int offset,double dshdx,double dshdy,double dshdz,TransportProperties *t)
@@ -328,6 +318,16 @@ void MatPoint2D::GetSemiSideVectors(Vector *r1,Vector *r2,Vector *r3) const
 	r2->z = 0.;
 }
 
+// Get distance from particle center to surface of deformed particle
+// along the provided unit vector
+double MatPoint2D::GetDeformedRadius(Vector *norm) const
+{	Vector r1,r2,r3;
+	GetSemiSideVectors(&r1,&r2,&r3);
+	double amag = fabs(norm->x*r1.y-norm->y*r1.x);
+	double bmag = fabs(norm->x*r2.y-norm->y*r2.x);
+	return fabs(r1.x*r2.y-r1.y*r2.x)/fmax(amag,bmag);
+}
+
 // Get undeformed size (only called by GIMP traction and Custom thermal ramp)
 // This uses mpmgrid so membrane particles must override
 // Assumes undeformation particle aligned with x-y-z axes
@@ -355,7 +355,7 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 	try
 	{	CPDIDomain **cpdi = GetCPDIInfo();
 		
-		if(cpdiType == LINEAR_CPDI)
+		if(cpdiType != QUADRATIC_CPDI)
 		{	// nodes at four corners in ccw direction
 			c.x = pos.x-r1.x-r2.x;
 			c.y = pos.y-r1.y-r2.y;
@@ -378,14 +378,17 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 			theElements[cpdi[3]->inElem]->GetXiPos(&c,&cpdi[3]->ncpos);
 			
 			// gradient weighting values
+			// wg[i] = (1/Ap)*(xi[i](r2.y,-r2.x) + eta[i](-r1.y,r1.x))
+			// where xi = {-1,1,1,-1} and eta = {-1,-1,1,1}
 			Ap = 1./Ap;
 			cpdi[0]->wg.x = (r1.y-r2.y)*Ap;
-			cpdi[0]->wg.y = (-r1.x+r2.x)*Ap;
 			cpdi[1]->wg.x = (r1.y+r2.y)*Ap;
-			cpdi[1]->wg.y = (-r1.x-r2.x)*Ap;
 			cpdi[2]->wg.x = (-r1.y+r2.y)*Ap;
-			cpdi[2]->wg.y = (r1.x-r2.x)*Ap;
 			cpdi[3]->wg.x = (-r1.y-r2.y)*Ap;
+			
+			cpdi[0]->wg.y = (-r1.x+r2.x)*Ap;
+			cpdi[1]->wg.y = (-r1.x-r2.x)*Ap;
+			cpdi[2]->wg.y = (r1.x-r2.x)*Ap;
 			cpdi[3]->wg.y = (r1.x+r2.x)*Ap;
 		}
 		
@@ -479,172 +482,145 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
     }
 }
 
-// To support traction boundary conditions, find the deformed edge, natural coordinates of
-// the corners along the edge, elements for those edges, and a normal vector in direction
-// of the traction
-// throws CommonException() if edge has left the grid
-double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
+// Given face, find dimensionless coordinates of corners (2 in 2D), elements for those corners (2 in 2D),
+//     and deformed particle radii (2 in 2D)
+// Return number of corners in numDnds
+// Function result is vector in BC direction * face weight (which is B*|r1| = Area/2 in 2D)
+// On input cElem, corners, and radii are areas of length equal to number of corners (2 in 2D)
+Vector MatPoint2D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Vector *radii,int *numDnds,double *redge)
 {
-    *numDnds = 2;
-    double faceWt,ex=0.,ey=0.,enorm;
-	Vector c1,c2;
+	*numDnds = 2;
+	Vector c1, c2, c3;		// edge from 1 to 2, other direction from 1 to 3
+	Vector r1,r2;
 	
-	// always UNIFORM_GIMP or LINEAR_CPDI
-    
-    // which GIMP method (cannot be used in POINT_GIMP)
-    if(ElementBase::useGimp==UNIFORM_GIMP)
-    {   // initial vectors only
-        double r1x,r2y;
-        GetUndeformedSemiSides(&r1x,&r2y,NULL);
-
-        switch(face)
-        {	case 1:
-                // lower edge
-                c1.x = pos.x-r1x;
-                c2.x = pos.x+r1x;
-                c1.y = c2.y = pos.y-r2y;
-                faceWt = r1x*mpmgrid.GetThickness();
-                break;
-                
-            case 2:
-                // right edge
-                c1.x = c2.x = pos.x+r1x;
-                c1.y = pos.y-r2y;
-                c2.y = pos.y+r2y;
-                faceWt = r2y*mpmgrid.GetThickness();
-                break;
-                
-            case 3:
-                // top edge
-                c1.x = pos.x+r1x;
-                c2.x = pos.x-r1x;
-                c1.y = c2.y = pos.y+r2y;
-                faceWt = r1x*mpmgrid.GetThickness();
-                break;
-                
-            default:
-                // left edge
-                c1.x = c2.x = pos.x-r1x;
-                c1.y = pos.y+r2y;
-                c2.y = pos.y-r2y;
-                faceWt = r2y*mpmgrid.GetThickness();
-                break;
-        }
-        
-        // get elements
-        try
-        {	cElem[0] = mpmgrid.FindElementFromPoint(&c1,this)-1;
-            theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
-            
-            cElem[1] = mpmgrid.FindElementFromPoint(&c2,this)-1;
-            theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
-        }
-        catch(CommonException& err)
-        {   char msg[200];
-            sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
-            throw CommonException(msg,"MatPoint2D::GetTractionInfo");
-        }
-		
-		// get edge vector
-		ex = c2.x-c1.x;
-		ey = c2.y-c1.y;
-    }
+	// get polygon vectors - these are from particle to edge
+	GetSemiSideVectors(&r1,&r2,NULL);
 	
-    else if(ElementBase::useGimp==LINEAR_CPDI)
-    {   // get deformed corners, but get from element and natural coordinates
-        //  from CPDI info because corners may have moved by here for any
-        //  simulations that update strains between initial extrapolation
-        //  and the grid forces calculation
-        int d1,d2;
-        switch(face)
-        {	case 1:
-                // lower edge
-                d1=0;
-                d2=1;
-                break;
-                
-            case 2:
-                // right edge
-                d1=1;
-                d2=2;
-                break;
-                
-            case 3:
-                // top edge
-                d1=2;
-                d2=3;
-                break;
-                
-            default:
-                // left edge
-                d1=3;
-                d2=0;
-                break;
-        }
-        
-        // copy for initial state at start of time step
-		CPDIDomain **cpdi = GetCPDIInfo();
-        cElem[0] = cpdi[d1]->inElem;
-        corners[0].x = cpdi[d1]->ncpos.x;
-        corners[0].y = cpdi[d1]->ncpos.y;
-        corners[0].z = 0.;
-        cElem[1] = cpdi[d2]->inElem;
-        corners[1].x = cpdi[d2]->ncpos.x;
-        corners[1].y = cpdi[d2]->ncpos.y;
-        corners[1].z = 0.;
-        
-        // get weighting factor as 1/2 of face area
-        // the 1/2 is weighting factor to average the two nodes
-        if(face==1 || face==3)
-            faceWt = faceArea->x;
-        else
-            faceWt = faceArea->y;
-		
-		// get edge vector
-		if(dof==N_DIRECTION || dof==T1_DIRECTION)
-		{	theElements[cElem[0]]->GetPosition(&corners[0],&c1);
-			theElements[cElem[1]]->GetPosition(&corners[1],&c2);
-			ex = c2.x-c1.x;
-			ey = c2.y-c1.y;
+	// handle axisymmetric
+	if(fmobj->IsAxisymmetric())
+	{	// truncate by shrinking domain if any have x < 0, but keep particle in the middle
+		if(pos.x-fabs(r1.x+r2.x)<0.)
+		{	// make pos.x-shrink*fabs(r1.x+r2.x) = eps (small and positive)
+			double shrink = (pos.x-theElements[ElemID()]->GetDeltaX()*1.e-10)/fabs(r1.x+r2.x);
+			r1.x *= shrink;
+			r1.y *= shrink;
+			r2.x *= shrink;
+			r2.y *= shrink;
 		}
-        
-    }
-	
-	else
-	{	// Current not allowed
-		throw CommonException("Traction BCs in 2D require lCPDI or uGIMP shape functions.","MatPoint2D::GetTractionInfo");
 	}
 	
-    // get traction normal vector by 1/2 the face area
-    ZeroVector(tscaled);
+	switch(face)
+	{	case 1:
+			// lower edge nodes 1 to 2
+			c1.x = pos.x-r1.x-r2.x;
+			c1.y = pos.y-r1.y-r2.y;
+			c2.x = pos.x+r1.x-r2.x;
+			c2.y = pos.y+r1.y-r2.y;
+			// third is node 4
+			c3.x = pos.x-r1.x+r2.x;
+			c3.y = pos.y-r1.y+r2.y;
+			break;
+			
+		case 2:
+			// right edge nodes 2 to 3
+			c1.x = pos.x+r1.x-r2.x;
+			c1.y = pos.y+r1.y-r2.y;
+			c2.x = pos.x+r1.x+r2.x;
+			c2.y = pos.y+r1.y+r2.y;
+			// third is node 1
+			c3.x = pos.x-r1.x-r2.x;
+			c3.y = pos.y-r1.y-r2.y;
+			break;
+			
+		case 3:
+			// top edge nodes 3 to 4
+			c1.x = pos.x+r1.x+r2.x;
+			c1.y = pos.y+r1.y+r2.y;
+			c2.x = pos.x-r1.x+r2.x;
+			c2.y = pos.y-r1.y+r2.y;
+			// third is node 2
+			c3.x = pos.x+r1.x-r2.x;
+			c3.y = pos.y+r1.y-r2.y;
+			break;
+			
+		default:
+			// left edge nodes 4 to 1
+			c1.x = pos.x-r1.x+r2.x;
+			c1.y = pos.y-r1.y+r2.y;
+			c2.x = pos.x-r1.x-r2.x;
+			c2.y = pos.y-r1.y-r2.y;
+			// third is node 3
+			c3.x = pos.x+r1.x+r2.x;
+			c3.y = pos.y+r1.y+r2.y;
+			break;
+	}
+	
+	// get elements and xipos for the two corners
+	try
+	{	cElem[0] = mpmgrid.FindElementFromPoint(&c1,this)-1;
+		theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
+		
+		cElem[1] = mpmgrid.FindElementFromPoint(&c2,this)-1;
+		theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
+	}
+	catch(CommonException& err)
+	{   char msg[200];
+		sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
+		throw CommonException(msg,"MatPoint2D::GetSurfaceInfo");
+	}
+		
+	// get relevant edge radii for this edge
+	radii[0].x = 0.5*(c2.x-c1.x);
+	radii[0].y = 0.5*(c2.y-c1.y);
+	radii[1].x = 0.5*(c3.x-c1.x);
+	radii[1].y = 0.5*(c3.y-c1.y);
+	
+	// get face weighting
+ 	// if planar then 1/2 the face area = |r|B
+	// if axisymmetric then |r| and load redge
+	double faceWt = sqrt(DotVectors(&radii[0],&radii[0]));
+	if(fmobj->IsAxisymmetric())
+		*redge = pos.x - radii[1].x;
+	else
+		faceWt *= mpmgrid.GetThickness();
+	
+	// get traction normal vector multiplied by 1/2 the face area = |r|B
+	double enorm,ex,ey;
+	Vector wtNorm;
+	ZeroVector(&wtNorm);
 	switch(dof)
 	{	case 1:
 			// normal is x direction
-			tscaled->x = faceWt;
+			wtNorm.x = faceWt;
 			break;
-        case 2:
-            // normal is y direction
-            tscaled->y = faceWt;
-            break;
+		case 2:
+			// normal is y direction
+			wtNorm.y = faceWt;
+			break;
 		case N_DIRECTION:
-			// cross product of edge vector with (0,0,1) = (ey, -ex)
-			enorm = ey;
-			ey = -ex;
-			ex = enorm;
+			// cross product of edge vector with (0,0,1) = (r1y, -r1x)
+			ex = radii[0].y;
+			ey = -radii[0].x;
+			enorm = sqrt(ex*ex+ey*ey);
+			wtNorm.x = ex*faceWt/enorm;
+			wtNorm.y = ey*faceWt/enorm;
+			break;
 		case T1_DIRECTION:
 			// load in direction specified by normalized (ex,ey)
+			ex = radii[0].x;
+			ey = radii[0].y;
 			enorm = sqrt(ex*ex+ey*ey);
-			tscaled->x = ex*faceWt/enorm;
-			tscaled->y = ey*faceWt/enorm;
+			wtNorm.x = ex*faceWt/enorm;
+			wtNorm.y = ey*faceWt/enorm;
 			break;
 		default:
-			// normal is z direction (not used here)
-            tscaled->z = faceWt;
+			// normal is z direction (not used in 2D or axisymmetric)
+			wtNorm.z = faceWt;
 			break;
 	}
 	
-	// always 1 in 2D planar (used in AS)
-	return 1.;
+	// Return hat n * Area/2 as vector
+	return wtNorm;
 }
 
 // Get Rotation matrix for initial material orientation (anistropic only)
@@ -654,4 +630,4 @@ Matrix3 MatPoint2D::GetInitialRotation(void)
 	double sn = sin(theta);
 	return Matrix3(cs,sn,-sn,cs,1.);
 }
-	
+

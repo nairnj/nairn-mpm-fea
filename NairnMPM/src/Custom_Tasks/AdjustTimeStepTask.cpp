@@ -80,7 +80,7 @@ CustomTask *AdjustTimeStepTask::Initialize(void)
 		velocityCFL = 1.;
 	
     // set verbose from entered reportRatio
-    // To support all mode, 0 is not verbose, 1 is verbose with reportRatio 2
+    // To support all modes, 0 is not verbose, 1 is verbose with reportRatio 2
     if(reportRatio<=0.99)
         verbose = 0;
     else
@@ -151,7 +151,7 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
 		
 		// test time step
 		double tst = fmobj->GetCFLCondition()*dcell/crot;
-        if(tst<timestep) timestep = tst;
+        if(tst<timestep)	timestep = tst;
         
         // propagation time (in sec)
         tst = fmobj->GetPropagationCFLCondition()*dcell/crot;
@@ -159,8 +159,15 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
 	}
 	
     // verify time step and make smaller if needed
-	strainTimestep = (fmobj->mpmApproach==USAVG_METHOD) ? timestep/2. : timestep ;
-    
+	if(fmobj->mpmApproach==USAVG_METHOD)
+	{	strainTimestepFirst = fractionUSF*timestep;
+		strainTimestepLast = timestep - strainTimestepFirst;
+	}
+	else
+	{	strainTimestepFirst = timestep;
+		strainTimestepLast = timestep;
+	}
+	
 	// propagation time step (no less than timestep)
     if(propTime<timestep) propTime = timestep;
     
@@ -168,7 +175,7 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     if(verbose!=0)
     {   double ratio = timestep/lastReportedTimeStep;
         if(ratio>reportRatio || ratio<1./reportRatio)
-		{	cout << "# time step changed " << ratio << "X to "
+		{	cout << "# Step: " << fmobj->mstep << ": time step changed " << ratio << "X to "
             		<< timestep*UnitsController::Scaling(1.e3) << " "
             		<< UnitsController::Label(ALTTIME_UNITS);
 			if(Max_Velocity_Condition)

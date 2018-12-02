@@ -27,9 +27,9 @@ void CrackController::AddCrack(CrackHeader *newCrack)
 }
 
 // Add new segment
-int CrackController::AddSegment(CrackSegment *newSegment)
-{
-	return ((CrackHeader *)lastObject)->add(newSegment);
+int CrackController::AddSegment(CrackSegment *newSegment,bool ignoreDuplicate)
+{	
+	return ((CrackHeader *)lastObject)->addSegment(newSegment,ignoreDuplicate);
 }
 
 // When done with crack, finish any other needed initializations

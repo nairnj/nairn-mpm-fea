@@ -14,6 +14,7 @@
 #include "Elements/ElementBase.hpp"
 #include "System/UnitsController.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "Exceptions/CommonException.hpp"
 
 // global
 MatPtLoadBC *firstLoadedPt=NULL;
@@ -52,11 +53,25 @@ BoundaryCondition *MatPtLoadBC::PrintBC(ostream &os)
 			UnitsController::Scaling(1.e-6)*GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
 	PrintFunction(os);
-    
-    // initial value is F in N or N/numParticles if net, but if function
-    //      initial value is 1 or 1/numParticles if net
 	
-	// rescale ... for fuction value is 1 or 1/numParticles if net force
+	// not allowed in rigid contact or BC particles
+	MaterialBase *matref = theMaterials[mpm[ptNum-1]->MatID()];
+	if(matref->IsRigid())
+	{	if(!matref->IsRigidBlock())
+		{	throw CommonException("Cannot set external force on rigid contact or rigid boundary condition particles",
+								  "MatPtLoadBC::PrintBC");
+		}
+		else if(style==SILENT)
+		{	throw CommonException("Cannot set silent external force on rigid block particles",
+								  "MatPtLoadBC::PrintBC");
+		}
+	}
+	
+    // Initial value is F or F/numParticles if net, but if function
+    //      initial value is s or s/numParticles if net
+	// (in Legacy, F in uN and s=1e6, otherwise, F unscaled and s=1)
+	
+	// rescale ... for fuction only using s or s/numParticles if net force
 	if(style==FUNCTION_VALUE)
 		scale = GetBCValue();
 	
@@ -167,84 +182,9 @@ MatPtLoadBC *MatPtLoadBC::MakeConstantLoad(double bctime)
     return (MatPtLoadBC *)GetNextObject();
 }
 
-// compact CPDI surface nodes into arrays
-int MatPtLoadBC::CompactCornerNodes(int numDnds,Vector *corners,int *cElem,double ratio,int *nds,double *fn)
-{	
-    // loop over corners finding all nodes and add to force
-    // maximum is numDnds nodes with 8 nodes (if 3D) for each
-    int i,j,numnds,ncnds=0;
-#ifdef CONST_ARRAYS
-	int cnodes[8 * 4];
-	double twt[8*4];
-#else
-	int cnodes[8 * numDnds];
-	double twt[8 * numDnds];
-#endif
-    double scale = 1.;
-	
-    for(i=0;i<numDnds;i++)
-	{	// get straight grid shape functions
-		theElements[cElem[i]]->GridShapeFunctions(&numnds,nds,&corners[i],fn);
-		
-		// loop over shape grid shape functions and collect in arrays
-        // means to add cnodes[k] with shape function weight twt[k]
-		for(j=1;j<=numnds;j++)
-		{   cnodes[ncnds] = nds[j];
-			twt[ncnds] = fn[j]*scale;
-			ncnds++;
-		}
-		
-		// in case axisymmetric, scale weight for second node (numDnds will be 2)
-		scale = ratio;
-	}
-	
- 	// shell sort by node numbers in cnodes[] (always 16 for linear CPDI)
-    // sort to get repeating nodes together
-	int lognb2=(int)(log((double)ncnds)*1.442695022+1.0e-5);	// log base 2
-	int k=ncnds,l,cmpNode;
-	double cmpSi;
-	for(l=1;l<=lognb2;l++)
-	{	k>>=1;		// divide by 2
-		for(j=k;j<ncnds;j++)
-		{	i=j-k;
-			cmpNode = cnodes[j];
-			cmpSi = twt[j];
-			
-			// Back up until find insertion point
-			while(i>=0 && cnodes[i]>cmpNode)
-			{	cnodes[i+k] = cnodes[i];
-				twt[i+k] = twt[i];
-				i-=k;
-			}
-			
-			// Insert point
-			cnodes[i+k]=cmpNode;
-			twt[i+k]=cmpSi;
-		}
-	}
-    
- 	// compact same node number
-	int count = 0;
-	nds[0] = -1;
-	fn[0] = 1.;
-	for(i=0;i<ncnds;i++)
-	{   if(cnodes[i] == nds[count])
-        {   fn[count] += twt[i];
-        }
-        else
-        {	if(fn[count]>1.e-10) count++;       // keep only if shape is nonzero
-            nds[count] = cnodes[i];
-            fn[count] = twt[i];
-        }
-	}
-	if(fn[count]<1.e-10) count--;
-    
-    return count;
-}
-
 #pragma mark MatPtLoadBC:Flux method in sub classes
 
-// add "flux" condition - must override in sub class flux BCx
+// add "flux" condition - must override in sub class flux BC
 MatPtLoadBC *MatPtLoadBC::AddMPFluxBC(double bctime)
 {	return (MatPtLoadBC *)GetNextObject();
 }
@@ -253,11 +193,11 @@ MatPtLoadBC *MatPtLoadBC::AddMPFluxBC(double bctime)
 #pragma mark MatPtLoadBC:Accessors
 
 // get current position of particle
-void MatPtLoadBC::GetPosition(double *xpos,double *ypos,double *zpos,double *rot)
-{	*xpos=mpm[ptNum-1]->pos.x;
-	*ypos=mpm[ptNum-1]->pos.y;
-	*zpos=mpm[ptNum-1]->pos.z;
-	*rot=mpm[ptNum-1]->GetParticleRotationZ();
+void MatPtLoadBC::GetPosition(unordered_map<string,double> vars)
+{	vars["x"] = mpm[ptNum-1]->pos.x;
+	vars["y"] = mpm[ptNum-1]->pos.y;
+	vars["z"] = mpm[ptNum-1]->pos.z;
+	vars["q"] = mpm[ptNum-1]->GetParticleRotationZ();
 }
 
 // set value (and scale legacy N to uN, and MPa to Pa)
@@ -270,9 +210,12 @@ void MatPtLoadBC::SetBCValue(double bcvalue)
 // Calculate forces applied to particles at time stepTime in g-mm/sec^2
 void MatPtLoadBC::SetParticleFext(double stepTime)
 {
+	// zero all with external force BC
     MatPtLoadBC *nextLoad=firstLoadedPt;
     while(nextLoad!=NULL)
     	nextLoad=nextLoad->ZeroMPLoad();
+	
+	// add external force BCs
     nextLoad=firstLoadedPt;
     while(nextLoad!=NULL)
     	nextLoad=nextLoad->AddMPLoad(stepTime);

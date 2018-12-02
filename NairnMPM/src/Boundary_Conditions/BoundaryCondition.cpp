@@ -9,16 +9,9 @@
 #include "stdafx.h"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "Nodes/NodalPoint.hpp"
-#include "Read_XML/mathexpr.hpp"
 #include "System/UnitsController.hpp"
-
-// global expression variables
-double BoundaryCondition::varTime=0.;
-double BoundaryCondition::varXValue=0.;
-double BoundaryCondition::varYValue=0.;
-double BoundaryCondition::varZValue=0.;
-double BoundaryCondition::varRotValue=0.;
-PRVar varTimeArray[5] = { NULL, NULL, NULL, NULL, NULL };
+#include "Exceptions/CommonException.hpp"
+#include "Read_XML/Expression.hpp"
 
 #pragma mark BoundaryCondition: Constructors and Destructors
 
@@ -95,9 +88,10 @@ double BoundaryCondition::BCValue(double stepTime)
             break;
 		case FUNCTION_VALUE:
 			if(stepTime>=ftime)
-			{	varTime=UnitsController::Scaling(1.e3)*(stepTime-ftime);
-				GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
-				currentValue=scale*function->Val();
+			{	unordered_map<string, double> vars;
+				GetPosition(vars);
+				vars["t"] = UnitsController::Scaling(1.e3)*(stepTime-ftime);
+				currentValue = scale*function->EvaluateFunction(vars);
 			}
         default:
             break;
@@ -108,9 +102,10 @@ double BoundaryCondition::BCValue(double stepTime)
 // print function if needed and a new line
 void BoundaryCondition::PrintFunction(ostream &os)
 {	if(style==FUNCTION_VALUE)
-	{	char *expr=GetFunctionString();
-		os << "  " << expr;
-		delete [] expr;
+	{	if(function!=NULL)
+			os << " " << function->GetString();
+		else
+			os << " " << "?";
 	}
 	os << endl;
 }
@@ -142,48 +137,30 @@ void BoundaryCondition::SetFunction(char *bcFunction)
 {
 	if(style!=FUNCTION_VALUE) return;
 	if(bcFunction==NULL)
-		ThrowSAXException("Boundary condition function of time and position is missing");
-	if(strlen(bcFunction)==0)
-		ThrowSAXException("Boundary condition function of time and position is missing");
-	if(function!=NULL)
-		ThrowSAXException("Duplicate boundary condition functions of time");
-	
-	// create variable
-	if(varTimeArray[0]==NULL)
-	{	varTimeArray[0]=new RVar("t",&varTime);
-		varTimeArray[1]=new RVar("x",&varXValue);
-		varTimeArray[2]=new RVar("y",&varYValue);
-		varTimeArray[3]=new RVar("z",&varZValue);
-		varTimeArray[4]=new RVar("q",&varRotValue);
+	{	ThrowSAXException("Boundary condition function of time and position is missing");
+		return;
 	}
-		
-	// create the function and check it
-	function=new ROperation(bcFunction,5,varTimeArray);
-	if(function->HasError())
-		ThrowSAXException("Boundary condition function of time and position is not valid");
+	if(strlen(bcFunction)==0)
+	{	ThrowSAXException("Boundary condition function of time and position is missing");
+		return;
+	}
+	if(function!=NULL)
+	{	ThrowSAXException("Duplicate boundary condition functions of time");
+		return;
+	}
+
+	function =  Expression::CreateExpression(bcFunction,"Boundary condition function not valid");
 	
 	// keep value, which can option by + or - to tell visualization code the direction of the load
 	// value=1.;
 }
 
-// new string for the function (caller should delete it)
-// throws std::bad_alloc
-char *BoundaryCondition::GetFunctionString(void)
-{	if(function!=NULL) return function->Expr('#');
-	char *unknown=new char[2];
-	unknown[0]='?';
-	unknown[1]=0;
-	return unknown;
-}
-
-// get position for current boundary conditions
-// assumes nodal BC, override for particle BC
-void BoundaryCondition::GetPosition(double *xpos,double *ypos,double *zpos,double *rot)
+void BoundaryCondition::GetPosition(unordered_map<string,double> vars)
 {	int i=GetNodeNum();
-	*xpos=nd[i]->x;
-	*ypos=nd[i]->y;
-	*zpos=nd[i]->z;
-	*rot=0.;
+	vars["x"] = nd[i]->x;
+	vars["y"] = nd[i]->y;
+	vars["z"] = nd[i]->z;
+	vars["q"] = 0.;
 }
 
 // Boundary condition ID may be used for some purpose by certain conditions

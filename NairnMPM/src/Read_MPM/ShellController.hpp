@@ -15,7 +15,7 @@
 
 #include "Read_XML/BoxController.hpp"
 
-class ROperation;
+class Expression;
 
 class ShellController : public BoxController
 {
@@ -34,8 +34,8 @@ class ShellController : public BoxController
 		virtual const char *GetShapeName(void);
 	
 	protected:
-		ROperation *radiusFunction;
-		ROperation *thicknessFunction;
+		Expression *radiusFunction;
+		Expression *thicknessFunction;
 		static double varHeight;
 };
 

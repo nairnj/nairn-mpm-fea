@@ -17,11 +17,8 @@
 
 #pragma mark BistableIsotropic::Constructors and Destructors
 
-// Constructors
-BistableIsotropic::BistableIsotropic() {}
-
-// Constructors
-BistableIsotropic::BistableIsotropic(char *matName) : IsotropicMat(matName)
+// Constructor
+BistableIsotropic::BistableIsotropic(char *matName,int matID) : IsotropicMat(matName,matID)
 {
     int i;
     
@@ -143,8 +140,7 @@ const char *BistableIsotropic::VerifyAndLoadProperties(int np)
     //	They equal first if not provide
     if(!readbs[K0_PROP] || !readbs[G0_PROP] || !readbs[A0_PROP])
 		return "Initial K0, G0, or alpha0 is missing.";
-	if(!readbs[B0_PROP])
-		beta0=0.;
+	if(!readbs[B0_PROP]) beta0=0.;
     if(!readbs[TRANSITION_PROP] || rule<DILATION_RULE || rule>VONMISES_RULE)
 		return "Phase transition rule is missing or invalid.";
     
@@ -225,7 +221,7 @@ void BistableIsotropic::PrintTransportProperties(void) const
     char mline[200];
 	
 	// Diffusion constants
-	if(DiffusionTask::active)
+	if(DiffusionTask::HasDiffusion())
 	{   sprintf(mline,"D0 =%12.3g   Dd =%12.3f mm^2/sec  csat = %9.5lf",diff0,diffd,concSaturation);
 		cout << mline << endl;
 	    sprintf(mline,"b0 =%12.6g   bD =%12.6g 1/wt fr",beta0,betad);
@@ -574,3 +570,7 @@ double BistableIsotropic::MaximumDiffusivity(void) const { return fmax(kCondd,kC
 // return material type
 const char *BistableIsotropic::MaterialType(void) const { return "Bistable Isotropic"; }
 
+// not supported, would be PE properties in two states
+// also if allow negative PP, fixed calculated dC increments
+bool BistableIsotropic::SupportsDiffusion(void) const
+{	return DiffusionTask::HasPoroelasticity() ? false : true; }

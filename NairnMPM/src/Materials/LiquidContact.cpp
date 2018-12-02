@@ -17,10 +17,8 @@
 
 #pragma mark LiquidContact::Constructors and Destructors
 
-// Constructors
-LiquidContact::LiquidContact() {}
-
-LiquidContact::LiquidContact(char *matName) : CoulombFriction(matName)
+// Constructor
+LiquidContact::LiquidContact(char *matName,int matID) : CoulombFriction(matName,matID)
 {
 	liquidPhaseID = -1;
 	liquidPhase = NULL;
@@ -35,7 +33,7 @@ LiquidContact::LiquidContact(char *matName) : CoulombFriction(matName)
 // Read material properties by name (in xName). Set input to variable type
 // (DOUBLE_NUM or INT_NUM) and return pointer to the class variable
 // (cast as a char *)
-char *LiquidContact::InputMaterialProperty(char *xName,int &input,double &gScaling)
+char *LiquidContact::InputContactProperty(char *xName,int &input,double &gScaling)
 {
 	// look for solid material
 	if(strcmp(xName,"LiquidPhase")==0)
@@ -70,6 +68,10 @@ const char *LiquidContact::VerifyAndLoadProperties(int np)
 	// set to be sure parent class friction handled correctly
 	frictionStyle = FRICTIONAL;
 	
+	// not support yet in NairnMPM
+	Dc = -1.;
+	displacementOnly = 0.0;
+	
 	// no super class tasks allowed
 	return NULL;
 }
@@ -87,6 +89,10 @@ void LiquidContact::PrintContactLaw(void) const
 		cout << liquidPhase->name << " (" << liquidPhaseID << ")" << endl;
 	else
 		cout << "(invalid ID " << liquidPhaseID << ")" << endl;
+	
+	// Dc and displacementOnly not support in NairnMPM
+	cout << "   Stress found by perfect interface methods" << endl;
+	cout << "   Detection by negative separation and stress < 0" << endl;
 }
 
 #pragma mark LiquidContact:Step Methods
@@ -98,10 +104,13 @@ void LiquidContact::PrintContactLaw(void) const
 double LiquidContact::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred,
 								 double contactArea,bool &inContact,double deltime) const
 {
+	// Exit if not in contact
+	if(!inContact) return 0.;
+	
 	double x1,y1,x2,y2,xk,yk;
 	
 	// constants
-	double factor = frictionCoeff*contactArea*deltime/mred;			// Sw Ac dt/mired
+	double factor = frictionCoeff*contactArea*deltime/mred;			// Sw Ac dt/mred
 	double gmaxdot = frictionCoeff*SStickAcDt/mred;					// max final shear rate (for slip)
 	
 	// ask liquid for solution or brackets

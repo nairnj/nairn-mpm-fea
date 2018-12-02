@@ -29,7 +29,6 @@ class TransIsotropic : public Elastic
     public:
         
         // constructors and destructors
-        TransIsotropic();
         TransIsotropic(char *,int);
 		
 		// initialize
@@ -62,12 +61,12 @@ class TransIsotropic : public Elastic
         virtual double MaximumDiffusivity(void) const;
 		virtual double GetDiffZ(void) const;
 		virtual double GetKcondZ(void) const;
+		virtual bool SupportsDiffusion(void) const;
 #endif
 		
 	protected:
 		double EA,ET,nuA,nuAp,nuT,GA,aA,aT,GT,KT,betaA,betaT;
 		char read[ORTHO_PROPS];
-		int tiType;
 #ifdef MPM_CODE
 		double diffA,diffT,kCondA,kCondT;
 #endif

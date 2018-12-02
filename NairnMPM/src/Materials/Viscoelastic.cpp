@@ -22,13 +22,8 @@ int Viscoelastic::warnExcessiveX = -1;
 
 #pragma mark Viscoelastic::Constructors and Destructors
 
-// Constructors
-Viscoelastic::Viscoelastic()
-{
-}
-
-// Constructors
-Viscoelastic::Viscoelastic(char *matName) : MaterialBase(matName)
+// Constructor
+Viscoelastic::Viscoelastic(char *matName,int matID) : MaterialBase(matName,matID)
 {
 	ntaus=-1;
     Gk=NULL;
@@ -403,31 +398,31 @@ double Viscoelastic::GetHistory(int num,char *historyPtr) const
  */
 void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res,int historyOffset) const
 {
+	// Note: cannot call generic method because need detdF and Vrot below
+	
 	// current previous deformation gradient and stretch
 	Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
 	
-    // get incremental deformation gradient and decompose it
+	// get incremental deformation gradient and decompose it
 	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
-    Matrix3 dR;
-    Matrix3 dVstretch = dF.LeftDecompose(&dR,NULL);
-	
-	// decompose to get previous stretch
-	Matrix3 Vnm1 = pFnm1.LeftDecompose(NULL,NULL);
-	
-	// get strain increments de = (dV-I) dR Vnma dRT
-	dVstretch(0,0) -= 1.;
-	dVstretch(1,1) -= 1.;
-	dVstretch(2,2) -= 1.;
-	Matrix3 Vrot = Vnm1.RMRT(dR);
-	Matrix3 detot = dVstretch*Vrot;
 	
 	// Update total deformation gradient
 	Matrix3 pF = dF*pFnm1;
 	mptr->SetDeformationGradientMatrix(pF);
 	
+	// decompose to get previous Rn and Rn-1 and current V
+	Matrix3 Rnm1,Rn;
+	pFnm1.LeftDecompose(&Rnm1,NULL);
+	Matrix3 Vrot = pF.LeftDecompose(&Rn,NULL);
+	Matrix3 dR = Rn*Rnm1.Transpose();
+	
+	// get strain increments in current configuration (dF-dR)F(n-1) Rn^T
+	Matrix3 dFmdR = dF - dR;
+	Matrix3 detot = dFmdR*(pFnm1*Rn.Transpose());;
+	
     // Effective strain by deducting thermal strain (no shear thermal strain because isotropic)
 	double eres=CTE*res->dT;
-	if(DiffusionTask::active)
+	if(DiffusionTask::HasFluidTransport())
 		eres+=CME*res->dC;
 	
 	// update pressure
@@ -583,11 +578,8 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
     // disispated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
     mptr->AddPlastEnergy(dispEnergy);
     
-    // heat energy is Cv dT - dPhi
-    // The dPhi is subtracted here because it will show up in next
-    //		time step within Cv dT (if adibatic heating occurs)
-    // The Cv dT was done in update pressure
-    IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
+    // heat energy
+    IncrementHeatEnergy(mptr,dTq0,dispEnergy);
 }
 
 // This method handles the pressure equation of state. Its tasks are
@@ -759,11 +751,17 @@ double Viscoelastic::WaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt((K
 // Copy stress to a read-only tensor variable
 // Subclass material can override, such as to combine pressure and deviatory stress into full stress
 Tensor Viscoelastic::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
-{	Tensor stress = *sp;
-    stress.xx -= pressure;
-    stress.yy -= pressure;
-    stress.zz -= pressure;
-    return stress;
+{	return GetStressPandDev(sp,pressure,mptr);
+}
+
+// store a new total stress on a particle's stress and pressure variables
+void Viscoelastic::SetStress(Tensor *spnew,MPMBase *mptr) const
+{	SetStressPandDev(spnew,mptr);
+}
+
+// Increment thickness (zz) stress through deviatoric stress and pressure
+void Viscoelastic::IncrementThicknessStress(double dszz,MPMBase *mptr) const
+{	IncrementThicknessStressPandDev(dszz,mptr);
 }
 
 // if a subclass material supports artificial viscosity, override this and return TRUE
@@ -780,7 +778,6 @@ double Viscoelastic::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) cons
 		double J = mptr->GetRelativeVolume();
 		
 		// get K/rho0, but this ignores slope of energy term
-		double KcurrRed;
 		if(J<1.)
 		{   double x = 1. - J;
 			
@@ -813,3 +810,6 @@ double Viscoelastic::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const
 }
 #endif
 
+// not supported yet, need to deal with aniostropi properties
+bool Viscoelastic::SupportsDiffusion(void) const
+{	return DiffusionTask::HasPoroelasticity() ? false : true; }

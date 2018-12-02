@@ -35,7 +35,7 @@ LinearHardening::LinearHardening(MaterialBase *pair) : HardeningLawBase(pair)
 #pragma mark LinearHardening::Initialize
 
 // Read hardening law properties
-char *LinearHardening::InputMaterialProperty(char *xName,int &input,double &gScaling)
+char *LinearHardening::InputHardeningProperty(char *xName,int &input,double &gScaling)
 {
     // dimensionless coefficient for hardening
     if(strcmp(xName,"Khard")==0)
@@ -48,7 +48,7 @@ char *LinearHardening::InputMaterialProperty(char *xName,int &input,double &gSca
 		return UnitsController::ScaledPtr((char *)&Ep,gScaling,1.e6);
     }
     
-    return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
+    return HardeningLawBase::InputHardeningProperty(xName,input,gScaling);
 }
 
 // get reduced stress than done
@@ -91,7 +91,7 @@ void LinearHardening::PrintYieldProperties(void) const
 // Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
 double LinearHardening::GetYield(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return fmax(yldred + Epred*a->alpint,yldredMin);
+	return a->alpint < alphaMax ? yldred + Epred*a->alpint : yldredMin ;
 }
 
 // Return (K(alpha)-K(0)), which is used in dissipated energy calculation
@@ -105,7 +105,7 @@ double LinearHardening::GetYieldIncrement(MPMBase *mptr,int np,double delTime,Ha
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)lamda or depdot/dlambda = sqrt(2./3.)/delTime
 double LinearHardening::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return a->alpint > alphaMax ? TWOTHIRDS*Epred : 0.;
+	return a->alpint < alphaMax ? TWOTHIRDS*Epred : 0. ;
 }
 
 // Get derivative of (1./3.)*yield^2 with respect to lambda for plane stress only
@@ -114,7 +114,7 @@ double LinearHardening::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningA
 // Also equal to sqrt(2./3.)*GetYield()*GetKPrime()*fnp1, but in separate call for efficiency
 double LinearHardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return a->alpint > alphaMax ? SQRT_EIGHT27THS*(yldred + Epred*a->alpint)*Epred*fnp1 : 0.;
+	return a->alpint < alphaMax ? SQRT_EIGHT27THS*(yldred + Epred*a->alpint)*Epred*fnp1 : 0. ;
 }
 
 #pragma mark HardeningLawBase::Return Mapping

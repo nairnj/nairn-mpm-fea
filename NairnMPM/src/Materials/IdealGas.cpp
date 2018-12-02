@@ -16,11 +16,8 @@
 
 #pragma mark IdealGas::Constructors and Destructors
 
-// Constructors
-IdealGas::IdealGas() {}
-
-// Constructors with arguments 
-IdealGas::IdealGas(char *matName) : HyperElastic(matName)
+// Constructor 
+IdealGas::IdealGas(char *matName,int matID) : HyperElastic(matName,matID)
 {
 	P0   = -1.;			// required initial pressure
 	rho  = -1.;			// required density (override default of 1)
@@ -129,8 +126,9 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
     // Update strains and rotations and Left Cauchy strain
     // get determinent of incremental deformation gradient
     double detf = IncrementDeformation(mptr,du,NULL,np);
-    
-    // update stress
+	double delV = 1. - 1./detf;
+	
+    // update stress (which is -P)
 	Tensor *sp=mptr->GetStressTensor();
     double mPnsp = sp->xx;
     
@@ -138,9 +136,21 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
 	// incrementally p(n+1)/rho = P0sp * (T(n+1)/T0)
 	//							= P0sp * (Tn/T0) * (T(n+1)/Tn)
 	//							= pn * (T(n+1)/Tn)
-	// (note: pPreviousTemperature is T(n+1))
-	double mPsp = (sp->xx/(1.-res->dT/mptr->pPreviousTemperature));
+	// (note: pPreviousTemperature is set in particle update, which will differ
+	//			in update before and after time step)
+	// double mPsp = (sp->xx/(1.-res->dT/mptr->pPreviousTemperature));
+	// (note: CpminusCv = P0/(T0 rho))
+	double mPsp = -CpMinusCv*mptr->pPreviousTemperature;
 
+	// artificial viscosity
+	double QAVred = 0.;
+	double AVEnergy = 0.;
+	if(delV<0. && artificialViscosity)
+	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(fabs(gammaAdiabatic*mPnsp)),mptr);
+		if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delV);
+		mPsp -= QAVred;
+	}
+	
 	// store in stress (which is minus the pressure)
 	sp->xx = mPsp;
 	sp->yy = mPsp;
@@ -148,16 +158,14 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
 	
 	// find the -P dV energy per unit mass dW/(rho0 V0) (nJ/g) as follows
     // dW/(rho0 V0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)/V0, which simplifies to
-    double dW = 0.5*(mPnsp*detf + mPsp)*(1.-1./detf);
+    double dW = 0.5*(mPnsp*detf + mPsp)*delV;
     
     // this energy is tracked in work energy and no residual energy is tracked
     mptr->AddWorkEnergy(dW);
     
-    // the same energy is tracked as heat (although it will be zero if adiabatic)
-    // and is dissipated (which will cause heating if adiabatic
-    // Update is Cv dT - dU
+    // heat energy (treated as reversible)
 	double dTq0 = dW/GetHeatCapacity(mptr);
-    IncrementHeatEnergy(mptr,res->dT,dTq0,0.);
+    IncrementHeatEnergy(mptr,dTq0,AVEnergy);
 }
 
 #pragma mark IdealGas::Accessors
@@ -176,6 +184,12 @@ double IdealGas::WaveSpeed(bool threeD,MPMBase *mptr) const
 		Pspcurr = P0sp;
 	return sqrt(gammaAdiabatic*Pspcurr);
 }
+
+// not supported because moisture swell may change MGEOS law (doe not work in Diffusion either)
+bool IdealGas::SupportsDiffusion(void) const { return false; }
+
+// if a subclass material supports artificial viscosity, override this and return TRUE
+bool IdealGas::SupportsArtificialViscosity(void) const { return true; }
 
 
 

@@ -38,11 +38,11 @@ void CrackVelocityFieldSingle::ZeroMatFields(void)
 // Delete empty velocity fields, count number of materials, and return total mass
 // Make copy of momenta, to be restored after strain update and forces
 // Note: never have materials that ignore cracks when this class is active
-double CrackVelocityFieldSingle::GetTotalMassAndCount(void)
+double CrackVelocityFieldSingle::GetTotalMassAndCount(bool &)
 {	if(mvf[0]->numberPoints<1) return 0.;
 	
 	// copy the extrapolated momenta
-	mvf[0]->xpic[PK_COPY] = mvf[0]->pk;
+	mvf[0]->xpic[MatVelocityField::pkCopy] = mvf[0]->pk;
 	
 	return mvf[0]->mass;
 }
@@ -101,25 +101,25 @@ void CrackVelocityFieldSingle::CalcVelocityForStrainUpdate(void)
 
 #pragma mark BOUNDARY CONDITIONS
 
-// zero one component of moment and velocity
-void CrackVelocityFieldSingle::SetMomVel(Vector *norm)
+// zero one component of moment and velocity on one material field
+void CrackVelocityFieldSingle::SetMomVel(Vector *norm,int passType)
 {	if(mvf[0]->numberPoints>0)
-        mvf[0]->SetMomentVelocityDirection(norm);
+        mvf[0]->SetMomentVelocityDirection(norm,passType);
 }
 
-// add one component of momentum and velocity from BCs
-void CrackVelocityFieldSingle::AddMomVel(Vector *norm,double vel)
+// add one component of momentum and velocity from BCs to one material field
+void CrackVelocityFieldSingle::AddMomVel(Vector *norm,double vel,int passType)
 {	if(mvf[0]->numberPoints>0)
-        mvf[0]->AddMomentVelocityDirection(norm,vel);
+        mvf[0]->AddMomentVelocityDirection(norm,vel,passType);
 }
 
 // Reflect one component of velocity and momentum from a node
-void CrackVelocityFieldSingle::ReflectMomVel(Vector *norm,CrackVelocityField *rcvf,double reflectRatio)
+void CrackVelocityFieldSingle::ReflectMomVel(Vector *norm,CrackVelocityField *rcvf,double vel0,double reflectRatio,int passType)
 {	if(mvf[0]->numberPoints>0)
 	{	MatVelocityField **rmvf = rcvf->GetMaterialVelocityFields();
 		if(rmvf[0]->numberPoints>0)
-		{	double rvel = -reflectRatio*DotVectors(norm,&rmvf[0]->pk)/rmvf[0]->mass;
-			mvf[0]->AddMomentVelocityDirection(norm,rvel);
+		{	double rvel = vel0 + reflectRatio*(vel0 - DotVectors(norm,&rmvf[0]->pk)/rmvf[0]->mass);
+			mvf[0]->AddMomentVelocityDirection(norm,rvel,passType);
 		}
 	}
 }
@@ -138,11 +138,12 @@ void CrackVelocityFieldSingle::AddFtotDirection(Vector *norm,double deltime,doub
 }
 
 // add one component of force such that updated momentum will be mass*velocity
-void CrackVelocityFieldSingle::ReflectFtotDirection(Vector *norm,double deltime,CrackVelocityField *rcvf,double reflectRatio,Vector *freaction)
+void CrackVelocityFieldSingle::ReflectFtotDirection(Vector *norm,double deltime,CrackVelocityField *rcvf,
+													double vel0,double reflectRatio,Vector *freaction)
 {	if(mvf[0]->numberPoints>0)
 	{	MatVelocityField **rmvf = rcvf->GetMaterialVelocityFields();
 		if(rmvf[0]->numberPoints>0)
-		{	double rvel = -reflectRatio*DotVectors(norm,&rmvf[0]->pk)/rmvf[0]->mass;
+		{	double rvel = vel0 + reflectRatio*(vel0 - DotVectors(norm,&rmvf[0]->pk)/rmvf[0]->mass);
 			mvf[0]->AddFtotDirection(norm,deltime,rvel,freaction);
 		}
 	}
@@ -178,9 +179,11 @@ double CrackVelocityFieldSingle::GetVolumeTotal(NodalPoint *ndptr) const
 }
 
 // get center of mass momentum for all material fields in this crack velocity field
-Vector CrackVelocityFieldSingle::GetCMatMomentum(bool &hasParticles,double *fieldMass) const
+// if totalFtot!=NULL, set it to nodal fi = mi ai
+Vector CrackVelocityFieldSingle::GetCMatMomentum(bool &hasParticles,double *fieldMass,Vector *totalFtot) const
 {	hasParticles = mvf[0]->numberPoints>0 ;
 	*fieldMass = mvf[0]->mass;
+	if(totalFtot!=NULL) *totalFtot=mvf[0]->GetFtot();
 	return mvf[0]->pk;
 }
 
@@ -211,9 +214,9 @@ Vector CrackVelocityFieldSingle::GetCMatFtot(void)
    Material i velocity becomes vi = pi/mi + dP/M
    Material i momentum change is mi vi = pi + mi dP/M
 */
-void CrackVelocityFieldSingle::ChangeCrackMomentum(Vector *delP,bool postUpdate,double deltime)
+void CrackVelocityFieldSingle::ChangeCrackMomentum(Vector *delP,int callType,double deltime)
 {	if(mvf[0]->numberPoints>0)
-		mvf[0]->ChangeMatMomentum(delP,postUpdate,deltime);
+		mvf[0]->ChangeMatMomentum(delP,callType,deltime);
 }
 
 // copy all material velocity fields for boundary conditions methods, returning new offset into the save array

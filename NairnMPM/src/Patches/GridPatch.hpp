@@ -16,6 +16,7 @@
 class MPMBase;
 class GhostNode;
 class NodalPoint;
+class TransportTask;
 
 typedef struct {
 	MPMBase *movingMptr;
@@ -24,7 +25,7 @@ typedef struct {
 	void *previousMoveData;
 } MovingData;
 
-enum { FIRST_NONRIGID=0,FIRST_RIGID_CONTACT,FIRST_RIGID_BC };
+enum { FIRST_NONRIGID=0,FIRST_RIGID_BLOCK,FIRST_RIGID_CONTACT,FIRST_RIGID_BC };
 
 class GridPatch
 {
@@ -54,6 +55,7 @@ class GridPatch
 		MPMBase *GetFirstBlockPointer(int);
 		NodalPoint *GetNodePointer(int);
         NodalPoint *GetNodePointer(int,bool);
+		GhostNode **GetGhosts(int *);
 	
     private:
         int x0,x1,y0,y1,z0,z1;					// element ranges (0-based row, col, rank)
@@ -63,6 +65,7 @@ class GridPatch
         MPMBase *firstNR;                       // first non-rigid particle
         MPMBase *firstRC;                       // first rigid contact particle
         MPMBase *firstRBC;                      // first rigid BC particle
+		MPMBase *firstRB;                       // first rigid block particle
 		int interiorRow;
 		int fullRow;
 		int basePartial;

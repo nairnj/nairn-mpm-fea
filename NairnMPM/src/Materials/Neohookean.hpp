@@ -30,8 +30,7 @@ class Neohookean : public HyperElastic
 	public:
 	
 		// constructors and destructors
-		Neohookean();
-		Neohookean(char *);
+		Neohookean(char *,int);
 	
 		// initialize
 		virtual char *InputMaterialProperty(char *,int &,double &);
@@ -40,18 +39,19 @@ class Neohookean : public HyperElastic
 		// history data
 		virtual int SizeOfHistoryData(void) const;
 		virtual char *InitHistoryData(char *,MPMBase *);
-		virtual double GetHistory(int,char *) const;
+    	virtual int NumberOfHistoryDoubles(void) const;
 		
 		// const methods
 		virtual void PrintMechanicalProperties(void) const;
 		
 		// methods
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
-		virtual void BeginActivePhase(MPMBase *mptr,int np,int historyOffset) const;
 		
 		// accessors
 		virtual Vector ConvertJToK(Vector,Vector,Vector,int);
 		virtual Tensor GetStress(Tensor *,double,MPMBase *) const;
+		virtual void SetStress(Tensor *,MPMBase *) const;
+		virtual void IncrementThicknessStress(double,MPMBase *) const;
 		virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual double ShearWaveSpeed(bool,MPMBase *,int) const;
 		virtual const char *MaterialType(void) const;

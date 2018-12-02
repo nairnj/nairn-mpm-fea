@@ -16,7 +16,7 @@
 
 #define _BODYFORCE_
 
-class ROperation;
+class Expression;
 class MPMBase;
 class NodalPoint;
 
@@ -44,7 +44,7 @@ class BodyForce
     
         // methods
 		void Activate(void);
-		void GetGridBodyForce(Vector *,NodalPoint *,double);
+		void GetGridBodyForce(Vector *,Vector *,double);
 		double GetDamping(double);
 		double GetPICDamping(void);
         double GetParticleDamping(double);
@@ -58,22 +58,22 @@ class BodyForce
 		void SetGridBodyForceFunction(char *,int);
 		void SetFractionPIC(double);
 		double GetFractionPIC(void);
+		bool IsUsingPICDamping(void);
 
 	private:
-        double alpha,maxAlpha;
-        ROperation *function;
-        ROperation *gridfunction;
-    
-        double palpha,maxPAlpha;
-        ROperation *pgridfunction;
-        ROperation *pfunction;
+		double alpha,maxAlpha;
+		Expression *function;
+		Expression *gridfunction;
+	
+		double palpha,maxPAlpha;
+		Expression *pgridfunction;
+		Expression *pfunction;
 
 		double fractionPIC;         // (1-beta) in my notes or alpha(PIC) = fractionPIC/dt
 		bool usePICDamping;         // true when PIC damping activated (damping and pdamping need not be true)
-    
-		ROperation *gridBodyForceFunction[3];
-		static double varTime;
-		static double varXValue,varYValue,varZValue;
+		int XPICOrder;				// XPIC oder (1=normal PIC or 2 or higher for extended PIC, always 1 in NairnMPM)
+
+		Expression *gridBodyForceFunction[3];
 };
 
 extern BodyForce bodyFrc;

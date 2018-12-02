@@ -20,10 +20,10 @@ class CohesiveZone : public TractionLaw
     public:
 	
 		// constructors and destructors
-        CohesiveZone(char *);
+        CohesiveZone(char *,int);
 		
 		// methods
-		virtual char *InputMaterialProperty(char *,int &,double &);
+		virtual char *InputTractionLawProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 	
 		// history data
@@ -33,7 +33,7 @@ class CohesiveZone : public TractionLaw
 		virtual void PrintMechanicalProperties(void) const;
 	
 		// the traction law
-		virtual void CrackTractionLaw(CrackSegment *,double,double,double,double,double);
+		virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);
 		virtual double CrackTractionEnergy(CrackSegment *,double,double,bool);
 		
 		// accessors

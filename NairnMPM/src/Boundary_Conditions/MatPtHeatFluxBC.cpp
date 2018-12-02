@@ -12,10 +12,16 @@
 #include "Materials/MaterialBase.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
-#include "Read_XML/mathexpr.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "System/UnitsController.hpp"
+#include "Exceptions/CommonException.hpp"
+#include "Read_XML/Expression.hpp"
+#include "Elements/ElementBase.hpp"
+
+// Local globals for BCs
+// c1 starts with c12i[1] and c2 starts with c12i[o]
+static double c12i[5]={1.,1.,-1.,-1.,1.};
 
 // global
 MatPtHeatFluxBC *firstHeatFluxPt=NULL;
@@ -40,6 +46,13 @@ BoundaryCondition *MatPtHeatFluxBC::PrintBC(ostream &os)
     os << nline;
 	PrintFunction(os);
 	
+	// not allowed on rigid particles
+	MaterialBase *matref = theMaterials[mpm[ptNum-1]->MatID()];
+	if(matref->IsRigid())
+	{	throw CommonException("Cannot set heat flux on rigid particles",
+							  "MatPtHeatFluxBC::PrintBC");
+	}
+
 	// for function input scale for Legacy units
 	if(style==FUNCTION_VALUE)
 		scale = UnitsController::Scaling(1.e3);
@@ -70,8 +83,8 @@ MatPtLoadBC *MatPtHeatFluxBC::AddMPFluxBC(double bctime)
 	{	TransportProperties t;
 		matptr->GetTransportProps(mpmptr,fmobj->np,&t);
 		Tensor *k = &(t.kCondTensor);
-        
-        // k is k/rho0 (nJ mm^2/(sec-K-g)), Dt in K/mm, k Dt (nJ mm/(sec-g))
+		
+		// k is k/rho (E-L^2/(K-T-M)), grat T in K/L, k grad T in E-L/(T-M)
 		if(fmobj->IsThreeD())
 		{	fluxMag.x = k->xx*mpmptr->pTemp[gGRADx] + k->xy*mpmptr->pTemp[gGRADy] + k->xz*mpmptr->pTemp[gGRADz];
 			fluxMag.y = k->xy*mpmptr->pTemp[gGRADx] + k->yy*mpmptr->pTemp[gGRADy] + k->yz*mpmptr->pTemp[gGRADz];
@@ -82,49 +95,64 @@ MatPtLoadBC *MatPtHeatFluxBC::AddMPFluxBC(double bctime)
 			fluxMag.y = k->xy*mpmptr->pTemp[gGRADx] + k->yy*mpmptr->pTemp[gGRADy];
 		}
 		
-		// remove 1/rho0 scaling on k to get nW/mm^2
+		// remove 1/rho0 scaling on k to get E/(T-L^2)
 		ScaleVector(&fluxMag,matptr->GetRho(mpmptr));
 		
 		// need to get normal vector from cpdi functions below
         bcDir = N_DIRECTION;
 	}
 	else if(direction==EXTERNAL_FLUX)
-	{	// user-supplied constant
+	{	// user-supplied constant (E/(T-L^2))
 		fluxMag.x = BCValue(bctime);
 	}
 	else
     {	// coupled surface flux
 		if(bctime>=GetBCFirstTime())
-		{	// time variable (t) is replaced by particle temperature
-			varTime = mpmptr->pPreviousTemperature;
-			GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
+		{	// time variable (t) is replaced by particle temperature, result should be E/(T-L^2)
+			unordered_map<string, double> vars;
+			GetPosition(vars);
+			vars["t"] = mpmptr->pPreviousTemperature;
 			
 			// Legacy scaling of W/m^2 to nW/mm^2
-			fluxMag.x = scale*function->Val();
+			fluxMag.x = scale*function->EvaluateFunction(vars);
 		}
 	}
 	
-	// get corners and direction from material point
+	// get corners and radii from deformed material point (2 in 2D and 4 in 3D)
+	// Not that bcDir will be X_DIRECTION to scale fluxMag, but if silent, it will be N_DIRECTION
 	int cElem[4],numDnds;
-	Vector corners[4],tscaled;
-	double ratio = mpmptr->GetTractionInfo(face,bcDir,cElem,corners,&tscaled,&numDnds);
+	Vector corners[4],radii[3];
+	double redge;
+	Vector wtNorm = mpmptr->GetSurfaceInfo(face,bcDir,cElem,corners,radii,&numDnds,&redge);
 	
-    // compact CPDI nodes into list of nodes (nds) and final shape function term (fn)
-    // May need up to 8 (in 3D) for each of the numDnds (2 in 2D or 4 in 3D)
 #ifdef CONST_ARRAYS
-	int nds[8 * 4 + 1];
-	double fn[8 * 4 + 1];
+	int nds[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES];
 #else
-    int nds[8*numDnds+1];
-    double fn[8*numDnds+1];
+	int nds[maxShapeNodes];
+	double fn[maxShapeNodes];
 #endif
-    int numnds = CompactCornerNodes(numDnds,corners,cElem,ratio,nds,fn);
-	
-    // add force to each node
-	// tscaled has units mm^s for final flux is (N-mm)/sec
-	int i;
-    for(i=1;i<=numnds;i++)
-		conduction->AddFluxCondition(nd[nds[i]],DotVectors(&fluxMag,&tscaled)*fn[i],false);
+		
+	for(int c=0;c<numDnds;c++)
+	{	// get straight grid shape functions
+		theElements[cElem[c]]->GetShapeFunctionsForTractions(fn,nds,&corners[c]);
+		int numnds = nds[0];
+		
+		// add flux to each node. fluxMag has units Energy/(sec-L^2)
+		// tscaled has units L^2 for final flux is Energy/sec
+		double flux;
+		for(int i=1;i<=numnds;i++)
+		{	if(fmobj->IsAxisymmetric())
+			{	// wtNorm has direction and |r1|. Also scale by axisymmetric term
+				flux = DotVectors(&fluxMag,&wtNorm)*(redge-c12i[c+1]*radii[0].x/3.)*fn[i];
+			}
+			else
+			{	// wtNorm has direction and Area/2 (2D) or Area/4 (3D) to average the nodes
+				flux = DotVectors(&fluxMag,&wtNorm)*fn[i];
+			}
+			conduction->AddFluxCondition(nd[nds[i]],flux,false);
+		}
+	}
 	
     return (MatPtHeatFluxBC *)GetNextObject();
 }

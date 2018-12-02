@@ -11,21 +11,21 @@
 		Verify time step for all cells and transport properties (TransportTimeStepFactor())
 		Call Initialize() - allocate particle gradients, print details, and other needs
 	Initialization:
-		Set gTValue, gMTp, and gQ on node to zero;
+		Set gTValue, gVCT, and gQ on node to zero;
 	Mass and Momentum Task
-		Extrapolate gTValue, gMTp (Task1Extrapolation())
+		Extrapolate gTValue, gVCT (Task1Extrapolation())
 			If contact implemented, add extrapolations m... and c...
-		In reduction, copy gTValue and gMTp from ghost to real (Task1Reduction())
+		In reduction, copy gTValue and gV from ghost to real (Task1Reduction())
 			If contact implemented, add extrapolations m... and c...
 		Post Extrapolation Task
-			Divide gTvale by gMTp (GetTransportNodalValue())
+			Divide gTvale by gVCT (GetTransportNodalValue())
 				If contact implemented, get values m... and c...
 			Impose grid Tvalue BCs (ImposeValueBCs())
 				If contact implemented, apply to m... and c...
 			Find grad Tvalue on particles (GetGradients(), ZeroTransportGradients(), AddTransportGradients())
 				If contact implemented, get for m... and c...
 	Update strains first (if used)
-		See update strains on particles below
+		Read changes in value to input to constitutive laws
  	Grid Forces Task
 		Add transport force to gQ (AddForces())
 			If contact implemented, add for m... and c...
@@ -36,33 +36,24 @@
 			Finish grid BCs and impose flux BCs in gQ (SetTransportForceBCs())
 				If contact implemented, impose in m... and c...
  	Update Momenta Task
-		Divide gQ by gMtp to get transport rates (GetTransportRates())
+		Divide gQ by gVCT to get transport rates (GetTransportRates()) and update nodal value
 			If contact implemented, get rates in m... and c...
 	Update Particles Task
-        Each particle: zero rate, extrapolate from nodes to particle, then
-            update particle (IncrementTransportRate(),MoveTransportRate()).
-        Add adiabatic term to particle transport value
+        Each particle: zero rate and value, extrapolate both from nodes to particle
+		Find d(value) from change in extrapolated value (GetDeltaValue())
+		Update particle value using rate (MoveTransportRate())
+		Special Tasks: conduction does adiabatic heating, energy, entropy, and phase transitions
+			poroelasticity does adiabatic pressure
+		Store d(value) on particle for input to next strain updates
 	Update strains last (if used and if second extrapolation)
-		Update transport value (UpdateNodalValues())
-            If contact implemented, get values m... and c...
-		See update strains on particles below
- 
-	Update strains on particles
-		In UpdateStrain() for material point classes, extrapolate grid, cvf, or mvf
-			to particle using IncrementValueExtrap()
-		Find dT = extrapolated value minus previous extrapolated value and then
-			store bew extrapolated value in previous value (GetDeltaValue())
-		This task is done because contititutive laws work better when transport value comes
-			from grid extrapolation instead of particle value. The current grid
-			based result is stored in the previous value. The particle
-			value, however, is the one used in transport calculations. Using the
-			grid based one causes numerical diffision.
+		Read changes in value to input to constitutive laws
  
 	Material Point class support
 		Place to store pTValue, pPreviousTValue, and extraolated gradient
 		Allocate memory for extrapolated gradient (1 or 2 more gradients if contact implemented)
 	Nodal Point class support
-		Place to store gTValue, gMTp, and gQ for value, transport "mass", and transport flow rate
+		Place to store gTValue, gVCT, and gQ for value, transport "mass", and transport flow rate
+		Place to store XPIC extrapolations
 		Crack velocity field create structure for contact extrapolations (if needed)
 		Material velocity field create structure for contact extrapolations (if needed)
 	Material class support
@@ -94,25 +85,22 @@ bool TransportTask::hasContactEnabled=false;
 // Constructors
 TransportTask::TransportTask()
 {	nextTask=NULL;
+	transportTimeStep = 1.e30;
 }
 
 // Destructor (and it is virtual)
 TransportTask::~TransportTask() { }
 
-#pragma mark MASS AND MOMENTUM EXTRAPOLATIONS
-
-// Task 1 Extrapolation of temperature to the grid
-// Only called for non-rigid materials
-TransportTask *TransportTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape,short vfld,int matfld)
-{	double pTValue;
-	double mTpShape = GetTransportMassAndValue(mptr,&pTValue)*shape;
-	double mTpTValueShape = pTValue*mTpShape;
-	TransportField *gTrans = GetTransportFieldPtr(ndpt);
-	gTrans->gTValue += mTpTValueShape;
-	gTrans->gMTp += mTpShape;
-	Task1ContactExtrapolation(ndpt,vfld,matfld,mTpTValueShape,mTpShape);
-	return nextTask;
+// find time step
+void TransportTask::CheckTimeStep(double tst)
+{	if(tst<transportTimeStep)
+		transportTimeStep = tst;
 }
+
+// return time step
+double TransportTask::GetTimeStep(void) const { return transportTimeStep; }
+
+#pragma mark MASS AND MOMENTUM EXTRAPOLATIONS
 
 // Task 1 Extrapolation of transport value to the grid for contact (overridden by contact classes)
 void TransportTask::Task1ContactExtrapolation(NodalPoint *ndpt,short vfld,int matfld,double argT,double mTpShape) {}
@@ -122,7 +110,7 @@ TransportTask *TransportTask::Task1Reduction(NodalPoint *real,NodalPoint *ghost)
 {	TransportField *gReal = GetTransportFieldPtr(real);
 	TransportField *gGhost = GetTransportFieldPtr(ghost);
 	gReal->gTValue += gGhost->gTValue;
-	gReal->gMTp += gGhost->gMTp;
+	gReal->gVCT += gGhost->gVCT;
 	Task1ContactReduction(real,ghost);
 	return nextTask;
 }
@@ -134,7 +122,7 @@ void TransportTask::Task1ContactReduction(NodalPoint *real,NodalPoint *ghost) {}
 TransportTask *TransportTask::GetTransportNodalValue(NodalPoint *ndptr)
 {	if(ndptr->NodeHasNonrigidParticles())
 	{	TransportField *gTrans = GetTransportFieldPtr(ndptr);
-		gTrans->gTValue /= gTrans->gMTp;
+		gTrans->gTValue /= gTrans->gVCT;
 		GetContactNodalValue(ndptr);
 	}
 	return nextTask;
@@ -262,7 +250,7 @@ void TransportTask::AddContactForces(NodalPoint *ndptr,MPMBase *mptr,double sh,d
 void TransportTask::AddFluxCondition(NodalPoint *ndptr,double extraFlux,bool postRateCalc)
 {	if(ndptr->NodeHasNonrigidParticles())
     {   TransportField *gTrans = GetTransportFieldPtr(ndptr);
-        if(postRateCalc) extraFlux /= gTrans->gMTp;
+		if(postRateCalc) extraFlux /= gTrans->gVCT;
         gTrans->gQ += extraFlux;
     }
 }
@@ -275,9 +263,10 @@ TransportTask *TransportTask::SetTransportForceBCs(double deltime)
 	int i;
 	TransportField *gTrans;
 	
-	// --------- consistent forces for grid concentration BCs ------------
+	// --------- consistent forces for grid transport BCs ------------
+	// note that conducution overrides and gets reaction energy
 	
-	// Paste back noBC concentration
+	// Paste back noBC transport value
 	NodalValueBC *nextBC = GetFirstBCPtr();
 	while(nextBC!=NULL)
 	{	i = nextBC->GetNodeNum(mtime);
@@ -285,24 +274,24 @@ TransportTask *TransportTask::SetTransportForceBCs(double deltime)
 		nextBC = (NodalValueBC *)nextBC->GetNextObject();
 	}
 	
-	// Set force to - VC(no BC)/timestep
+	// Set force to - Ci*Ti(no BC)/timestep
 	nextBC = GetFirstBCPtr();
 	while(nextBC!=NULL)
 	{	i = nextBC->GetNodeNum(mtime);
 		if(i!=0)
 		{	gTrans = GetTransportFieldPtr(nd[i]);
-			gTrans->gQ = -gTrans->gMTp*gTrans->gTValue/deltime;
+			gTrans->gQ = -gTrans->gVCT*gTrans->gTValue/deltime;
 		}
 		nextBC = (NodalValueBC *)nextBC->GetNextObject();
 	}
 	
-	// Now add each superposed concentration (* volume) BC at incremented time
+	// Now add each superposed BC (ci*TiBC/timestep) at incremented time
 	nextBC = GetFirstBCPtr();
 	while(nextBC!=NULL)
 	{	i = nextBC->GetNodeNum(mtime);
 		if(i!=0)
 		{	gTrans = GetTransportFieldPtr(nd[i]);
-			gTrans->gQ += gTrans->gMTp*nextBC->BCValue(mtime)/deltime;
+			gTrans->gQ += gTrans->gVCT*nextBC->BCValue(mtime)/deltime;
 		}
 		nextBC = (NodalValueBC *)nextBC->GetNextObject();
 	}
@@ -317,24 +306,12 @@ TransportTask *TransportTask::SetTransportForceBCs(double deltime)
 
 #pragma mark UPDATE MOMENTA TASK AND CONTACT FLOW
 
-#ifdef CONTACT_HEAT_FLOW
-// adjust for material contact
-TransportTask *TransportTask::MatContactFlowCalculations(MatVelocityField *mvf,NodalPoint *ndptr,
-														 CrackVelocityField *cvf,double surfaceArea,bool inContact)
-{	return nextTask;
-}
-
-// adjust for material contact
-TransportTask *TransportTask::CrackContactFlowCalculations(CrackVelocityField *mvf,NodalPoint *ndptr,double surfaceArea,int inContact)
-{	return nextTask;
-}
-#endif
-
 // Get transport rate but active nodes only
 TransportTask *TransportTask::GetTransportRates(NodalPoint *ndptr,double deltime)
 {	if(ndptr->NodeHasNonrigidParticles())
 	{	TransportField *gTrans = GetTransportFieldPtr(ndptr);
-		gTrans->gQ /= gTrans->gMTp;
+		gTrans->gQ /= gTrans->gVCT;
+		gTrans->gTValue += gTrans->gQ*timestep;
 		TransportContactRates(ndptr,deltime);
 	}
 	return nextTask;
@@ -375,24 +352,6 @@ double TransportTask::GetDeltaValue(MPMBase *mptr,double pValueExtrap) const
     return dValue;
 }
 
-#pragma mark UPDATE STRAIN LAST TASK
-
-// if needed for SZS or USAVG, update temperature on the grid (tempTime is always timestep)
-TransportTask *TransportTask::UpdateNodalValues(double tempTime)
-{	// add for each node
-	for(int i=1;i<=nnodes;i++)
-	{   if(nd[i]->NodeHasNonrigidParticles())
-		{	TransportField *gTrans = GetTransportFieldPtr(nd[i]);
-			gTrans->gTValue += gTrans->gQ*tempTime;
-			UpdateContactNodalValues(nd[i],tempTime);
-		}
-	}
-	return nextTask;
-}
-
-// Reduction of transport forces to the grid for contact (overridden by contact classes)
-void TransportTask::UpdateContactNodalValues(NodalPoint *ndptr,double tempTime) {}
-
 #pragma mark ACCESSORS
 
 // Return name of this task
@@ -400,4 +359,45 @@ const char *TransportTask::TaskName(void) { return "transport calculations"; }
 
 // get the next task
 TransportTask *TransportTask::GetNextTransportTask(void) const { return nextTask; }
+
+#pragma mark CLASS METHODS
+
+// get transport values on nodes in post mass and momentum extrapolation tasks
+void TransportTask::GetTransportValues(NodalPoint *ndptr)
+{
+	TransportTask *nextTransport=transportTasks;
+	while (nextTransport != NULL)
+		nextTransport = nextTransport->GetTransportNodalValue(ndptr);
+}
+
+// Impose transport BCs and extrapolate gradients to the particles
+void TransportTask::TransportBCsAndGradients(double bctime)
+{
+	TransportTask *nextTransport=transportTasks;
+	while(nextTransport!=NULL)
+	{   nextTransport->ImposeValueBCs(bctime);
+		nextTransport = nextTransport->GetGradients(bctime);
+	}
+}
+
+// Get grid transport rates during momentum update
+// The transport properties are updated when particle state updated
+// (do first so both material and crack contact will have actual rates)
+void TransportTask::GetTransportRatesOnNode(NodalPoint *ndptr)
+{
+	TransportTask *nextTransport=transportTasks;
+	while(nextTransport!=NULL)
+		nextTransport = nextTransport->GetTransportRates(ndptr,timestep);
+
+}
+
+
+// Set transport BCs (not parallel because small and possible use of function/global variables)
+void TransportTask::TransportForceBCs(double dtime)
+{
+	TransportTask *nextTransport=transportTasks;
+	while(nextTransport!=NULL)
+		nextTransport=nextTransport->SetTransportForceBCs(dtime);
+
+}
 

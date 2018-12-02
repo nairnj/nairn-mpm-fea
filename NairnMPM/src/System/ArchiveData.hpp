@@ -89,6 +89,8 @@ class ArchiveData : public CommonArchiveData
 		double *GetFirstArchTimePtr(void);
 		double *GetGlobalTimePtr(void);
 		Vector *GetLastContactForcePtr(void);
+		double GetLastArchived(int);
+	
 
 	private:
 		int archBlock;

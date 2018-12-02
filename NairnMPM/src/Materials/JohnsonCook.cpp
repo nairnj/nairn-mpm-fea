@@ -34,7 +34,7 @@ JohnsonCook::JohnsonCook(MaterialBase *pair) : HardeningLawBase(pair)
 #pragma mark JohnsonCook::Initialization
 
 // Read material properties
-char *JohnsonCook::InputMaterialProperty(char *xName,int &input,double &gScaling)
+char *JohnsonCook::InputHardeningProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"Bjc")==0)
     {	input=DOUBLE_NUM;
@@ -65,7 +65,7 @@ char *JohnsonCook::InputMaterialProperty(char *xName,int &input,double &gScaling
         return((char *)&mjc);
     }
     
-    return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
+    return HardeningLawBase::InputHardeningProperty(xName,input,gScaling);
 }
 
 // print just yield properties to output window
@@ -113,7 +113,7 @@ const char *JohnsonCook::VerifyAndLoadProperties(int np)
 // size of hardening law properties needed in strain updates
 int JohnsonCook::SizeOfHardeningProps(void) const { return sizeof(JCProperties); }
 
-// Get copy of particle-state dependent properties
+// Get copy of particle-state dependent properties - two temperature terms
 void *JohnsonCook::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer,int offset)
 {
 	JCProperties *p = (JCProperties *)altBuffer;

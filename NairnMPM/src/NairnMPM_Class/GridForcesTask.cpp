@@ -24,9 +24,6 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Patches/GridPatch.hpp"
 #include "Exceptions/CommonException.hpp"
-#ifdef LOG_PROGRESS
-#include "System/ArchiveData.hpp"
-#endif
 
 #pragma mark CONSTRUCTORS
 
@@ -93,18 +90,6 @@ void GridForcesTask::Execute(void)
 					// add the total force to nodal point
                     ndptr = GetNodePointer(pn,nds[i]);
 					ndptr->AddFtotTask3(vfld,matfld,&theFrc);
-					
-#ifdef CHECK_NAN
-                    if(theFrc.x!=theFrc.x || theFrc.y!=theFrc.y || theFrc.z!=theFrc.z)
-                    {
-#pragma omp critical (output)
-						{	cout << "\n# GridForcesTask::Execute: bad nodal force vfld = " << vfld << ", matfld = " << matfld;
-							PrintVector(" theFrc = ",&theFrc);
-							cout << endl;
-							ndptr->Describe();
-						}
-                    }
-#endif
 					
 					// transport forces
 					TransportTask *nextTransport=transportTasks;

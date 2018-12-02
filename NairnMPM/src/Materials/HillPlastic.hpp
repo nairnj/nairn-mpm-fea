@@ -22,25 +22,21 @@ class HillPlastic : public AnisoPlasticity
 		double Khard,nhard;
         
         // constructors and destructors
-		HillPlastic();
-		HillPlastic(char *matName);
+		HillPlastic(char *,int);
 		
         // methods
 		virtual char *InputMaterialProperty(char *,int &,double &);
 	
 		// history data
 		virtual char *InitHistoryData(char *,MPMBase *);
-		virtual double GetHistory(int,char *) const;
+   		virtual int NumberOfHistoryDoubles(void) const;
 		
 		// const methods
 		virtual void PrintYieldProperties(void) const;
 	
 		// hardening law terms
-		virtual double GetDfAlphaDotH(MPMBase *,int,AnisoHardProperties *p) const;
-		virtual void UpdatePlasticInternal(MPMBase *,int,AnisoHardProperties *p,int) const;
-		virtual void UpdateTrialAlpha(MPMBase *,int,AnisoHardProperties *,int) const;
-		virtual void UpdateTrialAlpha(MPMBase *,int,double,AnisoHardProperties *,int) const;
-		virtual double GetYield(AnisoHardProperties *p) const;
+		virtual double GetYield(AnisoPlasticProperties *p) const;
+		virtual double GetGPrime(AnisoPlasticProperties *) const;
 	
 		// accessors
 		virtual const char *MaterialType(void) const;

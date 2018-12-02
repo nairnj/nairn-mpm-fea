@@ -8,8 +8,7 @@
 
 #include "stdafx.h"
 #include "Read_XML/NodesController.hpp"
-#include "Nodes/NodalPoint2D.hpp"
-#include "Nodes/NodalPoint3D.hpp"
+#include "Nodes/NodalPoint.hpp"
 #ifdef MPM_CODE
 	#include "NairnMPM_Class/NairnMPM.hpp"
 #else
@@ -30,9 +29,9 @@ void NodesController::AddNode(double x,double y,double z)
 {
 	NodalPoint *newNode;
 	if(fmobj->IsThreeD())
-		newNode=new NodalPoint3D(numObjects+1,x,y,z);
+		newNode = NodalPoint::Create3DNode(numObjects+1,x,y,z);
 	else
-		newNode=new NodalPoint2D(numObjects+1,x,y);
+		newNode = NodalPoint::Create2DNode(numObjects+1,x,y);
 	AddObject(newNode);
 }
 
@@ -44,9 +43,9 @@ void NodesController::AddNode(double x,double y,double z,double temp)
 {
 	NodalPoint *newNode;
 	if(fmobj->IsThreeD())
-		newNode=new NodalPoint3D(numObjects+1,x,y,z);
+		newNode = NodalPoint::Create3DNode(numObjects+1,x,y,z);
 	else
-		newNode=new NodalPoint2D(numObjects+1,x,y);
+		newNode = NodalPoint::Create2DNode(numObjects+1,x,y);
 	AddObject(newNode);
 	newNode->gTemperature = temp;
 }
@@ -54,12 +53,12 @@ void NodesController::AddNode(double x,double y,double z,double temp)
 #endif
 
 // assemble into array used in the code
-int NodesController::SetNodeArray(double *xmin,double *xmax,double *ymin,double *ymax,double *zmin,double *zmax)
+NodalPoint **NodesController::SetNodeArray(int &countNodes,double *xmin,double *xmax,double *ymin,double *ymax,double *zmin,double *zmax)
 {
 	// make 1-based array of nodal points
-	if(numObjects==0) return false;
-	nd = new (std::nothrow) NodalPoint *[numObjects+1];
-	if(nd==NULL) return false;
+	if(numObjects==0) return NULL;
+	NodalPoint **ndArray = new (std::nothrow) NodalPoint *[numObjects+1];
+	if(ndArray==NULL) return NULL;
 	
 	// fill the array
 	NodalPoint *aNode=(NodalPoint *)firstObject;
@@ -68,10 +67,10 @@ int NodesController::SetNodeArray(double *xmin,double *xmax,double *ymin,double 
 		*ymin=*ymax=aNode->y;
 		*zmin=*zmax=aNode->z;
 	}
-	nnodes=0;
+	countNodes=0;
 	while(aNode!=NULL)
-	{	nnodes++;
-		nd[nnodes]=aNode;
+	{	countNodes++;
+		ndArray[countNodes]=aNode;
 		if(aNode->x<*xmin) *xmin=aNode->x;
 		if(aNode->x>*xmax) *xmax=aNode->x;
 		if(aNode->y<*ymin) *ymin=aNode->y;
@@ -80,27 +79,27 @@ int NodesController::SetNodeArray(double *xmin,double *xmax,double *ymin,double 
 		if(aNode->z>*zmax) *zmax=aNode->z;
 		aNode=(NodalPoint *)aNode->GetNextObject();
 	}
-	return true;
+	return ndArray;
 }
 
 // assemble into array used in the code when they are resequenced
-int NodesController::SetNodeArray(int *revMap)
+NodalPoint **NodesController::SetNodeArray(int *revMap)
 {
 	// make 1-base array of nodal points
-	if(numObjects==0) return false;
-	nd = new (std::nothrow) NodalPoint *[numObjects+1];
-	if(nd==NULL) return false;
+	if(numObjects==0) return NULL;
+	NodalPoint **ndArray = new (std::nothrow) NodalPoint *[numObjects+1];
+	if(ndArray==NULL) return NULL;
 	
 	// fill the array
 	NodalPoint *aNode=(NodalPoint *)firstObject;
 	nnodes=0;
 	while(aNode!=NULL)
 	{	nnodes++;
-		nd[revMap[nnodes]]=aNode;
+		ndArray[revMap[nnodes]]=aNode;
 		aNode->num=revMap[nnodes];
 		aNode=(NodalPoint *)aNode->GetNextObject();
 	}
-	return true;
+	return ndArray;
 }
 
 // next node number

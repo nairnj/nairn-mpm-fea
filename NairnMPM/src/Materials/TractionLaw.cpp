@@ -14,8 +14,8 @@
 
 #pragma mark TractionLaw::Constructors and Destructors
 
-// Constructors with arguments 
-TractionLaw::TractionLaw(char *matName) : MaterialBase(matName)
+// Constructor 
+TractionLaw::TractionLaw(char *matName,int matID) : MaterialBase(matName,matID)
 {
 	stress1=-1;			// sigmaI
 	stress2=-1;			// sigmaII
@@ -28,6 +28,9 @@ void TractionLaw::PrintTransportProperties(void) const {}
 
 // read peak stress in all traction laws
 char *TractionLaw::InputMaterialProperty(char *xName,int &input,double &gScaling)
+{	return InputTractionLawProperty(xName,input,gScaling);
+}
+char *TractionLaw::InputTractionLawProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"sigmaI")==0)
 	{	input=DOUBLE_NUM;
@@ -50,7 +53,7 @@ const char *TractionLaw::VerifyAndLoadProperties(int np) { return NULL; }
 void TractionLaw::ReportDebond(double dtime,CrackSegment *cs,double fractionI,double Gtotal)
 {
 	archiver->IncrementPropagationCounter();
-	cout << "# Debond: t=" << dtime*UnitsController::Scaling(1000.) << " (x,y) = (" << cs->x << "," << cs->y << ")"
+	cout << "# Debond: t=" << dtime*UnitsController::Scaling(1000.) << " (x,y) = (" << cs->cp.x << "," << cs->cp.y << ")"
 			<< " GI(%) = " << 100.*fractionI << " G = "
 			<< Gtotal*UnitsController::Scaling(0.001) << endl;
 }
@@ -62,9 +65,10 @@ void TractionLaw::CalculateTimeFunction(void) {}
 #pragma mark TractionLaw::Traction Law
 
 // Traction law - find traction force as traction pressure*area
-void TractionLaw::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,double dx,double dy,double area)
+void TractionLaw::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,Vector *n,Vector *t,double area)
 {	cs->tract.x=0.;
 	cs->tract.y=0.;
+	cs->tract.z=0.;
 }
 
 // Find recoverable energy in the traction law (Subclass must override)

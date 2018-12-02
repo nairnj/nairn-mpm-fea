@@ -30,6 +30,14 @@ void MPMTask::WriteLogFile(void)
 	archiver->WriteLogFile(logLine,NULL);
 }
 
+// for debugging comment within a task
+void MPMTask::WriteLogFile(const char *comment)
+{	// task number
+	char logLine[200];
+	sprintf(logLine,"... %s",comment);
+	archiver->WriteLogFile(logLine,NULL);
+}
+
 #endif
 
 // track times

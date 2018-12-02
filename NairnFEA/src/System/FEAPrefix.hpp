@@ -24,6 +24,8 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#include <string>
+#include <unordered_map>
 #ifdef USE_OPENMP
 #include <omp.h>
 #endif

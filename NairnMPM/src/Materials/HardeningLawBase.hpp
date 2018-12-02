@@ -17,12 +17,6 @@
 
 class MPMBase;
 
-// plastic law properties
-typedef struct {
-	double alpint;
-	double dalpha;
-} HardeningAlpha;
-
 class HardeningLawBase
 {
     public:
@@ -32,7 +26,7 @@ class HardeningLawBase
         virtual ~HardeningLawBase();
     
         // initialize
-        virtual char *InputMaterialProperty(char *,int &,double &);
+        virtual char *InputHardeningProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
         virtual void PrintYieldProperties(void) const = 0;
 	

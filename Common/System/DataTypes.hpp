@@ -87,13 +87,6 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 		double ws;
 	} CPDIDomain;
 
-	// for each particle store list of nodes for GIMP
-	// numnds in nds[0], rest 1 based, IDs zero based in ndIDs
-	typedef struct {
-		int *nds;
-		unsigned char *ndIDs;
-	} GIMPNodes;
-
 	// Transport Properties
 	// conductivity is divided by rho (in g/mm^3)
 	typedef struct {
@@ -104,15 +97,23 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 	// variables for multimaterial conduction calculations
 	typedef struct {
 		double gTValue;		  // material transport value
-		double gMTp;		  // transport mass
-		double gQ;			  // transport force
+		double gVCT;		  // transport capacity
+		double gQ;			  // transport velocity
 	} TransportField;
 
 	// For residual strains in constitutive laws
 	typedef struct {
 		double dT;
 		double dC;
+		double doopse;		// for generalized plane stress or strain
 	} ResidualStrains;
+
+	// plastic law properties
+	typedef struct {
+		double alpint;
+		double dalpha;
+		double strialmag;
+	} HardeningAlpha;
 
 	typedef struct {
 		Vector *acc;
@@ -161,6 +162,10 @@ int Reverse(char *,int);
 void PrimeFactors(int,vector<int> &);
 
 Vector MakeVector(double,double,double);
+Vector MakeScaledVector(double,double,double,double);
+Vector SetDiffVectors(const Vector *,const Vector *);
+Vector SetSumVectors(const Vector *,const Vector *);
+Vector SetScaledVector(const Vector *,const double );
 Vector *ZeroVector(Vector *);
 Vector *CopyVector(Vector *,const Vector *);
 Vector *ScaleVector(Vector *,const double);
@@ -178,6 +183,7 @@ Tensor MakeTensor(double, double, double, double, double, double);
 Tensor MakeTensor2D(double, double, double, double);
 Tensor *ZeroTensor(Tensor *);
 Tensor *AddTensor(Tensor *,Tensor *);
+Tensor *SubTensor(Tensor *,Tensor *);
 Tensor *ScaleTensor(Tensor *,double);
 double DotTensors2D(const Tensor *, const Tensor *);
 double Tensor_i(Tensor *,int);
@@ -208,6 +214,7 @@ double RationalApproximation(double t);
 
 #ifdef MPM_CODE
 #include "System/Matrix3.hpp"
+#include "System/Matrix4.hpp"
 #endif
 
 #endif

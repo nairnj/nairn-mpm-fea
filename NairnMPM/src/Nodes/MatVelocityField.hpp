@@ -20,9 +20,9 @@
 
 #define RIGID_FIELD_BIT 1
 #define IGORE_CRACKS_BIT 2
+#define RIGID_BLOCK_BIT 4
 
 #define VSTAR_VEC 0
-#define PK_COPY 0
 #define VSTARPREV_VEC 1
 #define VSTARNEXT_VEC 2
 
@@ -38,7 +38,7 @@ class MatVelocityField
 		Vector disp;				// displacement for contact calculations
 		Vector *volumeGrad;			// volume gradient allocated in multimaterial mode
 		Vector *xpic;				// For XPIC (OSParticulas) or copy momenta (nfm)
-		//Vector fext;              // This was used when keep separate fint and fext
+		static int pkCopy;			// which xpic vector to store pk
 	
 		// constants (not changed in MPM time step)
 				
@@ -53,7 +53,7 @@ class MatVelocityField
         void CopyMassAndMomentumLast(NodalPoint *,int,int);
 		void CopyGridForces(NodalPoint *,int,int);
 		void RestoreMomenta(void);
-		void ChangeMatMomentum(Vector *,bool,double);
+		void ChangeMatMomentum(Vector *,int,double);
 		void AddContactForce(Vector *);
 		void CalcVelocityForStrainUpdate(void);
 		void AddGravityAndBodyForceTask3(Vector *);
@@ -70,22 +70,26 @@ class MatVelocityField
 		void AddContactVolume(double);
 		void SetContactVolume(double);
 		double GetContactVolume(void) const;
-        void SetVelocity(Vector *);
         Vector GetVelocity(void);
-        void SetMomentVelocityDirection(Vector *);
-        void AddMomentVelocityDirection(Vector *,double);
+        void SetMomentVelocityDirection(Vector *,int);
+        void AddMomentVelocityDirection(Vector *,double,int);
         void SetFtotDirection(Vector *,double,Vector *);
         void AddFtotDirection(Vector *,double,double,Vector *);
         Vector GetFtot(void) const;
         Vector *GetFtotPtr(void);
 		bool IsRigidField(void) const;
 		void SetRigidField(bool);
+		bool IsFixedRigidField(void) const;
+		bool IsRigidBlockField(void) const;
 		int GetFlags(void) const;
+		bool IgnoresCracks(void) const;
 	
 		// class methods
 		static bool ActiveField(MatVelocityField *);
 		static bool ActiveRigidField(MatVelocityField *mvf);
 		static bool ActiveNonrigidField(MatVelocityField *mvf);
+		static bool ActiveNonrigidSourceField(MatVelocityField *,int);
+		static bool ActiveNonrigidSeesCracksField(MatVelocityField *,bool);
 	
 	protected:
 		int flags;					// bitwise flags for some field properties

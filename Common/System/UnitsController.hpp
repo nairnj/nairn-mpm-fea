@@ -15,7 +15,7 @@ enum { ERR_UNITS=0,CULENGTH_UNITS,TRACTIONSLOPE_UNITS,PRESSURE_UNITS,HEATCAPACIT
 		C0_UNITS,VISCOSITY_UNITS,CONDUCTIVITY_UNITS,DENSITY_UNITS,STRESSINTENSITY_UNITS,
 		FEAFORCE_UNITS,FEAWORK_UNITS,INTERFACEPARAM_UNITS,TIME_UNITS,CUMASS_UNITS,TARGETKE_UNITS,
 		CUVELOCITY_UNITS,BCARG_UNITS,ALTTIME_UNITS,BCHEATFLUX_UNITS,BCCONCFLUX_UNITS,
-		ALTVELOCITY_UNITS,CONVECTION_UNITS,HEATFUSION_UNITS };
+		ALTVELOCITY_UNITS,CONVECTION_UNITS,HEATFUSION_UNITS,DIFFUSION_UNITS };
 
 class UnitsController
 {
@@ -25,7 +25,7 @@ class UnitsController
 		UnitsController();
 	
 		// class methods
-	static void OutputUnits(void);
+		static void OutputUnits(void);
 		static char *ScaledPtr(char *,double &,double);
 		static double Scaling(double);
 		static const char *Label(int);
@@ -42,7 +42,8 @@ class UnitsController
 		static char errRate[15],tractionSlope[15],viscosity[15],heatFusion[18];
 		static char heatCapacity[18],power[15],conductivity[20],convection[20];
 		static char heatFlux[15],stressIntensity[20],bcarg[10],concFlux[20];
-		
+		static char diffusionTens[20];
+	
 };
 
 #endif

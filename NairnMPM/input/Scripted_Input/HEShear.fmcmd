@@ -50,7 +50,7 @@ EndXMLData
 #thick=#length			! thickness
 
 ! Total shear strain (estimated for traction loads)
-#strain=50
+#strain=100
 
 ! "rigid" or "biaxialdisp" or "biaxialtraction" or "sheartraction"
 ! In biaxial ones, tau = (#sxx-#syy)/2, sigmax = (#sxx+#syy)/2 + #sxy,
@@ -59,6 +59,7 @@ EndXMLData
 #bcs$="rigid"
 #simple$="no"
 #edgematerial$="no"
+#extrap$="yes"
 
 ! Loading rate
 #tmult=100			! number of transit times to load peak
@@ -66,7 +67,7 @@ EndXMLData
 ! Damping parameter - for feedback or grid
 #damp=0
 #fbdamp=0
-#factor=0.1			! time step factor
+#factor=0.3			! time step factor
 
 ! ------------ Calculations ---------------
 
@@ -101,6 +102,8 @@ endif
 #disp=#strain*#width/200				! mm of displacement
 #disprate=1000*#disp/#time			    ! displacement rate mm/s using tmult
 
+Comment "Analysis:"&#analysis$&", Material:"&#matID$&", shape:"&#method$&", update:"&#update$
+Comment "Loading:"&#bcs$&", Extrapolate Rigid:"&#extrap$
 if #bcs$="rigid"
   Comment "Top and bottom displacement = +/-"&(abs(#disp))&" mm for shear strain of "&#strain&"%"
   Comment "Top and bottom displacement rate = "&(#disprate/1000)&" m/sec"
@@ -118,72 +121,52 @@ ToArchive velocity,stress,strain,strainenergy,rotStrain,plasticstrain,history1,h
 
 ! ********** Materials Section **********
 
-if #matID$="neomooney"
-  Material #matID$,"Neohookean Mooney Material","Mooney"
-    G1 #G1
-    G2 #G2
-    K #Kbulk
-    a #aBase
-    rho #rho
-  Done
-  Material #matID$&"-#edge","Neohookean Mooney Material Edge","Mooney"
-    G1 #G1
-    G2 #G2
-    K #Kbulk
-    a #aBase
-    rho #rho
-  Done
-endif
-
-if #matID$="mooney"
-  Material #matID$,"Mooney-Rivlin Material","Mooney"
-    G1 #G1
-    G2 #G2
-    K #Kbulk
-    a #aBase
-    rho #rho
-  Done
-  Material #matID$&"-#edge","Mooney-Rivlin Material Edge","Mooney"
-    G1 #G1
-    G2 #G2
-    K #Kbulk
-    a #aBase
-    rho #rho
-  Done
-endif
-
-if #matID$="heiso"
-  Material #matID$,"HE Isotropic Plastic","HEIsotropic"
-    G1 #G1
-    !G2 #G2
-    K #Kbulk
-    a #aBase
-    rho #rho
-    hardening #hardID$
-    if #hardID$="Linear"
-      yield abs(#Ebase*#yldstrain/100)
-      Ep #Ep
+Repeat "#edge",1,2
+  #matIDUse$ = #matID$
+  if #edge=2
+    if #edgematerial$="no"
+      break
     endif
-    UJOption 0
-    kCond .202
-    Cv 1256
-  Done
-  Material #matID$&"-#edge","HE Isotropic Plastic","HEIsotropic"
-    G1 #G1
-    !G2 #G2
-    K #Kbulk
-    a #aBase
-    rho #rho
-    hardening #hardID$
-    if #hardID$="Linear"
-      yield abs(#Ebase*#yldstrain/100)
-      Ep #Ep
-    endif
-    UJOption 0
-    kCond .202
-    Cv 1256
-  Done
-endif
+    #matIDUse$=#matID$&"-edge"
+  endif
+  if #matID$="neomooney"
+    Material #matIDUse$,"Neohookean Mooney Material","Mooney"
+      G1 #G1
+      G2 #G2
+      K #Kbulk
+      a #aBase
+      rho #rho
+    Done
+  endif
+
+  if #matID$="mooney"
+    Material #matIDUse$,"Mooney-Rivlin Material","Mooney"
+      G1 #G1
+      G2 #G2
+      K #Kbulk
+      a #aBase
+      rho #rho
+    Done
+  endif
+
+  if #matID$="heiso"
+    Material #matIDUse$,"HE Isotropic Plastic","HEIsotropic"
+      G1 #G1
+      !G2 #G2
+      K #Kbulk
+      a #aBase
+      rho #rho
+      hardening #hardID$
+      if #hardID$="Linear"
+        yield abs(#Ebase*#yldstrain/100)
+        Ep #Ep
+      endif
+      UJOption 0
+      kCond .202
+      Cv 1256
+    Done
+  endif
+EndRepeat
 
 ! displacement functions for rigid materials
 if #bcs$="rigid"
@@ -194,7 +177,9 @@ if #bcs$="rigid"
   endif
 
   ! define rigid materials
-  ExtrapolateRigid
+  if #extrap$="yes"
+    ExtrapolateRigid
+  endif
   Material "rigid","Loading Clamp","Rigid"
     if #analysis$="3D MPM"
       direction 7
@@ -239,7 +224,7 @@ GlobalArchive "Strain Energy",#matID$
 GlobalArchive "Kinetic Energy",#matID$
 GlobalArchiveTime #time/100
 
-#sides=2
+#sides=3
 #xtra=int(1.3*abs(#disp)/#cell+.5)
 #gleft=-(#xtra+#sides)*#cell
 #gright=#length+(#xtra+#sides)*#cell
@@ -330,7 +315,7 @@ else
     Region #matID$,0,0,#thick
       Rect 2*#cell,#length-2*#cell,2*#cell,#width-2*#cell
     EndRegion
-    Region #matID$&"-#edge",0,0,#thick
+    Region #matID$&"-edge",0,0,#thick
       Rect 0,#length,0,#width
     EndRegion
   else

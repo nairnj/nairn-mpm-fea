@@ -33,7 +33,7 @@ class XYBMPImporter : public XYFileImporter
 	public:
 	
 		// constructors
-		XYBMPImporter(char *);
+		XYBMPImporter(char *,bool);
 
 		// methods
 		virtual void GetXYFileHeader(XYInfoHeader &);

@@ -156,7 +156,7 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 		thisBuffer=1;
     }
 	
-    else if(strcmp(pName,"concentration")==0)
+    else if(strcmp(pName,"concentration")==0 || strcmp(pName,"porepressure")==0)
     {	q=VTK_CONCENTRATION;
 		thisBuffer=1;
     }
@@ -204,11 +204,6 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 CustomTask *VTKArchive::Initialize(void)
 {
     cout << "Archive grid results to VTK files." << endl;
-	
-    // VTK has an option to deal with structured but variable element sizes
-    // Add when needed
-	if(!mpmgrid.IsStructuredEqualElementsGrid())
-		throw CommonException("VTKArchive task requires use of a generated grid with equal element sizes","VTKArchive::Initialize");
 	
 	// display quantities to be archived
 	unsigned int q;
@@ -488,7 +483,10 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
                 break;
                 
             case VTK_CONCENTRATION:
-                theWt=wt*mpnt->GetConcSaturation();
+				if(fmobj->HasDiffusion())
+                	theWt=wt*mpnt->GetConcSaturation();
+				else
+					theWt=wt*UnitsController::Scaling(1.e-6);
                 *vtkquant+=theWt*mpnt->pConcentration;
                 vtkquant++;
                 break;

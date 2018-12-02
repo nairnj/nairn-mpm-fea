@@ -14,6 +14,7 @@
 #define _GHOSTNODE_
 
 class NodalPoint;
+class TransportTask;
 
 class GhostNode
 {
@@ -36,6 +37,8 @@ class GhostNode
 	
 		// accessors
 		NodalPoint *GetNodePointer(void);
+		NodalPoint *GetGhostNodePointer(void);
+		NodalPoint *GetRealNodePointer(void);
 	
 	private:
 		NodalPoint *ghost;

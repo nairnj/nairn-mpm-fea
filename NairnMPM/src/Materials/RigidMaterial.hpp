@@ -9,9 +9,10 @@
 		MaterialBase.hpp
 ********************************************************************************/
 
-#ifndef RIGIDMATERIAL
+#ifndef RIGIDBCMATERIAL
 
-#define RIGIDMATERIAL 11
+#define RIGIDBCMATERIAL 11
+#define RIGIDCONTACTMATERIAL 35
 
 // same as constants without "CONTROL_" defined in boundary conditinos
 #define CONTROL_X_DIRECTION 1
@@ -25,7 +26,7 @@
 // means an actual material, but only possible in multimaterial mode
 #define RIGID_MULTIMATERIAL_MODE 8
 
-class ROperation;
+class Expression;
 
 #include "Materials/MaterialBase.hpp"
 
@@ -39,8 +40,7 @@ class RigidMaterial : public MaterialBase
 		int mirrored;
 	
         // constructors and destructors
-        RigidMaterial();
-        RigidMaterial(char *);
+        RigidMaterial(char *,int,int);
         
         // initialize
         virtual char *InputMaterialProperty(char *,int &,double &);
@@ -54,27 +54,33 @@ class RigidMaterial : public MaterialBase
 		bool RigidConcentration(void) const;
 		int SetDirection(void) const;
 		bool GetValueSetting(double *,double,Vector *) const;
-		bool GetVectorSetting(Vector *,bool *,double,Vector *) const;
 		void SetSettingFunction(char *,int);
-		void ReplaceSettingFunction(char *,int);
-		bool IsConstantVelocity(void);
 		void SetControlVelocity(double,int);
+		void SetControlVelocity(Vector * Velocity);
 	
+		// Rigid methods subclassed might override
+		virtual bool IsConstantVelocity(void) const;
+		virtual bool GetVectorSetting(Vector *,bool *,double,Vector *) const;
+
 		// accessors
 		virtual const char *MaterialType(void) const;
         virtual double WaveSpeed(bool,MPMBase *) const;
-		virtual bool Rigid(void) const;			// override base class to return true
-		virtual short RigidBC(void) const;		// override base class to return true if appropriate
-		virtual short RigidContact(void) const;	// override base class to return true if appropriate
-		
+		virtual bool IsRigid(void) const;			// override base class to return true
+		virtual bool IsRigidBC(void) const;		// override base class to return true if appropriate
+		virtual bool IsRigidContact(void) const;	// override base class to return true if appropriate
+		virtual bool IsRigidBlock(void) const;		// override base class to return true if appropriate
+	
 	protected:
-		ROperation *function;
-		ROperation *function2;
-		ROperation *function3;
-        ROperation *Vfunction;
+		Expression *function;
+		Expression *function2;
+		Expression *function3;
+		Expression *Vfunction;
+
 		bool useControlVelocity;
 		int controlDirection;
 		double controlVelocity;
+		Vector ControlVelocityVector;
+
 		static double varTime,xPos,yPos,zPos,delTime;
 };
 

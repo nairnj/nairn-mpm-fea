@@ -303,6 +303,12 @@ int main(int argc, char * const argv[])
 				strcpy(fileExtension,"vtk");
 			}
 			
+			// xyz file
+			else if(argv[parmInd][optInd]=='z' || argv[parmInd][optInd]=='Z')
+			{	fileFormat='Z';
+				strcpy(fileExtension,"xyz");
+			}
+			
 			// 3D file
 			else if(argv[parmInd][optInd]=='3')
 			{	threeD=true;
@@ -590,6 +596,18 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
         fclose(fp);
 		free(buffer);
 		return vtkResult;
+	}
+	
+	// special case for xyz files
+	else if(fileFormat)
+	{	if(crackDataOnly)
+		{	cerr << "Exports to XYZ file format cannot be for crack data" << endl;
+			return FileAccessErr;
+		}
+		int xyzResult = XYZExport(os,mpmFile);
+		fclose(fp);
+		free(buffer);
+		return xyzResult;
 	}
 	
 	// optional header
@@ -936,6 +954,101 @@ int VTKLegacy(ostream &os,const char *mpmFile)
     
     // done
     return noErr;
+}
+
+// called when start MP output - only needed for XML output
+int XYZExport(ostream &os,const char *mpmFile)
+{
+	// count points to extract
+	int nummpms=(int)(fileLength/recSize);
+	int p,numExtract=0;
+	long origOffset = (long)(ap-buffer);
+	for(p=0;p<nummpms;p++)
+	{   // read next block when needed
+		if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+		
+		short matnum=pointMatnum(ap);
+		if(matnum<0) break;
+		if(!skipThisPoint(matnum)) numExtract++;
+		ap+=recSize;
+	}
+	
+	// number of points
+	//os << numExtract << endl;
+
+	// one line comment
+	//os << "Particle data from file " << mpmFile;
+	//if(archiveTimeMs>-0.5)
+	//	os << " at time " << archiveTimeMs << " ms" ;
+	//os << endl;
+	
+	// back to start of the file
+	if(!RestartFileBlocks(origOffset,mpmFile)) return FileAccessErr;
+	
+	// extract material and point positions
+	for(p=0;p<nummpms;p++)
+	{   // read next block when needed
+		if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+		
+		short matnum=pointMatnum(ap);
+		if(matnum<0) break;
+		if(!skipThisPoint(matnum))
+		{	// material number
+			//os << matnum;
+			
+			// data
+			if(!skipThisPoint(matnum))
+			{	OutputDouble((double *)(ap+posOffset),0,0,reverseFromInput,os,XPOS);
+				//OutputDouble((double *)(ap+posOffset),0,' ',reverseFromInput,os,XPOS);
+				OutputDouble((double *)(ap+posOffset),1,' ',reverseFromInput,os,YPOS);
+				if(threeD)
+					OutputDouble((double *)(ap+posOffset),2,' ',reverseFromInput,os,ZPOS);
+				else
+					os << " 0.0";         // so ParaView can do 2D data
+				os << endl;
+			}
+		}
+		/*
+		char pos[20];
+		if(!skipThisPoint(matnum))
+		{	// output material x y z
+			if(matnum<10)
+				os << "  ";
+			else if(matnum<100)
+				os << " ";
+			os << matnum;
+			
+			// X pos
+			double *data = (double *)(ap+posOffset);
+			if(reverseFromInput) Reverse((char *)data,sizeof(double));
+			sprintf(pos," %12.5f",*data);
+			os << pos;
+			
+			// Y pos
+			data+=1;
+			if(reverseFromInput) Reverse((char *)data,sizeof(double));
+			sprintf(pos," %12.5f",*data);
+			os << pos;
+			
+			// Z pos
+			if(threeD)
+			{	data+=1;
+				if(reverseFromInput) Reverse((char *)data,sizeof(double));
+				sprintf(pos," %12.5f",*data);
+			}
+			else
+				sprintf(pos," %12.5f",(double)0.);
+			os << pos;
+			
+			// line odne
+			os << endl;
+		}
+		*/
+		ap+=recSize;
+	}
+	
+	// done
+	return noErr;
 }
 
 // If needed, read next block of data from the file
@@ -1300,6 +1413,7 @@ void OutputDouble(double *data,int offset,char delim,bool mustReverse,ostream &o
 	switch(fileFormat)
 	{	case 'T':
 		case 'V':
+		case 'Z':
 			if(mustReverse) Reverse((char *)data,sizeof(double));
 			if(delim!=0) os << delim;
 			os << *data;

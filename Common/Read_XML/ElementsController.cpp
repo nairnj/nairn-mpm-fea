@@ -10,10 +10,10 @@
 #include "Read_XML/ElementsController.hpp"
 #include "Elements/FourNodeIsoparam.hpp"
 #include "Elements/Lagrange2D.hpp"
+#include "Elements/CSTriangle.hpp"
 #ifdef FEA_CODE
 	#include "Elements/EightNodeIsoparam.hpp"
 	#include "Elements/SixNodeTriangle.hpp"
-	#include "Elements/CSTriangle.hpp"
 	#include "Elements/LinearInterface.hpp"
 	#include "Elements/QuadInterface.hpp"
 #else
@@ -46,29 +46,29 @@ void ElementsController::AddElement(ElementBase *newElem)
 	AddObject(newElem);
 	
 	// set some properties
-	newElem->num=numObjects;
+	newElem->num = numObjects;
 }
 
 // set array of elements when done
-int ElementsController::SetElementArray(void)
+ElementBase **ElementsController::SetElementArray(int &countElems,bool meshElements)
 {
 	// make 0-based array of elements
-	if(numObjects==0) return false;
-	theElements = new (std::nothrow) ElementBase *[numObjects];
-	if(theElements==NULL) return false;
+	if(numObjects==0) return NULL;
+	ElementBase **elemArray = new (std::nothrow) ElementBase *[numObjects];
+	if(elemArray==NULL) return NULL;
 	
 	// fill the array (zero based)
 	ElementBase *anElem=(ElementBase *)firstObject;
-	nelems=0;
+	countElems = 0;
 	while(anElem!=NULL)
-	{	theElements[nelems]=anElem;
-		theElements[nelems]->FindExtent();
-		nelems++;
+	{	elemArray[countElems]=anElem;
+		if(meshElements) elemArray[countElems]->FindExtent();
+		countElems++;
 		anElem=(ElementBase *)anElem->GetNextObject();
 	}
 	
 	// done
-	return true;
+	return elemArray;
 }
 
 // create specfic element from node list in character string
@@ -91,7 +91,7 @@ int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,d
 	
 	// create elements
 	ElementBase *newElem=NULL;
-
+	
 	try
 	{	switch(currentElemID)
 		{	
@@ -106,6 +106,7 @@ int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,d
 				if(numnds!=8) break;
 				newElem=new EightNodeIsoparamBrick(1,eNode);
 				break;
+			
 #else
 			// All FEA Element types
 			case FOUR_NODE_ISO:
@@ -145,12 +146,18 @@ int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,d
 				
 #endif
 			default:
-				break;
+				return false;
 		}
 	}
 	catch(std::bad_alloc&)
 	{	return false;
 	}
+	catch(...)
+	{	return false;
+	}
+	
+	// if failed
+	if(newElem==NULL) return false;
 	
 	// add element and return the result
 	AddElement(newElem);
@@ -419,23 +426,24 @@ int ElementsController::ElementSides(void)
 ********************************************************************************/
 
 int ElementsController::CurrentElemID(void) { return currentElemID; }
-int ElementsController::SetElemIDStr(char *value)
+bool ElementsController::SetElemIDStr(char *value,int eblock)
 {	int tempID;
 	sscanf(value,"%d",&tempID);
-	return SetCurrentElemID(tempID);
+	if(eblock==CRACKELEMENTLIST) return tempID==CS_TRIANGLE;
+	return SetCurrentElemID(tempID,eblock);
 }
-int ElementsController::SetCurrentElemID(int elemID)
+bool ElementsController::SetCurrentElemID(int elemID,int eblock)
 {
 	int oldElemID=currentElemID;
 	currentElemID=elemID;
 #ifdef MPM_CODE
 	// limit elements allowed in MPM
 	if(fmobj->IsThreeD())
-	{	if(elemID!=EIGHT_NODE_ISO_BRICK) return FALSE;
-		return TRUE;
+	{	if(elemID!=EIGHT_NODE_ISO_BRICK) return false;
+		return true;
 	}
 	else if(elemID!=FOUR_NODE_ISO && elemID!=NINE_NODE_LAGRANGE)
-		return FALSE;
+		return false;
 #endif
 	return ElementsCompatible(oldElemID);
 }

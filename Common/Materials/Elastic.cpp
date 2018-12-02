@@ -14,10 +14,8 @@
 
 #pragma mark Elastic::Constructors and Destructors
 
-// Constructors
-Elastic::Elastic() {}
-
-Elastic::Elastic(char *matName) : MaterialBase(matName)
+// Constructor
+Elastic::Elastic(char *matName,int matID) : MaterialBase(matName,matID)
 {
 #ifdef MPM_CODE
 	useLargeRotation=0;
@@ -75,7 +73,7 @@ void Elastic::FillUnrotatedElasticProperties(ElasticProperties *p,int np)
 		p->C[5][0]=p->C[5][1]=p->C[5][2]=p->C[5][3]=p->C[5][4]=0.;
 		p->C[5][5]=C66*rrho;
 		
-		// need p->alpha[] and p->beta[] for thermal and moisture expansion
+		// need p->alpha[] and p->beta[] for thermal and moisture expansion/poroelasticity
 		p->alpha[0]=CTE1;
 		p->alpha[1]=CTE2;
 		p->alpha[2]=CTE3;
@@ -101,10 +99,10 @@ void Elastic::FillUnrotatedElasticProperties(ElasticProperties *p,int np)
 	p->C[3][3]=C66;
 	
 #ifdef MPM_CODE
-	p->C[4][1]=C13;
-	p->C[4][2]=C23;
+	p->C[4][1]=C13;					// actually -C13/C33 if plane stress
+	p->C[4][2]=C23;					// actually -C23/C33 if plane stress
 	p->C[4][3]=0.;
-	p->C[4][4]=C33;
+	p->C[4][4]=C33;					// equal to C33
 #endif
 	
     // initial strains - all thermal and strain per temperature change
@@ -136,6 +134,17 @@ void Elastic::FillUnrotatedElasticProperties(ElasticProperties *p,int np)
 			p->C[4][2]*=rrho;
 			p->C[4][3]*=rrho;
 			p->C[4][4]*=rrho;
+			// for generalized plane strain in MPM
+			p->C[5][1] = S13/S33;			// = -vzx
+			p->C[5][2] = S23/S33;			// = -vzy
+			p->C[5][3] = 0.;				// = 0 (for shear, non-zero if rotated)
+		}
+		else if(np==PLANE_STRESS_MPM)
+		{	// for generalized plane stress in MPM
+			p->C[4][4] *= rrho;				// = C33/rho
+			p->C[5][1] = S13*rho;			// = -vxz*rho/Exx = -vzx*rho/Ezz
+			p->C[5][2] = S23*rho;			// = -vyz*rho/Eyy = -vzy*rho/Ezz
+			p->C[5][3] = 0.;				// - 0 (for shear, non-zero if rotated)
 		}
     }
 #endif
@@ -308,6 +317,11 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
 		Cadota = (C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1+C13*a3*a1+C23*a3*a2)/rho);
 #endif
     }
+	
+	// for generalized plane stress and strain
+	S13 = -v13/e1;
+	S23 = -v23/e2;
+	S33 = 1./e3;
     
     return NULL;
 }

@@ -24,8 +24,7 @@ class HEMGEOSMaterial : public HEIsotropic
 		static int warnExcessiveX;
 		
 		// constructors and destructors
-		HEMGEOSMaterial();
-		HEMGEOSMaterial(char *matName);
+		HEMGEOSMaterial(char *,int);
 		
 		// initialize
 		virtual char *InputMaterialProperty(char *,int &,double &);
@@ -44,7 +43,8 @@ class HEMGEOSMaterial : public HEIsotropic
 		// accessors
 		virtual const char *MaterialType(void) const;
 		virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;
-		
+		virtual bool SupportsDiffusion(void) const;
+	
 	protected:
 		// unique properties
 		double gamma0,C0,S1,S2,S3;

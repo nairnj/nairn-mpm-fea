@@ -19,6 +19,7 @@ class Matrix3
 						double,double,double);
 		Matrix3(double,double,double,double,double);
         Matrix3(double,double,double,double,double,double);
+		Matrix3(Vector *,Vector *);
 	
 		// printing
 		friend ostream &operator<<(ostream &os, const Matrix3 &);
@@ -58,7 +59,10 @@ class Matrix3
 		const Matrix3 operator*(const Matrix3 &) const;
 		double &operator()(unsigned,unsigned);
 		const double &operator()(unsigned row,unsigned col) const;
-	
+		Matrix3 &operator*=(double); 
+		const Matrix3 operator*(double) const;
+		friend const Matrix3 operator*(double factor, const Matrix3 & rhs);
+
 		// accessors
 		void set(double);
         void set(int,int,double);
@@ -71,6 +75,7 @@ class Matrix3
     
         // read only accessors
         void get(double c[][3]) const;
+		double mrc(int,int) const;
         void get(int,int,double *) const;
 		double get(int,double) const;
         bool getIs2D(void) const;

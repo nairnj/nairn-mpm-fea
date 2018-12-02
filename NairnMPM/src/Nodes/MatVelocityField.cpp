@@ -7,7 +7,6 @@
  
 	Special case for rigid material
 		pk will be sum of Vp*vel
-		vk will be the rigid material current velocity
 		disp will be sum Vp*disp
 		mass grad will be volume gradient
 		unscaled volume if the volume
@@ -21,6 +20,11 @@
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
+#include "Global_Quantities/BodyForce.hpp"
+
+// class statics
+int MatVelocityField::pkCopy=0;
 
 #pragma mark INITIALIZATION
 
@@ -31,8 +35,11 @@ MatVelocityField::MatVelocityField(int setFlags)
 		volumeGrad=new Vector;
 	else
 		volumeGrad=NULL;
-	// a single vector is used to copy and restore momenta
-	xpic = new Vector[1];
+    
+	// New one vector to copy momenta
+	xpic = new  Vector[1];
+	pkCopy = 0;
+	
 	SetRigidField(false);
 	Zero();
 	flags = setFlags;
@@ -49,9 +56,10 @@ MatVelocityField::~MatVelocityField()
 void MatVelocityField::Zero(void)
 {	mass=0.;
 	ZeroVector(&pk);
-	if(!IsRigidField())
+	if(!IsFixedRigidField())
     {   // rigid fields are tracking contact force on ftot
         // it is cummulative and therefore not zeroed here
+		// but RigidBlock fields do clear it
 		ZeroVector(&ftot);
 	}
 	ZeroVector(&vk);
@@ -59,7 +67,7 @@ void MatVelocityField::Zero(void)
 	if(volumeGrad!=NULL) ZeroVector(volumeGrad);
 	numberPoints=0;
 	volume=0.;
-	ZeroVector(&xpic[PK_COPY]);
+	ZeroVector(&xpic[pkCopy]);
 }
 
 #pragma mark METHODS
@@ -70,8 +78,6 @@ void MatVelocityField::Zero(void)
 void MatVelocityField::AddMomentumTask1(Vector *addPk,Vector *vel,int numPts)
 {	AddVector(&pk,addPk);
 	numberPoints += numPts;
-	// VEL1 : vel not needed as not tracked on tracked on single particle node
-	//if(numberPoints==1) vk=*vel;
 }
 
 // copy mass and momentum from ghost to real node
@@ -82,11 +88,6 @@ void MatVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld,int matfld)
 	
 	// momentum
 	real->AddMomentumTask1((short)vfld,matfld,1.,&pk,numberPoints);
-	// VEL1: no longer need special case for single particlenode
-	//if(numberPoints==1)
-	//	real->AddMomentumTask1((short)vfld,matfld,mass,&vk,1);
-	//else
-	//	real->AddMomentumTask1((short)vfld,matfld,1.,&pk,numberPoints);
 	
 	// if cracks and/or multimaterial mode
 	if(firstCrack!=NULL || fmobj->multiMaterialMode)
@@ -117,12 +118,7 @@ void MatVelocityField::CopyMassAndMomentumLast(NodalPoint *real,int vfld,int mat
 	
 	// momentum
 	real->AddMomentumTask6((short)vfld,matfld,1.,&pk);
-	// VEL1 no longer tracking single particle node velocity
-	//if(numberPoints==1)
-	//	real->AddMomentumTask6((short)vfld,matfld,mass,&vk);
-	//else
-	//	real->AddMomentumTask6((short)vfld,matfld,1.,&pk);
-    
+	
 	// if cracks and multimaterial mode
 	if(firstCrack!=NULL || fmobj->multiMaterialMode)
 	{	real->AddDisplacement((short)vfld,matfld,1.,&disp);
@@ -148,18 +144,21 @@ void MatVelocityField::CopyGridForces(NodalPoint *real,int vfld,int matfld)
 void MatVelocityField::RestoreMomenta(void)
 {
 	// paste the extrapolated momenta back and zero storage location
-	pk = xpic[PK_COPY];
+	pk = xpic[pkCopy];
 }
 
 // in response to contact, change the momentum
 // for a single point, calculate the velocity
 // if postUpdate is true, then adjust ftot as well to keep in sync with momentum change
 // Momentum is g-mm/sec
-void MatVelocityField::ChangeMatMomentum(Vector *delP,bool postUpdate,double deltime)
+void MatVelocityField::ChangeMatMomentum(Vector *delP,int callType,double deltime)
 {	AddVector(&pk,delP);
-	// VEL1 change velocity too is a single particle node
-	//if(numberPoints==1) CopyScaleVector(&vk,&pk,1./mass);
-	if(postUpdate) AddScaledVector(&ftot, delP, 1./deltime);
+	if(callType==UPDATE_MOMENTUM_CALL)
+	{	AddScaledVector(&ftot, delP, 1./deltime);
+	}
+	else if(callType==MASS_MOMENTUM_CALL)
+	{	xpic[pkCopy] = pk;
+	}
 }
 
 // in response to contact, and only for rigid materials, add contact force to ftot
@@ -176,10 +175,10 @@ void MatVelocityField::AddContactForce(Vector *delP)
 // Velocity is mm/sec
 // Note: do not call for rigid fields in multimaterial mode
 void MatVelocityField::CalcVelocityForStrainUpdate(void)
-{	// only 1 point or rigid contact material is stored already, 0 will have zero velocity
-	// VEL1 no calc is single particle node
-	//if(numberPoints<=1 || mass==0.) return;
+{	// exit if nothing there
 	if(numberPoints==0 || mass==0.) return;
+	
+	// get velocity
 	CopyScaleVector(&vk,&pk,1./mass);
 }
 
@@ -214,9 +213,13 @@ void MatVelocityField::UpdateMomentum(double timestep)
 void MatVelocityField::IncrementNodalVelAcc(double fi,GridToParticleExtrap *gp) const
 {
     double mnode = fi/mass;					// Ni/mass
+	
+	// Summing S v+
 	gp->vgpnp1.x += pk.x*mnode;				// velocity += p/mass
 	gp->vgpnp1.y += pk.y*mnode;
 	gp->vgpnp1.z += pk.z*mnode;
+	
+	// Summing S a
 	gp->acc->x += ftot.x*mnode;				// acceleration += f/mass
 	gp->acc->y += ftot.y*mnode;
 	gp->acc->z += ftot.z*mnode;
@@ -237,25 +240,24 @@ void MatVelocityField::AddContactVolume(double vol) { volume += vol; }
 void MatVelocityField::SetContactVolume(double vol) { volume = vol; }
 double MatVelocityField::GetContactVolume(void) const { return volume; }
 
-// velocity
-// VEL1 no longer set
-void MatVelocityField::SetVelocity(Vector *vel) { vk = *vel; }
+// Get velocity
 Vector MatVelocityField::GetVelocity(void) { return vk; }
 
-// moment and velocity zero for direction of velocity
-// Let pk = (pk.norm) norm + (pk.tang) tang (or same for vk)
+// moment zero for direction of velocity
+// Let pk = (pk.norm) norm + (pk.tang) tang
 // Here we want to subtract component in norm direction using pk - (pk.norm) norm
-void MatVelocityField::SetMomentVelocityDirection(Vector *norm)
+void MatVelocityField::SetMomentVelocityDirection(Vector *norm,int passType)
 {	double dotn = DotVectors(&pk, norm);
 	AddScaledVector(&pk, norm, -dotn);
-	dotn = DotVectors(&vk, norm);
-	AddScaledVector(&vk, norm, -dotn);
+	if(passType==UPDATE_MOMENTUM_CALL)
+		AddScaledVector(&ftot,norm,-dotn/timestep);
 }
 
-// add moment and velocity from velocity for one component only
-void MatVelocityField::AddMomentVelocityDirection(Vector *norm,double vel)
+// add moment for one component only
+void MatVelocityField::AddMomentVelocityDirection(Vector *norm,double vel,int passType)
 {	AddScaledVector(&pk, norm, mass*vel);
-	AddScaledVector(&vk, norm, vel);
+	if(passType==UPDATE_MOMENTUM_CALL)
+		AddScaledVector(&ftot,norm,mass*vel/timestep);
 }
 
 // set symmetry plane momenta to zero
@@ -263,31 +265,28 @@ void MatVelocityField::AddMomentVelocityDirection(Vector *norm,double vel)
 void MatVelocityField::AdjustForSymmetryBC(int fixedDirection)
 {   if(fixedDirection&XSYMMETRYPLANE_DIRECTION)
     {   pk.x = 0.;
-        vk.x = 0.;
-		xpic[PK_COPY].x=0.;
+		xpic[pkCopy].x=0.;
     }
     if(fixedDirection&YSYMMETRYPLANE_DIRECTION)
     {   pk.y = 0.;
-        vk.y = 0.;
-		xpic[PK_COPY].y=0.;
+		xpic[pkCopy].y=0.;
     }
     if(fixedDirection&ZSYMMETRYPLANE_DIRECTION)
     {   pk.z = 0.;
-        vk.z = 0.;
-		xpic[PK_COPY].z=0.;
+		xpic[pkCopy].z=0.;
     }
 }
 
-// Set component of Ftot to -p/dt in velocity BC direction (used by boundary conditions)
-// Ftot = (Ftot.norm) norm + (Ftot.tang) tang, but now we want
-// Ftotnew = -(pk.norm)/deltime norm + (Ftot.tang) tang
-// Ftotnew = Ftot - ((Ftot.norm) + (pk.norm)/deltime) norm
-//
+// Start adjusting force for nodal velocity BC
+//      Ftot = (Ftot.norm) norm + (Ftot.tang) tang
+// But, now we want it to start with
+//      Ftotnew = -(pk.norm)/deltime norm + (Ftot.tang) tang
+//      Ftotnew = Ftot - ((Ftot.norm) + (pk.norm)/deltime) norm
 // Note that if have same norm on same node, the net result after first pass is
-//    Ftot1 = -(pk.norm)/deltime norm + (Ftot.tang) tang
-// Then on second pass, dotf = -(pk.norm)/deltime to give same result
-//    Ftot2 = (-(pk.norm)/deltime+(pk.norm)/deltime-(pk.norm)/deltime) norm + (Ftot.tang) tang
-//          = -(pk.norm)/deltime norm + (Ftot.tang) tang
+//      Ftot1 = -(pk.norm)/deltime norm + (Ftot.tang) tang
+// Then on second pass, change in force is:
+//		dotf = Ftot1.norm = -(pk.norm)/deltime
+//      -dotf-dotp/deltime = -(pk.norm)/deltime + (pk.norm)/deltime = 0
 // But might have physical issues if components of norm overlap on the same node such as
 //    x axis and  skew xy or xz on the same node
 void MatVelocityField::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
@@ -320,8 +319,23 @@ void MatVelocityField::SetRigidField(bool setting)
 		flags -= RIGID_FIELD_BIT;
 }
 
+// Rigid contact, but not rigid block
+bool MatVelocityField::IsFixedRigidField(void) const
+{	if(!(flags&RIGID_FIELD_BIT)) return false;
+	if(flags&RIGID_BLOCK_BIT) return false;
+	return true;
+}
+
+// rigid block field
+bool MatVelocityField::IsRigidBlockField(void) const { return (bool)(flags&RIGID_BLOCK_BIT); }
+
 // all flags
 int MatVelocityField::GetFlags() const { return flags; }
+
+// ignoring cracks
+bool MatVelocityField::IgnoresCracks(void) const
+{	return (flags&IGORE_CRACKS_BIT) != 0 ? true : false;
+}
 
 #pragma mark CLASS METHODS
 
@@ -338,3 +352,19 @@ bool MatVelocityField::ActiveRigidField(MatVelocityField *mvf)
 // return true if references field that is active and is not for rigid materials
 bool MatVelocityField::ActiveNonrigidField(MatVelocityField *mvf)
 { return mvf==NULL ? false : (mvf->numberPoints>0 && !mvf->IsRigidField()) ; }
+
+// return true if references nonrigid field in memory
+//    if non-rigid material is ignoring cracks, then only true for field [0]
+// In NairnMPM, all non rigid are source fields
+bool MatVelocityField::ActiveNonrigidSourceField(MatVelocityField *mvf,int fieldNum)
+{	return ActiveNonrigidField(mvf);
+}
+
+// return true if references field that is active, is not rigid, and matches requireCracks
+// (i.e., if requireCracks is true, this field must see cracks, otherwise any field is OK)
+// In NairnMPM, same as having any nonrigid particles
+bool MatVelocityField::ActiveNonrigidSeesCracksField(MatVelocityField *mvf,bool requireCracks)
+{	return ActiveNonrigidField(mvf);
+}
+
+

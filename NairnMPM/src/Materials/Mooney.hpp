@@ -25,8 +25,7 @@ class Mooney : public HyperElastic
     public:
  
         // constructors and destructors
-        Mooney();
-        Mooney(char *);
+        Mooney(char *,int);
         
         // initialize
         virtual char *InputMaterialProperty(char *,int &,double &);
@@ -35,7 +34,7 @@ class Mooney : public HyperElastic
 		// history data
 		virtual int SizeOfHistoryData(void) const;
 		virtual char *InitHistoryData(char *,MPMBase *);
-		virtual double GetHistory(int,char *) const;
+   		virtual int NumberOfHistoryDoubles(void) const;
  	
 		// const methods
 		virtual void PrintMechanicalProperties(void) const;
@@ -46,6 +45,8 @@ class Mooney : public HyperElastic
 		// accessors
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
         virtual Tensor GetStress(Tensor *,double,MPMBase *) const;
+		virtual void SetStress(Tensor *,MPMBase *) const;
+		virtual void IncrementThicknessStress(double,MPMBase *) const;
 		virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual double ShearWaveSpeed(bool,MPMBase *,int) const;
 		virtual const char *MaterialType(void) const;

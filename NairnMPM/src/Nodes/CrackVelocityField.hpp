@@ -13,6 +13,12 @@
 
 #define _CRACKVELOCITYFIELD_
 
+typedef struct {
+	int numParticles;
+	Vector cmVel;
+	Vector cmAcc;
+} CenterMassField;
+
 // when activated, extrapolated momenta in symmetry directions are set to zero
 // A development topic - difference seems small with slight preference to activate this option
 #define ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
@@ -28,16 +34,18 @@
 
 class MPMBase;
 class NodalPoint;
+class MaterialContactNode;
 
 class CrackVelocityField
 {
 	public:
 		// variables (changed in MPM time step)
 		short loc[2];				// crack location's
-		int crackNum[2];			// crack number's/crackNum[0] used for total particles when moving crack planes by ctr mass
-		Vector norm[2];				// crack normal's/norm[0] used for velocity when moving crack planes by ctr mass
+		int crackNum[2];			// crack numbers
+		Vector norm[2];				// crack normals
 		DispField *df;				// For J and K calculations
-		
+		CenterMassField *cm;		// center of mass data when moving crack planes by ctr mass
+
 		// constants (not changed in MPM time step)
 	
 		// constructors and destructors
@@ -55,7 +63,7 @@ class CrackVelocityField
 		virtual void AddMomentumTask1(int,Vector *,Vector *,int);
 		virtual void AddMass(int,double);
 		virtual void AddMassTask1(int,double,int);
-		virtual double GetTotalMassAndCount(void) = 0;
+		virtual double GetTotalMassAndCount(bool &) = 0;
 		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
 		virtual void CopyVolumeGradient(int,Vector *);
 		virtual void CopyMassAndMomentum(NodalPoint *);
@@ -65,7 +73,7 @@ class CrackVelocityField
 		void AddRigidVelocityAndFlags(Vector *,double,int);
 		int ReadAndZeroRigidVelocity(Vector *);
 	
-		void AddFtotTask3(int,Vector *);
+		virtual void AddFtotTask3(int,Vector *);
 		virtual void CopyGridForces(NodalPoint *);
 		virtual void AddFtotSpreadTask3(Vector *) = 0;
 		virtual void AddGravityAndBodyForceTask3(Vector *) = 0;
@@ -76,35 +84,34 @@ class CrackVelocityField
 	
 		void CreateStrainField(void);
 		void DeleteStrainField(void);
-		
-		short IncrementDelvTask8(double,Vector *,double *);
-        bool CollectMomentaTask8(Vector *,double *) const;
-		void SetCMVelocityTask8(Vector *,int);
-		bool GetCMVelocityTask8(Vector *) const;
+
+		short IncrementDelvTask8(double,Vector *,Vector *,double *);
+		void SetCMVelocityTask8(Vector *,int,Vector *);
+		bool GetCMVelocityTask8(Vector *,Vector *) const;
+		bool CollectMomentaTask8(Vector *,double *,Vector *) const;
 	
 		void AddNormals(Vector *,int);
 		void AddDisplacement(int,double,Vector *);
 		void AddVolume(int,double);
 	
 		// methods
-		virtual void MaterialContactOnCVF(NodalPoint *,double,int);
+		virtual void MaterialContactOnCVF(MaterialContactNode *,double,int);
 		virtual bool HasVolumeGradient(int) const;
 		virtual void GetVolumeGradient(int,const NodalPoint *,Vector *,double) const;
 		virtual void CalcVelocityForStrainUpdate(void) = 0;
         virtual void AdjustForSymmetry(NodalPoint *,Vector *,bool) const;
 	
 		// boundary conditions
-        virtual void SetMomVel(Vector *) = 0;
-        virtual void AddMomVel(Vector *,double) = 0;
-		virtual void ReflectMomVel(Vector *,CrackVelocityField *,double) = 0;
+        virtual void SetMomVel(Vector *,int) = 0;
+        virtual void AddMomVel(Vector *,double,int) = 0;
+		virtual void ReflectMomVel(Vector *,CrackVelocityField *,double,double,int) = 0;
         virtual void SetFtotDirection(Vector *,double,Vector *) = 0;
         virtual void AddFtotDirection(Vector *,double,double,Vector *) = 0;
-		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,double,Vector *) = 0;
+		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,double,double,Vector *) = 0;
 	
 		// accessors
 		short location(int);
 		int crackNumber(int);
-		bool crackAndLocation(int,int,int);
 		int OppositeCrackTo(int,int,int *);
 		void SetLocationAndCrack(short,int,int);
 		MatVelocityField **GetMaterialVelocityFields(void);
@@ -113,10 +120,10 @@ class CrackVelocityField
 		virtual void AddKineticEnergyAndMass(double &,double &) = 0;
 		virtual double GetVolumeNonrigid(bool) const = 0;
 		virtual double GetVolumeTotal(NodalPoint *) const = 0;
-		virtual Vector GetCMatMomentum(bool &,double *) const = 0;
+		virtual Vector GetCMatMomentum(bool &,double *,Vector *) const = 0;
 		virtual Vector GetCMDisplacement(NodalPoint *,bool) const = 0;
 		virtual Vector GetCMatFtot(void) = 0;
-		virtual void ChangeCrackMomentum(Vector *,bool,double) = 0;
+		virtual void ChangeCrackMomentum(Vector *,int,double) = 0;
 		virtual int CopyFieldMomenta(Vector *,int) = 0;
 #ifdef ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
 		virtual void AdjustForSymmetryBC(NodalPoint *) = 0;
@@ -124,11 +131,14 @@ class CrackVelocityField
 		virtual int PasteFieldMomenta(Vector *,int) = 0;
 		Vector GetVelocity(int);
 		virtual int GetNumberPoints(void);
+		virtual int GetNumberMaterials(void);
 		virtual void SetNumberPoints(int);
 		virtual bool HasPointsNonrigid(void) const;
 		virtual void Describe(void) const;
 		virtual void SumAndClearRigidContactForces(Vector *,bool,double,Vector *);
 		virtual int GetFieldNum(void) const;
+		virtual int HasPointsThatSeeCracks(void);
+		virtual int GetNumberNonrigidMaterials(void);
 	
 		// class methods
 		static bool ActiveField(CrackVelocityField *);

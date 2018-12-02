@@ -31,6 +31,8 @@
 // Debugging
 //#define CONTOUR_PARTS
 //#define PRINT_CROSS_STATUS
+//#define JTERM_SUMMARY
+#define JDEBUG_STEP 100
 
 // to do axisymmetric J by Broberg method (any other number used Bergkvist and Huong method)
 #define AXISYM_BROBERG_J 1
@@ -58,73 +60,87 @@ class CrackHeader : public LinkedObject
 		
         // constructors and destructors
         CrackHeader();
-        ~CrackHeader();
-		void PreliminaryCrackCalcs(double);
-        
+		virtual ~CrackHeader();
+	
+		// crack setup
+		bool addSegment(CrackSegment *,bool);
+		bool addSegmentTip(CrackSegment *, int);
+		virtual void PreliminaryCrackCalcs(double);
+	
+		// crack hierarchy
+		virtual bool CreateHierarchy(void);
+		virtual void MoveHierarchy(void);
+		void ExtendHierarchy(CrackSegment *);
+	
         // methods
-        short add(CrackSegment *);
-        short add(CrackSegment *, int);
         void Archive(ofstream &);
         short MoveCrack(void);
         short MoveCrack(short);
 		void UpdateCrackTractions(void);
-        double Length(void);
-        int NumberOfSegments(void);
 		void CrackTipHeating(void);
+		void AddTractionForce(void);
+
+		// crack crossing
+		virtual short CrackCross(Vector *,Vector *,Vector *,int) const;
+        short CrackCrossLeaf(CrackLeaf *,Vector *,Vector *,Vector *,short) const;
+        short CrackCrossOneSegment(CrackSegment *,Vector *,Vector *,Vector *,short) const;
+		short CrackCrossLeafOnce(CrackLeaf *,Vector *,Vector *,CrackSegment **) const;
+
+		// Methods added for 3D
+		virtual void Update_NodeList_Edges_Normal();
+	
+        // calculate J-integral (YJG)
+        virtual void JIntegral(void);      	  // J-Integral calculation
+        void PrintContour(ContourPoint *,ContourPoint *,Vector &);
+		void GetCOD(CrackSegment *,Vector &,bool);
+		void CrackTipAndDirection(int,CrackSegment **,Vector &);
+		void InterpolatePosition(int,CrackSegment **,Vector &,bool);
+	
+		// J countour crossing in 2D
+		CrackSegment *ContourCrossCrack(ContourPoint *,Vector *) const;
+		CrackSegment *ContourCrossLeaf(CrackLeaf *,double,double,double,double,Vector *,int) const;
+		bool SegmentsCross(CrackSegment *,double,double,double,double,Vector *,int) const;
+	
+		// propagation
+        CrackSegment *Propagate(Vector &,int,int);
+		
+		// crossing while propagating in 2D
+		double AdjustGrowForCrossing(Vector *,CrackSegment *,double,Vector *);
+		short CrackCrossOnce(double,double,double,double,CrackSegment **) const;
+	
+		// Accessors
+		double Length(void) const;
+		int NumberOfSegments(void) const;
+		int NumberOfFacets(void) const;
+		void SetNumber(int);
+		int GetNumber(void) const;
+		void SetThickness(double);
+		double GetThickness(void) const;
+		double *GetThicknessPtr(void);
+		virtual bool IsThreeD(void) const;
+		bool GetAllowAlternate(int) const;
+		void SetAllowAlternate(int,bool);
 		void SetFixedCrack(int);
 		void SetContactLawID(int);
 		void Output(void);
-		void Describe(void);
-
-        bool CreateHierarchy(void);
-        void MoveHierarchy(void);
-        void ExtendHierarchy(CrackSegment *);
-        short CrackCross(double,double,double,double,Vector *) const;
-        short CrackCrossLeaf(CrackLeaf *,double,double,double,double,Vector *,short) const;
-        short CrackCrossOneSegment(CrackSegment *,double,double,double,double,Vector *,short) const;
-        CrackSegment *ContourCrossCrack(ContourPoint *,Vector *) const;
-        CrackSegment *ContourCrossLeaf(CrackLeaf *,double,double,double,double,Vector *,int) const;
-        bool SegmentsCross(CrackSegment *,double,double,double,double,Vector *,int) const;
-		double AdjustGrowForCrossing(Vector *,CrackSegment *,double,Vector *);
-		short CrackCrossOnce(double,double,double,double,CrackSegment **) const;
-		short CrackCrossLeafOnce(CrackLeaf *,double,double,double,double,CrackSegment **) const;
-    
-        // These two are not used, but left here for testing of hierarchical cracks
-        short FlatCrackCrossTest(double,double,double,double,Vector *);
-        void CFFlatCrossing(double,double,double,double,Vector *,short *,int,int);
-    
-		void SetNumber(int);
-		int GetNumber(void);
-		void SetThickness(double);
-		double GetThickness(void);
-		double *GetThicknessPtr(void);
-    
-        // calculate J-integral (YJG)
-        void JIntegral(void);      	  // J-Integral calculation
-        void PrintContour(ContourPoint *,ContourPoint *,Vector &);
-		CrackSegment *GetCrackTip(int);
-		CrackSegment *GetAdjToCrackTip(int);
-		int GetWhichTip(CrackSegment *);
-		int CriterionNeeds(void);
-		void GetCOD(CrackSegment *,Vector &,bool);
-		void CrackTipAndDirection(int,CrackSegment **,Vector &);
-		void AddTractionForce(void);
-		bool GetHasTractionLaws(void);
-		void GetInitialDirection(CrackSegment *,Vector &);
-		void InterpolatePosition(int,CrackSegment **,Vector &,bool);
-		bool GetAllowAlternate(int);
-		void SetAllowAlternate(int,bool);
-       
-        // propagation
-        CrackSegment *Propagate(Vector &,int,int);
-		
+		int CriterionNeeds(void) const;
+		virtual void Describe(void) const;
+		bool GetHasTractionLaws(void) const;
+		void GetInitialDirection(CrackSegment *,Vector &) const;
+		int GetWhichTip(CrackSegment *) const;
+		CrackSegment *GetCrackTip(int) const;
+		CrackSegment *GetAdjToCrackTip(int) const;
+	
 		// class methods
 		static void SetCodLocation(double);
-        static double Triangle(double,double,double,double,double,double);
-        static bool LineIsInExtents(double,double,double,double,double *,double *);
+		static double Triangle(double,double,double,double,double,double);
+        static double Triangle(Vector *,Vector *,Vector *);
+		static bool LineIsInExtents(double,double,double,double,double *,double *);
+		static bool LineIsInExtents(Vector *,Vector *,double *,double *);
 
-    private:
+    protected:
         int numberSegments;
+		int numberFacets;						// only used for 3D cracks, otherwise 0
 		int fixedCrack,number,customContactLawID;
 		bool hasTractionLaws;
 		Vector initialDirection[2];

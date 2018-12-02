@@ -25,6 +25,7 @@
 #include "Global_Quantities/BodyForce.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -40,10 +41,8 @@ void PostForcesTask::Execute(void)
 {
 	// restore nodal momenta
 #pragma omp parallel for
-	for(int i=1;i<=nnodes;i++)
-	{	NodalPoint *ndptr = nd[i];
-		ndptr->RestoreMomenta();
-	}
+	for(int i=1;i<=*nda;i++)
+		nd[nda[i]]->RestoreMomenta();
 	
 	// Add traction BCs on particles
 	MatPtTractionBC::SetParticleSurfaceTractions(mtime);
@@ -59,25 +58,39 @@ void PostForcesTask::Execute(void)
 	
 	// Add crack tip heating adds to conduction force
 	if(conduction) conduction->AddCrackTipHeating();
-	
+
 	// Add gravity and body forces (if any are present)
 	// Note: If ever need to implement body force that depend on particle state (stress, strain, etc.)
 	//			then move the body force addition into GridForcesTask loop where gravity is commented out
-    // When used to keep Fext, this section would all add fint and fext to get ftot (and it was always needed)
+	// When used to keep Fext, this section would also add fint and fext to get ftot (and it was always needed)
 	Vector gridBodyForce;
 	if(bodyFrc.gravity || bodyFrc.hasGridBodyForce)
-	{   for(int i=1;i<=nnodes;i++)
-		{	NodalPoint *ndptr = nd[i];
-			bodyFrc.GetGridBodyForce(&gridBodyForce,ndptr,mtime);
-			ndptr->AddGravityAndBodyForceTask3(&gridBodyForce);
+	{	CommonException *bfErr = NULL;
+
+#pragma omp parallel for
+		for(int i=1;i<=*nda;i++)
+		{	NodalPoint *ndptr = nd[nda[i]];
+			try
+			{	Vector fpos = MakeVector(ndptr->x,ndptr->y,ndptr->z);
+				bodyFrc.GetGridBodyForce(&gridBodyForce,&fpos,mtime);
+				ndptr->AddGravityAndBodyForceTask3(&gridBodyForce);
+			}
+			catch(CommonException &err)
+			{   if(bfErr==NULL)
+				{
+#pragma omp critical (error)
+					bfErr = new CommonException(err);
+				}
+			}
 		}
+			
+		// throw now - only known error is problem with function for body force setting
+		if(bfErr!=NULL) throw *bfErr;
 	}
 
     // Impose BCs on ftot to get correct grid BCs for velocity
     NodalVelBC::ConsistentGridForces();
 	
-	// Do similar to transport property BCs (not parallel because small and possible use of function/global variables)
-	TransportTask *nextTransport=transportTasks;
-	while(nextTransport!=NULL)
-		nextTransport=nextTransport->SetTransportForceBCs(timestep);
+	// Transport force BCs
+	TransportTask::TransportForceBCs(timestep);
 }

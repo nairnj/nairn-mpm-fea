@@ -32,8 +32,8 @@ class NodalVelBC : public BoundaryCondition
         virtual BoundaryCondition *PrintBC(ostream &);
 				
 		// specific methods
-		NodalVelBC *ZeroVelBC(double);
-		NodalVelBC *AddVelBC(double);
+		NodalVelBC *ZeroVelBC(double,int);
+		NodalVelBC *AddVelBC(double,int);
 		NodalVelBC *SetMirroredVelBC(double);
 		NodalVelBC *InitFtotDirection(double);
 		NodalVelBC *SuperposeFtotDirection(double);
@@ -45,7 +45,7 @@ class NodalVelBC : public BoundaryCondition
 		void SetMirrorSpacing(int);
 	
 		// class methods
-		static void GridMomentumConditions(void);
+		static void GridMomentumConditions(int);
 		static void ConsistentGridForces(void);
 		static Vector TotalReactionForce(int);
 	

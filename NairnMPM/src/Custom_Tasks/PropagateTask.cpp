@@ -133,8 +133,8 @@ CustomTask *PropagateTask::StepCalculation(void)
                     if(p*cellsPerPropagationStep>.7) numSegs= (int)(2*(p*cellsPerPropagationStep+.25));
                     CrackSegment *newCrkTip = NULL;
                     for(iseg=1;iseg<=numSegs;iseg++)
-                    {   growTo.x=crkTip->x+(double)iseg*grow.x/(double)numSegs;
-                        growTo.y=crkTip->y+(double)iseg*grow.y/(double)numSegs;
+                    {   growTo.x=crkTip->cp.x+(double)iseg*grow.x/(double)numSegs;
+                        growTo.y=crkTip->cp.y+(double)iseg*grow.y/(double)numSegs;
                         newCrkTip=nextCrack->Propagate(growTo,(int)i,theMaterials[inMat-1]->tractionMat[0]);
                     }
                     crkTip = newCrkTip;

@@ -13,10 +13,6 @@
 
 #define _MPM_BASE_
 
-// to activate simplifed heat energy and entropy calculations
-// When permanent, delete dT from IncrementHeatEnergy() arguments
-#define NEW_HEAT_METHOD
-
 #define DEFORMED_VOLUME 0
 #define DEFORMED_AREA 1
 #define DEFORMED_AREA_FOR_GRADIENT 2
@@ -25,10 +21,6 @@
 #define GRAD_SECOND 3
 #define GRAD_THIRD 6
 enum { gGRADx=0,gGRADy,gGRADz };
-
-// define to load nodes and node IDs in initialization rather than on the fly each
-// time they are needed (to remove also remove GIMPNodes in DataTypes)
-//#define LOAD_GIMP_INFO
 
 class MaterialBase;
 
@@ -42,9 +34,15 @@ class MPMBase : public LinkedObject
 		// for conduction, pTemp have 3, 6, or 9 depending on gradient needs
 		double pTemperature,pPreviousTemperature,*pTemp;
 	
+		// dT and dC for for particle residual strains
+		ResidualStrains dTrans;
+
 		// conc potential (0 to 1) (archived * concSaturation)
 		double pConcentration,pPreviousConcentration,*pDiffusion;
 	
+		// for generalized plane stress or strain
+		double oopIncrement;
+
 		// constants (not changed in MPM time step)
         double mp;
 		Vector origpos;
@@ -58,6 +56,7 @@ class MPMBase : public LinkedObject
 		bool AllocateGIMPStructures(int,bool);
     
         // virtual methods
+		virtual ResidualStrains ScaledResidualStrains(int);
         virtual double thickness(void) = 0;
         virtual void SetOrigin(Vector *) = 0;
         virtual void SetPosition(Vector *) = 0;
@@ -65,8 +64,8 @@ class MPMBase : public LinkedObject
 		virtual void UpdateStrain(double,int,int,void *,int) = 0;
 		virtual void GetFintPlusFext(Vector *,double,double,double,double) = 0;
 		virtual void MovePosition(double,Vector *,Vector *,double) = 0;
-		virtual void MoveVelocity(double,Vector *) = 0;
 		virtual void MovePosition(double) = 0;
+		virtual void MoveVelocity(double) = 0;
 		virtual void SetVelocitySpeed(double) = 0;
 		virtual void AddTemperatureGradient(int);
 		virtual void AddTemperatureGradient(int,Vector *) = 0;
@@ -84,9 +83,10 @@ class MPMBase : public LinkedObject
         virtual double GetRelativeVolume(void) = 0;
 		virtual double GetVolume(int) = 0;
         virtual void GetSemiSideVectors(Vector *,Vector *,Vector *) const = 0;
+		virtual double GetDeformedRadius(Vector *) const = 0;
 		virtual void GetUndeformedSemiSides(double *,double *,double *) const = 0;
 		virtual void GetCPDINodesAndWeights(int) = 0;
-		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *) = 0;
+		virtual Vector GetSurfaceInfo(int,int,int *,Vector *,Vector *,int *,double *) = 0;
 		virtual void SetDimensionlessSize(Vector *);
 		virtual void SetDimensionlessByPts(int);
         virtual void GetDimensionlessSize(Vector &) const;
@@ -151,20 +151,12 @@ class MPMBase : public LinkedObject
 		Vector *GetPFext(void);
 		Vector *GetNcpos(void);
 		CPDIDomain **GetCPDIInfo(void);
-#ifdef LOAD_GIMP_INFO
-		GIMPNodes *GetGIMPInfo(void);
-#endif
 		Vector *GetAcc(void);
 		Tensor *GetVelGrad(void);
 		double GetPlastEnergy(void);
 		void AddPlastEnergy(double);
-#ifdef NEW_HEAT_METHOD
     	double GetClear_dTad(void);
-#else
-    	double GetClearPrevious_dTad(void);
-    	double GetBufferClear_dTad(void);
-#endif
-   		void Add_dTad(double);
+    	void Add_dTad(double);
 		double GetWorkEnergy(void);
 		void SetWorkEnergy(double);
 		void AddWorkEnergy(double);
@@ -178,12 +170,15 @@ class MPMBase : public LinkedObject
         void AddHeatEnergy(double);
         double GetEntropy(void);
         void SetEntropy(double);
-        void AddEntropy(double);
+        void AddEntropy(double,double);
         double GetInternalEnergy(void);
         void IncrementPressure(double);
         void SetPressure(double);
         double GetPressure(void);
 		Tensor ReadStressTensor(void);
+		void StoreStressTensor(Tensor *);
+		void StoreThicknessStressIncrement(double);
+		void StoreThicknessStrainIncrement(double);
 		Tensor *GetStressTensor(void);
 		Tensor *GetStrainTensor(void);
  		Tensor *GetAltStrainTensor(void);
@@ -195,7 +190,8 @@ class MPMBase : public LinkedObject
         void Describe(void);
 		double GetRho(void);
 		double GetConcSaturation(void);
-    
+		double GetDiffusionCT(void);
+	
 	protected:
 		// variables (changed in MPM time step)
 		Vector mpm_lp;				// Dimensionless size relative to current element (radius in -1 to 1 natural coordinates)
@@ -211,9 +207,7 @@ class MPMBase : public LinkedObject
 		Tensor eplast;				// plastic strain tensor (init 0)
 		TensorAntisym wrot;			// rotation strain tensor (init 0)
 		double plastEnergy;			// total plastic energy
-#ifndef NEW_HEAT_METHOD
-    	double prev_dTad;			// adiabatic temperature rise in previous step
-#endif
+		double prev_dTad;			// adiabatic temperature rise in previous step
     	double buffer_dTad;			// adiabatic temperature rise current step
 		double workEnergy;			// total work energy  sigma.de
         double heatEnergy;          // total heat flow on the particle
@@ -226,7 +220,7 @@ class MPMBase : public LinkedObject
  		double anglez0;				// initial cw x rotation angle (2D or 3D) (stored in radians)
 		double angley0;				// initial cw y rotation (3D)
 		double anglex0;				// initial cw x rotation (3D)
-    	
+	
     private:
 		// variables (changed in MPM time step)
 		int inElem;
@@ -237,9 +231,9 @@ class MPMBase : public LinkedObject
 };
 
 // Lists of material points from mpm[0] to mpm[nmpms-1]
-// ordered such that nonrigid are from mpm[0] to mpm[nmpmsNR-1]
-//      rigid contact mpm[nmpmsNR] to  mpm[nmpmsRC-1] and rigid BC mpm[nmpmsRC] to  mpm[nmpms-1]
+// ordered such that nonrigid are from mpm[0] to mpm[nmpmsNR-1], rigid block [mpm[nmpmsNR] to mpm[nmpmsRB-1],
+//      rigid contact mpm[nmpmsRB] to  mpm[nmpmsRC-1] and rigid BC mpm[nmpmsRC] to  mpm[nmpms-1]
 extern MPMBase **mpm;
-extern int nmpms,nmpmsNR,nmpmsRC;
+extern int nmpmsNR,nmpmsRB,nmpmsRC,nmpms;
 
 #endif

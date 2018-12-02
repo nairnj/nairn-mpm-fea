@@ -90,16 +90,26 @@ void MoveCracksTask::Execute(void)
 				}
 			}
 		}
+	}
 
-#pragma omp single
-		{	// if moving crack plane in ctr mass velocity field, get those velocities now
-			if(!contact.GetMoveOnlySurfaces()) NodalPoint::GetGridCMVelocitiesTask8();
-		}
+	// throw any errors
+	if(mcErr!=NULL) throw *mcErr;
 	
-		// Move crack plane by one of two methods. When moving only surface, the plane will move to average
-		// of the two surfaces found above, otherwise moves in the just-calculated center or mass field
-		// After moving, crack plane is checked for crossing, if that option is activated
-		// Also calculate tractions
+	// get center of mass if moving crack planes that way
+	if(!contact.GetMoveOnlySurfaces())
+	{
+#pragma omp parallel for
+		for(int i=1;i<=nnodes;i++)
+		{	nd[i]->CalcCMVelocityTask8();
+		}
+	}
+
+	// Move crack plane by one of two methods. When moving only surface, the plane will move to average
+	// of the two surfaces found above, otherwise moves in the just-calculated center or mass field
+	// After moving, crack plane is checked for crossing, if that option is activated
+	// Also calculate tractions
+#pragma omp parallel if(numCracksPerProc>1)
+	{
 #pragma omp for
 		for(int cn=0;cn<numberOfCracks;cn++)
 		{   try

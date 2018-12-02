@@ -38,7 +38,7 @@ void FEAReadHandler::TranslateBMPFiles(void)
 	
 	// read image file
 	char *bmpFullPath=archiver->ExpandOutputPath(bmpFileName);
-	rows = (unsigned char **)ReadXYFile(bmpFullPath,info,BYTE_DATA);
+	rows = (unsigned char **)ReadXYFile(bmpFullPath,info,BYTE_DATA,true);
 	delete [] bmpFullPath;
 	
 	// angle file name
@@ -46,7 +46,7 @@ void FEAReadHandler::TranslateBMPFiles(void)
 	if(bmpAngleFileName[0][0]>0)
 	{	setAngles=true;
 		char *bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[0]);
-		angleRows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA);
+		angleRows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA,true);
 		if(info.height!=angleInfo.height || info.width!=angleInfo.width)
 			throw SAXException(XYFileError("The image file and angle file sizes do not match.",bmpFileName));
 		delete [] bmpFullAnglePath;

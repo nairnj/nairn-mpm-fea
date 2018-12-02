@@ -8,19 +8,42 @@
 
 #include "stdafx.h"
 #include "Nodes/NodalPoint.hpp"
+#ifdef MPM_CODE
+	#include "NairnMPM_Class/NairnMPM.hpp"
+#else
+	#include "NairnFEA_Class/NairnFEA.hpp"
+#endif
 
-// Nodal Point global
+// Nodal Point globals
 int nnodes=0;			// number of nodes
 NodalPoint **nd;		// list of nodes
+int *nda;				// list of active nodes (number in nda[0] = *nda
 
 #pragma mark NodalPoint: Constructors and Destructor
 
-NodalPoint::NodalPoint(int nodeNum)
+// 2D nodal point
+NodalPoint::NodalPoint(int nodeNum,double xPt,double yPt)
 {
+	CreateNodalPoint(nodeNum,xPt,yPt,0.);
+}
+
+// 3D nodal point
+NodalPoint::NodalPoint(int nodeNum,double xPt,double yPt,double zPt)
+{
+	CreateNodalPoint(nodeNum,xPt,yPt,zPt);
+}
+
+void NodalPoint::CreateNodalPoint(int nodeNum,double xPt,double yPt,double zPt)
+{
+	x=xPt;
+	y=yPt;
+	z=zPt;
+	
     num=nodeNum;
 #ifdef MPM_CODE 
 	fixedDirection=0;
 	cvf=NULL;
+	contactData=NULL;
 #endif
 }
 
@@ -50,4 +73,14 @@ NodalPoint::~NodalPoint()
 
 #endif
 
+// write node to output file
+void NodalPoint::PrintNodalPoint(ostream &os)
+{
+	char nline[200];
+	if(fmobj->IsThreeD())
+		sprintf(nline,"%5d %15.7e %15.7e %15.7e",num,x,y,z);
+	else
+		sprintf(nline,"%5d %15.7e %15.7e",num,x,y);
+	os << nline << endl;
+}
 

@@ -24,10 +24,13 @@ Organization
 <dd>This folder has items common to both MPM and FEA code
 
 <dl>
-<dt><code>nairn-mpm-fea/Projects</code></dt>
-<dd>This folder has XCode and VisualStudio project files for editing and compiling the code.</dd>
+<dt><code>/Projects</code></dt>
+<dd>This folder has XCode and Visual Studio project files for editing and compiling the code.</dd>
 
-<dt><code>nairn-mpm-fea/(others)</code></dt>
+<dt><code>/Programming Notes</code></dt>
+<dd>Development tasks and notes (in <code>OSParticulas</code> only).</dd>
+
+<dt><code>/(other folder)</code></dt>
 <dd>All other folders in <code>Common</code> have various common sections of code.</dd>
 </dl>
 
@@ -38,29 +41,34 @@ Organization
 <dd>This folder is the root folder for the NairnMPM source code
 
 <dl>
-<dt><code>nairn-mpm-fea/NairnMPM/src</code></dt>
+<dt><code>/src</code></dt>
 <dd>This folder has all MPM-specific source code in various subfolders</dd>
 
 
-<dt><code>nairn-mpm-fea/NairnMPM/build</code></dt>
+<dt><code>/build</code></dt>
 <dd>This folder has the <code>makefile</code> for compiling the code using a <code>make</code> command.</dd>
 
-<dt><code>nairn-mpm-fea/NairnMPM/input</code></dt>
+<dt><code>/input</code></dt>
 <dd>This folder has sample input files and the <code>NairnMPM.dtd</code> file. The compiled code gets installed here ready for running with the input files.
 
 <dl>
-<dt><code>nairn-mpm-fea/NairnMPM/input/Scripted_Input</code></dt>
+<dt><code>/Scripted_Input</code></dt>
 <dd>This folder has scripted input files that can be run using with <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> or <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a> applications.</dd>
 
-<dt><code>nairn-mpm-fea/NairnMPM/input/XML_Input</code></dt>
+<dt><code>/XML_Input</code></dt>
 <dd>This folder has XML input files that can be run from a command line. It is recommended that you rarely use such files and instead do all calculations using the scripting tools in <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> and <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a>.</dd>
 
+<dt><code>/Test-Suite</code></dt>
+<dd>A <code>RunTests</code> script for running many examples and comparing to previous code (in <code>OSParticulas</code> only).</dd>
+
+<dt><code>/MMSValidations</code></dt>
+<dd>Command files for using manufactured solutions to validate code development.</dd>
 </dl>
 
 </dd>
 
-<dt><code>nairn-mpm-fea/NairnMPM/tools</code></dt>
-<dd>This folder has source code for command line tools that can be used with NairnMPM such as for extracting data from archive files.</dd>
+<dt><code>/tools</code></dt>
+<dd>This folder has source code for command line tools that can be used with NairnMPM such as for extracting data from archive files or for comparing global results files.</dd>
 
 </dl>
 
@@ -70,22 +78,25 @@ Organization
 <dd>This folder is the root folder for the NairnFEA source code
 
 <dl>
-<dt><code>nairn-mpm-fea/NairnFEA/src</code></dt>
+<dt><code>/src</code></dt>
 <dd>This folder has all FEA-specific source code in various subfolders</dd>
 
 
-<dt><code>nairn-mpm-fea/NairnFEA/build</code></dt>
+<dt><code>/build</code></dt>
 <dd>This folder has the <code>makefile</code> for compiling the code using a <code>make</code> command.</dd>
 
-<dt><code>nairn-mpm-fea/NairnFEA/input</code></dt>
+<dt><code>/input</code></dt>
 <dd>This folder has sample input files and the <code>NairnFEA.dtd</code> file. The compiled code gets installed here ready for running with the input files.
 
 <dl>
-<dt><code>nairn-mpm-fea/NairnFEA/input/Scripted_Input</code></dt>
+<dt><code>/Scripted_Input</code></dt>
 <dd>This folder has scripted input files that can be run using with <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> or <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a> applications.</dd>
 
-<dt><code>nairn-mpm-fea/NairnFEA/input/XML_Input</code></dt>
+<dt><code>/XML_Input</code></dt>
 <dd>This folder has XML input files that can be run from a command line. It is recommended that you rarely use such files and instead do all calculations using the scripting tools in <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> and <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a>.</dd>
+
+<dt><code>/Test-Suite</code></dt>
+<dd>A <code>RunTests</code> script for running many examples and comparing to previous code (in <code>OSParticulas</code> only).</dd>
 
 </dl>
 </dd>
@@ -98,17 +109,17 @@ Organization
 <dd>This folder is the root folder for the platform-independent, Java-based visualization tool.
 
 <dl>
-<dt><code>nairn-mpm-fea/Visualization/src</code></dt>
+<dt><code>/src</code></dt>
 <dd>This folder has the Java source code for the visualization tool called NairnFEAMPMViz.</dd>
 
 
-<dt><code>nairn-mpm-fea/Visualization/build</code></dt>
+<dt><code>/build</code></dt>
 <dd>This folder has a <code>makejar</code> script that can compile the Java source code into a jar file. It also has files for creating a Windows shortcut with a provided icon.</dd>
 
-<dt><code>nairn-mpm-fea/Visualization/MatLab_VTK_Viz</code></dt>
+<dt><code>/MatLab_VTK_Viz</code></dt>
 <dd>Miscellaneous scripts for using MatLab to visualize results include some scripts to read VTK files.</dd>
 
-<dt><code>nairn-mpm-fea/Visualization/R_Tools</code></dt>
+<dt><code>/R_Tools</code></dt>
 <dd>Miscellaneous scripts for using R to visualize data.</dd>
 
 </dl>
@@ -116,7 +127,13 @@ Organization
 </dd>
 
 <dt><code>nairn-mpm-fea/Documentation</code></dt>
-<dd>This folder has all minimal documentation of the current version and links to tech note <code>pdf</code> files. Open the <code>index.html</code> file to view the documentation in any browser.</dd>
+<dd>This folder has all minimal documentation of the current version and links to tech note <code>pdf</code> files. Open the <code>index.html</code> file to view the documentation in any browser.
+
+<dl>
+<dt><code>/TechNotes</code></dt>
+<dd>This folder has a selection of tech notes as <code>pdf</code> files. In <code>OSParticulas</code>, this folder has LaTeX source files and image files for editing the notes.</dd>
+</dl
+</dd>
 
 </dl>
 

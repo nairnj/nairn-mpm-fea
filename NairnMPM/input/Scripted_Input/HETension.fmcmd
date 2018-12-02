@@ -18,10 +18,7 @@ EndHeader
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"
 #analysis$="Plane Strain MPM"
-Processors 2
-XMLData "Header"
-    <DevelFlag Number='3'>040101</DevelFlag>
-EndXMLData
+Processors 4
 
 ! Points per element
 #ppe=2
@@ -29,11 +26,11 @@ XMLData MPMHeader
     <DefGradTerms>2</DefGradTerms>
 EndXMLData
 
-! pick a method usually "lCPDI" or "uGIMP"
+! pick a method usually "lCPDI", "uGIMP", "B2SPLINE", or "B2GIMP"
 #method$="CPDI"
 
-! pick strain update method usually "SZS" or "USAVG"
-#update$="USAVG"
+! pick strain update method usually "USF" or "USAVG+/-"
+#update$="USAVG+"
 
 ! Supported materials:
 !     Elastic: "neomooney" (G2=0), "mooney" (G1=G2), "neohookean"
@@ -55,7 +52,7 @@ StressFreeTemp 294
 #aBase=60
 #yldstrain=2		! in percent
 
-! Chage for special case materials
+! Change for special case materials
 if #matID$="PMMA"
   #gamma0 = 0.85
   #C0=2180
@@ -77,7 +74,7 @@ endif
 #thick=1			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading$="rigid"	! Loading = "rigid", "force", "traction", "thermal", "contact", "grid"
+#loading$="rigid"	! Loading = "rigid", "traction", "contact", "force"
 
 ! Side BCs = "symmetry" to constrain y direction (and z direction if 3D), "no" for no contraint,
 ! "BC1" or "BC2" to use one or two layers of BCs instead of symmetry planes
@@ -88,7 +85,7 @@ endif
 
 ! test settings
 #gridStrain=50		! room in grid (ignored if #strain<0)
-#strain=40	        ! Maximum strain (%) (stress needed is estimated for force and tractions), or dT for thermal
+#strain=40	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
 #relRate=1		    ! Displacement rate as percent of wave speed of material
 #factor=0.4		    ! time step factor
 
@@ -110,12 +107,10 @@ Analysis #analysis$
 MPMMethod #update$,#method$
 PtsPerElement #ppe
 conduction "no","isothermal"
-!ExtrapolateRigid
 
 ! convert to contact
 if #loading$="contact"
   MultimaterialMode 0,enabled,"specify",180,0
-  !ImperfectInterfaceMM 0,1e15
 endif
 
 ! base line calculations
@@ -123,8 +118,8 @@ endif
 #G2=0
 #Kbulk=#Ebase/(3*(1-2*#nuBase))
 if #matID$="mooney"
-  !#G1=#G1/2
-  !#G2=#G1
+  #G1=#G1/2
+  #G2=#G1
 endif
 #G0=#G1+#G2
 
@@ -133,13 +128,6 @@ if #fixsides$!="symmetry"
   #stress=#Ebase*#strain/100
 else
   #stress=#Kbulk*#strain/100
-endif
-
-! estimate strain if thermal
-if #loading$="thermal"
-  #deltaT=#strain
-  #strain=#aBase*#deltaT/10000
-  #stress=0
 endif
 
 ! calculate time to reach peak state
@@ -487,10 +475,7 @@ else ifStr #loading$="force"
       if #hold+#unload>0
         Load x,function,(-#forcerate)&#tpart$
       else
-        !Load x,constant,-#stress*#width*#thick
         Load x,linear,-#forcerate
-        !Load x,sine,-#stress*#width*#thick,6*3.14159/#time
-        !Load x,cosine,-#stress*#width*#thick,6*3.14159/#time
       endif
     EndLoadRect
   endif
@@ -519,33 +504,6 @@ else ifStr #loading$="traction"
          !Traction x,4,cosine,-#stress,6*3.14159286/#time
        EndLoadRect
     endif
-  endif
-  
-else ifStr #loading$="thermal"
-  ThermalRamp #deltaT,#time
-  
-else ifStr #loading$="grid"
-  Comment "Displacement rate = "&(-#disprate)&" mm/sec"
-  if #hold+#unload>0
-    #tpart$="*(1-sign(t-"&#t1&")-sign(t-"&#t2&"))"
-  else
-    #tpart$=""
-  endif
-  if #analysis$="3D MPM"
-    MoveBox -4*#cell,0,0,#cell/10,#width,#thick
-      Velocity x,function,(-#disprate)&#tpart$
-    EndMoveBox
-  else
-    MoveLine -2*#cell,0,-2*#cell,#width,2.01*#cell
-      if #hold+#unload>0
-        Velocity x,function,(-#disprate)&#tpart$
-      else
-        Velocity x,constant,-#disprate
-        !Velocity x,linear,-2*#disprate/#time
-        !Velocity x,sine,-#disprate,6*3.14159286/#time
-        !Velocity x,cosine,-#disprate,6*3.14159286/#time
-      endif
-    EndMoveLine
   endif
   
 endif
@@ -622,19 +580,3 @@ if #isFixed$="yes"
     EndMoveLine
   endif
 endif
-
-! need to change BC to linear force, tractions, or rigid particles and constant velocity
-!CustomTask "ReverseLoad"
-!Parameter style,"reverse"
-!Parameter "quantity","sxx"
-!Parameter "material",#matID$
-!Parameter "hold",.5
-!Parameter "maxValue",3
-
-CustomTask VTKArchive
-Parameter strainenergy
-Parameter heatenergy
-Parameter plasticenergy
-
-CustomTask AdjustTimeStep
-Parameter verbose,1

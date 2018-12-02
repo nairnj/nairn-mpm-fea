@@ -44,7 +44,7 @@ void EightNodeIsoparam::ShapeFunction(Vector *xi,int getDeriv,
 {
 	double temp1,temp2,asr;
 	double jac[3][3],detjac;
-	register int i;
+	int i;
 	int ind1,ind2;
 	
 	for(i=0;i<4;i++)

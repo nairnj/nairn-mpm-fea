@@ -13,8 +13,11 @@
 
 #define _THERMALRAMPTASK_
 
+enum { RAMP_TEMP=0,RAMP_OOPSE,RAMP_FLUID };
+enum { RAMP_CONC=1,RAMP_PP,RAMP_SZZ,RAMP_EZZ };
+
 #include "Custom_Tasks/CustomTask.hpp"
-class ROperation;
+class Expression;
 class BMPLevel;
 
 class CustomThermalRamp : public CustomTask
@@ -43,8 +46,8 @@ class CustomThermalRamp : public CustomTask
 		double currentDeltaT;	// track Delta T to allow variable time steps
 		bool doRamp;			// flag to adjust temperature this time step
 		int sigmoidal;			// Use sigmoidal shape
-		ROperation *scaleFxn;
-		static double varTime,varXValue,varYValue,varZValue;
+		int property;			// RAMP_TEMP,RAMP_CONC, or RAMP_PP
+		Expression *scaleFxn;
 	
 		// for imaged ramp
 		char *bmpFile;

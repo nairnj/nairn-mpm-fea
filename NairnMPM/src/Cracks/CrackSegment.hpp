@@ -23,8 +23,8 @@ enum { STATIONARY=0, PROPAGATING, ARRESTING, ARRESTED };
 class CrackSegment
 {
     public:
-        double x,y,origx,origy;
-        double surfx[2],surfy[2];
+		Vector cp,surf[2],orig;			// crack plane, surface, and original position
+		Vector cpVel,surfVel[2];		// crack plane and surface velocities
         CrackSegment *nextSeg,*prevSeg;
         Vector Jint,sif,tract;
         int tipMatnum;					// crack tip material (not a traction law)
@@ -38,7 +38,7 @@ class CrackSegment
     
         // constructors
         CrackSegment();
-        CrackSegment(double,double,int,int);
+        CrackSegment(Vector *,int,int);
 	
 		// initialize
 		void FindInitialElement(void);
@@ -47,36 +47,35 @@ class CrackSegment
         void FillArchive(char *,int);
         int FindElement(void);
         int FindElement(short);
-        void MovePosition(double,double);
-        void MovePosition(void);
-		void MovePositionToMidpoint(void);
-        bool MoveSurfacePosition(short,double,double,bool);
+        virtual void MovePosition(void);
+		virtual void MovePositionToMidpoint(void);
+		void MovePosition(Vector *,Vector *,double,double);
+		bool MoveSurfacePosition(short,Vector *,Vector *,double,bool);
 		int CheckSurfaces(void);
 		bool MoveToPlane(int,double,double,bool,double);
 		bool CollapseSurfaces(void);
 		void StartCrackTipHeating(double,double);
 		double HeatRate(void);
-		double ForwardArea(double,double,int);
-		Vector SlightlyMovedIfNotMovedYet(int);
+		virtual Vector SlightlyMovedIfNotMovedYet(int);
 		int MatID(void);
 		void SetMatID(int);
 		void AddTractionForceSeg(CrackHeader *);
-		double AddTractionForceSegSide(CrackHeader *,int,double);
+		void AddTractionForceSegSide(CrackHeader *,int,double);
 		void FindCrackTipMaterial(int);
-		void UpdateTractions(CrackHeader *);
-		Vector GetTangential(double *) const;
+		virtual void UpdateTractions(CrackHeader *);
+		virtual double GetNormalAndTangent(CrackHeader *,Vector *,Vector *,double &,double &) const;
 		double TractionEnergy(Vector *,int,bool,CrackSegment **);
 		double SegmentTractionEnergy(bool);
-		Vector FTract(double);
+		virtual Vector FTract(double);
 		void SetHistoryData(char *p);
 		char *GetHistoryData(void);
         void CreateSegmentExtents(bool);
 		int planeElemID(void) const;
 		int surfaceElemID(int side) const;
 	
-	private:
+	protected:
 		Vector cFtract;				// traction law force
-		double dxPlane,dyPlane;
+		Vector dPlane;			// crack plane movement
 		bool hadAboveNodes;
 		bool planeMove;
 		int matnum;						// 1-based material ID for traction law

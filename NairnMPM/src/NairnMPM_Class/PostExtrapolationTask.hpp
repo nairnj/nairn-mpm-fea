@@ -25,6 +25,8 @@ class PostExtrapolationTask : public MPMTask
 		// required methods
 		virtual void Execute(void);
 	
+		// custom methods
+	
 	protected:
 };
 

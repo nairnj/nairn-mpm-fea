@@ -22,8 +22,7 @@ class WoodMaterial : public HillPlastic
 		// unique properties
 		
 		// constructors and destructors
-		WoodMaterial();
-		WoodMaterial(char *matName);
+		WoodMaterial(char *,int);
 		
 		// initialize
 		virtual char *InputMaterialProperty(char *,int &,double &);

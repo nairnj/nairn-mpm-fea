@@ -80,7 +80,7 @@ TransportField *NodalTempBC::GetTransportFieldPtr(NodalPoint *ndpt) const { retu
 /**********************************************************
 	Sum all reaction heat forces for all temperature BCs
 	If ID is not zero, only includes those with matching ID
-	Result is in nJ when in Legacy units
+	Result is in nJ/sec when in Legacy units
 */
 double NodalTempBC::TotalHeatReaction(int matchID)
 {

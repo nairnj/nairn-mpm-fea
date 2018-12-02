@@ -22,8 +22,7 @@ class Orthotropic : public TransIsotropic
     public:
         
         // constructors and destructors
-        Orthotropic();
-        Orthotropic(char *);
+        Orthotropic(char *,int);
         
         // initilize
         virtual char *InputMaterialProperty(char *,int &,double &);

@@ -23,7 +23,7 @@ class ImperfectInterface : public MaterialBase
         double Dn,Dt;
         
         // constructors and destructors
-        ImperfectInterface(char *);
+        ImperfectInterface(char *,int);
         
         // methods
         virtual char *InputMaterialProperty(char *,int &,double &);

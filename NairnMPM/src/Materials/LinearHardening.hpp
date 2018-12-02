@@ -24,7 +24,7 @@ class LinearHardening : public HardeningLawBase
         LinearHardening(MaterialBase *);
     
         // initialize
-        virtual char *InputMaterialProperty(char *,int &,double &);
+        virtual char *InputHardeningProperty(char *,int &,double &);
         virtual void PrintYieldProperties(void) const;
 		virtual const char *VerifyAndLoadProperties(int);
     

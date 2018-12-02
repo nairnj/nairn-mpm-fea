@@ -35,10 +35,12 @@ enum { MAXIMUM_VOLUME_GRADIENT=0,MAXIMUM_VOLUME,AVERAGE_MAT_VOLUME_GRADIENTS,EAC
 class CrackSurfaceContact
 {
     public:
+		static int warnLRConvergence;
+	
 		int materialContactLawID,crackContactLawID;
 		ContactLaw *materialContactLaw;
-		bool hasImperfectInterface,displacementCheck;
-		double materialContactVmin,rigidGradientBias;
+		bool hasImperfectInterface;
+		double rigidGradientBias;
 		int materialNormalMethod;
 		Vector contactNormal;
 		

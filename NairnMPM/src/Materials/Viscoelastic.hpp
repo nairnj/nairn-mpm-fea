@@ -29,8 +29,7 @@ class Viscoelastic : public MaterialBase
 		static int warnExcessiveX;
 	
         // constructors and destructors
-        Viscoelastic();
-        Viscoelastic(char *);
+        Viscoelastic(char *,int);
         
         // innitialization methods
         virtual char *InputMaterialProperty(char *,int &,double &);
@@ -58,12 +57,15 @@ class Viscoelastic : public MaterialBase
         virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual const char *MaterialType() const;
 		virtual Tensor GetStress(Tensor *,double,MPMBase *) const;
+		virtual void SetStress(Tensor *,MPMBase *) const;
+		virtual void IncrementThicknessStress(double dszz,MPMBase *mptr) const;
 		virtual bool SupportsArtificialViscosity(void) const;
 		virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;
 #ifdef USE_KIRCHOFF_STRESS
 		virtual double GetCurrentRelativeVolume(MPMBase *,int) const;
 #endif
-		
+		virtual bool SupportsDiffusion(void) const;
+	
     private:
 		int pressureLaw;
 		double G0,K,aI;

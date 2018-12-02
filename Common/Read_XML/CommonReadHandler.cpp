@@ -9,6 +9,7 @@
 #include "stdafx.h"
 #ifdef MPM_CODE
 	#include "NairnMPM_Class/NairnMPM.hpp"
+	#include "Read_MPM/CrackController.hpp"
 #else
 	#include "NairnFEA_Class/NairnFEA.hpp"
 #endif
@@ -19,6 +20,7 @@
 #include "Elements/ElementBase.hpp"
 #include "Exceptions/StrX.hpp"
 #include "System/UnitsController.hpp"
+#include "Nodes/NodalPoint.hpp"
 
 /********************************************************************************
 	CommonReadHandler: Constructors and Destructor
@@ -87,6 +89,7 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 			throw SAXException("<DevelFlag> must be within the <Header> element.");
 		double flagNumDble=ReadNumericAttribute("Number",attrs,(double)0.0);
     	int flagNum=(int)(flagNumDble+0.5);
+		// must be from 0 to NUMBER_DEVELOPMENT_FLAGS-1
 		if(flagNum<0 || flagNum>=NUMBER_DEVELOPMENT_FLAGS)
 			throw SAXException("The <DevelFlag> 'Number' must be from 0 to 9");
 		input=INT_NUM;
@@ -131,22 +134,38 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 	
     // Node list
     else if(strcmp(xName,"NodeList")==0)
-	{	ValidateCommand(xName,MESHBLOCK,ANY_DIM);
-    	if(meshType!=UNKNOWN_MESH)
-            throw SAXException("<NodeList> can not be used with a generated mesh.");
-    	block=NODELIST;
-		meshType=EXPLICIT_MESH;
-		if(theNodes==NULL) theNodes=new NodesController();
+	{	// mesh or could be 3D crack in MPM
+		if(block==MESHBLOCK)
+		{	if(meshType!=UNKNOWN_MESH)
+				throw SAXException("<NodeList> cannot be used with a generated mesh or used a second time for creating a mesh.");
+			block=NODELIST;
+			meshType=EXPLICIT_MESH;
+			if(theNodes==NULL) theNodes=new NodesController();
+		}
+		else if(block==CRACKMESHBLOCK)
+		{	// will add to current crack in crckCtrl
+			block=CRACKNODELIST;
+		}
+		else
+			throw SAXException("<NodeList> must be within a <Mesh> element.");
     }
         
     // Element list
     else if(strcmp(xName,"ElementList")==0)
-	{	ValidateCommand(xName,MESHBLOCK,ANY_DIM);
-		if(meshType!=EXPLICIT_MESH)
-            throw SAXException("<ElementList> cannot be used with a generated mesh.");
-    	block=ELEMENTLIST;
-		// MPM only uses when in ElementList (which is uncommon because does not suppport GIMP)
-		if(theElems==NULL) theElems=new ElementsController();
+	{	// mesh or could be 3D crack in MPM
+		if(block==MESHBLOCK)
+		{	if(meshType!=EXPLICIT_MESH)
+				throw SAXException("<ElementList> cannot be used with a generated mesh.");
+			block=ELEMENTLIST;
+			if(theElems==NULL) theElems=new ElementsController();
+		}
+		else if(block==CRACKMESHBLOCK)
+		{	// will add to current crack in crckCtrl
+			block=CRACKELEMENTLIST;
+		}
+		else
+			throw SAXException("<ElementList> must be within a <Mesh> element.");
+		
 	}
         
     //-----------------------------------------------------------
@@ -269,21 +288,39 @@ void CommonReadHandler::endElement(const XMLCh *const uri,const XMLCh *const loc
 	}
 	
 	else if(strcmp(xName,"Mesh")==0)
-	{	if(theNodes!=NULL)
-		{	if(!theNodes->SetNodeArray(&mxmin,&mxmax,&mymin,&mymax,&mzmin,&mzmax))
-				throw SAXException("Memory error in <NodeList> or no nodes.");
-			//delete theNodes;		// delete later, in case needed for limits or resequencing in FEA
+	{	// in MPM, might be in a 3D crack
+		if(theNodes!=NULL)
+		{	nd = theNodes->SetNodeArray(nnodes,&mxmin,&mxmax,&mymin,&mymax,&mzmin,&mzmax);;
+			if(nd==NULL)
+				throw SAXException("Memory error in <NodeList> or no nodes in the list.");
+#ifdef MPM_CODE
+			delete theNodes;
+			theNodes = NULL;
+#else
+			// FEA keeps the Nodes and deletes after resequencing is done
+			//delete theNodes;
+#endif
 		}
 		if(theElems!=NULL)
-		{	if(!theElems->SetElementArray())
+		{	theElements = theElems->SetElementArray(nelems,block==MESHBLOCK);
+			if(theElements==NULL)
 				throw SAXException("Memory error in <ElementList> or no elements.");
 			delete theElems;
+			theElems = NULL;
 		}
-		block=NO_BLOCK;
+		
+		// return to parent block
+		block = block==MESHBLOCK ? NO_BLOCK : CRACKLIST ;
 	}
 	
-	else if(strcmp(xName,"ElementList")==0 || strcmp(xName,"NodeList")==0)
-	{	block=MESHBLOCK;
+	else if(strcmp(xName,"NodeList")==0)
+	{	// return to parent block
+		block = block==NODELIST ? MESHBLOCK : CRACKMESHBLOCK;
+	}
+	
+	else if(strcmp(xName,"ElementList")==0)
+	{	// return to parent block
+		block = block==ELEMENTLIST ? MESHBLOCK : CRACKMESHBLOCK;
 	}
 	
 	else if(strcmp(xName,"DisplacementBCs")==0)

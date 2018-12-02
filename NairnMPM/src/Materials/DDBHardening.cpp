@@ -62,7 +62,7 @@ DDBHardening::DDBHardening(MaterialBase *pair) : HardeningLawBase(pair)
 // Read material properties by name (in xName). Set input to variable type
 // (DOUBLE_NUM or INT_NUM) and return pointer to the class variable
 // (cast as a char *)
-char *DDBHardening::InputMaterialProperty(char *xName,int &input,double &gScaling)
+char *DDBHardening::InputHardeningProperty(char *xName,int &input,double &gScaling)
 {
 	// tayM: Taylor Factor
     if(strcmp(xName,"tayM")==0)
@@ -178,7 +178,7 @@ char *DDBHardening::InputMaterialProperty(char *xName,int &input,double &gScalin
  		return UnitsController::ScaledPtr((char *)&MMG,gScaling,1.e6);
     }
 	
-    return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
+    return HardeningLawBase::InputHardeningProperty(xName,input,gScaling);
 }
 
 // Verify input properties do calculations; if problem return string with an error message
@@ -435,21 +435,6 @@ void DDBHardening::InitPlasticHistoryData(double *p) const
 	p[RHOW_HISTORY] = rhoW0;
 	
 }
-
-// Return history data for this material type when requested (this material has 8)
-double DDBHardening::GetHistory(int num,char *historyPtr) const
-{
-    double history=0.;
-	if(num>0 && num<9)
-	{	double *hist=(double *)historyPtr;
-		history=hist[num-1];
-	}
-	return history;
-}
-
-#pragma mark DDBHardening:Step Methods
-
-#pragma mark DDBHardening::Custom Methods
 
 #pragma mark DDBHardening::Accessors
 

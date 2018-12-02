@@ -33,8 +33,8 @@ class MatPoint3D : public MPMBase
 		virtual void PerformConstitutiveLaw(Matrix3,double,int,void *,ResidualStrains *);
 		virtual void GetFintPlusFext(Vector *,double,double,double,double);
 		virtual void MovePosition(double,Vector *,Vector *,double);
-		virtual void MoveVelocity(double,Vector *);
 		virtual void MovePosition(double);
+		virtual void MoveVelocity(double);
 		virtual void SetVelocitySpeed(double);
 		virtual void AddTemperatureGradient(int,Vector *);
 		virtual double FCond(int,double,double,double,TransportProperties *);
@@ -49,11 +49,12 @@ class MatPoint3D : public MPMBase
         virtual double GetRelativeVolume(void);
 		virtual double GetVolume(int);
         virtual void GetSemiSideVectors(Vector *,Vector *,Vector *) const;
+		virtual double GetDeformedRadius(Vector *) const;
         virtual void GetUndeformedSemiSides(double *,double *,double *) const;
 		virtual Vector GetParticleSize(void) const;
 		virtual double GetMinParticleLength(void) const;
 		virtual void GetCPDINodesAndWeights(int);
-		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *);
+		virtual Vector GetSurfaceInfo(int,int,int *,Vector *,Vector *,int *,double *);
 		virtual Matrix3 GetInitialRotation(void);
 		virtual Matrix3 GetElasticBiotStrain(void);
 };

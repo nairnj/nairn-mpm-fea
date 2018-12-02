@@ -25,6 +25,9 @@ class UpdateMomentaTask : public MPMTask
 		// required methods
 		virtual void Execute(void);
 	
+		// class methods
+		static void ContactAndMomentaBCs(int);
+	
 	protected:
 };
 

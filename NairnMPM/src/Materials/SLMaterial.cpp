@@ -34,7 +34,7 @@ SLMaterial::SLMaterial(MaterialBase *pair) : SCGLHardening(pair)
 #pragma mark SLMaterial::Initialization
 
 // Read material properties
-char *SLMaterial::InputMaterialProperty(char *xName,int &input,double &gScaling)
+char *SLMaterial::InputHardeningProperty(char *xName,int &input,double &gScaling)
 {
 	// unique properties here
 	
@@ -67,7 +67,7 @@ char *SLMaterial::InputMaterialProperty(char *xName,int &input,double &gScaling)
 		return UnitsController::ScaledPtr((char *)&YP,gScaling,1.e6);
     }
 	
-	return(SCGLHardening::InputMaterialProperty(xName,input,gScaling));
+	return(SCGLHardening::InputHardeningProperty(xName,input,gScaling));
 }
 
 // verify settings and some initial calculations
@@ -126,23 +126,12 @@ void SLMaterial::PrintYieldProperties(void) const
 // 1: YT (unreduced in MPA), 2: plastic strain rate in sec^-1
 int SLMaterial::HistoryDoublesNeeded(void) const { return 3; }
 
-// this hardening law has three history variables
-double SLMaterial::GetHistory(int num,char *historyPtr) const
-{
-    double history=0.;
-	if(num==1 || num==2 || num==3)
-	{	double *cumStrain=(double *)historyPtr;
-		history=cumStrain[num-1];
-	}
-    return history;
-}
-
 #pragma mark SLMaterial:Methods
 
 // size of hardening law properties needed in strain updates
 int SLMaterial::SizeOfHardeningProps(void) const { return sizeof(SLProperties); }
 
-// Get particle-state dependent properties (filled by Get Shear Ratio)
+// Get particle-state dependent properties (filled by GetShearRatio())
 void *SLMaterial::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer,int offset)
 {
 	SLProperties *p = (SLProperties *)altBuffer;

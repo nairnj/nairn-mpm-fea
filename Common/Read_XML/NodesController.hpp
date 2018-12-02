@@ -15,6 +15,8 @@
 
 #include "Read_XML/ParseController.hpp"
 
+class NodalPoint;
+
 class NodesController : public ParseController
 {
     public:
@@ -25,8 +27,8 @@ class NodesController : public ParseController
 #else
 		void AddNode(double,double,double,double);
 #endif
-		int SetNodeArray(double *,double *,double *,double *,double *,double *);
-		int SetNodeArray(int *);
+		NodalPoint **SetNodeArray(int &,double *,double *,double *,double *,double *,double *);
+		NodalPoint **SetNodeArray(int *);
 		int NextNodeNumber(void);
 #ifdef FEA_CODE
 		void MidPoint(int *,int,Vector *);

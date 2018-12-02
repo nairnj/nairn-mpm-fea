@@ -18,9 +18,11 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "System/UnitsController.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Exceptions/MPMWarnings.hpp"
 
 // Single global contact law object
 CrackSurfaceContact contact;
+int CrackSurfaceContact::warnLRConvergence = -1;
 
 extern double timestep;
 
@@ -37,8 +39,6 @@ CrackSurfaceContact::CrackSurfaceContact()
 	
 	materialContactLawID=-1;
 	
-	materialContactVmin=0.0;			// cutoff to kick in other contact checks
-	displacementCheck=true;			// if implementing check on displacement or position (last thing)
 	materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;		// method to find normals in multimaterial contact
 	rigidGradientBias=1.;				// Use rigid gradient unless material volume gradient is this much higher (only normal method 2)
 }
@@ -61,7 +61,7 @@ void CrackSurfaceContact::Output(void)
 	
 	// print other settings
 	cout << "Contact Detection: Normal cod < 0 AND normal dv < 0" << endl;
-    mpmgrid.OutputContactByDisplacements();
+    mpmgrid.OutputContactByDisplacements(false);
 	if(GetMoveOnlySurfaces())
 		cout << "Crack Plane Updating: Average of the crack surfaces" << endl;
 	else
@@ -71,20 +71,14 @@ void CrackSurfaceContact::Output(void)
 	else
 		cout << "Crack Plane Crosses: ignored" << endl;
 	
-#ifdef CRACK_GIMP
-	if(mpmgrid.crackParticleSize<0.)
-		mpmgrid.crackParticleSize = 0.;
-	else if(mpmgrid.crackParticleSize>1.)
-		mpmgrid.crackParticleSize = 1.;
-	cout << "Crack particle size for shape functions: " << mpmgrid.crackParticleSize << endl;
-#endif
+	cout << "Crack Shape Functions: Classic" << endl;
 }
 
 // Print contact law settings (if has one) and finalize crack law and set if has imperfect interface
 // throws CommonException()
 void CrackSurfaceContact::CustomCrackContactOutput(int &customCrackID,int number)
 {
-	// no custom law was set
+	// no custom law was set, so pick the default law
 	if(customCrackID<0)
 	{	crackContactLaw[number] = crackContactLaw[0];
 		return;
@@ -112,48 +106,34 @@ void CrackSurfaceContact::MaterialOutput(void)
 	if(materialContactLaw->IsImperfectInterface()) hasImperfectInterface=true;
 	
 	// print contact detection method
-	char join[3];
-	join[0]=0;
-	cout << "Contact Detection: ";
-	if(materialContactVmin>0.)
-	{	cout << "(Vrel >= " << materialContactVmin << ")";
-		strcpy(join," & ");
-	}
-	cout << join << "(Normal dv < 0)";
-	strcpy(join," & ");
-	if(displacementCheck)
-	{	cout << join << "(Normal cod < 0)" << endl;
-        mpmgrid.OutputContactByDisplacements();
-	}
-	else
-		cout << endl;
-	
+	cout << "Contact Detection: (Normal dv < 0) & (Normal cod < 0)" << endl;
+	mpmgrid.OutputContactByDisplacements(false);
 	cout << "Normal Calculation: ";
 	switch(materialNormalMethod)
 	{	case MAXIMUM_VOLUME_GRADIENT:
-			cout << " gradient of material or paired material (if all nonrigid), or the rigid material (if" << endl;
-			cout << "                   one rigid material), that has highest magnitude. When has rigid" << endl;
-			cout << "                   material, prefer rigid material gradient with bias factor = " << rigidGradientBias;
-			rigidGradientBias*=rigidGradientBias;       // squared as needed in algorithm
+			cout <<                     "Gradient of material or paired material (if all nonrigid), or the rigid" << endl;
+			cout << "                    material (if one rigid material), that has highest magnitude. When has" << endl;
+			cout << "                    rigid material, prefer rigid material gradient with bias factor = " << rigidGradientBias;
 			break;
 		case MAXIMUM_VOLUME:
 			cout << " gradient of material with maximum volume";
 			break;
 		case AVERAGE_MAT_VOLUME_GRADIENTS:
-			cout << " volume-weighted mean gradient of material and other materials lumped (if all nonrigid)," << endl;
-			cout << "                   on just the rigid material (if one rigid material). When has rigid" << endl;
-			cout << "                   material, prefer rigid material gradient with bias factor = " << rigidGradientBias;
-			rigidGradientBias*=rigidGradientBias;       // squared as needed in algorithm
+			cout <<                     "Volume-weighted mean gradient of material and other materials lumped (if all" << endl;
+			cout << "                    nonrigid), on just the rigid material (if one rigid material). When has" << endl;
+			cout << "                    rigid material, prefer rigid material gradient with bias factor = " << rigidGradientBias;
 			break;
 		case EACH_MATERIALS_MASS_GRADIENT:
-			cout << " each material's own mass gradient";
+			cout << "Each material's own mass gradient";
 			break;
 		case SPECIFIED_NORMAL:
-			cout << " use the specified normal of ";
+			cout << "Use the specified normal of ";
 			PrintVector("",&contactNormal);
+			break;
 		default:
 			break;
 	}
+	rigidGradientBias*=rigidGradientBias;       // algorithms assume it is squared (to compare to squared mag of other vectors)
 	cout << endl;
 }
 
@@ -226,8 +206,8 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	// velocities above and below
 	bool hasParticles;
 	double massa,massb;
-	Vector pka=cva->GetCMatMomentum(hasParticles,&massa);
-	Vector pkb=cvb->GetCMatMomentum(hasParticles,&massb);
+	Vector pka=cva->GetCMatMomentum(hasParticles,&massa,NULL);
+	Vector pkb=cvb->GetCMatMomentum(hasParticles,&massb,NULL);
 	double mnode=1./(massa+massb);
 	
 	// screen low masses
@@ -241,8 +221,9 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	
 	// get normalized normal vector and find dPDotn = Delta p_a . n (actual (vb-va).n = dPDotn*(ma+mb)/(ma*mb))
 	Vector norm;
-	CopyScaleVector(&norm,normin,1./sqrt(DotVectors2D(normin,normin)));
-	double dPDotn = DotVectors2D(delPa,&norm);
+	ZeroVector(&norm); // for 2D
+	CopyScaleVector(&norm,normin,1./sqrt(DotVectors(normin,normin)));
+	double dPDotn = DotVectors(delPa,&norm);
 	
 	// will need to get displacements if doing displacement check or
 	// if contact is imperfect interface
@@ -251,25 +232,20 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	if(dPDotn<0. || crackContactLaw[number]->IsImperfectInterface())
 	{	// displacement calculations
 		Vector dispa=cva->GetCMDisplacement(np,true);
-		dispa.x/=massa;
-		dispa.y/=massa;
-		dispa.z = 0.;
-		Vector dispb=cvb->GetCMDisplacement(np,true);
-		dispb.x/=massb;
-		dispb.y/=massb;
-		dispb.z = 0.;
+		Vector dispb = cvb->GetCMDisplacement(np, true);
+		ScaleVector(&dispa, (1. / massa));
+		ScaleVector(&dispb, (1. / massb));
 		delta = dispb;
 		SubVector(&delta,&dispa);
 		deltaDotn = MaterialSeparation(&delta,&dispa,&dispb,&norm,np);
 	}
 	
 	// With the first check, any movement apart will be taken as noncontact
-	// Also, frictional contact assume dvel<0.
 	if(dPDotn >= 0.)
 		*inContact=SEPARATED;
 	else
 	{	// on post update, adjust by normal velocity difference
-		if(callType!=MASS_MOMENTUM_CALL)
+		if(callType == UPDATE_MOMENTUM_CALL)
 		{	double dvel=(massa+massb)*dPDotn/(massa*massb);
 			deltaDotn += dvel*deltime;
 		}
@@ -278,14 +254,11 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		*inContact = (deltaDotn >= 0.) ? SEPARATED : IN_CONTACT ;
 	}
 	
-	// if separated, then no contact unless possibly needed for an imperfect interface
-	if(crackContactLaw[number]->ContactIsDone(*inContact==IN_CONTACT)) return false;
-	
 	// Now need to change momentum. For imperfect interface, change only for perfect directions
-	double mredDE;
+	double mredDelWf;
 	double mred = (massa*massb)/(massa+massb);
 	if(crackContactLaw[number]->IsFrictionalContact())
-	{	bool getHeating = (callType==UPDATE_MOMENTUM_CALL) && ConductionTask::crackContactHeating;
+	{
 		double contactArea = 1.;
 		if(crackContactLaw[number]->ContactLawNeedsContactArea())
 		{	// Angled path correction (cracks are only 2D)
@@ -300,27 +273,32 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		
 		// second order heating needs acceleration term
 		// Find (ma Fb - mb Fa)/(ma+mb)
-		Vector at;
-		Vector *atPtr = NULL;
-		if(getHeating)
+		bool getHeating = (callType==UPDATE_MOMENTUM_CALL) && ConductionTask::crackContactHeating;
+		Vector delFi;
+		Vector *delFiPtr = NULL;
+		if(callType==UPDATE_MOMENTUM_CALL)
 		{	Vector Fb = cvb->GetCMatFtot();
 			Vector Fa = cva->GetCMatFtot();
-			CopyScaleVector(&at,&Fb,massa*mnode);
-			AddScaledVector(&at,&Fa,-massb*mnode);
-			atPtr = &at;
+			CopyScaleVector(&delFi,&Fb,massa*mnode);
+			AddScaledVector(&delFi,&Fa,-massb*mnode);
+			delFiPtr = &delFi;
 		}
 		
-		if(!crackContactLaw[number]->GetFrictionalDeltaMomentum(delPa,&norm,dPDotn,&mredDE,mred,
-										getHeating,contactArea,*inContact==IN_CONTACT,deltime,atPtr))
-		{	return false;
+		*inContact = IN_CONTACT;
+		if(!crackContactLaw[number]->GetFrictionalDeltaMomentum(delPa,&norm,dPDotn,deltaDotn,&mredDelWf,mred,
+										getHeating,contactArea,deltime,delFiPtr))
+		{	*inContact = SEPARATED;
+			return false;
 		}
-		if(mredDE>0.)
-		{	double qrate = mredDE/mred;
-			NodalPoint::frictionWork += qrate;
-		
+		if(mredDelWf>0.)
+		{	double qrate = mredDelWf/mred;
 			// As heat source need nJ/sec or multiply by 1/timestep
 			// Note that this is after transport rates are calculated (by true in last parameter)
 			conduction->AddFluxCondition(np,fabs(qrate/deltime),true);
+			
+			// this line seems to crack XCode analyzer, comment our temporarily to analyze code
+#pragma omp atomic
+			NodalPoint::frictionWork += qrate;
 		}
 	}
 	else
@@ -343,7 +321,6 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		double contactArea = sqrt(2.0*fmin(vola*dist.y,volb*dist.z)*voltot)/dist.x;
 		if(fmobj->IsAxisymmetric()) contactArea *= np->x;
 		
-		// get input force if needed and then call for interface force and energy
 		// Find delFi = (ma Fb - mb Fa)/Mc (when needed)
 		Vector fImp;
 		if(callType==UPDATE_MOMENTUM_CALL)
@@ -354,11 +331,12 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		}
 		else
 			ZeroVector(&fImp);
+		
+		// Get interface force and energy
 		double rawEnergy;
 		crackContactLaw[number]->GetInterfaceForces(&norm,&fImp,&rawEnergy,
 													contactArea,delPa,dPDotn,mred,&tangDel,deltaDotn,deltaDott,dist.x);
 		
-#ifndef MANDMIMPINT
 		if(callType==UPDATE_MOMENTUM_CALL)
 		{	// add force (if any) to momentum change
 			AddScaledVector(delPa, &fImp, timestep);
@@ -366,17 +344,6 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 			// Add interface energy. (Legacy units g-mm^2/sec^2 or multiply by 1e-9 to get J - kg-m^2/sec^2)
 			NodalPoint::interfaceEnergy += rawEnergy;
 		}
-#else
-		if(callType==MASS_MOMENTUM_CALL)
-		{	// add only prior to update and add to forces
-			cva->AddFtotSpreadTask3(&fImp);
-			ScaleVector(&fImp,-1.);
-			cvb->AddFtotSpreadTask3(&fImp);
-			
-			// Add interface energy. (Legacy units g-mm^2/sec^2 or multiply by 1e-9 to get J - kg-m^2/sec^2)
-			NodalPoint::interfaceEnergy += rawEnergy;
-		}
-#endif
 		
 		// If no interface force, then should stick with returned momentum
 		// If has force, still may need to change using returned altered momentum (although it could be zero)

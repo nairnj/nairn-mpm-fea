@@ -77,13 +77,13 @@ void RunCustomTasksTask::Execute(void)
         while(nextTask!=NULL)
             nextTask=nextTask->BeginExtrapolations();
         
-        // particle loop or nonrigid and rigid contact particles
+        // particle loop or nonrigid, rigid block, and rigid contact particles
         for(int p=0;p<nmpmsRC;p++)
 		{	MPMBase *mpmptr = mpm[p];
 			
            // Load element coordinates
 			matID=theMaterials[mpmptr->MatID()];
-			isRigid=matID->Rigid();					// if TRUE, will be rigid contact particle
+			isRigid=matID->IsRigid();					// if TRUE, will be rigid contact particle
 			matfld=matID->GetField();
 			
             // find shape functions and derviatives

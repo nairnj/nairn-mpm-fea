@@ -97,9 +97,6 @@ int main(int argc,const char *argv[])
     
     // set number of processors (default 1)
 #ifdef _OPENMP
-#ifdef _OMPTEST
-    if(numProcs<1) numProcs=1;
-#else
 	// pick number of processors, but no more than number available
     // if set to 0, will set to maximum number
 	int maxThreads = omp_get_max_threads();
@@ -111,7 +108,6 @@ int main(int argc,const char *argv[])
     }
     else
         numProcs = maxProcs;
-#endif
 #else
 	// zero means omp is disabled
     numProcs = 0;
@@ -120,7 +116,7 @@ int main(int argc,const char *argv[])
 	
 	// seed random number generator
 	srand((unsigned int)time(NULL));
-    
+	
 	//-------------------------------------------------------------
     // 3. Read the input file, exceptions handled in ReadFile()
 	retval=fmobj->ReadFile(argv[parmInd],useWorkingDir);

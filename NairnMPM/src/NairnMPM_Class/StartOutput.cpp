@@ -66,7 +66,10 @@ void NairnMPM::PrintAnalysisType(void)
     }
 	
     switch(ElementBase::useGimp)
-    {   case UNIFORM_GIMP:
+	{	case POINT_GIMP:
+			cout << " / Classic";
+			break;
+		case UNIFORM_GIMP:
 		case UNIFORM_GIMP_AS:
             cout << " / GIMP";
             break;
@@ -74,12 +77,20 @@ void NairnMPM::PrintAnalysisType(void)
 		case LINEAR_CPDI_AS:
             cout << " / Linear CPDI";
             break;
-        case QUADRATIC_CPDI:
+       case QUADRATIC_CPDI:
             cout << " / Quadratric CPDI";
             break;
+		case BSPLINE_GIMP:
+			cout << " / B2GIMP";
+			break;
+		case BSPLINE:
+			cout << " / B2SPLINE";
+			break;
+		default:
+			cout << " / (unknown shape function method)";
     }
 	cout << endl;
-    
+
 	// time step and max time
     cout << "Time step: min(" << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << ", "
 		<< fmobj->GetCFLCondition() << " time for wave to cross one cell)\n";
@@ -148,12 +159,12 @@ void NairnMPM::MyStartResultsOutput(void)
 		// contact output and allocations
 		contact.Output();
 		
-        // location for COD calculation - range is 0 to 3 segments from crack tip
-        // future may want to read this as parameter
-        // Only used to partition J or to implement COD-based criteria
-        CrackHeader::SetCodLocation(2.);
-        cout << "Crack COD found (when needed) " << 2 << " segments from crack tip" << endl;
-        
+		// location for COD calculation - range is 0 to 3 segments from crack tip
+		// future may want to read this as parameter
+		// Only used to partition J or to implement COD-based criteria
+		CrackHeader::SetCodLocation(2.);
+		cout << "Crack COD found (when needed) " << 2 << " segments from crack tip" << endl;
+		
 		// crack details
 		cout << "Number of cracks = " << numberOfCracks << endl;
 		CrackHeader *nextCrack=firstCrack;
@@ -162,7 +173,6 @@ void NairnMPM::MyStartResultsOutput(void)
 			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 		}
 		cout << endl;
-        
     }
     
     //---------------------------------------------------

@@ -17,33 +17,29 @@
 
 #include "stdafx.h"
 #include "Cracks/CrackNode.hpp"
+#include "Nodes/NodalPoint.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
+#include "Exceptions/CommonException.hpp"
 
 // global point to contact conditions
-CrackNode *CrackNode::currentCNode = NULL;
+vector< CrackNode * > CrackNode::crackContactNodes;
 
 #pragma mark CrackNode: Constructors and Destructors
 
 // Constructors
-CrackNode::CrackNode(NodalPoint *nd,CrackNode *prev)
+CrackNode::CrackNode(NodalPoint *nd,int flags,CrackNode *prev)
 {
 	theNode = nd;
 	prevNode = prev;
+	hasFlags = flags;
 }
 
 #pragma mark CrackNode: Methods
 
-// check contact on this node during update momentum taks
-CrackNode *CrackNode::NodalCrackContactAndForces(double deltime)
-{
-	theNode->CrackContact(UPDATE_MOMENTUM_CALL,deltime,NULL,NULL);
-	return prevNode;
-}
-
 // check contact on this node during update strains last
-CrackNode *CrackNode::NodalCrackContact(void)
+void CrackNode::NodalCrackContact(double deltime,int passType)
 {
-	theNode->CrackContact(UPDATE_STRAINS_LAST_CALL,0.,NULL,NULL);
-	return prevNode;
+	theNode->CrackContact(passType,deltime,hasFlags);
 }
 
 // next BC accessors
@@ -52,33 +48,49 @@ CrackNode *CrackNode::GetPrevNode(void) { return prevNode; }
 
 #pragma mark CrackNode: Class methods
 
-// Delete all dynamically created contact BCs and restore
-// currentCNode to NULL - called in Task 0 or initialization
-void CrackNode::RemoveCrackNodes(void)
-{
-	CrackNode *prevCNode;
-	
-	while(currentCNode!=NULL)
-	{	prevCNode = currentCNode->GetPrevNode();
-		delete currentCNode;
-		currentCNode = prevCNode;
-	}
-}
-
-// In task 4, have to check if the momentum update caused new contact
-// If yes, change momentum again and change total force
-void CrackNode::CrackContactTask4(double deltime)
-{
-	CrackNode *prevCNode = currentCNode;
-	while(prevCNode!=NULL)
-		prevCNode = prevCNode->NodalCrackContactAndForces(deltime);
-}
-
 // On last pass (for USAVG or SZS), will already know which
 // nodes are crack nodes and now need to adjust forces
-void CrackNode::ContactOnKnownNodes(void)
+void CrackNode::ContactOnKnownNodes(double deltime,int passType)
 {
-	CrackNode *prevCNode = currentCNode;
-	while(prevCNode!=NULL)
-		prevCNode = prevCNode->NodalCrackContact();
+	// anything to do?
+	long numCrackNodes = crackContactNodes.size();
+	if(numCrackNodes==0) return;
+	
+	// prepare for parallel
+	CommonException *ccErr = NULL;
+	int numNodesPerProc = (int)((double)numCrackNodes/(double)(fmobj->GetNumberOfProcessors()));
+	
+#pragma omp parallel if(numNodesPerProc>1)
+	{
+#pragma omp for
+		for(long i=0;i<numCrackNodes;i++)
+		{	try
+			{	crackContactNodes[i]->NodalCrackContact(deltime,passType);
+			}
+			catch(...)
+			{	if(ccErr==NULL)
+				{
+#pragma omp critical (error)
+					ccErr = new CommonException("Unexpected error","MaterialContactNode::ContactOnKnownNodes");
+				}
+			}
+			
+		}
+	}
+	
+	// throw error now
+	if(ccErr!=NULL) throw *ccErr;
 }
+
+// delete the contact node (which delink to node), clear vector of pointers
+void CrackNode::ReleaseContactNodes(void)
+{
+	long numCrackNodes = crackContactNodes.size();
+	if(numCrackNodes==0) return;
+	
+	for(long i=0;i<numCrackNodes;i++)
+		delete crackContactNodes[i];
+	
+	crackContactNodes.clear();
+}
+

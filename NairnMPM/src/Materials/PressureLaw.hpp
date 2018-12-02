@@ -13,7 +13,7 @@
 
 #define PRESSURELAWMATERIAL 26
 
-class ROperation;
+class Expression;
 
 #include "Materials/TractionLaw.hpp"
 
@@ -22,24 +22,23 @@ class PressureLaw : public TractionLaw
 	public:
 	
 		// constructors and destructors
-		PressureLaw(char *);
+		PressureLaw(char *,int);
 	
 		// methods
-		virtual char *InputMaterialProperty(char *,int &,double &);
+		virtual char *InputTractionLawProperty(char *,int &,double &);
 		void SetStressFunction(char *);
 		virtual void PrintMechanicalProperties(void) const;
 		virtual void CalculateTimeFunction();
 	
 		// the traction law
-		virtual void CrackTractionLaw(CrackSegment *,double,double,double,double,double);
+		virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);
 		virtual double CrackTractionEnergy(CrackSegment *,double,double,bool);
 	
 		// accessors
 		virtual const char *MaterialType(void) const;
 	
 	protected:
-		ROperation *function;
-		static double varTime;
+		Expression *function;
 		double minCOD;
 	
 };

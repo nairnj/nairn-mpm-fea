@@ -15,6 +15,8 @@
 
 #include "Custom_Tasks/TransportTask.hpp"
 
+enum { NO_DIFFUSION=0,MOISTURE_DIFFUSION,POROELASTICITY_DIFFUSION };
+
 class MPMBase;
 class NodalPoint;
 class MatVelocityField;
@@ -22,13 +24,16 @@ class MatVelocityField;
 class DiffusionTask : public TransportTask
 {
     public:
-		static bool active;
+		static int active;
 		static double reference;
+		static double viscosity;
 
 		// initialize
 		virtual TransportTask *Initialize(void);
 	
 		// mass and momentum
+		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double,short,int);
+		virtual double GetVpCTp(MPMBase *);
 		virtual void ZeroTransportGradients(MPMBase *);
 		virtual void AddTransportGradients(MPMBase *,Vector *,NodalPoint *,short);
 	
@@ -41,12 +46,18 @@ class DiffusionTask : public TransportTask
         // accessors
         virtual const char *TaskName(void);
         virtual TransportTask *TransportTimeStepFactor(int,double *);
-        virtual double GetTransportMassAndValue(MPMBase *,double *);
         virtual TransportField *GetTransportFieldPtr(NodalPoint *) const;
         virtual NodalValueBC *GetFirstBCPtr(void) const;
 		virtual MatPtLoadBC *GetFirstFluxBCPtr(void) const;
         virtual double *GetParticleValuePtr(MPMBase *mptr) const;
         virtual double *GetPrevParticleValuePtr(MPMBase *mptr) const;
+	
+		// static methods
+		static bool HasDiffusion(void);
+		static bool HasPoroelasticity(void);
+		static bool HasFluidTransport(void);
+		static double RescalePotential(void);
+		static double RescaleFlux(void);
 	
     private:
 };

@@ -9,23 +9,21 @@
 #include "stdafx.h"
 #include "Materials/IsotropicMat.hpp"
 #include "System/UnitsController.hpp"
+#ifdef MPM_CODE
+#include "Custom_Tasks/DiffusionTask.hpp"
+#endif
 
 #pragma mark IsotropicMat::Constructors and Destructors
 
-// Constructors
-IsotropicMat::IsotropicMat() {}
-
-// Constructors
-IsotropicMat::IsotropicMat(char *matName) : Elastic(matName)
+// Constructor
+IsotropicMat::IsotropicMat(char *matName,int matID) : Elastic(matName,matID)
 {
-    int i;
-    
     aI = 40;
     E = -1;
     G = -1.;
     nu = -1.;
     
-    for(i=0;i<ISO_PROPS;i++)
+    for(int i=0;i<ISO_PROPS;i++)
         read[i]=0;
 }
 
@@ -59,11 +57,11 @@ char *IsotropicMat::InputMaterialProperty(char *xName,int &input,double &gScalin
 #endif
     else if(strcmp(xName,"nu")==0)
     {	read[NU_PROP]=1;
-        return((char *)&nu);
+        return (char *)&nu;
     }
     
     else if(strcmp(xName,"alpha")==0)
-        return((char *)&aI);
+        return (char *)&aI;
 
     return Elastic::InputMaterialProperty(xName,input,gScaling);
 }
@@ -111,9 +109,21 @@ const char *IsotropicMat::VerifyAndLoadProperties(int np)
 		
     for(int i=0;i<ISO_PROPS;i++)
     {	if(!read[i])
+		{	cout << "*** Isotropic material missing property number " << i << " ***" << endl;
 			return "A required material property is missing";
+		}
     }
-    
+	
+#ifdef MPM_CODE
+	// heating gamma0 (dimensionless) (K 3 alpha)/(rho Cv)
+	double alphaV = 3.e-6*aI;
+	double Kbulk = E/(3.*(1-2*nu));
+	gamma0 = Kbulk*alphaV/(rho*heatCapacity);
+	
+	// diffusion CT is 1
+	diffusionCT = 1.;
+#endif
+	
     // analysis properties
     const char *err=SetAnalysisProps(np,E,E,E,nu,nu,nu,G,G,G,
 							1.e-6*aI,1.e-6*aI,1.e-6*aI,
@@ -122,13 +132,6 @@ const char *IsotropicMat::VerifyAndLoadProperties(int np)
 	
 	// load elastic properties with constant values
 	FillUnrotatedElasticProperties(&pr,np);
-	
-#ifdef MPM_CODE
-	// heating gamma0 (dimensionless) (K 3 alpha)/(rho Cv)
-    double alphaV = 3.e-6*aI;
-	double Kbulk = E/(3.*(1-2*nu));
-    gamma0 = Kbulk*alphaV/(rho*heatCapacity);
-#endif
 	
 	// superclass call (skip Elastic, which has no VerifyAndLoadProperties()
 	return MaterialBase::VerifyAndLoadProperties(np);

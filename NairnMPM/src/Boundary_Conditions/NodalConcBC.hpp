@@ -23,8 +23,12 @@ class NodalConcBC: public NodalValueBC
     
         // constructors and destructors
         NodalConcBC(int,int,double,double);
-    
+	
+		// methods
+		virtual BoundaryCondition *PrintBC(ostream &);
+	
         // Accessors
+		virtual void SetBCValue(double bcvalue);
         virtual int GetSetDirection(void) const;
         virtual TransportField *GetTransportFieldPtr(NodalPoint *) const;
  

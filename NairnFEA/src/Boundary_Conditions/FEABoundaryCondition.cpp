@@ -12,14 +12,7 @@
 #include "stdafx.h"
 #include "FEABoundaryCondition.hpp"
 #include "Nodes/NodalPoint.hpp"
-#include "Read_XML/mathexpr.hpp"
-
-// global expression variables
-double FEABoundaryCondition::varXValue=0.;
-double FEABoundaryCondition::varYValue=0.;
-double FEABoundaryCondition::varRValue=0.;
-double FEABoundaryCondition::varZValue=0.;
-PRVar varArray[4] = { NULL, NULL, NULL, NULL };
+#include "Read_XML/Expression.hpp"
 
 #pragma mark FEABoundaryCondition: Constructors and Destructors
 
@@ -72,24 +65,20 @@ void FEABoundaryCondition::SetValue(double numValue,char *bcFunction)
 	// decode function at nodal position
 	if(strlen(bcFunction)==0)
 		ThrowSAXException("Boundary condition function of position is empty");
+
+	Expression *function = Expression::CreateExpression(bcFunction,"Boundary condition function of position is not valid");
 	
-	// create variable
-	if(varArray[0]==NULL)
-	{	varArray[0]=new RVar("x",&varXValue);
-		varArray[1]=new RVar("y",&varYValue);
-		varArray[2]=new RVar("r",&varRValue);
-		varArray[3]=new RVar("z",&varZValue);
+	unordered_map<string,double> vars;
+	vars["x"] = nd[nodeNum]->x;
+	vars["y"] = nd[nodeNum]->y;
+	vars["r"] = nd[nodeNum]->x;
+	vars["z"] = nd[nodeNum]->y;
+	try
+	{	bcValue = function->EvaluateFunction(vars);
 	}
-		
-	// create the function and check it
-	ROperation *function=new ROperation(bcFunction,4,varArray);
-	if(function->HasError())
-		ThrowSAXException("Boundary condition function of position is not valid");
-	
-	// set value to 1, it might be used to scale the function result
-	varXValue=varRValue=nd[nodeNum]->x;
-	varYValue=varZValue=nd[nodeNum]->y;
-	bcValue=function->Val();
+	catch(...)
+	{	ThrowSAXException("Boundary condition function of position is not valid");
+	}
 	delete function;
 }
 

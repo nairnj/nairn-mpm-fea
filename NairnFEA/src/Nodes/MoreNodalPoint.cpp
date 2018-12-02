@@ -9,10 +9,6 @@
 #include "stdafx.h"
 #include "Nodes/NodalPoint.hpp"
 
-/********************************************************************************
-    More NodalPoint methods
-********************************************************************************/
-
 // allocate and initialize force field
 // throws std::bad_alloc
 void NodalPoint::InitForceField(void)
@@ -40,4 +36,18 @@ void NodalPoint::PrintAvgStress(void)
     cout << fline << endl;
 }
 
+#pragma mark CLASS METHODS
 
+// create 2D node with or without cracks
+NodalPoint *NodalPoint::Create2DNode(int nodeNum,double xPt,double yPt)
+{
+	NodalPoint *newNode = new NodalPoint(nodeNum,xPt,yPt);
+	return newNode;
+}
+
+// create 2D node with or without cracks
+NodalPoint *NodalPoint::Create3DNode(int nodeNum,double xPt,double yPt,double zPt)
+{
+	NodalPoint *newNode = new NodalPoint(nodeNum,xPt,yPt,zPt);
+	return newNode;
+}

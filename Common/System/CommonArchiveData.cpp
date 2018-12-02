@@ -30,7 +30,7 @@ CommonArchiveData::CommonArchiveData()
 	// For windows dos command, user should input dos style with backslashes
 	inputDir=NULL;
 
-	// path to folderthat is starting point for creating archive files
+	// path to folder that is starting point for creating archive files
 	// For windows dos command will use backslashes
 	outputDir=NULL;
 

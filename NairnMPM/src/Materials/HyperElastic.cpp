@@ -16,10 +16,8 @@
 
 #pragma mark HyperElastic::Constructors and Destructors
 
-// Constructors
-HyperElastic::HyperElastic() {}
-
-HyperElastic::HyperElastic(char *matName) : MaterialBase(matName)
+// Constructor
+HyperElastic::HyperElastic(char *matName,int matID) : MaterialBase(matName,matID)
 {
 	Kbulk = -1.;                                        // required (check >0 before starting)
     UofJOption = HALF_J_SQUARED_MINUS_1_MINUS_LN_J;     // default U(J) function
@@ -84,7 +82,7 @@ const char *HyperElastic::VerifyAndLoadProperties(int np)
 double HyperElastic::GetIncrementalResJ(MPMBase *mptr,ResidualStrains *res) const
 {	// account for residual stresses
 	double dJres = CTE1*res->dT;
-	if(DiffusionTask::active)
+	if(DiffusionTask::HasFluidTransport())
 		dJres += CME1*res->dC;
     return exp(3.*dJres);
 }
@@ -94,12 +92,6 @@ void HyperElastic::TrackResidualStrain(MPMBase *mptr,double dJres,int historyOff
 {	// account for residual stresses
 	double Jres = dJres*mptr->GetHistoryDble(J_History+1,historyOffset);
 	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
-}
-
-// When becomes active update J
-void HyperElastic::BeginActivePhase(MPMBase *mptr,int np,int historyOffset) const
-{	double J = mptr->GetRelativeVolume();
-	mptr->SetHistoryDble(J_History,J,historyOffset);
 }
 
 /*  Given matrix of incremental deformation dF = exp(dt*grad v), increment particle strain,
@@ -156,7 +148,7 @@ double HyperElastic::GetResidualStretch(MPMBase *mptr,double &dresStretch,Residu
 	double dTemp=mptr->pPreviousTemperature-thermal.reference;
 	double resStretch = CTE1*dTemp;
 	dresStretch = CTE1*res->dT;
-	if(DiffusionTask::active)
+	if(DiffusionTask::HasFluidTransport())
 	{	double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
 		resStretch += CME1*dConc;
 		dresStretch += CME1*res->dC;
@@ -252,3 +244,7 @@ double HyperElastic::GetCpMinusCv(MPMBase *mptr) const
 // store elastic B in alt strain
 int HyperElastic::AltStrainContains(void) const { return LEFT_CAUCHY_TOTAL_B_STRAIN; }
 
+// not supported yet, need to deal with aniostropi properties
+// Need to check increments if allow negative PP
+bool HyperElastic::SupportsDiffusion(void) const
+{	return DiffusionTask::HasPoroelasticity() ? false : true; }

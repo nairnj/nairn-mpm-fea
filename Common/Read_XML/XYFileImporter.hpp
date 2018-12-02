@@ -22,7 +22,7 @@ class XYFileImporter
 	
 		// constructors and destructors
 		XYFileImporter();
-		XYFileImporter(char *);
+		XYFileImporter(char *,bool);
 		virtual ~XYFileImporter();
 		
 		// virtual methods
@@ -30,12 +30,13 @@ class XYFileImporter
 		virtual void ReadXYFileData(unsigned char **,XYInfoHeader &) = 0;
 
 		// methods
-		void XYFileError(const char *msg);
+		void XYFileImportError(const char *msg);
 		
 	protected:
 		char *fullPath;
 		FILE *fp;
 		int mustReverse;
+		bool readingXML;
 };
 
 #endif

@@ -19,6 +19,7 @@ char UnitsController::energy[10],UnitsController::density[10],UnitsController::h
 char UnitsController::errRate[15],UnitsController::tractionSlope[15],UnitsController::viscosity[15];
 char UnitsController::heatCapacity[18],UnitsController::power[15],UnitsController::conductivity[20],UnitsController::convection[20];
 char UnitsController::heatFlux[15],UnitsController::stressIntensity[20],UnitsController::bcarg[10],UnitsController::concFlux[20];
+char UnitsController::diffusionTens[20];
 
 // Constructor
 UnitsController::UnitsController(void)
@@ -97,6 +98,8 @@ const char *UnitsController::Label(int type)
 					return "J/kg";
 				case CONDUCTIVITY_UNITS:
 					return "W/(m-K)";
+				case DIFFUSION_UNITS:
+					return "mm^2/sec";
 				case CONVECTION_UNITS:
 					return "W/(m^2-K)";
 				case BCHEATFLUX_UNITS:
@@ -356,6 +359,16 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 		strcat(conductivity,length);
 		strcat(conductivity,"-K)");
 	}
+	
+	// diffusion tensor
+	if(unitsType==USER_UNITS)
+		strcpy(diffusionTens,"L^2/T");
+	else
+	{	strcpy(diffusionTens,length);
+		strcat(diffusionTens,"^2/");
+		strcat(velocity,timeu);
+	}
+
 
 	// convection
 	if(unitsType==USER_UNITS)

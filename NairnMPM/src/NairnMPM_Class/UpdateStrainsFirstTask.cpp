@@ -45,7 +45,7 @@ UpdateStrainsFirstTask::UpdateStrainsFirstTask(const char *name) : MPMTask(name)
 // Update strains with just-extrapolated momenta
 void UpdateStrainsFirstTask::Execute(void)
 {
-	FullStrainUpdate(strainTimestep,false,fmobj->np);
+	FullStrainUpdate(strainTimestepFirst,false,fmobj->np);
 }
 
 #pragma mark UpdateStrainFirstTask Class Methods
@@ -91,7 +91,10 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 {
 	CommonException *usfErr = NULL;
 
-    NodalPoint::GetGridVelocitiesForStrainUpdate();			// velocities needed for strain update
+	// Get Grid velocities needed for strain updates
+#pragma omp parallel for
+	for(int i=1;i<=*nda;i++)
+		nd[nda[i]]->CalcVelocityForStrainUpdate();
 
 	// loop over nonrigid particles
 	// This works as parallel when material properties change with particle state because

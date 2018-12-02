@@ -60,7 +60,7 @@ bool BoxController::FinishSetup(void)
     b2 *= b2;
     c2 = zmax-zmid;
     c2 *= c2;
-    
+	
     return TRUE;
 }
 

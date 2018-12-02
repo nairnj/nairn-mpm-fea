@@ -33,8 +33,8 @@ extern double mtime;
 
 #pragma mark TrilinearTraction::Constructors and Destructors
 
-// Constructors with arguments 
-TrilinearTraction::TrilinearTraction(char *matName) : CohesiveZone(matName)
+// Constructor 
+TrilinearTraction::TrilinearTraction(char *matName,int matID) : CohesiveZone(matName,matID)
 {
 	// mode I cohesive law (all others set to -1 in superclasses)
 	// others are: stress1,delIc,JIc,kI1,umid1
@@ -50,7 +50,7 @@ TrilinearTraction::TrilinearTraction(char *matName) : CohesiveZone(matName)
 #pragma mark TrilinearTraction::Initialization
 
 // no properties to read
-char *TrilinearTraction::InputMaterialProperty(char *xName,int &input,double &gScaling)
+char *TrilinearTraction::InputTractionLawProperty(char *xName,int &input,double &gScaling)
 {
 	if(strcmp(xName,"sigmaI2")==0)
 	{	input=DOUBLE_NUM;
@@ -72,7 +72,7 @@ char *TrilinearTraction::InputMaterialProperty(char *xName,int &input,double &gS
 		return((char *)&uII2);
 	}
 	
-    return CohesiveZone::InputMaterialProperty(xName,input,gScaling);
+    return CohesiveZone::InputTractionLawProperty(xName,input,gScaling);
 }
 
 // Calculate properties used in analyses - here trilinear law
@@ -125,7 +125,7 @@ void TrilinearTraction::PrintMechanicalProperties(void) const
 #pragma mark TrilinearTraction::Traction Law
 
 // Traction law - assume trianglar shape with unloading from down slope back to the origin
-void TrilinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,double dx,double dy,double area)
+void TrilinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,Vector *n,Vector *t,double area)
 {
 	double Tn=0.,Tt=0.,GI=0.,GII=0.;
 	double *upeak =(double *)cs->GetHistoryData();
@@ -209,7 +209,7 @@ void TrilinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCo
         }
     }
 	
-    // failure criterion
+	// failure criterion
     if(cs->MatID()<0)
     {   // it failed above in pure mode
         ReportDebond(mtime, cs, GI/(GI+GII),GI+GII);
@@ -226,9 +226,12 @@ void TrilinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCo
 		}
 	}
 	
-	// force is traction times area projected onto x-y plane
-	cs->tract.x = area*(Tn*dy - Tt*dx);
-	cs->tract.y = area*(-Tn*dx - Tt*dy);
+	// force is traction times area projected onto plane of unit vectors (units F)
+	// tract = -area*(Tn*n + Tt*t)
+	// In 2D, if t=(dx,dy), then n=(-dy,dx)
+	cs->tract.x = -area*(Tn*n->x + Tt*t->x);
+	cs->tract.y = -area*(Tn*n->y + Tt*t->y);
+	cs->tract.z = -area*(Tn*n->z + Tt*t->z);
 }
 
 // return total energy (which is needed for path independent J) under traction law curve

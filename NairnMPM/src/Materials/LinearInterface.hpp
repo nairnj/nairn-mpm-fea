@@ -20,17 +20,15 @@ class LinearInterface : public ContactLaw
 	public:
 
 		// constructors and destructors
-		LinearInterface();
-		LinearInterface(char *matName);
+		LinearInterface(char *,int);
 
 		// initialize
-		virtual char *InputMaterialProperty(char *,int &,double &);
+		virtual char *InputContactProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintContactLaw(void) const;
 	
 		// methods
 		virtual void GetInterfaceForces(Vector *,Vector *,double *,double,Vector *,double,double,Vector *,double,double,double) const;
-		virtual double GetTerms(double d,double m,double &sineTerm,double &sincosTerm) const;
 	
 		// accessors
 		virtual const char *MaterialType(void) const;

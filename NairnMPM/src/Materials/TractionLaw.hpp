@@ -22,17 +22,18 @@ class TractionLaw : public MaterialBase
     public:
 	
 		// constructors and destructors
-        TractionLaw(char *);
+        TractionLaw(char *,int);
 		
-		// methods
-        virtual char *InputMaterialProperty(char *,int &,double &);
+		// methods - subclass should override InputContactProperty only
+		virtual char *InputMaterialProperty(char *,int &,double &);
+		virtual char *InputTractionLawProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintTransportProperties(void) const;
 		virtual void ReportDebond(double,CrackSegment *,double,double);
 		virtual void CalculateTimeFunction();
 		
         // prototypes for traction law methods (subclasses must override)
-		virtual void CrackTractionLaw(CrackSegment *,double,double,double,double,double);
+		virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);
 		virtual double CrackTractionEnergy(CrackSegment *,double,double,bool);
 		
 		// accessors

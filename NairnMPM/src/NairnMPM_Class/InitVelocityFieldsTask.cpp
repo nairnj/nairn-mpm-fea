@@ -50,7 +50,6 @@ void InitVelocityFieldsTask::Execute(void)
 	
 #pragma omp parallel
 	{
-#ifndef LOAD_GIMP_INFO
 #ifdef CONST_ARRAYS
 		int ndsArray[MAX_SHAPE_NODES];
 		double fn[MAX_SHAPE_NODES];
@@ -58,11 +57,10 @@ void InitVelocityFieldsTask::Execute(void)
 		int ndsArray[maxShapeNodes];
 		double fn[maxShapeNodes];
 #endif
-#endif
 		
 		int pn = GetPatchNumber();
 		
-		// do non-rigid and rigid contact materials in patch pn
+		// do non-rigid, rigid block, and rigid contact particles in patch pn
 		for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
 		{   // get material point (only in this patch)
 			MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
@@ -71,11 +69,6 @@ void InitVelocityFieldsTask::Execute(void)
 			{	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
 				const int matfld = matID->GetField();                           // material velocity field
 				
-#ifdef LOAD_GIMP_INFO
-				GIMPNodes *gimp = mpmptr->GetGIMPInfo();
-				int *nds = gimp->nds;
-				int numnds = nds[0];
-#else
 				// get nodes and shape function for material point p
 				const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
 				
@@ -85,21 +78,21 @@ void InitVelocityFieldsTask::Execute(void)
 				int *nds = ndsArray;
 				elref->GetShapeFunctions(fn,&nds,mpmptr);
 				int numnds = nds[0];
-#endif
 				
 				// Only need to decipher crack velocity field if has cracks (firstCrack!=NULL)
 				//      and if this material allows cracks.
-				bool decipherCVF = firstCrack!=NULL && matID->AllowsCracks();
+				bool decipherCVF = (firstCrack!=NULL) && matID->AllowsCracks();
 				
 				// Check each node
 				for(int i=1;i<=numnds;i++)
 				{	// use real node in this loop
 					NodalPoint *ndptr = nd[nds[i]];
+					Vector ndpt = MakeVector(ndptr->x,ndptr->y,ndptr->z);
 					
 					// always zero when no cracks (or when ignoring cracks)
 					short vfld = 0;
 					
-					// If need, find vlocity field and for each field set location
+					// If need, find velocity field and for each field set location
 					// (above or below crack) and crack number (1 based) or 0 for NO_CRACK
 					if(decipherCVF)
 					{	// in CRAMP, find crack crossing and appropriate velocity field
@@ -111,11 +104,12 @@ void InitVelocityFieldsTask::Execute(void)
 						
 						CrackHeader *nextCrack = firstCrack;
 						while(nextCrack!=NULL)
-						{	vfld = nextCrack->CrackCross(mpmptr->pos.x,mpmptr->pos.y,ndptr->x,ndptr->y,&norm);
+						{	// get cross details
+							vfld = nextCrack->CrackCross(&(mpmptr->pos), &ndpt, &norm, nds[i]);
+							
 							if(vfld!=NO_CRACK)
 							{	cfld[cfound].loc=vfld;
 								cfld[cfound].norm=norm;
-								
 #ifdef IGNORE_CRACK_INTERACTIONS
 								// appears to always be same crack, and stop when found one
 								cfld[cfound].crackNum=1;
@@ -133,12 +127,13 @@ void InitVelocityFieldsTask::Execute(void)
 							nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 						}
 						
-						
 						// find (and allocate if needed) the velocity field
 						// Use vfld=0 if no cracks found
 						if(cfound>0)
-						{   // In parallel, this is critical code
-#pragma omp critical (addcvf)
+						{   // Some stuff in below needs critical. Two options to are to make it all critical
+							// (use here comment all pragma's inside the method) or comment out here and keep
+							// all in the method
+//#pragma omp critical (addcvf)
 							{   try
 								{   vfld = ndptr->AddCrackVelocityField(matfld,cfld);
 								}
@@ -152,9 +147,6 @@ void InitVelocityFieldsTask::Execute(void)
 								}
 							}
 						}
-						
-						// set material point velocity field for this node
-						mpmptr->vfld[i] = (char)vfld;
 					}
 					
 					// make sure material velocity field is created too
@@ -178,6 +170,9 @@ void InitVelocityFieldsTask::Execute(void)
 						}
 						
 					}
+						
+					// set material point velocity field for this node
+					mpmptr->vfld[i] = (char)vfld;
 				}
 				
 				// next material point

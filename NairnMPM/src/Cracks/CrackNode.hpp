@@ -13,34 +13,33 @@
 
 #define _CRACKNODE_
 
-#include "Nodes/NodalPoint.hpp"
+class NodalPoint;
 
 class CrackNode
 {
     public:
-		// variables (changed in MPM time step)
-		static CrackNode *currentCNode;
+		// list of crack nodes
+		static vector< CrackNode * > crackContactNodes;
 
         // constructors and destructors
-        CrackNode(NodalPoint *,CrackNode *);
+		CrackNode(NodalPoint *,int,CrackNode *);
 	
 		// common methods
 		void SetPrevNode(CrackNode *);
 		CrackNode *GetPrevNode(void);
 	
 		// interface and contact methods
-		virtual CrackNode *NodalCrackContact(void);
-		virtual CrackNode *NodalCrackContactAndForces(double);
+		virtual void NodalCrackContact(double,int);
 
 		// class methods
-		static void RemoveCrackNodes(void);
-		static void CrackContactTask4(double);
-		static void ContactOnKnownNodes(void);
-		
+		static void ContactOnKnownNodes(double,int);
+		static void ReleaseContactNodes(void);
+	
 	protected:
 		// variables (changed in MPM time step)
 		NodalPoint *theNode;
         CrackNode *prevNode;
+		int hasFlags;
 };
 
 #endif

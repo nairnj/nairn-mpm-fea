@@ -15,8 +15,8 @@
 #include "Boundary_Conditions/NodalLoad.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Boundary_Conditions/EdgeBC.hpp"
-#include "Read_XML/mathexpr.hpp"
 #include "System/UnitsController.hpp"
+#include "Read_XML/Expression.hpp"
 
 /*********************************************************************
     Begin results information
@@ -43,12 +43,12 @@ void NairnFEA::MyStartResultsOutput(void)
     // Temperature
     PrintSection("THERMAL LOAD");
 	if(temperatureExpr!=NULL)
-	{	if(!CreateFunction(temperatureExpr))
+	{	if(!Expression::CreateFunction(temperatureExpr,1))
 			throw CommonException("The temperature expression is not a valid function","NairnFEA::MyStartResultsOutput");
 		for(i=1;i<=nnodes;i++)
-		{	nd[i]->gTemperature = FunctionValue(1,nd[i]->x,nd[i]->y,0.,0.,0.,0.)-stressFreeTemperature;
+		{	nd[i]->gTemperature = Expression::FunctionValue(1,nd[i]->x,nd[i]->y,0.,0.,0.,0.)-stressFreeTemperature;
 		}
-		DeleteFunction();
+		Expression::DeleteFunction(1);
 	}
 	else
 	{	// unknown, but may have been set in explicit node commands

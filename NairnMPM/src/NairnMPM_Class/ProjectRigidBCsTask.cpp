@@ -61,27 +61,23 @@ void ProjectRigidBCsTask::Execute(void)
 		for(int i=1;i<=numnds;i++)
 		{   int mi=elref->nodes[i-1];		// 1 based node
 			
-			// look for setting function in one to three directions
-			// GetVectorSetting() returns true if function has set the velocity, otherwise it return FALSE
+			// look for setting function in one to three directions in rigid BC particle
+			// GetVectorSetting() returns true if function has set the velocity, otherwise it returns FALSE
 			bool hasDir[3];
-			Vector rvel;
-			if(rigid->GetVectorSetting(&rvel,hasDir,mtime,&mpmptr->pos))
+			if(rigid->GetVectorSetting(&mpmptr->vel,hasDir,mtime,&mpmptr->pos))
 			{   // velocity set by 1 to 3 functions as determined by hasDir[i]
 				if(hasDir[0])
-				{	mpmptr->vel.x = rvel.x;
-					SetRigidBCs(mi,matid0,X_DIRECTION,rvel.x,0.,rigid->mirrored,
+				{	SetRigidBCs(mi,matid0,X_DIRECTION,mpmptr->vel.x,0.,rigid->mirrored,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
 				if(hasDir[1])
-				{	mpmptr->vel.y = rvel.y;
-					SetRigidBCs(mi,matid0,Y_DIRECTION,rvel.y,0.,rigid->mirrored,
+				{	SetRigidBCs(mi,matid0,Y_DIRECTION,mpmptr->vel.y,0.,rigid->mirrored,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
 				if(hasDir[2])
-				{	mpmptr->vel.z = rvel.z;
-					SetRigidBCs(mi,matid0,Z_DIRECTION,rvel.z,0.,rigid->mirrored,
+				{	SetRigidBCs(mi,matid0,Z_DIRECTION,mpmptr->vel.z,0.,rigid->mirrored,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
@@ -114,8 +110,14 @@ void ProjectRigidBCsTask::Execute(void)
 			}
 			
 			// concentration
-			if(rigid->RigidConcentration())
+			if(rigid->RigidConcentration() && fmobj->HasFluidTransport())
 			{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pConcentration=rvalue;
+				if(fmobj->HasDiffusion())
+				{	if(mpmptr->pConcentration<0.)
+						mpmptr->pConcentration=0.;
+					else if(mpmptr->pConcentration>1.)
+						mpmptr->pConcentration=1.;
+				}
 				SetRigidBCs(mi,matid0,CONC_DIRECTION,mpmptr->pConcentration,0.,0,
 							(BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,
 							(BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);
@@ -182,6 +184,16 @@ void ProjectRigidBCsTask::SetRigidBCs(int mi,int matid0,int type,double value,do
 				newBC=(BoundaryCondition *)(new NodalVelBC(mi,newType,CONSTANT_VALUE,value,(double)0.,(double)0.,(double)0.));
 			}
 			((NodalVelBC *)newBC)->SetMirrorSpacing(mirrored);
+			/*
+			if(mirrored!=0)
+			{	if(type==X_DIRECTION)
+					nd[mi]->SetFixedDirection(XSYMMETRYPLANE_DIRECTION);
+				else if(type==Y_DIRECTION)
+					nd[mi]->SetFixedDirection(YSYMMETRYPLANE_DIRECTION);
+				else
+					nd[mi]->SetFixedDirection(ZSYMMETRYPLANE_DIRECTION);
+			}
+			*/
 			break;
 			
 		case TEMP_DIRECTION:

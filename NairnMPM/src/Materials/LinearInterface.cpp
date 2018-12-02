@@ -16,10 +16,8 @@ extern double timestep;
 
 #pragma mark LinearInterface::Constructors and Destructors
 
-// Constructors
-LinearInterface::LinearInterface() {}
-
-LinearInterface::LinearInterface(char *matName) : ContactLaw(matName)
+// Constructor
+LinearInterface::LinearInterface(char *matName,int matID) : ContactLaw(matName,matID)
 {
 	Dnt = -UnitsController::Scaling(1.e6);
 	Dnc = -UnitsController::Scaling(1.e6);
@@ -32,7 +30,7 @@ LinearInterface::LinearInterface(char *matName) : ContactLaw(matName)
 // Read material properties by name (in xName). Set input to variable type
 // (DOUBLE_NUM or INT_NUM) and return pointer to the class variable
 // (cast as a char *)
-char *LinearInterface::InputMaterialProperty(char *xName,int &input,double &gScaling)
+char *LinearInterface::InputContactProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"Dn")==0 || strcmp(xName,"Dnt")==0)
 	{	input=DOUBLE_NUM;
@@ -51,7 +49,7 @@ char *LinearInterface::InputMaterialProperty(char *xName,int &input,double &gSca
 	}
 	
 	// does not all any from MaterialBase
-    return ContactLaw::InputMaterialProperty(xName,input,gScaling);
+    return ContactLaw::InputContactProperty(xName,input,gScaling);
 }
 
 // Verify input properties do calculations; if problem return string with an error message
@@ -114,8 +112,7 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 		// May prefer to limit even futher, but never higher
 		if(d > 2.467401100272340*m)
 		{	// acceleration looks too high for stability, so revert to stick
-			trt = 0.;
-			// keep delPi at stick conditions
+			// set trt=0. (which initialized above) and keep delPi at stick conditions
 		}
 		else
 		{	// exact solution method
@@ -140,8 +137,7 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 	// if current perfect, stays perfect
 	if((Dnt<0. && deltaDotn>=0.) || (Dnc<0. && deltaDotn<0.))
 	{	// perfect interface
-		trn = 0;
-		// Add normal momentum change back into delPi to make it perfect
+		// Set trn=0 (which is initialized above), and add normal momentum change back into delPi to make it perfect
 		AddScaledVector(delPi,norm,dPDotn);
 	}
 	
@@ -162,8 +158,7 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 		// we limit to phi = sqrt(d/m) to less than pi/2 (pi^2/4 = 2.467401100272340)
 		if(d > 2.467401100272340*m || Di<0.)
 		{	// acceleration looks too high for stability, so revert to stick
-			trn = 0.;
-			// Add normal momentum change back into delPi to make it perfect
+			// Set trn=0 (which is initilized above),dd normal momentum change back into delPi to make it perfect
 			AddScaledVector(delPi,norm,dPDotn);
 		}
 		else
@@ -208,18 +203,22 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 				}
 				
 				else
-				{	// could it ever be negative in square root?
+				{	// These terms are in contactetc nores, but divided through by mred^2 kap^4
 					double arg = deltaDotn - delFn/(mred*kap2);
 					A = arg*arg + dn*dn/(mred*mred*kap2);
 					B = 2.*delFn*dn/(mred*mred*kap*kap2);
 					C = (delFn/(mred*kap2)+arg)*(delFn/(mred*kap2)-arg);
+					
+					// These comment forms are direct from notes
 					//double arg = mred*kap2*deltaDotn - delFn;
 					//A = arg*arg + kap2*dn*dn;
 					//B = 2.*kap*delFn*dn;
 					//C = (delFn+arg)*(delFn-arg);
+					
+					// stable quadratic solution method
 					rootTerm = B*B-4.*A*C;
 					if(rootTerm<0.)
-					{	// we assume it should be zero? But never observed in calculatinos
+					{	// assume must be zero, but round off error (also never observed in calculations)
 						q = -0.5*B;
 					}
 					else
@@ -248,7 +247,8 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 						tc = asin(sinkt)/kap;
 				}
 				
-				// find dn^(c) = dPDotn to stick after contact
+				// find dn^(c) = dPDotn now to stick after contact
+				// see contactetc results for first definition of dn^(c)
 				phi = kap*tc;
 				sineTerm = (phi<0.02) ? 1.-phi*phi/6 : sin(phi)/phi;
 				dPDotn = dn*cos(phi) - mred*kap*deltaDotn*sin(phi) + delFn*tc*sineTerm;
@@ -257,16 +257,21 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 				kap2 = Df*surfaceArea/mred;
 				kap = sqrt(kap2);
 				
-				// check is opposite direction is perfect
+				// check if opposite direction is perfect
 				if(Df<0. || kap2>2.467401100272340)
 				{	// effective force to reach contact, but no energy because final discontinity is zero
-					trn = (2./timestep)*(m*deltaDotn + dn) + delFn;
+					// found from contactetc notes with delta(delta t)=0
+					trn = (2./timestep)*(m*deltaDotn + dPDotn) - delFn;
+					
+					// this version gets sum delPi + trn*timestep to equal final force, but poor results
+					//trn = (2./timestep)*(m*deltaDotn - dPDotn) - delFn;
 					
 					// add momentum for post-contact stick
-					AddScaledVector(delPi,norm,dPDotn);
+					//AddScaledVector(delPi,norm,dPDotn);
 				}
 				else
 				{	// effective force for bilinear case
+					// See contactetc notes - form using dn^(c) = dPDotn and not the expanded from
 					phi = kap*timestep;
 					if(phi<1.e-5)
 					{	// for nearly debonded
@@ -296,24 +301,6 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
     // find (trn n + trt t) for force in cartesian coordinates
     CopyScaleVector(fImp, norm, trn);
     AddScaledVector(fImp, tangDel, trt);
-}
-
-// Get phi, 1-sin phi/phi and sin phi/phi -  (1-cos phi)/phi^2 stable even for phi near zero
-// return phi
-double LinearInterface::GetTerms(double d,double m,double &sineTerm,double &sincosTerm) const
-{
-	double phi = sqrt(d/m);
-	if(phi<0.02)
-	{	double phi2 = phi*phi;
-		sineTerm = phi2/6.;				// = 1-sin phi/phi within 1e-10
-		sincosTerm = 0.5 - 0.125*phi2;	// = sin phi/phi - (1-cos phi)/phi^2) within 1e-10
-	}
-	else
-	{	double sineRatio = sin(phi)/phi;
-		sineTerm = 1. - sineRatio;
-		sincosTerm = sineRatio - (1.-cos(phi))/(phi*phi);
-	}
-	return phi;
 }
 
 #pragma mark LinearInterface::Accessors

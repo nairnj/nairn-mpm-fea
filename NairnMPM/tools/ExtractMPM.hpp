@@ -48,6 +48,7 @@ char *NextArgument(int,char * const [],int,char);
 void Usage(const char *);
 int ExtractMPMData(const char *,int,int);
 int VTKLegacy(ostream &,const char *);
+int XYZExport(ostream &,const char *);
 bool GetNextFileBlock(const char *);
 bool RestartFileBlocks(long,const char *);
 void OutputQuantity(int,unsigned char *,ostream &,short,char);

@@ -42,8 +42,7 @@ class BistableIsotropic : public IsotropicMat
 		double kCond0,kCondd;	// conductivity constants
         
         // constructors and destructors
-        BistableIsotropic();
-        BistableIsotropic(char *);
+        BistableIsotropic(char *,int);
 		
 		// initialize
         virtual char *InputMaterialProperty(char *,int &,double &);
@@ -70,7 +69,8 @@ class BistableIsotropic : public IsotropicMat
         virtual double MaximumDiffusion(void) const;
         virtual double MaximumDiffusivity(void) const;
 		virtual const char *MaterialType(void) const;
-    
+		virtual bool SupportsDiffusion(void) const;
+	
     private:
         char readbs[BISTABLE_PROPS];
         short transState;	// current state for transport properties

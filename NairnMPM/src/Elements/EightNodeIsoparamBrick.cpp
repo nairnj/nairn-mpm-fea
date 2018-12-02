@@ -20,21 +20,37 @@ static double zti[8]={-1.,-1.,-1.,-1.,1.,1.,1.,1.};
 
 // globals for GIMP node locations
 #ifdef MPM_CODE
-static double gxii[64]={-1.,1.,1.,-1.,-1.,1.,1.,-1.,
+static double g3xii[64]={-1.,1.,1.,-1.,-1.,1.,1.,-1.,
 						-3.,-1.,1.,3.,3.,3.,3.,1.,-1.,-3.,-3.,-3.,
 						-3.,-1.,1.,3.,3.,3.,3.,1.,-1.,-3.,-3.,-3.,
 						-1.,1.,1.,-1.,-3.,-1.,1.,3.,3.,3.,3.,1.,-1.,-3.,-3.,-3.,
 						-1.,1.,1.,-1.,-3.,-1.,1.,3.,3.,3.,3.,1.,-1.,-3.,-3.,-3.};
-static double geti[64]={-1.,-1.,1.,1.,-1.,-1.,1.,1.,
+static double g3eti[64]={-1.,-1.,1.,1.,-1.,-1.,1.,1.,
 						-3.,-3.,-3.,-3.,-1.,1.,3.,3.,3.,3.,1.,-1.,
 						-3.,-3.,-3.,-3.,-1.,1.,3.,3.,3.,3.,1.,-1.,
 						-1.,-1.,1.,1.,-3.,-3.,-3.,-3.,-1.,1.,3.,3.,3.,3.,1.,-1.,
 						-1.,-1.,1.,1.,-3.,-3.,-3.,-3.,-1.,1.,3.,3.,3.,3.,1.,-1.};
-static double gzti[64]={-1.,-1.,-1.,-1.,1.,1.,1.,1.,
+static double g3zti[64]={-1.,-1.,-1.,-1.,1.,1.,1.,1.,
 						-1.,-1.,-1.,-1.,-1.,-1.,-1.,-1.,-1.,-1.,-1.,-1.,
 						1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,
 						-3.,-3.,-3.,-3.,-3.,-3.,-3.,-3.,-3.,-3.,-3.,-3.,-3.,-3.,-3.,-3.,
 						3.,3.,3.,3.,3.,3.,3.,3.,3.,3.,3.,3.,3.,3.,3.,3.};
+// = int(0.5*(g3xii[i]+1)), int(0.5*(g3etai[i]+1)), and int(0.5*(g3zti[i]+1))
+static int x3off[64]={0,1,1,0,0,1,1,0,
+					-1,0,1,2,2,2,2,1,0,-1,-1,-1,
+					-1,0,1,2,2,2,2,1,0,-1,-1,-1,
+					0,1,1,0,-1,0,1,2,2,2,2,1,0,-1,-1,-1,
+					0,1,1,0,-1,0,1,2,2,2,2,1,0,-1,-1,-1};
+static int y3off[64]={0,0,1,1,0,0,1,1,
+					-1,-1,-1,-1,0,1,2,2,2,2,1,0,
+					-1,-1,-1,-1,0,1,2,2,2,2,1,0,
+					0,0,1,1,-1,-1,-1,-1,0,1,2,2,2,2,1,0,
+					0,0,1,1,-1,-1,-1,-1,0,1,2,2,2,2,1,0};
+static int z3off[64]={0,0,0,0,1,1,1,1,
+					0,0,0,0,0,0,0,0,0,0,0,0,
+					1,1,1,1,1,1,1,1,1,1,1,1,
+					-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+					2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2};
 #endif
 
 #pragma mark EightNodeIsoparamBrick::Constructors and Destructor
@@ -85,6 +101,105 @@ void EightNodeIsoparamBrick::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
 			zDeriv[i]=0.25*zti[i]*temp1*temp2/GetDeltaZ();
 		}
 	}
+}
+
+// get B2SPLINE shape functions and optionally derivatives wrt x and y, but derivatives only work
+// if it is a regular array. Shape functions are general
+// For axisymmetric MPM, make sure zDeriv is not NULL and load with shape function/rp
+void EightNodeIsoparamBrick::SplineShapeFunction(int *nds,Vector *xi,int getDeriv,double *sfxn,
+										   double *xDeriv,double *yDeriv,double *zDeriv) const
+{
+	// constants
+	double inv_dx = 0.,inv_dy=0.,inv_dz=0.;
+	if(getDeriv)
+	{   inv_dx = 1./GetDeltaX();
+		inv_dy = 1./GetDeltaY();
+		inv_dz = 1./GetDeltaY();
+	}
+	
+	// get cell shape functions
+	double sx,sy,sz,arg,etai,netai,zetai,temp1,temp2,temp3;
+	int i=0;
+	for(int id=0;id<64;id++)
+	{	// xi direction
+		etai = xi->x - g3xii[id];
+		temp1=fabs(etai);
+		if(temp1>=3.) continue;
+		
+		// y direction
+		netai = xi->y - g3eti[id];
+		temp2=fabs(netai);
+		if(temp2>=3.) continue;
+		
+		// z direction
+		zetai = xi->z - g3zti[id];
+		temp3=fabs(zetai);
+		if(temp3>=3.) continue;
+		
+		// find shape function i
+		
+		// x direction
+		if(temp1<=1.0)
+			sx = 0.25*(3.-etai*etai);
+		else
+		{	arg = 3.-temp1;
+			sx = 0.125*arg*arg;
+		}
+		
+		// y direction
+		if(temp2<=1.0)
+			sy = 0.25*(3.-netai*netai);
+		else
+		{	arg = 3.-temp2;
+			sy = 0.125*arg*arg;
+		}
+		
+		// z direction
+		if(temp3<=1.0)
+			sz = 0.25*(3.-zetai*zetai);
+		else
+		{	arg = 3.-temp3;
+			sz = 0.125*arg*arg;
+		}
+
+		// combine
+		sfxn[i] = sx*sy*sz;
+		
+		// Note that derivative is (2/dx)dN/detai and (2/dy)dN/dnetai
+		if(getDeriv)
+		{	// x direction
+			if(temp1<=1.0)
+				xDeriv[i] = -etai*sy*sz*inv_dx;
+			else if(etai>=0.)
+				xDeriv[i] = 0.5*(etai-3)*sy*sz*inv_dx;
+			else
+				xDeriv[i] = 0.5*(etai+3)*sy*sz*inv_dx;
+			
+			// y direction
+			if(temp2<=1.0)
+				yDeriv[i] = -netai*sx*sz*inv_dy;
+			else if(netai>=0.)
+				yDeriv[i] = 0.5*(netai-3)*sx*sz*inv_dy;
+			else
+				yDeriv[i] = 0.5*(netai+3)*sx*sz*inv_dy;
+			
+			// z direction
+			if(temp3<=1.0)
+				zDeriv[i] = -zetai*sx*sy*inv_dz;
+			else if(zetai>=0.)
+				zDeriv[i] = 0.5*(zetai-3)*sx*sy*inv_dz;
+			else
+				zDeriv[i] = 0.5*(zetai+3)*sx*sy*inv_dz;
+		}
+		
+		// assign node number
+		i++;
+		nds[i] = nodes[0] + x3off[id]*mpmgrid.xplane + y3off[id]*mpmgrid.yplane + z3off[id]*mpmgrid.zplane;
+	}
+	
+	// set number
+	// this better be <=27 or bad things happen
+	nds[0] = i;
 }
 
 // see if point is in this element (assumes rectangular)
@@ -157,7 +272,7 @@ int EightNodeIsoparamBrick::Orthogonal(double *dx,double *dy,double *dz)
 }
 
 // find dimensionless position, but assumes an orthogonal element
-void EightNodeIsoparamBrick::GetXiPos(Vector *pos,Vector *xipos) const
+void EightNodeIsoparamBrick::GetXiPos(const Vector *pos,Vector *xipos) const
 {
 	xipos->x=(2.*pos->x-xmin-xmax)/GetDeltaX();
 	xipos->y=(2.*pos->y-ymin-ymax)/GetDeltaY();
@@ -166,742 +281,13 @@ void EightNodeIsoparamBrick::GetXiPos(Vector *pos,Vector *xipos) const
 
 #pragma mark EightNodeIsoparamBrick::GIMP Methods
 
-// Get GIMP nodes around an element #num, but only where shape functions are nonzero
-// assumed to be properly numbered regular 3D array
-// load nodes into nds[1]... and node ID (0-63) into ndIDs[0]...
-void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,unsigned char *ndIDs,Vector *xipos,Vector &lp) const
-{
-	// quadrant barriers assuming 8 particles
-	double q1x = -1.+lp.x, q2x = 1.-lp.x;
-	double q1z = -1.+lp.z, q2z = 1.-lp.z;
-	
-	// nodes directly associated with the element
-	nds[1]=nodes[0];
-	nds[2]=nodes[1];
-	nds[3]=nodes[2];
-	nds[4]=nodes[3];
-	nds[5]=nodes[4];
-	nds[6]=nodes[5];
-	nds[7]=nodes[6];
-	nds[8]=nodes[7];
-	ndIDs[0]=0;
-	ndIDs[1]=1;
-	ndIDs[2]=2;
-	ndIDs[3]=3;
-	ndIDs[4]=4;
-	ndIDs[5]=5;
-	ndIDs[6]=6;
-	ndIDs[7]=7;
-
-	// lower y quadrant
-	if(xipos->y<-1.+lp.y)
-	{	if(xipos->x<q1x)
-		{	if(xipos->z<q1z)
-			{	nds[9]=nodes[0]-mpmgrid.zplane;			// before element z direction
-				nds[10]=nodes[1]-mpmgrid.zplane;
-				nds[11]=nodes[2]-mpmgrid.zplane;
-				nds[12]=nodes[3]-mpmgrid.zplane;
-				nds[13]=nodes[0]-mpmgrid.xplane;		// before element x direction
-				nds[14]=nodes[3]-mpmgrid.xplane;
-				nds[15]=nodes[4]-mpmgrid.xplane;
-				nds[16]=nodes[7]-mpmgrid.xplane;
-				nds[17]=nodes[0]-mpmgrid.yplane;		// before element y direction
-				nds[18]=nodes[1]-mpmgrid.yplane;
-				nds[19]=nodes[4]-mpmgrid.yplane;
-				nds[20]=nodes[5]-mpmgrid.yplane;
-				nds[21]=nds[13]-mpmgrid.zplane;
-				nds[22]=nds[14]-mpmgrid.zplane;
-				nds[23]=nds[17]-mpmgrid.zplane;
-				nds[24]=nds[18]-mpmgrid.zplane;
-				nds[25]=nds[17]-mpmgrid.xplane;
-				nds[26]=nds[19]-mpmgrid.xplane;
-				nds[27]=nds[25]-mpmgrid.zplane;
-				ndIDs[8]=32;
-				ndIDs[9]=33;
-				ndIDs[10]=34;
-				ndIDs[11]=35;
-				ndIDs[12]=19;
-				ndIDs[13]=18;
-				ndIDs[14]=31;
-				ndIDs[15]=30;
-				ndIDs[16]=9;
-				ndIDs[17]=10;
-				ndIDs[18]=21;
-				ndIDs[19]=22;
-				ndIDs[20]=47;
-				ndIDs[21]=46;
-				ndIDs[22]=37;
-				ndIDs[23]=38;
-				ndIDs[24]=8;
-				ndIDs[25]=20;
-				ndIDs[26]=36;
-				*numnds=27;
-			}
-			else if(xipos->z<=q2z)
-			{	nds[9]=nodes[0]-mpmgrid.xplane;
-				nds[10]=nodes[3]-mpmgrid.xplane;
-				nds[11]=nodes[4]-mpmgrid.xplane;
-				nds[12]=nodes[7]-mpmgrid.xplane;
-				nds[13]=nodes[0]-mpmgrid.yplane;
-				nds[14]=nodes[1]-mpmgrid.yplane;
-				nds[15]=nodes[4]-mpmgrid.yplane;
-				nds[16]=nodes[5]-mpmgrid.yplane;
-				nds[17]=nds[13]-mpmgrid.xplane;
-				nds[18]=nds[15]-mpmgrid.xplane;
-				ndIDs[8]=19;
-				ndIDs[9]=18;
-				ndIDs[10]=31;
-				ndIDs[11]=30;
-				ndIDs[12]=9;
-				ndIDs[13]=10;
-				ndIDs[14]=21;
-				ndIDs[15]=22;
-				ndIDs[16]=8;
-				ndIDs[17]=20;
-				*numnds=18;
-			}
-			else
-			{	nds[9]=nodes[4]+mpmgrid.zplane;
-				nds[10]=nodes[5]+mpmgrid.zplane;
-				nds[11]=nodes[6]+mpmgrid.zplane;
-				nds[12]=nodes[7]+mpmgrid.zplane;
-				nds[13]=nodes[0]-mpmgrid.xplane;
-				nds[14]=nodes[3]-mpmgrid.xplane;
-				nds[15]=nodes[4]-mpmgrid.xplane;
-				nds[16]=nodes[7]-mpmgrid.xplane;
-				nds[17]=nodes[0]-mpmgrid.yplane;
-				nds[18]=nodes[1]-mpmgrid.yplane;
-				nds[19]=nodes[4]-mpmgrid.yplane;
-				nds[20]=nodes[5]-mpmgrid.yplane;
-				nds[21]=nds[15]+mpmgrid.zplane;
-				nds[22]=nds[16]+mpmgrid.zplane;
-				nds[23]=nds[19]+mpmgrid.zplane;
-				nds[24]=nds[20]+mpmgrid.zplane;
-				nds[25]=nds[17]-mpmgrid.xplane;
-				nds[26]=nds[19]-mpmgrid.xplane;
-				nds[27]=nds[26]+mpmgrid.zplane;
-				ndIDs[8]=48;
-				ndIDs[9]=49;
-				ndIDs[10]=50;
-				ndIDs[11]=51;
-				ndIDs[12]=19;
-				ndIDs[13]=18;
-				ndIDs[14]=31;
-				ndIDs[15]=30;
-				ndIDs[16]=9;
-				ndIDs[17]=10;
-				ndIDs[18]=21;
-				ndIDs[19]=22;
-				ndIDs[20]=63;
-				ndIDs[21]=62;
-				ndIDs[22]=53;
-				ndIDs[23]=54;
-				ndIDs[24]=8;
-				ndIDs[25]=20;
-				ndIDs[26]=52;
-				*numnds=27;
-			}
-		}
-		else if(xipos->x<=q2x)
-		{	if(xipos->z<q1z)
-			{	nds[9]=nodes[0]-mpmgrid.zplane;
-				nds[10]=nodes[1]-mpmgrid.zplane;
-				nds[11]=nodes[2]-mpmgrid.zplane;
-				nds[12]=nodes[3]-mpmgrid.zplane;
-				nds[13]=nodes[0]-mpmgrid.yplane;
-				nds[14]=nodes[1]-mpmgrid.yplane;
-				nds[15]=nodes[4]-mpmgrid.yplane;
-				nds[16]=nodes[5]-mpmgrid.yplane;
-				nds[17]=nds[13]-mpmgrid.zplane;
-				nds[18]=nds[14]-mpmgrid.zplane;
-				ndIDs[8]=32;
-				ndIDs[9]=33;
-				ndIDs[10]=34;
-				ndIDs[11]=35;
-				ndIDs[12]=9;
-				ndIDs[13]=10;
-				ndIDs[14]=21;
-				ndIDs[15]=22;
-				ndIDs[16]=37;
-				ndIDs[17]=38;
-				*numnds=18;
-			}
-			else if(xipos->z<=q2z)
-			{	nds[9]=nodes[0]-mpmgrid.yplane;
-				nds[10]=nodes[1]-mpmgrid.yplane;
-				nds[11]=nodes[4]-mpmgrid.yplane;
-				nds[12]=nodes[5]-mpmgrid.yplane;
-				ndIDs[8]=9;
-				ndIDs[9]=10;
-				ndIDs[10]=21;
-				ndIDs[11]=22;
-				*numnds=12;
-			}
-			else
-			{	nds[9]=nodes[4]+mpmgrid.zplane;
-				nds[10]=nodes[5]+mpmgrid.zplane;
-				nds[11]=nodes[6]+mpmgrid.zplane;
-				nds[12]=nodes[7]+mpmgrid.zplane;
-				nds[13]=nodes[0]-mpmgrid.yplane;
-				nds[14]=nodes[1]-mpmgrid.yplane;
-				nds[15]=nodes[4]-mpmgrid.yplane;
-				nds[16]=nodes[5]-mpmgrid.yplane;
-				nds[17]=nds[15]+mpmgrid.zplane;
-				nds[18]=nds[16]+mpmgrid.zplane;
-				ndIDs[8]=48;
-				ndIDs[9]=49;
-				ndIDs[10]=50;
-				ndIDs[11]=51;
-				ndIDs[12]=9;
-				ndIDs[13]=10;
-				ndIDs[14]=21;
-				ndIDs[15]=22;
-				ndIDs[16]=53;
-				ndIDs[17]=54;
-				*numnds=18;
-			}
-		}
-		else
-		{	if(xipos->z<q1z)
-			{	nds[9]=nodes[0]-mpmgrid.zplane;
-				nds[10]=nodes[1]-mpmgrid.zplane;
-				nds[11]=nodes[2]-mpmgrid.zplane;
-				nds[12]=nodes[3]-mpmgrid.zplane;
-				nds[13]=nodes[1]+mpmgrid.xplane;
-				nds[14]=nodes[2]+mpmgrid.xplane;
-				nds[15]=nodes[5]+mpmgrid.xplane;
-				nds[16]=nodes[6]+mpmgrid.xplane;
-				nds[17]=nodes[0]-mpmgrid.yplane;
-				nds[18]=nodes[1]-mpmgrid.yplane;
-				nds[19]=nodes[4]-mpmgrid.yplane;
-				nds[20]=nodes[5]-mpmgrid.yplane;
-				nds[21]=nds[13]-mpmgrid.zplane;
-				nds[22]=nds[14]-mpmgrid.zplane;
-				nds[23]=nds[17]-mpmgrid.zplane;
-				nds[24]=nds[18]-mpmgrid.zplane;
-				nds[25]=nds[18]+mpmgrid.xplane;
-				nds[26]=nds[20]+mpmgrid.xplane;
-				nds[27]=nds[25]-mpmgrid.zplane;
-				ndIDs[8]=32;
-				ndIDs[9]=33;
-				ndIDs[10]=34;
-				ndIDs[11]=35;
-				ndIDs[12]=12;
-				ndIDs[13]=13;
-				ndIDs[14]=24;
-				ndIDs[15]=25;
-				ndIDs[16]=9;
-				ndIDs[17]=10;
-				ndIDs[18]=21;
-				ndIDs[19]=22;
-				ndIDs[20]=40;
-				ndIDs[21]=41;
-				ndIDs[22]=37;
-				ndIDs[23]=38;
-				ndIDs[24]=11;
-				ndIDs[25]=23;
-				ndIDs[26]=39;
-				*numnds=27;
-			}
-			else if(xipos->z<=q2z)
-			{	nds[9]=nodes[1]+mpmgrid.xplane;
-				nds[10]=nodes[2]+mpmgrid.xplane;
-				nds[11]=nodes[5]+mpmgrid.xplane;
-				nds[12]=nodes[6]+mpmgrid.xplane;
-				nds[13]=nodes[0]-mpmgrid.yplane;
-				nds[14]=nodes[1]-mpmgrid.yplane;
-				nds[15]=nodes[4]-mpmgrid.yplane;
-				nds[16]=nodes[5]-mpmgrid.yplane;
-				nds[17]=nds[14]+mpmgrid.xplane;
-				nds[18]=nds[16]+mpmgrid.xplane;
-				ndIDs[8]=12;
-				ndIDs[9]=13;
-				ndIDs[10]=24;
-				ndIDs[11]=25;
-				ndIDs[12]=9;
-				ndIDs[13]=10;
-				ndIDs[14]=21;
-				ndIDs[15]=22;
-				ndIDs[16]=11;
-				ndIDs[17]=23;
-				*numnds=18;
-			}
-			else
-			{	nds[9]=nodes[4]+mpmgrid.zplane;
-				nds[10]=nodes[5]+mpmgrid.zplane;
-				nds[11]=nodes[6]+mpmgrid.zplane;
-				nds[12]=nodes[7]+mpmgrid.zplane;
-				nds[13]=nodes[1]+mpmgrid.xplane;
-				nds[14]=nodes[2]+mpmgrid.xplane;
-				nds[15]=nodes[5]+mpmgrid.xplane;
-				nds[16]=nodes[6]+mpmgrid.xplane;
-				nds[17]=nodes[0]-mpmgrid.yplane;
-				nds[18]=nodes[1]-mpmgrid.yplane;
-				nds[19]=nodes[4]-mpmgrid.yplane;
-				nds[20]=nodes[5]-mpmgrid.yplane;
-				nds[21]=nds[15]+mpmgrid.zplane;
-				nds[22]=nds[16]+mpmgrid.zplane;
-				nds[23]=nds[19]+mpmgrid.zplane;
-				nds[24]=nds[20]+mpmgrid.zplane;
-				nds[25]=nds[18]+mpmgrid.xplane;
-				nds[26]=nds[20]+mpmgrid.xplane;
-				nds[27]=nds[26]+mpmgrid.zplane;
-				ndIDs[8]=48;
-				ndIDs[9]=49;
-				ndIDs[10]=50;
-				ndIDs[11]=51;
-				ndIDs[12]=12;
-				ndIDs[13]=13;
-				ndIDs[14]=24;
-				ndIDs[15]=25;
-				ndIDs[16]=9;
-				ndIDs[17]=10;
-				ndIDs[18]=21;
-				ndIDs[19]=22;
-				ndIDs[20]=56;
-				ndIDs[21]=57;
-				ndIDs[22]=53;
-				ndIDs[23]=54;
-				ndIDs[24]=11;
-				ndIDs[25]=23;
-				ndIDs[26]=55;
-				*numnds=27;
-			}
-		}
-	}
-
-	else if(xipos->y<=1.-lp.y)
-	{	if(xipos->x<q1x)
-		{	if(xipos->z<q1z)
-			{	nds[9]=nodes[0]-mpmgrid.zplane;
-				nds[10]=nodes[1]-mpmgrid.zplane;
-				nds[11]=nodes[2]-mpmgrid.zplane;
-				nds[12]=nodes[3]-mpmgrid.zplane;
-				nds[13]=nodes[0]-mpmgrid.xplane;
-				nds[14]=nodes[3]-mpmgrid.xplane;
-				nds[15]=nodes[4]-mpmgrid.xplane;
-				nds[16]=nodes[7]-mpmgrid.xplane;
-				nds[17]=nds[13]-mpmgrid.zplane;
-				nds[18]=nds[14]-mpmgrid.zplane;
-				ndIDs[8]=32;
-				ndIDs[9]=33;
-				ndIDs[10]=34;
-				ndIDs[11]=35;
-				ndIDs[12]=19;
-				ndIDs[13]=18;
-				ndIDs[14]=31;
-				ndIDs[15]=30;
-				ndIDs[16]=47;
-				ndIDs[17]=46;
-				*numnds=18;
-			}
-			else if(xipos->z<=q2z)
-			{	nds[9]=nodes[0]-mpmgrid.xplane;
-				nds[10]=nodes[3]-mpmgrid.xplane;
-				nds[11]=nodes[4]-mpmgrid.xplane;
-				nds[12]=nodes[7]-mpmgrid.xplane;
-				ndIDs[8]=19;
-				ndIDs[9]=18;
-				ndIDs[10]=31;
-				ndIDs[11]=30;
-				*numnds=12;
-			}
-			else
-			{	nds[9]=nodes[4]+mpmgrid.zplane;
-				nds[10]=nodes[5]+mpmgrid.zplane;
-				nds[11]=nodes[6]+mpmgrid.zplane;
-				nds[12]=nodes[7]+mpmgrid.zplane;
-				nds[13]=nodes[0]-mpmgrid.xplane;
-				nds[14]=nodes[3]-mpmgrid.xplane;
-				nds[15]=nodes[4]-mpmgrid.xplane;
-				nds[16]=nodes[7]-mpmgrid.xplane;
-				nds[17]=nds[15]+mpmgrid.zplane;
-				nds[18]=nds[16]+mpmgrid.zplane;
-				ndIDs[8]=48;
-				ndIDs[9]=49;
-				ndIDs[10]=50;
-				ndIDs[11]=51;
-				ndIDs[12]=19;
-				ndIDs[13]=18;
-				ndIDs[14]=31;
-				ndIDs[15]=30;
-				ndIDs[16]=63;
-				ndIDs[17]=62;
-				*numnds=18;
-			}
-		}
-		else if(xipos->x<=q2x)
-		{	if(xipos->z<q1z)
-			{	nds[9]=nodes[0]-mpmgrid.zplane;
-				nds[10]=nodes[1]-mpmgrid.zplane;
-				nds[11]=nodes[2]-mpmgrid.zplane;
-				nds[12]=nodes[3]-mpmgrid.zplane;
-				ndIDs[8]=32;
-				ndIDs[9]=33;
-				ndIDs[10]=34;
-				ndIDs[11]=35;
-				*numnds=12;
-			}
-			else if(xipos->z<=q2z)
-			{	*numnds=8;
-			}
-			else
-			{	nds[9]=nodes[4]+mpmgrid.zplane;
-				nds[10]=nodes[5]+mpmgrid.zplane;
-				nds[11]=nodes[6]+mpmgrid.zplane;
-				nds[12]=nodes[7]+mpmgrid.zplane;
-				ndIDs[8]=48;
-				ndIDs[9]=49;
-				ndIDs[10]=50;
-				ndIDs[11]=51;
-				*numnds=12;
-			}
-		}
-		else
-		{	if(xipos->z<q1z)
-			{	nds[9]=nodes[0]-mpmgrid.zplane;
-				nds[10]=nodes[1]-mpmgrid.zplane;
-				nds[11]=nodes[2]-mpmgrid.zplane;
-				nds[12]=nodes[3]-mpmgrid.zplane;
-				nds[13]=nodes[1]+mpmgrid.xplane;
-				nds[14]=nodes[2]+mpmgrid.xplane;
-				nds[15]=nodes[5]+mpmgrid.xplane;
-				nds[16]=nodes[6]+mpmgrid.xplane;
-				nds[17]=nds[13]-mpmgrid.zplane;
-				nds[18]=nds[14]-mpmgrid.zplane;
-				ndIDs[8]=32;
-				ndIDs[9]=33;
-				ndIDs[10]=34;
-				ndIDs[11]=35;
-				ndIDs[12]=12;
-				ndIDs[13]=13;
-				ndIDs[14]=24;
-				ndIDs[15]=25;
-				ndIDs[16]=40;
-				ndIDs[17]=41;
-				*numnds=18;
-			}
-			else if(xipos->z<=q2z)
-			{	nds[9]=nodes[1]+mpmgrid.xplane;
-				nds[10]=nodes[2]+mpmgrid.xplane;
-				nds[11]=nodes[5]+mpmgrid.xplane;
-				nds[12]=nodes[6]+mpmgrid.xplane;
-				ndIDs[8]=12;
-				ndIDs[9]=13;
-				ndIDs[10]=24;
-				ndIDs[11]=25;
-				*numnds=12;
-			}
-			else
-			{	nds[9]=nodes[4]+mpmgrid.zplane;
-				nds[10]=nodes[5]+mpmgrid.zplane;
-				nds[11]=nodes[6]+mpmgrid.zplane;
-				nds[12]=nodes[7]+mpmgrid.zplane;
-				nds[13]=nodes[1]+mpmgrid.xplane;
-				nds[14]=nodes[2]+mpmgrid.xplane;
-				nds[15]=nodes[5]+mpmgrid.xplane;
-				nds[16]=nodes[6]+mpmgrid.xplane;
-				nds[17]=nds[15]+mpmgrid.zplane;
-				nds[18]=nds[16]+mpmgrid.zplane;
-				ndIDs[8]=48;
-				ndIDs[9]=49;
-				ndIDs[10]=50;
-				ndIDs[11]=51;
-				ndIDs[12]=12;
-				ndIDs[13]=13;
-				ndIDs[14]=24;
-				ndIDs[15]=25;
-				ndIDs[16]=56;
-				ndIDs[17]=57;
-				*numnds=18;
-			}
-		}
-	}
-
-	else 
-	{	if(xipos->x<q1x)
-		{	if(xipos->z<q1z)
-			{	nds[9]=nodes[0]-mpmgrid.zplane;
-				nds[10]=nodes[1]-mpmgrid.zplane;
-				nds[11]=nodes[2]-mpmgrid.zplane;
-				nds[12]=nodes[3]-mpmgrid.zplane;
-				nds[13]=nodes[0]-mpmgrid.xplane;
-				nds[14]=nodes[3]-mpmgrid.xplane;
-				nds[15]=nodes[4]-mpmgrid.xplane;
-				nds[16]=nodes[7]-mpmgrid.xplane;
-				nds[17]=nodes[3]+mpmgrid.yplane;
-				nds[18]=nodes[2]+mpmgrid.yplane;
-				nds[19]=nodes[7]+mpmgrid.yplane;
-				nds[20]=nodes[6]+mpmgrid.yplane;
-				nds[21]=nds[13]-mpmgrid.zplane;
-				nds[22]=nds[14]-mpmgrid.zplane;
-				nds[23]=nds[17]-mpmgrid.zplane;
-				nds[24]=nds[18]-mpmgrid.zplane;
-				nds[25]=nds[17]-mpmgrid.xplane;
-				nds[26]=nds[19]-mpmgrid.xplane;
-				nds[27]=nds[25]-mpmgrid.zplane;
-				ndIDs[8]=32;
-				ndIDs[9]=33;
-				ndIDs[10]=34;
-				ndIDs[11]=35;
-				ndIDs[12]=19;
-				ndIDs[13]=18;
-				ndIDs[14]=31;
-				ndIDs[15]=30;
-				ndIDs[16]=16;
-				ndIDs[17]=15;
-				ndIDs[18]=28;
-				ndIDs[19]=27;
-				ndIDs[20]=47;
-				ndIDs[21]=46;
-				ndIDs[22]=44;
-				ndIDs[23]=43;
-				ndIDs[24]=17;
-				ndIDs[25]=29;
-				ndIDs[26]=45;
-				*numnds=27;
-			}
-			else if(xipos->z<=q2z)
-			{	nds[9]=nodes[0]-mpmgrid.xplane;
-				nds[10]=nodes[3]-mpmgrid.xplane;
-				nds[11]=nodes[4]-mpmgrid.xplane;
-				nds[12]=nodes[7]-mpmgrid.xplane;
-				nds[13]=nodes[3]+mpmgrid.yplane;
-				nds[14]=nodes[2]+mpmgrid.yplane;
-				nds[15]=nodes[7]+mpmgrid.yplane;
-				nds[16]=nodes[6]+mpmgrid.yplane;
-				nds[17]=nds[13]-mpmgrid.xplane;
-				nds[18]=nds[15]-mpmgrid.xplane;
-				ndIDs[8]=19;
-				ndIDs[9]=18;
-				ndIDs[10]=31;
-				ndIDs[11]=30;
-				ndIDs[12]=16;
-				ndIDs[13]=15;
-				ndIDs[14]=28;
-				ndIDs[15]=27;
-				ndIDs[16]=17;
-				ndIDs[17]=29;
-				*numnds=18;
-			}
-			else
-			{	nds[9]=nodes[4]+mpmgrid.zplane;
-				nds[10]=nodes[5]+mpmgrid.zplane;
-				nds[11]=nodes[6]+mpmgrid.zplane;
-				nds[12]=nodes[7]+mpmgrid.zplane;
-				nds[13]=nodes[0]-mpmgrid.xplane;
-				nds[14]=nodes[3]-mpmgrid.xplane;
-				nds[15]=nodes[4]-mpmgrid.xplane;
-				nds[16]=nodes[7]-mpmgrid.xplane;
-				nds[17]=nodes[3]+mpmgrid.yplane;
-				nds[18]=nodes[2]+mpmgrid.yplane;
-				nds[19]=nodes[7]+mpmgrid.yplane;
-				nds[20]=nodes[6]+mpmgrid.yplane;
-				nds[21]=nds[15]+mpmgrid.zplane;
-				nds[22]=nds[16]+mpmgrid.zplane;
-				nds[23]=nds[19]+mpmgrid.zplane;
-				nds[24]=nds[20]+mpmgrid.zplane;
-				nds[25]=nds[17]-mpmgrid.xplane;
-				nds[26]=nds[19]-mpmgrid.xplane;
-				nds[27]=nds[26]+mpmgrid.zplane;
-				ndIDs[8]=48;
-				ndIDs[9]=49;
-				ndIDs[10]=50;
-				ndIDs[11]=51;
-				ndIDs[12]=19;
-				ndIDs[13]=18;
-				ndIDs[14]=31;
-				ndIDs[15]=30;
-				ndIDs[16]=16;
-				ndIDs[17]=15;
-				ndIDs[18]=28;
-				ndIDs[19]=27;
-				ndIDs[20]=63;
-				ndIDs[21]=62;
-				ndIDs[22]=60;
-				ndIDs[23]=59;
-				ndIDs[24]=17;
-				ndIDs[25]=29;
-				ndIDs[26]=61;
-				*numnds=27;
-			}
-		}
-		else if(xipos->x<=q2x)
-		{	if(xipos->z<q1z)
-			{	nds[9]=nodes[0]-mpmgrid.zplane;
-				nds[10]=nodes[1]-mpmgrid.zplane;
-				nds[11]=nodes[2]-mpmgrid.zplane;
-				nds[12]=nodes[3]-mpmgrid.zplane;
-				nds[13]=nodes[3]+mpmgrid.yplane;
-				nds[14]=nodes[2]+mpmgrid.yplane;
-				nds[15]=nodes[7]+mpmgrid.yplane;
-				nds[16]=nodes[6]+mpmgrid.yplane;
-				nds[17]=nds[13]-mpmgrid.zplane;
-				nds[18]=nds[14]-mpmgrid.zplane;
-				ndIDs[8]=32;
-				ndIDs[9]=33;
-				ndIDs[10]=34;
-				ndIDs[11]=35;
-				ndIDs[12]=16;
-				ndIDs[13]=15;
-				ndIDs[14]=28;
-				ndIDs[15]=27;
-				ndIDs[16]=44;
-				ndIDs[17]=43;
-				*numnds=18;
-			}
-			else if(xipos->z<=q2z)
-			{	nds[9]=nodes[3]+mpmgrid.yplane;
-				nds[10]=nodes[2]+mpmgrid.yplane;
-				nds[11]=nodes[7]+mpmgrid.yplane;
-				nds[12]=nodes[6]+mpmgrid.yplane;
-				ndIDs[8]=16;
-				ndIDs[9]=15;
-				ndIDs[10]=28;
-				ndIDs[11]=27;
-				*numnds=12;
-			}
-			else
-			{	nds[9]=nodes[4]+mpmgrid.zplane;
-				nds[10]=nodes[5]+mpmgrid.zplane;
-				nds[11]=nodes[6]+mpmgrid.zplane;
-				nds[12]=nodes[7]+mpmgrid.zplane;
-				nds[13]=nodes[3]+mpmgrid.yplane;
-				nds[14]=nodes[2]+mpmgrid.yplane;
-				nds[15]=nodes[7]+mpmgrid.yplane;
-				nds[16]=nodes[6]+mpmgrid.yplane;
-				nds[17]=nds[15]+mpmgrid.zplane;
-				nds[18]=nds[16]+mpmgrid.zplane;
-				ndIDs[8]=48;
-				ndIDs[9]=49;
-				ndIDs[10]=50;
-				ndIDs[11]=51;
-				ndIDs[12]=16;
-				ndIDs[13]=15;
-				ndIDs[14]=28;
-				ndIDs[15]=27;
-				ndIDs[16]=60;
-				ndIDs[17]=59;
-				*numnds=18;
-			}
-		}
-		else
-		{	if(xipos->z<q1z)
-			{	nds[9]=nodes[0]-mpmgrid.zplane;
-				nds[10]=nodes[1]-mpmgrid.zplane;
-				nds[11]=nodes[2]-mpmgrid.zplane;
-				nds[12]=nodes[3]-mpmgrid.zplane;
-				nds[13]=nodes[1]+mpmgrid.xplane;
-				nds[14]=nodes[2]+mpmgrid.xplane;
-				nds[15]=nodes[5]+mpmgrid.xplane;
-				nds[16]=nodes[6]+mpmgrid.xplane;
-				nds[17]=nodes[3]+mpmgrid.yplane;
-				nds[18]=nodes[2]+mpmgrid.yplane;
-				nds[19]=nodes[7]+mpmgrid.yplane;
-				nds[20]=nodes[6]+mpmgrid.yplane;
-				nds[21]=nds[13]-mpmgrid.zplane;
-				nds[22]=nds[14]-mpmgrid.zplane;
-				nds[23]=nds[17]-mpmgrid.zplane;
-				nds[24]=nds[18]-mpmgrid.zplane;
-				nds[25]=nds[18]+mpmgrid.xplane;
-				nds[26]=nds[20]+mpmgrid.xplane;
-				nds[27]=nds[25]-mpmgrid.zplane;
-				ndIDs[8]=32;
-				ndIDs[9]=33;
-				ndIDs[10]=34;
-				ndIDs[11]=35;
-				ndIDs[12]=12;
-				ndIDs[13]=13;
-				ndIDs[14]=24;
-				ndIDs[15]=25;
-				ndIDs[16]=16;
-				ndIDs[17]=15;
-				ndIDs[18]=28;
-				ndIDs[19]=27;
-				ndIDs[20]=40;
-				ndIDs[21]=41;
-				ndIDs[22]=44;
-				ndIDs[23]=43;
-				ndIDs[24]=14;
-				ndIDs[25]=26;
-				ndIDs[26]=42;
-				*numnds=27;
-			}
-			else if(xipos->z<=q2z)
-			{	nds[9]=nodes[1]+mpmgrid.xplane;
-				nds[10]=nodes[2]+mpmgrid.xplane;
-				nds[11]=nodes[5]+mpmgrid.xplane;
-				nds[12]=nodes[6]+mpmgrid.xplane;
-				nds[13]=nodes[3]+mpmgrid.yplane;
-				nds[14]=nodes[2]+mpmgrid.yplane;
-				nds[15]=nodes[7]+mpmgrid.yplane;
-				nds[16]=nodes[6]+mpmgrid.yplane;
-				nds[17]=nds[14]+mpmgrid.xplane;
-				nds[18]=nds[16]+mpmgrid.xplane;
-				ndIDs[8]=12;
-				ndIDs[9]=13;
-				ndIDs[10]=24;
-				ndIDs[11]=25;
-				ndIDs[12]=16;
-				ndIDs[13]=15;
-				ndIDs[14]=28;
-				ndIDs[15]=27;
-				ndIDs[16]=14;
-				ndIDs[17]=26;
-				*numnds=18;
-			}
-			else
-			{	nds[9]=nodes[4]+mpmgrid.zplane;
-				nds[10]=nodes[5]+mpmgrid.zplane;
-				nds[11]=nodes[6]+mpmgrid.zplane;
-				nds[12]=nodes[7]+mpmgrid.zplane;
-				nds[13]=nodes[1]+mpmgrid.xplane;
-				nds[14]=nodes[2]+mpmgrid.xplane;
-				nds[15]=nodes[5]+mpmgrid.xplane;
-				nds[16]=nodes[6]+mpmgrid.xplane;
-				nds[17]=nodes[3]+mpmgrid.yplane;
-				nds[18]=nodes[2]+mpmgrid.yplane;
-				nds[19]=nodes[7]+mpmgrid.yplane;
-				nds[20]=nodes[6]+mpmgrid.yplane;
-				nds[21]=nds[15]+mpmgrid.zplane;
-				nds[22]=nds[16]+mpmgrid.zplane;
-				nds[23]=nds[19]+mpmgrid.zplane;
-				nds[24]=nds[20]+mpmgrid.zplane;
-				nds[25]=nds[18]+mpmgrid.xplane;
-				nds[26]=nds[20]+mpmgrid.xplane;
-				nds[27]=nds[26]+mpmgrid.zplane;
-				ndIDs[8]=48;
-				ndIDs[9]=49;
-				ndIDs[10]=50;
-				ndIDs[11]=51;
-				ndIDs[12]=12;
-				ndIDs[13]=13;
-				ndIDs[14]=24;
-				ndIDs[15]=25;
-				ndIDs[16]=16;
-				ndIDs[17]=15;
-				ndIDs[18]=28;
-				ndIDs[19]=27;
-				ndIDs[20]=56;
-				ndIDs[21]=57;
-				ndIDs[22]=60;
-				ndIDs[23]=59;
-				ndIDs[24]=14;
-				ndIDs[25]=26;
-				ndIDs[26]=58;
-				*numnds=27;
-			}
-		}
-	}
-}
-
 // get GIMP shape functions and optionally derivatives wrt x and y
 // assumed to be properly numbered regular 3D array
-// input *xi position in element coordinate and ndIDs[0]... is which nodes (0-63)
-void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,unsigned char *ndIDs,int getDeriv,double *sfxn,
-						double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
+// input *xi position in element coordinate
+// output number of nodes in nds[0] and node numbers in nds[1] to nds[nds[0]]
+void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int *nds,int getDeriv,double *sfxn,
+											   double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
-	int i;
 	double xp,yp,zp,Svpx,Svpy,Svpz,dSvpx,dSvpy,dSvpz,xsign,ysign,zsign,argx=0.,argy=0.,argz=0.;
 	
 	// L is the cell spacing, 2*lpi is the current particle size (dimensionless for range -1 to 1).
@@ -910,86 +296,268 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,unsigned ch
     double q1y = 2.-lp.y, q2y = 2.+lp.y;
     double q1z = 2.-lp.z, q2z = 2.+lp.z;
 
-	for(i=0;i<numnds;i++)
-	{	xp=fabs(xi->x-gxii[ndIDs[i]]);			// first quadrant (xp, yp)>=0
-		yp=fabs(xi->y-geti[ndIDs[i]]);
-		zp=fabs(xi->z-gzti[ndIDs[i]]);
+	// Pre-compute expensive divisions
+	double inv_size_x = 1. / (4.*lp.x);
+	double inv_size_y = 1. / (4.*lp.y);
+	double inv_size_z = 1. / (4.*lp.y);
+	double inv_dx = 0;
+	double inv_dy = 0;
+	double inv_dz = 0;
+	if (getDeriv) {
+		inv_dx = 2.0 / GetDeltaX();
+		inv_dy = 2.0 / GetDeltaY();
+		inv_dz = 2.0 / GetDeltaZ();
+	}
+	
+	int i=0;
+	for(int id=0;id<64;id++)
+	{	// x direction
+		xp=fabs(xi->x-g3xii[id]);
+		if(xp>=q2x) continue;
+		
+		// y direction
+		yp=fabs(xi->y-g3eti[id]);
+		if(yp>=q2y) continue;
+		
+		// z direction
+		zp=fabs(xi->z-g3zti[id]);
+		if(zp>=q2z) continue;
+		
+		// shape function i
 		
 		if(xp<lp.x)
-			Svpx = ((4.-lp.x)*lp.x-xp*xp)/(4.*lp.x);	// if lp=0.5: -(4.*xp*xp-7.)/8.;
+			Svpx = ((4.-lp.x)*lp.x-xp*xp)*inv_size_x;	// if lp=0.5: -(4.*xp*xp-7.)/8.;
 		else if(xp<=q1x)
-			Svpx = (2.-xp)/2.;
-		else if(xp<q2x)
-		{	argx = (q2x-xp)/(4.*lp.x);			// if lp=0.5: (5.-2.*xp)/4
+			Svpx = 0.5*(2.-xp);
+		else
+		{	argx = (q2x-xp)*inv_size_x;			// if lp=0.5: (5.-2.*xp)/4
 			Svpx = 2.*lp.x*argx*argx;				// if lp=0.5: (5.-2.*xp)^2/16
 		}
-		else
-			Svpx=0.;
-			
+		
 		if(yp<lp.y)
-			Svpy = ((4.-lp.y)*lp.y-yp*yp)/(4.*lp.y);	// if lp=0.5: -(4.*yp*yp-7.)/8.;
+			Svpy = ((4.-lp.y)*lp.y-yp*yp)*inv_size_y;	// if lp=0.5: -(4.*yp*yp-7.)/8.;
 		else if(yp<=q1y)
-			Svpy = (2.-yp)/2.;
-		else if(yp<q2y)
-		{	argy = (q2y-yp)/(4.*lp.y);			// if lp=0.5: (5.-2.*yp)/4
+			Svpy = 0.5*(2.-yp);
+		else
+		{	argy = (q2y-yp)*inv_size_y;			// if lp=0.5: (5.-2.*yp)/4
 			Svpy = 2.*lp.y*argy*argy;				// if lp=0.5: (5.-2.*yp)^2/16
 		}
-		else
-			Svpy=0.;
-
+		
 		if(zp<lp.z)
-			Svpz = ((4.-lp.z)*lp.z-zp*zp)/(4.*lp.z);	// if lp=0.5: -(4.*zp*zp-7.)/8.;
+			Svpz = ((4.-lp.z)*lp.z-zp*zp)*inv_size_z;	// if lp=0.5: -(4.*zp*zp-7.)/8.;
 		else if(zp<=q1z)
-			Svpz = (2.-zp)/2.;
-		else if(zp<q2z)
-		{	argz = (q2z-zp)/(4.*lp.z);			// if lp=0.5: (5.-2.*zp)/4
+			Svpz = 0.5*(2.-zp);
+		else
+		{	argz = (q2z-zp)*inv_size_z;			// if lp=0.5: (5.-2.*zp)/4
 			Svpz = 2.*lp.z*argz*argz;				// if lp=0.5: (5.-2.*zp)^2/16
 		}
-		else
-			Svpz=0.;
-			
+		
 		sfxn[i] = Svpx*Svpy*Svpz;
-				
-		// find shape function at (xp,yp,zp) 		
+		
+		// find shape function gradient at (xp,yp,zp)
 		if(getDeriv)
-		{	xsign = xi->x>gxii[ndIDs[i]] ? 1. : -1.;
-			ysign = xi->y>geti[ndIDs[i]] ? 1. : -1.;
-			zsign = xi->z>gzti[ndIDs[i]] ? 1. : -1.;
-
+		{	xsign = xi->x>g3xii[id] ? 1. : -1.;
+			ysign = xi->y>g3eti[id] ? 1. : -1.;
+			zsign = xi->z>g3zti[id] ? 1. : -1.;
+			
 			if(xp<lp.x)
 				dSvpx = -xp/(2.*lp.x);			// if lp=0.5: -xp
 			else if(xp<=q1x)
 				dSvpx = -0.5;
-			else if(xp<q2x)
-				dSvpx = -argx;
 			else
-				dSvpx = 0.;
-				
+				dSvpx = -argx;
+			
 			if(yp<lp.y)
 				dSvpy = -yp/(2.*lp.y);			// if lp=0.5: -yp
 			else if(yp<=q1y)
 				dSvpy = -0.5;
-			else if(yp<q2y)
-				dSvpy = -argy;
 			else
-				dSvpy = 0.;
-
+				dSvpy = -argy;
+			
 			if(zp<lp.z)
 				dSvpz = -zp/(2.*lp.z);			// if lp=0.5: -zp;
 			else if(zp<=q1z)
 				dSvpz = -0.5;
-			else if(zp<q2z)
-				dSvpz = -argz;
 			else
-				dSvpz = 0.;
-
-			xDeriv[i] = xsign*dSvpx*Svpy*Svpz*2.0/GetDeltaX();
-			yDeriv[i] = ysign*Svpx*dSvpy*Svpz*2.0/GetDeltaY();
-			zDeriv[i] = zsign*Svpx*Svpy*dSvpz*2.0/GetDeltaZ();
+				dSvpz = -argz;
+			
+			xDeriv[i] = xsign*dSvpx*Svpy*Svpz*inv_dx;
+			yDeriv[i] = ysign*Svpx*dSvpy*Svpz*inv_dy;
+			zDeriv[i] = zsign*Svpx*Svpy*dSvpz*inv_dz;
 		}
+		
+		// set node (and better have room)
+		i++;
+		nds[i] = nodes[0] + x3off[id]*mpmgrid.xplane + y3off[id]*mpmgrid.yplane + z3off[id]*mpmgrid.zplane;
 	}
+	
+	// number of nodes (better be less than space available in nds[])
+	nds[0] = i;
+}
 
+// get GIMP shape functions and optionally derivatives wrt x and y
+// assumed to be properly numbered regular 3D array
+// input *xi position in element coordinate and ndIDs[0]... is which nodes (0-63)
+void EightNodeIsoparamBrick::BGimpShapeFunction(Vector *xi,int *nds,int getDeriv,double *sfxn,
+											   double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
+{
+	double xp,yp,zp,Svpx,Svpy,Svpz,dSvpx,dSvpy,dSvpz,xsign,ysign,zsign,arg;
+	
+	// L is the cell spacing, 2*lpi is the current particle size (dimensionless range -1 to 1).
+	// Breakpoints on positive side of the node
+	double b1x = 1.-lp.x,b2x = 1.+lp.x,b3x = 3.-lp.x,b4x = 3.+lp.x;
+	double b1y = 1.-lp.y,b2y = 1.+lp.y,b3y = 3.-lp.y,b4y = 3.+lp.y;
+	double b1z = 1.-lp.z,b2z = 1.+lp.z,b3z = 3.-lp.z,b4z = 3.+lp.z;
+	
+	// Pre-compute expensive divisions
+	double inv_size_x = 1. / (48.*lp.x);
+	double inv_size_y = 1. / (48.*lp.y);
+	double inv_size_z = 1. / (48.*lp.z);
+	double oneTwelth = 1./12.;
+	double inv_dx = 0;
+	double inv_dy = 0;
+	double inv_dz = 0;
+	if (getDeriv) {
+		inv_dx = 2.0 / GetDeltaX();
+		inv_dy = 2.0 / GetDeltaY();
+		inv_dz = 2.0 / GetDeltaZ();
+	}
+	
+	int i=0;
+	for(int id=0;id<64;id++)
+	{	// x direction
+		xp = fabs(xi->x - g3xii[id]);
+		if(xp>=b4x) continue;
+		
+		// y direction
+		yp = fabs(xi->y - g3eti[id]);
+		if(yp>=b4y) continue;
+		
+		// y direction
+		zp = fabs(xi->z - g3zti[id]);
+		if(zp>=b4z) continue;
+		
+		// shape function i
+		
+		// x direction
+		if(xp < b1x)
+			Svpx = (9.-lp.x*lp.x-3*xp*xp)*oneTwelth;
+		else if(xp < b2x)
+		{	arg = xp-1.;
+			double lp2 = lp.x*lp.x;
+			double lp3 = lp2*lp.x;
+			Svpx = (9.*lp2*arg + 3.*arg*arg*arg + 3.*lp.x*(15.-xp*(6.+xp)) - lp3)*inv_size_x;
+		}
+		else if (xp <= b3x)
+		{	arg = xp-3.;
+			Svpx = (lp.x*lp.x+3.*arg*arg)*0.5*oneTwelth;
+		}
+		else
+		{	arg = 3. + lp.x - xp;
+			Svpx = arg*arg*arg*inv_size_x;
+		}
+		
+		// y direction
+		if(yp < b1y)
+			Svpy = (9.-lp.y*lp.y-3*yp*yp)*oneTwelth;
+		else if(yp < b2y)
+		{	arg = yp-1.;
+			double lp2 = lp.y*lp.y;
+			double lp3 = lp2*lp.y;
+			Svpy = (9.*lp2*arg + 3.*arg*arg*arg + 3.*lp.y*(15.-yp*(6.+yp)) - lp3)*inv_size_y;
+		}
+		else if (yp <= b3y)
+		{	arg = yp-3.;
+			Svpy = (lp.y*lp.y+3.*arg*arg)*0.5*oneTwelth;
+		}
+		else
+		{	arg = 3. + lp.y - yp;
+			Svpy = arg*arg*arg*inv_size_y;
+		}
+		
+		// z direction
+		if(zp < b1z)
+			Svpz = (9.-lp.z*lp.z-3*zp*zp)*oneTwelth;
+		else if(zp < b2z)
+		{	arg = zp-1.;
+			double lp2 = lp.z*lp.z;
+			double lp3 = lp2*lp.z;
+			Svpz = (9.*lp2*arg + 3.*arg*arg*arg + 3.*lp.z*(15.-zp*(6.+zp)) - lp3)*inv_size_z;
+		}
+		else if (zp <= b3z)
+		{	arg = zp-3.;
+			Svpz = (lp.z*lp.z+3.*arg*arg)*0.5*oneTwelth;
+		}
+		else
+		{	arg = 3. + lp.z - zp;
+			Svpz = arg*arg*arg*inv_size_z;
+		}
 
+		// combine
+		sfxn[i] = Svpx*Svpy*Svpz;
+		
+		// find shape function gradient at (xp,yp)
+		
+		if(getDeriv)
+		{	xsign = xi->x>g3xii[id] ? 1. : -1.;
+			ysign = xi->y>g3eti[id] ? 1. : -1.;
+			zsign = xi->y>g3zti[id] ? 1. : -1.;
+			
+			// x gradient
+			if(xp < b1x)
+				dSvpx = -0.5*xp;
+			else if(xp < b2x)
+			{	arg = xp-1.;
+				dSvpx = (3*lp.x*lp.x + 3.*arg*arg - 2.*lp.x*(3.+xp))*3.*inv_size_x;
+			}
+			else if (xp <= b3x)
+				dSvpx = 0.25*(xp-3.);
+			else
+			{	arg = 3. + lp.x - xp;
+				dSvpx = -arg*arg*3.*inv_size_x;
+			}
+			
+			// y gradient
+			if(yp < b1y)
+				dSvpy = -0.5*yp;
+			else if(yp < b2y)
+			{	arg = yp-1.;
+				dSvpy = (3*lp.y*lp.y + 3.*arg*arg - 2.*lp.y*(3.+yp))*3.*inv_size_y;
+			}
+			else if (yp <= b3y)
+				dSvpy = 0.25*(yp-3.);
+			else
+			{	arg = 3. + lp.y - yp;
+				dSvpy = -arg*arg*3.*inv_size_y;
+			}
+			
+			// z gradient
+			if(zp < b1z)
+				dSvpz = -0.5*zp;
+			else if(zp < b2z)
+			{	arg = zp-1.;
+				dSvpz = (3*lp.z*lp.z + 3.*arg*arg - 2.*lp.z*(3.+zp))*3.*inv_size_z;
+			}
+			else if (zp <= b3z)
+				dSvpz = 0.25*(zp-3.);
+			else
+			{	arg = 3. + lp.z - zp;
+				dSvpz = -arg*arg*3.*inv_size_z;
+			}
+			
+			// combine
+			xDeriv[i] = xsign*dSvpx*Svpy*Svpz*inv_dx;
+			yDeriv[i] = ysign*Svpx*dSvpy*Svpz*inv_dy;
+			zDeriv[i] = zsign*Svpx*Svpy*dSvpz*inv_dz;
+		}
+		
+		// the node
+		i++;
+		nds[i] = nodes[0] + x3off[id]*mpmgrid.xplane + y3off[id]*mpmgrid.yplane + z3off[id]*mpmgrid.zplane;
+	}
+	
+	// number of nodes found - may be has high as 16 and that is OK
+	nds[0] = i;
 }
 
 #pragma mark EightNodeIsoparamBrick::Accessors

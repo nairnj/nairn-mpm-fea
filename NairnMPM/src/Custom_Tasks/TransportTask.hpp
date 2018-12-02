@@ -27,16 +27,20 @@ class TransportTask
     public:
 		static bool hasContactEnabled;
         TransportTask *nextTask;
+		double transportTimeStep;
        
         // constructors and destructors
         TransportTask();
         virtual ~TransportTask();
-        
+		void CheckTimeStep(double);
+		double GetTimeStep(void) const;
+	
 		// called before first time step, but after preliminary calcs
 		virtual TransportTask *Initialize(void) = 0;
 	
 		// Mass and Momentum extrapolation and post extrapolation for transport property to the grid
-		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double,short,int);
+		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double,short,int) = 0;
+		virtual double GetVpCTp(MPMBase *) = 0;
 		virtual void Task1ContactExtrapolation(NodalPoint *ndpt,short,int,double,double);
 		virtual TransportTask *Task1Reduction(NodalPoint *,NodalPoint *);
 		virtual void Task1ContactReduction(NodalPoint *,NodalPoint *);
@@ -60,24 +64,15 @@ class TransportTask
 		// update momentum task and contact flow
 		virtual TransportTask *GetTransportRates(NodalPoint *,double);
 		virtual void TransportContactRates(NodalPoint *,double);
-#ifdef CONTACT_HEAT_FLOW
-		// contact calculations
-		virtual TransportTask *MatContactFlowCalculations(MatVelocityField *,NodalPoint *,CrackVelocityField *,double,bool);
-		virtual TransportTask *CrackContactFlowCalculations(CrackVelocityField *,NodalPoint *,double,int);
-#endif
 		
 		// update particles task
 		virtual TransportTask *IncrementTransportRate(NodalPoint *,double,double &,short,int) const;
 		virtual TransportTask *MoveTransportValue(MPMBase *,double,double) const;
-		
+	
 		// update particle strains
 		virtual double IncrementValueExtrap(NodalPoint *,double,short,int) const;
 		virtual double GetDeltaValue(MPMBase *,double) const;
 	
-		// if needed for SZS or USAVG, update value on the grid
-		virtual TransportTask *UpdateNodalValues(double);
-		virtual void UpdateContactNodalValues(NodalPoint *,double);
-    
         // accessors
     
         // Return name of this task
@@ -85,9 +80,6 @@ class TransportTask
         
         // get the next task
         TransportTask *GetNextTransportTask(void) const;
-    
-        // Get transport mass, mTp in notes, and get particle transport value
-        virtual double GetTransportMassAndValue(MPMBase *,double *) = 0;
     
         // pointer to transport field
         virtual TransportField *GetTransportFieldPtr(NodalPoint *) const = 0;
@@ -102,6 +94,13 @@ class TransportTask
         // get pointers to particle value for this transport property
         virtual double *GetParticleValuePtr(MPMBase *mptr) const = 0;
         virtual double *GetPrevParticleValuePtr(MPMBase *mptr) const = 0;
+	
+		// static methods
+		static void GetTransportValues(NodalPoint *);
+		static void TransportBCsAndGradients(double);
+		static void GetTransportRatesOnNode(NodalPoint *);
+		static void TransportForceBCs(double);
+
 };
 
 // globals

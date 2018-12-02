@@ -164,27 +164,26 @@ BoundaryCondition *NodalVelBC::PrintBC(ostream &os)
 }
 
 // set to zero in x, y, or z velocity
-NodalVelBC *NodalVelBC::ZeroVelBC(double bctime)
+NodalVelBC *NodalVelBC::ZeroVelBC(double bctime,int passType)
 {	// set if has been activated
 	int i = GetNodeNum(bctime);
-	if(i>0) nd[i]->SetMomVel(&norm);
+	if(i>0) nd[i]->SetMomVel(&norm,passType);
     return (NodalVelBC *)GetNextObject();
 }
 
 // superpose x, y, or z velocity
-NodalVelBC *NodalVelBC::AddVelBC(double bctime)
+NodalVelBC *NodalVelBC::AddVelBC(double bctime,int passType)
 {	// set if has been activated
 	int i = GetNodeNum(bctime);
 	if(i>0)
     {   currentValue = BCValue(bctime);
 		if(reflectedNode<0)
 		{	// scalar value in norm direction
-			nd[i]->AddMomVel(&norm,currentValue);
+			nd[i]->AddMomVel(&norm,currentValue,passType);
 		}
 		else
 		{	// reflect one component at a symmetry plane
-            nd[i]->AddMomVel(&norm,(1.+reflectRatio)*currentValue);
-			nd[i]->ReflectMomVel(&norm,nd[reflectedNode],reflectRatio);
+			nd[i]->ReflectMomVel(&norm,nd[reflectedNode],currentValue,reflectRatio,passType);
 		}
 	}
     return (NodalVelBC *)GetNextObject();
@@ -199,24 +198,23 @@ NodalVelBC *NodalVelBC::SetMirroredVelBC(double bctime)
     // set if has been activated
 	int i = GetNodeNum(bctime);
     if(i>0)
-    {   // look at neighbor in mirror direction if node i has particles and neighbor is in the grid
+    {   // look at neighbor in mirror direction but only if node i has particles and neighbor is in the grid
         int neighbor = i+mirrorSpacing;
         if(nd[i]->NodeHasNonrigidParticles() && neighbor>0 && neighbor<=nnodes)
         {	// see if neighbor fixes same dof
             if(nd[neighbor]->fixedDirection&dir)
             {	// the next node in mirror direction if in the grid
                 int mirror = neighbor+mirrorSpacing;
+
                 if(mirror>0 && mirror<=nnodes)
                 {   // it should not fix the direection and should have particles
                     if((nd[mirror]->fixedDirection&dir)==0 && nd[mirror]->NodeHasNonrigidParticles())
                     {   // maybe should verify neighbor is for same rigid material, but needs to check all BCs for their ID
                         
                         // found node to reflect
-                        //cout << "#    node " << mirror << " from " << i << " through " << neighbor << endl;
                         reflectedNode = mirror;
 						
-						// the ratio is fabs(neighbod-i)/fabs(mirror-neighbor)
-						reflectRatio = 1.;			// no Tartan grid in NairnMPM
+						reflectRatio = 1.;
                     }
                 }
             }
@@ -228,7 +226,7 @@ NodalVelBC *NodalVelBC::SetMirroredVelBC(double bctime)
 // Initialize ftot to -(pk.norm/deltime) norm in each material velocity field
 // freaction will be sum over all material velocity fields for this BC only
 // freaction will be zero for second BC on same node with same norm
-// total reaction on node us sum of freaction over all BCs
+// total reaction on node is sum of freaction over all BCs
 NodalVelBC *NodalVelBC::InitFtotDirection(double bctime)
 {	// set if has been activated
 	int i = GetNodeNum(bctime);
@@ -249,8 +247,7 @@ NodalVelBC *NodalVelBC::SuperposeFtotDirection(double bctime)
 		}
 		else
 		{	// use reflected velocity
-            nd[i]->AddFtotDirection(&norm,timestep,(1.+reflectRatio)*currentValue,&freaction);
-			nd[i]->ReflectFtotDirection(&norm,timestep,nd[reflectedNode],reflectRatio,&freaction);
+			nd[i]->ReflectFtotDirection(&norm,timestep,nd[reflectedNode],currentValue,reflectRatio,&freaction);
 		}
 	}
 	return (NodalVelBC *)GetNextObject();
@@ -303,7 +300,7 @@ void NodalVelBC::SetMirrorSpacing(int mirrored)
     The imposed momenta are needed before any strain update.
 	Called in Tasks 1 and 6
 */
-void NodalVelBC::GridMomentumConditions(void)
+void NodalVelBC::GridMomentumConditions(int passType)
 {
     int i;
     NodalVelBC *nextBC;
@@ -327,12 +324,12 @@ void NodalVelBC::GridMomentumConditions(void)
     // Now zero nodes with velocity set by BC
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-		nextBC = nextBC->ZeroVelBC(mtime);
+		nextBC = nextBC->ZeroVelBC(mtime,passType);
     
     // Now add all velocities to nodes with velocity BCs
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-		nextBC = nextBC->AddVelBC(mtime);
+		nextBC = nextBC->AddVelBC(mtime,passType);
 }
 
 /**********************************************************
@@ -342,10 +339,8 @@ void NodalVelBC::GridMomentumConditions(void)
 */
 void NodalVelBC::ConsistentGridForces(void)
 {
-	NodalVelBC *nextBC = firstVelocityBC;
-
     // Second set force to -p(interpolated)/timestep
-    nextBC = firstVelocityBC;
+    NodalVelBC *nextBC = firstVelocityBC;
     while(nextBC!=NULL)
 		nextBC = nextBC->InitFtotDirection(mtime);
     

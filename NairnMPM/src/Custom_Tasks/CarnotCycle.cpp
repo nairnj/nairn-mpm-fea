@@ -145,7 +145,7 @@ CustomTask *CarnotCycle::StepCalculation(void)
 				for(p=0;p<nmpms;p++)
 				{	// verify material is defined and sets if field number (in in multimaterial mode)
 					matID=theMaterials[mpm[p]->MatID()];	// material object for this particle
-					if(matID->Rigid())
+					if(matID->IsRigid())
 						mpm[p]->ReverseParticle(false,false);
 					else
 						mpm[p]->StopParticle();

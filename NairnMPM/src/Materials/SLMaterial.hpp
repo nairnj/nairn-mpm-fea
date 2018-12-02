@@ -44,13 +44,12 @@ class SLMaterial : public SCGLHardening
 		SLMaterial(MaterialBase *);
 		
 		// initialize
-        virtual char *InputMaterialProperty(char *,int &,double &);
+        virtual char *InputHardeningProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
         virtual void PrintYieldProperties(void) const;
 	
 		// history data
 		virtual int HistoryDoublesNeeded(void) const;
-		virtual double GetHistory(int,char *) const;
 		
 		// copy of properties
         virtual int SizeOfHardeningProps(void) const;

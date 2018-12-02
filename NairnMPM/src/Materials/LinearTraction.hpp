@@ -20,14 +20,14 @@ class LinearTraction : public CohesiveZone
     public:
 	
 		// constructors and destructors
-        LinearTraction(char *);
+        LinearTraction(char *,int);
 		
 		// methods
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintMechanicalProperties(void) const;
 	
 		// the traction law
-		virtual void CrackTractionLaw(CrackSegment *,double,double,double,double,double);
+		virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);
 		virtual double CrackTractionEnergy(CrackSegment *,double,double,bool);
 		
 		// accessors

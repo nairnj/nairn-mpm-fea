@@ -53,26 +53,9 @@ void IsotropicMat::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
  */
 void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
-	// current previous deformation gradient and stretch
-	Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
-	
-    // get incremental deformation gradient and decompose it
-	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
+    // get incremental strain and rotation
     Matrix3 dR;
-    Matrix3 dV = dF.LeftDecompose(&dR,NULL);
-	
-	// decompose to get previous stretch
-	Matrix3 Vnm1 = pFnm1.LeftDecompose(NULL,NULL);
-	
-	// get strain increments de = (dV-I) dR Vnm1 dRT
-	dV(0,0) -= 1.;
-	dV(1,1) -= 1.;
-	dV(2,2) -= 1.;
-	Matrix3 de = dV*Vnm1.RMRT(dR);
-	
-	// Update total deformation gradient
-	Matrix3 pF = dF*pFnm1;
-	mptr->SetDeformationGradientMatrix(pF);
+    Matrix3 de = LRGetStrainIncrement(CURRENT_CONFIGURATION,mptr,du,&dR,NULL,NULL,NULL);
 	
 	// cast pointer to material-specific data
 	ElasticProperties *p = (ElasticProperties *)properties;
@@ -83,9 +66,13 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	// residual strains (thermal and moisture)
 	double eres = CTE1*res->dT;
 	double ezzres = CTE3*res->dT;
-	if(DiffusionTask::active)
+	if(DiffusionTask::HasFluidTransport())
 	{	eres += CME1*res->dC;
 		ezzres += CME3*res->dC;
+	}
+	if(np==PLANE_STRESS_MPM || np==PLANE_STRAIN_MPM)
+	{	// for generalized plane stress or strain, for isotropic = -nu*dszz/E or -nu*dezz
+		eres += p->C[5][1]*res->doopse;
 	}
 	
 	// effective strains
@@ -144,16 +131,23 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 		double workEnergy = sp->xx*de(0,0) + sp->yy*de(1,1) + sp->xy*(de(0,1)+de(1,0));
 		double resEnergy = (sp->xx + sp->yy)*ezzres;
 		if(np==PLANE_STRAIN_MPM)
-		{	// need to add back terms to get from reduced cte to actual cte
-			sp->zz += p->C[4][1]*(de(0,0)-ezzres) + p->C[4][2]*(de(1,1)-ezzres) - p->C[4][4]*ezzres;
+		{	// for generalized plane strain, get zz stress (need to use actual cte)
+			sp->zz += p->C[4][1]*(de(0,0)-ezzres) + p->C[4][2]*(de(1,1)-ezzres) + p->C[4][4]*(res->doopse-ezzres);
 			
 			// extra residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
+			workEnergy += sp->zz*res->doopse;
 			resEnergy += sp->zz*ezzres;
+			dVoverV += res->doopse;
 		}
 		else if(np==PLANE_STRESS_MPM)
-		{	// zz deformation
-			double dezz = p->C[4][1]*dvxxeff + p->C[4][2]*dvyyeff + eres;
+		{	// for generalized plane stress, get zz deformation (need to use actual cte)
+			double dezz = res->doopse/p->C[4][4] + p->C[4][1]*(de(0,0)-ezzres)
+								+ p->C[4][2]*(de(1,1)-ezzres) + ezzres;
 			mptr->IncrementDeformationGradientZZ(dezz);
+			
+			// extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
+			workEnergy += sp->zz*dezz;
+			resEnergy += sp->zz*ezzres;
 			dVoverV += dezz;
 		}
 		else
@@ -172,7 +166,7 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	double dTq0 = -gamma0*mptr->pPreviousTemperature*dVoverV;
     
     // track heat energy
-    IncrementHeatEnergy(mptr,res->dT,dTq0,0.);
+    IncrementHeatEnergy(mptr,dTq0,0.);
 }
 
 #pragma mark IsotropicMat::Methods (Small Rotation)
@@ -199,9 +193,13 @@ void IsotropicMat::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,i
     // residual strains (thermal and moisture)
 	double eres = CTE1*res->dT;
 	double ezzres = CTE3*res->dT;
-	if(DiffusionTask::active)
+	if(DiffusionTask::HasFluidTransport())
 	{	eres += CME1*res->dC;
 		ezzres += CME3*res->dC;
+	}
+	if(np==PLANE_STRESS_MPM || np==PLANE_STRAIN_MPM)
+	{	// for generalized plane stress or strain, for isotropic = -nu*dszz/E or -nu*dezz
+		eres += p->C[5][1]*res->doopse;
 	}
 	
     // moisture and thermal strain and temperature change
@@ -229,22 +227,29 @@ void IsotropicMat::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,i
 		c2 = p->C[1][2]*dvxxeff + p->C[2][2]*dvyyeff;
 		c3 = p->C[3][3]*dgam;
 	}
-	Hypo2DCalculations(mptr,dwrotxy,dvxx+dvyy,c1,c2,c3);
+	Hypo2DCalculations(mptr,dwrotxy,c1,c2,c3);
     
 	// work and residual strain energy increments
 	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy + (st0.xy+sp->xy)*dgam);
 	double resEnergy = 0.5*(st0.xx+sp->xx+st0.yy+sp->yy)*ezzres;
 	if(np==PLANE_STRAIN_MPM)
-	{	// need to add back terms to get from reduced cte to actual cte
-		sp->zz += p->C[4][1]*(dvxx-ezzres)+p->C[4][2]*(dvyy-ezzres)-p->C[4][4]*ezzres;
+	{	// for generalized plane strain, get zz stress (need to use actual cte)
+		sp->zz += p->C[4][1]*(dvxx-ezzres) + p->C[4][2]*(dvyy-ezzres) + p->C[4][4]*(res->doopse-ezzres);
 		
 		// extra residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
+		workEnergy += 0.5*(st0.zz+sp->zz)*res->doopse;
 		resEnergy += 0.5*(st0.zz+sp->zz)*ezzres;
+		dVoverV += res->doopse;
 	}
 	else if(np==PLANE_STRESS_MPM)
-	{	// zz deformation
-		double dezz = p->C[4][1]*dvxxeff+p->C[4][2]*dvyyeff+eres;
+	{	// for generalized plane stress, get zz deformation (need to use actual cte)
+		double dezz = res->doopse/p->C[4][4] + p->C[4][1]*(dvxx-ezzres)
+							+ p->C[4][2]*(dvyy-ezzres) + ezzres;
 		mptr->IncrementDeformationGradientZZ(dezz);
+		
+		// extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
+		workEnergy += 0.5*(st0.zz+sp->zz)*dezz;
+		resEnergy += 0.5*(st0.zz+sp->zz)*ezzres;
 		dVoverV += dezz;
 	}
 	else
@@ -262,7 +267,7 @@ void IsotropicMat::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,i
 	double dTq0 = -gamma0*mptr->pPreviousTemperature*dVoverV;
     
     // track heat energy
-    IncrementHeatEnergy(mptr,res->dT,dTq0,0.);
+    IncrementHeatEnergy(mptr,dTq0,0.);
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -292,7 +297,7 @@ void IsotropicMat::SRConstitutiveLaw3D(MPMBase *mptr,Matrix3 du,double delTime,i
 	
     // residual strains (thermal and moisture) (isotropic only)
 	double eres = CTE3*res->dT;
-	if(DiffusionTask::active)
+	if(DiffusionTask::HasFluidTransport())
 		eres += CME3*res->dC;
 	
 	// effective strains
@@ -327,10 +332,42 @@ void IsotropicMat::SRConstitutiveLaw3D(MPMBase *mptr,Matrix3 du,double delTime,i
 	double dTq0 = -gamma0*mptr->pPreviousTemperature*dVoverV;
     
     // track heat energy
-    IncrementHeatEnergy(mptr,res->dT,dTq0,0.);
+    IncrementHeatEnergy(mptr,dTq0,0.);
 }
 
 #pragma mark IsotropicMat::Accessors
+
+// Get magnitude of the deviatoric stress tensor when input is a deviatoric stress
+// ||s|| = sqrt(s.s) = sqrt(2J2) where J2 = (1/2)s.s
+// In 2D 2J2 = sx^2 + sy^2 + sz^2 + 2*txy^2
+// In 3D 2J2 = sx^2 + sy^2 + sz^2 + 2*txy^2 + 2*txz^2 + 2*tyz^2
+double IsotropicMat::GetMagnitudeSFromDev(Tensor *st,int np) const
+{
+	double s,t;
+	
+	switch(np)
+	{   case THREED_MPM:
+			s = st->xx*st->xx + st->yy*st->yy + st->zz*st->zz;
+			t = st->xy*st->xy + st->xz*st->xz + st->yz*st->yz;
+			break;
+			
+		default:
+			s = st->xx*st->xx + st->yy*st->yy + st->zz*st->zz;
+			t = st->xy*st->xy;
+			break;
+	}
+	return sqrt(s+t+t);
+}
+
+// Get magnitude of the deviatoric stress tensor when input is a total stress
+double IsotropicMat::GetMagnitudeSFromTotal(Tensor *st,int np) const
+{
+	double totalP = -(st->xx + st->yy + st->zz)/3.;
+	Tensor sdev = np==THREED_MPM ?
+		MakeTensor(st->xx+totalP,st->yy+totalP,st->zz+totalP,st->yz,st->xz,st->xy) :
+		MakeTensor2D(st->xx+totalP,st->yy+totalP,st->zz+totalP,st->xy);
+	return GetMagnitudeSFromDev(&sdev,np);
+}
 
 // Calculate wave speed in L/sec
 // Because G in F/L^2 = mass/(L sec^2) and rho in mass/L^3, G/rho in L^2/sec^2

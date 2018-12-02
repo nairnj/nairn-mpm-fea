@@ -25,7 +25,7 @@ class ElementsController : public ParseController
 	
 		// methods
 		void AddElement(ElementBase *);
-		int SetElementArray(void);
+		ElementBase **SetElementArray(int &,bool);
 		int ElementsCompatible(int);
 #ifdef MPM_CODE
 		int CreateElement(char *);
@@ -41,8 +41,8 @@ class ElementsController : public ParseController
 		int InterfaceElements(void);
 #endif		
 		// accessors
-		int SetElemIDStr(char *);
-		int SetCurrentElemID(int);
+		bool SetElemIDStr(char *,int);
+		bool SetCurrentElemID(int,int);
 		int CurrentElemID(void);
 	
 	private:

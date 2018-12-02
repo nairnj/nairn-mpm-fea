@@ -22,7 +22,7 @@
 			| CrackArchiveOrder | ProgSteps | Damping | FeedbackDamping | GlobalArchive | MPMArchive
 			| DefGradTerms | Diffusion | StressFreeTemp | GIMP | LeaveLimit | MultiMaterialMode
             | PDamping | PFeedbackDamping | TimeStep | TimeFactor | MaxTime | ArchiveTime | FirstArchiveTime
-			| GlobalArchiveTime | ExtrapolateRigid | SkipPostExtrapolation )*>
+			| GlobalArchiveTime | ExtrapolateRigid | SkipPostExtrapolation | TransTimeFactor | NeedsMechanics )*>
 
 <!ELEMENT	Cracks
 			( Friction | Propagate | AltPropagate | JContour | MovePlane | ContactPosition | PropagateLength | CrackParticleSize )*>
@@ -32,7 +32,7 @@
 <!ATTLIST	MultiMaterialMode
 			Vmin CDATA #IMPLIED
 			Dcheck (0|1) #IMPLIED
-			Normals (0|1|2|3|4) #IMPLIED
+			Normals (0|1|2|3|4|5|6|7) #IMPLIED
 			RigidBias CDATA #IMPLIED
 			Polar CDATA #IMPLIED
 			Azimuth CDATA #IMPLIED>
@@ -86,12 +86,16 @@
 			mat CDATA #IMPLIED
 			matname CDATA #IMPLIED
 			angle CDATA #IMPLIED
-			thick CDATA #IMPLIED>
+			thick CDATA #IMPLIED
+			temp CDATA #IMPLIED
+			conc CDATA #IMPLIED
+			wtconc CDATA #IMPLIED>
 
 <!ELEMENT	Body
 			( RotateX | RotateY | RotateZ | Unrotate | Oval | Rect | Polygon
 			| Sphere | Box | Cylinder | Polyhedron | Torus | Shell
-			| vel0X | vel0Y | vel0Z | Line | Arc )*>
+			| vel0X | vel0Y | vel0Z | Line | Arc
+			| Deform | Undeform )*>
 <!ATTLIST	Body
 			mat CDATA #IMPLIED
 			matname CDATA #IMPLIED
@@ -136,8 +140,24 @@
 			minAngle CDATA #IMPLIED
 			maxAngle CDATA #IMPLIED>
 			
+<!ELEMENT	Deform EMPTY>
+<!ATTLIST	Deform
+			dX CDATA #IMPLIED
+			dY CDATA #IMPLIED
+			dZ CDATA #IMPLIED
+			F11 CDATA #IMPLIED
+			F12 CDATA #IMPLIED
+			F13 CDATA #IMPLIED
+			F21 CDATA #IMPLIED
+			F22 CDATA #IMPLIED
+			F23 CDATA #IMPLIED
+			F31 CDATA #IMPLIED
+			F32 CDATA #IMPLIED
+			F33 CDATA #IMPLIED>
+<!ELEMENT	Undeform EMPTY>
+
 <!--- Add optional cracks -->
-									
+
 <!ELEMENT	CrackList
 			( pt | Line | Circle | Thickness)*>
 <!ATTLIST	CrackList
@@ -159,7 +179,7 @@
 				| GRT | GTR | Gyz | Gzy | GZT | GTZ
 				| nuxy | nuyx | nuRZ | nuZR | nuxz | nuzx | nuRT | nuTR | nuyz | nuzy | nuZT | nuTZ
 				| alphax | alphay | alphaz | alphaR | alphaZ | largeRotation | Dn | Dnt | Dnc | Dt | coeff | coeffStatic
-				| betax | betay | betaz | betaR | betaZ | CritComp | CritTens | xihard | Elastic
+				| betax | betay | betaz | betaR | betaZ | CritComp | CritTens | xihard | Elastic | displacementOnly | Dc
 				| K | G0 | ntaus | Gk | tauk | xGrow | yGrow | Lame | shareMatField
 				| G1 | G2 | speed | maxLength | Propagate | AltPropagate | initTime
 				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset | stress | function | minCOD
@@ -247,7 +267,8 @@
 <!-- Thermal analysis -->
 
 <!ELEMENT	Thermal
-			( Conduction | CrackTipHeating | EnergyCoupling | NoAVHeating | Isothermal | CrackContactHeating | ContactHeating )* >
+			( Conduction | CrackTipHeating | EnergyCoupling | NoAVHeating | Isothermal
+				| CrackContactHeating | ContactHeating )* >
 
 <!-- Gravity analysis -->
 
@@ -318,6 +339,7 @@
 			step CDATA #IMPLIED
 			max CDATA #IMPLIED
 			CFL CDATA #IMPLIED
+			TransCFL CDATA #IMPLIED
 			units CDATA #IMPLIED>
 <!ELEMENT	ArchiveGroup EMPTY>
 <!ATTLIST	ArchiveGroup
@@ -374,7 +396,7 @@
 <!ELEMENT	SkipPostExtrapolation EMPTY>
 <!ELEMENT	GIMP EMPTY>
 <!ATTLIST	GIMP
-			type (Dirac|uGIMP|lCPDI|qCPDI) #IMPLIED>
+			type (Dirac|uGIMP|lCPDI|qCPDI|B2GIMP|B2SPLINE|B2CPDI) #IMPLIED>
 <!ELEMENT	Diffusion EMPTY>
 <!ATTLIST	Diffusion
 			reference CDATA #IMPLIED>
@@ -532,6 +554,8 @@
 <!ELEMENT	order (#PCDATA)>
 <!ELEMENT	coeff (#PCDATA)>
 <!ELEMENT	coeffStatic (#PCDATA)>
+<!ELEMENT	displacementOnly (#PCDATA)>
+<!ELEMENT	Dc (#PCDATA)>
 <!ELEMENT	shareMatField (#PCDATA)>
 <!ELEMENT	G0 (#PCDATA)>
 <!ELEMENT	ntaus (#PCDATA)>
@@ -655,7 +679,7 @@
 
 <!ELEMENT	elem (#PCDATA)>
 <!ATTLIST	elem
-			type (2|7) "2"
+			type (1|2|7) "2"
 			matl CDATA "1"
 			angle CDATA "0.0"
 			thick CDATA "1">
@@ -920,6 +944,8 @@
 <!ELEMENT	vhalf (#PCDATA)>
 <!ELEMENT	LiquidPhase (#PCDATA)>
 
+<!ELEMENT	NeedsMechanics EMPTY>
+
 <!-- ==============================================
 		DEPRECATED ELEMENTS (with no children)
 ================================================-->
@@ -928,6 +954,7 @@
 <!ATTLIST	TimeStep
 			units CDATA #IMPLIED>
 <!ELEMENT	TimeFactor (#PCDATA)>
+<!ELEMENT	TransTimeFactor (#PCDATA)>
 <!ELEMENT	MaxTime (#PCDATA)>
 <!ATTLIST	MaxTime
 			units CDATA #IMPLIED>

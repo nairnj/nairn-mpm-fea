@@ -8,11 +8,7 @@
 
 #include "stdafx.h"
 #include "Read_MPM/ShellController.hpp"
-#include "Read_XML/mathexpr.hpp"
-
-// global expression variables
-double ShellController::varHeight = 0.;
-PRVar gHeightArray[1] = { NULL };
+#include "Read_XML/Expression.hpp"
 
 #pragma mark ShellController: initializers
 
@@ -29,31 +25,13 @@ void ShellController::SetProperty(const char *aName,char *value,CommonReadHandle
 	{	// bad if NULL
 		if(aName==NULL)
 			ThrowSAXException("Shell radius function is missing");
-		
-		// create variable
-		if(gHeightArray[0]==NULL)
-		{	gHeightArray[0]=new RVar("h",&varHeight);
-		}
-		
-		// create the function and check it
-		radiusFunction = new ROperation(value,1,gHeightArray);
-		if(radiusFunction->HasError())
-			ThrowSAXException("Shell radius function of height (h) time is not valid");
+		radiusFunction = Expression::CreateExpression(value,"Shell radius function of height (h) time is not valid");
 	}
     else if(strcmp(aName,"thickness")==0)
 	{	// bad if NULL
 		if(aName==NULL)
 			ThrowSAXException("Shell thickness function is missing");
-		
-		// create variable
-		if(gHeightArray[0]==NULL)
-		{	gHeightArray[0]=new RVar("h",&varHeight);
-		}
-		
-		// create the function and check it
-		thicknessFunction = new ROperation(value,1,gHeightArray);
-		if(thicknessFunction->HasError())
-			ThrowSAXException("Shell thickness function of height (h) time is not valid");
+		thicknessFunction = Expression::CreateExpression(value,"Shell thickness function of height (h) time is not valid");
 	}
     else
 	{	// pass on to get axis and axis ranges
@@ -69,6 +47,7 @@ bool ShellController::FinishSetup(void) { return TRUE; }
 // return true if point is in this sphere
 bool ShellController::ContainsPoint(Vector& v)
 {
+	double varHeight;
 	double dx,dy;
 	
     if(axis==1)
@@ -92,17 +71,20 @@ bool ShellController::ContainsPoint(Vector& v)
 	
 	// find radius
 	double r = sqrt(dx*dx+dy*dy);
+
+	unordered_map<string,double> vars;
+	vars["h"] = varHeight;
 	
 	// inner radius
-	double rmin = distScaling*radiusFunction->Val();
-	if(r<rmin) return FALSE;
+	double rmin = distScaling*radiusFunction->EvaluateFunction(vars);
+	if(r<rmin) return false;
 	
 	// thickness
-	double rmax = rmin + distScaling*thicknessFunction->Val();
-	if(r>rmax) return FALSE;
+	double rmax = rmin + distScaling*thicknessFunction->EvaluateFunction(vars);
+	if(r>rmax) return false;
 	
 	// OK
-	return TRUE;
+	return true;
 }
 
 #pragma mark SphereController: accessors

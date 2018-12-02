@@ -17,7 +17,7 @@
 
 #ifdef MPM_CODE
 // The full stiffness matrix in C
-// alpha and beta are thermal and moisture expansion coefficients
+// alpha and beta are thermal and moisture expansion/poroelasticity coefficients
 // although some elements are used for other things
 typedef struct {
 	double C[6][6];
@@ -31,11 +31,10 @@ class Elastic : public MaterialBase
     public:
         
         // constructors and destructors
-        Elastic();
-        Elastic(char *);
+        Elastic(char *,int);
 		
 		// initialize
-		char *InputMaterialProperty(char *,int &,double &);
+		virtual char *InputMaterialProperty(char *,int &,double &);
 #ifdef MPM_CODE
 		virtual void PrintCommonProperties(void) const;
 #endif
@@ -47,11 +46,10 @@ class Elastic : public MaterialBase
         virtual double GetCpMinusCv(MPMBase *) const;
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
 		virtual void LRConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
-		virtual void LRElasticConstitutiveLaw(MPMBase *,Matrix3,Matrix3,Matrix3,Matrix3,Matrix3 *,int,void *,ResidualStrains *) const;
+		virtual void LRElasticConstitutiveLaw(MPMBase *,Matrix3 &,Matrix3 &,Matrix3 &,Matrix3 &,Matrix3 &,int,void *,ResidualStrains *) const;
 		virtual void SRConstitutiveLaw2D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 		virtual void SRConstitutiveLaw3D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 		virtual ElasticProperties *GetElasticPropertiesPointer(void *) const;
-		virtual double GetAcOverVp(int,MPMBase *,Vector *) const;
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif

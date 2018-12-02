@@ -9,19 +9,15 @@
 #include "stdafx.h"
 #include "Materials/PressureLaw.hpp"
 #include "Cracks/CrackSegment.hpp"
-#include "Read_XML/mathexpr.hpp"
 #include "System/UnitsController.hpp"
+#include "Read_XML/Expression.hpp"
 
 extern double mtime;
 
-// global expression variables
-double PressureLaw::varTime=0.;
-PRVar plTimeArray[1] = { NULL };
-
 #pragma mark PressureLaw::Constructors and Destructors
 
-// Constructors with arguments
-PressureLaw::PressureLaw(char *matName) : TractionLaw(matName)
+// Constructor
+PressureLaw::PressureLaw(char *matName,int matID) : TractionLaw(matName,matID)
 {
 	function = NULL;
 	minCOD = -1.;
@@ -30,7 +26,7 @@ PressureLaw::PressureLaw(char *matName) : TractionLaw(matName)
 #pragma mark PressureLaw::Initialization
 
 // no properties to read
-char *PressureLaw::InputMaterialProperty(char *xName,int &input,double &gScaling)
+char *PressureLaw::InputTractionLawProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"stress")==0)
 	{	input=DOUBLE_NUM;
@@ -47,7 +43,7 @@ char *PressureLaw::InputMaterialProperty(char *xName,int &input,double &gScaling
 		return (char *)&minCOD;
 	}
 	
-    return TractionLaw::InputMaterialProperty(xName,input,gScaling);
+    return TractionLaw::InputTractionLawProperty(xName,input,gScaling);
 }
 
 // setting function if needed
@@ -56,20 +52,20 @@ void PressureLaw::SetStressFunction(char *bcFunction)
 {	
 	// NULL or empty is an error
 	if(bcFunction==NULL)
-		ThrowSAXException("Stress setting function of time is missing");
-	if(strlen(bcFunction)==0)
-		ThrowSAXException("Stress setting function of time is missing");
-	
-	// create time variable if needed
-	if(plTimeArray[0]==NULL)
-	{	plTimeArray[0]=new RVar("t",&varTime);
+	{	ThrowSAXException("Stress setting function of time is missing");
+		return;
 	}
-	
+	if(strlen(bcFunction)==0)
+	{	ThrowSAXException("Stress setting function of time is missing");
+		return;
+	}
+
+	// repeat is an error
 	if(function!=NULL)
 		ThrowSAXException("Duplicate stress setting function");
-	function=new ROperation(bcFunction,1,plTimeArray);
-	if(function->HasError())
-		ThrowSAXException("Stress setting function is not valid");
+	
+	// create function
+	function = Expression::CreateExpression(bcFunction,"Stress setting function is not valid");
 }
 
 // print to output window
@@ -80,8 +76,7 @@ void PressureLaw::PrintMechanicalProperties(void) const
 		cout <<  endl;
 	}
 	else
-	{	char *expr=function->Expr('#');
-		cout << "Stress = " << expr << endl;
+	{	cout << "Stress = " << function->GetString() << endl;
 	}
 	if(minCOD>=0.)
 	{	PrintProperty("Min COD",minCOD,UnitsController::Label(CULENGTH_UNITS));
@@ -94,30 +89,30 @@ void PressureLaw::PrintMechanicalProperties(void) const
 void PressureLaw::CalculateTimeFunction(void)
 {
 	if(function!=NULL)
-	{	// in Legacy units, convert to ms, in consistent units just use the time
-		varTime = mtime*UnitsController::Scaling(1000.);
-		
-		// in Legacy, convert MPa to Pa, in consisten units use the function
-		stress1 = function->Val()*UnitsController::Scaling(1.e6);
+	{	// in Legacy, convert MPa to Pa, in consistent units use the function
+		stress1 = function->TValue(mtime*UnitsController::Scaling(1000.))*UnitsController::Scaling(1.e6);
 	}
-	
 }
 
 #pragma mark PressureLaw::Traction Law
 
 // Traction law - constant pressure on crack surface
-void PressureLaw::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,double dx,double dy,double area)
+void PressureLaw::CrackTractionLaw(CrackSegment *cs, double nCod, double tCod, Vector *n, Vector *t, double area)
 {
 	// no pressure if less then a specific critical COD
-	if(minCOD>=0. && nCod<=minCOD)
-	{	cs->tract.x = 0.;
+	if(minCOD >= 0. && nCod <= minCOD)
+	{
+		cs->tract.x = 0.;
 		cs->tract.y = 0.;
+		cs->tract.z = 0.;
 		return;
 	}
-	
-	// force is traction times area projected onto x-y plane
-	cs->tract.x = area*stress1*dy;
-	cs->tract.y = -area*stress1*dx;
+
+	// force is traction times area projected onto plane of unit vectors (units F)
+	// tract = -area*(Tn*n + Tt*t), in 2D, if t=(dx,dy), then n=(-dy,dx)
+	cs->tract.x = -area*stress1*n->x;
+	cs->tract.y = -area*stress1*n->y;
+	cs->tract.z = -area*stress1*n->z;
 }
 
 // return total energy (which is needed for path independent J) under traction law curve

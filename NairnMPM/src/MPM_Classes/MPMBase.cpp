@@ -8,6 +8,7 @@
 
 #include "stdafx.h"
 #include "MPM_Classes/MPMBase.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
@@ -19,12 +20,15 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "Global_Quantities/BodyForce.hpp"
 
 // globals
 MPMBase **mpm;		// list of material points
-int nmpms=0;		// number of material points
 int nmpmsNR=0;		// number for last non-rigid material point
+// nmpmsRB will always equal nmpmsNR
+int nmpmsRB=0;		// number for last rigid block material
 int nmpmsRC=0;		// number for last rigid contact material
+int nmpms=0;		// number of material points
 
 #pragma mark MPMBase::Constructors and Destructors
 
@@ -58,12 +62,16 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	ZeroTensor(&eplast);
 	ZeroTensorAntisym(&wrot);
 	ZeroVector(&acc);
+	
+	// zero increment initial residual strains
+	dTrans.dT = 0.;
+	dTrans.dC = 0.;
+	dTrans.doopse = 0.;		// for generalized plane stress or strain
+	oopIncrement = 0.;		// out-of-plane increment (stress or strain)
     
     // zero energies
     plastEnergy=0.;
-#ifndef NEW_HEAT_METHOD
-    prev_dTad=0.;
-#endif
+	prev_dTad=0.;
     buffer_dTad=0.;
     workEnergy=0.;
     resEnergy=0.;
@@ -77,7 +85,7 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	matData=NULL;
 	
 	// concentration (c units) and gradient (c units/mm)
-	pConcentration=0.;
+	SetConcentration(0.,0.);
 	pDiffusion=NULL;
     
 	// temperature (degrees) and gradient (degrees/mm)
@@ -111,19 +119,13 @@ bool MPMBase::AllocateCPDIorGIMPStructures(int gimpType,bool isThreeD)
     int cpdiSize=0;
     
 	// If CPDU find size of CPDI datastructuress, other pass on to GIMP structur allocation
-    if(gimpType==LINEAR_CPDI || gimpType==LINEAR_CPDI_AS)
+    if(gimpType==LINEAR_CPDI || gimpType==LINEAR_CPDI_AS || gimpType==BSPLINE_CPDI)
         cpdiSize = isThreeD ? 8 : 4 ;
     else if(gimpType==QUADRATIC_CPDI)
         cpdiSize = 9;
-    else
-	{
-#ifdef LOAD_GIMP_INFO
-        return AllocateGIMPStructures(gimpType,isThreeD);
-#else
+	else
 		return true;
-#endif
-	}
-    
+	
     // create memory for cpdiSize pointers
     CPDIDomain **cpdi = new (nothrow) CPDIDomain *[cpdiSize];
     if(cpdi == NULL) return false;
@@ -136,7 +138,7 @@ bool MPMBase::AllocateCPDIorGIMPStructures(int gimpType,bool isThreeD)
         cpdi[i]->ncpos.z = 0.;          // set zero once for 2D calculations
 		
 		// weights constant except for axisymmetric CPDI
-		if(gimpType==LINEAR_CPDI)
+		if(gimpType==LINEAR_CPDI || gimpType==BSPLINE_CPDI)
 			cpdi[i]->ws = isThreeD ? 0.125 : 0.25 ;
 		else if(gimpType==QUADRATIC_CPDI)
 		{	if(i<4)
@@ -157,35 +159,6 @@ bool MPMBase::AllocateCPDIorGIMPStructures(int gimpType,bool isThreeD)
     
     return true;
 }
-
-#ifdef LOAD_GIMP_INFO
-// allocate structures when needed for particle domains (CPDI or GIMP)
-// throws std::bad_alloc
-bool MPMBase::AllocateGIMPStructures(int gimpType,bool isThreeD)
-{
-	// not needed for point GIMP
-	if(gimpType==POINT_GIMP) return true;
-	
-	// maximum nodes
-	int maxnds = isThreeD ? 27 : 9 ;
-	
-	// gimp info
-	GIMPNodes *gimp = new GIMPNodes;
-    if(gimp == NULL) return false;
-	
-	// arrays
-	gimp->nds = new (nothrow) int[maxnds+1];
-	if(gimp->nds == NULL) return false;
-	
-	gimp->ndIDs = new (nothrow) unsigned char[maxnds];
-	if(gimp->ndIDs == NULL) return false;
-
-	// load to generic variable
-	cpdi_or_gimp = (char *)gimp;
-    
-	return true;
-}
-#endif
 
 // Destructor (and it is virtual)
 MPMBase::~MPMBase() { }
@@ -220,6 +193,24 @@ void MPMBase::StopParticle(void)
 
 #pragma mark MPMBase::Accessors
 
+// scale residual strains for current update method
+// secondPass implies in USAVG_METHOD mode, therefore simply set to dTrans unless using USAVG+/-
+ResidualStrains MPMBase::ScaledResidualStrains(int secondPass)
+{
+	ResidualStrains res = dTrans;
+	if(secondPass)
+	{	res.dT *= (1.0-fractionUSF);
+		res.dC *= (1.0-fractionUSF);
+		res.doopse *= (1.0-fractionUSF);
+	}
+	else if(fmobj->mpmApproach==USAVG_METHOD)
+	{	res.dT *= fractionUSF;
+		res.dC *= fractionUSF;
+		res.doopse *= fractionUSF;
+	}
+	return res;
+}
+
 // set mass in PreliminaryCalcs, but only if input file did not set it first
 // When tracking spin, make sure particle momentum is initialized
 // throws std::bad_alloc
@@ -249,8 +240,8 @@ void MPMBase::SetVelocityGradient(double dvxx,double dvyy,double dvxy,double dvy
 
 // set concentration (only, and for all particles, during initialization)
 void MPMBase::SetConcentration(double pConc,double pRefConc)
-{	pConcentration=pConc;
-	pPreviousConcentration=pRefConc;
+{	pConcentration = pConc;
+	pPreviousConcentration= fmax(pRefConc,0.);
 }
 
 // set temperature (only and for all particles, during initialization)
@@ -280,7 +271,17 @@ int MPMBase::ArchiveMatID(void) const { return matnum; }		// one based for archi
 // element ID (convert to zero based)
 int MPMBase::ElemID(void) const { return inElem-1; }					// zero based element array in data storage
 void MPMBase::ChangeElemID(int newElem,bool adjust)
-{	inElem=newElem+1;                   // set using zero basis
+{	// adjust dimensionless size if needed
+	if(adjust)
+	{	Vector prev = theElements[ElemID()]->GetDeltaBox();
+		Vector next = theElements[newElem]->GetDeltaBox();
+		mpm_lp.x *= prev.x/next.x;
+		mpm_lp.y *= prev.y/next.y;
+		mpm_lp.z *= prev.z/next.z;
+	}
+	
+	// reset element
+	inElem=newElem+1;                   // set using zero basis
 	IncrementElementCrossings();		// count crossing
 }
 int MPMBase::ArchiveElemID(void) { return inElem; }			// one based for archiving
@@ -306,8 +307,11 @@ double MPMBase::GetUnscaledVolume(void)
 void MPMBase::GetInitialSize(Vector &lp) const { lp = mpm_lp; }
 
 // Set particle size as fraction of cell size in each direction in current element
-// It is radius in -1 to 1 natural coordinates
-void MPMBase::SetDimensionlessSize(Vector *lp) { mpm_lp = *lp; }
+// It's radius is -1 to 1 natural coordinates
+void MPMBase::SetDimensionlessSize(Vector *lp)
+{	mpm_lp = *lp;
+	mpmgrid.TrackMinParticleSize(GetParticleSize());
+}
 void MPMBase::SetDimensionlessByPts(int pointsPerCell)
 {	double lp;
     
@@ -335,6 +339,7 @@ void MPMBase::SetDimensionlessByPts(int pointsPerCell)
 			break;
 	}
 	mpm_lp = MakeVector(lp,lp,lp);
+	mpmgrid.TrackMinParticleSize(GetParticleSize());
 }
 
 // Get particle size as fraction of cell size in each direction
@@ -380,9 +385,16 @@ void MPMBase::Get2DSinCos(double *sintheta,double *costheta)
 }
 
 // Rotation matrix (for materials that track it)
-// All hypoelastic materials when in large rotation mode and tracking is activated
-// 3D, small rotation, and anisotropic tracks rotation always. It is calculated when fill elastic
-//    properties and then stored for later use by anisotropic plastic or transport properties
+// Currently only tracked in in Transisotropic (and subclasses) when in 3D and then
+//    it is rotation all the way to material axes
+// Tracking activated by call InitRtot in SetInitialParticleState()
+// Rtot is set when
+// 1. Small Rotation - when call FillElasticProperties3D() just before constitutive law
+//		it will have Rnm1 or rotation before F undated
+// 2. Large Rotation - when call constitutive law - it stores Rn
+// It is called for use
+// 1. Anisotropic plasticity
+// 2. GetTransportProps() in Tranisotropic (and subclasses)
 Matrix3 *MPMBase::GetRtotPtr(void) { return Rtot; }
 void MPMBase::SetRtot(Matrix3 newR) { Rtot->set(newR); }
 
@@ -450,9 +462,9 @@ void MPMBase::IncrementRotationStrain(double rotXY,double rotXZ,double rotYZ)
 }
 TensorAntisym *MPMBase::GetRotationStrainTensor(void) { return &wrot; }
 
-// For 2D or axisymmetric, iuncrement Fzz to Fzz(n) = (1+dezz)*Fzz(n-1)
+// For 2D or axisymmetric, increment Fzz to Fzz(n) = (1+dezz)*Fzz(n-1)
 // In the strain tensor, we store Fzz(n)-1 and Fzz(n-1) = 1 + ep.zz
-//		Fzz(n)-1 = (1+dezz)*(1 + ep.zz) = ep.zz + dezz*(1+ep.zz)
+//		Fzz(n)-1 = (1+dezz)*(1 + ep.zz)-1 = ep.zz + dezz*(1+ep.zz)
 void MPMBase::IncrementDeformationGradientZZ(double dezz)
 {	ep.zz += dezz*(1.+ep.zz);
 }
@@ -478,33 +490,12 @@ Matrix3 MPMBase::GetInitialRotation(void)
 double MPMBase::GetPlastEnergy(void) { return plastEnergy; }
 void MPMBase::AddPlastEnergy(double energyInc) { plastEnergy+=energyInc; }
 
-#ifdef NEW_HEAT_METHOD
-
 // return buffer_dTad and clear it too
 double MPMBase::GetClear_dTad(void)
 {	double dTad = buffer_dTad;
     buffer_dTad = 0.;
     return dTad;
 }
-
-#else
-
-// Get only in UpdateParticles task to add adiabiatic temperature rise to the particles
-// Buffer amount for next heat increment and clear it too
-double MPMBase::GetBufferClear_dTad(void)
-{	prev_dTad = buffer_dTad;
-    buffer_dTad = 0.;
-    return prev_dTad;
-}
-
-// Only called in IncrementHeatEnergy()
-double MPMBase::GetClearPrevious_dTad(void)
-{	double dTad = prev_dTad;
-    prev_dTad = 0.;
-    return dTad;
-}
-
-#endif
 
 // Only called in IncrementHeatEnergy()
 // a material should never call this directly
@@ -531,7 +522,9 @@ void MPMBase::AddHeatEnergy(double energyInc) { heatEnergy += energyInc; }
 
 void MPMBase::SetEntropy(double entropyTot) { entropy = entropyTot; }
 double MPMBase::GetEntropy(void) { return entropy; }
-void MPMBase::AddEntropy(double entropyInc) { entropy += entropyInc; }
+void MPMBase::AddEntropy(double dq,double Tgp)
+{   entropy += dq/Tgp;
+}
 
 double MPMBase::GetInternalEnergy(void) { return workEnergy + heatEnergy; }
 
@@ -539,9 +532,6 @@ double MPMBase::GetInternalEnergy(void) { return workEnergy + heatEnergy; }
 Vector *MPMBase::GetPFext(void) { return &pFext; }
 Vector *MPMBase::GetNcpos(void) { return &ncpos; }
 CPDIDomain **MPMBase::GetCPDIInfo(void) { return (CPDIDomain **)cpdi_or_gimp; }
-#ifdef LOAD_GIMP_INFO
-GIMPNodes *MPMBase::GetGIMPInfo(void) { return (GIMPNodes *)cpdi_or_gimp; }
-#endif
 Vector *MPMBase::GetAcc(void) { return &acc; }
 Tensor *MPMBase::GetVelGrad(void) { return velGrad; }
 Tensor *MPMBase::GetStrainTensor(void) { return &ep; }
@@ -551,6 +541,15 @@ Tensor *MPMBase::GetStrainTensor(void) { return &ep; }
 //  customize the way stresses are stored, such as to separate pressure and deviatoric stress
 Tensor *MPMBase::GetStressTensor(void) { return &sp; }
 Tensor MPMBase::ReadStressTensor(void) { return theMaterials[MatID()]->GetStress(&sp,pressure,this); }
+void MPMBase::StoreStressTensor(Tensor *newsp) { theMaterials[MatID()]->SetStress(newsp,this); }
+void MPMBase::StoreThicknessStressIncrement(double dszz)
+{	theMaterials[MatID()]->IncrementThicknessStress(dszz,this);
+	oopIncrement = dszz;
+}
+void MPMBase::StoreThicknessStrainIncrement(double dezz)
+{	IncrementDeformationGradientZZ(dezz);
+	oopIncrement = dezz;
+}
 void MPMBase::IncrementPressure(double dP) { pressure += dP; }
 void MPMBase::SetPressure(double P) { pressure = P; }
 double MPMBase::GetPressure(void) { return pressure; }
@@ -586,7 +585,12 @@ double MPMBase::GetRho(void)
 
 // get density from the material
 double MPMBase::GetConcSaturation(void)
-{	return theMaterials[matnum-1]->GetConcSaturation(this);
+{	return theMaterials[matnum-1]->GetMaterialConcentrationSaturation(this);
+}
+
+// get diffusion CT (1 moisture or 1/Q poroelasticity)
+double MPMBase::GetDiffusionCT(void)
+{	return theMaterials[matnum-1]->GetDiffusionCT();
 }
 
 // Decribe for debugging use or output on some errors

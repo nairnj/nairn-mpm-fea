@@ -13,9 +13,10 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
-#include "Read_XML/mathexpr.hpp"
 #include "System/UnitsController.hpp"
+#include "Read_XML/Expression.hpp"
 
 // This model tracks only volume change. It does prevent particles degenerating into
 // needles, but it is probably not correct thing to do for correct shape functions.
@@ -27,20 +28,10 @@
 // is Diagonal with Bii = J^(2/3) axisymmetric and 3D or Bxx=Byy=J for plane strain
 #define ELASTIC_B_MODEL
 
-// global expression variables
-double TaitLiquid::xPos=0.;
-double TaitLiquid::yPos=0.;
-double TaitLiquid::zPos=0.;
-PRVar tlTimeArray[4] = { NULL,NULL,NULL };
-
 #pragma mark TaitLiquid::Constructors and Destructors
 
-// Constructors
-TaitLiquid::TaitLiquid() {}
-
-// The default contructor should call a parent class constructor and
-// then fill in any new initialization.
-TaitLiquid::TaitLiquid(char *matName) : HyperElastic(matName)
+// Constructor
+TaitLiquid::TaitLiquid(char *matName,int matID) : HyperElastic(matName,matID)
 {
 	viscosity.clear();
 	logShearRate.clear();
@@ -78,9 +69,7 @@ char *TaitLiquid::InputMaterialProperty(char *xName,int &input,double &gScaling)
     return HyperElastic::InputMaterialProperty(xName,input,gScaling);
 }
 
-// Verify input properties do calculations; if problem return string with an error message
-// If OK, MUST pass on to super class. This is called just before PrintMaterial
-// (see also ValidateForUse() for checks that depend on MPM calculation mode)
+// Verify input properties do calculations
 const char *TaitLiquid::VerifyAndLoadProperties(int np)
 {
 	// make sure all were set
@@ -135,9 +124,7 @@ void TaitLiquid::PrintMechanicalProperties(void) const
 	}
 	
     if(function!=NULL)
-    {   char *expr=function->Expr('#');
-        cout << "Initial Pressure  = " << expr << " " << UnitsController::Label(PRESSURE_UNITS) << " (";
-        delete [] expr;
+    {	cout << "Initial Pressure  = " << function->GetString() << " " << UnitsController::Label(PRESSURE_UNITS) << " (";
 		cout << "mass adjusted to match)" << endl;
     }
 }
@@ -160,13 +147,14 @@ void TaitLiquid::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 	// is a pressure being set?
 	if(function!=NULL)
 	{	// function should be for pressure in MPa (e.g., rho*g*h)
-        xPos=mptr->pos.x;
-        yPos=mptr->pos.y;
-        zPos=mptr->pos.z;
+		unordered_map<string,double> vars;
+		vars["x"] = mptr->pos.x;
+		vars["x"] = mptr->pos.y;
+		vars["z"] = mptr->pos.z;
 		
 		// convert to internal specific pressure units of N/m^2 mm^3/g
 		// Divide by rho0, which cancels with rho0 in Ksp when getting Jinit
-		double Psp = UnitsController::Scaling(1.e6)*function->Val()/rho;
+		double Psp = UnitsController::Scaling(1.e6)*function->EvaluateFunction(vars)/rho;
 		
 		// Find initial Jinit
 		// Note that an initial temperature will cause change in pressure
@@ -199,16 +187,8 @@ char *TaitLiquid::InitHistoryData(char *pchr,MPMBase *mptr)
 	return (char *)p;
 }
 
-// this material has two
-double TaitLiquid::GetHistory(int num,char *historyPtr) const
-{
-    double history=0.;
-	if(num>0 && num<=3)
-	{	double *p=(double *)historyPtr;
-		history=p[num-1];
-	}
-    return history;
-}
+// Number of history variables
+int TaitLiquid::NumberOfHistoryDoubles(void) const { return 3; }
 
 #pragma mark TaitLiquid:Step Methods
 
@@ -256,7 +236,8 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 #endif
     
     // Get new J and save result on the particle
-	double J = detdF * mptr->GetHistoryDble(J_History,historyOffset);
+	double Jprev = mptr->GetHistoryDble(J_History,historyOffset);
+	double J = detdF * Jprev;
     mptr->SetHistoryDble(J_History,J,historyOffset);
 
 #ifdef ELASTIC_B_MODEL
@@ -276,18 +257,41 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     
     // account for residual stresses
 	double dJres = GetIncrementalResJ(mptr,res);
-	double Jres = dJres * mptr->GetHistoryDble(J_History+1,historyOffset);
+	double Jresprev = mptr->GetHistoryDble(J_History+1,historyOffset);
+	double Jres = dJres * Jresprev;
 	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
     double Jeff = J/Jres;
 
     // new Kirchhoff pressure (over rho0) from Tait equation
 	double p0=mptr->GetPressure();
+//#define INCREMENTAL_PRESSURE
+#ifdef INCREMENTAL_PRESSURE
+	double Jeffprev = Jprev/Jresprev;
+	double DeltaJeff = (detdF-dJres)*Jeffprev/dJres;
+	double dP = -Ksp*exp((1.-Jeffprev)/TAIT_C)*(DeltaJeff - 0.5*(DeltaJeff*DeltaJeff/TAIT_C)*(1 - DeltaJeff/(3.*TAIT_C)));
+	double pressure = p0 + dP;
+	mptr->IncrementPressure(dP);
+#else
     double pressure = J*TAIT_C*Ksp*(exp((1.-Jeff)/TAIT_C)-1.);
-    mptr->SetPressure(pressure);
-    
+	mptr->SetPressure(pressure);
+#endif
+	
+	// volume change
+	double delV = 1. - 1./detdF;
+	
+	// artificial viscosity
+	double QAVred = 0.;
+	double AVEnergy = 0.;
+	if(delV<0. && artificialViscosity)
+	{	double Kratio = Jeff*(1.+pressure/(TAIT_C*Ksp));
+		QAVred = GetArtificalViscosity(delV/delTime,sqrt((Kbulk*Kratio)/rho),mptr);
+		if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delV);
+		pressure += QAVred;
+		mptr->IncrementPressure(QAVred);
+	}
+
 	// incremental energy per unit mass - dilational part
     double avgP = 0.5*(p0+pressure);
-    double delV = 1. - 1./detdF;
     double workEnergy = -avgP*delV;
     
 	// incremental residual energy per unit mass
@@ -350,10 +354,9 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	double Kratio = Jeff*(1.+pressure/(TAIT_C*Ksp));
 	double dTq0 = -J*Kratio*gamma0*mptr->pPreviousTemperature*delV;
     
-    // heat energy is Cv (dT - dTq0) -dPhi
-	// Here do Cv (dT - dTq0)
+    // heat energy
     // dPhi = shearWork is lost due to shear term
-    IncrementHeatEnergy(mptr,res->dT,dTq0,shearWork);
+    IncrementHeatEnergy(mptr,dTq0,shearWork+AVEnergy);
 }
 
 // get 2 eta/rho for use in constitutive law (<=0 to get zero shear rate viscosity)
@@ -428,26 +431,6 @@ double TaitLiquid::BracketContactLawShearRate(double gmaxdot,double k,double &x1
 	return viscosity[numViscosity-1];
 }
 
-// When becomes active update J, set B elastic, set pressure, and zero deviatoric stress
-void TaitLiquid::BeginActivePhase(MPMBase *mptr,int np,int historyOffset) const
-{	double J = mptr->GetRelativeVolume();
-	mptr->SetHistoryDble(J_History,J,historyOffset);
-#ifdef ELASTIC_B_MODEL
-	double Jres = mptr->GetHistoryDble(J_History+1,historyOffset);
-    double Jeff = J/Jres;
-	
-	// store pressure strain as elastic B
-	// no need here, will happen in next time step
-	
-    // new Kirchhoff pressure (over rho0) from Tait equation
-    double pressure = J*TAIT_C*Ksp*(exp((1.-Jeff)/TAIT_C)-1.);
-    mptr->SetPressure(pressure);
-	
-	// set deviatoric stress to zero
-	ZeroTensor(mptr->GetStressTensor());
-#endif
-}
-
 #pragma mark TaitLiquid::Accessors
 
 // return unique, short name for this material
@@ -464,7 +447,7 @@ double TaitLiquid::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
     double J = mptr->GetHistoryDble(J_History,offset);;
 	double dTemp=mptr->pPreviousTemperature-thermal.reference;
 	double resStretch = CTE1*dTemp;
-	if(DiffusionTask::active)
+	if(DiffusionTask::HasFluidTransport())
 	{	double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
 		resStretch += exp(CME1*dConc);
 	}
@@ -475,11 +458,17 @@ double TaitLiquid::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
 
 // Copy stress to a read-only tensor variable after combininng deviatoric and pressure
 Tensor TaitLiquid::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
-{   Tensor stress = *sp;
-    stress.xx -= pressure;
-    stress.yy -= pressure;
-    stress.zz -= pressure;
-    return stress;
+{	return GetStressPandDev(sp,pressure,mptr);
+}
+
+// store a new total stress on a particle's stress and pressure variables
+void TaitLiquid::SetStress(Tensor *spnew,MPMBase *mptr) const
+{	SetStressPandDev(spnew,mptr);
+}
+
+// Increment thickness (zz) stress through deviatoric stress and pressure
+void TaitLiquid::IncrementThicknessStress(double dszz,MPMBase *mptr) const
+{	IncrementThicknessStressPandDev(dszz,mptr);
 }
 
 // Get current relative volume change = J (which this material tracks)
@@ -497,20 +486,17 @@ void TaitLiquid::SetPressureFunction(char *pFunction)
 	if(pFunction==NULL)
 		ThrowSAXException("Initial pressure function of position is missing");
 	
-	// create time variable if needed
-	if(tlTimeArray[0]==NULL)
-	{	tlTimeArray[0]=new RVar("x",&xPos);
-		tlTimeArray[1]=new RVar("y",&yPos);
-		tlTimeArray[2]=new RVar("z",&zPos);
-	}
-	
-	// set the function
+	// duplicate is error
 	if(function!=NULL)
 		ThrowSAXException("Duplicate initial pressure function");
-	function=new ROperation(pFunction,3,tlTimeArray);
-	if(function->HasError())
-		ThrowSAXException("Initial pressure function is not valid");
+
+	function = Expression::CreateExpression(pFunction,"Initial pressure function is not valid");
 }
 
 // get viscosity eta = 0.5*rho*(2 eta/rho) for use in constitutive law
 double TaitLiquid::GetViscosity(double shearRate) const { return 0.5*rho*GetTwoEtaOverRho(shearRate); }
+
+// if a subclass material supports artificial viscosity, override this and return TRUE
+bool TaitLiquid::SupportsArtificialViscosity(void) const { return true; }
+
+

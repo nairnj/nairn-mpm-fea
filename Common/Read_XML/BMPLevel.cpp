@@ -70,8 +70,12 @@ int BMPLevel::Material(unsigned char intensity,double pweight)
 // check for maximum weight
 BMPLevel *BMPLevel::MaximumWeight(double& maxweight,BMPLevel **maxLevel)
 {	if(weight>maxweight)
-	{	maxweight=weight;
-		*maxLevel=this;
+	{	// Accept if not void (i.e. mat!=0), but if void, all accept if
+		// void really has a higher weight
+		if(mat!=0 || fabs(weight-maxweight)>1.e-10)
+		{	maxweight=weight;
+			*maxLevel=this;
+		}
 	}
 	return (BMPLevel *)nextObject;
 }

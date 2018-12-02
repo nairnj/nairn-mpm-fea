@@ -40,12 +40,9 @@
 	#include "Materials/NonlinearInterface.hpp"
 	#include "Materials/AdhesionFriction.hpp"
 	#include "Materials/LiquidContact.hpp"
+	#include "Read_MPM/CrackController.hpp"
 #else
 	#include "Materials/ImperfectInterface.hpp"
-#endif
-
-#ifdef MPM_CODE
-extern CrackHeader *firstCrack;
 #endif
 
 MaterialController *matCtrl=NULL;
@@ -93,95 +90,98 @@ int MaterialController::AddMaterial(int matID,char *matName)
 	
 	switch(matID)
 	{   case ISOTROPIC:
-			newMaterial=new IsotropicMat(matName);
+			newMaterial=new IsotropicMat(matName,matID);
 			break;
 		case TRANSISO1:
 		case TRANSISO2:
 			newMaterial=new TransIsotropic(matName,matID);
 			break;
 		case ORTHO:
-			newMaterial=new Orthotropic(matName);
+			newMaterial=new Orthotropic(matName,matID);
 			break;
 #ifdef MPM_CODE
 		case VISCOELASTIC:
-			newMaterial=new Viscoelastic(matName);
+			newMaterial=new Viscoelastic(matName,matID);
 			break;
 		case MOONEYRIVLIN:
-			newMaterial=new Mooney(matName);
+			newMaterial=new Mooney(matName,matID);
 			break;
 		case HEISOTROPIC:
-			newMaterial = new HEIsotropic(matName);
+			newMaterial = new HEIsotropic(matName,matID);
 			break;
 		case ISOPLASTICITY:
-			newMaterial=new IsoPlasticity(matName);
+			newMaterial=new IsoPlasticity(matName,matID);
 			break;
 		case BISTABLEISO:
-			newMaterial=new BistableIsotropic(matName);
+			newMaterial=new BistableIsotropic(matName,matID);
 			break;
-		case RIGIDMATERIAL:
-			newMaterial=new RigidMaterial(matName);
+		case RIGIDBCMATERIAL:
+			newMaterial=new RigidMaterial(matName,matID,0);
+			break;
+		case RIGIDCONTACTMATERIAL:
+			newMaterial=new RigidMaterial(matName,matID,8);
 			break;
 		case COHESIVEZONEMATERIAL:
-			newMaterial=new CohesiveZone(matName);
+			newMaterial=new CohesiveZone(matName,matID);
 			break;
 		case PRESSURELAWMATERIAL:
-			newMaterial=new PressureLaw(matName);
+			newMaterial=new PressureLaw(matName,matID);
 			break;
 		case COUPLEDSAWTOOTHMATERIAL:
-			newMaterial=new CoupledSawTooth(matName);
+			newMaterial=new CoupledSawTooth(matName,matID);
 			break;
 		case LINEARTRACTIONMATERIAL:
-			newMaterial=new LinearTraction(matName);
+			newMaterial=new LinearTraction(matName,matID);
 			break;
 		case CUBICTRACTIONMATERIAL:
-			newMaterial=new CubicTraction(matName);
+			newMaterial=new CubicTraction(matName,matID);
 			break;
 		case HILLPLASTIC:
-			newMaterial=new HillPlastic(matName);
+			newMaterial=new HillPlastic(matName,matID);
 			break;
 		case WOODMATERIAL:
-			newMaterial=new WoodMaterial(matName);
+			newMaterial=new WoodMaterial(matName,matID);
 			break;
 		case TRILINEARTRACTIONMATERIAL:
-			newMaterial=new TrilinearTraction(matName);
+			newMaterial=new TrilinearTraction(matName,matID);
 			break;
 		case IDEALGASMATERIAL:
-			newMaterial=new IdealGas(matName);
+			newMaterial=new IdealGas(matName,matID);
 			break;
 		case TAITLIQUID:
-			newMaterial=new TaitLiquid(matName);
+			newMaterial=new TaitLiquid(matName,matID);
 			break;
 		case MGEOSMATERIAL:
 		case HEMGEOSMATERIAL:
-			newMaterial=new HEMGEOSMaterial(matName);
+			newMaterial=new HEMGEOSMaterial(matName,matID);
 			break;
         case NEOHOOKEAN:
-			newMaterial=new Neohookean(matName);
+			newMaterial=new Neohookean(matName,matID);
 			break;
 		case CLAMPEDNEOHOOKEAN:
-			newMaterial=new ClampedNeohookean(matName);
+			newMaterial=new ClampedNeohookean(matName,matID);
 			break;
 		case CONTACTLAW:
-			newMaterial=new ContactLaw(matName);
+			newMaterial=new ContactLaw(matName,matID);
 			break;
 		case COULOMBFRICTIONLAW:
-			newMaterial=new CoulombFriction(matName);
+			newMaterial=new CoulombFriction(matName,matID);
 			break;
 		case LINEARINTERFACELAW:
-			newMaterial=new LinearInterface(matName);
+			newMaterial=new LinearInterface(matName,matID);
 			break;
 		case NONLINEARINTERFACELAW:
-			newMaterial=new NonlinearInterface(matName);
+			newMaterial=new NonlinearInterface(matName,matID);
 			break;
         case ADHESIONFRICTIONLAW:
-            newMaterial=new AdhesionFriction(matName);
+            newMaterial=new AdhesionFriction(matName,matID);
             break;
         case LIQUIDCONTACT:
-            newMaterial=new LiquidContact(matName);
+            newMaterial=new LiquidContact(matName,matID);
             break;
 #else
 		case INTERFACEPARAMS:
-			newMaterial=new ImperfectInterface(matName);
+			newMaterial=new ImperfectInterface(matName,matID);
 			break;
 #endif
 		default:
@@ -191,7 +191,7 @@ int MaterialController::AddMaterial(int matID,char *matName)
 	return TRUE;
 }
 
-// assemble into array used in the code
+// assemble into array used in the code. Note that crack array not set upyet
 // throws std::bad_alloc
 const char *MaterialController::SetMaterialArray(void)
 {
@@ -267,7 +267,7 @@ const char *MaterialController::SetMaterialArray(void)
 		return "One or more materials was referenced but never defined.";
 
 #ifdef MPM_CODE
-	// cached contact laws created from old style input
+	// cached contact laws created from old style input to end of the list
 	ContactLaw *nextLaw = (ContactLaw *)autoContactCtrl->firstObject;
 	while(nextLaw!=NULL)
 	{	theMaterials[nmat] = nextLaw;
@@ -275,11 +275,15 @@ const char *MaterialController::SetMaterialArray(void)
 		nextLaw = (ContactLaw *)nextLaw->GetNextObject();
 	}
 	
-	//  check for cracks with tractions
-	if(hasTractionLaws && firstCrack!=NULL)
+	// firstCrack not set yet, but can check from crack controller
+	bool hasCracks = crackCtrl->firstObject != NULL;
+	
+	//  when using traction laws, create automatic frictionless law to assign to those cracks
+	//  when created, it is always materials #(nmat-1)
+	if(hasTractionLaws && hasCracks)
 	{	char tempName[80];
-		strcpy(tempName,"Frictioness for Traction-Law Cracks (Auto)");
-		theMaterials[nmat] = new CoulombFriction(tempName);
+		strcpy(tempName,"Frictionless for Traction-Law Cracks (Auto)");
+		theMaterials[nmat] = new CoulombFriction(tempName,COULOMBFRICTIONLAW);
 		nmat++;
 	}
 #endif
@@ -367,7 +371,7 @@ int MaterialController::GetIDFromNewName(char *matname)
 	if(matID > 0) return matID;
 	
 	// create new material name
-	IsotropicMat *namedMaterial = new IsotropicMat(matname);
+	IsotropicMat *namedMaterial = new IsotropicMat(matname,ISOTROPIC);
 	nameCtrl->AddObject(namedMaterial);
 	return nameCtrl->numObjects;
 }

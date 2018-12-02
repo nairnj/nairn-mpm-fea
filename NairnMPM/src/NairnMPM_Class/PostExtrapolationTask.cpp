@@ -30,6 +30,8 @@
 #include "Exceptions/CommonException.hpp"
 #include "Cracks/CrackNode.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
+#include "Nodes/MaterialContactNode.hpp"
+#include "NairnMPM_Class/UpdateMomentaTask.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -46,13 +48,16 @@ void PostExtrapolationTask::Execute(void)
 {
 	CommonException *massErr = NULL;
 	
-	bool combineRigid = firstCrack!=NULL && fmobj->multiMaterialMode && fmobj->hasRigidContactParticles;
+	// Only rigid materials ignore cracks in NairnMPM. Use OSParticulas to ignore cracks in non-rigid materials
+	bool mirrorIgnored = firstCrack!=NULL && fmobj->multiMaterialMode && fmobj->hasNoncrackingParticles;
 	
-	// Post mass and momentum extrapolation calculations on nodes
+	// First node pass does some calculations and gets transport values
+	// If needed, find material contact nodes (if numberMaterials>1)
 #pragma omp parallel
 	{
 		// variables for each thread
-		CrackNode *firstCrackNode=NULL,*lastCrackNode=NULL;
+		MaterialContactNode *lastMCNode=NULL;
+		CrackNode *lastCrackNode=NULL;
 		
 		// Each pass in this loop should be independent
 #pragma omp for nowait
@@ -61,26 +66,28 @@ void PostExtrapolationTask::Execute(void)
 			NodalPoint *ndptr = nd[i];
 			
 			try
-            {	// combine rigid fields if necessary
-                if(combineRigid)
-                    ndptr->CopyRigidParticleField();
-
+			{
+				// mirror velocity fields for materials that ignore cracks
+				if(mirrorIgnored)
+					ndptr->MirrorIgnoredCrackFields();
+				
 				// Get total nodal masses and count materials if multimaterial mode
-				// copy momenta
-				ndptr->CalcTotalMassAndCount();
+				if(ndptr->CalcTotalMassAndCount())
+				{	// save multimaterial nodes that might have contact
+					lastMCNode = new MaterialContactNode(ndptr,lastMCNode);
+					ndptr->contactData = lastMCNode;
+				}
 				
-				// multimaterial contact and interfaces
-				if(fmobj->multiMaterialMode)
-					ndptr->MaterialContactOnNode(timestep,MASS_MOMENTUM_CALL);
-				
-				// crack contact and interfaces
+				// if needed create crack contact node and added to this patches linked list
 				if(firstCrack!=NULL)
-					ndptr->CrackContact(MASS_MOMENTUM_CALL,0.,&firstCrackNode,&lastCrackNode);
-				
+				{	int hasFlags = ndptr->HasCrackContact();
+					if(hasFlags)
+					{	lastCrackNode = new CrackNode(ndptr,hasFlags,lastCrackNode);
+					}
+				}
+
 				// get transport values on nodes
-				TransportTask *nextTransport=transportTasks;
-				while (nextTransport != NULL)
-					nextTransport = nextTransport->GetTransportNodalValue(ndptr);
+				TransportTask::GetTransportValues(ndptr);
 			}
 			catch(std::bad_alloc&)
 			{	if(massErr==NULL)
@@ -97,29 +104,46 @@ void PostExtrapolationTask::Execute(void)
 				}
 			}
 		}
-		
-#pragma omp critical (linknodes)
+	
+		// as each thread exits above loop, insert into list (if was needed)
+		if(lastMCNode != NULL)
 		{
-			// link up crack nodes
-			if(lastCrackNode != NULL)
-			{	if(CrackNode::currentCNode != NULL)
-					firstCrackNode->SetPrevNode(CrackNode::currentCNode);
-				CrackNode::currentCNode = lastCrackNode;
+#pragma omp critical (linknodes)
+			{	// add to node vector
+				MaterialContactNode *prevMCNode = lastMCNode;
+				while(prevMCNode!=NULL)
+				{	MaterialContactNode::materialContactNodes.push_back(prevMCNode);
+					prevMCNode = prevMCNode->GetPrevNode();
+				}
+			}
+		}
+		
+		// as each thread exits above loop, insert into list (if was needed)
+		if(lastCrackNode != NULL)
+		{
+#pragma omp critical (linknodes)
+			{	// add to node vector
+				CrackNode *prevCNode = lastCrackNode;
+				while(prevCNode!=NULL)
+				{	CrackNode::crackContactNodes.push_back(prevCNode);
+					prevCNode = prevCNode->GetPrevNode();
+				}
 			}
 		}
 	}
 	
 	// throw any errors
-	if(massErr!=NULL) throw *massErr;
-	
-#pragma mark ... IMPOSE BOUNDARY CONDITIONS
-	
-	// Impose transport BCs and extrapolate gradients to the particles
-	TransportTask *nextTransport=transportTasks;
-	while(nextTransport!=NULL)
-	{   nextTransport->ImposeValueBCs(mtime);
-		nextTransport = nextTransport->GetGradients(mtime);
+	if(massErr!=NULL) throw *massErr;	// Post mass and momentum extrapolation calculations on nodes
+
+	// Create list of active nodes
+	int numActive = 0;
+	for(int i=1;i<=nnodes;i++)
+	{	if(nd[i]->NodeHasParticles())
+			nda[++numActive] = i;
 	}
+	nda[0] = numActive;
+
+#pragma mark ... FIND NODES WITH MIRRORED BCs, CONTACT, and
 	
 	// locate BCs with reflected nodes
 	if(firstRigidVelocityBC!=NULL)
@@ -128,7 +152,10 @@ void PostExtrapolationTask::Execute(void)
 			nextBC = nextBC->SetMirroredVelBC(mtime);
 	}
 	
-	// used to call class methods for material contact and crack contact here
-	// Impose velocity BCs
-	NodalVelBC::GridMomentumConditions();
+	UpdateMomentaTask::ContactAndMomentaBCs(MASS_MOMENTUM_CALL);
+	
+#pragma mark ... IMPOSE BOUNDARY CONDITIONS
+	
+	// Impose transport BCs and extrapolate gradients to the particles
+	TransportTask::TransportBCsAndGradients(mtime);
 }

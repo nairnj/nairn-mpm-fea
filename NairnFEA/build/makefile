@@ -7,6 +7,7 @@
 #       mac - MacOS X using gcc
 #       mac-clang - MacOS X using clang-mp
 #       carbon - OSU carbon/hedera cluster (the default)
+#		gcc7 - OSU cluster using gcc7
 #		mpm - OSU machine
 #       cygwin - Standard cygwin install in Windows
 #       cygwinbin - Standard cygwin install using cygwin binary xerces
@@ -44,6 +45,9 @@ endif
 ifeq ($(SYSTEM),carbon)
 	xercesSo = /usr/local/xerces3/lib/libxerces-c.so
 endif
+ifeq ($(SYSTEM),gcc7)
+	xercesSo = /usr/local/xerces3/lib/libxerces-c.so
+endif
 ifeq ($(SYSTEM),mpm)
 	xercesSo = /usr/lib/libxerces-c.so
 endif
@@ -60,6 +64,9 @@ endif
 # 2. Path to xerces headers (if not at default /usr/local/include) 
 headersPath= /usr/local/include
 ifeq ($(SYSTEM),carbon)
+	headersPath = /usr/local/xerces3/include
+endif
+ifeq ($(SYSTEM),gcc7)
 	headersPath = /usr/local/xerces3/include
 endif
 ifeq ($(SYSTEM),mpm)
@@ -79,6 +86,9 @@ endif
 CC= g++
 ifeq ($(SYSTEM),carbon)
     CC= /usr/local/gcc48/bin/g++
+endif
+ifeq ($(SYSTEM),carbon)
+    CC= /usr/local/gcc7/bin/g++
 endif
 ifeq ($(SYSTEM),mac)
     CC= /opt/local/bin/g++-mp-4.9
@@ -133,6 +143,7 @@ ifeq ($(SYSTEM),mac-clang)
 endif
 ArcController = $(com)/Read_XML/ArcController
 Area = $(src)/Read_FEA/Area
+Atomic = $(com)/Read_XML/Atomic
 BitMapFilesCommon = $(com)/Read_XML/BitMapFilesCommon
 BitMapFilesFEA = $(src)/Read_FEA/BitMapFilesFEA
 BMPLevel = $(com)/Read_XML/BMPLevel
@@ -144,13 +155,14 @@ CommonReadHandler = $(com)/Read_XML/CommonReadHandler
 CommonUtilities = $(com)/System/CommonUtilities
 Constraint = $(src)/Boundary_Conditions/Constraint
 ConstraintController = $(src)/Read_FEA/ConstraintController
-CSTriangle = $(src)/Elements/CSTriangle
+CSTriangle = $(com)/Elements/CSTriangle
 EdgeBC = $(src)/Boundary_Conditions/EdgeBC
 EdgeBCController = $(src)/Read_FEA/EdgeBCController
 EightNodeIsoparam = $(src)/Elements/EightNodeIsoparam
 Elastic = $(com)/Materials/Elastic
 ElementBase = $(com)/Elements/ElementBase
 ElementsController = $(com)/Read_XML/ElementsController
+Expression = $(com)/Read_XML/Expression
 FEAArchiveData = $(src)/System/FEAArchiveData
 FEABoundaryCondition = $(src)/Boundary_Conditions/FEABoundaryCondition
 FEAReadHandler = $(src)/Read_FEA/FEAReadHandler
@@ -171,7 +183,6 @@ main = $(com)/System/main
 MaterialBase = $(com)/Materials/MaterialBase
 MaterialBaseFEA = $(src)/Materials/MaterialBaseFEA
 MaterialController = $(com)/Read_XML/MaterialController
-mathexpr = $(com)/Read_XML/mathexpr
 MatRegionFEA = $(src)/Read_FEA/MatRegionFEA
 MoreElementBase = $(src)/Elements/MoreElementBase
 MoreNodalPoint = $(src)/Nodes/MoreNodalPoint
@@ -181,8 +192,6 @@ NodalDispBCController = $(src)/Read_FEA/NodalDispBCController
 NodalLoad = $(src)/Boundary_Conditions/NodalLoad
 NodalLoadController = $(src)/Read_FEA/NodalLoadController
 NodalPoint = $(com)/Nodes/NodalPoint
-NodalPoint2D = $(com)/Nodes/NodalPoint2D
-NodalPoint3D = $(com)/Nodes/NodalPoint3D
 NodesController = $(com)/Read_XML/NodesController
 Orthotropic = $(com)/Materials/Orthotropic
 OvalController = $(com)/Read_XML/OvalController
@@ -238,8 +247,6 @@ dprefix = $(src)/System/FEAPrefix.hpp $(com)/System/DataTypes.hpp \
 # NodalDispBCController.hpp : ParseController.hpp
 # NodalLoad.hpp : FEABoundaryCondition.hpp
 # NodalLoadController.hpp : ParseController.hpp
-# NodalPoint2D.hpp : NodalPoint.hpp
-# NodalPoint3D.hpp : NodalPoint.hpp
 # NodesController.hpp : ParseController.hpp
 # Orthotropic.hpp : TransIsotropic.hpp (Elastic.hpp MaterialBase.hpp)
 # OvalController.hpp : ShapeController.hpp
@@ -259,6 +266,7 @@ dprefix = $(src)/System/FEAPrefix.hpp $(com)/System/DataTypes.hpp \
 # Area.hpp CommonArchiveData.hpp CommonException.hpp CommonReadHandler.hpp FEABoundaryCondition.hpp
 # ElementBase.hpp Keypoint.hpp MaterialBase.hpp NairnFEA.hpp
 # NodalPoint.hpp ParseController.hpp Path.hpp ShapeController.hpp StrX.hpp
+# Expression.hpp Atomic.hpp
 
 # -------------------------------------------------------------------------
 # all compiled objects
@@ -273,10 +281,10 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		ImperfectInterface.o MoreElementBase.o Quad2D.o EightNodeIsoparam.o SixNodeTriangle.o \
 		CSTriangle.o Interface2D.o LinearInterface.o QuadInterface.o MoreNodalPoint.o \
 		NodalDispBC.o NodalLoad.o EdgeBC.o Gauss.o Elastic.o Constraint.o ConstraintController.o \
-		mathexpr.o FEABoundaryCondition.o ShapeController.o PointController.o PathBCController.o \
-		RectController.o ArcController.o NodalPoint2D.o NodalPoint3D.o BitMapFilesCommon.o \
+		FEABoundaryCondition.o ShapeController.o PointController.o PathBCController.o \
+		RectController.o ArcController.o BitMapFilesCommon.o \
 		OvalController.o BMPLevel.o BitMapFilesFEA.o Lagrange2D.o MatRegionFEA.o \
-		PolygonController.o UnitsController.o
+		PolygonController.o UnitsController.o Expression.o Atomic.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -291,7 +299,7 @@ main.o : $(main).cpp $(dprefix) $(NairnFEA).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(main).cpp
 CommonAnalysis.o : $(CommonAnalysis).cpp $(dprefix) $(FEAArchiveData).hpp $(FEAReadHandler).hpp $(CommonException).hpp \
 			$(StrX).hpp $(MaterialBase).hpp $(NodalPoint).hpp $(ElementBase).hpp $(CommonReadHandler).hpp \
-			$(CommonArchiveData).hpp
+			$(CommonArchiveData).hpp $(NodalPoint).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonAnalysis).cpp
 CommonArchiveData.o : $(CommonArchiveData).cpp $(dprefix) $(CommonArchiveData).hpp $(NodalPoint).hpp $(ElementBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonArchiveData).cpp
@@ -325,7 +333,7 @@ ElementsController.o : $(ElementsController).cpp $(dprefix) $(ElementsController
 			$(Quad2D).hpp  $(Lagrange2D).hpp $(CommonReadHandler).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ElementsController).cpp
 NodesController.o : $(NodesController).cpp $(dprefix) $(NodesController).hpp $(NodalPoint).hpp $(ParseController).hpp \
-			$(NodalPoint2D).hpp $(NodalPoint3D.hpp) $(NairnFEA).hpp
+			$(NairnFEA).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NodesController).cpp
 ShapeController.o : $(ShapeController).cpp $(dprefix) $(ShapeController).hpp $(NodalPoint).hpp $(CommonReadHandler).hpp \
             $(ElementBase).hpp
@@ -348,8 +356,10 @@ MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialControlle
 		$(IsotropicMat).hpp $(TransIsotropic).hpp $(Orthotropic).hpp $(ImperfectInterface).hpp \
 		$(Elastic).hpp $(MaterialBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
-mathexpr.o : $(mathexpr).cpp $(mathexpr).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(mathexpr).cpp
+Atomic.o : $(Atomic).cpp $(Atomic).hpp  $(Expression).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Atomic).cpp
+Expression.o : $(Expression).cpp $(Expression).hpp $(Atomic).hpp $(CommonException).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Expression).cpp
 
 # Common: Exceptions
 CommonException.o : $(CommonException).cpp $(dprefix) $(CommonException).hpp
@@ -379,14 +389,13 @@ Quad2D.o : $(Quad2D).cpp $(dprefix) $(Quad2D).hpp $(ElementBase).hpp $(NodalPoin
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Quad2D).cpp
 Lagrange2D.o : $(Lagrange2D).cpp $(dprefix) $(Lagrange2D).hpp $(Quad2D).hpp $(ElementBase).hpp $(NodalPoint).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Lagrange2D).cpp
+CSTriangle.o : $(CSTriangle).cpp $(dprefix) $(CSTriangle).hpp $(Linear2D).hpp $(ElementBase).hpp \
+			$(NairnFEA).hpp $(MaterialBase).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CSTriangle).cpp
 
 # Common: Nodes
 NodalPoint.o : $(NodalPoint).cpp $(dprefix) $(NodalPoint).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NodalPoint).cpp
-NodalPoint2D.o : $(NodalPoint2D).cpp $(dprefix) $(NodalPoint2D).hpp $(NodalPoint).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NodalPoint2D).cpp
-NodalPoint3D.o : $(NodalPoint3D).cpp $(dprefix) $(NodalPoint3D).hpp $(NodalPoint).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NodalPoint3D).cpp
 	
 # FEA: System
 FEAArchiveData.o : $(FEAArchiveData).cpp $(dprefix) $(FEAArchiveData).hpp $(CommonArchiveData).hpp
@@ -401,7 +410,7 @@ NairnFEA.o : $(NairnFEA).cpp $(dprefix) $(NairnFEA).hpp $(ElementBase).hpp $(Com
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NairnFEA).cpp
 FEAStartResults.o : $(FEAStartResults).cpp $(dprefix) $(NairnFEA).hpp $(ElementBase).hpp $(CommonException).hpp \
 			 $(NodalDispBC).hpp $(NodalLoad).hpp $(EdgeBC).hpp $(NodalPoint).hpp $(MaterialBase).hpp \
-			 $(mathexpr).hpp $(FEABoundaryCondition).hpp
+			 $(FEABoundaryCondition).hpp $(Expression).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(FEAStartResults).cpp
 
 # FEA: Read_FEA
@@ -410,7 +419,7 @@ FEAReadHandler.o : $(FEAReadHandler).cpp $(dprefix) $(FEAReadHandler).hpp $(Comm
 			$(Keypoint).hpp $(KeypointsController).hpp $(ParseController).hpp $(Path).hpp $(PathsController).hpp \
 			$(Area).hpp $(NodesController).hpp $(ElementsController).hpp $(EdgeBCController).hpp \
 			$(LineController).hpp $(MaterialController).hpp $(NodalDispBCController).hpp $(NodalLoadController).hpp \
-			$(Constraint).hpp $(ConstraintController).hpp $(mathexpr).hpp $(FEABoundaryCondition).hpp \
+			$(Constraint).hpp $(ConstraintController).hpp $ $(FEABoundaryCondition).hpp \
 			$(ShapeController).hpp $(PathBCController).hpp $(PointController).hpp $(ArcController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(FEAReadHandler).cpp
 BitMapFilesFEA.o : $(BitMapFilesFEA).cpp $(dprefix) $(FEAReadHandler).hpp $(CommonReadHandler).hpp $(RectController).hpp \
@@ -418,7 +427,7 @@ BitMapFilesFEA.o : $(BitMapFilesFEA).cpp $(dprefix) $(FEAReadHandler).hpp $(Comm
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BitMapFilesFEA).cpp
 MatRegionFEA.o : $(MatRegionFEA).cpp $(dprefix) $(FEAReadHandler).hpp $(CommonReadHandler).hpp $(RectController).hpp \
 			$(ShapeController).hpp $(ElementBase).hpp $(MaterialController).hpp $(OvalController).hpp $(ParseController).hpp \
-			$(PolygonController).hpp $(mathexpr).hpp
+			$(PolygonController).hpp $(Expression).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MatRegionFEA).cpp
 KeypointsController.o : $(KeypointsController).cpp $(dprefix) $(KeypointsController).hpp $(ParseController).hpp \
 			$(Keypoint).hpp
@@ -433,7 +442,7 @@ Path.o : $(Path).cpp $(dprefix) $(Path).hpp $(KeypointsController).hpp $(Keypoin
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Path).cpp
 Area.o : $(Area).cpp $(dprefix) $(Area).hpp $(KeypointsController).hpp $(Keypoint).hpp $(ParseController).hpp \
 			$(EdgeBCController).hpp $(PathsController).hpp $(ElementsController).hpp $(NodesController).hpp \
-			$(Path).hpp $(ElementBase).hpp $(EightNodeIsoparam).hpp $(Quad2D).hpp
+			$(Path).hpp $(ElementBase).hpp $(EightNodeIsoparam).hpp $(Quad2D).hpp $(Expression).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Area).cpp 
 EdgeBCController.o : $(EdgeBCController).cpp $(dprefix) $(EdgeBCController).hpp $(ParseController).hpp \
 			$(ElementBase).hpp $(EdgeBC).hpp $(FEABoundaryCondition).hpp
@@ -465,9 +474,6 @@ EightNodeIsoparam.o : $(EightNodeIsoparam).cpp $(dprefix) $(EightNodeIsoparam).h
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(EightNodeIsoparam).cpp
 SixNodeTriangle.o : $(SixNodeTriangle).cpp $(dprefix) $(SixNodeTriangle).hpp $(Quad2D).hpp $(ElementBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(SixNodeTriangle).cpp
-CSTriangle.o : $(CSTriangle).cpp $(dprefix) $(CSTriangle).hpp $(Linear2D).hpp $(ElementBase).hpp \
-			$(NairnFEA).hpp $(MaterialBase).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CSTriangle).cpp
 Interface2D.o : $(Interface2D).cpp $(dprefix) $(Interface2D).hpp $(ElementBase).hpp \
 			$(NairnFEA).hpp $(MaterialBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Interface2D).cpp
@@ -483,7 +489,8 @@ MoreNodalPoint.o : $(MoreNodalPoint).cpp $(dprefix) $(NodalPoint).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MoreNodalPoint).cpp
 
 # FEA: Boundary Conditions
-FEABoundaryCondition.o : $(FEABoundaryCondition).cpp $(dprefix) $(FEABoundaryCondition).hpp $(NodalPoint).hpp $(mathexpr).hpp
+FEABoundaryCondition.o : $(FEABoundaryCondition).cpp $(dprefix) $(FEABoundaryCondition).hpp $(NodalPoint).hpp \
+			$(Expression).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(FEABoundaryCondition).cpp
 NodalDispBC.o : $(NodalDispBC).cpp $(dprefix) $(NodalDispBC).hpp $(NodalPoint).hpp $(FEABoundaryCondition).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NodalDispBC).cpp

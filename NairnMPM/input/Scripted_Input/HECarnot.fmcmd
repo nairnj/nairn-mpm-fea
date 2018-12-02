@@ -13,11 +13,12 @@ EndHeader
 #analysis$="Plane Strain MPM"
 Analysis #analysis$
 MPMMethod USF,lCPDI
+Processors 4
 
 ! ********** Parameters Section **********
 #matID$="idealgas"		! idealgas or tungsten
-#strain=100			! strain
-#tmult=10
+#strain=100			    ! strain
+#tmult=30
 damping 3200
 
 #cell=5                 ! cell size (cubic cells)
@@ -59,7 +60,7 @@ endif
 ! Archiving
 Archive "Results/"&#matID$
 TimeStep 1000,100*#time,.05
-ArchiveTime #time/20
+ArchiveTime #time/50
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain,temperature,plasticenergy,plasticstrain
 
 ! ********** Materials Section **********

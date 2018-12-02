@@ -3,7 +3,7 @@
 	NairnMPM
 
 	Created by John Nairn on 11/4/14.
-	Parent class for custom task to archive grid results
+	Parent class for custom tasks to archive grid results
 ********************************************************************************/
 
 #include "stdafx.h"

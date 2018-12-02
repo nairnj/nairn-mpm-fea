@@ -187,7 +187,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			else if(strcmp(aName,"thick")==0)
 				sscanf(value,"%lf",&thick);
             else if(strcmp(aName,"type")==0)
-			{	if(!theElems->SetElemIDStr(value))
+			{	if(!theElems->SetElemIDStr(value,block))
 					throw SAXException("Invalid or incompatible element type.");
 			}
 			else if(strcmp(aName,"flip")==0)
@@ -207,7 +207,9 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	// point in NodeList or Keypoints list or polygon
     else if(strcmp(xName,"pt")==0)
     {   if(block==BODY_SHAPE)
+		{	// pt in polygon definition in a shape
             MatRegionInput(xName,attrs);
+		}
         else
         {	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
             x=y=temp=0.;
@@ -288,7 +290,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"type")==0)
-			{	if(!theElems->SetElemIDStr(value))
+			{	if(!theElems->SetElemIDStr(value,block))
 					throw SAXException("Invalid or incompatible element type.");
 				elemTypeSet=TRUE;
 			}
@@ -1071,7 +1073,7 @@ void FEAReadHandler::ResequenceNodes(void)
 	
 	// remap nodes
 	delete [] nd;
-	theNodes->SetNodeArray(revMap);
+	nd = theNodes->SetNodeArray(revMap);
 
 	// map nodes in all data structures
 	//  ... Elements, Nodal Displacements, Nodal Loads, selected nodes, periodic nodes

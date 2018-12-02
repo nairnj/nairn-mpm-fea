@@ -20,6 +20,8 @@ extern char rotationAxes[4];
 extern char angleAxes[4];
 #endif
 
+#define WEIGHT_TOL 1.e-10
+
 // file type allowed in BMP command
 enum { BMP_INPUT_FILE=0,FPG_INPUT_FILE,UNKNOWN_INPUT_FILE};
 
@@ -237,7 +239,7 @@ short CommonReadHandler::EndBMPInput(char *xName,int exitBlock)
 		BMPLevel *newLevel=new BMPLevel(0,0,255);
 		currentLevel->SetNextObject(newLevel);
 
-    	TranslateBMPFiles();		// scan file for material points or elements
+		TranslateBMPFiles();		// scan file for material points or elements
         block=exitBlock;			// Must have been in MATERIALPOINTS
 		
 		// delete defined levels
@@ -250,9 +252,7 @@ short CommonReadHandler::EndBMPInput(char *xName,int exitBlock)
     }
 
     else if(strcmp(xName,"Intensity")==0)
-	{	if(currentLevel->concentration<0. || currentLevel->concentration>1.)
-			throw SAXException(XYFileError("Particle concentration potential for an intensity level must be from 0 to 1",bmpFileName));
-        block=BMPBLOCK;
+	{	block=BMPBLOCK;
 	}
 		
     else if(strcmp(xName,"Origin")==0 || strcmp(xName,"Thickness")==0 || strcmp(xName,"Angle")==0
@@ -289,7 +289,7 @@ int CommonReadHandler::BMPIndex(double value,int indexMax)
 // Subroutine to read BMP file
 // throws std::bad_alloc, SAXException()
 //-----------------------------------------------------------
-void *CommonReadHandler::ReadXYFile(char *bmpFullPath,XYInfoHeader &info,int dataType)
+void *CommonReadHandler::ReadXYFile(char *bmpFullPath,XYInfoHeader &info,int dataType,bool isReadingXML)
 {
 	// get file extension
 	char ext[11];
@@ -298,7 +298,7 @@ void *CommonReadHandler::ReadXYFile(char *bmpFullPath,XYInfoHeader &info,int dat
 	// get file type from extension (case insensitive)
 	XYFileImporter *xyFile = NULL;
 	if(CIstrcmp(ext,"bmp")==0)
-		xyFile = (XYFileImporter *)new XYBMPImporter(bmpFullPath);
+		xyFile = (XYFileImporter *)new XYBMPImporter(bmpFullPath,isReadingXML);
 	else
 		throw SAXException(XYFileError("The bit mapped file type is not recognized.",bmpFullPath));
 	
@@ -443,6 +443,17 @@ bool CommonReadHandler::MapDomainToImage(XYInfoHeader info,Vector spot,Vector or
 			map.wtr2 = rmax-(double)map.r2;
 		}
 		
+		// ignore excellent alignment
+		if(map.wtr1<WEIGHT_TOL)
+		{	map.r1++;
+			map.wtr1 = 1.;
+		}
+		if(map.wtr2<WEIGHT_TOL)
+		{	map.r2--;
+			map.wtr2 = 1.;
+		}
+		
+		
 		double cmin=(spot.x-del.x-orig.x)/pw.x;
 		double cmax=(spot.x+del.x-orig.x)/pw.y;
 		map.c1 = BMPIndex(cmin,info.width);
@@ -455,6 +466,16 @@ bool CommonReadHandler::MapDomainToImage(XYInfoHeader info,Vector spot,Vector or
 		{	// fractional weight for first and last col in case not all within the extent
 			map.wtc1 = (double)(map.c1+1)-cmin;
 			map.wtc2 = cmax-(double)map.c2;
+		}
+		
+		// ignore excellent alignment
+		if(map.wtc1<WEIGHT_TOL)
+		{	map.c1++;
+			map.wtc1 = 1.;
+		}
+		if(map.wtc2<WEIGHT_TOL)
+		{	map.c2--;
+			map.wtc2 = 1.;
 		}
 		
 		return true;

@@ -20,7 +20,7 @@ class CubicTraction : public TractionLaw
     public:
 	
 		// constructors and destructors
-        CubicTraction(char *);
+        CubicTraction(char *,int);
 		
 		// methods
 		virtual const char *VerifyAndLoadProperties(int);
@@ -32,7 +32,7 @@ class CubicTraction : public TractionLaw
 		virtual void PrintMechanicalProperties(void) const;
 	
 		// the traction law
-		virtual void CrackTractionLaw(CrackSegment *,double,double,double,double,double);
+		virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);
 		virtual double CrackTractionEnergy(CrackSegment *,double,double,bool);
 		
 		// accessors

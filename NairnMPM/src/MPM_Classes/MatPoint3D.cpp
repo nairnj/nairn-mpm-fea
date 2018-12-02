@@ -7,6 +7,7 @@
 ********************************************************************************/
 
 #include "stdafx.h"
+#include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MatPoint3D.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Elements/ElementBase.hpp"
@@ -65,35 +66,15 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	//   and using the velocity field for that particle with each node
     for(i=1;i<=numnds;i++)
 	{	vel=nd[nds[i]]->GetVelocity((short)vfld[i],matFld);
-        dv += Matrix3(vel.x,vel.y,vel.z,xDeriv[i],yDeriv[i],zDeriv[i]);
+		Vector grad = MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
+        dv += Matrix3(&vel,&grad);
     }
 	    
-    // convert to strain increments
+	// convert to strain increments
     dv.Scale(strainTime);
     
-	// Extrapolate grid temperature (or concentration) to the particle
-	// Find delta value from previous extrapolated grid value on particle
-	// (and save this new one for use by others and next time step)
-	ResidualStrains res;
-	res.dT = 0;
-	res.dC = 0.;
-	if(!ConductionTask::active)
-	{	// just use and reset previous temperature
-		res.dT = pTemperature-pPreviousTemperature;
-		pPreviousTemperature = pTemperature;
-	}
-	else
-	{	for(i=1;i<=numnds;i++)
-			res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
-		res.dT = conduction->GetDeltaValue(this,res.dT);
-	}
-	if(DiffusionTask::active)
-	{	for(i=1;i<=numnds;i++)
-			res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i],(short)vfld[i],matFld);
-		res.dC = diffusion->GetDeltaValue(this,res.dC);
-	}
-
 	// pass on to material class to handle
+	ResidualStrains res = ScaledResidualStrains(secondPass);
 	PerformConstitutiveLaw(dv,strainTime,np,props,&res);
 }
 
@@ -106,35 +87,37 @@ void MatPoint3D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void
 }
 
 // Move position (3D) (in mm)
-// First finish accExtra by adding ap*Vp(n)
-// Then Update using dx = (Vpg(n+1) - (dt/2)(Agp(n) + accExtra))*dt
+// First finish accEeff by subtractin ap*Vp(n) and get adjucted acceleration base on last time step
+// Then Update using dx = dt*(vgpn + 0.5*accEff*dt)
 // Must be called BEFORE velocity update, because is needs vp(n) at start of timestep
-void MatPoint3D::MovePosition(double delTime,Vector *vgpnp1,Vector *accExtra,double particleAlpha)
+void MatPoint3D::MovePosition(double delTime,Vector *vgpn,Vector *accEff,double particleAlpha)
 {
-	// finish extra acceleration terms by adding ap Vp(n)
-	accExtra->x += particleAlpha*vel.x;
-	accExtra->y += particleAlpha*vel.y;
-	accExtra->z += particleAlpha*vel.z;
+	// finish extra acceleration terms by subtracting ap*Vp(n)
+	accEff->x -= particleAlpha*vel.x;
+	accEff->y -= particleAlpha*vel.y;
+	accEff->z -= particleAlpha*vel.z;
 	
+	// in this code, vgpn = vgpnp1
 	// position change
-	pos.x += delTime*(vgpnp1->x - 0.5*delTime*(acc.x + accExtra->x));
-    pos.y += delTime*(vgpnp1->y - 0.5*delTime*(acc.y + accExtra->y));
-    pos.z += delTime*(vgpnp1->z - 0.5*delTime*(acc.z + accExtra->z));
+	pos.x += delTime*(vgpn->x - 0.5*delTime*(acc.x - accEff->x));
+	pos.y += delTime*(vgpn->y - 0.5*delTime*(acc.y - accEff->y));
+	pos.z += delTime*(vgpn->z - 0.5*delTime*(acc.z - accEff->z));
+	
+	// finish acceleration
+	acc.x += accEff->x;
+	acc.y += accEff->y;
+	acc.z += accEff->z;
 }
 
 // Move velocity (3D) (in mm/sec)
 // First get final acceleration on the particle
 //		accEff = acc - accExtra
 // Then update using Vp(n+1) = Vp(n) + accEff*dt
-void MatPoint3D::MoveVelocity(double delTime,Vector *accExtra)
+void MatPoint3D::MoveVelocity(double delTime)
 {
-	acc.x -= accExtra->x;
-	acc.y -= accExtra->y;
-	acc.z -= accExtra->z;
-	
 	vel.x += delTime*acc.x;
-    vel.y += delTime*acc.y;
-    vel.z += delTime*acc.z;
+	vel.y += delTime*acc.y;
+	vel.z += delTime*acc.z;
 }
 
 // Move rigid particle by new current velocity
@@ -353,6 +336,22 @@ void MatPoint3D::GetSemiSideVectors(Vector *r1,Vector *r2,Vector *r3) const
 	r3->z = pF[2][2]*psz.z;
 }
 
+// Get distance from particle center to surface of deformed particle
+// along the provided unit vector
+// See JANOSU-13-74 to 77
+double MatPoint3D::GetDeformedRadius(Vector *norm) const
+{	Vector a,b,c;
+	GetSemiSideVectors(&a,&b,&c);
+	Vector aXb,aXc,bXc;
+	CrossProduct(&aXb,&a,&b);
+	CrossProduct(&aXc,&a,&c);
+	CrossProduct(&bXc,&b,&c);
+	double nab = fabs(DotVectors(norm,&aXb));
+	double nac = fabs(DotVectors(norm,&aXc));
+	double nbc = fabs(DotVectors(norm,&bXc));
+	return fabs(DotVectors(&a,&bXc))/fmax(nab,fmax(nac,nbc));
+}
+
 // Get undeformed size (only called by GIMP traction and Custom thermal ramp)
 // This uses mpmgrid so membrane particles must override
 // Assumes undeformation particle aligned with x-y-z axes
@@ -380,7 +379,7 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
                     + r1.y * (r2.z*r3.x - r2.x*r3.z)
                      + r1.z * (r2.x*r3.y - r2.y*r3.x) );
     
-	// always LINEAR_CPDI
+	// always LINEAR_CPDI or BSPLINE_CPDI
     
 	try
 	{	CPDIDomain **cpdi = GetCPDIInfo();
@@ -447,239 +446,196 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
     }
 }
 
-// To support traction boundary conditions, find the deformed edge, natural coordinates of
-// the corners around the face, elements for those faces, and a normal vector in direction
-// of the traction. Input vectors need to be length 4
-// throws CommonException() in traction edge as left the grid
-double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
+// Given face, find dimensionless coordinates of corners (4 in 3D), elements for those corners (4 in 3D),
+//     and deformed particle radii (3 in 3D)
+// Return number of corners in numDnds
+// Function result is face weight (which is Area/4 in 3D)
+// On input cElem, corners, and radii are arrays of length equal to number of corners (4 in 3D)
+Vector MatPoint3D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Vector *radii,int *numDnds,double *redge)
 {
-    *numDnds = 4;
-    double faceWt;
-	Vector e1,e2;
+	*numDnds = 4;
+	Vector c1, c2, c3, c4, c5;		// four corners of face, other direction node 1
+	Vector r1,r2,r3;
 	
-	// always UNIFORM_GIMP or LINEAR_CPDI
-    
-    // which GIMP method (cannot be used in POINT_GIMP)
-    if(ElementBase::useGimp==UNIFORM_GIMP)
-    {   // initial vectors only
-        double r1x,r2y,r3z;
-        GetUndeformedSemiSides(&r1x,&r2y,&r3z);
-        
-		// edges are c1 to c2 to c4 to c3
-        Vector c1,c2,c3,c4;
-        switch(face)
-        {	case 1:
-                // lower face n = (0,-1,0)
-                c1.x = c3.x = pos.x-r1x;
-                c2.x = c4.x = pos.x+r1x;
-                c1.y = c2.y = c3.y = c4.y = pos.y-r2y;
-				c1.z = c2.z = pos.z-r3z;
-				c3.z = c4.z = pos.z+r3z;
-                faceWt = r1x*r3z;
-                break;
-                
-            case 2:
-                // right face n = (1,0,0)
-                c1.x = c3.x = c2.x = c4.x = pos.x+r1x;
-                c1.y = c3.y = pos.y-r2y;
-                c2.y = c4.y = pos.y+r2y;
-				c1.z = c2.z = pos.z-r3z;
-				c3.z = c4.z = pos.z+r3z;
-                faceWt = r2y*r3z;
-                break;
-                
-            case 3:
-                // top face n = (0,1,0)
-                c1.x = c3.x = pos.x+r1x;
-                c2.x = c4.x = pos.x-r1x;
-                c1.y = c2.y = c3.y = c4.y = pos.y+r2y;
-				c1.z = c2.z = pos.z-r3z;
-				c3.z = c4.z = pos.z+r3z;
-                faceWt = r1x*r3z;
-                break;
-                
-            case 4:
-                // left face n = (-1,0,0)
-                c1.x = c3.x = c2.x = c4.x = pos.x-r1x;
-                c1.y = c3.y = pos.y+r2y;
-                c2.y = c4.y = pos.y-r2y;
-				c1.z = c2.z = pos.z-r3z;
-				c3.z = c4.z = pos.z+r3z;
-                faceWt = r2y*r3z;
-                break;
-			
-			case 5:
-                // bottom face n = (0,0,-1)
-                c1.x = c2.x = pos.x-r1x;
-                c3.x = c4.x = pos.x+r1x;
-                c1.y = c3.y = pos.y-r2y;
-                c2.y = c4.y = pos.y+r2y;
-				c1.z = c2.z = c3.z = c4.z = pos.z-r3z;
-                faceWt = r2y*r1x;
-                break;
-			
-			default:
-                // top face n = (0,0,1)
-                c1.x = c2.x = pos.x-r1x;
-                c3.x = c4.x = pos.x+r1x;
-                c1.y = c3.y = pos.y-r2y;
-                c2.y = c4.y = pos.y+r2y;
-				c1.z = c2.z = c3.z = c4.z = pos.z+r3z;
-                faceWt = r2y*r1x;
-                break;
-       }
-        
-        // get elements
-        try
-        {	cElem[0] = mpmgrid.FindElementFromPoint(&c1,this)-1;
-            theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
-            
-            cElem[1] = mpmgrid.FindElementFromPoint(&c2,this)-1;
-            theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
-			
-            cElem[2] = mpmgrid.FindElementFromPoint(&c3,this)-1;
-            theElements[cElem[2]]->GetXiPos(&c3,&corners[2]);
-			
-            cElem[3] = mpmgrid.FindElementFromPoint(&c4,this)-1;
-            theElements[cElem[3]]->GetXiPos(&c4,&corners[3]);
-        }
-        catch(CommonException& err)
-        {   char msg[200];
-            sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
-            throw CommonException(msg,"MatPoint3D::GetTractionInfo");
-        }
-		
-		if(dof==N_DIRECTION)
-		{	e1 = c2;
-			SubVector(&e1,&c1);
-			e2 = c3;
-			SubVector(&e2,&c1);
-		}
-    }
+	// get polygon vectors - these are from particle to edge
+	GetSemiSideVectors(&r1,&r2,&r3);
 	
-    else if(ElementBase::useGimp==LINEAR_CPDI)
-    {   // get deformed corners, but get element and natural coordinates
-        //  from CPDI info because corners have moved by here for any
-        //  simulations that update strains between initial extrapolation
-        //  and the grid forces calculation
-		
-		// edges are d1 to d2 to d4 to d3
-        int d1,d2,d3,d4;
-        switch(face)
-        {	case 1:
-                // lower face n = (0,-1,0)
-                d1=0;
-                d2=1;
-				d3=4;
-				d4=5;
-                break;
-                
-            case 2:
-                // right face n = (1,0,0)
-                d1=1;
-                d2=2;
-				d3=5;
-				d4=6;
-                break;
-                
-            case 3:
-                // top face n = (0,1,0)
-                d1=2;
-                d2=3;
-				d3=6;
-				d4=7;
-                break;
-                
-            case 4:
-                // left face n = (-1,0,0)
-                d1=3;
-                d2=0;
-				d3=7;
-				d4=4;
-                break;
+	switch(face)
+	{	case 1:
+			// lower face n = (0,-1,0) nodes 1,2,6,5
+			c1.x = pos.x-r1.x-r2.x-r3.x;	// 1
+			c1.y = pos.y-r1.y-r2.y-r3.y;
+			c1.z = pos.z-r1.z-r2.z-r3.z;
+			c2.x = pos.x+r1.x-r2.x-r3.x;	// 2
+			c2.y = pos.y+r1.y-r2.y-r3.y;
+			c2.z = pos.z+r1.z-r2.z-r3.z;
+			c3.x = pos.x+r1.x-r2.x+r3.x;	// 6
+			c3.y = pos.y+r1.y-r2.y+r3.y;
+			c3.z = pos.z+r1.z-r2.z+r3.z;
+			c4.x = pos.x-r1.x-r2.x+r3.x;	// 5
+			c4.y = pos.y-r1.y-r2.y+r3.y;
+			c4.z = pos.z-r1.z-r2.z+r3.z;
+			// fifth node 4
+			c5.x = pos.x-r1.x+r2.x-r3.x;	// 4
+			c5.y = pos.y-r1.y+r2.y-r3.y;
+			c5.y = pos.z-r1.z+r2.z-r3.z;
+			break;
 			
-			case 5:
-				// bottom face n = (0,0,-1)
-                d1=0;
-                d2=1;
-				d3=2;
-				d4=3;
-                break;
+		case 2:
+			// right face n = (1,0,0) nodes 2,3,7,6
+			c1.x = pos.x+r1.x-r2.x-r3.x;	// 2
+			c1.y = pos.y+r1.y-r2.y-r3.y;
+			c1.z = pos.z+r1.z-r2.z-r3.z;
+			c2.x = pos.x+r1.x+r2.x-r3.x;	// 3
+			c2.y = pos.y+r1.y+r2.y-r3.y;
+			c2.z = pos.z+r1.z+r2.z-r3.z;
+			c3.x = pos.x+r1.x+r2.x+r3.x;	// 7
+			c3.y = pos.y+r1.y+r2.y+r3.y;
+			c3.z = pos.z+r1.z+r2.z+r3.z;
+			c4.x = pos.x+r1.x-r2.x+r3.x;	// 6
+			c4.y = pos.y+r1.y-r2.y+r3.y;
+			c4.z = pos.z+r1.z-r2.z+r3.z;
+			// fifth node 1
+			c5.x = pos.x-r1.x-r2.x-r3.x;	// 1
+			c5.y = pos.y-r1.y-r2.y-r3.y;
+			c5.z = pos.z-r1.z-r2.z-r3.z;
+			break;
 			
-			default:
-				// top face n = (0,0,1)
-                d1=4;
-                d2=5;
-				d3=6;
-				d4=7;
-                break;
-        }
-        
-        // copy for initial state at start of time step
-		CPDIDomain **cpdi = GetCPDIInfo();
-        cElem[0] = cpdi[d1]->inElem;
-		CopyVector(&corners[0], &cpdi[d1]->ncpos);
-        cElem[1] = cpdi[d2]->inElem;
-		CopyVector(&corners[1], &cpdi[d2]->ncpos);
-        cElem[2] = cpdi[d3]->inElem;
-		CopyVector(&corners[2], &cpdi[d3]->ncpos);
-        cElem[3] = cpdi[d4]->inElem;
-		CopyVector(&corners[3], &cpdi[d4]->ncpos);
-        
-        // get weighting factor as 1/4 of face area
-        // 1/4 is the get average of the four nodes
-        if(face==1 || face==3)
-            faceWt = faceArea->x;
-        else if(face==2 || face==4)
-            faceWt = faceArea->y;
-		else
-			faceWt = faceArea->z;
-        
-		// get edge vector
-		if(dof==N_DIRECTION)
-		{	theElements[cElem[1]]->GetPosition(&corners[1],&e1);
-			theElements[cElem[2]]->GetPosition(&corners[2],&e2);
-			Vector e0;
-			theElements[cElem[0]]->GetPosition(&corners[0],&e0);
-			SubVector(&e1,&e0);
-			SubVector(&e2,&e0);
-		}
-    }
-	
-	else
-	{	// Current not allowed
-		throw CommonException("Traction BCs in 3D require lCPDI or uGIMP shape functions.","MatPoint2D::GetTractionInfo");
+		case 3:
+			// top face n = (0,1,0) nodes 3,4,8,7
+			c1.x = pos.x+r1.x+r2.x-r3.x;	// 3
+			c1.y = pos.y+r1.y+r2.y-r3.y;
+			c1.z = pos.z+r1.z+r2.z-r3.z;
+			c2.x = pos.x-r1.x+r2.x-r3.x;	// 4
+			c2.y = pos.y-r1.y+r2.y-r3.y;
+			c2.z = pos.z-r1.z+r2.z-r3.z;
+			c3.x = pos.x-r1.x+r2.x+r3.x;	// 8
+			c3.y = pos.y-r1.y+r2.y+r3.y;
+			c3.z = pos.z-r1.z+r2.z+r3.z;
+			c4.x = pos.x+r1.x+r2.x+r3.x;	// 7
+			c4.y = pos.y+r1.y+r2.y+r3.y;
+			c4.z = pos.z+r1.z+r2.z+r3.z;
+			// fifth node 2
+			c5.x = pos.x+r1.x-r2.x-r3.x;	// 2
+			c5.y = pos.y+r1.y-r2.y-r3.y;
+			c5.z = pos.z+r1.z-r2.z-r3.z;
+			break;
+			
+		case 4:
+			// left face n = (-1,0,0) nodes 4,1,5,8
+			c1.x = pos.x-r1.x+r2.x-r3.x;	// 4
+			c1.y = pos.y-r1.y+r2.y-r3.y;
+			c1.z = pos.z-r1.z+r2.z-r3.z;
+			c2.x = pos.x-r1.x-r2.x-r3.x;	// 1
+			c2.y = pos.y-r1.y-r2.y-r3.y;
+			c2.z = pos.z-r1.z-r2.z-r3.z;
+			c3.x = pos.x-r1.x-r2.x+r3.x;	// 5
+			c3.y = pos.y-r1.y-r2.y+r3.y;
+			c3.z = pos.z-r1.z-r2.z+r3.z;
+			c4.x = pos.x-r1.x+r2.x+r3.x;	// 8
+			c4.y = pos.y-r1.y+r2.y+r3.y;
+			c4.z = pos.z-r1.z+r2.z+r3.z;
+			// fifth node 3
+			c5.x = pos.x+r1.x+r2.x-r3.x;	// 3
+			c5.y = pos.y+r1.y+r2.y-r3.y;
+			c5.z = pos.z+r1.z+r2.z-r3.z;
+			break;
+			
+		case 5:
+			// bottom face n = (0,0,-1) nodes 2,1,4,3
+			c1.x = pos.x+r1.x-r2.x-r3.x;	// 2
+			c1.y = pos.y+r1.y-r2.y-r3.y;
+			c1.z = pos.z+r1.z-r2.z-r3.z;
+			c2.x = pos.x-r1.x-r2.x-r3.x;	// 1
+			c2.y = pos.y-r1.y-r2.y-r3.y;
+			c2.z = pos.z-r1.z-r2.z-r3.z;
+			c3.x = pos.x-r1.x+r2.x-r3.x;	// 4
+			c3.y = pos.y-r1.y+r2.y-r3.y;
+			c3.z = pos.z-r1.z+r2.z-r3.z;
+			c4.x = pos.x+r1.x+r2.x-r3.x;	// 3
+			c4.y = pos.y+r1.y+r2.y-r3.y;
+			c4.z = pos.z+r1.z+r2.z-r3.z;
+			// fifth node 6
+			c5.x = pos.x+r1.x-r2.x+r3.x;	// 6
+			c5.y = pos.y+r1.y-r2.y+r3.y;
+			c5.z = pos.z+r1.z-r2.z+r3.z;
+			break;
+			
+		default:
+			// top face n = (0,0,1) nodes 5,6,7,8
+			c1.x = pos.x-r1.x-r2.x+r3.x;	// 5
+			c1.y = pos.y-r1.y-r2.y+r3.y;
+			c1.z = pos.z-r1.z-r2.z+r3.z;
+			c2.x = pos.x+r1.x-r2.x+r3.x;	// 6
+			c2.y = pos.y+r1.y-r2.y+r3.y;
+			c2.z = pos.z+r1.z-r2.z+r3.z;
+			c3.x = pos.x+r1.x+r2.x+r3.x;	// 7
+			c3.y = pos.y+r1.y+r2.y+r3.y;
+			c3.z = pos.z+r1.z+r2.z+r3.z;
+			c4.x = pos.x-r1.x+r2.x+r3.x;	// 8
+			c4.y = pos.y-r1.y+r2.y+r3.y;
+			c4.z = pos.z-r1.z+r2.z+r3.z;
+			// fifth node 1
+			c5.x = pos.x-r1.x-r2.x-r3.x;	// 1
+			c5.y = pos.y-r1.y-r2.y-r3.y;
+			c5.z = pos.z-r1.z-r2.z-r3.z;
+			break;
 	}
 	
-    // get traction normal vector
+	// get elements and xipos for the two corners
+	try
+	{	cElem[0] = mpmgrid.FindElementFromPoint(&c1,this)-1;
+		theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
+		
+		cElem[1] = mpmgrid.FindElementFromPoint(&c2,this)-1;
+		theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
+		
+		cElem[2] = mpmgrid.FindElementFromPoint(&c3,this)-1;
+		theElements[cElem[2]]->GetXiPos(&c3,&corners[2]);
+		
+		cElem[3] = mpmgrid.FindElementFromPoint(&c4,this)-1;
+		theElements[cElem[3]]->GetXiPos(&c4,&corners[3]);
+	}
+	catch(CommonException& err)
+	{   char msg[200];
+		sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
+		throw CommonException(msg,"MatPoint3D::GetSurfaceInfo");
+	}
 	
-    ZeroVector(tscaled);
+	// get relevant edge radii for this face
+	radii[0] = MakeVector(0.5*(c2.x-c1.x),0.5*(c2.y-c1.y),0.5*(c2.z-c1.z));
+	radii[1] = MakeVector(0.5*(c4.x-c1.x),0.5*(c4.y-c1.y),0.5*(c4.z-c1.z));
+	radii[2] = MakeVector(0.5*(c5.x-c1.x),0.5*(c5.y-c1.y),0.5*(c5.z-c1.z));
+	
+	// Face Area/4 = mag of cross product vector
+	Vector Ap;
+	CrossProduct(&Ap,&radii[0],&radii[1]);
+	double faceWt = sqrt(DotVectors(&Ap,&Ap));
+
+	// get traction normal vector times 1/4 area
+	Vector wtNorm;
+	ZeroVector(&wtNorm);
 	switch(dof)
 	{	case 1:
 			// normal is x direction
-			tscaled->x = faceWt;
+			wtNorm.x = faceWt;
 			break;
-        case 2:
-            // normal is y direction
-            tscaled->y = faceWt;
-            break;
+		case 2:
+			// normal is y direction
+			wtNorm.y = faceWt;
+			break;
 		case N_DIRECTION:
-		{	Vector cp;
-			CrossProduct(&cp,&e1,&e2);
-			double enorm = sqrt(DotVectors(&cp,&cp));
-			tscaled->x = cp.x*faceWt/enorm;
-			tscaled->y = cp.y*faceWt/enorm;
-			tscaled->z = cp.z*faceWt/enorm;
+			// vector Ap is normal to the face with magnitude area/4
+			wtNorm = Ap;
 			break;
-		}
 		default:
-			// normal is z direction (not used here)
-            tscaled->z = faceWt;
+			// normal is z direction
+			wtNorm.z = faceWt;
 			break;
 	}
-	
-	// always 1 in 3D (used in AS)
-	return 1.;
+
+	// Return hat n * Area/4 as vector
+	return wtNorm;
 }
 
 // Get Rotation matrix for initial material orientation (anistropic only)

@@ -25,7 +25,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		virtual void ZeroMatFields(void);
 	
 		// specific task methods
-		virtual double GetTotalMassAndCount(void);
+		virtual double GetTotalMassAndCount(bool &);
 	
 		virtual void AddFtotSpreadTask3(Vector *);
 		virtual void AddGravityAndBodyForceTask3(Vector *);
@@ -38,22 +38,22 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		virtual void CalcVelocityForStrainUpdate(void);
 	
 		// boundary conditions
-        virtual void SetMomVel(Vector *);
-        virtual void AddMomVel(Vector *,double);
-		virtual void ReflectMomVel(Vector *,CrackVelocityField *,double);
+        virtual void SetMomVel(Vector *,int);
+        virtual void AddMomVel(Vector *,double,int);
+		virtual void ReflectMomVel(Vector *,CrackVelocityField *,double,double,int);
         virtual void SetFtotDirection(Vector *,double,Vector *);
         virtual void AddFtotDirection(Vector *,double,double,Vector *);
-		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,double,Vector *);
+		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,double,double,Vector *);
 	
 		// accessors
 		virtual double GetTotalMass(bool) const;
 		virtual void AddKineticEnergyAndMass(double &,double &);
 		virtual double GetVolumeNonrigid(bool) const;
 		virtual double GetVolumeTotal(NodalPoint *) const;
-		virtual Vector GetCMatMomentum(bool &,double *) const;
+		virtual Vector GetCMatMomentum(bool &,double *,Vector *) const;
 		virtual Vector GetCMDisplacement(NodalPoint *,bool) const;
 		virtual Vector GetCMatFtot(void);
-		virtual void ChangeCrackMomentum(Vector *,bool,double);
+		virtual void ChangeCrackMomentum(Vector *,int,double);
 		virtual int CopyFieldMomenta(Vector *,int);
 #ifdef ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
 		virtual void AdjustForSymmetryBC(NodalPoint *);

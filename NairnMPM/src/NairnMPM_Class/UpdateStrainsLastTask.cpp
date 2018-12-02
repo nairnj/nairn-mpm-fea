@@ -42,12 +42,6 @@ UpdateStrainsLastTask::UpdateStrainsLastTask(const char *name) : MPMTask(name)
 // Get total grid point forces (except external forces)
 void UpdateStrainsLastTask::Execute(void)
 {
-	// grid temperature is never updated unless needed here
-	// update nodal values for transport properties (when coupled to strain)
-	TransportTask *nextTransport=transportTasks;
-	while(nextTransport!=NULL)
-		nextTransport=nextTransport->UpdateNodalValues(timestep);
-	
 	// update strains based on current velocities
-	UpdateStrainsFirstTask::FullStrainUpdate(strainTimestep,(fmobj->mpmApproach==USAVG_METHOD),fmobj->np);
+	UpdateStrainsFirstTask::FullStrainUpdate(strainTimestepLast,(fmobj->mpmApproach==USAVG_METHOD),fmobj->np);
 }

@@ -24,11 +24,10 @@ class NonlinearInterface : public LinearInterface
 	public:
 		
 		// constructors and destructors
-		NonlinearInterface();
-		NonlinearInterface(char *matName);
+		NonlinearInterface(char *,int);
 		
 		// initialize
-		virtual char *InputMaterialProperty(char *,int &,double &);
+		virtual char *InputContactProperty(char *,int &,double &);
 		virtual void PrintContactLaw(void) const;
 		
 		// methods

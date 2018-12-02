@@ -35,32 +35,34 @@ class ContactLaw : public MaterialBase
 		int autoID;
 	
 		// constructors and destructors
-		ContactLaw();
-		ContactLaw(char *matName);
+		ContactLaw(char *,int);
 	
-		// initialize
+		// initialize - subclass should override InputContactProperty only
 		virtual char *InputMaterialProperty(char *,int &,double &);
+		virtual char *InputContactProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintMaterial(int) const;
 		virtual void PrintContactLaw(void) const;
 	
 		// methods
-		virtual bool GetFrictionalDeltaMomentum(Vector *,Vector *,double,double *,double,bool,double,bool,double,Vector *) const;
+		virtual bool GetFrictionalDeltaMomentum(Vector *,Vector *,double,double,double *,double,bool,double,double,Vector *) const;
 		virtual void GetInterfaceForces(Vector *,Vector *,double *,double,Vector *,double,double,Vector *,double,double,double) const;
 		virtual double GetSslideAcDt(double,double,double,double,bool &,double) const;
+		virtual double GetTerms(double d,double m,double &sineTerm,double &sincosTerm) const;
 	
 		// accessors
 		virtual int MaterialStyle(void) const;
 		virtual const char *MaterialType(void) const;
 		virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual bool IgnoreContact(void) const;
-		virtual bool ContactIsDone(bool) const;
 		virtual bool IsFrictionalContact(void) const;
 		virtual bool ContactLawNeedsContactArea(void) const;
 		virtual bool IsImperfectInterface(void) const;
+		virtual bool IsFrictionless(void) const;
+		virtual bool IsStick(void) const;
 	
 		// Class methods
-		static int ConvertOldStyleToContactLaw(MaterialController *,ContactInput *,double);
+		static int ConvertOldStyleToContactLaw(MaterialController *,ContactInput *,double,const char *);
 	
 	protected:
 	

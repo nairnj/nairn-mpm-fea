@@ -9,9 +9,10 @@
 #include "stdafx.h"
 #include "Materials/Elastic.hpp"
 #include "MPM_Classes/MPMBase.hpp"
-//#include "Custom_Tasks/ConductionTask.hpp"
-#include "Custom_Tasks/DiffusionTask.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
+#include "Elements/ElementBase.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
 
 #pragma mark Elastic::Initialization
 
@@ -56,40 +57,17 @@ ElasticProperties *Elastic::GetElasticPropertiesPointer(void *properties) const 
 // Entry point for large rotation
 void Elastic::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
-	// get previous deformation gradient
-	Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
-	
-    // get incremental deformation gradient and decompose it
-	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
-    Matrix3 dR;
-    Matrix3 dU = dF.RightDecompose(&dR,NULL);
-
-	// get pinitial rotation R0
+	// get rotations and initial rotation R0
+	Matrix3 dR,Rnm1,Rtot;
 	Matrix3 R0 = mptr->GetInitialRotation();
 	
-	// get previous rotation and stretch
-    Matrix3 Rnm1;
-	Matrix3 Unm1 = pFnm1.RightDecompose(&Rnm1,NULL);
+	// get incremental strain and rotation
+	Matrix3 de = LRGetStrainIncrement(INITIALMATERIAL,mptr,du,&dR,&R0,&Rnm1,&Rtot);
 	
-	// get strain increments de = R0T.[(Rnm1T.dU.Rnm1 - I).Unm1].R0
-	Matrix3 dUrot = dU.RTMR(Rnm1);
-	dUrot(0,0) -= 1.;
-	dUrot(1,1) -= 1.;
-	dUrot(2,2) -= 1.;
-	dUrot *= Unm1;
-	
-	// apply initial rotation to get strain increment in the material coordinates
-	Matrix3 de = dUrot.RTMR(R0);
-	Matrix3 Rtotnm1M3 = Rnm1*R0;
-	Matrix3 *Rtotnm1 = &Rtotnm1M3;
-	
-	// get total rotation
-	Matrix3 Rtot = dR*Rtotnm1M3;
+	// Get rotation to material axes for state n-1 in n (or tot)
+	Matrix3 Rtotnm1 = Rnm1*R0;
+	Rtot *= R0;
 	if(np==THREED_MPM) mptr->SetRtot(Rtot);
-	
-	// Update total deformation gradient
-	Matrix3 pF = dF*pFnm1;
-	mptr->SetDeformationGradientMatrix(pF);
 	
 	// cast pointer to material-specific data
 	ElasticProperties *p = GetElasticPropertiesPointer(properties);
@@ -100,7 +78,7 @@ void Elastic::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	{	exxr = p->alpha[0]*res->dT;
 		eyyr = p->alpha[1]*res->dT;
 		ezzr = p->alpha[2]*res->dT;
-		if(DiffusionTask::active)
+		if(fmobj->HasFluidTransport())
 		{	exxr += p->beta[0]*res->dC;
 			eyyr += p->beta[1]*res->dC;
 			ezzr += p->beta[2]*res->dC;
@@ -110,7 +88,7 @@ void Elastic::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	{	exxr = p->alpha[1]*res->dT;
 		eyyr = p->alpha[2]*res->dT;
 		ezzr = p->alpha[4]*res->dT;
-		if(DiffusionTask::active)
+		if(fmobj->HasFluidTransport())
 		{	exxr += p->beta[1]*res->dC;
 			eyyr += p->beta[2]*res->dC;
 			ezzr += p->beta[4]*res->dC;
@@ -125,8 +103,8 @@ void Elastic::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 // Once stress deformation has been decomposed, finish calculations in the material axis system
 // When stress are found, they are rotated back to the global axes (using Rtot and dR)
 // Similar, strain increments are rotated back to find work energy (done in global system)
-void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matrix3 Rtot,Matrix3 dR,
-									   Matrix3 *Rnm1tot,int np,void *properties,ResidualStrains *res) const
+void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3 &er,Matrix3 &Rtot,Matrix3 &dR,
+									   Matrix3 &Rnm1tot,int np,void *properties,ResidualStrains *res) const
 {
 	// effective strains
 	double dvxxeff = de(0,0)-er(0,0);
@@ -218,8 +196,8 @@ void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matri
 		
 	}
     
-    // track heat energy
-    IncrementHeatEnergy(mptr,res->dT,0.,0.);
+    // no more heat energy (should get dTq0)
+    //IncrementHeatEnergy(mptr,dTq0,0.);
 }
 
 #pragma mark Elastic::Methods (Small Rotation)
@@ -247,7 +225,7 @@ void Elastic::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,int np
 	double eryy = p->alpha[2]*res->dT;
 	double erxy = p->alpha[3]*res->dT;
 	double erzz = CTE3*res->dT;
-	if(DiffusionTask::active)
+	if(fmobj->HasFluidTransport())
 	{	erxx += p->beta[1]*res->dC;
 		eryy += p->beta[2]*res->dC;
 		erxy += p->beta[3]*res->dC;
@@ -279,7 +257,7 @@ void Elastic::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,int np
 		c2=p->C[1][2]*dvxxeff + p->C[2][2]*dvyyeff + p->C[2][3]*dgameff;
 		c3=p->C[1][3]*dvxxeff + p->C[2][3]*dvyyeff + p->C[3][3]*dgameff;
 	}
-	Hypo2DCalculations(mptr,dwrotxy,dvxx+dvyy,c1,c2,c3);
+	Hypo2DCalculations(mptr,dwrotxy,c1,c2,c3);
     
 	// work and resdiaul strain energy increments
 	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy + (st0.xy+sp->xy)*dgam);
@@ -306,8 +284,8 @@ void Elastic::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,int np
 	}
 	mptr->AddWorkEnergyAndResidualEnergy(workEnergy, resEnergy);
 	
-    // track heat energy
-    IncrementHeatEnergy(mptr,res->dT,0.,0.);
+	// no more heat energy (should get dTq0)
+	//IncrementHeatEnergy(mptr,dTq0,0.);
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -342,7 +320,7 @@ void Elastic::SRConstitutiveLaw3D(MPMBase *mptr,Matrix3 du,double delTime,int np
 	double eyzr = p->alpha[3]*res->dT;
 	double exzr = p->alpha[4]*res->dT;
 	double exyr = p->alpha[5]*res->dT;
-	if(DiffusionTask::active)
+	if(fmobj->HasFluidTransport())
 	{	exxr += p->beta[0]*res->dC;
 		eyyr += p->beta[1]*res->dC;
 		ezzr += p->beta[2]*res->dC;
@@ -383,8 +361,8 @@ void Elastic::SRConstitutiveLaw3D(MPMBase *mptr,Matrix3 du,double delTime,int np
 							 + (st0.zz+sp->zz)*ezzr  + (st0.yz+sp->yz)*eyzr
 							 + (st0.xz+sp->xz)*exzr + (st0.xy+sp->xy)*exyr));
     
-    // track heat energy
-    IncrementHeatEnergy(mptr,res->dT,0.,0.);
+	// no more heat energy (should get dTq0)
+	//IncrementHeatEnergy(mptr,dTq0,0.);
 
 }
 
@@ -411,11 +389,3 @@ void Elastic::HypoIncrementDeformation(MPMBase *mptr,Matrix3 du) const
 	const Matrix3 F = dF*pF;
     mptr->SetDeformationGradientMatrix(F);
 }
-
-// For softening materials find area that the plane with given normal vector makes with
-// box define by the particle volume. Return that area divided by particle volume
-double Elastic::GetAcOverVp(int np,MPMBase *mptr,Vector *norm) const
-{
-	return 1.;
-}
-

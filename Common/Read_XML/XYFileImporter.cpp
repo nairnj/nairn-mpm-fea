@@ -10,7 +10,8 @@
 ********************************************************************************/
 
 #include "stdafx.h"
-#include "XYFileImporter.hpp"
+#include "Read_XML/XYFileImporter.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark XYFileImporter: Constructors and Destructors
 
@@ -18,17 +19,20 @@
 XYFileImporter::XYFileImporter()
 {	fp = NULL;
 	fullPath = NULL;
+	readingXML = true;
 }
 
-XYFileImporter::XYFileImporter(char *filePath)
+XYFileImporter::XYFileImporter(char *filePath,bool isReadingXML)
 {
+	readingXML = isReadingXML;
+	
 	// save file name
 	fullPath = new char[strlen(filePath)+1];
 	strcpy(fullPath,filePath);
 	
 	// open the file
 	if((fp=fopen(fullPath,"r"))==NULL)
-		XYFileError("The bit mapped file could not be opened.");
+		XYFileImportError("The bit mapped file could not be opened.");
 	
 	// decide what computer I am on
 	// byte order marker
@@ -48,8 +52,8 @@ XYFileImporter::~XYFileImporter()
 #pragma mark XYFileImporter: Methods
 
 // create error message with bmp file name
-// throws SAXException or std::bad_alloc
-void XYFileImporter::XYFileError(const char *msg)
+// throws SAXException or std::bad_alloc or CommonException
+void XYFileImporter::XYFileImportError(const char *msg)
 {
 	if(fp!=NULL) fclose(fp);
 	char *error = new (nothrow) char[strlen(msg)+strlen(fullPath)+10];
@@ -58,9 +62,15 @@ void XYFileImporter::XYFileError(const char *msg)
 		strcat(error," (file: ");
 		strcat(error,fullPath);
 		strcat(error,")");
-		throw SAXException(error);
+		if(readingXML)
+			throw SAXException(error);
+		else
+			throw CommonException(error,"XYFileImporter::XYFileImportError");
 	}
 	else
-		throw SAXException(msg);
+		if(readingXML)
+			throw SAXException(msg);
+		else
+			throw CommonException(msg,"XYFileImporter::XYFileImportError");
 }
 

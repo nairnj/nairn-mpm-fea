@@ -64,8 +64,8 @@ class ElementBase : public LinkedObject
         static double gridTolerance;	// TOLERANCE_RATIO * minimum grid extent
 #ifdef MPM_CODE
 		static int useGimp;             // Code for GIMP method (0 is classic MPM special case of GIMP)
-		static int analysisGimp;		// store GIMP option in case need to disable for a while
-        static int numCPDINodes;        // number of nodes used by CPDI in particle domain
+		static int gridNiNodes;			// Number of nodes used by grid shape functions
+        static int numCPDINodes;        // number of particle points used by CPDI in particle domain
 #endif
 		
         // constructors and destructors
@@ -89,10 +89,10 @@ class ElementBase : public LinkedObject
 									Vector *,double *,double *,double *) const = 0;
 #ifdef MPM_CODE
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) const = 0;
-	
-		virtual void GetGimpNodes(int *,int *,unsigned char *,Vector *,Vector &) const;
-		virtual void GimpShapeFunction(Vector *,int,unsigned char *,int,double *,double *,double *,double *,Vector &) const;
-		virtual void GimpShapeFunctionAS(Vector *,int,unsigned char *,int,double *,double *,double *,double *,Vector &) const;
+		virtual void SplineShapeFunction(int *,Vector *,int,double *,double *,double *,double *) const = 0;
+		virtual void GimpShapeFunction(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
+		virtual void GimpShapeFunctionAS(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
+		virtual void BGimpShapeFunction(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
 #endif
 									
         // prototypes of methods defined in ElementBase class (but may override)
@@ -125,16 +125,17 @@ class ElementBase : public LinkedObject
         virtual int NearestNode(double,double,int *);
         virtual void MPMPoints(short,Vector *) const;
 		virtual void GetPosition(Vector *,Vector *);
+		virtual void Describe(void) const;
 	
 		// const methods
 		virtual void GetShapeFunctionData(MPMBase *) const;
 		virtual void GetShapeFunctions(double *,int **,MPMBase *) const;
 		virtual void GetShapeGradients(double *,int **,double *,double *,double *,MPMBase *) const;
-		virtual void GetShapeFunctionsForCracks(double *,int *,Vector *) const;
-		virtual void GridShapeFunctions(int *,int *,Vector *,double *) const;
-		virtual void GimpCompact(int *,int *,double *,double *,double *,double *) const;
-		virtual void GetXiPos(Vector *,Vector *) const;
+		virtual void GetShapeFunctionsForCracks(double *,int *,const Vector &) const;
+		virtual void GetShapeFunctionsForTractions(double *,int *,Vector *) const;
+		virtual void GetXiPos(const Vector *,Vector *) const;
 		virtual int GetCPDIFunctions(int *,double *,double *,double *,double *,MPMBase *) const;
+		
 #else
 		virtual bool HasNode(int);
 		virtual void DecrementNodeNums(int);
@@ -174,7 +175,7 @@ class ElementBase : public LinkedObject
 #else
         double angle;					// FEA material angle
 #endif
-
+	
 #ifdef MPM_CODE
         virtual void GetCentroid(Vector *) const;
         virtual void GetCoordinates(Vector *,int,int *) const;

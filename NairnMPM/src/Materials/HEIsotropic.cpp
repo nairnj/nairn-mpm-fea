@@ -21,12 +21,8 @@
 
 #pragma mark HEIsotropic::Constructors and Destructors
 
-// Constructors
-HEIsotropic::HEIsotropic() {}
-
-// Constructors
-// throws std::bad_alloc
-HEIsotropic::HEIsotropic(char *matName) : HyperElastic(matName)
+// Constructor
+HEIsotropic::HEIsotropic(char *matName,int matID) : HyperElastic(matName,matID)
 {
    	G1 = -1.;			// required
     
@@ -53,7 +49,7 @@ char *HEIsotropic::InputMaterialProperty(char *xName,int &input,double &gScaling
     
     // JAN: Move yielding properties to the hardening law (yield, Ep, Khard)
 	// check plastic law
-    char *ptr = plasticLaw->InputMaterialProperty(xName,input,gScaling);
+    char *ptr = plasticLaw->InputHardeningProperty(xName,input,gScaling);
     if(ptr != NULL) return ptr;
     
     return(HyperElastic::InputMaterialProperty(xName,input,gScaling));
@@ -152,16 +148,8 @@ char *HEIsotropic::InitHistoryData(char *pchr,MPMBase *mptr)
 	return (char *)p;
 }
 
-// this material has two history variables
-double HEIsotropic::GetHistory(int num,char *historyPtr) const
-{
-    double history=0.;
-	if(num>0 && num<=J_History+2)
-	{	double *p=(double *)historyPtr;
-		history=p[num-1];
-	}
-    return history;
-}
+// Number of history variables - plastic plus 2
+int HEIsotropic::NumberOfHistoryDoubles(void) const { return J_History+2; }
 
 #pragma mark HEIsotropic:Methods
 
@@ -285,8 +273,8 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 		// because deviatoric stress is traceless and deres has zero shear terms
 		// residual energy due to pressure was added in the pressure update
 		
-		// heat energy is Cv(dT-dTq0) - dPhi, all from pressure update
-		IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
+		// heat energy
+		IncrementHeatEnergy(mptr,dTq0,dispEnergy);
         
 		// give material chance to update history variables that change in elastic updates
 		plasticLaw->ElasticUpdateFinished(mptr,np,delTime,historyOffset);
@@ -367,8 +355,8 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	// The cumulative dissipated energy is tracked in plastic energy
     mptr->AddPlastEnergy(dispEnergy);
     
-    // heat energy is Cv(dT-dTq0) - dPhi
-    IncrementHeatEnergy(mptr,res->dT,dTq0,dispEnergy);
+    // heat energy
+    IncrementHeatEnergy(mptr,dTq0,dispEnergy);
     
 	// update internal variables in the plastic law
 	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha,historyOffset);
@@ -504,11 +492,17 @@ Vector HEIsotropic::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 // Copy stress to a read-only tensor variable
 // Subclass material can override, such as to combine pressure and deviatory stress into full stress
 Tensor HEIsotropic::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
-{   Tensor stress = *sp;
-    stress.xx -= pressure;
-    stress.yy -= pressure;
-    stress.zz -= pressure;
-    return stress;
+{	return GetStressPandDev(sp,pressure,mptr);
+}
+
+// store a new total stress on a particle's stress and pressure variables
+void HEIsotropic::SetStress(Tensor *spnew,MPMBase *mptr) const
+{	SetStressPandDev(spnew,mptr);
+}
+
+// Increment thickness (zz) stress through deviatoric stress and pressure
+void HEIsotropic::IncrementThicknessStress(double dszz,MPMBase *mptr) const
+{	IncrementThicknessStressPandDev(dszz,mptr);
 }
 
 // return unique, short name for this material

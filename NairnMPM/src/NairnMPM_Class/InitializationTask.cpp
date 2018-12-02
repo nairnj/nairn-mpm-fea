@@ -22,6 +22,7 @@
 #include "Exceptions/MPMWarnings.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 #include "Cracks/CrackNode.hpp"
+#include "Nodes/MaterialContactNode.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Patches/GridPatch.hpp"
 #include "MPM_Classes/MPMBase.hpp"
@@ -48,16 +49,17 @@ void InitializationTask::Execute(void)
 	
 #pragma omp parallel
 	{
-        // zero all nodal variables on real nodes
+		// zero active nodal variables on real nodes (first step does all)
+		// After this step, nda is invalid until reset in post extrapolation task
 #pragma omp for
-		for(int i=1;i<=nnodes;i++)
-			nd[i]->InitializeForTimeStep();
+		for(int i=1;i<=*nda;i++)
+			nd[nda[i]]->InitializeForTimeStep();
 		
         // zero ghost nodes in patch for this thread
         int pn = GetPatchNumber();
         patches[pn]->InitializeForTimeStep();
 
-		// particle calculations get CPDI or GIMP info for each nonrigid and rigid contact particle
+		// particle calculations get CPDI or GIMP info for each nonrigid, rigid block, and rigid contact particle
 #pragma omp for nowait
 		for(int p=0;p<nmpmsRC;p++)
         {   MPMBase *mpmptr = mpm[p];                                       // pointer
@@ -88,8 +90,11 @@ void InitializationTask::Execute(void)
     // Update forces applied to particles
 	MatPtLoadBC::SetParticleFext(mtime);
 	
-	// remove contact conditions
-	CrackNode::RemoveCrackNodes();
+	// remove nodes with contact
+	if(fmobj->multiMaterialMode)
+		MaterialContactNode::ReleaseContactNodes();
+	if(firstCrack!=NULL)
+		CrackNode::ReleaseContactNodes();
 	
 	// total interface energy
 	NodalPoint::interfaceEnergy=0.;

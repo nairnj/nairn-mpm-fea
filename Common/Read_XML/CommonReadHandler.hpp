@@ -59,6 +59,7 @@ enum { NO_BLOCK=0,HEADER,MPMHEADER,NODELIST,MESHBLOCK,POINTSBLOCK,
         CRACKHEADER,MULTIMATERIAL,CRACKLIST,THERMAL,CUSTOMTASKS,TASKPARAMETERS,
 		GRIDBCHEADER,PARTICLEBCHEADER,BMPBLOCK,INTENSITYBLOCK,
 		LOADEDNODES,LOADEDFACES,KEYPOINTBLOCK,PATHBLOCK,AREABLOCK,MATREGIONBLOCK,
+		CRACKMESHBLOCK,CRACKNODELIST,CRACKELEMENTLIST,
 		GRIDBLOCK=1000,BODYPART,BCSHAPE,BODY_SHAPE,MEMBRANEPART,
         MUST_BE_NO_BLOCK=2000 };
 
@@ -123,7 +124,7 @@ class CommonReadHandler : public DefaultHandler
 	
 		// class methods
 		static bool GetFreeFormatNumbers(char *,vector<double> &,double);
-		static void *ReadXYFile(char *,XYInfoHeader &,int);
+		static void *ReadXYFile(char *,XYInfoHeader &,int,bool);
 		static char *XYFileError(const char *,const char *);
 		static const char *DecodeBMPWidthAndHeight(XYInfoHeader,double &,double &,double &,Vector &,bool);
 		static bool MapDomainToImage(XYInfoHeader,Vector,Vector,Vector,Vector,double,double,DomainMap &);

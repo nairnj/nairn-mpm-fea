@@ -13,7 +13,7 @@
 
 #define _BOUNDARYCONDITION_
 
-class ROperation;
+class Expression;
 
 // BC directions (x and y are used at bit locations too)
 #define X_DIRECTION 1
@@ -73,9 +73,8 @@ class BoundaryCondition : public LinkedObject
 		int GetNodeNum(double);
 		int GetNodeNum(void);
 		virtual void SetFunction(char *);
-		virtual char *GetFunctionString(void);
+		virtual void GetPosition(unordered_map<string,double> );
 		virtual void PrintFunction(ostream &);
-		virtual void GetPosition(double *,double *,double *,double *);
 		int GetID(void);
 		void SetID(int);
 		double *GetBCValuePtr(void);
@@ -92,8 +91,7 @@ class BoundaryCondition : public LinkedObject
 		int GetBCStyle();
 	
 	protected:
-		ROperation *function;
-		static double varTime,varXValue,varYValue,varZValue,varRotValue;
+		Expression *function;
 		double scale;
 		int nodeNum;
 		int bcID;

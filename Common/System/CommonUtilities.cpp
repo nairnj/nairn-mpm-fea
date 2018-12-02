@@ -105,6 +105,42 @@ Vector MakeVector(double x,double y,double z)
 	return v;
 }
 
+// return vector from components all times scale factor
+Vector MakeScaledVector(double x,double y,double z,double scale)
+{	Vector v;
+	v.x=x*scale;
+	v.y=y*scale;
+	v.z=z*scale;
+	return v;
+}
+
+// return vector from difference of two vectors
+Vector SetDiffVectors(const Vector *a,const Vector *b)
+{	Vector v;
+	v.x=a->x-b->x;
+	v.y=a->y-b->y;
+	v.z=a->z-b->z;
+	return v;
+}
+
+// return vector from sum of two vectors
+Vector SetSumVectors(const Vector *a,const Vector *b)
+{	Vector v;
+	v.x=a->x+b->x;
+	v.y=a->y+b->y;
+	v.z=a->z+b->z;
+	return v;
+}
+
+// return vector from components all times scale factor
+Vector SetScaledVector(const Vector *a,const double scale)
+{	Vector v;
+	v.x=a->x*scale;
+	v.y=a->y*scale;
+	v.z=a->z*scale;
+	return v;
+}
+
 // zero a vector and return pointer to zeroed v
 Vector *ZeroVector(Vector *v)
 {	v->x=v->y=v->z=0.;
@@ -244,6 +280,19 @@ Tensor *AddTensor(Tensor *t,Tensor *toadd)
 	return t;
 }
 
+// subtract tensor tosub from tensor t and return pointer to changed t
+Tensor *SubTensor(Tensor *t,Tensor *tosub)
+{	t->xx-=tosub->xx;
+	t->yy-=tosub->yy;
+	t->zz-=tosub->zz;
+#ifdef MPM_CODE
+	t->yz-=tosub->yz;
+	t->xz-=tosub->xz;
+#endif
+	t->xy-=tosub->xy;
+	return t;
+}
+
 // scale tensor t and return pointer to changed t
 Tensor *ScaleTensor(Tensor *t,double scale)
 {	t->xx*=scale;
@@ -261,7 +310,6 @@ Tensor *ScaleTensor(Tensor *t,double scale)
 double DotTensors2D(const Tensor *t1,const Tensor *t2)
 {	return t1->xx*t2->xx + t1->yy*t2->yy + t1->zz*t2->zz + t1->xy*t2->xy;
 }
-
 
 #ifdef MPM_CODE
 // Dot product of two vectors (if used for 2D make sure z's are zero)
@@ -526,176 +574,34 @@ void GetFileExtension(const char *fileName,char *ext,int maxLength)
 
 #pragma mark Other Function
 
-/****************************************************************
- *  Functions for an intersect of plane and  unit cube
- ****************************************************************/
-// Returns a vector with coordinates of vertex
-Vector MakeCubeCorner(int vertex){
-	Vector corner;
-	switch(vertex){
-		case(0): 
-			corner.x = 0.5;
-			corner.y = 0.5;
-			corner.z = 0.5;			
-			break;
-		case(1): 			
-			corner.x = 0.5;
-			corner.y = -0.5;
-			corner.z = 0.5;			
-			break;
-		case(2): 
-			corner.x = 0.5;
-			corner.y = 0.5;
-			corner.z = -0.5;			
-			break;
-		case(3): 
-			corner.x = -0.5;
-			corner.y = 0.5;
-			corner.z = 0.5;			
-			break;
-		case(4): 
-			corner.x = -0.5;
-			corner.y = -0.5;
-			corner.z = 0.5;			
-			break;
-		case(5): 			
-			corner.x = 0.5;
-			corner.y = -0.5;
-			corner.z = -0.5;			
-			break;
-		case(6): 			
-			corner.x = -0.5;
-			corner.y = 0.5;
-			corner.z = -0.5;			
-			break;
-		case(7): 
-			corner.x = -0.5;
-			corner.y = -0.5;
-			corner.z = -0.5;			
-			break;
+// The cummulative dist function is p(x,mean,s) = 0.5(1+erf((x-mean)/(s*sqrt(2))))
+// Given p(d,0,1), return d and set (x-mean)/s = d or x = mean + s*d
+// Or relative to mean value/mean = 1 + s*d/mean = 1 + d*(CV)
+// where (CV) is coefficient of variation.
+// A property
+// found at http://www.johndcook.com/blog/normal_cdf_inverse/
+double NormalCDFInverse(double p)
+{	if(p <= 0.0 || p >= 1.0)
+	{	return 0.;
 	}
-	return corner;
-}
-// Do these edges intersect?
-// Inspired by paper: "A Vertex Program for Efficient Box-Plane Intersection"
-// by Christof Rezk Salama and Andreas Kolb, 2005
-bool IntersectEdges(int i,int j,Vector *Point,Vector *n)
-{
-// Vertices of edge ij
-Vector Vertex_i = MakeCubeCorner(i);  // vertex i
-Vector Edge_ij = MakeCubeCorner(j);   // vertex j
-Edge_ij.x -=Vertex_i.x;    // difference of coordinates
-Edge_ij.y -=Vertex_i.y;
-Edge_ij.z -=Vertex_i.z;
-// Start calculating lambda
-double lambda = -DotVectors(&Vertex_i,n);  // numerator of lambda
-double denom = DotVectors(&Edge_ij,n); // denominator of lambda
-
-// Don't divide by zero
-if(DbleEqual(denom,0.0))
-{
-	return false;  // colinear
+	else if(p < 0.5)
+	{	// F^-1(p) = - G^-1(p)
+		return -RationalApproximation( sqrt(-2.0*log(p)) );
+	}
+	else if (p < 1.0)
+	{	// F^-1(p) = G^-1(1-p)
+		return RationalApproximation( sqrt(-2.0*log(1-p)) );
+	}
+	else
+		return 1.;
 }
 
-// Calculate lambda
-lambda = lambda/denom;
-// if not in [0,1] then it doesn't intersect
-if(lambda>1.0 || lambda<0.0){
-	return false;  // doesn't intersect
+// Abramowitz and Stegun formula 26.2.23.
+// The absolute value of the error should be less than 4.5 e-4.
+// found at http://www.johndcook.com/blog/normal_cdf_inverse/
+double RationalApproximation(double t)
+{	double c[] = {2.515517, 0.802853, 0.010328};
+	double d[] = {1.432788, 0.189269, 0.001308};
+	return t - ((c[2]*t + c[1])*t + c[0]) /
+	(((d[2]*t + d[1])*t + d[0])*t + 1.0);
 }
-// Find point
-Point->x = Vertex_i.x +lambda*Edge_ij.x;
-Point->y = Vertex_i.y +lambda*Edge_ij.y;
-Point->z = Vertex_i.z +lambda*Edge_ij.z;
-return true; // it does intersect
-}
-
-
-// get the area of  the  polygon
-double AreaOverVolume3D(Vector *norm,double dx,double dy,double dz)
-{
-	// define stuff
-	Vector Polygon[6];
-	double area =0.0;
-	int j,k,v;
-	bool intersect;
-	// Get the polygon from the intersection
-	// Also inspired by paper: "A Vertex Program for Efficient Box-Plane Intersection"
-
-	// Get the first point P0
-	v=0;
-	if(!IntersectEdges(0,1,&Polygon[v],norm)){
-		if(!IntersectEdges(1,4,&Polygon[v],norm)){
-			intersect = IntersectEdges(4,7,&Polygon[v],norm);
-			
-		}
-	}
-	v++;
-	// P1 Second point (possibily)
-	intersect = IntersectEdges(1,5,&Polygon[v],norm);
-	if(intersect) v++;  // if it does intersect go the next point
-
-	// Get P2
-	if(!IntersectEdges(0,2,&Polygon[v],norm)){
-		if(!IntersectEdges(2,5,&Polygon[v],norm)){
-			intersect = IntersectEdges(5,7,&Polygon[v],norm);
-		}
-	}
-	v++;
-
-	//Get P3 (if it is there)
-	intersect = IntersectEdges(2,6,&Polygon[v],norm);
-	if(intersect) v++;  // if it does intersect go the next point
-
-	// Get P4
-	if(!IntersectEdges(0,3,&Polygon[v],norm)){
-		if(!IntersectEdges(3,6,&Polygon[v],norm)){
-			intersect = IntersectEdges(6,7,&Polygon[v],norm);
-		}
-	}
-	v++;
-
-	//Get P5 (if it is there)
-	intersect = IntersectEdges(3,4,&Polygon[v],norm);
-	if(intersect) v++;  // if it does intersect go the next point
-	
-	// Find which coordinate project out
-	double nx = fabs(norm->x);
-	double ny = fabs(norm->y);
-	double nz = fabs(norm->z);
-	double norm_n = sqrt(nx*nx+ny*ny+nz*nz);
-	// Loop through and find area of polygon
-	if(nx>ny&&nx>nz){  // project out x
-		 // area of polygon projected onto z-y
-		for(int i =0;i<v;i++){
-			j = (i+1)%v;
-			k = (i+2)%v;
-			area += Polygon[j].y*(Polygon[k].z-Polygon[i].z);
-		}
-		area = fabs(area*norm_n/(2.0 * nx )); // correction factor for projection
-		area /= dx; // Convert from unit cube and divide by volume  
-	}else if(ny>nx&&ny>nz){// project out y
-		// area of polygon projected onto z-x
-		for(int i =0;i<v;i++){
-			j = (i+1)%v;
-			k = (i+2)%v;
-			area += Polygon[j].z*(Polygon[k].x-Polygon[i].x);
-		}
-		area = fabs(area*norm_n/(2.0 * ny )); // correction factor for projection
-		area /= dy; // Convert from unit cube and divide by volume 
-	}else{
-		// area of polygon projected onto x-y
-		for(int i =0;i<v;i++){
-			j = (i+1)%v;
-			k = (i+2)%v;
-			area += Polygon[j].x*(Polygon[k].y-Polygon[i].y);
-		}
-		area = fabs(area*norm_n/(2.0 * nz)); // correction factor for projection
-		area /= dz; // Convert from unit cube and divide by volume 
-	}
-	return area;
-
-}
-
-
-

@@ -20,11 +20,10 @@ class AdhesionFriction : public CoulombFriction
 	public:
 		
 		// constructors and destructors
-		AdhesionFriction();
-		AdhesionFriction(char *matName);
+		AdhesionFriction(char *,int);
 		
 		// initialize
-		virtual char *InputMaterialProperty(char *,int &,double &);
+		virtual char *InputContactProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintContactLaw(void) const;
 		
@@ -33,7 +32,6 @@ class AdhesionFriction : public CoulombFriction
 		
 		// accessors
 		virtual const char *MaterialType(void) const;
-		virtual bool ContactIsDone(bool) const;
 		virtual bool ContactLawNeedsContactArea(void) const;
 		
 	protected:

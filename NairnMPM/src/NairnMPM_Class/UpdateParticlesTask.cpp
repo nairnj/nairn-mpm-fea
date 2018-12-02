@@ -25,6 +25,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
 #include "Exceptions/CommonException.hpp"
 
@@ -75,7 +76,7 @@ void UpdateParticlesTask::Execute(void)
 			// Update particle position and velocity
 			const MaterialBase *matRef=theMaterials[mpmptr->MatID()];
 			int matfld=matRef->GetField();
-            
+
 			// Allow material to override global settings
             double localParticleAlpha = particleAlpha;
             double localGridAlpha = gridAlpha;
@@ -84,16 +85,16 @@ void UpdateParticlesTask::Execute(void)
 			// data structure for extrapolations
 			GridToParticleExtrap *gp = new GridToParticleExtrap;
 			
-			// acceleration on the particle
+			// acceleration on the particle or S a
 			gp->acc = mpmptr->GetAcc();
 			ZeroVector(gp->acc);
 			
-			// extrapolate nodal velocity from grid to particle
+			// extrapolate nodal velocity from grid to particle S v+
 			ZeroVector(&gp->vgpnp1);
 			
 			// only two possible transport tasks
-			double rate[2];
-			rate[0] = rate[1] = 0.;
+			double rate[2],value[2];
+			rate[0] = rate[1] = value[0] = value[1] = 0.;
 			int task;
 			TransportTask *nextTransport;
 			
@@ -106,73 +107,75 @@ void UpdateParticlesTask::Execute(void)
 				// increment
 				ndptr->IncrementDelvaTask5(vfld,matfld,fn[i],gp);
 
-#ifdef CHECK_NAN
-				// conditionally compiled check for nan velocities
-                if(gp->vgpnp1.x!=gp->vgpnp1.x || gp->vgpnp1.y!=gp->vgpnp1.y || gp->vgpnp1.z!=gp->vgpnp1.z)
-                {
-#pragma omp critical (output)
-					{	cout << "\n# UpdateParticlesTask::Execute: bad material velocity field for vfld=" << vfld << "matfld=" << matfld << " fn[i]=" << fn[i] << endl;;
-						PrintVector("#  Particle velocity vgpn1 = ",&gp->vgpnp1);
-						cout << endl;
-						ndptr->Describe();
-					}
-                }
-#endif
-				
 				// increment transport rates
 				nextTransport=transportTasks;
 				task=0;
 				while(nextTransport!=NULL)
-					nextTransport=nextTransport->IncrementTransportRate(ndptr,fn[i],rate[task++],vfld,matfld);
+				{	value[task] += nextTransport->IncrementValueExtrap(ndptr,fn[i],vfld,matfld);
+					nextTransport = nextTransport->IncrementTransportRate(ndptr,fn[i],rate[task++],vfld,matfld);
+				}
 			}
+			
+			// Find initial velocity vgp = vgpnp1 - a dt (may be better to not need this calculation)
+			Vector vgpn = gp->vgpnp1;
+			AddScaledVector(&vgpn, gp->acc, -timestep);
 
-			// Find grid damping acceleration parts =  ag*Vgp(n) = ag*(Vgp(n+1) - Agp(n)*dt)
-			Vector accExtra = gp->vgpnp1;
-			AddScaledVector(&accExtra, gp->acc, -timestep);
-			ScaleVector(&accExtra,localGridAlpha);
+			// get extra particle acceleration Aextra = -ag*Vgp(n) - ap*Vp - m(1-beta)Sv^*/dt
+			// (the -ap*Vp term is done in MovePosition, others done here)
+			Vector accExtra = SetScaledVector(&vgpn,-localGridAlpha);
 			
 			// update position, and must be before velocity update because updates need initial velocity
             // This section does second order update
 			mpmptr->MovePosition(timestep,&gp->vgpnp1,&accExtra,localParticleAlpha);
 			
 			// update velocity in mm/sec
-			mpmptr->MoveVelocity(timestep,&accExtra);
-
-#ifdef NEW_HEAT_METHOD
-            // update transport values
-            double dTcond = 0.;
-            nextTransport=transportTasks;
-            task=0;
-            while(nextTransport!=NULL)
-            {	if(nextTransport == conduction) dTcond = rate[task]*timestep;
-                nextTransport=nextTransport->MoveTransportValue(mpmptr,timestep,rate[task++]);
-            }
-            
-            // for heat energy and entropy
-            if(ConductionTask::active)
-            {   double dq = matRef->GetHeatCapacity(mpmptr)*dTcond;
-                mpmptr->AddHeatEnergy(dq);
-                mpmptr->AddEntropy(dq/mpmptr->pPreviousTemperature);
-            }
-            
-            // energy coupling here adds adiabtic temperature rise
-            if(ConductionTask::adiabatic)
-            {	double dTad = mpmptr->GetClear_dTad();					// in K
-                mpmptr->pTemperature += dTad;							// in K
-            }
-#else
-            // update transport values
-            nextTransport=transportTasks;
-            task=0;
-            while(nextTransport!=NULL)
-                nextTransport=nextTransport->MoveTransportValue(mpmptr,timestep,rate[task++]);
-            
-            // energy coupling here adds adiabtic temperature rise
-            if(ConductionTask::adiabatic)
-            {	double dTad = mpmptr->GetBufferClear_dTad();			// in K
-                mpmptr->pTemperature += dTad;							// in K
-            }
-#endif
+			mpmptr->MoveVelocity(timestep);
+			
+			// update transport values
+			ResidualStrains res;
+			res.dT = res.dC = 0.;
+			double dTcond = 0.,dTad = 0.;
+			nextTransport=transportTasks;
+			task=0;
+			while(nextTransport!=NULL)
+			{	// mechanics would need to add to store returned value on particle (or get delta from rate?)
+				if(nextTransport == conduction)
+				{	dTcond = rate[task]*timestep;
+					res.dT = nextTransport->GetDeltaValue(mpmptr,value[task]);;
+				}
+				else
+					res.dC = nextTransport->GetDeltaValue(mpmptr,value[task]);;
+				nextTransport=nextTransport->MoveTransportValue(mpmptr,timestep,rate[task++]);
+			}
+			
+			// energy coupling here adds adiabatic temperature rise
+			if(ConductionTask::adiabatic)
+			{	dTad = mpmptr->GetClear_dTad();						// in K
+				mpmptr->pTemperature += dTad;						// in K
+				mpmptr->pPreviousTemperature += dTad;				// in K
+				res.dT += dTad;
+			}
+			
+			// for heat energy and entropy
+			if(ConductionTask::active)
+			{	double dq = matRef->GetHeatCapacity(mpmptr)*dTcond;
+				mpmptr->AddHeatEnergy(dq);
+				mpmptr->AddEntropy(dq,mpmptr->pPreviousTemperature);
+			}
+			else
+			{	// when conduction off, update previous temp here
+				res.dT = mpmptr->pTemperature - mpmptr->pPreviousTemperature;
+				mpmptr->pPreviousTemperature = mpmptr->pTemperature;
+			}
+			
+			// for generalized plane stress or strain, increment szz if needed
+			if(fmobj->np==PLANE_STRESS_MPM || fmobj->np==PLANE_STRAIN_MPM)
+			{	res.doopse = mpmptr->oopIncrement;
+				mpmptr->oopIncrement = 0.;
+			}
+			
+			// store increments on the particles
+			mpmptr->dTrans = res;
 			
 			// delete grid to particle extrap data
 			delete gp;
@@ -205,7 +208,7 @@ void UpdateParticlesTask::Execute(void)
 	if(upErr!=NULL) throw *upErr;
     
     // rigid materials move at their current velocity
-    for(int p=nmpmsNR;p<nmpms;p++)
+    for(int p=nmpmsRB;p<nmpms;p++)
     {	mpm[p]->MovePosition(timestep);
     }
 }

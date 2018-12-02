@@ -13,12 +13,6 @@
 
 #define _MESHINFO_
 
-// When not defined, use Classic shape functions for cracks (the default)
-// When defined, use GIMP shape function based on crackParticleSize (default is zero
-//		which is equivalent to classic, but may be slightly slower)
-// <CrackParticleSize> can be set in <Cracks> element and is undocumented feature
-//#define CRACK_GIMP
-
 class GridPatch;
 class NodalPoint;
 class MPMBase;
@@ -40,16 +34,14 @@ class MeshInfo
 		double xmax,ymax,zmax;			// maximums (if from a grid)
         double positionCutoff;          // cut off for normal contact when using positiong instead of displacements
 		int xplane,yplane,zplane;		// node spacings in each plane
-#ifdef CRACK_GIMP
-		double crackParticleSize;		// crack particle size for crack shape functions
-#endif
+		Vector minParticleSize;
 	
 		// constructors
 		MeshInfo(void);
 		
 		// methods
 		void Output(int,bool);
-        void OutputContactByDisplacements(void);
+        void OutputContactByDisplacements(bool);
 		bool EdgeElement2D(int);
 		bool EdgeElement3D(int);
 		bool EdgeNode(int,char);
@@ -71,15 +63,22 @@ class MeshInfo
         bool GetContactByDisplacements(void);
         void SetContactByDisplacements(bool);
 		double GetMinCellDimension(void);
+		void TrackMinParticleSize(Vector);
+		Vector GetGlobalMinParticleSize(void) const;
+		double GetGlobalMinParticleLength(void) const;
 		double GetThickness(void);                          // 2D only
-    
+		int FindElementFromPoint(const Vector *,MPMBase *);
+		int BinarySearchForElement(int,double,int,int);
+		void FindElementCoordinatesFromPoint(Vector *,int &,int &,int &);
+		double GetCellVolume(NodalPoint *);
+		void GetLocalCellSizes(NodalPoint *,double &,double &,double &,double &,double &,double &);
+		double GetCellRatio(NodalPoint *,int);
+		double GetAverageCellSize(MPMBase *);
+		bool FindMeshLineForBCs(int,double,int,int &,double &,double &);
+		Vector GetPerpendicularDistance(Vector *,NodalPoint *);
+		void ScaleTangent(double,double,double,double &,double &);
+   
         // use of these implies equal element sizes
-		int FindElementFromPoint(Vector *,MPMBase *);
-        double GetAverageCellSize(MPMBase *);
-        double FindMeshLineForBCs(int axis,double *,double *);
-        double GetCellVolume(NodalPoint *ndptr);
-        Vector GetPerpendicularDistance(Vector *,NodalPoint *);
-		double GetNormalCODAdjust(Vector *,NodalPoint *);
         Vector GetCellSize(void);
 			
 	private:
@@ -94,10 +93,7 @@ class MeshInfo
 
 		double cellVolume;				// cell volume when equal element sizes
 		double avgCellSize;             // average cell size when equal element sizes
-		double lp;						// semilength of particle (lp in natural coordinates)
         Vector grid;                    // cell size when equal element sizes
-        Vector part;                    // particle size in x, y, and z direction when equal element sizes
-        Vector diag;                    // cell diagonal
 };
 
 extern MeshInfo mpmgrid;

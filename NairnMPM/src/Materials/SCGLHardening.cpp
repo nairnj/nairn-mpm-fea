@@ -36,7 +36,7 @@ SCGLHardening::SCGLHardening(MaterialBase *pair) : HardeningLawBase(pair)
 #pragma mark LinearHardening::Initialize
 
 // Read hardening law properties
-char *SCGLHardening::InputMaterialProperty(char *xName,int &input,double &gScaling)
+char *SCGLHardening::InputHardeningProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"GPpG0")==0)
     {	input=DOUBLE_NUM;
@@ -63,7 +63,7 @@ char *SCGLHardening::InputMaterialProperty(char *xName,int &input,double &gScali
 		return UnitsController::ScaledPtr((char *)&yieldMax,gScaling,1.e6);
     }
 	
-    return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
+    return HardeningLawBase::InputHardeningProperty(xName,input,gScaling);
 }
 
 // verify settings and some initial calculations
@@ -115,7 +115,7 @@ void SCGLHardening::PrintYieldProperties(void) const
 // size of hardening law properties needed in strain updates
 int SCGLHardening::SizeOfHardeningProps(void) const { return sizeof(SCGLProperties); }
 
-// Get particle-state dependent properties (filled by Get Shear Ratio)
+// Get particle-state dependent properties (filled by GetShearRatio())
 void *SCGLHardening::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer,int offset)
 {
 	SCGLProperties *p = (SCGLProperties *)altBuffer;

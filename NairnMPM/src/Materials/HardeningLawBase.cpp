@@ -32,7 +32,7 @@ HardeningLawBase::~HardeningLawBase() {}
 #pragma mark LinearHardening::Initialize
 
 // Read hardening law properties
-char *HardeningLawBase::InputMaterialProperty(char *xName,int &input,double &gScaling)
+char *HardeningLawBase::InputHardeningProperty(char *xName,int &input,double &gScaling)
 {
     // base yield stress
     if(strcmp(xName,"yield")==0)
@@ -73,9 +73,9 @@ int HardeningLawBase::HistoryDoublesNeeded(void) const { return 1; }
 void HardeningLawBase::InitPlasticHistoryData(double *p) const {}
 
 // IsoPlasticity has no history data, but the hardening law might (and are all assumed doubles here)
+// num is 1 based and assumes plastic law history must be first on the particles (starting at 0)
 double HardeningLawBase::GetHistory(int num,char *historyPtr) const
-{
-    double history=0.;
+{	double history=0;
     if(num>0 && num<=HistoryDoublesNeeded())
     {	double *p=(double *)historyPtr;
 		history = p[num-1];
@@ -88,7 +88,8 @@ double HardeningLawBase::GetHistory(int num,char *historyPtr) const
 // size of hardening law properties needed in strain updates
 int HardeningLawBase::SizeOfHardeningProps(void) const { return 0; }
 
-// If needed, hardenling law can create properties that depend on particle state
+// If needed, hardening law can create properties that depend on particle state
+// Current users: JohnsonCook, SCGLHardening, SLMaterial,DDBHardening
 void *HardeningLawBase::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer,int offset)
 {	return NULL;
 }

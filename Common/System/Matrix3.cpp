@@ -85,7 +85,7 @@ Matrix3::Matrix3(double xx,double xy,double xz,
 	m[2][0] = zx;
 	m[2][1] = zy;
 	m[2][2] = zz;
-	is2D = FALSE;
+	is2D = false;
 }
 
 // define matrix in 2D mechanics with xz, yz, zx, and zy equal to zero
@@ -100,22 +100,39 @@ Matrix3::Matrix3(double xx,double xy,double yx,double yy,double zz)
 	m[2][0] = 0.;
 	m[2][1] = 0.;
 	m[2][2] = zz;
-	is2D = TRUE;
+	is2D = true;
+}
+
+// define symmetric 3D matrix
+Matrix3::Matrix3(double xx,double xy,double xz,
+						   double yy,double yz,
+				 					 double zz)
+{
+	m[0][0] = xx;
+	m[0][1] = xy;
+	m[0][2] = xz;
+	m[1][0] = xy;
+	m[1][1] = yy;
+	m[1][2] = yz;
+	m[2][0] = xz;
+	m[2][1] = yz;
+	m[2][2] = zz;
+	is2D = false;
 }
 
 // define matrix as outer product of two vectors (x1,y1,z1) and (x2,y2,z2)
-Matrix3::Matrix3(double x1,double y1,double z1,double x2,double y2,double z2)
+Matrix3::Matrix3(Vector *x1,Vector *x2)
 {
-	m[0][0] = x1*x2;
-	m[0][1] = x1*y2;
-	m[0][2] = x1*z2;
-	m[1][0] = y1*x2;
-	m[1][1] = y1*y2;
-	m[1][2] = y1*z2;
-	m[2][0] = z1*x2;
-	m[2][1] = z1*y2;
-	m[2][2] = z1*z2;
-	is2D = FALSE;
+	m[0][0] = x1->x*x2->x;
+	m[0][1] = x1->x*x2->y;
+	m[0][2] = x1->x*x2->z;
+	m[1][0] = x1->y*x2->x;
+	m[1][1] = x1->y*x2->y;
+	m[1][2] = x1->y*x2->z;
+	m[2][0] = x1->z*x2->x;
+	m[2][1] = x1->z*x2->y;
+	m[2][2] = x1->z*x2->z;
+	is2D = false;
 }
 
 #pragma mark Matrix3:methods
@@ -123,7 +140,7 @@ Matrix3::Matrix3(double x1,double y1,double z1,double x2,double y2,double z2)
 // zero the matrix
 void Matrix3::Zero(void)
 {	set(0.);
-	is2D = TRUE;
+	is2D = true;
 }
 
 // get the transpose
@@ -213,7 +230,7 @@ Tensor Matrix3::RVoightRT(Tensor *t,bool stress,bool do2D) const
 	return mT;
 }
 
-// Assume this matrix is a rotation matrix and rotate Voight form tensor for stress (if stressis true)
+// Assume this matrix is a rotation matrix and rotate Voight form tensor for stress (if stress is true)
 // or strain (if false). If do2D is true, assume matrix is Rz matrix with t->yz=t->xz=0 and t->zz=1
 // Compared to RVoightRT, this rotates by R inverse
 Tensor Matrix3::RTVoightR(Tensor *t,bool stress,bool do2D) const
@@ -376,9 +393,16 @@ Matrix3 Matrix3::Exponential(int kmax) const
 // matrix times a vector
 Vector Matrix3::Times(Vector *v) const
 {   Vector mv;
-	mv.x = m[0][0]*v->x + m[1][0]*v->y + m[2][0]*v->z;
-    mv.y = m[0][1]*v->x + m[1][1]*v->y + m[2][1]*v->z;
-	mv.z = m[0][2]*v->x + m[1][2]*v->y + m[2][2]*v->z;
+	if(is2D)
+	{	mv.x = m[0][0]*v->x + m[0][1]*v->y;
+		mv.y = m[1][0]*v->x + m[1][1]*v->y;
+		mv.z = m[2][2]*v->z;
+	}
+	else
+	{	mv.x = m[0][0]*v->x + m[0][1]*v->y + m[0][2]*v->z;
+    	mv.y = m[1][0]*v->x + m[1][1]*v->y + m[1][2]*v->z;
+		mv.z = m[2][0]*v->x + m[2][1]*v->y + m[2][2]*v->z;
+	}
     return mv;
 }
 
@@ -459,7 +483,7 @@ Vector Matrix3::Eigenvalues(void) const
         lam.z = m[2][2];
     }
     else
-    {	double mm, c1, c0;
+	{	double mm, c1, c0;
 		
 		// Determine coefficients of characteristic poynomial. We write
 		//       | a   d   f  |
@@ -863,7 +887,7 @@ Matrix3 &Matrix3::operator+=(const Matrix3 &rhs)
 	{	for(j=0;j<3;j++)
 			m[i][j] += rhs(i,j);
 	}
-	if(!rhs.getIs2D()) is2D = FALSE;
+	if(!rhs.getIs2D()) is2D = false;
 	return *this;
 }
 
@@ -881,7 +905,7 @@ Matrix3 &Matrix3::operator-=(const Matrix3 &rhs)
 	{	for(j=0;j<3;j++)
 			m[i][j] -= rhs(i,j);
 	}
-	if(!rhs.getIs2D()) is2D = FALSE;
+	if(!rhs.getIs2D()) is2D = false;
 	return *this;
 }
 
@@ -894,19 +918,40 @@ const Matrix3 Matrix3::operator-(const Matrix3 &rhs) const
 
 // *=
 Matrix3 &Matrix3::operator*=(const Matrix3 &rhs)
-{	double cm[3][3],rm[3][3];
-	get(cm);
-	rhs.get(rm);
-	if(is2D && rhs.getIs2D())
-	{	set(0.);
+{	//double cm[3][3],rm[3][3];
+	//get(cm);
+	//rhs.get(rm);
+	if(is2D && rhs.getIs2D()){	
+		//new method: 25% speed up
+		double m00 = this->operator()(0, 0) * rhs(0, 0) + this->operator()(0, 1) * rhs(1, 0);
+		double m01 = this->operator()(0, 0) * rhs(0, 1) + this->operator()(0, 1) * rhs(1, 1);
+		double m10 = this->operator()(1, 0) * rhs(0, 0) + this->operator()(1, 1) * rhs(1, 0);
+		double m11 = this->operator()(1, 0) * rhs(0, 1) + this->operator()(1, 1) * rhs(1, 1);
+		
+		// Set values in memory coherent way
+		m[0][0] = m00;
+		m[0][1] = m01;
+		m[0][2] = 0.0;
+		m[1][0] = m10;
+		m[1][1] = m11;
+		m[1][2] = 0.0;
+		m[2][0] = 0.0;
+		m[2][1] = 0.0;
+		m[2][2] *= rhs(2, 2);
+		
+		/*// Old method
+		set(0.);
 		m[0][0] = cm[0][0]*rm[0][0] + cm[0][1]*rm[1][0];
 		m[0][1] = cm[0][0]*rm[0][1] + cm[0][1]*rm[1][1];
 		m[1][0] = cm[1][0]*rm[0][0] + cm[1][1]*rm[1][0];
 		m[1][1] = cm[1][0]*rm[0][1] + cm[1][1]*rm[1][1];
 		m[2][2] = cm[2][2]*rm[2][2];
-	}
-	else
-	{	int i,j,k;
+		*/
+	}else{	
+		double cm[3][3],rm[3][3];
+		get(cm);
+		rhs.get(rm);
+		int i,j,k;
 		for(i=0;i<3;i++)
 		{	for(j=0;j<3;j++)
 			{	m[i][j] = 0.;
@@ -914,7 +959,7 @@ Matrix3 &Matrix3::operator*=(const Matrix3 &rhs)
 					m[i][j] += cm[i][k]*rm[k][j];
 			}
 		}
-		is2D = FALSE;
+		is2D = false;
 	}
 	return *this;
 }
@@ -925,6 +970,54 @@ const Matrix3 Matrix3::operator*(const Matrix3 &rhs) const
 	result *= rhs;
 	return result;
 }
+
+// Some extra operator overrides (Chad)
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+// *= Scale by double
+Matrix3 &Matrix3::operator*=(double factor)
+{
+	m[0][0] *= factor;
+	m[0][1] *= factor;
+	m[1][0] *= factor;
+	m[1][1] *= factor;
+	m[2][2] *= factor;
+	if (!is2D)
+	{
+		m[0][2] *= factor;
+		m[1][2] *= factor;
+		m[2][0] *= factor;
+		m[2][1] *= factor;
+	}
+	return *this;
+}
+// scale by double 
+const Matrix3 Matrix3::operator*(double factor) const
+{
+	Matrix3 result = *this;
+	result *= factor;
+	return result;
+}
+
+// Make commutative
+const Matrix3 operator*(double factor, const Matrix3 & rhs)
+{
+	Matrix3 result = rhs;
+	result *= factor;
+	return result;
+}
+
+/*friend Vector operator*(const Matrix3 & A,Vector * x)
+{
+	Vector b;
+	b.x = A(0, 0) * x->x + A(1, 0) * x->y + A(2, 0) * x->z;
+	b.y = A(0, 1) * x->x + A(1, 1) * x->y + A(2, 1) * x->z;
+	b.z = A(0, 2) * x->x + A(1, 2) * x->y + A(2, 2) * x->z;
+	return b;
+}
+*/
+
+
 
 // printing
 ostream &operator<<(ostream &os, const Matrix3 &mat)
@@ -955,7 +1048,7 @@ void Matrix3::set(double constant)
 	{	for(j=0;j<3;j++)
 			m[i][j] = constant;
 	}
-	is2D = constant==0. ? TRUE : FALSE ;
+	is2D = constant==0. ? true : false ;
 }
 
 // set one element (0 based indices)
@@ -972,6 +1065,7 @@ void Matrix3::get(double c[][3]) const
 
 // get one element (0 based indices)
 void Matrix3::get(int row,int col,double *value) const { *value = m[row][col]; }
+double Matrix3::mrc(int row,int col) const { return m[row][col]; }
 
 // get one element using contraction notation of 0 to 5 for xx,yy,zz,yz,xz,xy, 6 to 8 for zy,zx,yx
 // applying scalling if an off-axis value (e.g., 2 to get engineering strain)
@@ -1010,7 +1104,7 @@ void Matrix3::set(double c[][3])
 	{	for(j=0;j<3;j++)
 			m[i][j] = c[i][j];
 	}
-	is2D = FALSE;
+	is2D = false;
 }
 
 // set this object to five elements and make it 2D
@@ -1024,7 +1118,7 @@ void Matrix3::set(double c0,double c1,double c2,double c3,double c4)
     m[1][2] = 0.;
     m[2][0] = 0.;
     m[2][1] = 0.;
-    is2D = TRUE;
+    is2D = true;
 }
 
 // set this object to nine elements and make it 3D
@@ -1038,7 +1132,7 @@ void Matrix3::set(double c00,double c01,double c02,double c10,double c11,double 
     m[2][0] = c20;
     m[2][1] = c21;
     m[2][2] = c22;
-    is2D = FALSE;
+    is2D = false;
 }
 
 // swap two columns

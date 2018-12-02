@@ -185,10 +185,10 @@ void CrackLeaf::DescribeSegments(int level)
     
     if(terminalLeaf)
     {   CrackSegment *scrk1 = (CrackSegment *)child1;
-        cout << "(" << scrk1->x << "," << scrk1->y << ")" ;
+        cout << "(" << scrk1->cp.x << "," << scrk1->cp.y << ")" ;
         if(child2!=NULL)
         {   scrk1 = (CrackSegment *)child2;
-            cout << "(" << scrk1->x << "," << scrk1->y << ")" ;
+            cout << "(" << scrk1->cp.x << "," << scrk1->cp.y << ")" ;
         }
     }
     else

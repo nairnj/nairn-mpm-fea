@@ -33,17 +33,18 @@
 #include "Read_MPM/MpsController.hpp"
 #include "Elements/FourNodeIsoparam.hpp"
 #include "Elements/EightNodeIsoparamBrick.hpp"
-#include "Nodes/NodalPoint2D.hpp"
-#include "Nodes/NodalPoint3D.hpp"
+#include "Nodes/NodalPoint.hpp"
 #include "Read_MPM/CrackController.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "Read_MPM/SphereController.hpp"
 #include "Read_XML/PolygonController.hpp"
 #include "Read_MPM/PolyhedronController.hpp"
-#include "Read_XML/mathexpr.hpp"
 #include "Read_XML/ElementsController.hpp"
 #include "Read_XML/MaterialController.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
+#include "Read_XML/Expression.hpp"
+#include "NairnMPM_Class/ResetElementsTask.hpp"
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
@@ -60,6 +61,11 @@ double pConc,pTempSet,Angle,Thick;
 Vector Vel;
 char rotationAxes[4];
 char angleAxes[4];
+
+// transformed particles
+char *initTranslate[3];
+Matrix3 initDeformation;
+bool isDeformed;
 
 // to allow new elements, add attribute or command to change this for grid
 // Create those element in ElementsController::MeshElement()
@@ -212,10 +218,10 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             delete [] value;
         }
     }
-	
-    //-----------------------------------------------------------
-    // Read AreaOfInterest (x1,x2,nx each direction)
-    //-----------------------------------------------------------
+
+	//-----------------------------------------------------------
+	// Read AreaOfInterest (x1,x2,nx each direction)
+	//-----------------------------------------------------------
 	else if(strcmp(xName,"AreaOfInterest")==0)
 	{	throw SAXException("<AreaOfInterest> command requires OSParticulas.");
 	}
@@ -236,10 +242,12 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         MatID=0;
 		char matname[200];
 		matname[0]=0;
+		initTranslate[0] = initTranslate[1] = initTranslate[2] = NULL;
+		isDeformed = false;
         if(strcmp(xName,"Body")==0)
         {   Thick=mpmgrid.GetDefaultThickness();
             Angle=Vel.x=Vel.y=Vel.z=0.0;
-			pConc=0.0;
+			pConc = diffusion->reference;
 			pTempSet = thermal.reference;
             numAttr=(int)attrs.getLength();
 			rotationAxes[0]=0;			// no rotations yet
@@ -247,7 +255,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             for(i=0;i<numAttr;i++)
 			{	aName=XMLString::transcode(attrs.getLocalName(i));
                 value=XMLString::transcode(attrs.getValue(i));
-                if(strcmp(aName,"mat")==0)
+				if(strcmp(aName,"mat")==0)
                     sscanf(value,"%d",&MatID);
                 else if(strcmp(aName,"matname")==0)
 				{	if(strlen(value)>199) value[200]=0;
@@ -264,15 +272,21 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 else if(strcmp(aName,"vz")==0)
                     sscanf(value,"%lf",&Vel.z);
                 else if(strcmp(aName,"conc")==0)
-				{	sscanf(value,"%lf",&pConc);
-					if(pConc<0. || pConc>1.)
-						throw SAXException("Material point concentration potential must be from 0 to 1");
+				{	// only used if diffusion is active
+					if(fmobj->HasDiffusion())
+					{	sscanf(value,"%lf",&pConc);
+						if(pConc<0. || pConc>1.)
+							throw SAXException("Material point concentration potential must be from 0 to 1");
+					}
 				}
 				else if(strcmp(aName,"wtconc")==0)
-				{	sscanf(value,"%lf",&pConc);
-					pConc=-pConc;
-					if(pConc>0.)
-						throw SAXException("Material point weight fraction concentration must be >= 0");
+				{	// only used if diffusion is active
+					if(fmobj->HasDiffusion())
+					{	sscanf(value,"%lf",&pConc);
+						pConc=-pConc;
+						if(pConc>0.)
+							throw SAXException("Material point weight fraction concentration must be >= 0");
+					}
 				}
                 else if(strcmp(aName,"temp")==0)
                     sscanf(value,"%lf",&pTempSet);
@@ -515,7 +529,16 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		// create crack segment
 		MPMCracks(crackShape,resolution,start_angle,end_angle,startTip,endTip);
     }
-
+	
+	//-----------------------------------------------------------
+	// Read into geometry parameters for a crack plane
+	//       Line (xmin,ymin,xmax,ymax)
+	// Chad
+	//-----------------------------------------------------------
+	else if ((strcmp(xName, "Plane") == 0 && block == CRACKLIST))
+	{	throw SAXException("<Plane> command for cracks requires OSParticulas");
+	}
+	
 	// add to polygon body object
     else if(strcmp(xName,"pt")==0)
 	{	ValidateCommand(xName,BODY_SHAPE,MUST_BE_2D);
@@ -552,7 +575,43 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 
 	// Deform shapes in a BODY
     else if(strcmp(xName,"Deform")==0)
-	{	throw SAXException("<Deform> command requires OSParticulas");
+    {   ValidateCommand(xName,BODYPART,ANY_DIM);
+		initDeformation = Matrix3::Identity();
+		isDeformed = true;
+		numAttr=(int)attrs.getLength();
+		for(i=0;i<numAttr;i++)
+		{	aName=XMLString::transcode(attrs.getLocalName(i));
+			value=XMLString::transcode(attrs.getValue(i));
+			if(strcmp(aName,"dX")==0 || strcmp(aName,"dY")==0 || strcmp(aName,"dZ")==0)
+			{	int axis = (int)(aName[1]-'X');
+				if(initTranslate[axis]!=NULL) delete [] initTranslate[axis];
+				initTranslate[axis] = new char[strlen(value)+1];
+				strcpy(initTranslate[axis],value);
+			}
+			else if(aName[0]=='F' && strlen(aName)>2)
+			{	double defVal;
+				sscanf(value,"%lf",&defVal);
+				int row = (int)(aName[1]-'0')-1;
+				int col = (int)(aName[2]-'0')-1;
+				if(row>=0 && col>=0 && row<3 && col<3)
+				{	initDeformation(row,col) = defVal;
+					if((row==2 || col==2) && (row!=col))
+						initDeformation.setIs2D(false);
+				}
+			}
+			delete [] aName;
+			delete [] value;
+		}
+    }
+	
+	// Deform shapes in a BODY
+    else if(strcmp(xName,"Undeform")==0)
+    {   ValidateCommand(xName,BODYPART,ANY_DIM);
+		if(initTranslate[0]!=NULL) delete [] initTranslate[0];
+		if(initTranslate[1]!=NULL) delete [] initTranslate[1];
+		if(initTranslate[2]!=NULL) delete [] initTranslate[2];
+		initTranslate[0] = initTranslate[1] = initTranslate[2] = NULL;
+		isDeformed = false;
 	}
 	
 	// triclinic option
@@ -897,8 +956,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		}
 		else if(strcmp(xName,"ConcFluxBC")==0)
         {	if(dof==2 && style!=FUNCTION_VALUE)
-				throw SAXException("Coupled concentration flux condition must use function style");
-				
+				throw SAXException("Coupled option in <ConcFluxBC> element must use function style");
+			
 			// check each material point
 			MatPtFluxBC *newFluxBC;
 			theShape->resetParticleEnumerator();
@@ -912,7 +971,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		}
 		else if(strcmp(xName,"HeatFluxBC")==0)
         {	if(dof==2 && style!=FUNCTION_VALUE)
-				throw SAXException("Coupled heat flux condition must use function style");
+				throw SAXException("Coupled option in <HeatFluxBC> element must use function style");
 			
 			// check each material point
 			MatPtHeatFluxBC *newFluxBC;
@@ -927,6 +986,11 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		}
 		if(function!=NULL) delete [] function;
     }
+	
+    // Read into initial conditions on current shape
+	else if(strcmp(xName,"Damage")==0)
+	{	throw SAXException("<Damage> command requires OSParticulas");
+	}
 	
 	// Not recognized as a generator element
 	else
@@ -958,6 +1022,9 @@ short MPMReadHandler::EndGenerator(char *xName)
         {   if(vel0Expr[i]!=NULL)
                 delete [] vel0Expr[i];
         }
+		if(initTranslate[0]!=NULL) delete [] initTranslate[0];
+		if(initTranslate[1]!=NULL) delete [] initTranslate[1];
+		if(initTranslate[2]!=NULL) delete [] initTranslate[2];
     	block=POINTSBLOCK;
 	}
     
@@ -1056,11 +1123,8 @@ void MPMReadHandler::MPMPts(void)
 	if(numRotations>0)
 	{	Angle=0.;			// rotations override angle settings
 		for(i=0;i<numRotations;i++)
-		{	char *expr=new char[strlen(angleExpr[i])+1];
-			strcpy(expr,angleExpr[i]);
-			if(!CreateFunction(expr,i+1))
+		{	if(!Expression::CreateFunction(angleExpr[i],i+1))
 				throw SAXException("Invalid angle expression was provided in <RotateX(YZ)> command.");
-			delete [] expr;
 		}
 	}
 	
@@ -1070,22 +1134,35 @@ void MPMReadHandler::MPMPts(void)
 	for(i=0;i<3;i++)
 	{	if(vel0Expr[i]!=NULL)
 		{	fnum++;
-			char *expr=new char[strlen(vel0Expr[i])+1];
-			strcpy(expr,vel0Expr[i]);
-			if(!CreateFunction(expr,fnum))
-				throw SAXException("Invalid velocity expression was provided in <vel0X(YZ))> command.");
-			delete [] expr;
+			if(!Expression::CreateFunction(vel0Expr[i],fnum))
+				throw SAXException("Invalid angle expression was provided in <RotateX(YZ)> command.");
 			hasVelOrLp = true;
 		}
 	}
 	
+	
+	// if deformed, create translation functions
+	int firstTranslate = fnum;
+	if(isDeformed)
+	{	for(i=0;i<3;i++)
+		{	if(initTranslate[i]!=NULL)
+			{	fnum++;
+				if(!Expression::CreateFunction(initTranslate[i],fnum))
+					throw SAXException("Invalid angle expression was provided in <RotateX(YZ)> command.");
+			}
+		}
+	}
+
     try
     {   for(i=1;i<=nelems;i++)
 		{	theElements[i-1]->MPMPoints(fmobj->ptsPerElement,ppos);
             for(k=0;k<fmobj->ptsPerElement;k++)
             {   // if particle size is already used, then go to next location
-            	ptFlag=1<<k;
-                if(theElements[i-1]->filled&ptFlag) continue;
+                // this check is skipped when creating shifted and/or deformed particles
+                if(!isDeformed)
+                {	ptFlag=1<<k;
+                    if(theElements[i-1]->filled&ptFlag) continue;
+                }
                 
                 // check if particle is in the shape
                 if(theShape->ShapeContainsPoint(ppos[k]))
@@ -1107,21 +1184,51 @@ void MPMReadHandler::MPMPts(void)
 						{	fnum=numRotations;
 							if(vel0Expr[0]!=NULL)
 							{	fnum++;
-								Vel.x=FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
+								Vel.x=Expression::FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
 							}
 							if(vel0Expr[1]!=NULL)
 							{	fnum++;
-								Vel.y=FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
+								Vel.y=Expression::FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
 							}
 							if(vel0Expr[2]!=NULL)
 							{	fnum++;
-								Vel.z=FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
+								Vel.z=Expression::FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
 							}
 						}
-						newMpt->SetVelocity(&Vel);
+                        newMpt->SetVelocity(&Vel);
 						
 						// custom angles
                         SetMptAnglesFromFunctions(rotationAxes,NULL,&ppos[k],newMpt);
+						
+						// translate and deform the point
+						if(isDeformed)
+						{	Vector moved;
+							ZeroVector(&moved);
+							fnum = firstTranslate;
+							if(initTranslate[0]!=NULL)
+							{	fnum++;
+								moved.x=Expression::FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
+							}
+							if(initTranslate[1]!=NULL)
+							{	fnum++;
+								moved.y=Expression::FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
+							}
+							if(initTranslate[2]!=NULL)
+							{	fnum++;
+								moved.z=Expression::FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
+							}
+							AddVector(&moved,&ppos[k]);
+							newMpt->SetPosition(&moved);
+							newMpt->SetOrigin(&moved);
+							
+							// reset element, but delete if not in the grid
+							int status = ResetElementsTask::ResetElement(newMpt);
+							if(status==LEFT_GRID) continue;
+							newMpt->SetElementCrossings(0);		// in case in new element
+							
+							// set deformation gradient
+							newMpt->SetDeformationGradientMatrix(initDeformation);
+						}
 						
 						// add the point
                         mpCtrl->AddMaterialPoint(newMpt,pConc,pTempSet);
@@ -1139,7 +1246,7 @@ void MPMReadHandler::MPMPts(void)
     }
 	
 	// remove created functions (angleExpr deleted later)
-	DeleteFunction(-1);
+	Expression::DeleteFunction(-1);
 	
 }
 
@@ -1168,16 +1275,16 @@ void MPMReadHandler::SetGIMPBorderAsHoles(void)
 void MPMReadHandler::MPMCracks(int crackShape,int resolution,double start_angle,double end_angle,int startTip,int endTip)
 {
 	int tipMatnum;
-	double x, y, dx, dy, a, b, x0, y0, startSita, deltaSita;
+	double dx, dy, a, b, x0, y0, startSita, deltaSita;
+	Vector xp;
 	
 	if(crackShape==LINE_SHAPE)
     {   dx = (Xmax-Xmin)/(double)resolution;
 		dy = (Ymax-Ymin)/(double)resolution;
 		tipMatnum = startTip;
 		for(int i=0;i<=resolution;i++)
-        {   x = Xmin+dx*i;
-			y = Ymin+dy*i;
-			if(!crackCtrl->AddSegment(new CrackSegment(x,y,tipMatnum,MatID)))
+		{   xp = MakeVector(Xmin+dx*i,Ymin+dy*i,0.);
+			if(!crackCtrl->AddSegment(new CrackSegment(&xp,tipMatnum,MatID),false))
 				throw SAXException("Crack not in the mesh or out of memory adding a crack segment.");
 			tipMatnum = i!=resolution-1 ? -1 : endTip;
 		}
@@ -1190,10 +1297,9 @@ void MPMReadHandler::MPMCracks(int crackShape,int resolution,double start_angle,
 		deltaSita=(end_angle-start_angle)/180.*PI_CONSTANT/(double)resolution;
 		startSita=start_angle/180.*PI_CONSTANT;
 		tipMatnum=startTip;
-		for(int i=0;i<=resolution;i++){
-			x=x0+a*cos(i*deltaSita+startSita);
-			y=y0+b*sin(i*deltaSita+startSita);
-			if(!crackCtrl->AddSegment(new CrackSegment(x,y,tipMatnum,MatID)))
+		for(int i=0;i<=resolution;i++)
+		{	xp = MakeVector(x0+a*cos(i*deltaSita+startSita),y0+b*sin(i*deltaSita+startSita),0.);
+			if(!crackCtrl->AddSegment(new CrackSegment(&xp,tipMatnum,MatID),false))
 				throw SAXException("Crack not in the mesh or out of memory adding a crack segment.");
 			tipMatnum = i!=resolution-1 ? -1 : endTip;
 		}
@@ -1216,43 +1322,45 @@ char *MPMReadHandler::LastBC(char *firstBC)
 }
 
 //-----------------------------------------------------------
-// Subroutine for creating grid objects (nd, theElements)
+// Create a regular MPM grid
+// throws std::bad_alloc
 //-----------------------------------------------------------
 void MPMReadHandler::grid()
 {
-    int i,j,k,curPt=0,curEl=0;
+	int i,j,k,curPt=0,curEl=0;
 	int node,element,enode[MaxElNd]={0};
-    double xpt,ypt,zpt;
-    
-    // use cell sizes instead
-    if(cellHoriz>0.)
-    {	Nhoriz=(int)((Xmax-Xmin)/cellHoriz);
-    	double newMax=Xmin+Nhoriz*cellHoriz;
-    	if(newMax<Xmax)
-    	{	Xmax=newMax+cellHoriz;
-    		Nhoriz++;
-    	}
-    }
-    if(cellVert>0.)
-    {	Nvert=(int)((Ymax-Ymin)/cellVert);
-    	double newMax=Ymin+Nvert*cellVert;
-    	if(newMax<Ymax)
-    	{	Ymax=newMax+cellVert;
-    		Nvert++;
-    	}
-    }
-    if(cellDepth>0. && fmobj->IsThreeD())
-    {	Ndepth=(int)((Zmax-Zmin)/cellDepth);
-    	double newMax=Zmin+Ndepth*cellDepth;
-    	if(newMax<Zmax)
-    	{	Zmax=newMax+cellDepth;
-    		Ndepth++;
-    	}
-    }
-
+	double xpt,ypt,zpt;
+	bool is3D = fmobj->IsThreeD();
+	
+	// use cell sizes instead
+	if(cellHoriz>0.)
+	{	Nhoriz=(int)((Xmax-Xmin)/cellHoriz);
+		double newMax=Xmin+Nhoriz*cellHoriz;
+		if(newMax<Xmax)
+		{	Xmax=newMax+cellHoriz;
+			Nhoriz++;
+		}
+	}
+	if(cellVert>0.)
+	{	Nvert=(int)((Ymax-Ymin)/cellVert);
+		double newMax=Ymin+Nvert*cellVert;
+		if(newMax<Ymax)
+		{	Ymax=newMax+cellVert;
+			Nvert++;
+		}
+	}
+	if(cellDepth>0. && is3D)
+	{	Ndepth=(int)((Zmax-Zmin)/cellDepth);
+		double newMax=Zmin+Ndepth*cellDepth;
+		if(newMax<Zmax)
+		{	Zmax=newMax+cellDepth;
+			Ndepth++;
+		}
+	}
+	
 	// check has grid settings
-    if(Nhoriz<1 || Nvert<1 || (Ndepth<1 && fmobj->IsThreeD()))
-        throw SAXException("Number of grid elements in all direction must be >= 1.");
+	if(Nhoriz<1 || Nvert<1 || (Ndepth<1 && is3D))
+		throw SAXException("Number of grid elements in all direction must be >= 1.");
 	
 	// save the limits before extra GIMP layer
 	mxmin=Xmin;
@@ -1272,7 +1380,7 @@ void MPMReadHandler::grid()
 		Ymin-=cell;
 		Ymax+=cell;
 		Nvert+=2;
-		if(fmobj->IsThreeD())
+		if(is3D)
 		{	cell=(Zmax-Zmin)/(double)Ndepth;
 			Zmin-=cell;
 			Zmax+=cell;
@@ -1281,9 +1389,9 @@ void MPMReadHandler::grid()
 	}
 	
 	double zparam,gridz = 0.;
-	if(DbleEqual(Rhoriz,1.) && DbleEqual(Rvert,1.) && (!fmobj->IsThreeD() || DbleEqual(Rdepth,1.)))
+	if(DbleEqual(Rhoriz,1.) && DbleEqual(Rvert,1.) && (!is3D || DbleEqual(Rdepth,1.)))
 	{   // Orthogonal, and all elements are the same size
-		if(fmobj->IsThreeD())
+		if(is3D)
 		{	zparam = Zmin;
 			gridz = (Zmax-Zmin)/(double)Ndepth;
 		}
@@ -1298,7 +1406,7 @@ void MPMReadHandler::grid()
 	else
 	{   // Orthogonal, but elements do not have equal sides in all dimensions
 		int gridType = VARIABLE_RECTANGULAR_GRID;
-		if(fmobj->IsThreeD())
+		if(is3D)
 		{	zparam = Zmin;
 			gridz = 1.0;
 			gridType = VARIABLE_ORTHOGONAL_GRID;
@@ -1312,7 +1420,7 @@ void MPMReadHandler::grid()
 	}
 	
 	// number of nodes and elements
-	if(fmobj->IsThreeD())
+	if(is3D)
 	{	nnodes=(Nhoriz+1)*(Nvert+1)*(Ndepth+1);
 		nelems=Nhoriz*Nvert*Ndepth;
 	}
@@ -1331,13 +1439,19 @@ void MPMReadHandler::grid()
 	nd = new (std::nothrow) NodalPoint *[nnodes+1];
 	if(nd==NULL) throw SAXException("Out of memory allocating space for nodes.");
 	
+	// space for active nodes (1 based, counter in 0) and set to all nodes for first step
+	nda = new (std::nothrow) int[nnodes+1];
+	if(nda==NULL) throw SAXException("Out of memory allocating space for active nodes.");
+	for(i=1;i<=nnodes;i++) nda[i] = i;
+	nda[0] = nnodes;
+
 	// space for elements (0 based)
 	curEl=0;
 	theElements = new (std::nothrow) ElementBase *[nelems];
 	if(theElements==NULL) throw SAXException("Out of memory allocating space for elements.");
 	
 	// create the elements
-	if(fmobj->IsThreeD())
+	if(is3D)
 	{	// create the nodes: vary x first, then y, last z
 		for(k=0;k<=Ndepth;k++)
 		{	zpt=Zmin+(double)k*(Zmax-Zmin)/(double)Ndepth;
@@ -1347,7 +1461,7 @@ void MPMReadHandler::grid()
 				{	xpt=Xmin+(double)i*(Xmax-Xmin)/(double)Nhoriz;
 					zpt=Zmin+(double)k*(Zmax-Zmin)/(double)Ndepth;
 					node=k*(Nhoriz+1)*(Nvert+1)+j*(Nhoriz+1)+(i+1);
-					nd[curPt]=new NodalPoint3D(node,xpt,ypt,zpt);
+					nd[curPt] = NodalPoint::Create3DNode(node,xpt,ypt,zpt);
 					curPt++;
 				}
 			}
@@ -1380,7 +1494,7 @@ void MPMReadHandler::grid()
 			for(i=0;i<=Nhoriz;i++)
 			{	xpt=Xmin+(double)i*(Xmax-Xmin)/(double)Nhoriz;
 				node=j*(Nhoriz+1)+(i+1);
-				nd[curPt]=new NodalPoint2D(node,xpt,ypt);
+				nd[curPt] = NodalPoint::Create2DNode(node,xpt,ypt);
 				curPt++;
 			}
 		}
@@ -1407,7 +1521,7 @@ void MPMReadHandler::grid()
 			for(i=0;i<=NhorizHalfCells;i++)
 			{	xpt=Xmin+(double)i*(Xmax-Xmin)/(double)NhorizHalfCells;
 				node=j*(NhorizHalfCells+1)+(i+1);
-				nd[curPt]=new NodalPoint2D(node,xpt,ypt);
+				nd[curPt] = NodalPoint::Create2DNode(node,xpt,ypt);
 				curPt++;
 			}
 		}
@@ -1431,7 +1545,6 @@ void MPMReadHandler::grid()
 		}
 	}
 }
-
 
 //-----------------------------------------------------------
 // Make sure axisymmetric has r=0 BCs
@@ -1468,22 +1581,22 @@ void MPMReadHandler::CreateSymmetryBCs()
 //-----------------------------------------------------------
 void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,int velID)
 {
-	// read grid parameters (min, max, and cell size in direction)
-	double gridmin,gridmax;
-	double gridsize = mpmgrid.FindMeshLineForBCs(axis,&gridmin,&gridmax);
+	// Find nnum = 1 to # of nodes in that axis for location of symmetry condition
+	//   gridout = element size outside the BC
+	//	 gridin = element size inside the BC
+	double gridout,gridin;
+	int nnum;
+	if(!mpmgrid.FindMeshLineForBCs(axis,gridsym,symdir,nnum,gridout,gridin))
+	{	if(fmobj->IsAxisymmetric() && symdir<0)
+			throw SAXException("Axisymetric grid that includes the origin does not have zero along a grid line.");
+		char msg[200];
+		char ax = 'x';
+		if(axis==Y_DIRECTION) ax = 'y';
+		if(axis==Z_DIRECTION) ax = 'z';
+		sprintf(msg,"Symmetry direction for %c axis at location %g is outside the grid, on grid edge, or not along a grid line.",ax,gridsym);
+		throw SAXException(msg);
+	}
 	
-	// find symmetry node location relative to edge of the grid
-	// nmin = -cells from symmetry plane to the edge
-	double nmin = symdir<0 ? (gridmin-gridsym)/gridsize : (gridsym-gridmax)/gridsize;
-	
-	// no need if does not reach that plane (i.e., gridsym<gridmin or gridsym>gridmax)
-	if(nmin>0.1*gridsize) return;
-	
-	// symmetry plane must be along grid line
-	double ntest = int(fabs(nmin)+.1);			// positive integer as a double
-	if(!DbleEqual(ntest,fabs(nmin)))
-		throw SAXException("Symmetry plane in a grid is not along a grid line.");
-
 	// remove current velocites at or beyond the symmetry plane
 	int i;
 	double ni;
@@ -1492,11 +1605,11 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 	while(nextBC != NULL)
 	{	i = nextBC->GetNodeNum();
 		if(axis==X_DIRECTION)
-			ni = (nd[i]->x-gridsym)/gridsize;
+			ni = (nd[i]->x-gridsym)/gridout;
 		else if(axis==Y_DIRECTION)
-			ni = (nd[i]->y-gridsym)/gridsize;
-		else if(axis==Z_DIRECTION)
-			ni = (nd[i]->z-gridsym)/gridsize;
+			ni = (nd[i]->y-gridsym)/gridout;
+		else
+			ni = (nd[i]->z-gridsym)/gridout;
 		if(symdir>0) ni = -ni;
 		if(ni<0.5 && nextBC->dir==axis)
 		{	// remove this velocity BC
@@ -1533,7 +1646,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 	
 	// create new ones at end of the list, with special case for each axis
 	if(axis==X_DIRECTION)
-	{	int node = int((gridsym-gridmin)/gridsize+.1) + 1;
+	{	int node = nnum;
 		while(node<=nnodes)
 		{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
 			NodalVelBC *newVelBC=new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
@@ -1561,7 +1674,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
                     newVelBC->SetID(velID);
 				
 					// reflected node
-					newVelBC->SetReflectedNode(node - symdir,1.);
+					newVelBC->SetReflectedNode(node - symdir,gridout/gridin);
 					
 					// link at the end
 					lastVelocityBC->SetNextObject(newVelBC);
@@ -1575,8 +1688,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 	}
 	
 	else if(axis==Y_DIRECTION)
-	{	int row = int((gridsym-gridmin)/gridsize+.1);			// zero based
-		int node,node0 = row*mpmgrid.yplane+1;
+	{	int node,node0 = (nnum-1)*mpmgrid.yplane+1;
 		while(node0<nnodes)
 		{	node = node0;
 			for(i=0;i<mpmgrid.yplane;i++)
@@ -1604,7 +1716,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
                     newVelBC->SetID(velID);
 					
 					// reflected node
-					newVelBC->SetReflectedNode(node - symdir*mpmgrid.yplane,1.);
+					newVelBC->SetReflectedNode(node - symdir*mpmgrid.yplane,gridout/gridin);
 				
 					// link at the end
 					lastVelocityBC->SetNextObject(newVelBC);
@@ -1621,8 +1733,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 	
     // must convert dof to Z_DIRECTION_INPUT when create nodal velocity BC
 	if(axis==Z_DIRECTION)
-	{	int rank = int((gridsym-gridmin)/gridsize+.1);			// zero based
-		int node = rank*mpmgrid.zplane + 1;
+	{	int node = (nnum-1)*mpmgrid.zplane + 1;
 		for(i=0;i<mpmgrid.zplane;i++)
 		{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
 			NodalVelBC *newVelBC=new NodalVelBC(node,Z_DIRECTION_INPUT,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
@@ -1648,7 +1759,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
                 newVelBC->SetID(velID);
 				
 				// reflected node
-				newVelBC->SetReflectedNode(node - symdir*mpmgrid.zplane,1.);
+				newVelBC->SetReflectedNode(node - symdir*mpmgrid.zplane,gridout/gridin);
 				
 				// link at the end
 				lastVelocityBC->SetNextObject(newVelBC);
@@ -1668,13 +1779,18 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 void SetMptAnglesFromFunctions(char *theAxes,double *theAngles,Vector *mpos,MPMBase *newMpt)
 {
 	int numRotations = (int)strlen(theAxes);
-	if(numRotations==0) return;
+	if(numRotations<=0) return;
 	
 	// evaluate each angle
 	double rotAngle[3];
+	
+	// this line eliminates grabage values flage in XCode analyze code
+	rotAngle[0]=rotAngle[1]=rotAngle[2] = 0.;
+	
+	// set angles avaiable
 	if(theAngles==NULL)
 	{	for(int i=0;i<numRotations;i++)
-			rotAngle[i]=FunctionValue(i+1,mpos->x,mpos->y,mpos->z,0.,0.,0.);
+			rotAngle[i]=Expression::FunctionValue(i+1,mpos->x,mpos->y,mpos->z,0.,0.,0.);
 	}
 	else
 	{	for(int i=0;i<numRotations;i++)

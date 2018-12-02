@@ -330,9 +330,9 @@ CustomTask *ReverseLoad::FinishForStep(bool &removeMe)
                 nextTraction=(MatPtTractionBC *)nextTraction->MakeConstantLoad(mtime);
         }
         
-        // reverse rigid particles at constant velocity
+        // reverse rigid contact and BC particles
         int p;
-        for(p=nmpmsNR;p<nmpms;p++)
+        for(p=nmpmsRB;p<nmpms;p++)
         {	RigidMaterial *mat = (RigidMaterial *)theMaterials[mpm[p]->MatID()];
             if(mat->IsConstantVelocity())
             {	if(style==REVERSE)

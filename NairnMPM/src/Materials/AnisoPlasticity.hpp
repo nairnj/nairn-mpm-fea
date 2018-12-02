@@ -15,32 +15,14 @@
 
 #include "Materials/Orthotropic.hpp"
 
+// plastic law properties
 typedef struct {
 	double aint;
-	double minush;
-} AnisoHardProperties;
-
-// plastic law properties
-typedef struct {
-	AnisoHardProperties hp;
+	double sAsmag;
 	Tensor dfds;
 	double dfCdf;
 	Tensor Cdf;
-	Tensor Cdf0;
-	double snorm;
 	ElasticProperties *ep;
-} LRAnisoPlasticProperties;
-
-// plastic law properties
-typedef struct {
-	AnisoHardProperties hp;
-	Tensor dfds;
-	double dfCdf;
-	Tensor Cdf;
-	Tensor Cdf0;
-	double snorm;
-	ElasticProperties ep;
-	double rzyx[6][6];			// 3D rotation matrix calcualted once per step
 } AnisoPlasticProperties;
 
 class AnisoPlasticity : public Orthotropic
@@ -49,8 +31,7 @@ class AnisoPlasticity : public Orthotropic
 		static int warnNonconvergence;
     
         // constructors and destructors
-		AnisoPlasticity();
-		AnisoPlasticity(char *matName);
+		AnisoPlasticity(char *,int);
 		
         // initialize
         virtual char *InputMaterialProperty(char *,int &,double &);
@@ -65,38 +46,21 @@ class AnisoPlasticity : public Orthotropic
 		virtual int AltStrainContains(void) const;
 		virtual ElasticProperties *GetElasticPropertiesPointer(void *) const;
 	
-		// Lare Rotation Methods
-		virtual void LRElasticConstitutiveLaw(MPMBase *,Matrix3,Matrix3,Matrix3,Matrix3,Matrix3 *,int,void *,ResidualStrains *) const;
-		virtual double GetMagnitudeHill(Matrix3 &,int) const;
-		virtual double LRSolveForLambdaAP(MPMBase *mptr,int,double,Matrix3 &,Matrix3 &,LRAnisoPlasticProperties *p) const;
-		virtual void LRGetDfCdf(Matrix3 &,int,LRAnisoPlasticProperties *p) const;
-		virtual void LRGetDfDsigma(Matrix3 &,int,LRAnisoPlasticProperties *p) const;
-		virtual void LRUpdateStress(Matrix3 &,Matrix3 &,double,int,LRAnisoPlasticProperties *p) const;
-		virtual double LRGetFkFromLambdak(MPMBase *,Matrix3 &,Matrix3 &,double,int,LRAnisoPlasticProperties *) const;
-		virtual void LRPrintFk(MPMBase *,Matrix3 &,Matrix3 &,double,int,LRAnisoPlasticProperties *,double,double) const;
-
-		// small rotation methods
-		virtual void SRConstitutiveLaw2D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
-		virtual void SRConstitutiveLaw3D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
-		virtual double GetMagnitudeRotatedHill(Tensor *,Tensor *,int,AnisoPlasticProperties *) const;
-		virtual double SolveForLambdaAP(MPMBase *mptr,int,double,Tensor *,AnisoPlasticProperties *p) const;
-		virtual void GetDfCdf(Tensor *,int,AnisoPlasticProperties *p) const;
-		virtual void GetDfDsigma(Tensor *,int,AnisoPlasticProperties *p) const;
-		virtual void UpdateStress(Tensor *,Tensor *,double,int,AnisoPlasticProperties *p) const;
-		virtual double GetFkFromLambdak(MPMBase *,Tensor *,Tensor *,double,int,AnisoPlasticProperties *) const;
-		virtual void SRPrintFk(MPMBase *,Tensor *,Tensor *,double,int,AnisoPlasticProperties *,double,double) const;
- 		
+		// Large Rotation Methods
+		virtual void LRElasticConstitutiveLaw(MPMBase *,Matrix3 &,Matrix3 &,Matrix3 &,Matrix3 &,Matrix3 &,int,void *,ResidualStrains *) const;
+		virtual Tensor SolveForPlasticIncrement(MPMBase *,int,double,Tensor &,AnisoPlasticProperties *) const;
+		virtual double GetMagnitudeHill(Tensor &,int) const;
+		virtual void GetDfDsigma(Tensor &,int,AnisoPlasticProperties *) const;
+		virtual void GetDfCdf(Tensor &,int,AnisoPlasticProperties *) const;
+	
 		// hardening term methods (move to hardening law class when want more hardening options)
-		virtual void UpdateTrialAlpha(MPMBase *,int,AnisoHardProperties *,int) const = 0;
-		virtual void UpdateTrialAlpha(MPMBase *,int,double,AnisoHardProperties *p,int) const = 0;
-		virtual double GetYield(AnisoHardProperties *p) const = 0;
-		virtual double GetDfAlphaDotH(MPMBase *,int,AnisoHardProperties *p) const = 0;
-		virtual void UpdatePlasticInternal(MPMBase *,int,AnisoHardProperties *p,int) const = 0;
+		virtual double GetYield(AnisoPlasticProperties *p) const = 0;
+		virtual double GetGPrime(AnisoPlasticProperties *) const = 0;
 		
    protected:
 		double syxx,syyy,syzz,tyyz,tyxz,tyxy;
 		double syxxred2,syyyred2,syzzred2,tyyzred2,tyxzred2,tyxyred2;		// equal to 1/yield^2 and reduced
-		double fTerm,gTerm,hTerm;
+		double fTerm,gTerm,hTerm,sigmaYref;
 
 };
 

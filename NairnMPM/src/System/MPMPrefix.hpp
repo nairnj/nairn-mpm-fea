@@ -19,15 +19,6 @@
 // crashed in the time step
 //#define LOG_PROGRESS
 
-// Define to test multiple patches, but not be in parallel
-// This overrides incompatiible omp calls but does not deactivate #pragma omp,
-// which therefore should be commented out. Also assume omp is enabled to
-// _OPENMP is defined, even though not being used
-//#define _OMPTEST
-
-// Activate debugging messages that look for nan in results that should always be valid numbers
-//#define CHECK_NAN
-
 // C includes
 #ifdef WINDOWS_EXE
 #include <stdio.h>
@@ -38,6 +29,8 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#include <string>
+#include <unordered_map>
 #ifdef USE_OPENMP
 #include <omp.h>
 #endif
@@ -48,6 +41,9 @@ using namespace std;
 
 // This includes all data types and some common headers
 #include "System/DataTypes.hpp"
+#ifdef LOG_PROGRESS
+#include "System/ArchiveData.hpp"
+#endif
 
 // math utilities
 #define fmin(a,b) (((a)>(b))?(b):(a))
@@ -98,6 +94,10 @@ enum { NO_CRACK=0,ABOVE_CRACK,BELOW_CRACK};
 #define QUADRATIC_CPDI 3
 #define UNIFORM_GIMP_AS 4
 #define LINEAR_CPDI_AS 5
+#define FINITE_GIMP 6
+#define BSPLINE_GIMP 7
+#define BSPLINE 8
+#define BSPLINE_CPDI 9
 
 
 

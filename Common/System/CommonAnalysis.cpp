@@ -68,15 +68,12 @@ void CommonAnalysis::StartResultsOutput(void)
 #endif
         << endl;
     
-         
     //--------------------------------------------------
     // Description
     PrintSection("ANALYSIS DESCRIPTION");
     cout << GetDescription() << endl;
-	
-	/* development flags
-	 *
-	 *	Current Flags in Use in MPM Code
+
+	/*	NairnMPM: Current Flags in Use
 	 *	 none
 	 *
 	 */
@@ -209,7 +206,7 @@ int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
     try
     {	XMLPlatformUtils::Initialize();
 	
-		//  Create a SAX parser object.
+		// Create a SAX parser object.
 		parser=XMLReaderFactory::createXMLReader();
 		
 		// Validation (first means yes or no, second means to skip if no DTD, even if yes)
@@ -340,11 +337,9 @@ char *CommonAnalysis::GetDescription(void) { return &description[1]; }
 
 // is it 3D analysis
 bool CommonAnalysis::IsThreeD(void) { return np==THREED_MPM; }
-bool CommonAnalysis::IsThreeD(int otherNp) { return otherNp==THREED_MPM; }
 
-// is it axisynmmetric (FEA or MPM)
+// is it axisymmetric (FEA or MPM)
 bool CommonAnalysis::IsAxisymmetric(void) { return np==AXI_SYM || np==AXISYMMETRIC_MPM; }
-bool CommonAnalysis::IsAxisymmetric(int otherNp) { return otherNp==AXI_SYM || otherNp==AXISYMMETRIC_MPM; }
 
 // string about MPM additions (when printing out analysis type
 const char *CommonAnalysis::MPMAugmentation(void) { return ""; }

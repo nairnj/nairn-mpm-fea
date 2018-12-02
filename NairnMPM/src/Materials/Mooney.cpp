@@ -14,13 +14,8 @@
 
 #pragma mark Mooney::Constructors and Destructors
 
-// Constructors
-Mooney::Mooney()
-{
-}
-
-// Constructors with arguments 
-Mooney::Mooney(char *matName) : HyperElastic(matName)
+// Constructor 
+Mooney::Mooney(char *matName,int matID) : HyperElastic(matName,matID)
 {
 	G1 = -1.;			// Must enter K and G1 OR Etens and nu
 	Etens = -1.;
@@ -102,12 +97,17 @@ char *Mooney::InputMaterialProperty(char *xName,int &input,double &gScaling)
 // verify settings and some initial calculations
 const char *Mooney::VerifyAndLoadProperties(int np)
 {
+	// Note that Etens and nu or input (or found here), but they
+	// are not used in any calculations. They are made consistent with
+	// Kbulk, G1, and G2, which are used (when made specific) in calculations.
+	
 	// must enter G1 and Kbulk OR Etens and nu
 	if(G1>=0. && Kbulk>=0.)
 	{	if(Etens>=0. || nu>=-1.)
 			return "Mooney-Rivlin Hyperelastic material needs K and G1 OR E and nu";
-		Etens = 9.*Kbulk*G1/(3.*Kbulk+G1);
-		nu = (3.*Kbulk-2.*G1)/(6.*Kbulk+2.*G1);
+		double Glow = G1+G2;
+		Etens = 9.*Kbulk*Glow/(3.*Kbulk+Glow);
+		nu = (3.*Kbulk-2.*Glow)/(6.*Kbulk+2.*Glow);
 	}
 	else if(G1>=0. || Kbulk>=0. || Etens<0. || nu<-1.)
 	{	return "Mooney-Rivlin Hyperelastic material needs K and G1 OR E and nu";
@@ -163,15 +163,8 @@ char *Mooney::InitHistoryData(char *pchr,MPMBase *mptr)
 	return (char *)p;
 }
 
-// archive material data for this material type when requested.
-double Mooney::GetHistory(int num,char *historyPtr) const
-{   double history=0.;
-    if(num>0 && num<=2)
-    {	double *J=(double *)historyPtr;
-        history = J[num-1];
-    }
-    return history;
-}
+// Number of history variables
+int Mooney::NumberOfHistoryDoubles(void) const { return 2; }
 
 #pragma mark Mooney::Methods
 
@@ -215,7 +208,7 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 		// In tests finds answer in 3 or less steps
 		Tensor *ep=mptr->GetStrainTensor();
 		double xn16,xn12,xnp1,xn = (1.+ep->zz)*(1.+ep->zz);
-		double fx,fxp,J13,J0,J2,Jeff;
+		double fx,fxp,J13,J0,Jeff;
 		int iter=1;
         double mJ2P,mdJ2PdJ;
         
@@ -230,7 +223,6 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 			xn12 = sqrt(xn);
 			J13 = xn16*arg16;
 			J0 = xn12*arg12;
-			J2 = J0*J0;
             Jeff = J0/Jres;
             
             // get f and df/dxn
@@ -357,7 +349,7 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 		}
 		dTq0 = -J*Kratio*gamma0*mptr->pPreviousTemperature*delV;
 	}
-	IncrementHeatEnergy(mptr,res->dT,dTq0,QAVred);
+	IncrementHeatEnergy(mptr,dTq0,AVEnergy);
 }
 
 #pragma mark Mooney::Accessors
@@ -372,11 +364,17 @@ Vector Mooney::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 // Copy stress to a read-only tensor variable
 // Subclass material can override, such as to combine pressure and deviatory stress into full stress
 Tensor Mooney::GetStress(Tensor *sp,double pressure,MPMBase *mptr) const
-{   Tensor stress = *sp;
-    stress.xx -= pressure;
-    stress.yy -= pressure;
-    stress.zz -= pressure;
-    return stress;
+{	return GetStressPandDev(sp,pressure,mptr);
+}
+
+// store a new total stress on a particle's stress and pressure variables
+void Mooney::SetStress(Tensor *spnew,MPMBase *mptr) const
+{	SetStressPandDev(spnew,mptr);
+}
+
+// Increment thickness (zz) stress through deviatoric stress and pressure
+void Mooney::IncrementThicknessStress(double dszz,MPMBase *mptr) const
+{	IncrementThicknessStressPandDev(dszz,mptr);
 }
 
 /// Calculate wave speed in L/sec (because K and G in mass/(L sec^2) and rho in mass/L^3)
@@ -421,5 +419,3 @@ double Mooney::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
 	}
 	return sqrt((Kratio*Kbulk+4.*(G1+G2)/3.)/rho);
 }
-
-

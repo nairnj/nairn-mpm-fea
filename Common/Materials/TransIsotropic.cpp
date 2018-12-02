@@ -18,15 +18,11 @@
 
 #pragma mark TransIsotropic::Constructors and Destructors
 
-// Constructors
-TransIsotropic::TransIsotropic() {}
-
-// Constructors
-TransIsotropic::TransIsotropic(char *matName,int matID) : Elastic(matName)
+// Constructor
+TransIsotropic::TransIsotropic(char *matName,int matID) : Elastic(matName,matID)
 {
     int i;
     
-	tiType=matID;
     for(i=0;i<ORTHO_PROPS;i++)
         read[i]=0;
     
@@ -35,6 +31,7 @@ TransIsotropic::TransIsotropic(char *matName,int matID) : Elastic(matName)
     aT=40;
 
 #ifdef MPM_CODE
+	// Here "A" is "y" when othotropic and "T" is "x"
 	diffA=0.;
 	diffT=0.;
 	kCondA=0.;
@@ -71,7 +68,7 @@ void TransIsotropic::PrintMechanicalProperties(void) const
 void TransIsotropic::PrintTransportProperties(void) const
 {
 	// Diffusion constants
-	if(DiffusionTask::active)
+	if(DiffusionTask::HasFluidTransport())
 	{	PrintProperty("Da",diffA,"mm^2/s");
 		PrintProperty("Dt",diffT,"mm^2/s");
 		PrintProperty("csat",concSaturation,"");
@@ -185,10 +182,10 @@ char *TransIsotropic::InputMaterialProperty(char *xName,int &input,double &gScal
     else if(strcmp(xName,"DT")==0)
         return((char *)&diffT);
 		
-    else if(strcmp(xName,"kCondA")==0)
+	else if(strcmp(xName,"kCondA")==0)
 		return UnitsController::ScaledPtr((char *)&kCondA,gScaling,1.e6);
-    
-    else if(strcmp(xName,"kCondT")==0)
+	
+	else if(strcmp(xName,"kCondT")==0)
 		return UnitsController::ScaledPtr((char *)&kCondT,gScaling,1.e6);
 #endif
     
@@ -255,7 +252,7 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 //		and in small rotation is 3D
 void TransIsotropic::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 {
-	// always track in 3D so transport properties does not need second decomposition
+	// always track in 3D so transport properties do not need second decomposition
 	if(np==THREED_MPM)
 		mptr->InitRtot(mptr->GetInitialRotation());
 	
@@ -442,6 +439,11 @@ void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecif
 		p->C[4][3]=cssn*(C13-C23);
 		p->C[4][4]=C33;
 		
+		// rotated S13,S23,and S36 for generalized plane stress or strain
+		p->C[5][1]=S13*c2+S23*s2;
+		p->C[5][2]=S13*s2+S23*c2;
+		p->C[5][3]=2.*(S13-S23)*cssn;
+		
 		p->alpha[5]=c2*prop1+s2*prop2;
 		p->alpha[6]=s2*prop1+c2*prop2;
 		p->alpha[7]=2.*cssn*(prop1-prop2);
@@ -477,6 +479,11 @@ void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecif
 		p->C[4][3]=0.;
 		p->C[4][4]=C33;
 		
+		// rotated S13,S23,and S36 for generalized plane stress
+		p->C[5][1]=S13;
+		p->C[5][2]=S23;
+		p->C[5][3]=0.;
+		
 		p->alpha[5]=prop1;
 		p->alpha[6]=prop2;
 		p->alpha[7]=0.;
@@ -510,6 +517,17 @@ void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecif
 			p->C[4][2]*=rrho;
 			p->C[4][3]*=rrho;
 			p->C[4][4]*=rrho;
+			// for generalized plane strain
+			p->C[5][1]/=S33;
+			p->C[5][2]/=S33;
+			p->C[5][3]/=S33;
+		}
+		else if(np==PLANE_STRESS_MPM)
+		{	// for generalized plane stress
+			p->C[4][4]*=rrho;
+			p->C[5][1]*=rho;
+			p->C[5][2]*=rho;
+			p->C[5][3]*=rho;
 		}
     }
 #endif
@@ -585,7 +603,7 @@ void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties 
 		double cssn=cs*sn;
 		
 		// diffusion and conductivity tensors = R.Tens.RT
-		if(DiffusionTask::active)
+		if(DiffusionTask::HasFluidTransport())
 		{	t->diffusionTensor.xx = diffA*s2 + diffT*c2;
 			t->diffusionTensor.yy = diffA*c2 + diffT*s2;
 			t->diffusionTensor.xy = (diffT-diffA)*cssn;
@@ -603,7 +621,7 @@ void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties 
 		Matrix3 *Rtot = mptr->GetRtotPtr();
 		Rtot->GetRStress(R);
 		
-		if(DiffusionTask::active)
+		if(DiffusionTask::HasFluidTransport())
 		{	double diffz = GetDiffZ();
 			t->diffusionTensor.xx = R[0][0]*diffT + R[0][1]*diffA + R[0][2]*diffz;
 			t->diffusionTensor.yy = R[1][0]*diffT + R[1][1]*diffA + R[1][2]*diffz;
@@ -630,7 +648,7 @@ void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties 
 #pragma mark TransIsotropic::Accessors
 
 // Return base axial direction
-int TransIsotropic::AxialDirection(void) const { return tiType==TRANSISO1 ? AXIAL_Z : AXIAL_Y; };
+int TransIsotropic::AxialDirection(void) const { return materialID==TRANSISO1 ? AXIAL_Z : AXIAL_Y; }
 
 // return material type
 const char *TransIsotropic::MaterialType(void) const
@@ -667,6 +685,10 @@ double TransIsotropic::MaximumDiffusivity(void) const { return fmax(kCondA,kCond
 // diffusion and conductivity in the z direction
 double TransIsotropic::GetDiffZ(void) const { return AxialDirection()==AXIAL_Z ? diffA : diffT; }
 double TransIsotropic::GetKcondZ(void) const { return AxialDirection()==AXIAL_Z ? kCondA : kCondT; }
+
+// not supported yet, need to deal with aniostropi properties
+bool TransIsotropic::SupportsDiffusion(void) const
+{	return DiffusionTask::HasPoroelasticity() ? false : true; }
 
 #endif
 

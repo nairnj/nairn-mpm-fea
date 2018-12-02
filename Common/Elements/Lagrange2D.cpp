@@ -219,6 +219,15 @@ void Lagrange2D::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
 	}
 }
 
+// get B2SPLINE shape functions and optionally derivatives wrt x and y, but derivatives only work
+// if it is a regular array. Shape functions are general
+// For axisymmetric MPM, make sure zDeriv is not NULL and load with shape function/rp
+void Lagrange2D::SplineShapeFunction(int *nds,Vector *xi,int getDeriv,double *sfxn,
+											double *xDeriv,double *yDeriv,double *zDeriv) const
+{
+	throw "B2SPLINE option not yet available for Langrange2D elements";
+}
+
 //	Find extent of this element - called once at start (and must be called)
 void Lagrange2D::FindExtent(void)
 {	
@@ -290,7 +299,7 @@ void Lagrange2D::FindExtent(void)
  
 	Only used in MPM
 */
-void Lagrange2D::GetXiPos(Vector *pos,Vector *xipos) const
+void Lagrange2D::GetXiPos(const Vector *pos,Vector *xipos) const
 {
 	// analytical solution for parallelograms
 	if(pgElement==PGRAM_ELEMENT)

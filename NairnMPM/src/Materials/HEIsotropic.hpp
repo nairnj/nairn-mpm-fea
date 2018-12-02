@@ -30,8 +30,7 @@ class HEIsotropic : public HyperElastic
 {
     public:
         // constructors and destructors
-		HEIsotropic();
-		HEIsotropic(char *matName);
+		HEIsotropic(char *,int);
 		
 		// initialize
         virtual char *InputMaterialProperty(char *,int &,double &);
@@ -40,7 +39,7 @@ class HEIsotropic : public HyperElastic
 	
 		// history data
 		virtual int SizeOfHistoryData(void) const;
-		virtual double GetHistory(int,char *) const;
+   		virtual int NumberOfHistoryDoubles(void) const;
 		virtual char *InitHistoryData(char *,MPMBase *);
 	
 		// const methods
@@ -62,6 +61,8 @@ class HEIsotropic : public HyperElastic
 		// accessors
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
         virtual Tensor GetStress(Tensor *,double,MPMBase *) const;
+		virtual void SetStress(Tensor *,MPMBase *) const;
+		virtual void IncrementThicknessStress(double,MPMBase *) const;
 		virtual const char *MaterialType(void) const;
 		virtual double WaveSpeed(bool,MPMBase *) const;
         virtual bool SupportsArtificialViscosity(void) const;

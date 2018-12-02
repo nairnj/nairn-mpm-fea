@@ -31,6 +31,8 @@ class ConductionTask : public TransportTask
 		virtual TransportTask *Initialize(void);
 	
 		// mass and momentum
+		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double,short,int);
+		virtual double GetVpCTp(MPMBase *);
 		virtual void ZeroTransportGradients(MPMBase *);
 		virtual void AddTransportGradients(MPMBase *,Vector *,NodalPoint *,short);
 	
@@ -45,7 +47,6 @@ class ConductionTask : public TransportTask
         // accessors
         virtual const char *TaskName(void);
         virtual TransportTask *TransportTimeStepFactor(int,double *);
-        virtual double GetTransportMassAndValue(MPMBase *,double *);
         virtual TransportField *GetTransportFieldPtr(NodalPoint *) const;
         virtual NodalValueBC *GetFirstBCPtr(void) const;
 		virtual MatPtLoadBC *GetFirstFluxBCPtr(void) const;

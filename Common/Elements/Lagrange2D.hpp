@@ -36,11 +36,12 @@ class Lagrange2D : public Quad2D
 #endif
 #ifdef MPM_CODE
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) const;
+		virtual void SplineShapeFunction(int *,Vector *,int,double *,double *,double *,double *) const;
 		virtual void FindExtent(void);
 		virtual int Orthogonal(double *,double *,double *);
 	
 		// const methods
-		virtual void GetXiPos(Vector *,Vector *) const;
+		virtual void GetXiPos(const Vector *,Vector *) const;
 #endif
 	
 };

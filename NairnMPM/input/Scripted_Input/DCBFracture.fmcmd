@@ -14,8 +14,8 @@ EndHeader
 
 #analysis$="Plane Strain MPM"
 Analysis #analysis$
-MPMMethod USAVG,"uGIMP"
-Processors 2
+MPMMethod "USAVG+","uGIMP"
+Processors 4
 
 ! ********** Parameters Section **********
 #cwidth=.5				! cell width

@@ -43,8 +43,8 @@ extern double mtime;
 
 #pragma mark CoupledSawTooth::Constructors and Destructors
 
-// Constructors with arguments 
-CoupledSawTooth::CoupledSawTooth(char *matName) : CohesiveZone(matName)
+// Constructor 
+CoupledSawTooth::CoupledSawTooth(char *matName,int matID) : CohesiveZone(matName,matID)
 {
 	// use mode I settings of superclass law
 }
@@ -92,7 +92,7 @@ char *CoupledSawTooth::InitHistoryData(char *pchr)
 #pragma mark CohesiveZone::Traction Law
 
 // Traction law - assume trianglar shape with unloading down slope back to the origin
-void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,double dx,double dy,double area)
+void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,Vector *n,Vector *t,double area)
 {
 	double Tn=0.,Tt=0.;
 	double *upeak =(double *)cs->GetHistoryData();
@@ -106,6 +106,7 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
         ReportDebond(mtime,cs,upeak[3]/(upeak[3]+upeak[4]),upeak[3]+upeak[4]);
         cs->tract.x = 0.;
         cs->tract.y = 0.;
+		cs->tract.z = 0.;
         return;
     }
     
@@ -141,10 +142,12 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
 		upeak[2] = abstCod;
 	}
 	
-	// force is traction times area projected onto x-y plane
-	cs->tract.x = area*(Tn*dy - Tt*dx);
-	cs->tract.y = area*(-Tn*dx - Tt*dy);
-	
+	// force is traction times area projected onto plane of unit vectors (units F)
+	// tract = -area*(Tn*n + Tt*t)
+	// In 2D, if t=(dx,dy), then n=(-dy,dx)
+	cs->tract.x = -area*(Tn*n->x + Tt*t->x);
+	cs->tract.y = -area*(Tn*n->y + Tt*t->y);
+	cs->tract.z = -area*(Tn*n->z + Tt*t->z);	
 }
 
 // return total energy (which is needed for path independent J) under traction law curve

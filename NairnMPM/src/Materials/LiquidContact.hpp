@@ -22,11 +22,10 @@ class LiquidContact : public CoulombFriction
 	public:
 	
 		// constructors and destructors
-		LiquidContact();
-		LiquidContact(char *matName);
+		LiquidContact(char *,int);
 	
 		// initialize
-		virtual char *InputMaterialProperty(char *,int &,double &);
+		virtual char *InputContactProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintContactLaw(void) const;
 	

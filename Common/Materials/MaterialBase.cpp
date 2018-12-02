@@ -27,14 +27,20 @@ int nmat=0;								// number of materials
 #pragma mark MaterialBase::Constructors and Destructors
 
 // Constructors
-MaterialBase::MaterialBase() {}
+MaterialBase::MaterialBase()
+{	// unknow material and nothing else gets set
+	name=new char[20];
+	strcpy(name,"UNKNOWN MATERIAL");
+	materialID = -1;
+}
 
 // Constructors
 // throws std::bad_alloc
-MaterialBase::MaterialBase(char *matName)
+MaterialBase::MaterialBase(char *matName,int matID)
 {
 	name=new char[strlen(matName)+1];
     strcpy(name,matName);
+	materialID = matID;
 	concSaturation=1.;
 	betaI=0.;
 	red=-1.;
@@ -175,6 +181,7 @@ void MaterialBase::PrintProperty(const char *text,bool rightJustify)
 }
 
     
-// return material type
+// return material type and ID
 const char *MaterialBase::MaterialType(void) const { return "Unknown Material Type"; }
+const int MaterialBase::MaterialID(void) const { return materialID; }
 

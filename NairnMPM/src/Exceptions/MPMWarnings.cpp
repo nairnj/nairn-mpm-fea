@@ -127,30 +127,45 @@ int MPMWarnings::Issue(int warnKind,int theID,char *comment)
 				tooManyIDs = true;
 		}
 	}
-	
-	// increment number of steps (first time on each step)
-	if(warn->thisStep) warn->numSteps++;
-    
-    // increment total number of warnings
-    warn->numWarnings++;
-	
-	// if first time in analysis, print message and force archiving
-	if((warn->numSteps==1 && warn->thisStep) || newID)
-	{	warn->firstStep=fmobj->mstep;
-		warnResult=GAVE_WARNING;
-		if(MPMTask::GetNumberOfThreads()>0)
-		{
+
+	// if in parallel, changes to warn object need to be critical
+	if(MPMTask::GetNumberOfThreads()>0)
+	{
 #pragma omp critical (output)
-			{	archiver->ForceArchiving();
+		{	// increment number of steps (first time on each step)
+			if(warn->thisStep) warn->numSteps++;
+			
+			// increment total number of warnings
+			warn->numWarnings++;
+			
+			// if first time in analysis, print message and force archiving
+			if((warn->numSteps==1 && warn->thisStep) || newID)
+			{	warn->firstStep=fmobj->mstep;
+				warnResult=GAVE_WARNING;
+				archiver->ForceArchiving();
 				cout << "# " << warn->msg;
 				if(theID>0) cout << " (ID=" << theID << ")";
 				if(tooManyIDs) cout << " (exceeded maximum allowed IDs)";
 				cout << endl;
 				if(comment!=NULL) cout << "#  " << comment << endl;
 			}
+			
+			// deactivate for this step
+			warn->thisStep = false;
 		}
-		else
-		{	archiver->ForceArchiving();
+	}
+	else
+	{	// increment number of steps (first time on each step)
+		if(warn->thisStep) warn->numSteps++;
+    
+		// increment total number of warnings
+		warn->numWarnings++;
+	
+		// if first time in analysis, print message and force archiving
+		if((warn->numSteps==1 && warn->thisStep) || newID)
+		{	warn->firstStep=fmobj->mstep;
+			warnResult=GAVE_WARNING;
+			archiver->ForceArchiving();
 			cout << "# " << warn->msg;
 			if(theID>0) cout << " (ID=" << theID << ")";
 			if(tooManyIDs) cout << " (exceeded maximum allowed IDs)";

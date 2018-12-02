@@ -15,13 +15,8 @@
 
 #pragma mark HillPlastic::Constructors and Destructors
 
-// Constructors
-HillPlastic::HillPlastic()
-{
-}
-
-// Constructors
-HillPlastic::HillPlastic(char *matName) : AnisoPlasticity(matName)
+// Constructor
+HillPlastic::HillPlastic(char *matName,int matID) : AnisoPlasticity(matName,matID)
 {
     // default value of hardening (elastic plastic)
 	Khard=0.;
@@ -66,46 +61,19 @@ char *HillPlastic::InitHistoryData(char *pchr,MPMBase *mptr)
 	return (char *)p;
 }
 
-// hardening history - equivalent plastic strain (absolute strain)
-double HillPlastic::GetHistory(int num,char *historyPtr) const
-{
-    double history=0.;
-	if(num==1)
-	{	double *h=(double *)historyPtr;
-		history=*h;
-	}
-    return history;
-}
+// Number of history variables
+int HillPlastic::NumberOfHistoryDoubles(void) const { return 1; }
 
 #pragma mark HillPlastic:Hardening Terms
 
-// Load current internal variables into local alpha variables
-void HillPlastic::UpdateTrialAlpha(MPMBase *mptr,int np,AnisoHardProperties *p,int offset) const
-{	p->aint = mptr->GetHistoryDble(0,offset);
-}
-
-// Update alpha: Here dalpha = alpha0 - lambdak h = alpha0 + lambdak*(-h)
-void HillPlastic::UpdateTrialAlpha(MPMBase *mptr,int np,double lambdak,AnisoHardProperties *p,int offset) const
-{	p->aint = mptr->GetHistoryDble(0,offset) + lambdak*p->minush;
-}
-
 // Return yield stress for current conditions (p->aint for cum. plastic strain and dalpha/delTime for plastic strain rate)
-double HillPlastic::GetYield(AnisoHardProperties *p) const
-{
-	return 1. + Khard*pow(p->aint,nhard);
+double HillPlastic::GetYield(AnisoPlasticProperties *p) const
+{	return 1. + Khard*pow(p->aint,nhard);
 }
 
-// Hardening term : find df^(alpha) . h = (-g'(alpha))*(-h)
-// Here g(alpha) = 1 + Khard alpha^nhard
-//    and therefore g'(alpha) = nhard Khard alpha^(nhard-1) or just Khard if nhard=1
-double HillPlastic::GetDfAlphaDotH(MPMBase *mptr,int np,AnisoHardProperties *p) const
-{	return DbleEqual(nhard,1.) ? Khard*p->minush :
-	Khard*nhard*pow(p->aint,nhard-1)*p->minush ;
-}
-
-// transfer final alpha variables to the material point
-void HillPlastic::UpdatePlasticInternal(MPMBase *mptr,int np,AnisoHardProperties *p,int offset) const
-{	mptr->SetHistoryDble(0,p->aint,offset);
+// Get g'(alpha)
+double HillPlastic::GetGPrime(AnisoPlasticProperties *p) const
+{	return DbleEqual(nhard,1.) ? Khard : Khard*nhard*pow(p->aint,nhard-1) ;
 }
 
 

@@ -23,6 +23,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "System/UnitsController.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
 
 // archiver global
 ArchiveData *archiver;
@@ -55,12 +56,12 @@ ArchiveData::ArchiveData()
 		strcat(defaultOrder,"N");
     SetCrackOrder(defaultOrder);
 	
-	timeStamp=NULL;			// pointer to header
-	propgationCounter=0;					// counts crack propagation
+	timeStamp = NULL;			// pointer to header
+	propgationCounter = 0;					// counts crack propagation
     
     // contact archive to coordinate with global contact archiving
-	lastArchiveContactStep=0;               // last time contact force was archived
-	doingArchiveContact=FALSE;
+	lastArchiveContactStep = 0;               // last time contact force was archived
+	doingArchiveContact = false;
  	contactForce = NULL;
  }
 
@@ -572,7 +573,8 @@ void ArchiveData::ArchivePointDimensions(void)
 		if(mpmgrid.IsStructuredEqualElementsGrid())
 		{	Vector grid = mpmgrid.GetCellSize();
 			for(p=0;p<nmpms;p++)
-			{	mpm[p]->GetDimensionlessSize(lp);
+			{
+				mpm[p]->GetDimensionlessSize(lp);
 				sprintf(nline,"%7d %g %g %g",p+1,lp.x*grid.x,lp.y*grid.y,lp.z*grid.z);
 				outfile << nline << endl;
 			}
@@ -610,9 +612,9 @@ void ArchiveData::ArchiveResults(double atime)
 	// increment for next archive time
 	nextArchTime += archTimes[archBlock];
 	if(archBlock+1<firstArchTimes.size())
-	{	if(nextArchTime>=firstArchTimes[archBlock+1])
+	{	if(nextArchTime > firstArchTimes[archBlock+1])
 		{	archBlock++;
-			nextArchTime = firstArchTimes[archBlock];
+			nextArchTime = atime + archTimes[archBlock];
 		}
 	}
 	
@@ -833,6 +835,7 @@ void ArchiveData::ArchiveResults(double atime)
         // ------- temperature (K)
         if(mpmOrder[ARCH_DeltaTemp]=='Y')
         {   *(double *)app=mpm[p]->pTemperature;
+			//*(double *)app=mpm[p]->pPreviousTemperature;
             app+=sizeof(double);
         }
         
@@ -885,6 +888,7 @@ void ArchiveData::ArchiveResults(double atime)
 		}
 		
 		// ------- concentration and gradients convert to wt fraction units using csat for this material
+		// for pore pressure it is poroelasticity
         if(mpmOrder[ARCH_Concentration]=='Y')
 		{	double csat=mpm[p]->GetConcSaturation();
 			
@@ -973,7 +977,8 @@ void ArchiveData::ArchiveResults(double atime)
 
 		// Particle spin momentum (Legacy Units J-sec)
 		if(mpmOrder[ARCH_SpinMomentum]=='Y')
-		{	Vector Lp = MakeVector(0.,0.,0.);
+		{
+			Vector Lp = MakeVector(0.,0.,0.);
 			double Lscale = 1.;
 			if(threeD)
 			{	*(double *)app=Lscale*Lp.x;
@@ -991,8 +996,11 @@ void ArchiveData::ArchiveResults(double atime)
 		
 		// Particle spin velocity (Legacy units 1/sec)
 		if(mpmOrder[ARCH_SpinVelocity]=='Y')
-		{	// angular velocity
+		{
+			// angular velocity
 			Vector wp = MakeVector(0.,0.,0.);
+			
+			// add to archive
 			if(threeD)
 			{	*(double *)app=wp.x;
 				app+=sizeof(double);
@@ -1643,6 +1651,13 @@ bool ArchiveData::PassedLastArchived(int qIndex,double criticalValue)
 	else
 		return lastArchived[qIndex] <= criticalValue;
 	
+}
+
+// get last archived value
+double ArchiveData::GetLastArchived(int qIndex)
+{	// if no archived yet say false or invalid
+	if(qIndex<0 || qIndex>=lastArchived.size()) return 0.;
+	return lastArchived[qIndex];
 }
 
 // Propgation Counter

@@ -13,7 +13,7 @@
 #pragma mark ImperfectInterface::Constructors and Destructors
 
 // Constructors
-ImperfectInterface::ImperfectInterface(char *matName) : MaterialBase(matName)
+ImperfectInterface::ImperfectInterface(char *matName,int matID) : MaterialBase(matName,matID)
 {
 	Dn=Dt=1.e15;
 }

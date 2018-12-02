@@ -15,20 +15,14 @@
 #include "stdafx.h"
 #include "Materials/NonlinearInterface.hpp"
 
-// To get method from my 2013 paper, define PAPERIMPINTMETHOD below and also
-// must define MANDMIMPINT in NodalPoint.hpp
-//#define PAPERIMPINTMETHOD
-
 extern double timestep;
 
 #pragma mark NonlinearInterface::Constructors and Destructors
 
-// Constructors
-NonlinearInterface::NonlinearInterface() {}
-
-NonlinearInterface::NonlinearInterface(char *matName) : LinearInterface(matName)
+// Constructor
+NonlinearInterface::NonlinearInterface(char *matName,int matID) : LinearInterface(matName,matID)
 {
-	order = 1;				// default to use higher-order method (0 is zeroth order, reset is 1)
+	order = 1;				// default to use higher-order method (0 is zeroth order, rest is 1)
 }
 
 #pragma mark LinearInterface::Initialization
@@ -36,7 +30,7 @@ NonlinearInterface::NonlinearInterface(char *matName) : LinearInterface(matName)
 // Read material properties by name (in xName). Set input to variable type
 // (DOUBLE_NUM or INT_NUM) and return pointer to the class variable
 // (cast as a char *)
-char *NonlinearInterface::InputMaterialProperty(char *xName,int &input,double &gScaling)
+char *NonlinearInterface::InputContactProperty(char *xName,int &input,double &gScaling)
 {
 	if(strcmp(xName,"order")==0)
 	{	input=INT_NUM;
@@ -44,7 +38,7 @@ char *NonlinearInterface::InputMaterialProperty(char *xName,int &input,double &g
 	}
 	
 	// does not all any from MaterialBase
-	return LinearInterface::InputMaterialProperty(xName,input,gScaling);
+	return LinearInterface::InputContactProperty(xName,input,gScaling);
 }
 
 // print contact law details to output window
@@ -58,7 +52,7 @@ void NonlinearInterface::PrintContactLaw(void) const
 	cout << endl;
 }
 
-#pragma mark LinearInterface:Step Methods
+#pragma mark NonlinearInterface:Step Methods
 
 // Contact handled here only for perfect interface parts (Dt or Dn < 0) by changing delPi
 //		if done return false (i.e., if perfect interface with trn=trt=0
@@ -79,144 +73,14 @@ void NonlinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *ra
 	//   if shear force limited leave alone, otherwise set to zero
 	//   if normal force limited, add normal back, otherwise leave alone
 	AddScaledVector(delPi,norm,-dPDotn);
-	
-	// Get shear (which is will always be positive because sign of tangent changes to accomodate it)
-	// Legacy units for force microN and displacement mm
-	
-#ifdef PAPERIMPINTMETHOD
-	
-	if(Dt>0.)
-	{	trt = Dt*deltaDott*surfaceArea;
-		double dPDott=sqrt(DotVectors(delPi,delPi));
-		double maxFt = 2.*(dPDott/timestep + mred*deltaDott/(timestep*timestep));
-		if(trt > maxFt)
-		{	// limit force and keep momentum change for tangential direction
-			trt = 0;
-			// keep delPi at stick conditions
-		}
-		else
-		{	// all done, have force, and energy
-			*rawEnergy += GetFtEnergy(deltaDott,trt);
-			
-			// remove shear stick
-			ZeroVector(delPi);
-		}
-	}
-	
-#else
-	
-	// Check for numerical stability
-	double d = GetFtPrime(deltaDott,surfaceArea)*timestep;
-	int response = CheckDtStability(d,m);
-	if(response!=STABLE)
-	{	// acceleration looks too high for stability, so revert to stick
-		trt = 0.;
-		// keep delPi for stick conditions, discard for debond
-		if(response==FORCE_DEBOND) ZeroVector(delPi);
-	}
-	else
-	{	// zeroth order
-		trt = GetFt(deltaDott,surfaceArea);
-
-		if(order!=0)
-		{	// new terms needed
-			double dPDott=sqrt(DotVectors(delPi,delPi));
-			double delFt = DotVectors(fImp,tangDel);
-			
-			// update discontinuity (to mean value over time step)
-			double dut1 = deltaDott - trt*timestep/(6.*m) + 0.5*dPDott/m - delFt*timestep/(3.*m);
-			
-			// Recheck for numerical stability
-			d = GetFtPrime(dut1,surfaceArea)*timestep;
-			response = CheckDtStability(d,m);
-			if(response!=STABLE)
-			{	// acceleration looks too high for stability, so revert to stick
-				trt = 0.;
-				/// keep delPi for stick conditions, discard for debond
-				if(response==FORCE_DEBOND) ZeroVector(delPi);
-			}
-			else
-			{	// adjusted force
-				trt = 0.5*(trt + GetFt(dut1,surfaceArea));
-				
-				// final discontinuity
-				double dut = deltaDott - trt*timestep/(2.*m) + dPDott/m - delFt*timestep/(2.*m);
-	
-				// Recheck for numerical stability
-				d = GetFtPrime(dut,surfaceArea)*timestep;
-				response = CheckDtStability(d,m);
-				if(response!=STABLE)
-				{	// acceleration looks too high for stability, so revert to stick
-					trt = 0.;
-					// keep delPi for stick conditions, discard for debond
-					if(response==FORCE_DEBOND) ZeroVector(delPi);
-				}
-				else
-				{	// all done, have force, and energy
-					*rawEnergy += GetFtEnergy(dut,trt);
-					// remove shear stick
-					ZeroVector(delPi);
-				}
-			}
-		}
-		else
-		{	// all done, have force, and energy
-			*rawEnergy += GetFtEnergy(deltaDott,trt);
-			// remove shear stick
-			ZeroVector(delPi);
-		}
-	}
-#endif
+	double dPDott=sqrt(DotVectors(delPi,delPi));
+	ZeroVector(delPi);
 	
 	// Get normal traction
-
-#ifdef PAPERIMPINTMETHOD
 	
-	// Get normal traction - but different separated or in contact
-	// Legacy units for force microN and displacement mm
-	if(deltaDotn>0.)
-	{	if(Dnt>=0.)
-		{   // normal direction in tension is imperfect
-			trn = Dnt*deltaDotn*surfaceArea;
-			double maxFn = 2.*(dPDotn/timestep + mred*deltaDotn/(timestep*timestep));
-			if(trn > maxFn)
-			{	// limit force and add normal momentum change back into delPi to make normal perfect
-				trn = 0;
-				AddScaledVector(delPi,norm,dPDotn);
-			}
-			else
-				*rawEnergy += 0.5*trn*deltaDotn;
-			
-		}
-		else
-		{   // normal direction in tension flagged perfect
-			// limit forces (trn already 0) and add normal momentum change back into delPi
-			AddScaledVector(delPi,norm,dPDotn);
-		}
-	}
-	else if(Dnc>=0.)
-	{	// normal direction in compression is imperfect
-		trn = Dnc*deltaDotn*surfaceArea;
-		double maxFn = 2.*(dPDotn/timestep + mred*deltaDotn/(timestep*timestep));
-		if(trn < maxFn)
-		{	// limit negative force and add normal momentum change back into delPi to make normal perfect
-			trn = 0;
-			AddScaledVector(delPi,norm,dPDotn);
-		}
-		else
-			*rawEnergy += 0.5*trn*deltaDotn;
-	}
-	else
-	{   // normal direction is compression and flagged as perfect
-		// limit forces (trn already 0) and add normal momentum change back into delPi
-		AddScaledVector(delPi,norm,dPDotn);
-	}
-	
-#else
-
-	// Check for numerical stability
-	d = GetFnPrime(deltaDotn,surfaceArea)*timestep;
-	response = CheckDnStability(d,m,deltaDotn);
+	// Check for numerical stability: (d/m) = F'dt^2/mred = phi^2 (see contactetc notes)
+	double d = GetFnPrime(deltaDotn,surfaceArea)*timestep;
+	int response = CheckDnStability(d,m,deltaDotn);
 	if(response!=STABLE)
 	{	// limit force and add normal momentum change back into delPi to make normal perfect
 		trn = 0.;
@@ -230,7 +94,7 @@ void NonlinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *ra
 		if(order!=0)
 		{	// new terms needed
 			double delFn = DotVectors(fImp,norm);
-		
+			
 			// update discontinuity
 			double dun1 = deltaDotn - trn*timestep/(6.*m) + 0.5*dPDotn/m - delFn*timestep/(3.*m);
 			
@@ -270,25 +134,87 @@ void NonlinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *ra
 			*rawEnergy += GetFnEnergy(deltaDotn,trn);
 		}
 	}
-#endif
+
+	// Get shear (which is will always be positive because sign of tangent changes to accomodate it)
+	// Legacy units for force microN and displacement mm
+	
+	// Check for numerical stability: (d/m) = F'dt^2/mred = phi^2 (see contactetc notes)
+	d = GetFtPrime(deltaDott,surfaceArea)*timestep;
+	response = CheckDtStability(d,m);
+	if(response!=STABLE)
+	{	// acceleration looks too high for stability, so revert to stick
+		trt = 0.;
+		// add back for stick, keep zero for debond
+		if(response==FORCE_STICK) AddScaledVector(delPi,tangDel,dPDott);
+	}
+	else
+	{	// zeroth order
+		trt = GetFt(deltaDott,surfaceArea);
+
+		if(order!=0)
+		{	// new terms needed
+			double delFt = DotVectors(fImp,tangDel);
+			
+			// update discontinuity (to mean value over time step)
+			double dut1 = deltaDott - trt*timestep/(6.*m) + 0.5*dPDott/m - delFt*timestep/(3.*m);
+			
+			// Recheck for numerical stability
+			d = GetFtPrime(dut1,surfaceArea)*timestep;
+			response = CheckDtStability(d,m);
+			if(response!=STABLE)
+			{	// acceleration looks too high for stability, so revert to stick
+				trt = 0.;
+				// add back for stick, keep zero for debond
+				if(response==FORCE_STICK) AddScaledVector(delPi,tangDel,dPDott);
+			}
+			else
+			{	// adjusted force
+				trt = 0.5*(trt + GetFt(dut1,surfaceArea));
+				
+				// final discontinuity
+				double dut = deltaDott - trt*timestep/(2.*m) + dPDott/m - delFt*timestep/(2.*m);
+	
+				// Recheck for numerical stability
+				d = GetFtPrime(dut,surfaceArea)*timestep;
+				response = CheckDtStability(d,m);
+				if(response!=STABLE)
+				{	// acceleration looks too high for stability, so revert to stick
+					trt = 0.;
+					// add back for stick, keep zero for debond
+					if(response==FORCE_STICK) AddScaledVector(delPi,tangDel,dPDott);
+				}
+				else
+				{	// all done, have force, and energy
+					*rawEnergy += GetFtEnergy(dut,trt);
+				}
+			}
+		}
+		else
+		{	// all done, have force, and energy
+			*rawEnergy += GetFtEnergy(deltaDott,trt);
+		}
+	}
+	
 	
 	// find (trn n + trt t) for force in cartesian coordinates
 	CopyScaleVector(fImp, norm, trn);
 	AddScaledVector(fImp, tangDel, trt);
 }
 
+#pragma mark NonlinearInterface::Law Implementation
+
 // Nonlinear subclasses only need to support follow methods for given interface law.
-// One set for tangential and one set for normal
+// One set for tangential and one set for normal.
 
 // check stability
 int NonlinearInterface::CheckDtStability(double d,double m) const
 {	// stick if set to perfect
 	if(Dt<0.) return FORCE_STICK;
 	
-	// see if stable (less then pi^2/2)
+	// see if stable (d/m < (pi/2)^2)
 	if(fabs(d) <= 2.467401100272340*m) return STABLE;
 	
-	// instable, but should it debond or stick
+	// unstable, but should it debond or stick
 	return d>0. ? FORCE_STICK : FORCE_DEBOND ;
 }
 
@@ -316,7 +242,7 @@ int NonlinearInterface::CheckDnStability(double d,double m,double delta) const
 	else if(Dnc<0.)
 		return FORCE_STICK;
 	
-	// see if stable (less then pi^2/2)
+	// see if stable (d/m < (pi/2)^2)
 	if(fabs(d) <= 2.467401100272340*m) return STABLE;
 	
 	// instable, but should it debond or stick
@@ -338,7 +264,7 @@ double NonlinearInterface::GetFnEnergy(double dun,double trn) const
 {	return 0.5*trn*dun;
 }
 
-#pragma mark LinearInterface::Accessors
+#pragma mark NonlinearInterface::Accessors
 
 // return unique, short name for this material
 const char *NonlinearInterface::MaterialType(void) const { return "Nonlinear Imperfect Interface"; }

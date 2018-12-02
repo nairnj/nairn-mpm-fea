@@ -9,8 +9,7 @@
 #include "stdafx.h"
 #include "Patches/GhostNode.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
-#include "Nodes/NodalPoint2D.hpp"
-#include "Nodes/NodalPoint3D.hpp"
+#include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
 #include "Exceptions/CommonException.hpp"
 
@@ -47,7 +46,7 @@ GhostNode::GhostNode(int row,int col,bool interiorRow,bool interiorCol)
 	
 	// create ghost node now
 	if(makeGhost)
-		ghost = new NodalPoint2D(real);
+		ghost = NodalPoint::CreateGhostFromReal(real);
 	else
 		ghost = NULL;
 		
@@ -102,7 +101,7 @@ GhostNode::GhostNode(int row,int col,int rank,bool interiorRow,bool interiorCol,
 	
 	// create ghost node now
 	if(makeGhost)
-		ghost = new NodalPoint3D(real);
+		ghost = NodalPoint::CreateGhostFromReal(real);
 	else
 		ghost = NULL;
 	
@@ -187,4 +186,8 @@ NodalPoint *GhostNode::GetNodePointer(void)
 		throw CommonException("double NULL ghost node","GhostNode::GetNodePointer");
 	return ghost!=NULL ? ghost : real ;
 }
+
+// return private variables as is
+NodalPoint *GhostNode::GetGhostNodePointer(void) { return ghost; }
+NodalPoint *GhostNode::GetRealNodePointer(void) { return real; }
 

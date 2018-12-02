@@ -47,7 +47,7 @@ class GlobalQuantity
 		bool IsSameQuantity(int,int,int);
 		
 		// class methods
-		static int DecodeGlobalQuantity(char *,int *);
+		static int DecodeGlobalQuantity(const char *,int *);
 	
 	private:
 		int whichMat;

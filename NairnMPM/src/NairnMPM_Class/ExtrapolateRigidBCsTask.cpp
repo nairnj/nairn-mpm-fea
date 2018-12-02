@@ -9,7 +9,7 @@
 	--------------
 	* This task only active if there are rigid BC particles and the
 	  simulation is to set them AFTER extrapolating to the grid
-	  (these are non contact rigid from nmpmsRC to nmpms)
+	  (these are from nmpmsRC to nmpms and excludes rigid block and contact particles)
 	* First loop extrapolates rigid vel, T, and c to nodes
 	* Second loop sets BCs on those nodes (and clears nodal values
 	  because they are used need on subsequent steps and this step
@@ -28,7 +28,6 @@
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
-#include "Custom_Tasks/DiffusionTask.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -69,14 +68,15 @@ void ExtrapolateRigidBCsTask::Execute(void)
 		MPMBase *mpmptr = mpm[p];
 		const RigidMaterial *rigid = (RigidMaterial *)theMaterials[mpmptr->MatID()];				// material object for this particle
 		
-		// get rigid particle velocity
+		// get rigid BC particle velocity
 		// Get directions set, others will be zero
+		// May not need to set to zero because setting BC will ignore those direction anyway
 		setFlags = rigid->SetDirection();
 		ZeroVector(&rvel);
-		if(rigid->GetVectorSetting(&rvel,hasDir,mtime,&mpmptr->pos))
-		{	if(hasDir[0]) mpmptr->vel.x = rvel.x;
-			if(hasDir[1]) mpmptr->vel.y = rvel.y;
-			if(hasDir[2]) mpmptr->vel.z = rvel.z;
+		if(rigid->GetVectorSetting(&mpmptr->vel,hasDir,mtime,&mpmptr->pos))
+		{	if(hasDir[0]) rvel.x = mpmptr->vel.x;
+			if(hasDir[1]) rvel.y = mpmptr->vel.y;
+			if(hasDir[2]) rvel.z = mpmptr->vel.z;
 		}
 		else
 		{	if(setFlags&CONTROL_X_DIRECTION) rvel.x = mpmptr->vel.x;
@@ -91,7 +91,7 @@ void ExtrapolateRigidBCsTask::Execute(void)
 		}
 		
 		// concentration
-		if(rigid->RigidConcentration() && DiffusionTask::active)
+		if(rigid->RigidConcentration() && fmobj->HasFluidTransport())
 		{	setFlags += CONTROL_CONCENTRATION;
 			if(rigid->GetValueSetting(&concValue,mtime,&mpmptr->pos)) mpmptr->pConcentration = concValue;
 		}

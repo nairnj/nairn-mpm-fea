@@ -17,7 +17,7 @@
 #include "Elements/ElementBase.hpp"
 #include "Read_MPM/MpsController.hpp"
 #include "System/ArchiveData.hpp"
-#include "Read_XML/mathexpr.hpp"
+#include "Read_XML/Expression.hpp"
 
 extern char *angleExpr[3];
 extern char rotationAxes[4];
@@ -62,7 +62,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	
 	// read image file
 	char *bmpFullPath=archiver->ExpandOutputPath(bmpFileName);
-	rows = (unsigned char **)ReadXYFile(bmpFullPath,info,BYTE_DATA);
+	rows = (unsigned char **)ReadXYFile(bmpFullPath,info,BYTE_DATA,true);
 	delete [] bmpFullPath;
 	
 	// angle file name (overrides other angle settings)
@@ -75,7 +75,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		// first file always there
 		XYInfoHeader angleInfo;
 		char *bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[0]);
-		angleRows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA);
+		angleRows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA,true);
 		if(info.height!=angleInfo.height || info.width!=angleInfo.width)
 			throw SAXException(XYFileError("The image file and first angle file sizes do not match.",bmpFileName));
 		delete [] bmpFullAnglePath;
@@ -86,7 +86,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		
 		if(fileRotations>1)
 		{	bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[1]);
-			angle2Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA);
+			angle2Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA,true);
 			if(info.height!=angleInfo.height || info.width!=angleInfo.width)
 				throw SAXException(XYFileError("The image file and second angle file sizes do not match.",bmpFileName));
 			delete [] bmpFullAnglePath;
@@ -100,7 +100,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		
 		if(fileRotations>2)
 		{	bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[2]);
-			angle3Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA);
+			angle3Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA,true);
 			if(info.height!=angleInfo.height || info.width!=angleInfo.width)
 				throw SAXException(XYFileError("The image file and second angle file sizes do not match.",bmpFileName));
 			delete [] bmpFullAnglePath;
@@ -115,11 +115,8 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	else if(numRotations>0)
 	{	int i;
 		for(i=0;i<numRotations;i++)
-		{	char *expr=new char[strlen(angleExpr[i])+1];
-			strcpy(expr,angleExpr[i]);
-			if(!CreateFunction(expr,i+1))
+		{	if(!Expression::CreateFunction(angleExpr[i],i+1))
 				throw SAXException("Invalid angle expression was provided in <RotateX(YZ)> command.");
-			delete [] expr;
 		}
 	}
 	
@@ -147,7 +144,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
         1. Will need copy of levels for each block (or pass copy of weight to BMPLevel methods)
             see BMPLevel methods: ClearWeight(),Material(double,double), MaximumWeight(double)
         2. mpCtrl->AddMaterialPoint() will need critical block
-        3. FunctionValue() when setting angles uses globals they are problem for parallel
+        3. FunctionMValue() when setting angles uses globals they are problem for parallel
     */
 	
 	// scan mesh and assign material points or angles
@@ -161,7 +158,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
             // load point coordinates
             elem->MPMPoints(fmobj->ptsPerElement,mpos);
         
-            // particle size withing volume of the element
+            // particle size within volume of the element
 			Vector del;
             del.x=(elem->GetDeltaX())/semiscale;
             del.y=(elem->GetDeltaY())/semiscale;
@@ -254,7 +251,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	for(int ii=0;ii<numRotations;ii++)
 	{	delete [] angleExpr[ii];
 	}
-	DeleteFunction(-1);
+	Expression::DeleteFunction(-1);
 		
 }
 

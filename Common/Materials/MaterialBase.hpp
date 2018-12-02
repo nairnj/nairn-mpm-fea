@@ -39,6 +39,7 @@ enum { NO_PROPAGATION=0,MAXHOOPSTRESS,STEADYSTATEGROWTH,DELETED_TOTALENERGYBALAN
        STRAINENERGYDENSITY,EMPIRICALCRITERION,MAXCTODCRITERION,CRITICALERR };
 enum { DEFAULT_DIRECTION=0,SELF_SIMILAR,NORMAL_TO_COD,HOOP_FROM_COD,INITIAL_DIRECTION };
 enum { SOLID_MAT=0,MEMBRANE_MAT,TRACTION_MAT,CONTACT_MAT };
+enum { CURRENT_CONFIGURATION=0,INITIAL_CONFIGURATION,INITIALMATERIAL};
 
 // NOTHING:							alt strain is not used
 // ENG_BIOT_PLASTIC_STRAIN:			small strain plasticity it biot plastic strain in alt strain to total strain
@@ -81,7 +82,7 @@ class MaterialBase : public LinkedObject
         
         // constructors and destructors
         MaterialBase();
-        MaterialBase(char *);
+        MaterialBase(char *,int);
 		virtual ~MaterialBase();
 		
 		// initialization and verification
@@ -93,6 +94,7 @@ class MaterialBase : public LinkedObject
 		virtual int SizeOfHistoryData(void) const;
 		virtual char *InitHistoryData(char *);
 		virtual char *InitHistoryData(char *,MPMBase *mptr);
+   		virtual int NumberOfHistoryDoubles(void) const;
 		virtual double GetHistory(int,char *) const;
 		double *CreateAndZeroDoubles(char *,int) const;
 		virtual Vector GetDamageNormal(MPMBase *,bool) const;
@@ -121,16 +123,18 @@ class MaterialBase : public LinkedObject
 		virtual double GetHeatCapacity(MPMBase *) const;
 		virtual double GetCpHeatCapacity(MPMBase *) const;
 		virtual double GetCpMinusCv(MPMBase *) const;
-        virtual void IncrementHeatEnergy(MPMBase *,double,double,double) const;
+		virtual double GetDiffusionCT(void) const;
+        virtual void IncrementHeatEnergy(MPMBase *,double,double) const;
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
 		virtual double GetIncrementalResJ(MPMBase *,ResidualStrains *) const;
+    	virtual Matrix3 LRGetStrainIncrement(int,MPMBase *,Matrix3,Matrix3 *,Matrix3 *,Matrix3 *,Matrix3 *) const;
 #else
 		virtual void LoadMechanicalPropertiesFEA(int,double,int);
 #endif
 
 		// Methods (base class only)
 #ifdef MPM_CODE
-		void Hypo2DCalculations(MPMBase *,double,double,double,double,double) const;
+		void Hypo2DCalculations(MPMBase *,double,double,double,double) const;
 		void Hypo3DCalculations(MPMBase *,double,double,double,double *) const;
 #endif
 
@@ -150,6 +154,7 @@ class MaterialBase : public LinkedObject
 
 		// accessors
 		virtual const char *MaterialType(void) const;
+		virtual const int MaterialID(void) const;
 #ifdef MPM_CODE
 		virtual double GetRho(MPMBase *) const;
         virtual double WaveSpeed(bool,MPMBase *) const = 0;
@@ -157,9 +162,10 @@ class MaterialBase : public LinkedObject
         virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;
 		virtual double MaximumDiffusion(void) const;
         virtual double MaximumDiffusivity(void) const;
-		virtual bool Rigid(void) const;
-		virtual short RigidBC(void) const;
-		virtual short RigidContact(void) const;
+		virtual bool IsRigid(void) const;
+		virtual bool IsRigidBC(void) const;
+		virtual bool IsRigidContact(void) const;
+		virtual bool IsRigidBlock(void) const;
 		virtual int MaterialStyle(void) const;
 		virtual int KeepsCrackTip(void) const;
 		virtual void SetFriction(int,int);
@@ -167,9 +173,10 @@ class MaterialBase : public LinkedObject
 		virtual void ContactOutput(int);
         virtual double GetArtificalViscosity(double,double,MPMBase *) const;
 		virtual bool SupportsArtificialViscosity(void) const;
+		virtual bool SupportsDiffusion(void) const;
 		virtual int GetShareMatField(void) const;
 		virtual int AltStrainContains(void) const;
-		virtual double GetConcSaturation(MPMBase *) const;
+		virtual double GetMaterialConcentrationSaturation(MPMBase *) const;
 		virtual double GetMGEOSXmax(double,double,double,double,double &);
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
@@ -182,15 +189,20 @@ class MaterialBase : public LinkedObject
 		int GetActiveField(void) const;
 		virtual double GetCurrentRelativeVolume(MPMBase *,int) const;
         virtual Tensor GetStress(Tensor *,double,MPMBase *) const;
+		virtual void SetStress(Tensor *,MPMBase *) const;
+		virtual void IncrementThicknessStress(double,MPMBase *) const;
+		virtual Tensor GetStressPandDev(Tensor *,double,MPMBase *) const;
+		virtual void SetStressPandDev(Tensor *,MPMBase *) const;
+		virtual void IncrementThicknessStressPandDev(double,MPMBase *) const;
 	
 		// material damping
 		virtual void SetDamping(double,double);
 		virtual double GetMaterialDamping(double &,double &,double,double) const;
     
-        // for liquid contact
-        virtual double GetViscosity(double) const;
-        virtual double BracketContactLawShearRate(double,double,double &,double &,double &,double &) const;
-    
+		// for liquid contact
+		virtual double GetViscosity(double) const;
+		virtual double BracketContactLawShearRate(double,double,double &,double &,double &,double &) const;
+	
         // material in cracks
         virtual int AllowsCracks(void) const;
 #endif
@@ -207,6 +219,7 @@ class MaterialBase : public LinkedObject
 #endif
 		
 	protected:
+		int materialID;
 		double rho;
 		double concSaturation,betaI;	// not used in FEA, but needed for compiling
 #ifdef MPM_CODE
@@ -214,7 +227,8 @@ class MaterialBase : public LinkedObject
         bool artificialViscosity;       // true to false for artifical viscosity
         double avA1,avA2;               // artificial viscosity coefficients
 		TransportProperties tr;			// transport tensors
-		double diffusionCon,kCond;			// for isotropic properties
+		double diffusionCon,kCond;		// for isotropic properties
+		double diffusionCT;				// eta*alpha and eta/Q for poroelasticity
 		ContactPair *lastFriction;
 		double matPdamping,matFractionPIC;		// particle damping
 		bool matUsePDamping;                // true it particle damping or PIC damping changed in this material
@@ -224,6 +238,7 @@ class MaterialBase : public LinkedObject
 	
 		// constants (changed in MPM time step)
 		double C11,C12,C13,C22,C23,C33,C44,C55,C66;
+		double S13,S23,S33;						// for generalized plane stress and strain
 		double CTE1,CTE2,CTE3;
 #ifdef MPM_CODE
 		double CME1,CME2,CME3;

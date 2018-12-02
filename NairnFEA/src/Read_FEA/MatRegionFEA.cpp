@@ -16,7 +16,7 @@
 #include "Read_XML/LineController.hpp"
 #include "Read_XML/ArcController.hpp"
 #include "Elements/ElementBase.hpp"
-#include "Read_XML/mathexpr.hpp"
+#include "Read_XML/Expression.hpp"
 
 static int regionMatNum;
 static double regionThick;
@@ -68,7 +68,7 @@ short FEAReadHandler::MatRegionInput(char *xName,const Attributes& attrs)
         
         // create function if being used
         if(regionAngleExpr!=NULL)
-        {	if(!CreateFunction(regionAngleExpr))
+		{	if(!Expression::CreateFunction(regionAngleExpr,1))
                 throw SAXException("The expression for material angle is not a valid function");
         }
     }
@@ -240,7 +240,7 @@ void FEAReadHandler::SetRegionElements(void)
         if(regionAngleExpr!=NULL)
         {   Vector midPt;
             elem->GetXYZCentroid(&midPt);
-            angle=FunctionValue(1,midPt.x,midPt.y,0.,0.,0.,0.);
+			angle=Expression::FunctionValue(1,midPt.x,midPt.y,0.,0.,0.,0.);
         }
         
         // assign material, thickness, an angle
