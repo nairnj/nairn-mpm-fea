@@ -37,6 +37,7 @@
 		6736CBF21AB74C5B0009A663 /* UnitsController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6736CBEF1AB74C5B0009A663 /* UnitsController.cpp */; };
 		6736CBF31AB74C5B0009A663 /* UnitsController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6736CBF01AB74C5B0009A663 /* UnitsController.hpp */; };
 		6736CBF41AB74C5B0009A663 /* UnitsController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6736CBF01AB74C5B0009A663 /* UnitsController.hpp */; };
+		6738040D21B4B13500A295C9 /* CompareGlobal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6738040921B4B12200A295C9 /* CompareGlobal.cpp */; };
 		673EC9B616C9EB71007FFEB5 /* CarnotCycle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 673EC9B416C9EB71007FFEB5 /* CarnotCycle.cpp */; };
 		673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */; };
 		6741B24817EDFF1300CFADC7 /* PressureLaw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6741B24617EDFF1300CFADC7 /* PressureLaw.cpp */; };
@@ -492,6 +493,9 @@
 		6727B3CF19E19853006D93EC /* CrossedCrack.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CrossedCrack.hpp; sourceTree = "<group>"; };
 		6736CBEF1AB74C5B0009A663 /* UnitsController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UnitsController.cpp; sourceTree = "<group>"; };
 		6736CBF01AB74C5B0009A663 /* UnitsController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = UnitsController.hpp; sourceTree = "<group>"; };
+		6738040821B4B0DA00A295C9 /* CompareGlobal */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CompareGlobal; sourceTree = BUILT_PRODUCTS_DIR; };
+		6738040921B4B12200A295C9 /* CompareGlobal.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CompareGlobal.cpp; path = ../../NairnMPM/tools/CompareGlobal.cpp; sourceTree = "<group>"; };
+		6738040A21B4B12200A295C9 /* CompareGlobal.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = CompareGlobal.hpp; path = ../../NairnMPM/tools/CompareGlobal.hpp; sourceTree = "<group>"; };
 		673B31CF1636F6CC00FB27DA /* MatPointAS.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPointAS.cpp; sourceTree = "<group>"; };
 		673B31D11636F6E400FB27DA /* MatPointAS.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPointAS.hpp; sourceTree = "<group>"; };
 		673EC9B416C9EB71007FFEB5 /* CarnotCycle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CarnotCycle.cpp; sourceTree = "<group>"; };
@@ -854,6 +858,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		6738040521B4B0DA00A295C9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A72A90C70CD2ADA5001DCFA8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -935,6 +946,7 @@
 				A766706705862EB600F56460 /* NairnMPM */,
 				A76673CA05863A1700F56460 /* NairnFEA */,
 				A72A90C90CD2ADA5001DCFA8 /* ExtractMPM */,
+				6738040821B4B0DA00A295C9 /* CompareGlobal */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1164,6 +1176,8 @@
 		A72A90CC0CD2ADC0001DCFA8 /* Tools */ = {
 			isa = PBXGroup;
 			children = (
+				6738040A21B4B12200A295C9 /* CompareGlobal.hpp */,
+				6738040921B4B12200A295C9 /* CompareGlobal.cpp */,
 				A72A90D00CD2ADFB001DCFA8 /* ExtractMPM.hpp */,
 				A72A90CF0CD2ADFB001DCFA8 /* ExtractMPM.cpp */,
 				524A4A691EE0B1F600DE607E /* makefile */,
@@ -1865,6 +1879,22 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		6738040221B4B0DA00A295C9 /* CompareGlobal */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6738040621B4B0DA00A295C9 /* Build configuration list for PBXNativeTarget "CompareGlobal" */;
+			buildPhases = (
+				6738040321B4B0DA00A295C9 /* Sources */,
+				6738040521B4B0DA00A295C9 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CompareGlobal;
+			productName = ExtractMPM;
+			productReference = 6738040821B4B0DA00A295C9 /* CompareGlobal */;
+			productType = "com.apple.product-type.tool";
+		};
 		A72A90C80CD2ADA5001DCFA8 /* ExtractMPM */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A72A90CD0CD2ADC0001DCFA8 /* Build configuration list for PBXNativeTarget "ExtractMPM" */;
@@ -1943,6 +1973,7 @@
 				A766701A05862EB600F56460 /* NairnMPM */,
 				A766739C05863A1700F56460 /* NairnFEA */,
 				A72A90C80CD2ADA5001DCFA8 /* ExtractMPM */,
+				6738040221B4B0DA00A295C9 /* CompareGlobal */,
 			);
 		};
 /* End PBXProject section */
@@ -1965,6 +1996,14 @@
 /* End PBXRezBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		6738040321B4B0DA00A295C9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6738040D21B4B13500A295C9 /* CompareGlobal.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A72A90C60CD2ADA5001DCFA8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2225,16 +2264,23 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		6738040721B4B0DA00A295C9 /* Default */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
+				INSTALL_PATH = "$(HOME)/bin";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Default;
+		};
 		A72A90CE0CD2ADC0001DCFA8 /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
-				ENABLE_OPENMP_SUPPORT = NO;
-				GCC_MODEL_TUNING = G5;
 				INSTALL_PATH = "$(HOME)/bin";
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = ExtractMPM;
-				ZERO_LINK = NO;
 			};
 			name = Default;
 		};
@@ -2242,7 +2288,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
-				CC = "/opt/local/bin/clang-mp-4.0";
 				CODE_SIGN_IDENTITY = "";
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = s;
@@ -2259,7 +2304,7 @@
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "-fopenmp";
 				OTHER_LDFLAGS = "-fopenmp";
 				PRODUCT_NAME = NairnMPM;
@@ -2273,9 +2318,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
-				CC = "/opt/local/bin/clang-mp-4.0";
 				CODE_SIGN_IDENTITY = "";
-				ENABLE_OPENMP_SUPPORT = "";
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_PREFIX_HEADER = ../../NairnFEA/src/System/FEAPrefix.hpp;
@@ -2291,12 +2334,12 @@
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "-fopenmp";
 				OTHER_LDFLAGS = "-fopenmp";
 				PRODUCT_NAME = NairnFEA;
 				SECTORDER_FLAGS = "";
-				VALID_ARCHS = "i386 x86_64";
+				VALID_ARCHS = x86_64;
 				WARNING_CFLAGS = "";
 			};
 			name = Default;
@@ -2305,22 +2348,31 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
-				CC = "/opt/local/bin/clang-mp-4.0";
+				CC = "/opt/local/bin/clang-mp-7.0";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CODE_SIGN_IDENTITY = "";
 				GCC_VERSION = "";
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				LDPLUSPLUS = "/opt/local/bin/clang++-mp-7.0";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_LDFLAGS = "-fopenmp";
 				SDKROOT = macosx;
-				VALID_ARCHS = "i386 x86_64";
+				VALID_ARCHS = x86_64;
 			};
 			name = Default;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		6738040621B4B0DA00A295C9 /* Build configuration list for PBXNativeTarget "CompareGlobal" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6738040721B4B0DA00A295C9 /* Default */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Default;
+		};
 		A72A90CD0CD2ADC0001DCFA8 /* Build configuration list for PBXNativeTarget "ExtractMPM" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

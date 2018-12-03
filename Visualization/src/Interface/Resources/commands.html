@@ -102,6 +102,7 @@ table { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-R
 <li><a href="#mmmode">Multimaterial MPM</a> commands</li>
 <li><a href="#thermal">Thermal Calculation</a> commands</li>
 <li><a href="#conc">Diffusion Calculation</a> command</li>
+<li><a href="#poro">Poroelasticity Calculation</a> command</li>
 <li><a href="#bconds">Boundary Condition</a> commands</li>
 <li><a href="#gravity">Gravitational Field</a> commands</li>
 <li><a href="#custom">Custom Task</a> commands</li>
@@ -445,13 +446,25 @@ to include those results in output FEA results file. The second of each pair (<i
 
 <ul>
 <li><code>MPMMethod (update),&lt;(method)&gt;</code><br>
-Select MPM methods for the calculations. <code>(update)</code> is the update method and it can be USF, USAVG (same as USAVG+) or USL (same as USL+ or SZS), or USAVG-, or USL-. <code>(method)</code> is the shape functions method and it can be uGIMP (or GIMP), lCPDI (or CPDI), qCPDI, or Classic (or Dirac).</li>
+Select MPM methods for the calculations. <code>(update)</code> is the update
+method and it can be USF, USAVG (same as USAVG+) or USL (same as USL+ or SZS),
+or USAVG-, or USL-. <code>(method)</code> selects the shape functions method
+and it can be uGIMP (or GIMP), lCPDI (or CPDI), qCPDI, B2Spline, B2GIMP, B2CPDI, or Classic (or Dirac).</li>
 
 <li><code>TimeStep (step),&lt;(max)&gt;,&lt;(factor)&gt;</code><br>
-Set MPM time step parameters. <code>(step)</code> is the time step in <a href="#units">alt time units</a> (choose a high number to have the code pick time step based on material properties). Optional <code>(max)</code> is the maximum time to stop the calculations in <a href="#units">alt time units</a> (which can also be set in the <a href="#maximumtime">MaximumTime command</a>). Optional <code>(factor)</code> is the Courant-Friedrichs-Levy safety factor for the code to adjust the time step (which can also be set in the <a href="#cflfactor">CFLFactor command</a>).</li>
+Set MPM time step parameters. <code>(step)</code> is the time step in <a href="#units">alt time units</a>
+(choose a high number to have the code pick time step based on material properties).
+Optional <code>(max)</code> is the maximum time to stop the calculations
+in <a href="#units">alt time units</a> (which can also be set in
+the <a href="#maximumtime">MaximumTime command</a>).
+The optional <code>(factor)</code> is the Courant-Friedrichs-Levy safety factor for
+the code to adjust the time step
+(which can also be set in the <a href="#cflfactor">CFLFactor command</a>).</li>
 
-<li><a name="cflfactor"></a><code>CFLFactor (factor)</code><br>
-Set the Courant-Friedrichs-Levy safety factor for the code to adjust the time step (the default is 0.5; it should be less then 1 and often needs to be less than 0.5).</li>
+<li><a name="cflfactor"></a><code>CFLFactor (factor),&lt;(transFactor)&gt;</code><br>
+Sets the Courant-Friedrichs-Levy safety factors for the code to adjust the time step. The first parameter
+is for mechanics calculations while the second (optional) parameter is for transport equations. The defaults are both 0.5;
+they should be less then 1 and may need to be less than 0.5.</li>
 
 <li><a name="maximumtime"></a><code>MaximumTime (max)</code><br>
 Set time the MPM calculations will stop in <a href="#units">alt time units</a>.</li>
@@ -482,7 +495,7 @@ Select options for alternative damping of MPM particle velocities. The two comma
 
 <ul>
 <li><code>ExtrapolateRigid &lt;(option)&gt;</code><br>
-When this option is activated (with <code>(option)</code>="yes" or omitted), all <a href="materials.html#rigid">rigid material</a> particles that set boundary conditions for velocity, temperature, or concentration, will extrapolate to the grid first and then set boundary conditions on those extrapolated values instead of the rigid particle velocity, temperature, or concentration. It is normally used when the rigid particle values vary with position, such as loading in shear.</li>
+When this option is activated (with <code>(option)</code>="yes" or omitted), all <a href="materials.html#rigid">rigid material</a> particles that set boundary conditions for velocity, temperature, oconcentration, or pore pressure will extrapolate to the grid first and then set boundary conditions on those extrapolated values. It is normally used when the rigid particle values vary with position, such as loading in shear.</li>
 <li><code>LeaveLimit (allow)</code><br>
 Set number of particles allowed to leave the grid (in <code>(allow)</code>) before an analysis is stopped.
 If command is omitted, the limit is 1% of the particles. Set to 1 to stop when the first particle leaves the grid.</li>
@@ -529,7 +542,7 @@ whenever strain is archived (which means full deformation gradient is archived)<
 <li><code>lp</code> - angular momentum due to particle spin (zero unless <a href="#trackspin">particle spin</a> is activated)</li>
 <li><code>wp</code> - angular velocity due to particle spin (zero unless <a href="#trackspin">particle spin</a> is activated).</li>
 <li>temperature</li>
-<li>concentration (which includes concentration gradients)</li>
+<li>concentration or porepressure - concentration and gradients when doing diffusion calculations or pore pressure and gradients when doing poroelasticity calculations </li>
 <li>jintegral - at crack tips</li>
 <li>stressintensity - at crack tips</li>
 <li>history1, history2, history3, history4 - up to four material-dependent history variables can be archived.</li>
@@ -583,7 +596,7 @@ Global results are average values over the particles. Specify global result to b
 	<li><code>reactionR</code> or <code>reactionZ</code> - component of the reaction force per radian at axisymmetric nodes with velocity boundary conditions in <a href="#units">force units</a> (synonyms for <code>reactionx</code> or <code>reactiony</code> and see those options for meaning of the <code>(mat)</code> option)</li>
 	<li><code>heatWatts</code> - the heating force at nodes with velocity boundary conditions in <a href="#units">energy units/time units</a>. If <code>(mat)</code> specifies a material, the heating rate will be for all temperature conditions created by that rigid material; if<code>(mat)</code> is omitted the heating rate will sum all temperature boundary conditions (specified or created by that <a href="materials.html#rigid">rigid material</a>); if <code>(mat)</code> &lt; 0, the heating rate will be only for <a href="#tempbc">temperature</a> boundary conditions with that boundary condition ID.</li>
 	<li><code>temp</code> - average temperature (in K)</li>	
-	<li><code>concentration</code> - weight fraction concentration</li>	
+	<li><code>concentration</code> or <code>porepressure</code> - weight fraction concentration when doing diffusion calculations or pore pressure in <a href="#units">pressure units</a> when doing poroelasticity calculations.</li>	
 	<li><code>Work Energy</code> - total work energy in <a href="#units">energy units</a></li>
 	<li><code>Kinetic Energy</code> - total kinetic energy in <a href="#units">energy units</a> on the particles</li>
 	<li><code>Grid Kinetic Energy</code> - total kinetic energy in <a href="#units">energy units</a> on the grid</li>
@@ -662,23 +675,43 @@ Define type of element to use in the MPM background grid. Currently (type) can o
 
 <ul>
 <li><a name="regionmpm"></a><code>Region (mat),(velx),(vely),(velzOrThick),&lt;(prop,value)&gt;<br>
+&nbsp;&nbsp;(one optional <a href="#transform">Transform</a> command)<br>
 &nbsp;&nbsp;(optional <a href="#angularmom0">AngularMom0</a> commands)<br>
 &nbsp;&nbsp;(series of <a href="#shape2D">2D</a> or <a href="#shape3D">3D</a> shape commands)<br>
 &nbsp;&nbsp;(optional <a href="#rotatempm">Rotate</a> commands)<br>
 EndRegion</code><br>
-Define a region for creating material points within the union of the subordinate <a href="#shape2D">shape commands</a>. <code>(mat)</code> is material ID. (<code>velx,velz</code>) are velocities in x and y
-direction  (in <a href="#units">velocity units</a>). For 2D, <code>(velzOrThick)</code> is thickness in <a href="#units">length units</a>, but for 3D it is velocity in z direction (in <a href="#units">velocity units</a>). The velocities can be numerical values or <a href="#function">user-defined functions</a> of particle position. The optional
-<code>(prop,value)</code> pairs to set some initial property of the materials. The <code>(prop)</code> options are "angle" (for material rotation about z axis in degrees), "temp" (for temperature in K), and "conc" (for particle concentration potential).</li>
+Define a region for creating material points within the union of the subordinate <a href="#shape2D">shape commands</a>.
+<code>(mat)</code> is material ID. (<code>velx,velz</code>) are velocities in x and y
+direction  (in <a href="#units">velocity units</a>). For 2D, <code>(velzOrThick)</code> is thickness in
+<a href="#units">length units</a>, but for 3D it is velocity in z direction (in <a href="#units">velocity units</a>).
+The velocities can be numerical values or <a href="#function">user-defined functions</a> of particle position.
+The optional <code>(prop,value)</code> pairs to set some initial property of the materials.
+The <code>(prop)</code> options are "angle" (for material rotation about z axis in degrees),
+"temp" (for temperature in K), "conc" (for particle concentration potential), and "pp" (for particle concentration potential).</li>
 
 <li><a name="holempm"></a><code>Hole<br>
 &nbsp;&nbsp;(series of <a href="#shape2D">2D</a> or <a href="#shape3D">3D</a> shape commands)<br>
 commands)<br>
 EndHole</code><br>
-Define a region for creating a hole that will not be assigned material points. The hole is defined by the union of the subordinate <a href="#shape2D">shape commands</a>.</li>
+Define a region for creating a hole that will not be assigned material points.
+The hole is defined by the union of the subordinate <a href="#shape2D">shape commands</a>.</li>
+
+<li><a name="transform"></a><code>Transform (angZ),&lt;(Tx)&gt;,&lt;(Ty)&gt;,&lt;(Ox)&gt;,&lt;(Oy)&gt;,&lt;(angY)&gt;,&lt;(angZ2)&gt;,&lt;(Tz)&gt;,&lt;(Ozx)&gt;</code><br>
+This command will rotate all particles in the shape by ZYZ rotation scheme using angles <code>(angZ)</code>,
+<code>(angY)</code>, and <code>(angZ2)</code>, respectively, about an origin at (<code>(Ox),(Oy),(Oz)</code>) and then
+translate them by (<code>(Tx),(Ty),(Tz)</code>). The rotation is rotating the particle shape and not the particle
+material property axes. Note that when regions are transformed, the particles are placed wherever they appear on the
+grid including on top other particles inserted in other commands. In other words, when using this option,
+the user is responsible for insuring that particles do not overlap. All parameters are optional; those omitted are set to zero.
+The first five commands are for 2D simulations. The last four add more parameters needed for 3D simulations.
+</li>
 
 <li><a name="rotatempm"></a><code>Rotate (axis),(angle),&lt;(axis),(angle)&gt;,...</code><br>
-To rotate, in order, about each axis <code>(axis)</code> (x,y,z,1,2,or 3) by each angle <code>(angle)</code> (can be function) for materials in the current <a href="#regionmpm">region</a>. The <code>(axis)</code> can alternatively be "reset" to remove all previous rotations in the current
-<a href="#regionmpm">region</a>. Up to three rotations in 3D calculations can either be entered in one command or in a series of commands.</li>
+To rotate, in order, about each axis <code>(axis)</code> (x,y,z,1,2,or 3) by each angle <code>(angle)</code>
+(can be function) for materials in the current <a href="#regionmpm">region</a>.
+The <code>(axis)</code> can alternatively be "reset" to remove all previous rotations in the current
+<a href="#regionmpm">region</a>. Up to three rotations in 3D calculations can either be entered in
+one command or in a series of commands.</li>
 
 <li><a name="angularmom0"></a><code>AngularMom0 (Lp0z)</code> (in 2D)<br>
 <code>AngularMom0 (Lp0x),(Lp0y),(Lp0z)</code> (in 3D)<br>
@@ -703,7 +736,7 @@ Create material from an image in a BMP file with <code>(path)</code> having the 
 The optional <code>(scheme)</code> and 1 to 3 <code>(anglesPath)</code>s gives paths to 1 to 3 additional BMP files (of the same size) whose gray scale values determine one Euler angle for particles covered by the image. For 2D  simulations the <code>(scheme)</code> must be "Z" and the one BMP files gives rotation angle about the z axis (in fact, for 2D, the <code>(scheme)</code> argument can be omitted). For 3D, the scheme can be any 1 axis, 2 axes, or 3 axes beginning in "Z" (<i>e.g.</i>, "ZYZ") to specify Euler angle method and gray scales in the file determine the angles. For details on rotation angles see <a href="">OSUPDocs details</a>. Mapping of gray scale to angle is done with 1 to 3 <code>Intensity</code> commands.</li>
 
 <li><a name="intensitympm"></a><code>Intensity (mat),(imin),(imax),&lt;(prop,value)&gt;,...</code><br>
-Map pixel gray scale values in <a href="#bmpregion">BMPRegion</a> in the range <code>(imin)</code> to <code>(imax)</code>
+Map pixel gray scale values in <a href="#bmpregionmpm">BMPRegion</a> in the range <code>(imin)</code> to <code>(imax)</code>
 to material in <code>(mat)</code>. The optional pairs <code>(prop,value)</code> can set
 initial material point properties with (prop) options of:
 <ul>
@@ -713,15 +746,16 @@ initial material point properties with (prop) options of:
 <li>"vx" for particle x-direction velocity in <a href="#units">velocity units</a>.</li>
 <li>"vy" for particle y-direction velocity in <a href="#units">velocity units</a>.</li>
 <li>"vz" for particle z-direction velocity in <a href="#units">velocity units</a> (for 3D MPM).</li>
-<li>"conc" for particle concentration potential.</li></ul>
+<li>"conc" for particle concentration potential.</li>
+<li>"pp" for particle pore pressure in <a href="#units">stress units</a>.</li></ul>
 </li>
 
 <li><code>Intensity "angles",(imin),(imax),(angleMin),(angleMax)</code><br>
-When the first parameter for an Intensity command is "angles", its meaning changes to define a mapping from pixel gray scale values in a <a href="#bmpregion">BMPRegion</a> command's <code>(anglesPath)</code> file to angle by
+When the first parameter for an Intensity command is "angles", its meaning changes to define a mapping from pixel gray scale values in a <a href="#bmpregionmpm">BMPRegion</a> command's <code>(anglesPath)</code> file to angle by
 linearly interpolating a line through <code>(imin,angleMin)</code> and <code>(imax,angleMax)</code>. If more than one <code>(anglesPath)</code> file is used, you can have a corresponding number of <code>Intensity</code> commands to set angle mapping for each file. If fewer <code>Intensity</code> comands are used then <code>(anglesPath)</code> files, the extra files will use the mapping of the last <tt>Intensity</tt> command.</li>
 
 <li><a name="origbmpmpm"></a><code>Origin (xO),(yO),&lt;(zO)&gt;,&lt;(flip)&gt;</code><br>
-Set origin within the mesh (in <a href="#units">length units</a>) for mapping the origin of the image in a <a href="#bmpregionfea">BMPRegion</a> command to
+Set origin within the mesh (in <a href="#units">length units</a>) for mapping the origin of the image in a <a href="#bmpregionmpm">BMPRegion</a> command to
 the grid. The optional <code>(flip)</code> can be "yes" to flip image along its y axis. The optional (z0) is for 3D MPM. Images are always mapped in the x-y plane, but by combining images at different z values, you can create a 3D object from a stack of images, such as X-ray CT data.</li>
 </ul>
 
@@ -1009,10 +1043,9 @@ and intersections between materials on nodes are resolved using various contact
 mechanics models. The key commands to use this mode are:</p>
 
 <ul>
-<li><code>MultimaterialMode &lt;(Vmin)&gt;,&lt;(disps)&gt;,&lt;(norm)&gt;,&lt;(rigidBiasOrAzimuth)&gt;,&lt;(polar)&gt;</code><br>
-Sets to use multimaterial modes and sets some options. <code>(Vmin)</code> is minimum relative volume to allow contact (default 0.0).
-<code>(disps)</code> is &quot;enabled&quot; (or &quot;yes&quot; or 1) or &quot;disabled&quot; (or &quot;no&quot; or 0)
-for detection of contact using particle displacements (default &quot;enabled&quot;). <code>(norm)</code> determines the method used to find surface normals during
+<li><code>MultimaterialMode 0.0,1,&lt;(norm)&gt;,&lt;(rigidBiasOrAzimuth)&gt;,&lt;(polar)&gt;</code><br>
+Sets to use multimaterial modes and sets some options.
+The first two parameters are no longer used, but should specify previous default values (0.0 and 1) for parameter alignment. <code>(norm)</code> determines the method used to find surface normals during
 contact calculations, with options:
 <ul>
 <li>&quot;maxgrad&quot; (or 0)</li>
@@ -1070,7 +1103,7 @@ Set the stress free temperature to (temp) (in K).</li>
 
 </ul>
 
-<p>When doing thermal calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for thermal calculations (coefficient of thermal expansion, thermal conductivity, heat capacity). You can apply <a href="#bconds">temperature and heat flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregion">BMPRegion</a> commands to set initial particle temperature. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to select various thermal parameters for output in the archive files, such as concentration temperature and heat energy.</p>
+<p>When doing thermal calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for thermal calculations (coefficient of thermal expansion, thermal conductivity, heat capacity). You can apply <a href="#bconds">temperature and heat flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregionmpm">BMPRegion</a> commands to set initial particle temperature. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to select various thermal parameters for output in the archive files, such as concentration, temperature, and heat energy.</p>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
@@ -1083,7 +1116,7 @@ Set the stress free temperature to (temp) (in K).</li>
 Set the stress free temperature to <code>(temp)</code> (in K); the default is zero.</li>
 
 <li><code>Temperature (temp)</code><br>
-Apply temperature <code>(temp)</code> to all nodes (in K). Enter a <a href="function">user defined function</a>
+Apply temperature <code>(temp)</code> to all nodes (in K). Enter a <a href="#function">user defined function</a>
 of nodal position (x and y). It is only the difference between temperature and stress free temperature that matters in FEA calculations.
 </li>
 
@@ -1096,7 +1129,7 @@ needed for thermal calculations (coefficient of thermal expansion).</p>
 
 <h2><a name="conc"></a>Diffusion Calculations</h2>
 
-<p>The commands to activate diffusion calculations is (MPM only):</p>
+<p>The command to activate diffusion calculations is (MPM only):</p>
 
 <ul>
 
@@ -1105,7 +1138,22 @@ To turn on diffusion calculations. <code>(diff)</code> is "yes" or "no" to activ
 
 </ul>
 
-<p>When doing concentration calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for diffusions calculations (coefficient of moisture expansion, diffusion constant, saturation concentration). You can apply <a href="#bconds">concentration an concentration flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregion">BMPRegion</a> commands to set initial particle concentration. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to select various concentration parameters for output in the archive files, such as concentration (which includes concentration gradients).</p>
+<p>When doing concentration calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for diffusions calculations (coefficient of moisture expansion, diffusion constant, saturation concentration). You can apply <a href="#bconds">concentration and concentration flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregionmpm">BMPRegion</a> commands to set initial particle concentration. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to add concentration concentration gradients to archive filesd.</p>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="poro"></a>Poroelasticity Calculations</h2>
+
+<p>The command to activate poroelasticity calculations is (MPM only):</p>
+
+<ul>
+
+<li><code>Poroelasticity (poro),&lt;(res)&gt;,&lt;(visc)&gt;</code><br>
+To turn on poroelasticity calculations. <code>(poro)</code> is "yes" or "no" to activate poroelasticity. <code>(res)</code> can specify a reference pore pressure in <a href="#units">pressure units</a> (default is 0). <code>(visc)</code> viscosity of the fluid in the pores in cP for Legacy units but in <a href="#units">viscosity units</a> for consistent units (default is 1 <a href="#units">viscosity unit</a>).</li>
+
+</ul>
+
+<p>When doing poroelasticitty calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for poroelasticity calculations (undrained bulk modulus, Biot coefficient, and Darcy's ;aw permitivity). You can apply <a href="#bconds">pore pressure and pore pressure flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregionmpm">BMPRegion</a> commands to set initial particle pore pressure. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to add pore pressure and pore pressure gradient to archive files.</p>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
@@ -1120,7 +1168,7 @@ To turn on diffusion calculations. <code>(diff)</code> is "yes" or "no" to activ
 &nbsp;&nbsp;(one <a href="#shape2D">2D</a> or <a href="#shape2D">3D</a> shape)<br>
 &nbsp;&nbsp;(grid condition commands)<br>
 EndMoveLine</code><br>
-Apply <a href="#velbc">velocity</a>, <a href="#tempbc">temperature</a>, or <a href="concbc">concentration</a> conditions to all nodes within the provided shape (which can be a <a href="#cutcmd">nested shape</a>).</li>
+Apply <a href="#velbc">velocity</a>, <a href="#tempbc">temperature</a>, <a href="concbc">concentration</a>, or <a href="#ppbc">porepressure</a> conditions to all nodes within the provided shape (which can be a <a href="#cutcmd">nested shape</a>).</li>
 
 <li><a name="velbc"></a><code>Velocity (dir),(style),&lt;(value)&gt;,&lt;(time)&gt;,&lt;(skew)&gt;,&lt;(skew2)&gt;</code><br>
 Apply velocity conditions to currently selected nodes in the (dir) direction (x, t, z, skewxy, skewxz,
@@ -1132,6 +1180,10 @@ Apply temperature boundary conditions to selected nodes. <code>(style)</code> is
 
 <li><a name="concbc"></a><code>Concentration (style),&lt;(value)&gt;,&lt;(time)&gt;</code><br>
 Apply concentration conditions to selected nodes. <code>(style)</code> is style with <code>(value)</code> (in concentration potential) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition.
+</li>
+
+<li><a name="ppbc"></a><code>PorePressure (style),&lt;(value)&gt;,&lt;(time)&gt;</code><br>
+Apply pore pressure conditions to selected nodes. <code>(style)</code> is style with <code>(value)</code> (in <a href="#units">stress units</a>) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition.
 </li>
 
 <li><code>BoundaryID &lt;(id)&gt;</code><br>
@@ -1159,7 +1211,7 @@ Set ID for subsequent velocity boundary condition for use when global archiving 
 &nbsp;&nbsp;(one <a href="#shape2D">2D</a> or <a href="#shape2D">3D</a> shape)<br>
 &nbsp;&nbsp;(particle condition commands)<br>
 ParticleBC</code><br>
-Apply <a href="#force">force</a>, <a href="#traction">traction</a>, <a href="#hflux">heat</a>, or <a href="#cflux">concentration</a> flux conditions to all particles within the one shape (which can be a <a href="#cutcmd">nested shape</a>).</li>
+Apply <a href="#force">force</a>, <a href="#traction">traction</a>, <a href="#hflux">heat</a>, <a href="#cflux">concentration</a>, or <a href="#pflux">porepressure</a> flux conditions, or <a href="#damage">initial damage state</a> to all particles within the one shape (which can be a <a href="#cutcmd">nested shape</a>).</li>
 
 <li><a name="force"></a><code>Load (dir),(style),(value),&lt;(time)&gt;</code><br>
 Apply force to selected particles in direction (dir) (x, y, z (or 1, 2, or 3 or R or Z if axisymmetric). <code>(style)</code> is style with <code>(value)</code> (in <a href="#units">force units</a>, but see <a href="loadtype">LoadType command</a>) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition.</li>
@@ -1176,6 +1228,14 @@ Apply heat flux to selected particles on face <code>(face)</code> (see <a href="
 <li><a name="cflux"></a><code>ConcentrationFlux (mode),(face),(style),(value),&lt;(time)&gt;</code><br>
 Apply concentration flux to selected particles on face <code>(face)</code> (see <a href="#traction">Traction command</a> for meaning of (face) parameter). For <code>(mode)</code>=external, <code>(style)</code> is style with <code>(value)</code> (in concentration potential) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition. For <code>(mode)</code>=coupled, <code>(style)</code> must be "function", <code>(value)</code> is a <a href="#function">user-defined function</a> where <code>t</code> is difference between particle concentration (0 to 1) and a reservoir concentration, and <code>(time)</code> is the reservoir concentration (0 to 1).</li>
 
+<li><a name="ppflux"></a><code>PorePressureFlux (mode),(face),(style),(value),&lt;(time)&gt;</code><br>
+Apply pore pressure flux to selected particles on face <code>(face)</code> (see <a href="#traction">Traction command</a> for meaning of (face) parameter). For <code>(mode)</code>=external, <code>(style)</code> is style with <code>(value)</code> (in <a href="#units">pressure units</a>/sec) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition. For <code>(mode)</code>=coupled, <code>(style)</code> must be "function", <code>(value)</code> is a <a href="#function">user-defined function</a> where <code>t</code> is difference between particle pore pressure and a reservoir pore pressure, and <code>(time)</code> is the reservoir pore pressure (both in <a href="#units">pressure units</a>).</li>
+
+<li><a name="damage"></a><code>Damage (nx),(ny),&lt;(nz)&gt;,&lt;(dn)&gt;,&lt;(dxy)&gt;,&lt;(dxz)&gt;,&lt;(mode)&gt;
+</code><br>
+Set initial particle damage where <code>(nx, ny, nz)</code> is normal vector for the damage plane, <code>(dn, dxy, dxz)</code> defines the three damage parameters (default 1), and <code>(mode)</code> is damage mode or value for first damage history variable (default 1). In 2D calculations, <code>(nz)</code> and <code>(dxz)</code> are ignored, but are needed for parameter alignment.</li>
+</ul>
+
 </ul>
 
 <h3><a name="bcstyle"></a>MPM Boundary Condition Styles</h3>
@@ -1188,7 +1248,7 @@ Apply concentration flux to selected particles on face <code>(face)</code> (see 
 <li>"sine" (or 3) - Set condition to <code>(value)*sin[t*(time)]</code> where <code>t</code> is current time and <code>(time)</code> is in <a href="#units">1/alt time units</a>.</li>
 <li>"cosine" (or 4) - Set condition to <code>(value)*cos[t*(time)]</code> where <code>t</code> is current time and <code>(time)</code> is in <a href="#units">1/alt time units</a>.</li>
 <li>"silent" (or 5) - Set an absorbing boundary condition. This style can only be used for <a href="#force">load</a>, <a href="#hflux">heat</a>, or <a href="#cflux">concentration</a> flux conditions. For loads, it is meant to absorb stress waves as if simulating a large object; the edge must be normal to x, y, or z direction and the material must be isotropic. For heat and concentration flux conditions, it attempts to apply extrapolated flux, which may simulation flow through and out of a layer of material.</li>
-<li>"function" (or 6) - Set condition to the <a href="function.html">user-defined function</a> given in <code>(value)</code>, which can depend on time (<code>t</code> in <a href="#units">alt time units</a>) and/or nodal coordinates (<code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, <code>Z</code>, <code>D</code>, and <code>T</code> in <a href="#units">lwngth units</a>). If the <code>(time)</code> parameter is used the condition starts at <code>(time)</code> and the function is evaluated at <code>[t-(time)]</code>.</li>
+<li>"function" (or 6) - Set condition to the <a href="#function">user-defined function</a> given in <code>(value)</code>, which can depend on time (<code>t</code> in <a href="#units">alt time units</a>) and/or nodal coordinates (<code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, <code>Z</code>, <code>D</code>, and <code>T</code> in <a href="#units">length units</a>). If the <code>(time)</code> parameter is used the condition starts at <code>(time)</code> and the function is evaluated at <code>[t-(time)]</code>.</li>
 </ul>
 
 
@@ -1391,7 +1451,7 @@ When this task is triggered by critical crack length, the crack propagation will
 <li>sigmoidal (style) - enter 0 or 1 for a linear or sigmoidal thermal ramp. This parameter is optional; if omitted, the ramp is linear.</li>
 <li><code>scale (function)</code> - if this optional command is used, the applied <code>DeltaT</code> is scaled by any <a href="#function">user-defined function</a> of time and particle position. The <code>(function)</code> must be embedded in the parameter name (<i>e.g.</i>, <code>"scale x/40"</code>).</li>
 </ul>
-Another option for this task is to set the thermal field using a bit mapped image of the temperature distribution. To use this option see on-line help on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/ThermalRamp_Custom_Task">OSUPDocs wiki </a>. 
+Besides the above thermal ramp, this task can ramp thermal fields provided in bit mapped files and ramp other quantities (such as out-of-plane stress and strain, particle concentration, or particle pore pressure). The other quantities can use a simple ramp and bit-mapped files. These options are documented only in on-line help on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/ThermalRamp_Custom_Task">OSUPDocs wiki</a>. 
 </dd>
 
 
@@ -1427,6 +1487,10 @@ Insert XML data in the interpretation output. <code>(where)</code> indicates the
 <li><code>&quot;Mesh&quot;</code></li>
 
 <li><code>&quot;MaterialPoints&quot;</code> to intersperse with other commands in this section (MPM only)</li>
+
+<li><code>&quot;CrackList&quot;</code> to intersperse with other crack definitions &mdash; the XML data must
+define a complete crack but omit the enclosing <code>&lt;CrackList&gt;</code> element
+(it is inserted automatically) (MPM only)</li>
 
 <li><code>&quot;Materials&quot;</code> to intersperse a custom material definition (see below)</li>
 
@@ -1616,6 +1680,16 @@ current material and another material (specified in <code>(mat)</code>). Use the
 
 </ul></li>
 
+<li>The following functions are helpful if creating boundary conditions:
+<ul>
+<li><code>ramp(A,x)</code> - 0 for x&lt;0, Ax for 0&le;x&le;1, and A for x&gt;1</li>
+<li><code>cosramp(A,x)</code> - 0 for x&lt;0, (A/2)(1-cos(&pi;x)) for 0&le;x&le;1, and A for x&gt;1</li>
+<li><code>box(A,x)</code> - 0 for x&lt;0, A for 0&le;x&le;1, and A for x&gt;1</li>
+<li><code>sinbox(A,x)</code> - 0 for x&lt;0, A sin(&pi;x) for 0&le;x&le;1, and 0 for x&gt;1</li>
+<li><code>sgn(x)</code> - -1 for x&lt;0, 0 for x=0, and +1 for x&gt;0</li>
+</ul>
+</li>
+
 <li>The function can include <code>pi</code> (or <code>Pi</code> or <code>PI</code>) for the number &pi;.
 </li>
 
@@ -1651,7 +1725,7 @@ current material and another material (specified in <code>(mat)</code>). Use the
 <tr><td>Alt Time</td><td>ms</td><td>s</td><td>s</td><td>s</td><td>x10<sup>3</sup>=ms</td>
 </tr>
 
-<tr><td>Density (M/L<sup>3</sup>) </td><td>g/cm<sup>3</sup><td>kg/m<sup>3</sup></td><td>x10<sup>-6</sup>=g/mm<sup>3</sup></td><td>x10<sup>-3</sup>=g/cm<sup>3</sup></td><td>x10<sup>-6</sup>=g/mm<sup>3</sup></td>
+<tr><td>Density (M/L<sup>3</sup>) </td><td>g/cm<sup>3</sup></td><td>kg/m<sup>3</sup></td><td>x10<sup>-6</sup>=g/mm<sup>3</sup></td><td>x10<sup>-3</sup>=g/cm<sup>3</sup></td><td>x10<sup>-6</sup>=g/mm<sup>3</sup></td>
 </tr>
 
 <tr><td>Velocity (L/T)</td><td>mm/s</td><td>m/s</td><td>x10<sup>3</sup>=mm/s</td><td>x10<sup>2</sup>=cm/s</td><td>m/s</td>
@@ -1660,7 +1734,7 @@ current material and another material (specified in <code>(mat)</code>). Use the
 <tr><td>Alt Velocity</td><td>m/s</td><td>m/s</td><td>x10<sup>3</sup>=mm/s</td><td>x10<sup>2</sup>=cm/s</td><td>m/s</td>
 </tr>
 
-<tr><td>Acceleration (L/T<sup>2</sup>)</td><td>mm/s<sup>2</sup></td><td>m/s<sup>2</sup></td><td>x10<sup>3</sup>=mm/s<sup>2</sup></td><td>x10<sup>2</sup>=cm/s<sup>2</sup></td></td><td>x10<sup>-3</sup>=mm/ms<sup>2</sup></td>
+<tr><td>Acceleration (L/T<sup>2</sup>)</td><td>mm/s<sup>2</sup></td><td>m/s<sup>2</sup></td><td>x10<sup>3</sup>=mm/s<sup>2</sup></td><td>x10<sup>2</sup>=cm/s<sup>2</sup></td><td>x10<sup>-3</sup>=mm/ms<sup>2</sup></td>
 </tr>
 
 <tr><td>Force (F=M-L/T<sup>2</sup>)</td><td>N</td><td>N</td><td>x10<sup>6</sup>=&mu;N</td><td>x10<sup>5</sup>=dyne</td><td>N</td>
@@ -1690,7 +1764,7 @@ current material and another material (specified in <code>(mat)</code>). Use the
 <tr><td>Energy Release (E/L<sup>2</sup>=M/T<sup>2</sup>)</td><td>J/m<sup>2</sup></td><td>J/m<sup>2</sup></td><td>x10<sup>3</sup>=mJ/m<sup>2</sup></td><td>x10<sup>3</sup>=erg/cm<sup>2</sup></td><td>x10<sup>-3</sup>=kJ/m<sup>2</sup></td>
 </tr>
 
-<tr><td>Stress Intensity (P-L<sup>0.5</sup>=M/(L<sup>0.5</sup>-T<sup>2</sup>))</td><td>MPa-m<sup>0.5</sup></td><td>Pa-m<sup>0.5</sup></td><td>X31.623=Pa-mm<sup>0.5</sup></td><td>x10<sup>2</sup>=Ba-cm<sup>0.5</sup></td><td>X3.1623e<sup>-5</sup>=MPa-mm<sup>0.5</sup></td>
+<tr><td>Stress Intensity (P-L<sup>0.5</sup>=M/(L<sup>0.5</sup>-T<sup>2</sup>))</td><td>MPa-m<sup>0.5</sup></td><td>Pa-m<sup>0.5</sup></td><td>x31.623=Pa-mm<sup>0.5</sup></td><td>x10<sup>2</sup>=Ba-cm<sup>0.5</sup></td><td>x3.1623e<sup>-5</sup>=MPa-mm<sup>0.5</sup></td>
 </tr>
 
 <tr><td>Viscosity (P-T=M/(L-T))</td><td>cPoise</td><td>Pa-s</td><td>Pa-s</td><td>x10=Poise</td><td>x10<sup>-3</sup>=kPa-s</td>

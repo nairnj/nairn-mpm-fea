@@ -84,6 +84,9 @@ public class Materials
 		options.put("isoplasticity", new Integer(9));
 		options.put("bistable", new Integer(10));
 		options.put("rigid", new Integer(11));
+		options.put("rigidbc", new Integer(11));
+		options.put("rigidcontact", new Integer(35));
+		options.put("rigidblock", new Integer(36));
 		options.put("triangulartraction", new Integer(12));
 		options.put("lineartraction", new Integer(13));
 		options.put("cubictraction", new Integer(14));
@@ -104,6 +107,7 @@ public class Materials
 		options.put("isosoftening", new Integer(50));
 		options.put("transisosoftening 1", new Integer(51));
 		options.put("transisosoftening 2", new Integer(52));
+		options.put("isoplasticsoftening", new Integer(53));
 		options.put("phasetransition", new Integer(30));
 		options.put("ignorecontact", new Integer(60));
 		options.put("coulombfriction", new Integer(61));
@@ -349,7 +353,16 @@ public class Materials
 			// 0 or 1
 			int value = doc.readIntArg(args.get(1));
 			if(value<0 || value>1)
-				throw new Exception("Rigid 'SetConcentration' property must be integer 0 or 1:\n"+args);
+				throw new Exception("Rigid 'concentration' property must be integer 0 or 1:\n"+args);
+			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("porepressure"))
+		{	prop = "SetConcentration";
+			// 0 or 1
+			int value = doc.readIntArg(args.get(1));
+			if(value<0 || value>1)
+				throw new Exception("Rigid 'porepressure' property must be integer 0 or 1:\n"+args);
 			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
 			return;
 		}

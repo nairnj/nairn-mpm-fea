@@ -119,7 +119,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 		if(plot2DView.getNumberOfPlots()<2)
 		{	ResultsDocument resDoc=((DocViewer)document).resDoc;
 			plot2DView.setXTitle("Time ("+resDoc.units.timeUnits()+")");
-			plot2DView.setYTitle(PlotQuantity.plotLabel(component,resDoc.units));
+			plot2DView.setYTitle(PlotQuantity.plotLabel(component,resDoc));
 		}
 		controls.disableProgress();
 		setVisible(true);

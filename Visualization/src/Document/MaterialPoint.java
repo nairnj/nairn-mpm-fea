@@ -817,7 +817,7 @@ public class MaterialPoint
 				theValue=z;
 				break;
 			
-			// concentration
+			// concentration and pore pressure
 			case PlotQuantity.MPMCONCENTRATION:
 				theValue=concentration;
 				break;

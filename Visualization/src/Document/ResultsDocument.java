@@ -59,6 +59,7 @@ public class ResultsDocument extends AbstractTableModel
 	public DocViewer docCtrl;
 	public int recSize;
 	public double totalEnergy;
+	public boolean hasPorePressure;
 	
 	// units
 	public JNUnits units = new JNUnits();
@@ -317,8 +318,12 @@ public class ResultsDocument extends AbstractTableModel
 			if(word1.equals("Isotropic"))
 			{	if(word2.equals("Dugdale"))
 					matl=new MaterialBase(matName,MaterialBase.DUGDALE);
+        		else if(word2.equals("Elastic-Plastic"))
+        			matl=new MaterialBase(matName,MaterialBase.ISOPLASTICITY);
             	else if(word2.equals("Softening"))
             		matl=new MaterialBase(matName,MaterialBase.ISOSOFTENING);
+            	else if(word2.equals("Plastic"))
+            		matl=new MaterialBase(matName,MaterialBase.ISOPLASTICSOFTENING);
 				else
 					matl=new IsotropicMat(matName);
 			}
@@ -359,7 +364,13 @@ public class ResultsDocument extends AbstractTableModel
 			else if(word1.equals("Interface"))
 				matl=new MaterialBase(matName,MaterialBase.INTERFACEPARAMS);
 			else if(word1.equals("Rigid"))
-				matl=new RigidMaterial(matName);
+			{	if(word2.equals("Block"))
+					matl=new RigidMaterial(matName,MaterialBase.RIGIDBLOCKMATERIAL);
+				else if(word2.equals("Contact"))
+					matl=new RigidMaterial(matName,MaterialBase.RIGIDCONTACTMATERIAL);
+				else
+					matl=new RigidMaterial(matName,MaterialBase.RIGIDBCMATERIAL);
+			}
 			else if(word1.equals("Triangular"))
 				matl=new MaterialBase(matName,MaterialBase.COHESIVEZONEMATERIAL);
 			else if(word1.equals("Linear"))
@@ -520,6 +531,10 @@ public class ResultsDocument extends AbstractTableModel
 			
 			bcs=section("NODAL POINTS WITH FIXED CONCENTRATIONS");
 			lineStart=findNextLine(bcs,"--------");
+			if(lineStart<=0)
+			{	bcs=section("NODAL POINTS WITH FIXED PORE PRESSURE");
+				lineStart=findNextLine(bcs,"--------");
+			}
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
 				s.useLocale(Locale.US);
@@ -541,6 +556,10 @@ public class ResultsDocument extends AbstractTableModel
 			
 			bcs=section("MATERIAL POINTS WITH CONCENTRATION FLUX");
 			lineStart=findNextLine(bcs,"--------");
+			if(lineStart<=0)
+			{	bcs=section("NODAL POINTS WITH PORE PRESSURE FLUX");
+				lineStart=findNextLine(bcs,"--------");
+			}
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
 				s.useLocale(Locale.US);
@@ -688,6 +707,22 @@ public class ResultsDocument extends AbstractTableModel
 				
 				sline.close();
 				sline=null;
+			}
+			
+			bcs=section("SCHEDULED CUSTOM TASKS");
+			s=new Scanner(bcs);
+			s.useDelimiter("\\r\\n|\\n|\\r");
+			s.useLocale(Locale.US);
+			// scan THROUGH CUSTOM TASKS
+			hasPorePressure = false;
+			while(s.hasNext())
+			{	String gridLine=s.next();
+				if(gridLine.length()>12)
+				{	if(gridLine.substring(0,12).equals("Coupled pore"))
+					{	hasPorePressure = true;
+						break;
+					}
+				}
 			}
 		}
 		

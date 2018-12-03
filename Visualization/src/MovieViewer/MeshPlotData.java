@@ -165,7 +165,7 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener, J
 	}
 	
 	public void setZunits()
-	{	String newUnits = PlotQuantity.plotUnits(resDoc.docCtrl.controls.getPlotComponent(-1),resDoc.units);
+	{	String newUnits = PlotQuantity.plotUnits(resDoc.docCtrl.controls.getPlotComponent(-1),resDoc);
 		if(newUnits.length()>0)
 			zunits = new String(" "+newUnits);
 		else

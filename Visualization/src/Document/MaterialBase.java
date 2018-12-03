@@ -21,7 +21,7 @@ public class MaterialBase
 	public static final int ISOPLASTICITY=9;
 	public static final int VONMISES=9;
 	public static final int BISTABLEISO=10;
-	public static final int RIGIDMATERIAL=11;
+	public static final int RIGIDBCMATERIAL=11;
 	public static final int COHESIVEZONEMATERIAL=12;
 	public static final int LINEARTRACTIONMATERIAL=13;
 	public static final int CUBICTRACTIONMATERIAL=14;
@@ -41,9 +41,12 @@ public class MaterialBase
 	public static final int NEOHOOKEAN=28;
 	public static final int CLAMPEDNEOHOOKEAN=29;
 	public static final int PHASETRANSITION=30;
+	public static final int RIGIDCONTACTMATERIAL=35;
+	public static final int RIGIDBLOCKMATERIAL=36;
 	public static final int ISOSOFTENING=50;
 	public static final int TRANSISOSOFTENING1=51;
 	public static final int TRANSISOSOFTENING2=52;
+	public static final int ISOPLASTICSOFTENING=53;
 	public static final int IGNORECONTACT=60;
 	public static final int COULOMBFRICTION=61;
 	public static final int LINEARIMPERFECT=62;
@@ -120,7 +123,9 @@ public class MaterialBase
 			case INTERFACEPARAMS:
 			case VISCOELASTIC:
 			case BISTABLEISO:
-			case RIGIDMATERIAL:
+			case RIGIDBCMATERIAL:
+			case RIGIDCONTACTMATERIAL:
+			case RIGIDBLOCKMATERIAL:
 				return NOTHING;
 				
 			case DUGDALE:
@@ -133,6 +138,7 @@ public class MaterialBase
 			case ISOSOFTENING:
 			case TRANSISOSOFTENING1:
 			case TRANSISOSOFTENING2:
+			case ISOPLASTICSOFTENING:
 				return ENG_BIOT_PLASTIC_STRAIN;
 			
 			case MOONEYRIVLIN:

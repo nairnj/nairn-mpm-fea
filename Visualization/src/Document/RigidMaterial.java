@@ -10,8 +10,8 @@ public class RigidMaterial extends MaterialBase
 {
 
 	// initialize
-	RigidMaterial(String matName)
-	{	super(matName,MaterialBase.RIGIDMATERIAL);
+	RigidMaterial(String matName,int rigidType)
+	{	super(matName,rigidType);
 	}
 	
 	// this is the one rigid material

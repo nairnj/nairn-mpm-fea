@@ -33,8 +33,11 @@ public class ConsolePane extends JNConsolePane
 	// Initialize - scrolling edit field
 	//-----------------------------------------------------------------
 	
-	public ConsolePane()
+	public ConsolePane(Font theFont)
 	{	super();
+	
+		if(theFont!=null)
+			console.setFont(theFont);
 		
 		// set file filter
 		JNFileFilter filter=new JNFileFilter();

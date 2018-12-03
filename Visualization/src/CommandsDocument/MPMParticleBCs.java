@@ -6,7 +6,7 @@
  * Copyright (c) 2013 RSAC Software. All rights reserved.
  * 
  * Start BC: LoadLine, LoadArc, LoadRect, MoveBox
- * Subordinate: Load, Traction ConcentrationFlux, HeatFlux, LoadType
+ * Subordinate: Load, Traction, ConcentrationFlux, PorePressureFlux, HeatFlux, LoadType
  */
 
 import java.util.*;
@@ -25,6 +25,7 @@ public class MPMParticleBCs
 	public static final int ADD_TRACTION=2;
 	public static final int ADD_HEATFLUX=3;
 	public static final int ADD_CONCENTRATIONFLUX=4;
+	public static final int ADD_DAMAGE=5;
 	
 	//----------------------------------------------------------------------------
 	// Initialize
@@ -111,10 +112,15 @@ public class MPMParticleBCs
 		doc.requiresMPM(args);
 		
 		if(inBC == 0)
-			throw new Exception("'"+args.get(0)+"' command must by in 'LoadLine',\n'LoadArc', 'LoadRect', or 'LoadBox' block:\n"+args);
+			throw new Exception("'"+args.get(0)+"' command must by in a 'ParticleBC' block:\n"+args);
 		
-		// always needs #1, #2, and #3 (those with face need #4 to)
-		if((theType!=ADD_LOAD && args.size()<5) || (theType==ADD_LOAD && args.size()<3))
+		// always needs #1, #2, and #3 (those with face need #4 to), add damage 2D only needs 2, but 3 in 3D
+		if(theType==ADD_DAMAGE)
+		{	if(args.size()<3 || (doc.isMPM3D() && args.size()<4))
+	    		throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+			
+		}
+		else if((theType!=ADD_LOAD && args.size()<5) || (theType==ADD_LOAD && args.size()<4))
 	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
 		// read direction
@@ -122,6 +128,30 @@ public class MPMParticleBCs
 		if(theType==ADD_CONCENTRATIONFLUX || theType==ADD_HEATFLUX)
 		{	options.put("external", new Integer(1));
 			options.put("coupled", new Integer(2));
+		}
+		else if(theType==ADD_DAMAGE)
+		{	// (#1,#2,#3) is normal vector, (#4,#5,#6) are dn, dxy, and dxz
+			// #7 is mode
+			double nx = doc.readDoubleArg(args.get(1)); 
+			double ny = doc.readDoubleArg(args.get(2));
+			double nz = args.size()>=4 ? doc.readDoubleArg(args.get(3)) : 0.; 
+			double dn = args.size()>=5 ? doc.readDoubleArg(args.get(4)) : 1.; 
+			double dxy = args.size()>=6 ? doc.readDoubleArg(args.get(5)) : 1.; 
+			double dxz = args.size()>=7 ? doc.readDoubleArg(args.get(6)) : 1.;
+			double mode = args.size()>=8 ? doc.readDoubleArg(args.get(7)) : 1.;
+			if(doc.isMPM3D())
+			{	bcSettings.append("      <Damage nx='"+doc.formatDble(nx)+"' ny='"+doc.formatDble(ny)+
+					"' nz='"+doc.formatDble(nz)+"' dn='"+doc.formatDble(dn)+
+					"' dxy='"+doc.formatDble(dxy)+"' dxz='"+doc.formatDble(dxz)+
+					"' mode='"+doc.formatDble(mode)+"'");
+			}
+			else
+			{	bcSettings.append("      <Damage nx='"+doc.formatDble(nx)+"' ny='"+doc.formatDble(ny)+
+					"' dn='"+doc.formatDble(dn)+"' dxy='"+doc.formatDble(dxy)+
+					"' mode='"+doc.formatDble(mode)+"'");
+			}
+			bcSettings.append("/>\n");
+			return;
 		}
 		else
 		{	options.put("x", new Integer(1));
@@ -208,7 +238,7 @@ public class MPMParticleBCs
 		{	// <ConcFluxBC dir='1' face='1' style='1' value='0' time='0.0' function='sinh(t)'/>
 			bcSettings.append("      <ConcFluxBC dir='"+dof+"' face='"+face+"' style='"+style+"'");
 			if(dof==2 && style!=6)
-				throw new Exception("Coupled ConcentrationFlux must use a function");
+				throw new Exception("Coupled ConcentrationFlux or PorePressureFlux must use a function");
 			if(style==6)
 				bcSettings.append(" function='"+function+"'");
 			else

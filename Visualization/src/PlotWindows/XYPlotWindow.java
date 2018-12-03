@@ -305,7 +305,7 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 			// axis labels
 			if(plot2DView.getNumberOfPlots()<2)
 			{	plot2DView.setXTitle("Position ("+resDoc.units.lengthUnits()+")");
-				plot2DView.setYTitle(PlotQuantity.plotLabel(component,resDoc.units));
+				plot2DView.setYTitle(PlotQuantity.plotLabel(component,resDoc));
 			}
 		}
 	}

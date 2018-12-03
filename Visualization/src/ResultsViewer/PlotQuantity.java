@@ -294,8 +294,14 @@ public class PlotQuantity extends PlotControl
 					quant.addItem(new PlotMenuItem("Temperature",MPMTEMPERATURE));
 					
 				if(arch[ReadArchive.ARCH_Concentration]=='Y')
-				{   quant.addItem(new PlotMenuItem("Concentration",MPMCONCENTRATION));
-					quant.addItem(new PlotMenuItem("Conc Gradient",MPMDCDX));
+				{   if(docCtrl.resDoc.hasPorePressure)
+					{	quant.addItem(new PlotMenuItem("Pore Pressure",MPMCONCENTRATION));
+						quant.addItem(new PlotMenuItem("Pore Press Gradient",MPMDCDX));
+					}
+					else
+					{	quant.addItem(new PlotMenuItem("Concentration",MPMCONCENTRATION));
+						quant.addItem(new PlotMenuItem("Conc Gradient",MPMDCDX));
+					}
 				}
 				
 				if(arch[ReadArchive.ARCH_History]=='Y')
@@ -521,18 +527,37 @@ public class PlotQuantity extends PlotControl
 				
 			case MPMDCDX:
 				if(docCtrl.resDoc.is3D())
-				{	if(numItems!=3 || !cmpnt.getItemAt(0).equals("dc/d"+xchar))
-					{	cmpnt.removeAllItems();
-						cmpnt.addItem("dc/d"+xchar);
-						cmpnt.addItem("dc/d"+ychar);
-						cmpnt.addItem("dc/d"+zchar);
+				{	if(docCtrl.resDoc.hasPorePressure)
+					{	if(numItems!=3 || !cmpnt.getItemAt(0).equals("dp/d"+xchar))
+						{	cmpnt.removeAllItems();
+							cmpnt.addItem("dp/d"+xchar);
+							cmpnt.addItem("dp/d"+ychar);
+							cmpnt.addItem("dp/d"+zchar);
+						}
+					}
+					else
+					{	if(numItems!=3 || !cmpnt.getItemAt(0).equals("dc/d"+xchar))
+						{	cmpnt.removeAllItems();
+							cmpnt.addItem("dc/d"+xchar);
+							cmpnt.addItem("dc/d"+ychar);
+							cmpnt.addItem("dc/d"+zchar);
+						}
 					}
 				}
 				else
-				{	if(numItems!=2 || !cmpnt.getItemAt(0).equals("dc/d"+xchar))
-					{	cmpnt.removeAllItems();
-						cmpnt.addItem("dc/d"+xchar);
-						cmpnt.addItem("dc/d"+ychar);
+				{	if(docCtrl.resDoc.hasPorePressure)
+					{	if(numItems!=2 || !cmpnt.getItemAt(0).equals("dp/d"+xchar))
+						{	cmpnt.removeAllItems();
+							cmpnt.addItem("dp/d"+xchar);
+							cmpnt.addItem("dp/d"+ychar);
+						}
+					}
+					else
+					{	if(numItems!=2 || !cmpnt.getItemAt(0).equals("dc/d"+xchar))
+						{	cmpnt.removeAllItems();
+							cmpnt.addItem("dc/d"+xchar);
+							cmpnt.addItem("dc/d"+ychar);
+						}
 					}
 				}
 				cmpnt.setEnabled(true);
@@ -624,8 +649,9 @@ public class PlotQuantity extends PlotControl
 	}
 	
 	// Label for plot axes (i.e., just generic name and plot units)
-	public static String plotLabel(int component,JNUnits units)
+	public static String plotLabel(int component,ResultsDocument resDoc)
 	{
+		JNUnits units = resDoc.units;
 		switch(component)
 		{	// Stresses
 			case MPMSIGMAX:
@@ -752,13 +778,19 @@ public class PlotQuantity extends PlotControl
 			
 			// concentration
 			case MPMCONCENTRATION:
-				return "Concentration";
+				if(resDoc.hasPorePressure)
+					return "Pore Pressure ("+units.stressUnits()+")";
+				else
+					return "Concentration";
 			
 			// concentration gradient
 			case MPMDCDX:
 			case MPMDCDY:
 			case MPMDCDZ:
-				return "Gradient (1/"+units.lengthUnits()+")";
+				if(resDoc.hasPorePressure)
+					return "Pore Press Grad ("+units.stressUnits()+"/"+units.lengthUnits()+")";
+				else
+					return "Conc Grad (1/"+units.lengthUnits()+")";
 			
 			// an Expression
 			case MPMEXPRESSION:
@@ -821,8 +853,9 @@ public class PlotQuantity extends PlotControl
 	}
 	
 	// Units for plot quantity
-	public static String plotUnits(int component,JNUnits units)
+	public static String plotUnits(int component,ResultsDocument resDoc)
 	{
+		JNUnits units = resDoc.units;
 		switch(component)
 		{	// Stresses
 			case MPMSIGMAX:
@@ -943,7 +976,17 @@ public class PlotQuantity extends PlotControl
 			case MPMDCDX:
 			case MPMDCDY:
 			case MPMDCDZ:
-				return "1/"+units.lengthUnits();
+				if(resDoc.hasPorePressure)
+					return units.stressUnits()+"/"+units.lengthUnits();
+				else
+					return "1/"+units.lengthUnits();
+			
+			// concentration and pore pressure
+			case MPMCONCENTRATION:
+				if(resDoc.hasPorePressure)
+					return units.stressUnits();
+				else
+					return "";
 				
 			case MESHFORCEX:
 			case MESHFORCEY:
@@ -1169,16 +1212,28 @@ public class PlotQuantity extends PlotControl
 				return "Material History";
 			
 			case MPMDCDY:
-				return "Conc Gradient dc/d"+yc;
+				if(resDoc.hasPorePressure)
+					return "Pore Press Grad dp/d"+yc;
+				else
+					return "Conc Grad dc/d"+yc;
 			
 			case MPMDCDX:
-				return "Conc Gradient dc/d"+xc;
+				if(resDoc.hasPorePressure)
+					return "Pore Press Grad dp/d"+xc;
+				else
+					return "Conc Grad dc/d"+xc;
 			
 			case MPMDCDZ:
-				return "Conc Gradient dc/d"+zc;
+				if(resDoc.hasPorePressure)
+					return "Pore Press Grad dp/d"+zc;
+				else
+					return "Conc Grad dc/d"+zc;
 			
 			case MPMCONCENTRATION:
-				return "Concentration";
+				if(resDoc.hasPorePressure)
+					return "Pore Pressure";
+				else
+					return "Concentration";
 			
 			case MPMEXPRESSION:
 			case FEAEXPRESSION:

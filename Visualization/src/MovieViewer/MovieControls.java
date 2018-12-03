@@ -303,8 +303,14 @@ public class MovieControls extends JPanel
 			case PlotQuantity.MPMDCDX:
 				if(numItems!=2 || !pcmpnt.getItemAt(0).equals("dc/d"+xchar))
 				{	pcmpnt.removeAllItems();
-					pcmpnt.addItem("dc/d"+xchar);
-					pcmpnt.addItem("dc/d"+ychar);
+					if(resDoc.hasPorePressure)
+					{	pcmpnt.addItem("dp/d"+xchar);
+						pcmpnt.addItem("dp/d"+ychar);
+					}
+					else
+					{	pcmpnt.addItem("dc/d"+xchar);
+						pcmpnt.addItem("dc/d"+ychar);
+					}
 				}
 				pcmpnt.setEnabled(true);
 				break;

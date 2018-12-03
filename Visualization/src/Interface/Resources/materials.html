@@ -221,6 +221,13 @@ and rubber elastic materials as special cases.</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
+<tr>
+<td><a href="#isoplastsoft"><code>IsoPlasticSoftening</code></a></td>
+<td>53</td>
+<td width="50%">Small-strain isotropic, plastic material with anisotropic damage mechanics using mode I and mode I softening laws.</td>
+<td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
 </table>
 
 <h3>Hyperelastic-Plastic Materials</h3>
@@ -490,7 +497,7 @@ and rubber elastic materials as special cases.</td>
 
 <!-- Material  Section -->
 
-<h2><a name="iso"></a>Linear Elastic, Isotropic (Type=1)</h2>
+<h2><a name="iso"></a><a name="isotropic"></a>Linear Elastic, Isotropic (Type=1)</h2>
 
 <p>This material is small-strain, isotropic material. The material properties are:</p>
 
@@ -977,6 +984,31 @@ where h is height of liquid above the position (x, y, z).</li>
 </ol>
 
 <p>History variables 8-10 are storing Euler angles &alpha;, &beta;, and &gamma; (in radians) for a Z-Y-Z rotation scheme; only &alpha; is needed for 2D and it is stored as cos(&alpha;) and sin(&alpha;) instead of as angles.</p>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- New Material Section -->
+
+<h2><a name="isoplastsoft"></a>Isotropic, Plastic, Small-Strain Material with Anisotropic Damage (Type=53)</h2>
+
+<p>This material is an isotropic, elastic-plastic material that can also develop aniostropic damage. For more details see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Isotropic_ Plastic Softening Material">OSUPDocs wiki</a>.The properties are:
+
+<ul>
+<li><a href="#isotropic">(Isotropic, Elastic Properties)</a> - Enter all properties needed to define the underlying isotropic material response</li>
+<li><a href="#isoplast">(Isotropic, Plastic Properties)</a> - Enter yield properties and a hardening law (but cannot use a hardening law that changes shear modulus)</li>
+<li><a href="#isosoft">(Isotropic, Softening Properties)</a> - Enter properties for initiation of damage and for two softening laws</li>
+<li>(other) - see <a href="#isotropic">Isotropic</a> material for all properties of the underlying small-strain, isotropic material, except this softening material requires use of <a href="#cmn1"><code>largeRotation</code> property</a> set to 1.</li>
+</ul>
+
+<p>The particle plastic strain will archive the sum of plastic and cracking strain in the global axis system. The plastic energy will archive the total amount of energy released by plsticity or by damage to the particle.</p>
+
+<h3>History Data for Isotropic, Plastic, Small-Strain Materials with Anisotropic Damage</h3>
+
+<ul>
+<li>The first history variables for for the choosen softening law.
+<li>The subsequent history variables are identical to <a href="#isosoft">isotropic softening materials</a>, but renumbered from end of softening law history variables</li>
+<li>Three addition history variable at the end will track components of the normal and shear cracking strains in the crack axis system.</li>
+</ul>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
@@ -1519,6 +1551,7 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 <li><a href="#cmn3">Crack Propagation Properties</a></li>
 <li><a href="#cmn4">Contact Properties</a></li>
 <li><a href="#cmn5">Artificial Viscosity</a></li>
+<li><a href="#cmn6">Poroelasticity Properties</a></li>
 </ul>
 
 
@@ -1614,6 +1647,36 @@ Q = &Delta;x*|D<sub>kk</sub>|*(A1*C + A2*&Delta;x*|D<sub>kk</sub>|)
 <li>avA2 - the A2 parameter in artificial viscosity (dimensionless, default 2.0)</li>
 </ul>
 <p>The artificial viscosity option is only supported in some materials (as documented <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Common_Material_Properties#Artificial_Viscosity">here</a>). If you use these commands in a material that does not support, an error will result.</p>
+
+<h3><a name="cmn6"></a>Poroelasticity Properties</h3>
+
+<p>Some materials support poroelasticity calculations and the properties in this section control pore pressure flow between particles and coupling between stress and strain and pore pressure. The properties to use depend on symmetry of the parent material.</p>
+
+<p><b>Isotropic Poroelasticity Properties</b></p>
+
+<ul>
+<li>Ku - undrained bulk modulus (<a href="commands.html#units">pressure units</a>)</li>
+<li>alphaPE - The poroelasticity Biot coefficient (from 0 to 1) (dimensionless, default 0)</li>
+<li>Darcy - Darcy law permittivity for the material (1/<a href="commands.html#units">length units<sup>2</sup></a>, default 0)</li>
+</ul>
+
+<p><b>Transversely Isotropic Poroelasticity Properties</b></p>
+
+<ul>
+<li>Ku - undrained bulk modulus (<a href="commands.html#units">pressure units</a>)</li>
+<li>alphaAPE, alphaTPE - The axial and transverse poroelasticity Biot coefficients (from 0 to 1) (dimensionless, default 0)</li>
+<li>DarcyA, DarcyT - Darcy axial and transverse law permittivities for the material (1/<a href="commands.html#units">length units<sup>2</sup></a>, default 0)</li>
+</ul>
+
+<p><b>Orthotropic Poroelasticity Properties</b></p>
+
+<ul>
+<li>Ku - undrained bulk modulus (<a href="commands.html#units">pressure units</a>)</li>
+<li>alphaxPE, alphayPE, alphazPE - The poroelasticity Biot coefficients in the three orthrotopic directions (from 0 to 1) (dimensionless, default 0)</li>
+<li>alphaRPE, alphaZPE, alphaTPE - For cylindrical, orthotropic materials, these are radial, axial, and hoop Biot coefficients. They are synonyms for orthotropic coefficients (with R=x, Z=y, and T=z). (from 0 to 1) (dimensionless, default 0)</li>
+<li>Darcyx, Darcyy, Darcyz - Darcy law permittivities for the three orthotropic directions (1/<a href="commands.html#units">length units<sup>2</sup></a>, default 0)</li>
+<li>DarcyR, DarcyZ, DarcyT - For cylindrical, orthotropic materials, these are radial, axial, and hoop Darcy law permittivities for the material. They are synonyms for orthotropic coefficients (with R=x, Z=y, and T=z). (1/<a href="commands.html#units">length units<sup>2</sup></a>, default 0)</li>
+</ul>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 

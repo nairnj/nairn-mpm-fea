@@ -83,6 +83,27 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	public static int NumContoursDef = 0;
 	public static String NumSubelementsKey = "NumberOfSubelements";
 	public static int NumSubelementsDef = 4;
+	
+	private JComboBox<String> families;
+	private JComboBox<Integer> sizes;
+	private JComboBox<String> ofamilies;
+	private JComboBox<Integer> osizes;
+	private JComboBox<String> rfamilies;
+	private JComboBox<Integer> rsizes;
+	
+	// window fonts
+	public static String ScriptFontKey = "Script Editing Font";
+	public static String ScriptFontDef = "Monospaced";
+	public static String ScriptFontSizeKey = "Script Editing Font Size";
+	public static int ScriptFontSizeDef = 14;
+	public static String OutputFontKey = "Output Font";
+	public static String OutputFontDef = "Monospaced";
+	public static String OutputFontSizeKey = "Output Font Size";
+	public static int OutputFontSizeDef = 14;
+	public static String ResultsFontKey = "Results Font";
+	public static String ResultsFontDef = "Monospaced";
+	public static String ResultsFontSizeKey = "Output Font Size";
+	public static int ResultsFontSizeDef = 14;
 
 	// plot colors
 	public static String backColorKey = "Background Color";
@@ -149,6 +170,9 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 
 		// color preferences pane ----------------------------------------
 		tabbedPane.addTab("Colors", null, colorPanel(), "Select colors used in plots");
+
+		// color preferences pane ----------------------------------------
+		tabbedPane.addTab("Fonts", null, fontPanel(), "Select fonts for windows");
 
 		// FEA and MPM preferences pane
 		// -----------------------------------------
@@ -473,6 +497,128 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		return panel2;
 	}
 	
+	// build panel for remote connections
+	public JPanel fontPanel()
+	{	JPanel panel4 = new JPanel();
+
+		GridBagLayout panebag = new GridBagLayout();
+		GridBagConstraints pc = new GridBagConstraints(); // for the pane
+		panel4.setLayout(panebag);
+
+		// font box
+		GridBagLayout gridbag = new GridBagLayout();
+		JNBoxPanel fontPan = new JNBoxPanel("Window Fonts",gridbag);
+		GridBagConstraints c = new GridBagConstraints(); // for the box panel
+		
+		// Script font
+		families = makeFontNameMenu(prefs.get(ScriptFontKey, ScriptFontDef));
+		sizes = makeFontSizesMenu(prefs.getInt(ScriptFontSizeKey, ScriptFontSizeDef));
+		makeFontFields(c,"Editing:",gridbag,fontPan,families,sizes);
+
+		// Output font
+		ofamilies = makeFontNameMenu(prefs.get(OutputFontKey, OutputFontDef));
+		osizes = makeFontSizesMenu(prefs.getInt(OutputFontSizeKey, OutputFontSizeDef));
+		makeFontFields(c,"Output:",gridbag,fontPan,ofamilies,osizes);
+
+		// Results font
+		rfamilies = makeFontNameMenu(prefs.get(ResultsFontKey, ResultsFontDef));
+		rsizes = makeFontSizesMenu(prefs.getInt(ResultsFontSizeKey, ResultsFontSizeDef));
+		makeFontFields(c,"Results:",gridbag,fontPan,rfamilies,rsizes);
+
+		// add spectrum box to pan
+		pc.fill = GridBagConstraints.HORIZONTAL;
+		pc.gridx = 0;
+		pc.gridwidth = 1;
+		pc.weightx = 1.0;
+		pc.weighty = 0.;
+		pc.insets = new Insets(1, 6, 1, 6); // tlbr
+		pc.anchor = GridBagConstraints.CENTER;
+		panebag.setConstraints(fontPan, pc);
+		panel4.add(fontPan);
+		
+		// empty fill on the bottom
+		pc.fill = GridBagConstraints.VERTICAL;
+		pc.weighty = 10.;
+		JLabel label = new JLabel(" ");
+		panebag.setConstraints(label,pc);
+		panel4.add(label);
+		
+		return panel4;
+	}
+	
+	protected void makeFontFields(GridBagConstraints c,String title,GridBagLayout gridbag,
+			JNBoxPanel fontPan,JComboBox<String> fontNames,JComboBox<Integer> fontSizes)
+	{
+		// label for type of font
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.anchor = GridBagConstraints.WEST;
+		c.gridx=0;
+		c.gridwidth = 1;
+		c.weightx = 0.0;
+		c.insets=new Insets(6, 6, 1, 0);			// tlbr
+		JLabel nameLabel=new JLabel(title);
+		gridbag.setConstraints(nameLabel,c);
+		fontPan.add(nameLabel);
+		
+		// menu of font families
+		c.gridx++;
+		c.weightx = 1.0;
+		c.insets = new Insets(6, 3, 1, 6);
+		gridbag.setConstraints(fontNames,c);
+		fontPan.add(fontNames);
+		
+		// menu of font sizes
+		c.fill = GridBagConstraints.NONE;
+		c.anchor = GridBagConstraints.CENTER;
+		c.gridx++;
+		c.insets=new Insets(6, 3, 1, 6);			// tlbr
+		gridbag.setConstraints(fontSizes,c);
+		fontPan.add(fontSizes);		
+	}
+	
+	// create combo box for font names
+	protected JComboBox<String> makeFontNameMenu(String eFontName)
+	{	// font menu in inspector
+		String [] names=GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames(null);
+		JComboBox<String> fNames=new JComboBox<String>(names);
+		fNames.addActionListener(this);
+		fNames.setFocusable(false);
+		fNames.setActionCommand("NewFontName");
+		
+		// select font
+		int i;
+		for(i=0;i<fNames.getItemCount();i++)
+		{	if(((String)(fNames.getItemAt(i))).equals(eFontName))
+			{	fNames.setSelectedIndex(i);
+				break;
+			}
+		}
+		
+		return fNames;
+	}
+
+	// create combo box
+	protected JComboBox<Integer> makeFontSizesMenu(int eFontSize)
+	{	// font menu in inspector
+		int i;
+		JComboBox<Integer> fSizes=new JComboBox<Integer>();
+		int [] allowSizes={8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32, 36 };
+		for(i=0;i<allowSizes.length;i++)
+			fSizes.addItem(new Integer(allowSizes[i]));
+		fSizes.addActionListener(this);
+		fSizes.setFocusable(false);
+		fSizes.setActionCommand("NewFontSize");
+		
+		// select size
+		for(i=0;i<fSizes.getItemCount();i++)
+		{	if(((Integer)(fSizes.getItemAt(i))).intValue()==eFontSize)
+			{	fSizes.setSelectedIndex(i);
+				break;
+			}
+		}
+
+		return fSizes;
+	}
 	// line on remote panel with label and text field
 	public void remoteLine(JPanel panel3,GridBagLayout gridbag,GridBagConstraints c,String tlab,
 			JTextField theFld,String theValue,String aPrefKey,String toolTip)
@@ -721,6 +867,32 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 			else if (this.rdbtnExecRemote.isSelected())
 			{	prefs.put(CodeExecLocationKey, "remote");
 				currentRemoteMode = true;
+			}
+		}
+		
+		else if(theCmd.equalsIgnoreCase("NewFontName"))
+		{	JComboBox<?> cb = (JComboBox<?>)e.getSource();
+			if(cb==families)
+			{	prefs.put(ScriptFontKey,(String)cb.getSelectedItem());
+			}
+			else if(cb==ofamilies)
+			{	prefs.put(OutputFontKey,(String)cb.getSelectedItem());
+			}
+			else if(cb==rfamilies)
+			{	prefs.put(ResultsFontKey,(String)cb.getSelectedItem());
+			}
+		}
+		
+		else if(theCmd.equalsIgnoreCase("NewFontSize"))
+		{	JComboBox<?> cb = (JComboBox<?>)e.getSource();
+			if(cb==sizes)
+			{	prefs.putInt(ScriptFontSizeKey,((Integer)cb.getSelectedItem()).intValue());
+			}
+			else if(cb==osizes)
+			{	prefs.putInt(OutputFontSizeKey,((Integer)cb.getSelectedItem()).intValue());
+			}
+			else if(cb==rsizes)
+			{	prefs.putInt(ResultsFontSizeKey,((Integer)cb.getSelectedItem()).intValue());
 			}
 		}
 		

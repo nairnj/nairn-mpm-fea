@@ -53,7 +53,11 @@ public class DocViewer extends JNDocument
 		addToolBarIcon(showCmds,null,"Show associated commands window (if available).",showPartnerCommand);
 
 		// top displays sections and text of selected section
-		display=new TextDisplay(resDoc);
+		Font theFont = new Font(NFMVPrefs.prefs.get(NFMVPrefs.ResultsFontKey,
+				NFMVPrefs.ResultsFontDef),Font.PLAIN,
+				NFMVPrefs.prefs.getInt(NFMVPrefs.ResultsFontSizeKey,
+						NFMVPrefs.ResultsFontSizeDef));
+		display=new TextDisplay(resDoc,theFont);
 		
 		// control area
 		controls=new ControlPanel(this);

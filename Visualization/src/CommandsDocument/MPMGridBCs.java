@@ -6,7 +6,7 @@
  * Copyright (c) 2013 RSAC Software. All rights reserved.
  * 
  * Start BC: MoveLine, MoveArv, MoveBox
- * Subordinate: Velocity, Temperature, Concentration
+ * Subordinate: Velocity, Temperature, Concentration (PorePressure)
  */
 
 import java.util.*;
@@ -375,7 +375,7 @@ public class MPMGridBCs
 		options.put("cosine", new Integer(4));
 		options.put("function", new Integer(6));
 		int style = doc.readIntOption(args.get(1), options,
-				"Temperature or concentration style");
+				"Temperature, concentration, or porepressure style");
 
 		// read arg1 and arg2
 		double arg1 = 0., arg2 = 0.;

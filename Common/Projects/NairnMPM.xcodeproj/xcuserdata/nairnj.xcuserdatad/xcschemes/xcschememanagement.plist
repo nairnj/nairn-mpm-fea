@@ -4,6 +4,11 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>CompareGlobal.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
 		<key>ExtractMPM.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -22,6 +27,11 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>6738040221B4B0DA00A295C9</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>A72A90C80CD2ADA5001DCFA8</key>
 		<dict>
 			<key>primary</key>

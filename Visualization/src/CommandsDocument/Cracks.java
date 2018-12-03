@@ -298,7 +298,7 @@ public class Cracks
 	public void setCrackFriction(ArrayList<String> args,String cmd) throws Exception
 	{	// must be in a crack
 		if(currentCrack==null)
-			throw new Exception("'CrackInteface' command must be in an active crack:\n"+args);
+			throw new Exception("'CrackInterface' command must be in an active crack:\n"+args);
 		crackFriction = cmd;
 	}
 
@@ -419,6 +419,19 @@ public class Cracks
 		crackList.append(">\n"+currentCrack.toString());
 		if(crackThickness!=null) crackList.append(crackThickness);
 		crackList.append("  </CrackList>\n\n");
+	}
+
+	// when done or start new crack, append current one
+	public void appendXMLCrack(String xmlData)
+	{
+		// output current crack first
+		appendCurrentCrack();
+		
+		crackList.append("  <CrackList>\n");
+		crackList.append(xmlData);
+		crackList.append("  </CrackList>\n\n");
+		
+		currentCrack = null;
 	}
 
 	//----------------------------------------------------------------------------

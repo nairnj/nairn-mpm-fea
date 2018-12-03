@@ -35,13 +35,17 @@ public class TextDisplay extends JSplitPane
 	// left and scrollable text content on the right
 	//-----------------------------------------------------------------
 	
-	public TextDisplay(ResultsDocument gResDoc)
+	public TextDisplay(ResultsDocument gResDoc,Font theFont)
 	{   super(JSplitPane.HORIZONTAL_SPLIT);
+	
+		// default font
+		if(theFont==null) theFont = new Font("Monospaced",Font.PLAIN,12);
 		
 		// left side is table with sections
 		resDoc=gResDoc;
 		sectionList=new JTable(resDoc);
-		sectionList.setFont(new Font("Monospaced",Font.PLAIN,12));
+		sectionList.setFont(theFont);
+		sectionList.setRowHeight(theFont.getSize()+4);
 		sectionList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		ListSelectionModel rowSM=sectionList.getSelectionModel();
 		rowSM.addListSelectionListener(new ListSelectionListener()
@@ -61,7 +65,7 @@ public class TextDisplay extends JSplitPane
 		
 		// right side is text view
 		textPane.setEditable(false);
-		textPane.setFont(new Font("Monospaced",Font.PLAIN,12));
+		textPane.setFont(theFont);
 		right=new JScrollPane(textPane);
 		setRightComponent(right);
 		
