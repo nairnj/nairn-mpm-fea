@@ -103,9 +103,6 @@
     <ClInclude Include="..\..\..\..\Read_XML\MaterialController.hpp">
       <Filter>Common\Read_XML</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\Read_XML\mathexpr.hpp">
-      <Filter>Common\Read_XML</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\Read_XML\NodesController.hpp">
       <Filter>Common\Read_XML</Filter>
     </ClInclude>
@@ -172,12 +169,6 @@
     <ClInclude Include="..\..\..\..\Nodes\NodalPoint.hpp">
       <Filter>Common\Nodes</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\Nodes\NodalPoint2D.hpp">
-      <Filter>Common\Nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\Nodes\NodalPoint3D.hpp">
-      <Filter>Common\Nodes</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Area.hpp">
       <Filter>NairnFEA_src\Read_FEA</Filter>
     </ClInclude>
@@ -217,9 +208,6 @@
     <ClInclude Include="..\..\..\..\..\NairnFEA\src\Materials\ImperfectInterface.hpp">
       <Filter>NairnFEA_src\Materials</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\CSTriangle.hpp">
-      <Filter>NairnFEA_src\Elements</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnFEA\src\Elements\EightNodeIsoparam.hpp">
       <Filter>NairnFEA_src\Elements</Filter>
     </ClInclude>
@@ -252,6 +240,15 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnFEA\src\System\FEAPrefix.hpp">
       <Filter>NairnFEA_src\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\Atomic.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\Expression.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Elements\CSTriangle.hpp">
+      <Filter>Common\Elements</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -310,9 +307,6 @@
       <Filter>Common\Read_XML</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\Read_XML\MaterialController.cpp">
-      <Filter>Common\Read_XML</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Read_XML\mathexpr.cpp">
       <Filter>Common\Read_XML</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\Read_XML\NodesController.cpp">
@@ -378,12 +372,6 @@
     <ClCompile Include="..\..\..\..\Nodes\NodalPoint.cpp">
       <Filter>Common\Nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\Nodes\NodalPoint2D.cpp">
-      <Filter>Common\Nodes</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Nodes\NodalPoint3D.cpp">
-      <Filter>Common\Nodes</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Area.cpp">
       <Filter>NairnFEA_src\Read_FEA</Filter>
     </ClCompile>
@@ -435,9 +423,6 @@
     <ClCompile Include="..\..\..\..\..\NairnFEA\src\Materials\MaterialBaseFEA.cpp">
       <Filter>NairnFEA_src\Materials</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\CSTriangle.cpp">
-      <Filter>NairnFEA_src\Elements</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnFEA\src\Elements\EightNodeIsoparam.cpp">
       <Filter>NairnFEA_src\Elements</Filter>
     </ClCompile>
@@ -476,6 +461,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnFEA\src\Numerical\Gauss.cpp">
       <Filter>NairnFEA_src\Numerical</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\Atomic.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\Expression.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Elements\CSTriangle.cpp">
+      <Filter>Common\Elements</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

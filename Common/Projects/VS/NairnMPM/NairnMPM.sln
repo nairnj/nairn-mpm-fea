@@ -9,19 +9,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NairnFEA", "NairnFEA\NairnF
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExtractMPM", "ExtractMPM\ExtractMPM.vcxproj", "{3D0F936D-1161-407C-B806-F5540AE12C8F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Programming_Notes", "Programming_Notes", "{38505872-7097-49CF-BC27-B34DD9037D59}"
-	ProjectSection(SolutionItems) = preProject
-		..\..\..\Programming_Notes\CuttingResults_94-957.pdf = ..\..\..\Programming_Notes\CuttingResults_94-957.pdf
-		..\..\..\Programming_Notes\MPM+PS_Development.txt = ..\..\..\Programming_Notes\MPM+PS_Development.txt
-		..\..\..\Programming_Notes\Multimaterial_Conduction.txt = ..\..\..\Programming_Notes\Multimaterial_Conduction.txt
-		..\..\..\Programming_Notes\OSP_NFM_Differences.txt = ..\..\..\Programming_Notes\OSP_NFM_Differences.txt
-		..\..\..\Programming_Notes\Recent_Changes.txt = ..\..\..\Programming_Notes\Recent_Changes.txt
-		..\..\..\Programming_Notes\Summary_of_Tasks.txt = ..\..\..\Programming_Notes\Summary_of_Tasks.txt
-		..\..\..\Programming_Notes\Tartan_Grid.txt = ..\..\..\Programming_Notes\Tartan_Grid.txt
-		..\..\..\Programming_Notes\TISoftening_Development.txt = ..\..\..\Programming_Notes\TISoftening_Development.txt
-		..\..\..\Programming_Notes\Wood_Cutting.txt = ..\..\..\Programming_Notes\Wood_Cutting.txt
-		..\..\..\Programming_Notes\XPIC_Development.txt = ..\..\..\Programming_Notes\XPIC_Development.txt
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CompareGlobal", "CompareGlobal\CompareGlobal.vcxproj", "{15A1D3AF-7BB2-4403-81E6-8B742520441A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +43,14 @@ Global
 		{3D0F936D-1161-407C-B806-F5540AE12C8F}.Release|x64.Build.0 = Release|x64
 		{3D0F936D-1161-407C-B806-F5540AE12C8F}.Release|x86.ActiveCfg = Release|Win32
 		{3D0F936D-1161-407C-B806-F5540AE12C8F}.Release|x86.Build.0 = Release|Win32
+		{15A1D3AF-7BB2-4403-81E6-8B742520441A}.Debug|x64.ActiveCfg = Release|x64
+		{15A1D3AF-7BB2-4403-81E6-8B742520441A}.Debug|x64.Build.0 = Release|x64
+		{15A1D3AF-7BB2-4403-81E6-8B742520441A}.Debug|x86.ActiveCfg = Release|Win32
+		{15A1D3AF-7BB2-4403-81E6-8B742520441A}.Debug|x86.Build.0 = Release|Win32
+		{15A1D3AF-7BB2-4403-81E6-8B742520441A}.Release|x64.ActiveCfg = Release|x64
+		{15A1D3AF-7BB2-4403-81E6-8B742520441A}.Release|x64.Build.0 = Release|x64
+		{15A1D3AF-7BB2-4403-81E6-8B742520441A}.Release|x86.ActiveCfg = Release|Win32
+		{15A1D3AF-7BB2-4403-81E6-8B742520441A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

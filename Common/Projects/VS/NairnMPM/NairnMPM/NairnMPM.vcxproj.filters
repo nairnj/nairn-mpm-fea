@@ -170,9 +170,6 @@
     <ClInclude Include="..\..\..\..\Read_XML\MaterialController.hpp">
       <Filter>Common\Read_XML</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\Read_XML\mathexpr.hpp">
-      <Filter>Common\Read_XML</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\Read_XML\NodesController.hpp">
       <Filter>Common\Read_XML</Filter>
     </ClInclude>
@@ -201,12 +198,6 @@
       <Filter>Common\Read_XML</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\Nodes\NodalPoint.hpp">
-      <Filter>Common\Nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\Nodes\NodalPoint2D.hpp">
-      <Filter>Common\Nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\Nodes\NodalPoint3D.hpp">
       <Filter>Common\Nodes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\System\ArchiveData.hpp">
@@ -542,6 +533,15 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\NonlinearInterface.hpp">
       <Filter>NairnMPM_src\Contact_Laws</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\Expression.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\Atomic.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MaterialContactNode.hpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -631,9 +631,6 @@
     <ClCompile Include="..\..\..\..\Read_XML\MaterialController.cpp">
       <Filter>Common\Read_XML</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\Read_XML\mathexpr.cpp">
-      <Filter>Common\Read_XML</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\Read_XML\NodesController.cpp">
       <Filter>Common\Read_XML</Filter>
     </ClCompile>
@@ -662,12 +659,6 @@
       <Filter>Common\Read_XML</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\Nodes\NodalPoint.cpp">
-      <Filter>Common\Nodes</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Nodes\NodalPoint2D.cpp">
-      <Filter>Common\Nodes</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Nodes\NodalPoint3D.cpp">
       <Filter>Common\Nodes</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\System\ArchiveData.cpp">
@@ -1023,6 +1014,18 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\NonlinearInterface.cpp">
       <Filter>NairnMPM_src\Contact_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\Expression.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\Atomic.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\MaterialContactNode.cpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\SetCustomTasks.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
