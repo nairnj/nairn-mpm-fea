@@ -175,9 +175,9 @@ double DiffusionTask::RescalePotential(void)
 {	return active==POROELASTICITY_DIFFUSION ? UnitsController::Scaling(1.e6) : 1 ;
 }
 
-// convert poroelasticity MPa/time to Pa/time and SI flux units to Legacy flux units
+// convert Legacy poroelasticity (dV/V)/time to (dV/V)/time (factor=1) and
+// convert concetration flux (kg/(m^2-sec) to Legacy (g/(mm^2 sec))
 double DiffusionTask::RescaleFlux(void)
-{	return active==POROELASTICITY_DIFFUSION ? UnitsController::Scaling(1.e6) :
-			UnitsController::Scaling(1.e-3);
+{	return active==POROELASTICITY_DIFFUSION ? 1. : UnitsController::Scaling(1.e-3);
 }
 

@@ -99,24 +99,21 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 			fluxMag.y = D->xy*mpmptr->pDiffusion[gGRADx] + D->yy*mpmptr->pDiffusion[gGRADy];
 		}
 		
-		// scale by volume to get 1/(L^2-T)
-		ScaleVector(&fluxMag,1./mpmptr->GetVolume(DEFORMED_VOLUME));
-		
         bcDir = N_DIRECTION;
 	}
 	else if(direction==EXTERNAL_FLUX)
 	{	if(fmobj->HasPoroelasticity())
-		{	// provided value in P/(L^2-T), scale by 1/Q for get 1/(L^2-T)
-			fluxMag.x = BCValue(bctime)*mpmptr->GetDiffusionCT();
+		{	// provided value in (dV/V)/(L^2-T), scale by V to get L/T
+			fluxMag.x = BCValue(bctime)*mpmptr->GetVolume(DEFORMED_VOLUME);
 		}
 		else
-		{	// provided value in M/(L^2-T), scale by mass to get 1/(L^2-T)
-			fluxMag.x = BCValue(bctime)/mpmptr->mp;
+		{	// provided value in M/(L^2-T), scale by current density to get L/T
+			fluxMag.x = BCValue(bctime)*mpmptr->GetVolume(DEFORMED_VOLUME)/mpmptr->mp;
 		}
 	}
 	else
     {	// moisture f(c-cres) (units potential) and function should give flux in M/(L^2-T)
-		// poroelasticity f(p-pres) (units P) and function should give flux in P/(L^2-T)
+		// poroelasticity f(p-pres) (units P) and function should give flux in (dV/V)/(L^2-T)
 		
 		// time variable (t) is replaced by c-cres, where c is the particle value and cres is reservoir
 		// Poroelasticity used particle value to support changed flux when void space
@@ -136,12 +133,12 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 		if(cmcres>0.) currentValue=-currentValue;
 		
 		if(fmobj->HasPoroelasticity())
-		{	// function value in P/(L^2-T), scale by 1/Q for get 1/(L^2-T)
-			fluxMag.x = currentValue*mpmptr->GetDiffusionCT();
+		{	// provided value in (dV/V)/(L^2-T), scale by V to get L/T
+			fluxMag.x = currentValue*mpmptr->GetVolume(DEFORMED_VOLUME);
 		}
 		else
-		{	// function value in M/(L^2-T), scale by mass to get flux in 1/(L^2-T)
-			fluxMag.x = currentValue/mpmptr->mp;
+		{	// provided value in M/(L^2-T), scale by current density to get L/T
+			fluxMag.x = currentValue*mpmptr->GetVolume(DEFORMED_VOLUME)/mpmptr->mp;
 		}
 	}
 	
@@ -185,7 +182,7 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 
 #pragma mark MatPtFluxBC:Accessors
 
-// set value (and scale legacy kg/(m^2-sec) to g/(mm^2-sec) for concentration or MPa/sec to Pa/sec for pore pressure)
+// set value (and scale legacy kg/(m^2-sec) to g/(mm^2-sec) for concentration or (dV/V)/sec to (dV/V)/sec for pore pressure)
 void MatPtFluxBC::SetBCValue(double bcvalue)
 {	double rescale = DiffusionTask::RescaleFlux();
 	BoundaryCondition::SetBCValue(rescale*bcvalue);
