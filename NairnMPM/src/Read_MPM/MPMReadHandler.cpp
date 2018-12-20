@@ -1271,9 +1271,9 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	}
 	
 	// Turn off artificial viscosity heating (only on when adibatic)
-    else if(strcmp(xName,"NoAVHeating")==0)
+    else if(strcmp(xName,"AVHeating")==0)
 	{	ValidateCommand(xName,THERMAL,ANY_DIM);
-		ConductionTask::AVHeating = false;
+		ConductionTask::AVHeating = true;
 	}
 
 	else if(strcmp(xName,"ContactHeatFlow")==0)

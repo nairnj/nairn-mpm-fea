@@ -47,7 +47,7 @@ bool ConductionTask::matContactHeating=false;
 
 // these don't require conduction to be active
 bool ConductionTask::adiabatic=false;
-bool ConductionTask::AVHeating=true;
+bool ConductionTask::AVHeating=false;
 
 // possible one conduction task
 ConductionTask *conduction=NULL;

@@ -2382,6 +2382,7 @@ public class CmdViewer extends JNCmdTextDocument
 		boolean hasTips = false;
 		boolean hasFriction = false;
 		boolean hasCrackFriction = false;
+		boolean hasAVHeating = false;
 		HashMap<String, Integer> options = new HashMap<String, Integer>(4);
 		options.put("adiabatic", new Integer(1));
 		options.put("mechanical energy", new Integer(1));
@@ -2389,6 +2390,7 @@ public class CmdViewer extends JNCmdTextDocument
 		options.put("crack tips", new Integer(3));
 		options.put("friction", new Integer(4));
 		options.put("crack friction", new Integer(5));
+		options.put("avheating", new Integer(6));
 
 		// each one
 		int arg = 2;
@@ -2405,6 +2407,8 @@ public class CmdViewer extends JNCmdTextDocument
 				hasFriction = true;
 			else if(opt == 5)
 				hasCrackFriction = true;
+			else if(opt == 6)
+				hasAVHeating = true;
 			arg++;
 		}
 
@@ -2421,6 +2425,8 @@ public class CmdViewer extends JNCmdTextDocument
 			conduction = conduction + "    <ContactHeating/>\n";
 		if(hasCrackFriction)
 			conduction = conduction + "    <CrackContactHeating/>\n";
+		if(hasAVHeating)
+			conduction = conduction + "    <AVHeating/>\n";
 	}
 
 	// CustomTask name

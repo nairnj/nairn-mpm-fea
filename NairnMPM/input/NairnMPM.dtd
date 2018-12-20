@@ -267,7 +267,7 @@
 <!-- Thermal analysis -->
 
 <!ELEMENT	Thermal
-			( Conduction | CrackTipHeating | EnergyCoupling | NoAVHeating | Isothermal
+			( Conduction | CrackTipHeating | EnergyCoupling | AVHeating | Isothermal
 				| CrackContactHeating | ContactHeating )* >
 
 <!-- Gravity analysis -->
@@ -405,7 +405,7 @@
 <!ELEMENT	CrackContactHeating EMPTY>
 <!ELEMENT	ContactHeating EMPTY>
 <!ELEMENT	EnergyCoupling EMPTY>
-<!ELEMENT	NoAVHeating EMPTY>
+<!ELEMENT	AVHeating EMPTY>
 
 <!ELEMENT	rho (#PCDATA)>
 <!ELEMENT	E (#PCDATA)>
