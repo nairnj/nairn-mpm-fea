@@ -340,20 +340,15 @@ void MaterialBase::PrintCommonProperties(void) const
 	
 	// artificial visconsity
 	if(artificialViscosity)
-	{	PrintProperty("Artificial viscosity on",FALSE);
+	{	if(ConductionTask::AVHeating)
+			PrintProperty("Art. viscosity on (+heat)",false);
+		else
+			PrintProperty("Art. viscosity on (-heat)",false);
 		PrintProperty("AV-A1",avA1,"");
 		PrintProperty("AV-A2",avA2,"");
 		cout << endl;
-		if(ConductionTask::AVHeating)
-		{	PrintProperty("    AV heating on",FALSE);
-			cout << endl;
-		}
-		else
-		{	PrintProperty("    AV heating off",FALSE);
-			cout << endl;
-		}
 	}
-	
+
 	// particle damping
 	if(matUsePDamping)
 	{	cout << "Particle damping: " << matPdamping << " /sec";

@@ -1270,12 +1270,18 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		ConductionTask::adiabatic = true;
 	}
 	
-	// Turn off artificial viscosity heating (only on when adibatic)
+	// Turn on artificial viscosity heating (only on when adibatic)
     else if(strcmp(xName,"AVHeating")==0)
 	{	ValidateCommand(xName,THERMAL,ANY_DIM);
 		ConductionTask::AVHeating = true;
 	}
 
+	// Turn off artificial viscosity heating (only on when adibatic)
+	else if(strcmp(xName,"NoAVHeating")==0)
+	{	ValidateCommand(xName,THERMAL,ANY_DIM);
+		ConductionTask::AVHeating = false;
+	}
+	
 	else if(strcmp(xName,"ContactHeatFlow")==0)
 	{	throw SAXException("<ContactHeatFlow> command requires OSParticulas.");
 	}

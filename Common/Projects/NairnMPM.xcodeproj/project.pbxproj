@@ -1955,6 +1955,20 @@
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0460;
+				TargetAttributes = {
+					A72A90C80CD2ADA5001DCFA8 = {
+						DevelopmentTeam = 463VM8Q453;
+						ProvisioningStyle = Automatic;
+					};
+					A766701A05862EB600F56460 = {
+						DevelopmentTeam = 463VM8Q453;
+						ProvisioningStyle = Automatic;
+					};
+					A766739C05863A1700F56460 = {
+						DevelopmentTeam = 463VM8Q453;
+						ProvisioningStyle = Automatic;
+					};
+				};
 			};
 			buildConfigurationList = A7BB15E009F4555D000A7C91 /* Build configuration list for PBXProject "NairnMPM" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -2278,9 +2292,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 463VM8Q453;
 				INSTALL_PATH = "$(HOME)/bin";
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = ExtractMPM;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
 			name = Default;
 		};
@@ -2288,7 +2306,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
-				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 463VM8Q453;
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_PREFIX_HEADER = ../../NairnMPM/src/System/MPMPrefix.hpp;
@@ -2308,6 +2328,7 @@
 				OTHER_CFLAGS = "-fopenmp";
 				OTHER_LDFLAGS = "-fopenmp";
 				PRODUCT_NAME = NairnMPM;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SECTORDER_FLAGS = "";
 				WARNING_CFLAGS = "";
@@ -2318,7 +2339,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
-				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 463VM8Q453;
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_PREFIX_HEADER = ../../NairnFEA/src/System/FEAPrefix.hpp;
@@ -2338,6 +2361,7 @@
 				OTHER_CFLAGS = "-fopenmp";
 				OTHER_LDFLAGS = "-fopenmp";
 				PRODUCT_NAME = NairnFEA;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SECTORDER_FLAGS = "";
 				VALID_ARCHS = x86_64;
 				WARNING_CFLAGS = "";
