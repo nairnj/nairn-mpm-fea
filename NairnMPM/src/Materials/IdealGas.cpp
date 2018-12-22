@@ -147,7 +147,7 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
 	double AVEnergy = 0.;
 	if(delV<0. && artificialViscosity)
 	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(fabs(gammaAdiabatic*mPnsp)),mptr);
-		if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delV);
+		AVEnergy += fabs(QAVred*delV);
 		mPsp -= QAVred;
 	}
 	
@@ -165,7 +165,7 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
     
     // heat energy (treated as reversible)
 	double dTq0 = dW/GetHeatCapacity(mptr);
-    IncrementHeatEnergy(mptr,dTq0,AVEnergy);
+    IncrementHeatEnergy(mptr,dTq0-AVEnergy,AVEnergy);
 }
 
 #pragma mark IdealGas::Accessors

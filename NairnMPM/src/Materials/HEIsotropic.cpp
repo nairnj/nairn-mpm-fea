@@ -384,7 +384,7 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,doub
     double QAVred = 0.;
     if(delV<0. && artificialViscosity)
 	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(p->Kred*J),mptr);
-        if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delV);
+        AVEnergy += fabs(QAVred*delV);
     }
     double Pfinal = -Kterm + QAVred;
     mptr->SetPressure(Pfinal);

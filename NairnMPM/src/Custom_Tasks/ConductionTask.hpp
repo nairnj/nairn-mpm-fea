@@ -24,7 +24,7 @@ class NodalValueBC;
 class ConductionTask : public TransportTask
 {
     public:
-		static bool active,activeRamp,crackTipHeating,adiabatic,AVHeating;
+		static bool active,activeRamp,crackTipHeating,adiabatic;
 		static bool crackContactHeating,matContactHeating;
 	
 		// initialize

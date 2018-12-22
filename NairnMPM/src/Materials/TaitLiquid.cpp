@@ -285,7 +285,7 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	if(delV<0. && artificialViscosity)
 	{	double Kratio = Jeff*(1.+pressure/(TAIT_C*Ksp));
 		QAVred = GetArtificalViscosity(delV/delTime,sqrt((Kbulk*Kratio)/rho),mptr);
-		if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delV);
+		AVEnergy += fabs(QAVred*delV);
 		pressure += QAVred;
 		mptr->IncrementPressure(QAVred);
 	}

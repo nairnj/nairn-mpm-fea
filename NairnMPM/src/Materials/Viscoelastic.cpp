@@ -612,7 +612,7 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 #else
 			QAVred = GetArtificalViscosity(delV/delTime,sqrt(Kered),mptr);
 #endif
-			if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delV);
+			AVEnergy += fabs(QAVred*delV);
 		}
 		
 		// increment pressure
@@ -711,7 +711,7 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		double QAVred = 0.;
 		if(delVMG<0. && artificialViscosity)
 		{	QAVred = GetArtificalViscosity(delVMG/delTime,sqrt(Kred*J),mptr);
-			if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delVMG);
+			AVEnergy += fabs(QAVred*delVMG);
 		}
 		
 		// set final pressure

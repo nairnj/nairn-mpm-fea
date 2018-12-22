@@ -269,7 +269,7 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,
     double QAVred = 0.;
     if(delV<0. && artificialViscosity)
 	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(p->Kred*J),mptr);
-        if(ConductionTask::AVHeating) AVEnergy += fabs(QAVred*delV);
+        AVEnergy += fabs(QAVred*delV);
     }
     
     // set final pressure

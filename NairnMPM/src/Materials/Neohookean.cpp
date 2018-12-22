@@ -255,7 +255,7 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
 	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(pr.Ksp)*J,mptr);
-        if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
+        AVEnergy = fabs(QAVred*delV);
     }
     double Pfinal = -Pterm + QAVred;
     

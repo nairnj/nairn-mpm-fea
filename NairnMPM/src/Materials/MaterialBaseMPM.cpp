@@ -340,10 +340,7 @@ void MaterialBase::PrintCommonProperties(void) const
 	
 	// artificial visconsity
 	if(artificialViscosity)
-	{	if(ConductionTask::AVHeating)
-			PrintProperty("Art. viscosity on (+heat)",false);
-		else
-			PrintProperty("Art. viscosity on (-heat)",false);
+	{	PrintProperty("Artificial viscosity on:",false);
 		PrintProperty("AV-A1",avA1,"");
 		PrintProperty("AV-A2",avA2,"");
 		cout << endl;
