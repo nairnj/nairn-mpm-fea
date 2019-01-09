@@ -118,7 +118,7 @@ bool MPMBase::AllocateCPDIorGIMPStructures(int gimpType,bool isThreeD)
 {
     int cpdiSize=0;
     
-	// If CPDU find size of CPDI datastructuress, other pass on to GIMP structur allocation
+	// If CPDI find size of CPDI datastructuress, otherwise pass on to GIMP structur allocation
     if(gimpType==LINEAR_CPDI || gimpType==LINEAR_CPDI_AS || gimpType==BSPLINE_CPDI)
         cpdiSize = isThreeD ? 8 : 4 ;
     else if(gimpType==QUADRATIC_CPDI)

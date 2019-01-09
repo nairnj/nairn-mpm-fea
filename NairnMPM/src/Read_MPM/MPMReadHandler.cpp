@@ -412,7 +412,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
                 }
                 else if(strcmp(value,"lCPDI")==0 || strcmp(value,"CPDI")==0 || strcmp(value,"2")==0)
                 {   ElementBase::useGimp = LINEAR_CPDI;
-					maxShapeNodes = fmobj->np==THREED_MPM ? 40 : 17 ;
+					maxShapeNodes = fmobj->np==THREED_MPM ? 50 : 17 ;
 					ElementBase::gridNiNodes = fmobj->np==THREED_MPM ? 8 : 4 ;
                 }
                 else if(strcmp(value,"qCPDI")==0 || strcmp(value,"3")==0)

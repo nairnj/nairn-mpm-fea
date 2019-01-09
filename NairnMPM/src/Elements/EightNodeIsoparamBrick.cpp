@@ -114,7 +114,7 @@ void EightNodeIsoparamBrick::SplineShapeFunction(int *nds,Vector *xi,int getDeri
 	if(getDeriv)
 	{   inv_dx = 1./GetDeltaX();
 		inv_dy = 1./GetDeltaY();
-		inv_dz = 1./GetDeltaY();
+		inv_dz = 1./GetDeltaZ();
 	}
 	
 	// get cell shape functions

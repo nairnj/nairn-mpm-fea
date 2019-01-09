@@ -843,22 +843,18 @@ void ElementBase::AllocateNeighbors(void)
 // throws CommonException() if CPDI type is not allowed
 void ElementBase::InitializeCPDI(bool isThreeD)
 {
-    if(isThreeD)
-    {   if(useGimp == LINEAR_CPDI)
-        {   numCPDINodes = 8;
-        }
-        else if(useGimp == QUADRATIC_CPDI)
-        {	throw CommonException("qCPDI is not yet implemented for 3D (use lCPDI instead).","ElementBase::InitializeCPDI");
-        }
-    }
-    else
-    {   if(useGimp == LINEAR_CPDI || useGimp==LINEAR_CPDI_AS)
-        {   numCPDINodes = 4;
-        }
-        else if(useGimp == QUADRATIC_CPDI)
-        {   numCPDINodes = 9;
-        }
-    }
+	if(isThreeD)
+	{	numCPDINodes = 8;
+		if(useGimp == QUADRATIC_CPDI)
+		{	throw CommonException("qCPDI is not yet implemented for 3D (use lCPDI or B2CPDI instead).","ElementBase::InitializeCPDI");
+		}
+	}
+	else
+	{   numCPDINodes = 4;
+		if(useGimp == QUADRATIC_CPDI)
+		{   numCPDINodes = 9;
+		}
+	}
 }
 
 
