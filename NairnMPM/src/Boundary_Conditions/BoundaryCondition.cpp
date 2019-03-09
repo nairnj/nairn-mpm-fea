@@ -155,7 +155,7 @@ void BoundaryCondition::SetFunction(char *bcFunction)
 	// value=1.;
 }
 
-void BoundaryCondition::GetPosition(unordered_map<string,double> vars)
+void BoundaryCondition::GetPosition(unordered_map<string,double> &vars)
 {	int i=GetNodeNum();
 	vars["x"] = nd[i]->x;
 	vars["y"] = nd[i]->y;

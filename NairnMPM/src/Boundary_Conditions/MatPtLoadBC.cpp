@@ -193,7 +193,7 @@ MatPtLoadBC *MatPtLoadBC::AddMPFluxBC(double bctime)
 #pragma mark MatPtLoadBC:Accessors
 
 // get current position of particle
-void MatPtLoadBC::GetPosition(unordered_map<string,double> vars)
+void MatPtLoadBC::GetPosition(unordered_map<string,double> &vars)
 {	vars["x"] = mpm[ptNum-1]->pos.x;
 	vars["y"] = mpm[ptNum-1]->pos.y;
 	vars["z"] = mpm[ptNum-1]->pos.z;

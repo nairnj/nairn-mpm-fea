@@ -73,7 +73,7 @@ class BoundaryCondition : public LinkedObject
 		int GetNodeNum(double);
 		int GetNodeNum(void);
 		virtual void SetFunction(char *);
-		virtual void GetPosition(unordered_map<string,double> );
+		virtual void GetPosition(unordered_map<string,double> & );
 		virtual void PrintFunction(ostream &);
 		int GetID(void);
 		void SetID(int);
