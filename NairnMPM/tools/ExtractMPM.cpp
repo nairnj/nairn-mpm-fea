@@ -28,6 +28,7 @@ char *headerName=NULL;
 char fileExtension[20];
 char mpmOrder[50];
 char crackOrder[50];
+char stepNum[50];
 vector< int > includeMaterial;
 vector< int > excludeMaterial;
 vector< int > quantity;
@@ -107,7 +108,9 @@ int main(int argc, char * const argv[])
 					q=SXZ;
 				else if(strcmp(parm,"syz")==0 || strcmp(parm,"szy")==0)
 					q=SYZ;
-                else if(strcmp(parm,"pressure")==0)
+				else if(strcmp(parm,"stress")==0)
+					q=STRESS;
+				else if(strcmp(parm,"pressure")==0)
                     q=PRESSURE;
                 else if(strcmp(parm,"vonmises")==0)
                     q=EQUIVSTRESS;
@@ -125,6 +128,8 @@ int main(int argc, char * const argv[])
 					q=EXZ;
 				else if(strcmp(parm,"eyz")==0 || strcmp(parm,"ezy")==0)
 					q=EYZ;
+				else if(strcmp(parm,"strain")==0)
+					q=STRAIN;
 				else if(strcmp(parm,"pexx")==0)
 					q=PEXX;
 				else if(strcmp(parm,"peyy")==0)
@@ -137,6 +142,8 @@ int main(int argc, char * const argv[])
 					q=PEXZ;
 				else if(strcmp(parm,"peyz")==0 || strcmp(parm,"pezy")==0)
 					q=PEYZ;
+				else if(strcmp(parm,"plasticstrain")==0)
+					q=PLASTICSTRAIN;
 				else if(strcmp(parm,"strerg")==0)
 					q=STRENG;
 				else if(strcmp(parm,"plerg")==0)
@@ -155,12 +162,16 @@ int main(int argc, char * const argv[])
 					q=VELY;
 				else if(strcmp(parm,"velz")==0)
 					q=VELZ;
+				else if(strcmp(parm,"velocity")==0)
+					q=VELOCITY;
 				else if(strcmp(parm,"dispx")==0)
 					q=DISPX;
 				else if(strcmp(parm,"dispy")==0)
 					q=DISPY;
 				else if(strcmp(parm,"dispz")==0)
 					q=DISPZ;
+				else if(strcmp(parm,"displacement")==0)
+					q=DISPLACEMENT;
 				else if(strcmp(parm,"mat")==0)
 					q=MAT;
 				else if(strcmp(parm,"j1")==0)
@@ -544,33 +555,34 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	// output file
 	ofstream fout;
 	if(outfile!=NULL)
-	{	char fname[256],step[256];
-		if(stepExtension)
-		{	int ext=0,dot=(int)strlen(mpmFile)-1;
-			while(dot>=0 && mpmFile[dot]!='.') dot--;
-			if(dot>=0)
-			{	step[ext++]='_';
-				dot++;
-				while(mpmFile[dot]!=0)
-				{	if(mpmFile[dot]<'0' || mpmFile[dot]>'9')
-					{	// skip if not a number
-						ext=0;
-						break;
-					}
-					step[ext++]=mpmFile[dot++];
+	{	char fname[256];
+		
+		// get stepNum string
+		int ext=0,dot=(int)strlen(mpmFile)-1;
+		while(dot>=0 && mpmFile[dot]!='.') dot--;
+		if(dot>=0)
+		{	stepNum[ext++]='_';
+			dot++;
+			while(mpmFile[dot]!=0)
+			{	if(mpmFile[dot]<'0' || mpmFile[dot]>'9')
+				{	// skip if not a number
+					ext=0;
+					break;
 				}
+				stepNum[ext++]=mpmFile[dot++];
 			}
-			step[ext]=0;
 		}
+		stepNum[ext]=0;
+		
 		if(lastIndex==0)
 		{	if(stepExtension)
-				sprintf(fname,"%s%s.%s",outfile,step,fileExtension);
+				sprintf(fname,"%s%s.%s",outfile,stepNum,fileExtension);
 			else
 				sprintf(fname,"%s.%s",outfile,fileExtension);
 		}
 		else
-		{	if(stepExtension && strlen(step)>0)
-				sprintf(fname,"%s%s.%s",outfile,step,fileExtension);
+		{	if(stepExtension && strlen(stepNum)>0)
+				sprintf(fname,"%s%s.%s",outfile,stepNum,fileExtension);
 			else
 				sprintf(fname,"%s-%d.%s",outfile,fileIndex,fileExtension);
 		}
@@ -599,7 +611,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	}
 	
 	// special case for xyz files
-	else if(fileFormat)
+	else if(fileFormat=='Z')
 	{	if(crackDataOnly)
 		{	cerr << "Exports to XYZ file format cannot be for crack data" << endl;
 			return FileAccessErr;
@@ -887,6 +899,20 @@ int VTKLegacy(ostream &os,const char *mpmFile)
 	os << "ASCII" << endl;
 	os << "DATASET POLYDATA" << endl;
 	
+	// time and step number
+	if(strlen(stepNum)>1)
+	{	os << "FIELD FieldData 2" << endl;
+		os << "TIME 1 1 double" << endl;
+		os << archiveTimeMs << endl;
+		os << "STEP 1 1 int" << endl;
+		os << &stepNum[1] << endl;
+	}
+	else
+	{	os << "FIELD FieldData 1" << endl;
+		os << "TIME 1 1 double" << endl;
+		os << archiveTimeMs << endl;
+	}
+
 	// count points to extract
 	int nummpms=(int)(fileLength/recSize);
 	int p,numExtract=0;
@@ -934,9 +960,22 @@ int VTKLegacy(ostream &os,const char *mpmFile)
 	for(i=0;i<(int)quantity.size();i++)
     {   // back to start of the file
         if(!RestartFileBlocks(origOffset,mpmFile)) return FileAccessErr;
-        
-		os << "SCALARS " << quantityName[i] << " double 1" << endl;
-		os << "LOOKUP_TABLE default" << endl;
+		
+		switch(quantity[i])
+		{	case VELOCITY:
+			case DISPLACEMENT:
+				os << "VECTORS " << quantityName[i] << " double" << endl;
+				break;
+			case STRESS:
+			case STRAIN:
+			case PLASTICSTRAIN:
+				os << "TENSORS " << quantityName[i] << " double" << endl;
+				break;
+			default:
+				os << "SCALARS " << quantityName[i] << " double 1" << endl;
+				os << "LOOKUP_TABLE default" << endl;
+				break;
+		}
 		
 		for(p=0;p<nummpms;p++)
         {   // read next block when needed
@@ -1116,7 +1155,68 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 			else
 				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
 			break;
-        
+		
+		case STRESS:
+			if(fileFormat=='V')
+			{	// VTK legacy only
+				if(stressOffset>0)
+				{	// 9 elements of stress - SXX, SXY, SXZ
+					OutputDouble((double *)(ap+stressOffset),0,0,reverseFromInput,os,quantity[i]);
+					OutputDouble((double *)(ap+stressOffset),3,' ',reverseFromInput,os,quantity[i]);
+					if(threeD)
+						OutputDouble((double *)(ap+stressOffset),4,' ',reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+					
+					// SXY, SYY, SYZ
+					OutputDouble((double *)(ap+stressOffset),3,' ',reverseFromInput,os,quantity[i]);
+					OutputDouble((double *)(ap+stressOffset),1,' ',reverseFromInput,os,quantity[i]);
+					if(threeD)
+						OutputDouble((double *)(ap+stressOffset),5,' ',reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+					
+					// SXZ, SYZ, SZZ
+					if(threeD)
+					{	OutputDouble((double *)(ap+stressOffset),4,' ',reverseFromInput,os,quantity[i]);
+						OutputDouble((double *)(ap+stressOffset),5,' ',reverseFromInput,os,quantity[i]);
+					}
+					else
+					{	OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+					}
+					OutputDouble((double *)(ap+stressOffset),2,' ',reverseFromInput,os,quantity[i]);
+				}
+				else
+				{	// 9 zeros
+					OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					for(int z=0;z<8;z++)
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+
+				}
+			}
+			else if(stressOffset>0)
+			{	// each available element of stress SXX, SYY, SZZ, SXY, SXZ, SYZ
+				OutputDouble((double *)(ap+stressOffset),0,delim,reverseFromInput,os,quantity[i]);
+				OutputDouble((double *)(ap+stressOffset),1,delim,reverseFromInput,os,quantity[i]);
+				OutputDouble((double *)(ap+stressOffset),2,delim,reverseFromInput,os,quantity[i]);
+				OutputDouble((double *)(ap+stressOffset),3,delim,reverseFromInput,os,quantity[i]);
+				if(threeD)
+				{	OutputDouble((double *)(ap+stressOffset),4,delim,reverseFromInput,os,quantity[i]);
+					OutputDouble((double *)(ap+stressOffset),5,delim,reverseFromInput,os,quantity[i]);
+				}
+				else
+				{	OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+					OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+				}
+			}
+			else
+			{	// 6 zeros
+				for(int z=0;z<6;z++)
+					OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			}
+			break;
+
         case PRESSURE:
             // Pressure in Pa
 			if(stressOffset>0)
@@ -1128,7 +1228,7 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 					Reverse((char *)syy,sizeof(double));
 					Reverse((char *)szz,sizeof(double));
 				}
-                double pressure = (*sxx+*syy+*szz)/3.;
+                double pressure = -(*sxx+*syy+*szz)/3.;
 				OutputDouble(&pressure,0,delim,false,os,quantity[i]);
             }
 			else
@@ -1212,7 +1312,69 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 			else
 				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
 			break;
-		
+			
+		case STRAIN:
+			if(fileFormat=='V')
+			{	// VTK legacy only
+				if(strainOffset>0)
+				{	// 9 elements of stress - EXX, EXY, EXZ
+					OutputDouble((double *)(ap+strainOffset),0,0,reverseFromInput,os,quantity[i]);
+					OutputDouble((double *)(ap+strainOffset),3,' ',reverseFromInput,os,quantity[i]);
+					if(threeD)
+						OutputDouble((double *)(ap+strainOffset),4,' ',reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+					
+					// EXY, EYY, EXZ
+					OutputDouble((double *)(ap+strainOffset),3,' ',reverseFromInput,os,quantity[i]);
+					OutputDouble((double *)(ap+strainOffset),1,' ',reverseFromInput,os,quantity[i]);
+					if(threeD)
+						OutputDouble((double *)(ap+strainOffset),5,' ',reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+					
+					// EXZ, EYZ, EZZ
+					if(threeD)
+					{	OutputDouble((double *)(ap+strainOffset),4,' ',reverseFromInput,os,quantity[i]);
+						OutputDouble((double *)(ap+strainOffset),5,' ',reverseFromInput,os,quantity[i]);
+					}
+					else
+					{	OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+					}
+					OutputDouble((double *)(ap+strainOffset),2,' ',reverseFromInput,os,quantity[i]);
+					break;
+				}
+				else
+				{	// 9 zeros
+					OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					for(int z=0;z<8;z++)
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+					
+				}
+			}
+			else if(strainOffset>0)
+			{	// each available element of stress EXX, EYY, EZZ, EXY, EXZ, EYZ
+				OutputDouble((double *)(ap+strainOffset),0,delim,reverseFromInput,os,quantity[i]);
+				OutputDouble((double *)(ap+strainOffset),1,delim,reverseFromInput,os,quantity[i]);
+				OutputDouble((double *)(ap+strainOffset),2,delim,reverseFromInput,os,quantity[i]);
+				OutputDouble((double *)(ap+strainOffset),3,delim,reverseFromInput,os,quantity[i]);
+				if(threeD)
+				{	OutputDouble((double *)(ap+strainOffset),4,delim,reverseFromInput,os,quantity[i]);
+					OutputDouble((double *)(ap+strainOffset),5,delim,reverseFromInput,os,quantity[i]);
+				}
+				else
+				{	OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+					OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+				}
+			}
+			else
+			{	// 6 zeros
+				for(int z=0;z<6;z++)
+					OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			}
+			break;
+
 		case PEXX:
 		case PEYY:
 		case PEZZ:
@@ -1225,6 +1387,67 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
 			break;
 		
+		case PLASTICSTRAIN:
+			if(fileFormat=='V')
+			{	// VTK legacy only
+				if(plStrainOffset>0)
+				{	// 9 elements of stress - EPXX, EPXY, EPXZ
+					OutputDouble((double *)(ap+plStrainOffset),0,0,reverseFromInput,os,quantity[i]);
+					OutputDouble((double *)(ap+plStrainOffset),3,' ',reverseFromInput,os,quantity[i]);
+					if(threeD)
+						OutputDouble((double *)(ap+plStrainOffset),4,' ',reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+					
+					// EXY, EYY, EXZ
+					OutputDouble((double *)(ap+plStrainOffset),3,' ',reverseFromInput,os,quantity[i]);
+					OutputDouble((double *)(ap+plStrainOffset),1,' ',reverseFromInput,os,quantity[i]);
+					if(threeD)
+						OutputDouble((double *)(ap+plStrainOffset),5,' ',reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+					
+					// EPXZ, EPYZ, EPXZ
+					if(threeD)
+					{	OutputDouble((double *)(ap+plStrainOffset),4,' ',reverseFromInput,os,quantity[i]);
+						OutputDouble((double *)(ap+plStrainOffset),5,' ',reverseFromInput,os,quantity[i]);
+					}
+					else
+					{	OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+					}
+					OutputDouble((double *)(ap+plStrainOffset),2,' ',reverseFromInput,os,quantity[i]);
+				}
+				else
+				{	// 9 zeros
+					OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					for(int z=0;z<8;z++)
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+					
+				}
+			}
+			else if(plStrainOffset>0)
+			{	// each available element of stress EPXX, EPYY, EPZZ, EPXY, EPXZ, EPYZ
+				OutputDouble((double *)(ap+plStrainOffset),0,delim,reverseFromInput,os,quantity[i]);
+				OutputDouble((double *)(ap+plStrainOffset),1,delim,reverseFromInput,os,quantity[i]);
+				OutputDouble((double *)(ap+plStrainOffset),2,delim,reverseFromInput,os,quantity[i]);
+				OutputDouble((double *)(ap+plStrainOffset),3,delim,reverseFromInput,os,quantity[i]);
+				if(threeD)
+				{	OutputDouble((double *)(ap+plStrainOffset),4,delim,reverseFromInput,os,quantity[i]);
+					OutputDouble((double *)(ap+plStrainOffset),5,delim,reverseFromInput,os,quantity[i]);
+				}
+				else
+				{	OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+					OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+				}
+			}
+			else
+			{	// 6 zeros
+				for(int z=0;z<6;z++)
+					OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			}
+			break;
+
 		case VELX:
 		case VELY:
 		case VELZ:
@@ -1232,6 +1455,26 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 				OutputDouble((double *)(ap+velocityOffset),quantity[i]-VELX,delim,reverseFromInput,os,quantity[i]);
 			else
 				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+		
+		case VELOCITY:
+			if(fileFormat=='V')
+			{	// VTK legacy only
+				OutputDouble((double *)(ap+velocityOffset),0,0,reverseFromInput,os,quantity[i]);
+				OutputDouble((double *)(ap+velocityOffset),1,' ',reverseFromInput,os,quantity[i]);
+				if(threeD)
+					OutputDouble((double *)(ap+velocityOffset),2,' ',reverseFromInput,os,quantity[i]);
+				else
+					OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+			}
+			else
+			{	OutputDouble((double *)(ap+velocityOffset),0,delim,reverseFromInput,os,quantity[i]);
+				OutputDouble((double *)(ap+velocityOffset),1,delim,reverseFromInput,os,quantity[i]);
+				if(threeD)
+					OutputDouble((double *)(ap+velocityOffset),2,delim,reverseFromInput,os,quantity[i]);
+				else
+					OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			}
 			break;
 			
 		case DISPX:
@@ -1252,6 +1495,51 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 			else
 				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
 			break;
+			
+		case DISPLACEMENT:
+		{	double *pPtr=(double *)(ap+posOffset);
+			double *opPtr=(double *)(ap+origPosOffset);
+			if(reverseFromInput)
+			{	Reverse((char *)pPtr,sizeof(double));
+				Reverse((char *)opPtr,sizeof(double));
+			}
+			double displacement=*pPtr-*opPtr;
+			if(fileFormat=='V')
+				OutputDouble(&displacement,0,0,false,os,quantity[i]);
+			else
+				OutputDouble(&displacement,0,delim,false,os,quantity[i]);
+			
+			pPtr++;
+			opPtr++;
+			if(reverseFromInput)
+			{	Reverse((char *)pPtr,sizeof(double));
+				Reverse((char *)opPtr,sizeof(double));
+			}
+			displacement=*pPtr-*opPtr;
+			if(fileFormat=='V')
+				OutputDouble(&displacement,0,' ',false,os,quantity[i]);
+			else
+				OutputDouble(&displacement,0,delim,false,os,quantity[i]);
+
+			if(threeD)
+			{	pPtr++;
+				opPtr++;
+				if(reverseFromInput)
+				{	Reverse((char *)pPtr,sizeof(double));
+					Reverse((char *)opPtr,sizeof(double));
+				}
+				displacement=*pPtr-*opPtr;
+				if(fileFormat=='V')
+					OutputDouble(&displacement,0,' ',false,os,quantity[i]);
+				else
+					OutputDouble(&displacement,0,delim,false,os,quantity[i]);
+			}
+			else if(fileFormat=='V')
+				OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+			else
+				OutputDouble(&displacement,0,delim,false,os,quantity[i]);
+			break;
+		}
 			
 		case STRENG:
 			if(strainEnergyOffset>0)
