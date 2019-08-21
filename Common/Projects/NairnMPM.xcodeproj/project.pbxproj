@@ -2034,6 +2034,10 @@
 			attributes = {
 				LastUpgradeCheck = 0460;
 				TargetAttributes = {
+					6738040221B4B0DA00A295C9 = {
+						DevelopmentTeam = 463VM8Q453;
+						ProvisioningStyle = Automatic;
+					};
 					A72A90C80CD2ADA5001DCFA8 = {
 						DevelopmentTeam = 463VM8Q453;
 						ProvisioningStyle = Automatic;
@@ -2370,9 +2374,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 463VM8Q453;
 				INSTALL_PATH = "$(HOME)/bin";
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
 			name = Default;
 		};
