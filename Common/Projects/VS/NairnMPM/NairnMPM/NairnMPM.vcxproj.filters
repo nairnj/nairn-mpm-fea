@@ -87,6 +87,9 @@
     <Filter Include="info">
       <UniqueIdentifier>{e95c7eae-db0d-446f-9e44-848100d11e3d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="NairnMPM_src\Softening">
+      <UniqueIdentifier>{2d74ce2a-ff5d-4138-afa6-c5620bad0dc9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -541,6 +544,36 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MaterialContactNode.hpp">
       <Filter>NairnMPM_src\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalVelGradBC.hpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\InitialCondition.hpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PeriodicXPIC.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\ExponentialSoftening.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\FailureSurface.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoSoftening.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LinearSoftening.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SmoothStep3.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTask.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1026,6 +1059,36 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\SetCustomTasks.cpp">
       <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalVelGradBC.cpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\InitialCondition.cpp">
+      <Filter>NairnMPM_src\Boundary_Conditions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PeriodicXPIC.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ExponentialSoftening.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\FailureSurface.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoSoftening.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LinearSoftening.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SmoothStep3.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTask.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

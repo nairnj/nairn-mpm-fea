@@ -26,9 +26,7 @@ class PeriodicXPIC : public CustomTask
 		virtual void Finalize(void);
 		virtual const char *TaskName(void);
 		virtual char *InputParam(char *,int &,double &);
-#ifdef OSPARTICULAS
-		virtual void SetTextParameter(char *,char *);
-#endif
+
 		virtual CustomTask *Initialize(void);
 	
 		virtual CustomTask *PrepareForStep(bool &);

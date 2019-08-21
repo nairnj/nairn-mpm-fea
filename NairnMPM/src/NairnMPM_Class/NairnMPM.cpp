@@ -910,7 +910,6 @@ void NairnMPM::CreateTasks(void)
 		lastMPMTask=nextMPMTask;
 	}
 
-#ifndef TRANSPORT_ONLY
 	nextMPMTask=(MPMTask *)new PostExtrapolationTask("Post Extrapolation Tasks");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
@@ -992,9 +991,6 @@ void NairnMPM::CreateTasks(void)
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	//lastMPMTask=nextMPMTask;
 
-#else
-	// Create all the transport-only tasks
-#endif
 }
 
 // When NR particle p2 moves to p1, reset any point-based BCs that use that point

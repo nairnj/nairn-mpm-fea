@@ -94,6 +94,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\BoundaryCondition.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\InitialCondition.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtFluxBC.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtHeatFluxBC.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtLoadBC.hpp" />
@@ -102,6 +103,7 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalTempBC.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalValueBC.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalVelBC.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalVelGradBC.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\ContourPoint.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackHeader.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackLeaf.hpp" />
@@ -118,6 +120,7 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\DiffusionTask.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\GridArchive.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\HistoryArchive.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PeriodicXPIC.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PropagateTask.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ReverseLoad.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TransportTask.hpp" />
@@ -138,6 +141,8 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CoupledSawTooth.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CubicTraction.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\DDBHardening.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\ExponentialSoftening.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\FailureSurface.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HardeningLawBase.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HEIsotropic.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HEMGEOSMaterial.hpp" />
@@ -145,9 +150,11 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HyperElastic.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IdealGas.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticity.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoSoftening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\JohnsonCook.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LinearHardening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LinearInterface.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LinearSoftening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LinearTraction.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\LiquidContact.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Mooney.hpp" />
@@ -159,6 +166,8 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\RigidMaterial.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SCGLHardening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SLMaterial.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SmoothStep3.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TaitLiquid.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TractionLaw.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.hpp" />
@@ -188,6 +197,7 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsFirstTask.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastContactTask.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTask.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityField.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldMulti.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldSingle.hpp" />
@@ -247,6 +257,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\BoundaryCondition.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\InitialCondition.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtFluxBC.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtHeatFluxBC.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\MatPtLoadBC.cpp" />
@@ -255,6 +266,7 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalTempBC.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalValueBC.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalVelBC.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Boundary_Conditions\NodalVelGradBC.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\ContourPoint.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackHeader.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Cracks\CrackLeaf.cpp" />
@@ -271,6 +283,7 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\DiffusionTask.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\GridArchive.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\HistoryArchive.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PeriodicXPIC.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PropagateTask.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ReverseLoad.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TransportTask.cpp" />
@@ -293,6 +306,8 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\CubicTraction.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\DDBHardening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ElasticMPM.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ExponentialSoftening.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\FailureSurface.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HardeningLawBase.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HEIsotropic.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HEMGEOSMaterial.cpp" />
@@ -300,9 +315,11 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HyperElastic.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IdealGas.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticity.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoSoftening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\JohnsonCook.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LinearHardening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LinearInterface.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LinearSoftening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LinearTraction.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\LiquidContact.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\MaterialBaseMPM.cpp" />
@@ -316,6 +333,8 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\RigidMaterial.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SCGLHardening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SLMaterial.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SmoothStep3.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TaitLiquid.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TractionLaw.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.cpp" />
@@ -346,6 +365,7 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsFirstTask.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastContactTask.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\UpdateStrainsLastTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTask.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityField.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldMulti.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\CrackVelocityFieldSingle.cpp" />
