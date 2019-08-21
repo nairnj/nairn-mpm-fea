@@ -29,6 +29,10 @@ JohnsonCook::JohnsonCook(MaterialBase *pair) : HardeningLawBase(pair)
 	ep0jc = 1.;           // time^-1
 	Tmjc = 1000.;         // Melting point in K relative to thermal.reference
     mjc = 1.;             // dimensionless
+	Djc = 0.;			  // dimensionless
+	n2jc = 1.;			  // dimensionless
+	
+	lawID = JOHNSONCOOOK_ID;
 }
 
 #pragma mark JohnsonCook::Initialization
@@ -64,7 +68,15 @@ char *JohnsonCook::InputHardeningProperty(char *xName,int &input,double &gScalin
     {	input=DOUBLE_NUM;
         return((char *)&mjc);
     }
-    
+	else if(strcmp(xName,"n2jc")==0)
+	{	input=DOUBLE_NUM;
+		return((char *)&n2jc);
+	}
+	else if(strcmp(xName,"Djc")==0)
+	{	input=DOUBLE_NUM;
+		return((char *)&Djc);
+	}
+
     return HardeningLawBase::InputHardeningProperty(xName,input,gScaling);
 }
 
@@ -82,6 +94,9 @@ void JohnsonCook::PrintYieldProperties(void) const
 	strcat(glabel,"^-1");
 	MaterialBase::PrintProperty("ep0",ep0jc,glabel);
     cout << endl;
+	MaterialBase::PrintProperty("D",Djc,"");
+	MaterialBase::PrintProperty("n2",n2jc,"");
+	cout << endl;
 	MaterialBase::PrintProperty("Tm",Tmjc,"K");
     MaterialBase::PrintProperty("T0",thermal.reference,"K");
 	MaterialBase::PrintProperty("m",mjc,"");
@@ -100,8 +115,13 @@ const char *JohnsonCook::VerifyAndLoadProperties(int np)
     // reduced yield stress or Ajc
 	HardeningLawBase::VerifyAndLoadProperties(np);
     
-    // ignore strain rates below this
+    // ignore strain rates below this (we do not want 1+Cjc*Log(edot) going negative)
     edotMin = Cjc!=0. ? exp(-0.5/Cjc) : 1.e-20 ;
+	
+	// but extend to ep0jc if it is smaller, anything < edotMin is < ep0jc
+	edotMin = fmin(ep0jc,edotMin);
+	
+	// Below this minimum, this terms is contact
     eminTerm = 1. + Cjc*log(edotMin) ;
 	
 	// base class never has error
@@ -157,6 +177,7 @@ double JohnsonCook::GetYield(MPMBase *mptr,int np,double delTime,HardeningAlpha 
     double term1 = yldred + Bred*pow(a->alpint,njc);
     double ep = a->dalpha/(delTime*ep0jc);
     double term2 = ep>edotMin ? 1. + Cjc*log(ep) : eminTerm ;
+	if(Djc!=0. && ep>1.) term2 += Djc*pow(log(ep),n2jc);
     return term1 * term2 * p->TjcTerm ;
 }
 
@@ -168,13 +189,22 @@ double JohnsonCook::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningAlpha
 	JCProperties *p = (JCProperties *)properties;
     if(p->hmlgTemp>=1.) return 0.;
     double ep = a->dalpha/(delTime*ep0jc);
+	double dterm1 = Bred*njc*pow(a->alpint,njc-1.);
     if(ep>edotMin)
     {   double term1 = yldred + Bred*pow(a->alpint,njc);
         double term2 = 1. + Cjc*log(ep) ;
-        return TWOTHIRDS * p->TjcTerm * (Bred*njc*pow(a->alpint,njc-1.)*term2 + Cjc*term1/a->dalpha ) ;
+		double dterm2 = Cjc*ep0jc/a->dalpha;
+		if(Djc!=0. && ep>1.)
+		{	term2 += Djc*pow(log(ep),n2jc);
+			dterm2 += Djc*ep0jc*n2jc*pow(log(ep),n2jc-1.)/a->dalpha;
+		}
+        return TWOTHIRDS * p->TjcTerm * (dterm1*term2 + term1*dterm2 ) ;
     }
     else
-        return TWOTHIRDS * p->TjcTerm * Bred*njc*pow(a->alpint,njc-1.) * eminTerm ;
+	{	double term2 = eminTerm;
+		// dterm2 = 0
+		return TWOTHIRDS * p->TjcTerm * dterm1*term2 ;
+	}
 }
 
 // Get derivative of (1./3.)*yield^2 with respect to lambda for plane stress only
@@ -187,15 +217,23 @@ double JohnsonCook::GetK2Prime(MPMBase *mptr,double fnp1,double delTime,Hardenin
 	JCProperties *p = (JCProperties *)properties;
 	if(p->hmlgTemp>=1.) return 0.;
     double term1 = yldred + Bred*pow(a->alpint,njc);
+	double dterm1 = Bred*njc*pow(a->alpint,njc-1.);
     double ep = a->dalpha/(delTime*ep0jc);
     if(ep>edotMin)
     {   double term2 = 1. + Cjc*log(ep) ;
-        return SQRT_EIGHT27THS * term1 * term2 * fnp1 * p->TjcTerm * p->TjcTerm *
-                        (Bred*njc*pow(a->alpint,njc-1.)*term2 + Cjc*term1/a->dalpha ) ;
+		double dterm2 = Cjc*ep0jc/a->dalpha;
+		if(Djc!=0. && ep>1.)
+		{	term2 += Djc*pow(log(ep),n2jc);
+			dterm2 += Djc*ep0jc*n2jc*pow(log(ep),n2jc-1.)/a->dalpha;
+		}
+		return SQRT_EIGHT27THS * term1 * term2 * fnp1 * p->TjcTerm * p->TjcTerm *
+                        (dterm1*term2 + dterm2*term1) ;
     }
     else
-    {   return SQRT_EIGHT27THS * term1 * fnp1 * p->TjcTerm * p->TjcTerm * eminTerm * eminTerm *
-                    (Bred*njc*pow(a->alpint,njc-1.)) ;
+	{	double term2 = eminTerm;
+		// dterm2 = 0
+      	return SQRT_EIGHT27THS * term1 * term2 * fnp1 * p->TjcTerm * p->TjcTerm *
+                    	dterm1*term2  ;
     }
 }
 
@@ -207,6 +245,7 @@ double JohnsonCook::GetYieldIncrement(MPMBase *mptr,int np,double delTime,Harden
     if(p->hmlgTemp>=1.) return 0.;
     double ep = a->dalpha/(delTime*ep0jc);
     double term2 = ep>edotMin ? 1. + Cjc*log(ep) : eminTerm ;
+	if(Djc!=0. && ep>1.) term2 += Djc*pow(log(ep),n2jc);
 	return Bred*pow(a->alpint,njc) * term2 * p->TjcTerm ;
 }
 
@@ -221,7 +260,7 @@ double JohnsonCook::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,T
     {   return strial/(2.*Gred);
     }
     
-    // assume error in bracking is because near melting, convert error to zero deviatoric stress
+    // assume error in bracketing is because near melting, convert error to zero deviatoric stress
     return HardeningLawBase::SolveForLambdaBracketed(mptr,np,strial,stk,Gred,psKred,Pfinal,delTime,a,properties,offset);
 }
 

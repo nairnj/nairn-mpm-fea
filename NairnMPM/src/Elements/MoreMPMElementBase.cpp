@@ -51,6 +51,7 @@ void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
 	{	case UNIFORM_GIMP:
         case UNIFORM_GIMP_AS:
 		case BSPLINE_GIMP:
+		case BSPLINE_GIMP_AS:
 		case BSPLINE:
 		case POINT_GIMP:
 			GetXiPos(&mpmptr->pos,mpmptr->GetNcpos());
@@ -80,6 +81,7 @@ void ElementBase::GetShapeFunctionsForCracks(double *fn,int *nds,const Vector &p
 	switch(useGimp)
 	{	case BSPLINE:
 		case BSPLINE_GIMP:
+		case BSPLINE_GIMP_AS:
 		case BSPLINE_CPDI:
 			SplineShapeFunction(nds,&xipos,false,&fn[1],NULL,NULL,NULL);
 			break;
@@ -100,6 +102,7 @@ void ElementBase::GetShapeFunctionsForTractions(double *fn,int *nds,Vector *xipo
 	switch(useGimp)
 	{	case BSPLINE:
 		case BSPLINE_GIMP:
+		case BSPLINE_GIMP_AS:
 		case BSPLINE_CPDI:
 			SplineShapeFunction(nds,xipos,false,&fn[1],NULL,NULL,NULL);
 			break;
@@ -163,6 +166,14 @@ void ElementBase::GetShapeFunctions(double *fn,int **ndsHandle,MPMBase *mpmptr) 
 			break;
 		}
 
+		case BSPLINE_GIMP_AS:
+		{	// B2GIMP analysis
+			Vector *xipos = mpmptr->GetNcpos();
+			mpmptr->GetDimensionlessSize(lp);
+			BGimpShapeFunctionAS(xipos,nds,FALSE,&fn[1],NULL,NULL,NULL,lp);
+			break;
+		}
+			
 		case BSPLINE_CPDI:
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
@@ -236,6 +247,14 @@ void ElementBase::GetShapeGradients(double *fn,int **ndsHandle,
 			break;
 		}
 
+		case BSPLINE_GIMP_AS:
+		{	// uGIMP analysis
+			Vector *xipos = mpmptr->GetNcpos();
+			mpmptr->GetDimensionlessSize(lp);
+			BGimpShapeFunctionAS(xipos,nds,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
+			break;
+		}
+		
 		case BSPLINE_CPDI:
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
@@ -243,6 +262,12 @@ void ElementBase::GetShapeGradients(double *fn,int **ndsHandle,
             nds[0] = GetCPDIFunctions(nds,fn,xDeriv,yDeriv,zDeriv,mpmptr);
             break;
     }
+}
+
+// Get shape functions for exact traction calculations in 2D MPM
+// Overriden only by four node isoparam, so does not work in 3D yet
+void ElementBase::GridTractionFunction(Vector *xi1,Vector *xi2,bool isAxisymmetric,double *tfxn,int *nds,double rmid,double dr) const
+{
 }
 
 #pragma mark ElementBase: Shape and Gradient utility methods for MPM
@@ -485,6 +510,15 @@ void ElementBase::BGimpShapeFunction(Vector *xi,int *nds,int getDeriv,double *sf
 {
 }
 
+// get axisymmetric GIMP shape functions and optionally derivatives wrt x and y
+// assumed to be properly numbered regular array
+// input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
+// Elements that support GIMP must override
+void ElementBase::BGimpShapeFunctionAS(Vector *xi,int *nds,int getDeriv,double *sfxn,
+									 double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
+{
+}
+
 // check if this GIMP element is on the edge of the grid
 // assumes a generated 2D structured grid
 bool ElementBase::OnTheEdge(void)
@@ -534,15 +568,6 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 		}
 	}
 	
-    /*
-    if(xDeriv!=NULL)
-	{	cout << "Initial:" << endl;
-		for(i=0;i<ncnds;i++)
-		{   cout << "# node = " << cnodes[i] << ", ws*Si = " << wsSi[i] << ", wgx*Si = " << wgSi[i].x << ", wgy*Si = " << wgSi[i].y << endl;
-		}
-	}
-    */
-	
 	// shell sort by node numbers in cnodes[] (always 16 for linear CPDI)
 	int lognb2=(int)(log((double)ncnds)*1.442695022+1.0e-5);	// log base 2
 	int k=ncnds,l,cmpNode;
@@ -571,23 +596,6 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 		}
 	}
 
-    /*
- 	if(xDeriv!=NULL)
-    {   for(j=1;j<ncnds;j++)
-        {   if(cnodes[j]<cnodes[j-1])
-            {
-#pragma omp critical (output)
-                {   cout << "Not Sorted: " << endl;
-                    for(i=0;i<ncnds;i++)
-                    {   cout << "# node = " << cnodes[i] << ", ws*Si = " << wsSi[i] << ", wgx*Si = " << wgSi[i].x << ", wgy*Si = " << wgSi[i].y << endl;
-                    }
-                }
-                break;
-            }
-        }
-	}
-    */
-	
 	// compact same node number
 	int count = 0;
 	nds[0] = -1;
@@ -843,18 +851,18 @@ void ElementBase::AllocateNeighbors(void)
 // throws CommonException() if CPDI type is not allowed
 void ElementBase::InitializeCPDI(bool isThreeD)
 {
-	if(isThreeD)
+    if(isThreeD)
 	{	numCPDINodes = 8;
-		if(useGimp == QUADRATIC_CPDI)
-		{	throw CommonException("qCPDI is not yet implemented for 3D (use lCPDI or B2CPDI instead).","ElementBase::InitializeCPDI");
-		}
-	}
-	else
-	{   numCPDINodes = 4;
-		if(useGimp == QUADRATIC_CPDI)
-		{   numCPDINodes = 9;
-		}
-	}
+        if(useGimp == QUADRATIC_CPDI)
+        {	throw CommonException("qCPDI is not yet implemented for 3D (use lCPDI or B2CPDI instead).","ElementBase::InitializeCPDI");
+        }
+    }
+    else
+    {   numCPDINodes = 4;
+        if(useGimp == QUADRATIC_CPDI)
+        {   numCPDINodes = 9;
+        }
+    }
 }
 
 

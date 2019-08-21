@@ -45,7 +45,7 @@ NodalPoint::~NodalPoint()
 	}
 }
 
-// Called by PreliminaryCalcs() just before the MPM analysis starts
+// Called by NodalPoint::PrepareNodeCrackFields() just before the MPM analysis starts
 // Can allocate things that were not known while reading the XML file
 // throws std::bad_alloc
 void NodalPoint::PrepareForFields()
@@ -79,12 +79,14 @@ void NodalPoint::InitializeForTimeStep(void)
 	gCond.gTValue=0.;
 	gCond.gVCT=0.;
 	gCond.gQ=0.;
+	
+	hasParticles = false;
 }
 
 #pragma mark TASK 0 METHODS
 
 // When there are cracks, call this method to allocate crack and material velocity fields
-// that are needed on this time step. Called once in initialization task
+// that are needed on this time step. Called from InitVelocityFieldsTasks
 // SCWarning - may look at [2] and [3]
 // throws std::bad_alloc
 short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
@@ -386,28 +388,14 @@ void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shap
 	Vector wtvel;
 	cvf[vfld]->AddMomentumTask1(matfld,CopyScaleVector(&wtvel,&mptr->vel,fnmp),&mptr->vel,numPts);
 
-	// crack contact calculations
-	// (only if cracks or multimaterial mode, i.e., contact is being done)
+	// crack contact calculations (only if cracks or multimaterial mode, i.e., contact is being done)
 	if(firstCrack!=NULL || fmobj->multiMaterialMode)
-	{	// displacement or position for contact calculations
-		if(mpmgrid.GetContactByDisplacements())
-		{	// extrapolate displacements
-			Vector pdisp=mptr->pos;
-			cvf[vfld]->AddDisplacement(matfld,fnmp,SubVector(&pdisp,&mptr->origpos));
-		}
-		else
-		{	// extraplate positions
-			cvf[vfld]->AddDisplacement(matfld,fnmp,&mptr->pos);
-		}
+	{	// Extrapolate volume along with displacement and position (if needed)
+		double wtVolume = nonRigid ? shape*mptr->GetVolume(DEFORMED_AREA) : shape*mptr->GetUnscaledVolume();
+		cvf[vfld]->AddVolumeDisplacement(matfld,wtVolume,fnmp,mptr->pos,&mptr->origpos);
 		
-		// add dilated volume (actually contact area), only used for contact calculations (and if not done above)
-		if(nonRigid)
-			cvf[vfld]->AddVolume(matfld,shape*mptr->GetVolume(DEFORMED_AREA));
-		else
-			cvf[vfld]->AddVolume(matfld,shape*mptr->GetUnscaledVolume());
-
-		// material contact calculations (only if multimaterial mode)
-		if(fmobj->multiMaterialMode)
+		// material contact calculations (only if multimaterial mode and if needed)
+		if(mpmgrid.volumeGradientIndex>=0)
 			cvf[vfld]->AddVolumeGradient(matfld,mptr,dNdx,dNdy,dNdz);
 	}
 	
@@ -449,25 +437,13 @@ void NodalPoint::AddMassMomentumLast(MPMBase *mptr,short vfld,int matfld,double 
 	double fnmp = shape*mp;
 	cvf[vfld]->AddMomentumTask6(matfld,fnmp,&mptr->vel);
 	
-	// crack contact calculations
-	// (only if cracks or multimaterial mode, i.e., contact is being done)
+	// crack contact calculations (only if cracks or multimaterial mode, i.e., contact is being done)
 	if(firstCrack!=NULL || fmobj->multiMaterialMode)
-	{	// displacement or position for contact calculations
-		if(mpmgrid.GetContactByDisplacements())
-		{	// extrapolate displacements
-			Vector pdisp=mptr->pos;
-			cvf[vfld]->AddDisplacement(matfld,fnmp,SubVector(&pdisp,&mptr->origpos));
-		}
-		else
-		{	// extraplate positions
-			cvf[vfld]->AddDisplacement(matfld,fnmp,&mptr->pos);
-		}
-		
-		// add dilated volume, only used by transport tasks, contact, and imperfect interfaces
-        cvf[vfld]->AddVolume(matfld,shape*mptr->GetVolume(DEFORMED_AREA));
-        
-		// material contact calculations (only if multimaterial mode)
-		if(fmobj->multiMaterialMode)
+	{	// Extrapolate volume along with displacement and position (if needed) (only nonrigid materials here)
+		cvf[vfld]->AddVolumeDisplacement(matfld,shape*mptr->GetVolume(DEFORMED_AREA),fnmp,mptr->pos,&mptr->origpos);
+
+		// material contact calculations (only if multimaterial mode and needed)
+		if(mpmgrid.volumeGradientIndex>=0)
 			cvf[vfld]->AddVolumeGradient(matfld,mptr,dNdx,dNdy,dNdz);
 	}
 }
@@ -492,11 +468,6 @@ void NodalPoint::AddMass(short vfld,int matfld,double mnode) { cvf[vfld]->AddMas
 // for rigid particles, adding mass is counting number of rigid particles
 void NodalPoint::AddMassTask1(short vfld,int matfld,double mnode,int numPts) { cvf[vfld]->AddMassTask1(matfld,mnode,numPts); }
 
-// Copy volume gradient when copying from ghost to real node
-void NodalPoint::CopyVolumeGradient(short vfld,int matfld,Vector *grad)
-{	cvf[vfld]->CopyVolumeGradient(matfld,grad);
-}
-
 // Calculate total mass and count number of materials on this node
 // The nodal mass counts only source materials (i.e., does not count mass in mirrored
 //    mvf that ignore cracks, but deos get that material in field [0]).
@@ -510,6 +481,7 @@ bool NodalPoint::CalcTotalMassAndCount(void)
 	for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
 		{	nodalMass += cvf[i]->GetTotalMassAndCount(hasMaterialContact);
+			hasParticles = true;
 		}
 	}
 	return hasMaterialContact;
@@ -526,7 +498,7 @@ void NodalPoint::RestoreMomenta(void)
 }
 
 // In mass and momentum task
-// 1. Add momentum (if any set) (uses mvf[0]->pk and mvf[0]->disp)
+// 1. Add momentum (if any set) (uses mvf[0]->pk and mvf[0]->vk[0])
 // 2. Add temperture and concentration (if either set)
 //			(uses gCond.gTValue, gCond.gQ, gDiff.gTValue, gDiff.gQ temporariily, zeroed when BC are set)
 //			(only allowed if transport tasks is active)
@@ -613,7 +585,7 @@ void NodalPoint::MirrorIgnoredCrackFields(void)
 // Add to internal force
 // throws CommonException()
 void NodalPoint::AddFtotTask3(short vfld,int matfld,Vector *f)
-{	if(cvf[vfld]==NULL) throw CommonException("NULL crack velocity field in grid forces test","NodalPoint::AddFtotTask3");
+{	//if(cvf[vfld]==NULL) throw CommonException("NULL crack velocity field in grid forces test","NodalPoint::AddFtotTask3");
 	cvf[vfld]->AddFtotTask3(matfld,f);
 }
 
@@ -629,30 +601,33 @@ void NodalPoint::CopyGridForces(NodalPoint *real)
 // Only called by AddTractionForce()
 void NodalPoint::AddFtotSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFtotSpreadTask3(&f); }
 
-// Add to traction force (g-mm/sec^2)
-void NodalPoint::AddTractionTask3(MPMBase *mpmptr,short vfld,int matfld,Vector *f)
-{	if(CrackVelocityField::ActiveField(cvf[vfld]))
+// Add to traction force. Only called for surface tractions
+// Return true if added or false if that matfld is inactive on empty
+bool NodalPoint::AddTractionTask3(MPMBase *mpmptr,short vfld,int matfld,Vector *f)
+{	if(CrackVelocityField::HasActiveMatField(cvf[vfld],matfld))
 	{	cvf[vfld]->AddFtotTask3(matfld,f);
+		return true;
     }
+	return false;
 }
 
 // Add gravity and body forces on node in g mm/sec^2
-void NodalPoint::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
+void NodalPoint::AddGravityAndBodyForceTask3(Vector *gridBodyForce,double gridAlpha,double gridForceAlpha)
 {	int i;
     for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->AddGravityAndBodyForceTask3(gridBodyForce);
+			cvf[i]->AddGravityAndBodyForceTask3(gridBodyForce,gridAlpha,gridForceAlpha);
 	}
 }
 
 #pragma mark TASK 4 METHODS
 
 // update momenta for this MPM step
-void NodalPoint::UpdateMomentaOnNode(double timestep)
+void NodalPoint::UpdateMomentum(double timestep)
 {	// update momenta in all crack velocity fields
     for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
-			cvf[i]->UpdateMomentaOnField(timestep);
+			cvf[i]->UpdateMomentum(timestep);
     }
 }
 
@@ -663,12 +638,36 @@ void NodalPoint::IncrementDelvaTask5(short vfld,int matfld,double fi,GridToParti
 {	cvf[vfld]->IncrementDelvaTask5(matfld,fi,gp);
 }
 
+// Support XPIC calculations
+// xpicOptions: INITIALIZE_XPIC, UPDATE_VSTAR, COPY_VSTARNEXT
+void NodalPoint::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int m,int k,double vsign)
+{	for(int i=0;i<maxCrackFields;i++)
+	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
+			cvf[i]->XPICSupport(xpicCalculation,xpicOption,real,timestep,m,k,vsign);
+	}
+}
+
+// add to vStarNext
+void NodalPoint::AddVStarNext(short vfldi,int matfld,Vector *vStarPrevj,Vector *delXiMpPtr,Vector *delXjPtr,
+							  Matrix3 *Dpinv,double weight,double weightContact)
+{	cvf[vfldi]->AddVStarNext(matfld,vStarPrevj,delXiMpPtr,delXjPtr,Dpinv,weight,weightContact);
+}
+
+// get real node vStarPrev point
+Vector *NodalPoint::GetVStarPrev(short vfldj,int matfld) const
+{	return cvf[vfldj]->GetVStarPrev(matfld);
+}
+
+// get real node material mass
+double NodalPoint::GetMaterialMass(short vfldj,int matfld) const
+{	return cvf[vfldj]->GetMaterialMass(matfld);
+}
+
 #pragma mark TASK 6 METHODS
 
 // zero momentum at a node for new calculations
 void NodalPoint::RezeroNodeTask6(double deltaTime)
-{	int i;
-    for(i=0;i<maxCrackFields;i++)
+{	for(int i=0;i<maxCrackFields;i++)
     {	if(CrackVelocityField::ActiveField(cvf[i]))
 			cvf[i]->RezeroNodeTask6(deltaTime);
     }
@@ -1241,60 +1240,80 @@ int NodalPoint::SurfaceCrossesOtherCrack(Vector *xp1,Vector *xp2,int cnum) const
 	return NO_CRACK;
 }
 
-// Calculate CM velocity at a node and store in nv[0] velocity
-//   (only used when contact.GetMoveOnlySurfaces() is FALSE, i.e., when crack particles
+// Calculate CM velocity at a node
+// When vout==NULL it was called when contact.GetMoveOnlySurfaces() is FALSE, i.e., when crack particles
 //		move in CM velocity field,  and then only when crack plane particles are about to move)
-void NodalPoint::CalcCMVelocityTask8(void)
+//      Tasks are to find vcm and acm and store in cvf[0]
+// When vout!=NULL, find and return center of mass in that vector
+bool NodalPoint::GetCenterOfMassVelocity(Vector *vout,bool useVelocity)
 {
-	Vector nodePk,nodeAcc;
-	ZeroVector(&nodePk);
-	ZeroVector(&nodeAcc);
-	int hasParticles=0;
+	Vector nodePk,nodeAcc,*accPtr=NULL;
+	bool hasParticles = false;
 	double foundMass = 0.;
+
+	// zero vector, but we only zero and get acceleration if vout==NULL
+	ZeroVector(&nodePk);
+	if(vout==NULL)
+	{	ZeroVector(&nodeAcc);
+		accPtr = &nodeAcc;
+	}
+	
+	// loop over crack velocity fields
 	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
-		{	if(cvf[i]->CollectMomentaTask8(&nodePk,&foundMass,&nodeAcc))
-				hasParticles = 1;
+		{	if(cvf[i]->CollectMomentaInCrackField(&nodePk,&foundMass,accPtr,useVelocity))
+				hasParticles = true;
 		}
 	}
 
-	// store in field zero
-	if(hasParticles)
-	{	ScaleVector(&nodePk,1./foundMass);			// S.v
-		ScaleVector(&nodeAcc,1./foundMass);			// S.a
+	if(vout==NULL)
+	{	// only divide by mass it is not zero
+		if(hasParticles)
+		{	double invMass = 1./foundMass;
+			ScaleVector(&nodePk,invMass);			// S.v
+			ScaleVector(&nodeAcc,invMass);			// S.a
+		}
+		// store in cvf[0] (stores zero if no particles
+		cvf[0]->SetCMVelocityTask8(&nodePk,hasParticles,&nodeAcc);
 	}
-	cvf[0]->SetCMVelocityTask8(&nodePk,hasParticles,&nodeAcc);
+	else
+	{	// store just the velocity
+		*vout = SetScaledVector(&nodePk,1./foundMass);
+	}
+	
+	// return if found any particles
+	return hasParticles;
 }
 
 // Get velocity for center of mass
-//   (assumes recently called CalcCMVelocityTask8() for this node)
+//   (assumes recently called GetCenterOfMassVelocity(NULL,false) for this node)
 //   (only used when contact.GetMoveOnlySurfaces() is FALSE and crack plane
 //       particles are moving)
-bool NodalPoint::GetCMVelocityTask8(Vector *vkcm,Vector *ak) const
-{	return cvf[0]->GetCMVelocityTask8(vkcm,ak);
+bool NodalPoint::GetCMVelocityTask8(Vector *vcm,Vector *ak) const
+{	return cvf[0]->GetCMVelocityTask8(vcm,ak);
 }
 
-#pragma mark INCREMENTERS
+#pragma mark CONTACT INCREMENTER
 
-// Add displacements to selected field
-void NodalPoint::AddDisplacement(short vfld,int matfld,double wt,Vector *pdisp)
-{	cvf[vfld]->AddDisplacement(matfld,wt,pdisp);
-}
-
-// Add volume to selected field
-void NodalPoint::AddVolume(short vfld,int matfld,double wtVol)
-{	cvf[vfld]->AddVolume(matfld,wtVol);
+// Add contact terms to selected field
+void NodalPoint::AddContactTerms(short vfld,int matfld,ContactTerms *contactInfo)
+{	cvf[vfld]->AddContactTerms(matfld,contactInfo);
 }
 
 #pragma mark VELOCITY FIELDS
 
-// Calculate velocity at a node from current momentum and mass matrix
-void NodalPoint::CalcVelocityForStrainUpdate(void)
+// Make calculation on grid values for all active crack and material
+//		fields associated with this node
+// When mirrored fields, calculation done only for non-mirrored fields
+//		(i.e., CrackVelocityFieldMulti check for ActiveNonrigidSourceField())
+//		The mirrored field will get the calculation through mirroring
+// calcOption = VELOCITY_FOR_STRAIN_UPDATE - get velocity on the grid from
+//		momentum using the lumped mass matrix
+void NodalPoint::GridValueCalculation(int calcOption)
 {	// get velocity for all crack and material velocity fields
-	int i;
-    for(i=0;i<maxCrackFields;i++)
+    for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->CalcVelocityForStrainUpdate();
+			cvf[i]->GridValueCalculation(calcOption);
     }
 }
 
@@ -1334,6 +1353,7 @@ void NodalPoint::AddGetContactForce(bool clearForces,Vector *forces,double stepS
 
 // Called in multimaterial mode to check contact at nodes with multiple materials
 // throws std::bad_alloc
+// callType == MASS_MOMENTUM_CALL, UPDATE_MOMENTUM_CALL, UPDATE_STRAINS_LAST_CALL
 void NodalPoint::MaterialContactOnNode(double deltime,int callType,MaterialContactNode *mcn)
 {
 	// check each crack velocity field on this node
@@ -1345,17 +1365,18 @@ void NodalPoint::MaterialContactOnNode(double deltime,int callType,MaterialConta
 
 // retrieve volume gradient for matnum (1 based) in crack field only (or zero if
 // not there or not tracked)
+// Only called by VTK archive task and only looks for cvf[0]
 void NodalPoint::GetMatVolumeGradient(int matnum,Vector *grad) const
 {
-	// Default to zero and exit if not in multimaterial mode
+	// Default to zero and exit if not in multimaterial mode that needs volume gradient
 	ZeroVector(grad);
-	if(!fmobj->multiMaterialMode) return;
+	if(mpmgrid.volumeGradientIndex<0) return;
 	
 	// Only there if field zero is active
     if(CrackVelocityField::ActiveField(cvf[0]))
     {   // convert to field number
 		int matfld = theMaterials[matnum-1]->GetField();
-        if(cvf[0]->HasVolumeGradient(matfld))
+		if(cvf[0]->GetMaterialVelocityField(matfld)!=NULL)
             cvf[0]->GetVolumeGradient(matfld,this,grad,1.);
     }
 }
@@ -1519,17 +1540,9 @@ bool NodalPoint::NodeHasNonrigidParticles(void) const
 	return false;
 }
 
-// Look for presence of any points on this node
-bool NodalPoint::NodeHasParticles(void) const
-{
-	for(int i=0;i<maxCrackFields;i++)
-	{	if(CrackVelocityField::ActiveField(cvf[i]))
-		{	if(cvf[i]->GetNumberPoints()>0)
-				return true;
-		}
-	}
-	return false;
-}
+// Look for presence of any points on this node (only valid after
+// calling CalcTotalMassAndCount() in PostExtrapolationTask
+bool NodalPoint::NodeHasParticles(void) const { return hasParticles; }
 
 // return true if vfld is active and has more than one material
 bool NodalPoint::NeedsParticleListed(short vfld)
@@ -1555,85 +1568,37 @@ void NodalPoint::Describe(bool cvfDetails) const
     if(!active) cout << "#  no active crack velocity fields (might be in initialization)" << endl;
 }
 
-// Total nodal mass. If requireCracks is false, then gets mass of all nonrigid materials, otherwise,
-//   it gets mas of materials that see cracks (as calculated in CalcTotalMassAndCount())
-// true uses: none
-// false uses: ArchiveVTKFile() and VTKArchive::EndExtrapolations()
-double NodalPoint::GetNodalMass(bool requireCracks) const
-{	if(!requireCracks) return nodalMass;
-	double crackMass = 0;
-	for(int i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
-			crackMass += cvf[i]->GetTotalMass(true);
-	}
-	return crackMass;
-}
-
 #pragma mark BOUNDARY CONDITION METHODS
 
 // set one component of velocity and momentum to zero
-void NodalPoint::SetMomVel(Vector *norm,int passType)
+void NodalPoint::ZeroVelocityBC(Vector *norm,int passType,double deltime,Vector *freaction)
 {	for(int i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-            cvf[i]->SetMomVel(norm,passType);
+            cvf[i]->ZeroVelocityBC(norm,passType,deltime,freaction);
 	}
 }
 
 // Add one component of velocity and momentum at a node (assumes mass already set)
-void NodalPoint::AddMomVel(Vector *norm,double vel,int passType)
+void NodalPoint::AddVelocityBC(Vector *norm,double vel,int passType,double deltime,Vector *freaction)
 {	for(int i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-            cvf[i]->AddMomVel(norm,vel,passType);
+            cvf[i]->AddVelocityBC(norm,vel,passType,deltime,freaction);
 	}
 }
 
 // Reflect one component of velocity and momentum from a node
-void NodalPoint::ReflectMomVel(Vector *norm,NodalPoint *ndptr,double vel0,double reflectRatio,int passType)
+void NodalPoint::ReflectVelocityBC(Vector *norm,NodalPoint *ndptr,double vel0,double reflectRatio,
+								   int passType,double deltime,Vector *freaction)
 {	for(int i=0;i<maxCrackFields;i++)
 	{	// Is field i active?
 		if(CrackVelocityField::ActiveField(cvf[i]))
 		{	// Does the reflected node have information
 			if(CrackVelocityField::ActiveField(ndptr->cvf[i]))
-			{	cvf[i]->ReflectMomVel(norm,ndptr->cvf[i],vel0,reflectRatio,passType);
+			{	cvf[i]->ReflectVelocityBC(norm,ndptr->cvf[i],vel0,reflectRatio,passType,deltime,freaction);
 			}
 			else
 			{	// if no info, add non-mirrored BC
-				cvf[i]->AddMomVel(norm,vel0,passType);
-			}
-		}
-	}
-}
-
-// set force in direction norm to -p(interpolated)/time such that updated momentum
-//    of pk.i + deltime*ftot.i will be zero in that direction
-void NodalPoint::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
-{	for(int i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-            cvf[i]->SetFtotDirection(norm,deltime,freaction);
-	}
-}
-
-// set one component of force such that updated momentum will be mass*velocity
-void NodalPoint::AddFtotDirection(Vector *norm,double deltime,double vel,Vector *freaction)
-{	for(int i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-            cvf[i]->AddFtotDirection(norm,deltime,vel,freaction);
-	}
-}
-
-// set one component of force such that updated momentum will match reflected node
-void NodalPoint::ReflectFtotDirection(Vector *norm,double deltime,NodalPoint *ndptr,
-									  double vel0,double reflectRatio,Vector *freaction)
-{	for(int i=0;i<maxCrackFields;i++)
-	{	// Is field i active?
-		if(CrackVelocityField::ActiveField(cvf[i]))
-		{	// Does the reflected node have information
-			if(CrackVelocityField::ActiveField(ndptr->cvf[i]))
-			{	cvf[i]->ReflectFtotDirection(norm,deltime,ndptr->cvf[i],vel0,reflectRatio,freaction);
-			}
-			else
-			{	// if no info, add non-mirrored BC
-				cvf[i]->AddFtotDirection(norm,deltime,vel0,freaction);
+				cvf[i]->AddVelocityBC(norm,vel0,passType,deltime,freaction);
 			}
 		}
 	}
@@ -1655,7 +1620,7 @@ void NodalPoint::UnsetFixedDirection(int dir)
 #pragma mark CLASS METHODS
 
 // zero all velocity fields at start of time step
-void NodalPoint::PreliminaryCalcs(void)
+void NodalPoint::PrepareNodeCrackFields(void)
 {	int i;
     for(i=1;i<=nnodes;i++)
         nd[i]->PrepareForFields();

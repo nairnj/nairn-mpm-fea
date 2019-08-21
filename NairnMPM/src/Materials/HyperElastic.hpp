@@ -34,7 +34,6 @@ class HyperElastic : public MaterialBase
     
 		// Methods (make virtual if any subclass needs them)
 		virtual double GetIncrementalResJ(MPMBase *,ResidualStrains *) const;
-		virtual void TrackResidualStrain(MPMBase *,double,int) const;
 		virtual double IncrementDeformation(MPMBase *,Matrix3,Tensor *,int) const;
 		virtual double GetResidualStretch(MPMBase *,double &,ResidualStrains *) const;
         virtual double GetCpMinusCv(MPMBase *) const;

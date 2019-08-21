@@ -24,6 +24,14 @@ typedef struct {
 	double alpha[8];
 	double beta[6];
 } ElasticProperties;
+
+class SofeningLaw;
+
+// softrning history variables
+enum { SOFT_DAMAGE_STATE=0,DELTANORMAL,DELTASHEAR,DELTASHEAR2,DAMAGENORMAL,DAMAGESHEAR,DAMAGESHEAR2,
+	NORMALDIR1,NORMALDIR2,NORMALDIR3,GCSCALING,RELATIVE_STRENGTH,SOFT_NUMBER_HISTORY };
+enum { RECTANGULAR_SURFACE=0,ELLIPTICAL_SURFACE};
+
 #endif
 
 class Elastic : public MaterialBase
@@ -50,6 +58,16 @@ class Elastic : public MaterialBase
 		virtual void SRConstitutiveLaw2D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 		virtual void SRConstitutiveLaw3D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 		virtual ElasticProperties *GetElasticPropertiesPointer(void *) const;
+
+		// methods for softening materials
+		virtual double GetAcOverVp(int,MPMBase *,Vector *) const;
+		virtual bool SoftenAxis(double,double *,int,int,double,double,SofteningLaw *,
+								  double,double,double,double &,double *,double &,bool &) const;
+		virtual bool SoftenTwoAxes(double *,double,double,double,double,double,SofteningLaw *,int,int,
+			double,double,double,double,double,SofteningLaw *,int,int,double &,double &,double &,bool &) const;
+		virtual void PostFailureUpdate(double &,double &,double &,Tensor *,Tensor *,Tensor *,Matrix3,
+									   double,double,double,double,bool) const;
+		virtual void UpdateCrackingStrainStress(int,Tensor *,Tensor *,double,double,double,Tensor *,Tensor *,Matrix3) const;
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif

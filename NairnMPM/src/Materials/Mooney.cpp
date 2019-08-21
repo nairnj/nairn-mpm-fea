@@ -21,7 +21,7 @@ Mooney::Mooney(char *matName,int matID) : HyperElastic(matName,matID)
 	Etens = -1.;
 	nu = -2.;
 	G2 = 0.;			// zero is neo-Hookean
-    rubber = FALSE;     // not a rubber
+    rubber = false;     // not a rubber
 	J_History = 0;
 }
 
@@ -87,7 +87,7 @@ char *Mooney::InputMaterialProperty(char *xName,int &input,double &gScaling)
     
     else if(strcmp(xName,"IdealRubber")==0)
     {   input = NOT_NUM;
-        rubber = TRUE;
+        rubber = true;
         return (char *)&rubber;
     }
     
@@ -324,31 +324,31 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     double dU = dilEnergy + shearEnergy;
     mptr->AddWorkEnergyAndResidualEnergy(dU,resEnergy);
 	
-    // thermodynamics depends on whether or not this is a rubber
-	double dTq0;
-    if(rubber)
-    {   // convert internal energy to temperature change
+	// elastic particle isentropic temperature increment
+	double Kratio;				// = rho_0 K/(rho K_0)
+	switch(UofJOption)
+	{   case J_MINUS_1_SQUARED:
+			Kratio = Jeff;
+			break;
+			
+		case LN_J_SQUARED:
+			Kratio = (1-log(Jeff))/(Jeff*Jeff);
+			break;
+			
+		case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
+		default:
+			Kratio = 0.5*(Jeff + 1./Jeff);
+			break;
+	}
+	double dTq0 = -J*Kratio*gamma0*mptr->pPreviousTemperature*delV;
+	
+	// ideal rubber, has entropy cooling on tension that adds to compeession heating
+	if(rubber)
+	{   // convert internal energy to temperature change
 		dTq0 = dU/GetHeatCapacity(mptr);
 	}
-	else
-	{	// elastic particle isentropic temperature increment
-		double Kratio;				// = rho_0 K/(rho K_0)
-		switch(UofJOption)
-		{   case J_MINUS_1_SQUARED:
-				Kratio = Jeff;
-				break;
-				
-			case LN_J_SQUARED:
-				Kratio = (1-log(Jeff))/(Jeff*Jeff);
-				break;
-				
-			case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
-			default:
-				Kratio = 0.5*(Jeff + 1./Jeff);
-				break;
-		}
-		dTq0 = -J*Kratio*gamma0*mptr->pPreviousTemperature*delV;
-	}
+	
+	// Add all
 	IncrementHeatEnergy(mptr,dTq0,AVEnergy);
 }
 

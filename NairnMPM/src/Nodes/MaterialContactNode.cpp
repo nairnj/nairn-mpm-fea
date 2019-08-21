@@ -17,7 +17,7 @@
 #include "Patches/GridPatch.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Elements/ElementBase.hpp"
-#include "Cracks/CrackSurfaceContact.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 
 #define PARALLEL_LINKING
 
@@ -63,6 +63,7 @@ NodalPoint *MaterialContactNode::GetTheNode(void) { return theNode; }
 #pragma mark MaterialContactNode: Methods
 
 // check contact on this node during update strains last
+// passType == MASS_MOMENTUM_CALL, UPDATE_MOMENTUM_CALL, UPDATE_STRAINS_LAST_CALL
 void MaterialContactNode::NodalMaterialContact(double dtime,int passType)
 {
 	theNode->MaterialContactOnNode(dtime,passType,this);
@@ -107,12 +108,13 @@ vector<int> MaterialContactNode::ParticleLists(int vfld) { return lists[vfld]; }
 
 // On last pass (for USAVG or SZS), will already know which
 // nodes are crack nodes and now need to adjust forces
-void MaterialContactNode::ContactOnKnownNodes(double dtime,int passType)
+// passType == MASS_MOMENTUM_CALL, UPDATE_MOMENTUM_CALL, UPDATE_STRAINS_LAST_CALL
+bool MaterialContactNode::ContactOnKnownNodes(double dtime,int passType)
 {
 	// anythiing to do?
 	long numContactNodes = materialContactNodes.size();
-	if(numContactNodes==0) return;
-	
+	if(numContactNodes==0) return false;
+
 	// prepare for parallel
 	CommonException *mcErr = NULL;
 	int numNodesPerProc = (int)((double)numContactNodes/(double)(fmobj->GetNumberOfProcessors()));
@@ -137,6 +139,8 @@ void MaterialContactNode::ContactOnKnownNodes(double dtime,int passType)
 	
 	// throw error now
 	if(mcErr!=NULL) throw *mcErr;
+	
+	return true;
 }
 
 // delete the contact node (which delink to node), clear vector of pointers

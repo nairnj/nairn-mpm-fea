@@ -6,6 +6,7 @@
 	Copyright 2007 RSAC Software. All rights reserved.
 *******************************************************************/
 
+import geditcom.JNFramework.*;
 import javax.swing.*;
 import java.util.*;
 import java.awt.Toolkit;
@@ -34,7 +35,8 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 	// variables
 	private String var1=null;
 	private String var2=null;
-	private MathEvaluator contourExpr=null;
+	private JNExpression contourExpr = null;
+	HashMap<String,String> variables;
 	private double contourRange;
 	private int pmpts;
 	private int functionType;
@@ -108,9 +110,14 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 					}
 					
 					// test it
-					contourExpr=new MathEvaluator(contourFxn);
-					if(evaluate(2.d)==null)
-						throw new Exception("The contour function does not evaluate to a number");
+					contourExpr = new JNExpression(contourFxn,null);
+					variables = new HashMap<String,String>(2);
+					try
+					{	evaluate(2.d);
+					}
+					catch(Exception e)
+					{	throw new Exception("The contour function does not evaluate to a number");
+					}
 						
 					// get range
 					contourRange=controls.getPlusMinus();
@@ -150,11 +157,11 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 	}
 	
 	// evaluate expression at tval
-	public Double evaluate(double tval)
-	{	contourExpr.reset();
-		contourExpr.addVariable(var1,tval);
-		if(var2!=null) contourExpr.addVariable(var2,tval);
-		return contourExpr.getValue();
+	public double evaluate(double tval) throws Exception
+	{	variables.put(var1,JNUtilities.formatDouble(tval));
+		if(var2!=null) variables.put(var2,JNUtilities.formatDouble(tval));
+		contourExpr.evaluateWith(variables);
+		return contourExpr.getNumericValue();
 	}
 	
 	// entry point to get non-crack, x-y plot points
@@ -196,10 +203,12 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 		
 		// initialize a previous point for finding normals
 		prevX=pmin-pstep;
-		Double nextVal=evaluate(prevX);
-		if(nextVal==null)
-			throw new Exception("The contour function does not evaluate to a number at "+prevX);
-		prevY=nextVal.doubleValue();
+		try
+		{	prevY=evaluate(prevX);
+		}
+		catch(Exception e)
+		{	throw new Exception("The contour function does not evaluate to a number at "+prevX);
+		}
 		if(functionType==XorRContour || functionType==DContour)
 		{	double temp=prevX;
 			prevX=prevY;
@@ -221,10 +230,12 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 			
 			// plot
 			mptX=pmin+((double)i)*pstep;
-			nextVal=evaluate(mptX);
-			if(nextVal==null)
-				throw new Exception("The contour function does not evaluate to a number at "+mptX);
-			mptY=nextVal.doubleValue();
+			try
+			{	mptY = evaluate(mptX);
+			}
+			catch(Exception e)
+			{	throw new Exception("The contour function does not evaluate to a number at "+mptX);
+			}
 			if(functionType==XorRContour || functionType==DContour)
 			{	double temp=mptX;
 				mptX=mptY;

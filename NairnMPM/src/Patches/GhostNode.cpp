@@ -112,7 +112,7 @@ GhostNode::GhostNode(int row,int col,int rank,bool interiorRow,bool interiorCol,
 #pragma mark GhostNode: Methods
 
 // initialize ghost nodes for next time step
-void GhostNode::InitializeForTimeStep()
+void GhostNode::InitializeForTimeStep(void)
 {	if(ghost!=NULL)
 		ghost->InitializeForTimeStep();
 }
@@ -133,6 +133,12 @@ void GhostNode::MassAndMomentumReduction(void)
 		while(nextTransport!=NULL)
 			nextTransport=nextTransport->Task1Reduction(real,ghost);
 	}
+}
+
+// Support XPIC calculations (always xpicCalculation==COPY_VSTARNEXT, and k=pass in XPIC loop)
+void GhostNode::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *dummy,double timestep,int m,int k,double vsign)
+{	if(ghost!=NULL)
+	ghost->XPICSupport(xpicCalculation,xpicOption,real,timestep,m,k,vsign);
 }
 
 // initialize ghost nodes for next time step

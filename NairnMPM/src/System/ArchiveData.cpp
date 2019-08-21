@@ -41,6 +41,8 @@ ArchiveData::ArchiveData()
 	nextGlobalTime=0.;		// next time to archive global results (sec)
 	
 	globalFile=NULL;		// path to global results file
+	decohesionFile=NULL;	// path to decohesion file
+	decohesionModes[0]=0;	// observed decohesion modes
 	threeD=FALSE;			// three D calculations
 	
 	// default archive has byte order and defaults only
@@ -459,41 +461,115 @@ void ArchiveData::CreateGlobalFile(void)
 	// no file if no quantities created
 	if(firstGlobal==NULL) return;
 	
-	// get relative path name to the file
-	globalFile=new char[strlen(outputDir)+strlen(archiveRoot)+8];
-	GetFilePath(globalFile,"%s%s.global");
-	
-    // create and open the file
-    if((fp=fopen(globalFile,"w"))==NULL) goto abort;
-	
-	// write color and count archives
-	strcpy(fline,"#setColor");
+	// see what files are needed
+	bool hasDecohesion = false;
+	bool hasGlobalValues = false;
+	bool hasTracers = 0;
 	nextGlobal=firstGlobal;
 	while(nextGlobal!=NULL)
-	    nextGlobal=nextGlobal->AppendColor(fline);
-	strcat(fline,"\n");
-	if(fwrite(fline,strlen(fline),1,fp)!=1) goto abort;
+	{	switch(nextGlobal->GetQuantity())
+		{	case DECOHESION:
+				hasDecohesion = true;
+				break;
+			case UNKNOWN_QUANTITY:
+				break;
+			default:
+				if(nextGlobal->IsTracerParticle())
+					hasTracers = true;
+				hasGlobalValues = true;
+				break;
+		}
+		nextGlobal = nextGlobal->GetNextGlobal();
+	}
+	if(!hasDecohesion && !hasGlobalValues) return;
+
+	// create global file and add headers
+	if(hasGlobalValues)
+	{	// find tracer particles
+		if(hasTracers)
+		{	for(int p=0;p<nmpms;p++)
+			{	nextGlobal=firstGlobal;
+				while(nextGlobal!=NULL)
+					nextGlobal = nextGlobal->FindTracerParticle(p,&mpm[p]->origpos);
+			}
+			nextGlobal=firstGlobal;
+			while(nextGlobal!=NULL)
+				nextGlobal = nextGlobal->SetTracerParticle();
+		}
+
+		// get relative path name to the file
+		globalFile = new char[strlen(outputDir)+strlen(archiveRoot)+8];
+		GetFilePath(globalFile,"%s%s.global");
 	
-	// write name
-	strcpy(fline,"#setName");
-	nextGlobal=firstGlobal;
-	while(nextGlobal!=NULL)
-		nextGlobal=nextGlobal->AppendName(fline);
-	strcat(fline,"\n");
-	if(fwrite(fline,strlen(fline),1,fp)!=1) goto abort;
+		// create and open the file
+		if((fp=fopen(globalFile,"w"))==NULL)
+		{	FileError("Global archive file creation failed",globalFile,"ArchiveData::CreateGlobalFile");
+			return;
+		}
 	
-	// close the file
-    if(fclose(fp)!=0) goto abort;
+		// write color and count archives
+		strcpy(fline,"#setColor");
+		nextGlobal=firstGlobal;
+		while(nextGlobal!=NULL)
+			nextGlobal = nextGlobal->AppendColor(fline);
+		strcat(fline,"\n");
+		if(fwrite(fline,strlen(fline),1,fp)!=1)
+		{	FileError("Global archive file failed to add colors",globalFile,"ArchiveData::CreateGlobalFile");
+			return;
+		}
+
+		// write name
+		strcpy(fline,"#setName");
+		nextGlobal=firstGlobal;
+		while(nextGlobal!=NULL)
+			nextGlobal = nextGlobal->AppendName(fline);
+		strcat(fline,"\n");
+		if(fwrite(fline,strlen(fline),1,fp)!=1)
+		{	FileError("Global archive file failed to add quantity names",globalFile,"ArchiveData::CreateGlobalFile");
+			return;
+		}
+
+		// close the file
+		if(fclose(fp)!=0)
+		{	FileError("Global archive file failed to close",globalFile,"ArchiveData::CreateGlobalFile");
+			return;
+		}
+		
+	}
 	
+	// Create Decohsion file
+	if(hasDecohesion)
+	{	// get relative path name to the file
+		decohesionFile = new char[strlen(outputDir)+strlen(archiveRoot)+8];
+		GetFilePath(decohesionFile,"%s%s.decohn");
+		
+		// create and open the file
+		if((fp=fopen(decohesionFile,"w"))==NULL)
+		{	FileError("Decohesion file creation failed",globalFile,"ArchiveData::CreateGlobalFile");
+			return;
+		}
+		
+		// write heading
+		strcpy(fline,"t\tmat\tID\tXp\tYp\tZp\tAng1\tAng2\tAng3\tGI\tGII1\tGII2\tGtot\n");
+		if(fwrite(fline,strlen(fline),1,fp)!=1)
+		{	FileError("Decohesion file failed to add header",globalFile,"ArchiveData::CreateGlobalFile");
+			return;
+		}
+		
+		// close the file
+		if(fclose(fp)!=0)
+		{	FileError("Decohesion file failed to close",globalFile,"ArchiveData::CreateGlobalFile");
+			return;
+		}
+	}
+
 	// section in output file
     PrintSection("ARCHIVED GLOBAL RESULTS");
-    cout << "Global data file: " << archiveRoot << ".global" << endl;
+	if(hasGlobalValues)
+    	cout << "Global data file: " << archiveRoot << ".global" << endl;
+	if(hasDecohesion)
+		cout << "Decohesion data file: " << archiveRoot << ".decohn" << endl;
 	cout << endl;
-	
-	return;
-
-abort:
-	FileError("Global archive file creation failed",globalFile,"ArchiveData::CreateGlobalFile");
 }
 
 // Create file in archive folder (outputDir)/(rootName)(fileName)
@@ -545,8 +621,8 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 	
 	// list in output file (by request or if file error)
     cout << " Node    DOF ID  Vel (" << UnitsController::Label(CUVELOCITY_UNITS) << ")"
-	<< "   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Angle1  Angle2  Function\n"
-   	     << "--------------------------------------------------------------------------\n";
+	<< "   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Angle1  Angle2  Function(:side:grad:pos)\n"
+   	     << "---------------------------------------------------------------------------------------------\n";
     nextBC=(BoundaryCondition *)firstBC;
     while(nextBC!=NULL)
 		nextBC=nextBC->PrintBC(cout);
@@ -596,7 +672,7 @@ void ArchiveData::ArchiveResults(double atime)
 	// test global archiving based on specified time
 	if(firstGlobal!=NULL && globalTime>=0.)
     {	if(atime>nextGlobalTime)
-		{	GlobalArchive(atime);
+	 	{	GlobalArchive(atime);
 			nextGlobalTime+=globalTime;
 		}
 	}
@@ -621,7 +697,7 @@ void ArchiveData::ArchiveResults(double atime)
 	// global archive too, if using archive time
 	if(firstGlobal!=NULL && globalTime<0.)
 		GlobalArchive(atime);
-    
+	
     // get relative path name to the file
 	GetFilePathNum(fname,"%s%s.%d",fmobj->mstep);
     
@@ -976,6 +1052,7 @@ void ArchiveData::ArchiveResults(double atime)
 		}
 
 		// Particle spin momentum (Legacy Units J-sec)
+		// zero unless tracking particle spin
 		if(mpmOrder[ARCH_SpinMomentum]=='Y')
 		{
 			Vector Lp = MakeVector(0.,0.,0.);
@@ -995,6 +1072,7 @@ void ArchiveData::ArchiveResults(double atime)
 		}
 		
 		// Particle spin velocity (Legacy units 1/sec)
+		// zero unless using affine MPM methods
 		if(mpmOrder[ARCH_SpinVelocity]=='Y')
 		{
 			// angular velocity
@@ -1211,6 +1289,9 @@ void ArchiveData::ArchiveResults(double atime)
 // Archive global results if it is time
 void ArchiveData::GlobalArchive(double atime)
 {
+	// possible if archiving decohesion, but not anything else
+	if(globalFile==NULL) return;
+	
 	// clear previous ones
 	lastArchived.clear();
 	
@@ -1251,14 +1332,99 @@ void ArchiveData::GlobalArchive(double atime)
 	}
 }
 
+// Archive global results if it is time
+void ArchiveData::Decohesion(double atime,MPMBase *mptr,double alpha,double beta,double gamma,
+							 		double GI,double GII1,double GII2,double decohesionCode)
+{
+	// write in the main results file instead
+	if(decohesionFile==NULL)
+	{
+#pragma omp critical (output)
+		{	cout << "# Decohesion: t=" << atime*UnitsController::Scaling(1000.);
+			cout << " x=(" << mptr->pos.x << "," << mptr->pos.y << "," << mptr->pos.z << ")";
+			cout << " angles=(" << alpha << "," << beta << "," << gamma << ")";
+			cout << "  (GI,GII1,GII2,Gtot)=(" << GI << "," << GII1 << "," << GII2 << "," << GI+GII1+GII2 << ")" << endl;
+		}
+		return;
+	}
+	
+#pragma omp critical (output)
+	{	// check for first in this mode
+		int mode=0;
+		int code=(int)(100*decohesionCode+0.5);
+		while(decohesionModes[mode]>0 && code!=decohesionModes[mode]) mode++;
+	
+		// if not found, then new mode (better be 10 or fewer options in any softening material)
+		if(decohesionModes[mode]==0)
+		{	decohesionModes[mode] = code;
+			decohesionModes[mode+1] = 0;
+			cout << "# Decohesion initiation t=" << atime*UnitsController::Scaling(1000.);
+			cout << " mode=" << decohesionCode << endl;
+		}
+	}
+	
+	// time (Legacy units ms)
+	char fline[1000],numStr[200];
+	sprintf(fline,"%g",UnitsController::Scaling(1000.)*atime);
+	
+	// material ID
+	sprintf(numStr,"\t%d\t%.2lf",mptr->MatID()+1,decohesionCode);
+	strcat(fline,numStr);
+	
+	// position
+	sprintf(numStr,"\t%g\t%g\t%g",mptr->pos.x,mptr->pos.y,mptr->pos.z);
+	strcat(fline,numStr);
+
+	// angles
+	sprintf(numStr,"\t%g\t%g\t%g",alpha,beta,gamma);
+	strcat(fline,numStr);
+
+	// energies
+	sprintf(numStr,"\t%g\t%g\t%g\t%g",GI,GII1,GII2,GI+GII1+GII2);
+	strcat(fline,numStr);
+
+#pragma omp critical (decohesion)
+	{	// append to global results file
+		ofstream global;
+		try
+		{	global.open(decohesionFile,ios::out | ios::app);
+			if(!global.is_open())
+				FileError("File error opening decohesion results",decohesionFile,"ArchiveData::Decohesion");
+			global << fline << endl;
+			if(global.bad())
+				FileError("File error writing decohesion results",decohesionFile,"ArchiveData::Decohesion");
+			global.close();
+			if(global.bad())
+				FileError("File error closing decohesion results",decohesionFile,"ArchiveData::Decohesion");
+		}
+	
+		catch(CommonException& err)
+		{   // divert to standard output and try to continue
+			cout << "# File error - check disk for amount of free space" << endl;
+			cout << "# " << err.Message() << endl;
+			cout << "# Data: " << fline << endl;
+			if(global.is_open()) global.close();
+		}
+	}
+}
+
 // Archive the results if it is time
 void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int > quantitySize,
-											vector< char * > quantityName,vector< int > qparam,double **vtk)
+											vector< char * > quantityName,vector< int > qparam,double **vtk,int onemat)
 {
     char fname[300],fline[300];
 	
     // get relative path name to the file
-	GetFilePathNum(fname,"%s%s_%d.vtk",fmobj->mstep);
+	if(onemat<0)
+		GetFilePathNum(fname,"%s%s_%d.vtk",fmobj->mstep);
+	else
+	{	char matname[20];
+		sprintf(matname,"%d",onemat);
+		strcpy(fline,"%s%s_mat_");
+		strcat(fline,matname);
+		strcat(fline,"_%d.vtk");
+		GetFilePathNum(fname,fline,fmobj->mstep);
+	}
     
     // open the file
 	ofstream afile;
@@ -1271,13 +1437,14 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 	
 	// title (Legacy time units ms)
 	sprintf(fline,"step:%d time:%15.7e %s",fmobj->mstep,atime*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
-    afile << fline << endl;
+	afile << fline << endl;
 	
 	// header
 	afile << "ASCII" << endl;
+	
+	// The points
 	int ptx,pty,ptz;
 	mpmgrid.GetGridPoints(&ptx,&pty,&ptz);
-	
 	if(mpmgrid.IsStructuredEqualElementsGrid())
 	{	// regular grid ewith equal element sizes
 		afile << "DATASET STRUCTURED_POINTS" << endl;
@@ -1301,6 +1468,13 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 		else
 			afile << " " << csz.x << endl;
 	}
+	
+	// title (Legacy time units ms)
+	afile << "FIELD FieldData 2" << endl;
+	afile << "TIME 1 1 double" << endl;
+	afile << atime*UnitsController::Scaling(1.e3) << endl;
+	afile << "STEP 1 1 int" << endl;
+	afile << fmobj->mstep << endl;
 	
 	// the data
 	afile << "POINT_DATA " << nnodes << endl;
@@ -1355,12 +1529,8 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 		for(i=1;i<=nnodes;i++)
 		{	if(vtk!=NULL) vtkquant=vtk[i];
 			switch(quantity[q])
-			{	case VTK_MASS:
-					// mass (Legacy units g)
-					afile << nd[i]->GetNodalMass(false) << endl;
-					break;
-                
-                case VTK_NUMBERPOINTS:
+			{	// Non buffered quantitities (don't respect material selection)
+				case VTK_NUMBERPOINTS:
                     // number of points (including rigid contact and mirrored fields)
                     afile << nd[i]->NumberParticles() << endl;
                     break;
@@ -1397,6 +1567,8 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 						afile << "0. 0. 0." << endl;
 					break;
 				
+				// scalars
+				case VTK_MASS:
 				case VTK_CONCENTRATION:
 				case VTK_WORKENERGY:
 				case VTK_PLASTICENERGY:
@@ -1410,13 +1582,15 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					afile << vtkquant[offset] << endl;
 					break;
 				
-				case VTK_VELOCITY:				// extraplated to always get enter of mass velocity
+				// vectors
+				case VTK_VELOCITY:
 				case VTK_DISPLACEMENT:
 					// Displacement (Legacy units mm)
 					if(vtk==NULL) break;
 					afile << vtkquant[offset] << " " << vtkquant[offset+1] << " " << vtkquant[offset+2] << endl;
 					break;
 				
+				// tensors
 				case VTK_PLASTICSTRAIN:
 				case VTK_STRESS:
 				case VTK_STRAIN:
@@ -1428,6 +1602,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					afile << vtkquant[offset+4] << " " << vtkquant[offset+5] << " " << vtkquant[offset+2] << endl;
 					break;
 				
+				// tensor in different order
 				case VTK_DEFGRAD:
 					if(vtk==NULL) break;
 					afile << vtkquant[offset] << " " << vtkquant[offset+1] << " " << vtkquant[offset+2] << endl;
@@ -1539,10 +1714,10 @@ void ArchiveData::ClearLogFile(void)
 	try
 	{	logstream.open(logFile,ios::trunc);
 		if(!logstream.is_open())
-			FileError("File error opening log file",globalFile,"ArchiveData::ClearLogFile");
+			FileError("File error opening log file",logFile,"ArchiveData::ClearLogFile");
 		logstream.close();
 		if(logstream.bad())
-			FileError("File error closing log file",globalFile,"ArchiveData::ClearLogFile");
+			FileError("File error closing log file",logFile,"ArchiveData::ClearLogFile");
 		logStartTime=fmobj->CPUTime();
 	}
 	

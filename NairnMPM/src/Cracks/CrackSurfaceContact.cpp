@@ -19,10 +19,10 @@
 #include "System/UnitsController.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Exceptions/MPMWarnings.hpp"
+#include "Nodes/CrackVelocityFieldMulti.hpp"
 
 // Single global contact law object
 CrackSurfaceContact contact;
-int CrackSurfaceContact::warnLRConvergence = -1;
 
 extern double timestep;
 
@@ -31,16 +31,12 @@ extern double timestep;
 // Constructors
 CrackSurfaceContact::CrackSurfaceContact()
 {
-	crackContactLawID=-1;
-	
-	hasImperfectInterface=false;	// flag for any imperfect interfaces
 	moveOnlySurfaces=true;			// move surfaces, plane moves at midpoint of surfaces
 	preventPlaneCrosses=false;		// if true, move surfaces that cross the crack plane back to the crack plane
 	
-	materialContactLawID=-1;
-	
-	materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;		// method to find normals in multimaterial contact
-	rigidGradientBias=1.;				// Use rigid gradient unless material volume gradient is this much higher (only normal method 2)
+	// contact
+	crackContactLawID=-1;
+	crackContactByDisplacements=true;	// contact by displacements for cracks
 }
 
 // Print contact law settings for cracks and finalize variables
@@ -57,11 +53,11 @@ void CrackSurfaceContact::Output(void)
 		throw CommonException("Crack settings must select a default contact law","CrackSurfaceContact::Output");
 	crackContactLaw[0] = (ContactLaw *)theMaterials[crackContactLawID];
 	cout << "Default Contact Law: " << crackContactLaw[0]->name << " (number " << (crackContactLawID+1) << ")" << endl;
-	if(crackContactLaw[0]->IsImperfectInterface()) hasImperfectInterface=true;
+	if(crackContactLaw[0]->IsImperfectInterface()) mpmgrid.hasImperfectInterface=true;
 	
 	// print other settings
 	cout << "Contact Detection: Normal cod < 0 AND normal dv < 0" << endl;
-    mpmgrid.OutputContactByDisplacements(false);
+    mpmgrid.OutputContactByDisplacements(false,crackContactByDisplacements,crackPositionCutoff);
 	if(GetMoveOnlySurfaces())
 		cout << "Crack Plane Updating: Average of the crack surfaces" << endl;
 	else
@@ -90,101 +86,7 @@ void CrackSurfaceContact::CustomCrackContactOutput(int &customCrackID,int number
 		throw CommonException("Custom crack contact must select a default contact law","CrackSurfaceContact::Output");
 	crackContactLaw[number] = (ContactLaw *)theMaterials[customCrackID];
 	cout << "    Custom Contact Law: " << crackContactLaw[number]->name << " (number " << (customCrackID+1) << ")" << endl;
-	if(crackContactLaw[number]->IsImperfectInterface()) hasImperfectInterface=true;
-}
-
-// Print contact law settings for cracks and finalize variables
-// throws CommonException()
-void CrackSurfaceContact::MaterialOutput(void)
-{
-	// Global material contact law (must be set,if not force to frictionless)
-	materialContactLawID = MaterialBase::GetContactLawNum(materialContactLawID);
-	if(materialContactLawID<0)
-		throw CommonException("Multimaterial mode must select a default contact law","CrackSurfaceContact::MaterialOutput");
-	materialContactLaw = (ContactLaw *)theMaterials[materialContactLawID];
-	cout << "Default Contact Law: " << materialContactLaw->name << " (number " << (materialContactLawID+1) << ")" << endl;
-	if(materialContactLaw->IsImperfectInterface()) hasImperfectInterface=true;
-	
-	// print contact detection method
-	cout << "Contact Detection: (Normal dv < 0) & (Normal cod < 0)" << endl;
-	mpmgrid.OutputContactByDisplacements(false);
-	cout << "Normal Calculation: ";
-	switch(materialNormalMethod)
-	{	case MAXIMUM_VOLUME_GRADIENT:
-			cout <<                     "Gradient of material or paired material (if all nonrigid), or the rigid" << endl;
-			cout << "                    material (if one rigid material), that has highest magnitude. When has" << endl;
-			cout << "                    rigid material, prefer rigid material gradient with bias factor = " << rigidGradientBias;
-			break;
-		case MAXIMUM_VOLUME:
-			cout << " gradient of material with maximum volume";
-			break;
-		case AVERAGE_MAT_VOLUME_GRADIENTS:
-			cout <<                     "Volume-weighted mean gradient of material and other materials lumped (if all" << endl;
-			cout << "                    nonrigid), on just the rigid material (if one rigid material). When has" << endl;
-			cout << "                    rigid material, prefer rigid material gradient with bias factor = " << rigidGradientBias;
-			break;
-		case EACH_MATERIALS_MASS_GRADIENT:
-			cout << "Each material's own mass gradient";
-			break;
-		case SPECIFIED_NORMAL:
-			cout << "Use the specified normal of ";
-			PrintVector("",&contactNormal);
-			break;
-		default:
-			break;
-	}
-	rigidGradientBias*=rigidGradientBias;       // algorithms assume it is squared (to compare to squared mag of other vectors)
-	cout << endl;
-}
-
-// prepare array for material contact details
-// throws CommonException()
-void CrackSurfaceContact::MaterialContactPairs(int maxFields)
-{
-	// create double array of pairs
-	mmContactLaw = new (nothrow) ContactLaw **[maxFields];
-	if(mmContactLaw==NULL)
-	{	throw CommonException("Memory error creating contact pairs array","CrackSurfaceContact::MaterialContactPairs");
-	}
-	
-	// fill all pairs with default material properties
-	int i,j;
-	for(i=0;i<maxFields-1;i++)
-	{	mmContactLaw[i] = new (nothrow) ContactLaw *[maxFields-1-i];
-		if(mmContactLaw[i]==NULL)
-		{	throw CommonException("Memory error creating contact pairs array","CrackSurfaceContact::MaterialContactPairs");
-		}
-		
-		// to default law
-		for(j=i+1;j<maxFields;j++) mmContactLaw[i][j-i-1] = materialContactLaw;
-	}
-	
-	// check all active materials and change laws that were specified
-	for(i=0;i<nmat;i++)
-	{	int mati=theMaterials[i]->GetField();			// may be a shared field
-		if(mati<0) continue;							// skip if not used
-		
-		// loop over all other materials
-		for(j=0;j<nmat;j++)
-		{	int matj=theMaterials[j]->GetField();		// may be a shared field
-			if(matj<0 || i==j) continue;				// skip if no field or same material
-			
-			// look from custom friction from mat i to mat j
-			int pairContactID=theMaterials[i]->GetContactToMaterial(j+1);
-			if(pairContactID<0) continue;
-			pairContactID = MaterialBase::GetContactLawNum(pairContactID);
-			
-			// setting more than one shared material overwrite previous ones
-			if(mati<matj)
-			{	mmContactLaw[mati][matj-mati-1]=(ContactLaw *)theMaterials[pairContactID];
-				if(mmContactLaw[mati][matj-mati-1]->IsImperfectInterface()) hasImperfectInterface=true;
-			}
-			else
-			{	mmContactLaw[matj][mati-matj-1]=(ContactLaw *)theMaterials[pairContactID];
-				if(mmContactLaw[matj][mati-matj-1]->IsImperfectInterface()) hasImperfectInterface=true;
-			}
-		}
-	}
+	if(crackContactLaw[number]->IsImperfectInterface()) mpmgrid.hasImperfectInterface=true;
 }
 
 #pragma mark CrackSurfaceContact: Contact Calculations
@@ -206,8 +108,8 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	// velocities above and below
 	bool hasParticles;
 	double massa,massb;
-	Vector pka=cva->GetCMatMomentum(hasParticles,&massa,NULL);
-	Vector pkb=cvb->GetCMatMomentum(hasParticles,&massb,NULL);
+	Vector pka=cva->GetCMatMomentum(hasParticles,&massa,NULL,false);
+	Vector pkb=cvb->GetCMatMomentum(hasParticles,&massb,NULL,false);
 	double mnode=1./(massa+massb);
 	
 	// screen low masses
@@ -231,13 +133,22 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	Vector delta = MakeVector(0.,0.,0.);
 	if(dPDotn<0. || crackContactLaw[number]->IsImperfectInterface())
 	{	// displacement calculations
-		Vector dispa=cva->GetCMDisplacement(np,true);
-		Vector dispb = cvb->GetCMDisplacement(np, true);
+		Vector dispa = cva->GetCMDisplacement(np,true,crackContactByDisplacements);
+		Vector dispb = cvb->GetCMDisplacement(np,true,crackContactByDisplacements);
 		ScaleVector(&dispa, (1. / massa));
 		ScaleVector(&dispb, (1. / massb));
+		deltaDotn = MaterialSeparation(DotVectors(&dispb,&norm),DotVectors(&dispa,&norm),&norm,np,
+									   crackContactByDisplacements,crackPositionCutoff);
+		
+		// For interface, only delta is needed later, but it must change if above used positiong
+		if(!crackContactByDisplacements && crackContactLaw[number]->IsImperfectInterface())
+		{	dispa = cva->GetCMDisplacement(np,true,true);
+			dispb = cvb->GetCMDisplacement(np,true,true);
+			ScaleVector(&dispa, (1. / massa));
+			ScaleVector(&dispb, (1. / massb));
+		}
 		delta = dispb;
 		SubVector(&delta,&dispa);
-		deltaDotn = MaterialSeparation(&delta,&dispa,&dispb,&norm,np);
 	}
 	
 	// With the first check, any movement apart will be taken as noncontact
@@ -258,22 +169,18 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	double mredDelWf;
 	double mred = (massa*massb)/(massa+massb);
 	if(crackContactLaw[number]->IsFrictionalContact())
-	{
+	{	// Handle frictional contact
+		
+		// Get contact area if needed
 		double contactArea = 1.;
 		if(crackContactLaw[number]->ContactLawNeedsContactArea())
-		{	// Angled path correction (cracks are only 2D)
-			Vector dist = mpmgrid.GetPerpendicularDistance(&norm,np);
-			
-			// Area correction method (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
-			// dist weightings to allow for Tartan grid
-			double vola = cva->GetVolumeNonrigid(true),volb = cvb->GetVolumeNonrigid(true),voltot=vola+volb;
-			contactArea = sqrt(2.0*fmin(vola*dist.y,volb*dist.z)*voltot)/dist.x;
-			if(fmobj->IsAxisymmetric()) contactArea *= np->x;
+		{	double vola = cva->GetContactVolumeNonrigid(true),volb = cvb->GetContactVolumeNonrigid(true),hperp;
+			contactArea = CrackVelocityFieldMulti::GetContactArea(np,vola,volb,&norm,&hperp);
 		}
 		
 		// second order heating needs acceleration term
 		// Find (ma Fb - mb Fa)/(ma+mb)
-		bool getHeating = (callType==UPDATE_MOMENTUM_CALL) && ConductionTask::crackContactHeating;
+		bool getHeating = false;
 		Vector delFi;
 		Vector *delFiPtr = NULL;
 		if(callType==UPDATE_MOMENTUM_CALL)
@@ -286,7 +193,7 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		
 		*inContact = IN_CONTACT;
 		if(!crackContactLaw[number]->GetFrictionalDeltaMomentum(delPa,&norm,dPDotn,deltaDotn,&mredDelWf,mred,
-										getHeating,contactArea,deltime,delFiPtr))
+										getHeating,contactArea,deltime,delFiPtr,np))
 		{	*inContact = SEPARATED;
 			return false;
 		}
@@ -302,24 +209,15 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		}
 	}
 	else
-	{	// get tangDel and deltaDott
-		Vector tangDel;
-		double deln = DotVectors(&delta,&norm);			// delta.n, but not same as correct deltaDotn from above
-		CopyVector(&tangDel,&delta);
-		AddScaledVector(&tangDel,&norm,-deln);				// delta - deln (n) = deltaDott (t)
+	{	// Handle imperfect interfaces
 		
-		// by normalizing to positive delt, hat t always points in positive direction
-		double deltaDott=sqrt(DotVectors(&tangDel,&tangDel));
-		if(!DbleEqual(deltaDott,0.)) ScaleVector(&tangDel,1./deltaDott);
+		// get tangDel and deltaDott
+		Vector tangDel;
+		double deltaDott = CrackVelocityFieldMulti::GetTangentCOD(&norm,&delta,&tangDel);
 		
 		// get contact area - angled path correction (cracks are only 2D)
-		Vector dist = mpmgrid.GetPerpendicularDistance(&norm,np);
-		
-		// Area correction method (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
-		// dist weightings to allow for Tartan grid
-		double vola = cva->GetVolumeNonrigid(true),volb = cvb->GetVolumeNonrigid(true),voltot=vola+volb;
-		double contactArea = sqrt(2.0*fmin(vola*dist.y,volb*dist.z)*voltot)/dist.x;
-		if(fmobj->IsAxisymmetric()) contactArea *= np->x;
+		double vola = cva->GetContactVolumeNonrigid(true),volb = cvb->GetContactVolumeNonrigid(true),hperp;
+		double contactArea = CrackVelocityFieldMulti::GetContactArea(np,vola,volb,&norm,&hperp);
 		
 		// Find delFi = (ma Fb - mb Fa)/Mc (when needed)
 		Vector fImp;
@@ -332,16 +230,17 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		else
 			ZeroVector(&fImp);
 		
-		// Get interface force and energy
+		// Get interface force, energy, and possible changed delPa
 		double rawEnergy;
-		crackContactLaw[number]->GetInterfaceForces(&norm,&fImp,&rawEnergy,
-													contactArea,delPa,dPDotn,mred,&tangDel,deltaDotn,deltaDott,dist.x);
+		crackContactLaw[number]->GetInterfaceForces(&norm,&fImp,&rawEnergy,contactArea,delPa,
+													dPDotn,mred,&tangDel,deltaDotn,deltaDott,hperp);
 		
 		if(callType==UPDATE_MOMENTUM_CALL)
 		{	// add force (if any) to momentum change
 			AddScaledVector(delPa, &fImp, timestep);
 			
 			// Add interface energy. (Legacy units g-mm^2/sec^2 or multiply by 1e-9 to get J - kg-m^2/sec^2)
+#pragma omp atomic
 			NodalPoint::interfaceEnergy += rawEnergy;
 		}
 		
@@ -352,28 +251,26 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	return true;
 }
 
-// Return dispbma.n
-// If extraplated position correct for edge effects
-// Input displacement from material a and material b, their difference, norm, and ndptr
-//		norm assummed to be normalized
-double CrackSurfaceContact::MaterialSeparation(Vector *dispbma,Vector *dispa,Vector *dispb,Vector *norm,NodalPoint *ndptr)
+// Return separation in normal direction
+// If extraplated position, correct for grid effects by two methods
+// dispb.n, dispa.n, norm, and ndptr (norm assummed to be normalized)
+double CrackSurfaceContact::MaterialSeparation(double dbdotn,double dadotn,Vector *norm,NodalPoint *ndptr,bool useDisps,double cutoff)
 {
 	// get dnorm and correct if needed
 	double dnorm;
-	if(mpmgrid.GetContactByDisplacements())
-		dnorm = dispbma->x*norm->x + dispbma->y*norm->y + dispbma->z*norm->z;
+	if(useDisps)
+		dnorm = dbdotn-dadotn;
 	else
-	{	double r = mpmgrid.positionCutoff;
+	{	double r = cutoff;
 		Vector dist = mpmgrid.GetPerpendicularDistance(norm,ndptr);
 		if(r>0.)
-		{	dnorm = dispbma->x*norm->x + dispbma->y*norm->y + dispbma->z*norm->z;
-			dnorm -= r * dist.x;
+		{	dnorm = dbdotn-dadotn - r*dist.x;
 		}
 		else
 		{	r = -r;
-			double pa = (dispa->x-ndptr->x)*norm->x + (dispa->y-ndptr->y)*norm->y + (dispa->z-ndptr->z)*norm->z;
+			double pa = dadotn - ndptr->x*norm->x - ndptr->y*norm->y - ndptr->z*norm->z;
 			double da = pa>0. ? 2.*pow(pa/(1.25*dist.x),r) - 1. : 1 - 2.*pow(-pa/(1.25*dist.x),r);
-			double pb = (dispb->x-ndptr->x)*norm->x + (dispb->y-ndptr->y)*norm->y + (dispb->z-ndptr->z)*norm->z;
+			double pb = dbdotn - ndptr->x*norm->x - ndptr->y*norm->y - ndptr->z*norm->z;
 			double db = pb>0. ? 2.*pow(pb/(1.25*dist.x),r) - 1. : 1 - 2.*pow(-pb/(1.25*dist.x),r);
 			dnorm = (db-da)*dist.x;
 			//cout << "# (" << ndptr->x << "," << ndptr->y << ") " << pa << "," << pb << "," << da << "," << db << "," << dnorm << endl;
@@ -393,27 +290,3 @@ void CrackSurfaceContact::SetMoveOnlySurfaces(bool moveSurfaces) { moveOnlySurfa
 bool CrackSurfaceContact::GetPreventPlaneCrosses(void) const { return preventPlaneCrosses; }
 void CrackSurfaceContact::SetPreventPlaneCrosses(bool preventCross) { preventPlaneCrosses=preventCross; }
 
-// material contact law for field mati to field matj
-ContactLaw *CrackSurfaceContact::GetMaterialContactLaw(int mati,int matj)
-{	// index based on smaller of the two indices
-	return mati<matj ? mmContactLaw[mati][matj-mati-1] : mmContactLaw[matj][mati-matj-1] ;
-}
-
-// set contact normal when normal is specified
-void CrackSurfaceContact::SetContactNormal(double polarAngle,double aximuthAngle)
-{
-	double angle,sinp;
-	
-	if(fmobj->IsThreeD())
-	{	angle = PI_CONSTANT*polarAngle/180.;
-		contactNormal.z = cos(angle);
-		sinp = sin(angle);
-	}
-	else
-	{	contactNormal.z = 0.;
-		sinp = 1.0;
-	}
-	angle = PI_CONSTANT*aximuthAngle/180.;
-	contactNormal.x = cos(angle)*sinp;
-	contactNormal.y = sin(angle)*sinp;
-}

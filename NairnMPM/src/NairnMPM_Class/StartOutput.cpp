@@ -13,6 +13,7 @@
 #include "System/ArchiveData.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
@@ -54,8 +55,8 @@ void NairnMPM::PrintAnalysisType(void)
             break;
         case USAVG_METHOD:
             cout << "USAVG";
-        case SZS_METHOD:
-            if(mpmApproach==SZS_METHOD) cout << "USL";
+        case USL_METHOD:
+            if(mpmApproach==USL_METHOD) cout << "USL";
 			if(fmobj->skipPostExtrapolation)
 				cout << " (-2nd extrap)";
 			else
@@ -76,12 +77,19 @@ void NairnMPM::PrintAnalysisType(void)
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
             cout << " / Linear CPDI";
+			if(ElementBase::rcrit>0.) cout << " / rcrit = " << ElementBase::rcrit;
             break;
        case QUADRATIC_CPDI:
             cout << " / Quadratric CPDI";
+			if(ElementBase::rcrit>0.) cout << " / rcrit = " << ElementBase::rcrit;
             break;
 		case BSPLINE_GIMP:
+		case BSPLINE_GIMP_AS:
 			cout << " / B2GIMP";
+			break;
+		case BSPLINE_CPDI:
+			cout << " / B2CPDI";
+			if(ElementBase::rcrit>0.) cout << " / rcrit = " << ElementBase::rcrit;
 			break;
 		case BSPLINE:
 			cout << " / B2SPLINE";
@@ -174,12 +182,16 @@ void NairnMPM::MyStartResultsOutput(void)
 		}
 		cout << endl;
     }
+	else
+	{	// turn off request for position extrapolation
+		contact.crackContactByDisplacements = true;
+	}
     
     //---------------------------------------------------
     // Multimaterial Contact
 	if(multiMaterialMode)
     {   PrintSection("MULTIMATERIAL CONTACT");
-		contact.MaterialOutput();
+		mpmgrid.MaterialOutput();
 		int i;
 		for(i=0;i<nmat;i++)
 			theMaterials[i]->ContactOutput(i+1);

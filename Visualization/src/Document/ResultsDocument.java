@@ -7,13 +7,10 @@
 *******************************************************************/
 
 import geditcom.JNFramework.JNUtilities;
-
 import java.awt.geom.*;
 import java.io.*;
 import java.nio.*;
-
 import javax.swing.table.*;
-
 import java.util.*;
 
 public class ResultsDocument extends AbstractTableModel
@@ -98,7 +95,7 @@ public class ResultsDocument extends AbstractTableModel
 		String line,archDir;
 		char strChar;
 		String [] words;
-		Scanner s=null,sline=null;
+		Scanner s = null,sline = null;
 		int numMps=1;
 		
 		//----------------------------------------------------------
@@ -115,20 +112,19 @@ public class ResultsDocument extends AbstractTableModel
 					break;
 				}
 			}
-			s.close();
-			s=null;
 		}
 		catch(NoSuchElementException e)
 		{	s.close();
 			throw new Exception("Could not read the header for this file");
 		}
+		s.close();
+		s=null;
 		units.setOutputUnits(fileUnits);
 		
 		//----------------------------------------------------------
 		// Expected number of nodes and elements
 		String summary=section("NODES AND ELEMENTS");
 		int nnodes,nelems;
-		Scanner nline=null;
 		try
 		{	// get nodes and elements
 			s=new Scanner(summary);
@@ -137,49 +133,49 @@ public class ResultsDocument extends AbstractTableModel
 			s.next();
 			s.next();
 			
-			nline=new Scanner(s.next());
-			nline.useLocale(Locale.US);
-			nline.next();
-			nnodes=nline.nextInt();
-			nline.next();
-			nelems=nline.nextInt();
-			nline.close();
+			sline = new Scanner(s.next());
+			sline.useLocale(Locale.US);
+			sline.next();
+			nnodes = sline.nextInt();
+			sline.next();
+			nelems = sline.nextInt();
+			sline.close();
 		
 			// Options are 2D Plane Strain Analysis, 2D Plane Stress Analysis, Axisymmetric Analysis,
 			//	2D Plane Strain MPM Analysis, 2D Plane Stress MPM Analysis, 3D MPM Analysis
-			nline=new Scanner(s.next());
-			nline.useLocale(Locale.US);
-			nline.next();
-			nline.next();
-			nline.next();
-			nline.next();
-			String word=nline.next();
+			sline = new Scanner(s.next());
+			sline.useLocale(Locale.US);
+			sline.next();
+			sline.next();
+			sline.next();
+			sline.next();
+			String word = sline.next();
 			if(word.equals("3D"))
 				np=THREED_MPM;
 			else if(word.equals("Axisymmetric"))
-			{	if(nline.next().equals("MPM"))
+			{	if(sline.next().equals("MPM"))
 					np=AXI_SYM_MPM;
 				else
 					np=AXI_SYM;
 			}
 			else
-			{	nline.next();
-				if(nline.next().equals("Strain"))
+			{	sline.next();
+				if(sline.next().equals("Strain"))
 					np=PLANE_STRAIN;
 				else
 					np=PLANE_STRESS;
-				if(nline.next().equals("MPM"))
+				if(sline.next().equals("MPM"))
 					np = (np==PLANE_STRAIN) ? PLANE_STRAIN_MPM : PLANE_STRESS_MPM;
 			}
-			nline.close();
-			s.close();
-			s=null;
 		}
 		catch(NoSuchElementException e)
 		{	if(s!=null) s.close();
-			if(nline!=null) nline.close();
+			if(sline!=null) sline.close();
 			throw new Exception("Could not decode analysis type for this file");
 		}
+		sline.close();
+		s.close();
+		sline = null;
 		//if(is3D())
 		//	throw new Exception("This tool cannot visualize 3D results; see help information for other options.");
 		
@@ -189,7 +185,7 @@ public class ResultsDocument extends AbstractTableModel
 		lineStart=findNextLine(ndst,"-----");
 		if(lineStart<0)
 			throw new Exception("Error: missing nodal point coordinates section");
-		s=new Scanner(ndst.substring(lineStart,ndst.length()-1));
+		s = new Scanner(ndst.substring(lineStart,ndst.length()-1));
 		s.useLocale(Locale.US);
 		int prevNodeNum=0,nodeNum;
 		double xpt,ypt,zpt;
@@ -310,10 +306,10 @@ public class ResultsDocument extends AbstractTableModel
 			if(matName==null) break;
 			
 			// get material type
-			sline=new Scanner(s.next());
+			sline = new Scanner(s.next());
 			sline.useLocale(Locale.US);
-			String word1=sline.next();
-			String word2=sline.next();
+			String word1 = sline.next();
+			String word2 = sline.next();
 			MaterialBase matl;
 			if(word1.equals("Isotropic"))
 			{	if(word2.equals("Dugdale"))
@@ -416,7 +412,7 @@ public class ResultsDocument extends AbstractTableModel
 				matl=new MaterialBase(matName,MaterialBase.UNKNOWNMATERIAL);
 			}
 			sline.close();
-			sline=null;
+			sline = null;
 			
 			// decode material properteis
 			matl.decodeData(s);
@@ -434,33 +430,62 @@ public class ResultsDocument extends AbstractTableModel
 			s.useLocale(Locale.US);
 			int dof,bcID;
 			double bcVal,bcArg,bcAngle=0.,bcAngle2=0.;
-			while(s.hasNextInt())
-			{	nodeNum=s.nextInt();
-				dof=s.nextInt();
-				
+			while(s.hasNextLine())
+			{	// scanner for the next line
+				String bcline = s.nextLine();
+				Scanner bs = new Scanner(bcline);
+				nodeNum=bs.nextInt();
+				dof=bs.nextInt();
+			
 				if(isMPMAnalysis())
-				{	bcID=s.nextInt();
-					bcVal=s.nextDouble();
-					bcArg=s.nextDouble();
+				{	bcID=bs.nextInt();
+					bcVal=bs.nextDouble();
+					bcArg=bs.nextDouble();
 					bcAngle=0.;
-					
+				
 					// keep reading as long as next item is not integer on the next line
 					// could be a problem if function value looks like an integer
-					if(!s.hasNextInt())
-					{	if(s.hasNextDouble())
-							bcAngle=s.nextDouble();
+					if(!bs.hasNextInt())
+					{	if(bs.hasNextDouble())
+							bcAngle=bs.nextDouble();
 					}
-					if(!s.hasNextInt())
-					{	if(s.hasNextDouble())
-							bcAngle2=s.nextDouble();
+					if(!bs.hasNextInt())
+					{	if(bs.hasNextDouble())
+							bcAngle2=bs.nextDouble();
 					}
-					if(bcID==BoundaryCondition.FUNCTION_VALUE && !s.hasNextInt())
-						s.next();
 					
+					// style 6 will have 1 function (normal BC) or
+					// (function) : side : (gradient) : (displacement) for gradient BCs (last two optional)					
+					ArrayList<String> fxns = null;
+					if(bcID==BoundaryCondition.FUNCTION_VALUE)
+					{	// collect remaining string args
+						fxns = new ArrayList<String>(4);
+						while(bs.hasNext())
+						{	String nextFxn = bs.next();
+							if(!nextFxn.equals(":")) fxns.add(nextFxn);
+						}
+					}
+				
 					addGridBC(nodeNum,dof,bcID,bcVal*units.lengthScale(),bcArg*units.altTimeScale(),bcAngle,bcAngle2);
+					
+					// add data for moving walls
+					if(fxns!=null)
+					{	if(fxns.size()>1)
+						{	// store depth, gradFxns, and displacement functions
+							int bcnum = gridBCs.size()-1;
+							Scanner ds = new Scanner(fxns.get(1));
+							ds.useLocale(Locale.US);
+							if(ds.hasNextDouble())
+							{	double depth = ds.nextDouble();
+								String dispFxn = fxns.size()>3 ? fxns.get(3) : null ;
+								gridBCs.get(bcnum).setVelGradBC(depth,dispFxn);
+							}
+							ds.close();
+						}
+					}
 				}
 				else
-				{	bcVal=s.nextDouble();
+				{	bcVal=bs.nextDouble();
 					bcArg=0.;
 					bcAngle=0.;
 					if(dof==3)
@@ -476,6 +501,7 @@ public class ResultsDocument extends AbstractTableModel
 					}
 					addGridBC(nodeNum,dof,bcID,bcVal*units.lengthScale(),bcArg*units.altTimeScale(),bcAngle,bcAngle2);
 				}
+				bs.close();
 			}
 			s.close();
 			s=null;
@@ -654,7 +680,7 @@ public class ResultsDocument extends AbstractTableModel
 			if(gridInfo!=null)
 			{	// read grid info and find relative cell sides
 				// minimum side scale is 1 and other are relative to that side
-				sline=new Scanner(gridInfo);
+				sline = new Scanner(gridInfo);
 				sline.useDelimiter("[ :]");
 				sline.useLocale(Locale.US);
 				if(sline.hasNextDouble())
@@ -706,7 +732,7 @@ public class ResultsDocument extends AbstractTableModel
 				}
 				
 				sline.close();
-				sline=null;
+				sline = null;
 			}
 			
 			bcs=section("SCHEDULED CUSTOM TASKS");
@@ -832,13 +858,13 @@ public class ResultsDocument extends AbstractTableModel
 			s.next();
 			
 			// root file name
-			sline=new Scanner(s.next());
+			sline = new Scanner(s.next());
 			sline.useDelimiter(": ");
 			sline.useLocale(Locale.US);
 			sline.next();
-			line=sline.next();
+			line = sline.next();
 			sline.close();
-			sline=null;
+			sline = null;
 			endIndex=line.lastIndexOf('/');
 			if(endIndex>=0)
 				archDir=line.substring(0,endIndex+1);
@@ -849,13 +875,13 @@ public class ResultsDocument extends AbstractTableModel
 			String dimPath = line.substring(0, line.length()-1)+"_PtDims.txt";
 			
 			// archive format and check it
-			sline=new Scanner(s.next());
+			sline = new Scanner(s.next());
 			sline.useDelimiter(": ");
 			sline.useLocale(Locale.US);
 			sline.next();
 			setArchFormat(sline.next());
 			sline.close();
-			sline=null;
+			sline = null;
 			if(archFormat.length()>ReadArchive.ARCH_MAXMPMITEMS)
 			{	for(int ii=ReadArchive.ARCH_MAXMPMITEMS;ii<archFormat.length();ii++)
 				{	if(archFormat.charAt(ii)=='Y')
@@ -866,7 +892,7 @@ public class ResultsDocument extends AbstractTableModel
 			}
 			
 			// crack archive format
-			sline=new Scanner(s.next());
+			sline = new Scanner(s.next());
 			sline.useDelimiter(": ");
 			sline.useLocale(Locale.US);
 			sline.next();
@@ -881,7 +907,7 @@ public class ResultsDocument extends AbstractTableModel
 				}
 			}
 			sline.close();
-			sline=null;
+			sline = null;
 			
 			// archive files
 			s.next();
@@ -1458,8 +1484,7 @@ public class ResultsDocument extends AbstractTableModel
 	// gather time plot data as a scripting object call
 	// Expression starts @obj.timeplot.component.
 	//    for crack plots add crackNum.tipNum, except length and debond length add only crackNum
-	public String collectTimePlotData(String[] atoms,HashMap<String, Double> variables,
-			HashMap<String, String> variablesStrs) throws Exception
+	public String collectTimePlotData(String[] atoms,HashMap<String, String> variablesStrs) throws Exception
 	{
 		// get component
 		if(atoms.length<3) throw new Exception("timeplot property has too few parameters");
@@ -1610,8 +1635,8 @@ public class ResultsDocument extends AbstractTableModel
 			case PlotQuantity.MPMDEBONDSCTOD:
 				// get crack numberand tip number
 				if(atoms.length<5) throw new Exception("timeplot property has too few parameters");
-				crackNum = CmdViewer.atomInt(atoms[3],variables);
-				tipNum = CmdViewer.atomInt(atoms[4],variables);
+				crackNum = CmdViewer.atomInt(atoms[3],variablesStrs);
+				tipNum = CmdViewer.atomInt(atoms[4],variablesStrs);
 				if(tipNum<0 || tipNum>1)
 					throw new Exception("timeplot crack tip number must be 0 (start) or 1 (end)");
 				getTimeCrackData(null,cmpnt,crackNum,tipNum,x,y);
@@ -1623,7 +1648,7 @@ public class ResultsDocument extends AbstractTableModel
 			case PlotQuantity.MPMDEBONDLENGTH:
 				// these crack values don't need tip number
 				if(atoms.length<4) throw new Exception("timeplot property has too few parameters");
-				crackNum = CmdViewer.atomInt(atoms[3],variables);
+				crackNum = CmdViewer.atomInt(atoms[3],variablesStrs);
 				getTimeCrackData(null,cmpnt,crackNum,0,x,y);
 				for(i=0;i<x.size();i++)
 					pdata.append(x.get(i)+" "+y.get(i)+"\n");

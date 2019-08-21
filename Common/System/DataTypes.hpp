@@ -116,8 +116,12 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 	} HardeningAlpha;
 
 	typedef struct {
-		Vector *acc;
-		Vector vgpnp1;
+		Vector Sacc;			// FLIP and XPIC only
+		Vector Svtilde;
+		Vector Svlumped;		// XPIC(k>1) only
+		double gridAlpha;
+		double particleAlpha;
+		int m;					// m>1 FMPM,m=0 FLIP,m<0 XPIC
 	} GridToParticleExtrap;
 
 #else

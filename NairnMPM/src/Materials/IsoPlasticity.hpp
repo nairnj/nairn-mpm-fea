@@ -41,7 +41,8 @@ class IsoPlasticity : public IsotropicMat
         virtual char *InputMaterialProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
         virtual bool AcceptHardeningLaw(HardeningLawBase *,int );
-	
+		virtual HardeningLawBase *GetPlasticLaw(void) const;
+
 		// history data
 		virtual char *InitHistoryData(char *,MPMBase *);
    		virtual int NumberOfHistoryDoubles(void) const;

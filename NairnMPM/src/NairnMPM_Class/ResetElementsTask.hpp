@@ -27,7 +27,7 @@ class ResetElementsTask : public MPMTask
 		ResetElementsTask(const char *);
 	
 		// required methods
-		virtual void Execute(void);
+		virtual void Execute(int);
 	
 		// class method
 		static int ResetElement(MPMBase *);

@@ -91,7 +91,7 @@ public class FEABCs
 	    	bcAttrs = "x1='"+doc.formatDble(x1)+"' y1='"+doc.formatDble(y1)
 	    				+"' x2='"+doc.formatDble(x2)+"' y2='"+doc.formatDble(y2)+"'";
 	    	if(tolerance > 0.)
-	    		bcAttrs = bcAttrs + " tolerance='" + tolerance + "'";
+	    		bcAttrs = bcAttrs + " tolerance='" + doc.formatDble(tolerance) + "'";
 	    	
 		    inBC = FIXLINE_BC;
 	    }

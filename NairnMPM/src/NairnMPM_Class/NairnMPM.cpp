@@ -21,6 +21,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
+#include "Nodes/CrackVelocityFieldMulti.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Exceptions/MPMWarnings.hpp"
 #include "NairnMPM_Class/MPMTask.hpp"
@@ -48,7 +49,15 @@
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "System/UnitsController.hpp"
+#include "Boundary_Conditions/InitialCondition.hpp"
+#include "NairnMPM_Class/XPICExtrapolationTask.hpp"
+#include "Boundary_Conditions/NodalVelBC.hpp"
+#include "Global_Quantities/BodyForce.hpp"
 #include <time.h>
+
+// Activate this to print steps as they run. If too many steps happen before failure
+// better to use LOG_PROGRESS in MPMPrefix.hpp
+//#define COUT_PROGRESS
 
 enum { NO_RIGID_MM=0,RIGID_CONTACT_MM,RIGID_BLOCK_MM };
 
@@ -67,6 +76,7 @@ int maxCrackFields=1;		// Maximum crack velocity fields at a node in a material 
 int maxMaterialFields;		// Maximum velocity fields or number of independent materials in multimaterial mode (=1 in single mat mode)
 int numActiveMaterials;		// Number of non-rigid materials used by at least one material point
 int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
+int nextPeriodicXPIC=-1;
 
 #pragma mark CONSTRUCTORS
 
@@ -74,7 +84,7 @@ int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
 // throws std::bad_alloc
 NairnMPM::NairnMPM()
 {
-	version=13;						// main version
+	version=14;						// main version
 	subversion=1;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 
@@ -90,10 +100,11 @@ NairnMPM::NairnMPM()
 	TransFractCellTime=0.5;				// scaling factor for finding transport time step
 	mstep=0;						// step number
 	warnParticleLeftGrid=-1;		// abort when this many leave the grid
-	multiMaterialMode=false;		// multi-material mode
-	skipPostExtrapolation=false;	// if changed to true, will extrapolate for post update strain updates
-	hasNoncrackingParticles=false;	// rigid contact particles in multimaterial mode
-
+	multiMaterialMode = false;		// multi-material mode
+	skipPostExtrapolation = false;	// if changed to true, will extrapolate for post update strain updates
+	exactTractions=false;			// exact traction BCs
+	hasNoncrackingParticles=false;	// particles that ignore cracks in multimaterial mode (rigid only in NairnMPM)
+	
 	// initialize objects
 	archiver=new ArchiveData();		// archiving object
 	
@@ -165,7 +176,7 @@ void NairnMPM::MPMAnalysis(bool abort)
 		{	// MPM Calculations
 			mstep++;			// step number
             MPMStep();
-		
+
 			// advance time and archive if desired
 			mtime+=timestep;
 			archiver->ArchiveResults(mtime);
@@ -179,6 +190,15 @@ void NairnMPM::MPMAnalysis(bool abort)
 		cout << endl;
 		PrintSection("ABNORMAL TERMINATION");
 		term.Display(mstep,mtime);
+	}
+	catch(CommonException* term)
+	{	// calculation stopped, but still report results
+		mtime+=timestep;
+		archiver->ForceArchiving();
+		archiver->ArchiveResults(mtime);
+		cout << endl;
+		PrintSection("ABNORMAL TERMINATION");
+		term->Display(mstep,mtime);
 	}
 	catch(const char *errMsg)
 	{	// string error - exit to main
@@ -245,19 +265,25 @@ void NairnMPM::MPMStep(void)
 	// loop through the tasks
 	MPMTask *nextMPMTask=firstMPMTask;
 	while(nextMPMTask!=NULL)
-	{
+	{	
 #ifdef LOG_PROGRESS
 		nextMPMTask->WriteLogFile();
 #endif
+#ifdef COUT_PROGRESS
+		cout << "# " << mstep << ": " << nextMPMTask->GetTaskName() << endl;
+#endif
 		double beginTime=fmobj->CPUTime();
 		double beginETime=fmobj->ElapsedTime();
-		nextMPMTask->Execute();
+		nextMPMTask->Execute(0);
 		nextMPMTask->TrackTimes(beginTime,beginETime);
         
         // on to next task
 		nextMPMTask=(MPMTask *)nextMPMTask->GetNextTask();
 #ifdef LOG_PROGRESS
 		archiver->WriteLogFile("           Done",NULL);
+#endif
+#ifdef COUT_PROGRESS
+		cout << "#            Done"  << endl;
 #endif
 	}
 }
@@ -330,7 +356,7 @@ void NairnMPM::PreliminaryCalcs(void)
 			}
 		}
 		
-		// unstructer grid - set type, but elements not set so meshInfo will not know many things
+		// unstructured grid - set type, but elements not set so meshInfo will not know many things
 		// and horiz will be <=0 
 		mpmgrid.SetCartesian(userCartesian,gridx,gridy,gridz);
 	}
@@ -398,6 +424,9 @@ void NairnMPM::PreliminaryCalcs(void)
 			//     but moved here to get volume)
 			if(theMaterials[matid]->IsRigidBC())
 			{	if(firstRigidPt<0) firstRigidPt=p;
+				// CPDI or GIMP domain data only for rigid contact particles (non-rigid done below)
+				if(!mpm[p]->AllocateCPDIorGIMPStructures(ElementBase::useGimp,IsThreeD()))
+					throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
 				continue;
 			}
 			
@@ -478,6 +507,7 @@ void NairnMPM::PreliminaryCalcs(void)
 				ReorderPtBCs(firstTractionPt,p,nmpmsNR);
 				ReorderPtBCs(firstFluxPt,p,nmpmsNR);
 				ReorderPtBCs(firstHeatFluxPt,p,nmpmsNR);
+                ReorderPtBCs(firstDamagedPt,p,nmpmsNR);
 				
 				// back up to new last nonrigid
 				while(nmpmsNR>=0)
@@ -542,10 +572,12 @@ void NairnMPM::PreliminaryCalcs(void)
 		throw CommonException("No material points found with an actual material","NairnMPM::PreliminaryCalcs");
 	else if(maxMaterialFields==1)
 	{	// Turning off multimaterial mode because only one material is used
-		multiMaterialMode=FALSE;
+		multiMaterialMode = false;
+		mpmgrid.volumeGradientIndex = -1;
+		mpmgrid.contactByDisplacements = true;
 	}
 	else
-	{	contact.MaterialContactPairs(maxMaterialFields);
+	{	mpmgrid.MaterialContactPairs(maxMaterialFields);
 	}
 	
     // ghost particles will need to now this setting when creating patches
@@ -556,13 +588,45 @@ void NairnMPM::PreliminaryCalcs(void)
             maxCrackFields=MAX_FIELDS_FOR_ONE_CRACK;
     }
 	
+	if(firstCrack!=NULL || multiMaterialMode)
+	{	// number of contact extrapolation vectors
+		mpmgrid.numContactVectors = 0;
+		
+		// displacement extrapolations
+		mpmgrid.displacementIndex = mpmgrid.numContactVectors;
+		mpmgrid.numContactVectors++;
+		
+		// position extrapolations
+		if(!mpmgrid.contactByDisplacements || !contact.crackContactByDisplacements)
+		{	mpmgrid.positionIndex = mpmgrid.numContactVectors;
+			mpmgrid.numContactVectors++;
+		}
+		else
+			mpmgrid.positionIndex = -1;
+		
+		// gradient extrapolations
+		if(mpmgrid.volumeGradientIndex>=0)
+		{	mpmgrid.volumeGradientIndex = mpmgrid.numContactVectors;
+			mpmgrid.numContactVectors++;
+		}
+		
+#if MM_XPIC == 1
+		// need 3 more vectors to store delta p^alpha and process when needed
+		if(bodyFrc.XPICVectors()>=3)
+			bodyFrc.SetXPICVectors(6);
+		// If using on first time step, set flag
+		if(bodyFrc.UsingVstar()>0)
+			bodyFrc.SetUsingVstar(VSTAR_WITH_CONTACT);
+#endif
+	}
+
 	// get time step
 	
     // verify time step and make smaller if needed
 	// FractCellTime and TransFractCellTime are CFL factors for mechanics and transport
 	double timeStepMin = FractCellTime*timeStepMinMechanics;
 
-    // Transport property time steps
+	// Transport property time steps
 	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
 	{	double tst = TransFractCellTime*nextTransport->GetTimeStep();
@@ -676,6 +740,23 @@ void NairnMPM::PreliminaryCalcs(void)
 			nextBC=nextBC->PrintBC(cout);
 		cout << endl;
 	}
+
+    //---------------------------------------------------
+    // Damaged Material Points
+    if(firstDamagedPt!=NULL)
+    {   PrintSection("MATERIAL POINTS HAVE INITIAL DAMAGE");
+        cout << "Plot history #1 to see initially damage particles" << endl;
+        cout << "Those fully failed have history #1 = 3" << endl;
+        cout << endl;
+        
+        // assign initial conditions and then delete
+        InitialCondition *nextIC=firstDamagedPt,*prevIC;
+        while(nextIC!=NULL)
+        {   prevIC = nextIC;
+            nextIC = prevIC->AssignInitialConditions(IsThreeD());
+            delete prevIC;
+        }
+    }
 	
 	// non-standard particle sizes
 	archiver->ArchivePointDimensions();
@@ -702,7 +783,8 @@ void NairnMPM::PreliminaryCalcs(void)
 		// let all cracks do prelimnary calcs
 		CrackHeader *nextCrack=firstCrack;
 		while(nextCrack!=NULL)
-		{	nextCrack->PreliminaryCrackCalcs(dcell);
+		{
+			nextCrack->PreliminaryCrackCalcs(dcell,false);
 			if(nextCrack->GetHasTractionLaws())
 				hasTractionCracks=TRUE;
 			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
@@ -721,7 +803,8 @@ void NairnMPM::PreliminaryCalcs(void)
 	warnParticleLeftGrid=warnings.CreateWarning("particle has left the grid warning",warnParticleLeftGrid,0);
 	
 	// nodal point calculations
-	NodalPoint::PreliminaryCalcs();
+	// Note that no crack velocity or materical velocity fields created before this call
+	NodalPoint::PrepareNodeCrackFields();
 	
 	// finish warnings
 	warnings.CreateWarningList();
@@ -815,18 +898,19 @@ void NairnMPM::CreateTasks(void)
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 		lastMPMTask=nextMPMTask;
 	}
-	
+
 	nextMPMTask=(MPMTask *)new MassAndMomentumTask("Extrapolate Mass and Momentum");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
 	
-	// if rigid BCs not by extrapolation, project to BCs
+	// if rigid BCs not using extrapolations, project to grid BCs
 	if(nmpms>nmpmsRC && !MaterialBase::extrapolateRigidBCs)
 	{	nextMPMTask=(MPMTask *)new ProjectRigidBCsTask("Rigid BCs by Projection");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 		lastMPMTask=nextMPMTask;
 	}
-	
+
+#ifndef TRANSPORT_ONLY
 	nextMPMTask=(MPMTask *)new PostExtrapolationTask("Post Extrapolation Tasks");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
@@ -836,6 +920,7 @@ void NairnMPM::CreateTasks(void)
 	{	nextMPMTask=(MPMTask *)new UpdateStrainsFirstTask("Update Strains First");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 		lastMPMTask=nextMPMTask;
+		USFTask = (UpdateStrainsFirstTask *)nextMPMTask;
 	}
 
 	// EXTRAPOLATE FORCES
@@ -846,27 +931,34 @@ void NairnMPM::CreateTasks(void)
 	nextMPMTask=(MPMTask *)new PostForcesTask("Post Force Extrapolation Tasks");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
-	
+
 	// UPDATE MOMENTA
 	nextMPMTask=(MPMTask *)new UpdateMomentaTask("Update Momenta");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
+
+	// XPIC extrapolations is needed only if order 2 or higher
+	if (bodyFrc.XPICVectors() > 1)
+	{	XPICMechanicsTask = new XPICExtrapolationTask("XPIC Extrapolations");
+	}
     
 	// UPDATE PARTICLES
 	nextMPMTask=(MPMTask *)new UpdateParticlesTask("Update Particles");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
 	
+#ifdef MOVECRACKS_EARLY
 	// MOVE CRACKS
 	if(firstCrack!=NULL)
 	{	nextMPMTask=(MPMTask *)new MoveCracksTask("Move Cracks");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 		lastMPMTask=nextMPMTask;
 	}
+#endif
 	
 	// UPDATE STRAINS LAST AND USAVG
 	// Energy calcs suggest the contact method, which re-extrapolates, should always be used
-	if(mpmApproach==SZS_METHOD || mpmApproach==USAVG_METHOD)
+	if(mpmApproach==USL_METHOD || mpmApproach==USAVG_METHOD)
 	{	if(fmobj->skipPostExtrapolation)
 		{	nextMPMTask=(MPMTask *)new UpdateStrainsLastTask("Update Strains Last");
 			lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
@@ -886,10 +978,23 @@ void NairnMPM::CreateTasks(void)
 		lastMPMTask=nextMPMTask;
 	}
 	
+#ifndef MOVECRACKS_EARLY
+	// MOVE CRACKS
+	if(firstCrack!=NULL)
+	{	nextMPMTask=(MPMTask *)new MoveCracksTask("Move Cracks");
+		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+		lastMPMTask=nextMPMTask;
+	}
+#endif
+	
 	// RESET ELEMEMTS
 	nextMPMTask=(MPMTask *)new ResetElementsTask("Reset Elements");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	//lastMPMTask=nextMPMTask;
+
+#else
+	// Create all the transport-only tasks
+#endif
 }
 
 // When NR particle p2 moves to p1, reset any point-based BCs that use that point
@@ -910,14 +1015,13 @@ void NairnMPM::ValidateOptions(void)
 							  "NairnMPM::ValidateOptions");
 	}
 	
-    // GIMP and CPDI require regular
+	// GIMP and CPDI and SPLINE require regular
     //  and qCPDI not allowed in 3D
 	if(ElementBase::useGimp != POINT_GIMP)
-    {   // using a GIMP method
+    {   // Not using classic MPM shape functions
 		if(!mpmgrid.IsStructuredEqualElementsGrid())
 		{	switch(ElementBase::useGimp)
 			{	case UNIFORM_GIMP:
-				case UNIFORM_GIMP_AS:
 				{	throw CommonException("GIMP needs a generated structured grid with equally sized elements",
 								  "NairnMPM::ValidateOptions");
 				}
@@ -942,7 +1046,19 @@ void NairnMPM::ValidateOptions(void)
         {   if(IsThreeD())
                 throw CommonException("3D does not allow qCPDI shape functions; use lCPDI instead","NairnMPM::ValidateOptions");
         }
+		
+		else if(ElementBase::useGimp == BSPLINE || ElementBase::useGimp==BSPLINE_GIMP
+					 || ElementBase::useGimp==BSPLINE_CPDI)
+		{
+			if(firstTractionPt!=NULL && exactTractions)
+			{	throw CommonException("Exact tractions not yet supported for spline shape functions.","NairnMPM::ValidateOptions");
+			}
+		}
 	}
+	
+	// Only allowed if 2D and ExactTractions
+	if(exactTractions && fmobj->IsThreeD())
+		throw CommonException("Exact tractions not supported yet in 3D simulations.","NairnMPM::ValidateOptions");
 	
     // 3D requires orthogonal grid and 1,8, or 27 particles per element
     // 2D requires 1,4, 9, 16, or 25 particles per element
@@ -967,12 +1083,22 @@ void NairnMPM::ValidateOptions(void)
         }
         else if(ElementBase::useGimp == UNIFORM_GIMP)
 		{	ElementBase::useGimp = UNIFORM_GIMP_AS;
+			// verify r=0,cell,... on grid lines if grid minimum < 2*cell
+			if(!mpmgrid.ValidateASForGIMP())
+			{	throw CommonException("GIMP needs r=0 on grid line (if mesh minimum<2*cell size)",
+									  "NairnMPM::ValidateOptions");
+			}
 		}
         else if(ElementBase::useGimp == LINEAR_CPDI)
 		{	ElementBase::useGimp = LINEAR_CPDI_AS;
         }
 		else if(ElementBase::useGimp == BSPLINE_GIMP)
-		{   throw CommonException("Axisymmetric does not allow B2GIMP shape functions","NairnMPM::ValidateOptions");
+		{   ElementBase::useGimp = BSPLINE_GIMP_AS;
+			// verify r=0,cell,... on grid lines if grid minimum < 2*cell
+			if(!mpmgrid.ValidateASForGIMP())
+			{	throw CommonException("B2GIMP needs r=0 on grid line (if mesh minimum<2*cell size)",
+									  "NairnMPM::ValidateOptions");
+			}
 		}
 		else if(ElementBase::useGimp == QUADRATIC_CPDI)
 		{   throw CommonException("Axisymmetric does not allow qCPDI shape functions","NairnMPM::ValidateOptions");
@@ -1054,7 +1180,6 @@ double *NairnMPM::GetTransCFLPtr(void) { return &TransFractCellTime; }
 
 // to check on diffusion or poroelasticity
 bool NairnMPM::HasDiffusion(void) { return DiffusionTask::active==MOISTURE_DIFFUSION; }
-bool NairnMPM::HasPoroelasticity(void) { return DiffusionTask::active==POROELASTICITY_DIFFUSION; }
 bool NairnMPM::HasFluidTransport(void) { return DiffusionTask::active!=NO_DIFFUSION; }
 
 // Get Courant-Friedrichs-Levy condition factor for convergence for propagation calculations

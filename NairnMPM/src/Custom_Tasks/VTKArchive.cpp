@@ -29,7 +29,6 @@
 #include "System/UnitsController.hpp"
 
 // globals
-VTKArchive *vtkArchiveTask=NULL;
 int dummyArg;
 
 #pragma mark CREATION OF THE TASK
@@ -40,6 +39,15 @@ VTKArchive::VTKArchive() : GridArchive()
 	bufferSize=0;
 	vtk=NULL;
     intIndex=0;
+	
+	// always extrapolate mass
+	quantity.push_back(VTK_MASS);
+	quantitySize.push_back(1);
+	qparam.push_back(-1);
+	bufferSize+=1;
+	char *qname=new char[5];
+	strcpy(qname,"mass");
+	quantityName.push_back(qname);
 }
 
 // Return name of this task
@@ -56,11 +64,11 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
     // default return value
     char *retPtr = (char *)&dummyArg;
 	
-    // check for archiving quantity
+	// Check for parameter as quantity to be archived
     if(strcmp(pName,"mass")==0)
-    {	q=VTK_MASS;
-		// no buffer since no need to extrapolate
-		thisBuffer=-1;
+    {	// VTK_MASS now archived by default so ignore in old files
+		input=INT_NUM;
+		return retPtr;
     }
     
     else if(strcmp(pName,"numpoints")==0)
@@ -207,8 +215,14 @@ CustomTask *VTKArchive::Initialize(void)
 	
 	// display quantities to be archived
 	unsigned int q;
-	cout << "   Archiving: " ;
 	int len=14;
+	if(thisMaterial<0)
+		cout << "   Archiving: " ;
+	else
+	{	cout << "   Archiving material " << thisMaterial << ": ";
+		len += 11;
+		if(thisMaterial>9) len++;
+	}
 	for(q=0;q<quantity.size();q++)
 	{	char *name=quantityName[q];
 		if(len+strlen(name)>70)
@@ -299,11 +313,22 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 	double *vtkquant=vtk[ndmi->num];
 	double theWt=1.,rho,rho0,se;
 	Tensor *ten=NULL,sp;
-    
+	
+	// exit if only one material and this point is not the right one
+	if(thisMaterial>0)
+	{	if(mpnt->MatID()!=thisMaterial-1)
+			return nextTask;
+	}
+
     // this loop for non-rigid particles
     for(q=0;q<quantity.size();q++)
     {	switch(quantity[q])
-        {	case VTK_STRESS:
+		{	case VTK_MASS:
+				*vtkquant += wt;
+				vtkquant++;
+				break;
+				
+			case VTK_STRESS:
             case VTK_PRESSURE:
             case VTK_EQUIVSTRESS:
                 rho0=theMaterials[mpnt->MatID()]->GetRho(mpnt);
@@ -527,10 +552,15 @@ void VTKArchive::FinishExtrapolationCalculations(void)
 	int i,j;
     for(i=1;i<=nnodes;i++)
 	{	if(!nd[i]->NodeHasNonrigidParticles()) continue;
-		double mnode=1./nd[i]->GetNodalMass(false);
-		
 		double *vtkquant=vtk[i];
-		for(j=0;j<bufferSize;j++)
+		
+		// check mass in first quantity
+		if(DbleEqual(*vtkquant,0.)) continue;
+		double mnode=1./(*vtkquant);
+		vtkquant++;
+		
+		// normalize the rest
+		for(j=1;j<bufferSize;j++)
 		{	*vtkquant*=mnode;
 			vtkquant++;
 		}
@@ -539,7 +569,7 @@ void VTKArchive::FinishExtrapolationCalculations(void)
 
 // Archive VTK file now and free up buffers
 void VTKArchive::ExportExtrapolationsToFiles(void)
-{	archiver->ArchiveVTKFile(mtime+timestep,quantity,quantitySize,quantityName,qparam,vtk);
+{	archiver->ArchiveVTKFile(mtime+timestep,quantity,quantitySize,quantityName,qparam,vtk,thisMaterial);
 
 	// free buffer if used
 	if(vtk!=NULL)

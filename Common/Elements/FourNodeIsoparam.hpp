@@ -45,7 +45,10 @@ class FourNodeIsoparam : public Linear2D
 		virtual void GimpShapeFunction(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
 		virtual void GimpShapeFunctionAS(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
 		virtual void BGimpShapeFunction(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
+		virtual void BGimpShapeFunctionAS(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
 		virtual void GetXiPos(const Vector *,Vector *) const;
+		virtual void GridTractionFunction(Vector *,Vector *,bool,double *,int *,double,double) const;
+	
 #endif
 
 };

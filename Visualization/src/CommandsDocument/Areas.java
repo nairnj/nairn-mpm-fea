@@ -313,7 +313,7 @@ public class Areas
 			if(inPath) keys.add(keyID);
 		
 			// add to XML
-			xmlkeys.append("      <pt x='"+doc.formatDble(x)+"' y = '"+doc.formatDble(y)+"' id='"+keyID+"'/>\n");
+			xmlkeys.append("      <pt x='"+doc.formatDble(x)+"' y='"+doc.formatDble(y)+"' id='"+keyID+"'/>\n");
 		}
 	}
 

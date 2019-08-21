@@ -66,6 +66,7 @@ class ElementBase : public LinkedObject
 		static int useGimp;             // Code for GIMP method (0 is classic MPM special case of GIMP)
 		static int gridNiNodes;			// Number of nodes used by grid shape functions
         static int numCPDINodes;        // number of particle points used by CPDI in particle domain
+		static double rcrit;        	// critical radius (in cell size) for CPDI (<0 for none)
 #endif
 		
         // constructors and destructors
@@ -93,6 +94,9 @@ class ElementBase : public LinkedObject
 		virtual void GimpShapeFunction(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
 		virtual void GimpShapeFunctionAS(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
 		virtual void BGimpShapeFunction(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
+		virtual void BGimpShapeFunctionAS(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
+		virtual void GridTractionFunction(Vector *,Vector *,bool,double *,int *,double,double) const;
+
 #endif
 									
         // prototypes of methods defined in ElementBase class (but may override)

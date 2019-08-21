@@ -49,8 +49,5 @@ class VTKArchive : public GridArchive
 		
 };
 
-// globals
-extern VTKArchive *vtkArchiveTask;
-
 #endif
 

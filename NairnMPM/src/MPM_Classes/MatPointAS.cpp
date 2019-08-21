@@ -78,15 +78,15 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     
 	// pass on to material class to handle
 	ResidualStrains res = ScaledResidualStrains(secondPass);
-	PerformConstitutiveLaw(dv,strainTime,np,props,&res);
+	PerformConstitutiveLaw(dv,strainTime,np,props,&res,NULL);
 }
 
 // Pass on to material class
-void MatPointAS::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void *props,ResidualStrains *res)
+void MatPointAS::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void *props,ResidualStrains *res,Tensor *gStress)
 {
     // update particle strain and stress using its constitutive law
 	const MaterialBase *matRef = theMaterials[MatID()];
-    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res,0);
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res,0,gStress);
 }
 
 #pragma mark MatPoint2D::Accessors
@@ -147,15 +147,18 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 	Vector r1,r2,c;
     GetSemiSideVectors(&r1,&r2,NULL);
 
-	// truncate domain by shrinking if any have x < 0, but keep particle in the middle
-	if(pos.x-fabs(r1.x+r2.x)<0.)
-	{	// make pos.x-shrink*fabs(r1.x+r2.x) very small and positive
-		double shrink = (pos.x-theElements[ElemID()]->GetDeltaX()*1.e-10)/fabs(r1.x+r2.x);
+	// truncate domain by shrinking if any have x < 0
+	if(pos.x-fabs(r1.x)-fabs(r2.x)<=0.)
+	{	// make pos.x=shrink*(fabs(r1.x)+fabs(r2.x))
+		double shrink = pos.x/(fabs(r1.x)+fabs(r2.x));
 		r1.x *= shrink;
 		r1.y *= shrink;
 		r2.x *= shrink;
 		r2.y *= shrink;
 	}
+	
+	// rescale if needed
+	ScaleSemiSideVectorsForCPDI(&r1,&r2,NULL);
 	
     // Particle domain area is area of the full parallelogram
     // Assume positive due to orientation of initial vectors, and sign probably does not matter

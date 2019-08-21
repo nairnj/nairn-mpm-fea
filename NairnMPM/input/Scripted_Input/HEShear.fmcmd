@@ -26,10 +26,10 @@ XMLData MPMHeader
 EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method$="lCPDI"
+#method$="B2CPDI"
 
 ! pick strain update method usually "USF" or "USAVG"
-#update$="USF"
+#update$="USL-"
 
 ! Supported materials: "neomooney" (G2=0), "mooney" (G1=G2), heiso
 #matID$="neomooney"
@@ -283,33 +283,41 @@ else
   else if #bcs$="biaxialtraction"
     #Gle=#Ebase/(2*(1+#nuBase))
     #stressrate=#Gle*2*#strain/(100*#time)
-    LoadLine 0,0,#length,0,#cell/2
+    ParticleBC
+      Line 0,#length,0,0,#cell/2
       Traction y,1,linear,#stressrate
-    EndLoadLine
-    LoadLine 0,#width,#length,#width,#cell/2
+    EndParticleBC
+    ParticleBC
+      Line 0,#length,#width,#width,#cell/2
       Traction y,3,linear,-#stressrate
-    EndLoadLine
-    LoadLine 0,0,0,#width,#cell/2
+    EndParticleBC
+    ParticleBC
+      Line 0,0,0,#width,#cell/2
       Traction x,4,linear,-#stressrate
-    EndLoadLine
-    LoadLine #length,0,#length,#width,#cell/2
+    EndParticleBC
+    ParticleBC
+      Line #length,#length,0,#width,#cell/2
       Traction x,2,linear,#stressrate
-    EndLoadLine
+    EndParticleBC
   else if #bcs$="sheartraction"
     #Gle=#Ebase/(2*(1+#nuBase))
     #stressrate=#Gle*2*#strain/(100*#time)
-    LoadLine 0,0,#length,0,#cell/2
+    ParticleBC
+      Line 0,#length,0,0,#cell/2
       Traction shear,1,linear,-#stressrate
-    EndLoadLine
-    LoadLine 0,#width,#length,#width,#cell/2
+    EndParticleBC
+    ParticleBC
+      Line 0,#length,#width,#width,#cell/2
       Traction shear,3,linear,-#stressrate
-    EndLoadLine
-    LoadLine 0,0,0,#width,#cell/2
+    EndParticleBC
+    ParticleBC
+      Line 0,0,0,#width,#cell/2
       Traction shear,4,linear,#stressrate
-    EndLoadLine
-    LoadLine #length,0,#length,#width,#cell/2
+    EndParticleBC
+    ParticleBC
+      Line #length,#length,0,#width,#cell/2
       Traction shear,2,linear,#stressrate
-    EndLoadLine
+    EndParticleBC
   endif
   if #edgematerial$="yes"
     Region #matID$,0,0,#thick
@@ -325,4 +333,6 @@ else
   endif
 endif
 
-
+!CustomTask "PeriodicXPIC"
+!Parameter "XPICOrder",5
+!Parameter "periodicSteps",1

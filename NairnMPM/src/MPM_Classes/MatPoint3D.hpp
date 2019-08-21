@@ -30,15 +30,14 @@ class MatPoint3D : public MPMBase
         virtual void SetVelocity(Vector *);
         virtual double thickness(void);
 		virtual void UpdateStrain(double,int,int,void *,int);
-		virtual void PerformConstitutiveLaw(Matrix3,double,int,void *,ResidualStrains *);
+		virtual void PerformConstitutiveLaw(Matrix3,double,int,void *,ResidualStrains *,Tensor *);
 		virtual void GetFintPlusFext(Vector *,double,double,double,double);
-		virtual void MovePosition(double,Vector *,Vector *,double);
+		virtual void MoveParticle(GridToParticleExtrap *);
 		virtual void MovePosition(double);
-		virtual void MoveVelocity(double);
 		virtual void SetVelocitySpeed(double);
 		virtual void AddTemperatureGradient(int,Vector *);
-		virtual double FCond(int,double,double,double,TransportProperties *);
 		virtual void AddConcentrationGradient(Vector *);
+		virtual double FCond(int,double,double,double,TransportProperties *);
 		virtual double FDiff(double,double,double,TransportProperties *);
 		virtual double KineticEnergy(void);
 		virtual Matrix3 GetDeformationGradientMatrix(void) const;
@@ -49,6 +48,7 @@ class MatPoint3D : public MPMBase
         virtual double GetRelativeVolume(void);
 		virtual double GetVolume(int);
         virtual void GetSemiSideVectors(Vector *,Vector *,Vector *) const;
+		virtual void ScaleSemiSideVectorsForCPDI(Vector *,Vector *,Vector *) const;
 		virtual double GetDeformedRadius(Vector *) const;
         virtual void GetUndeformedSemiSides(double *,double *,double *) const;
 		virtual Vector GetParticleSize(void) const;

@@ -13,9 +13,6 @@
 
 #define _EXPRESSION_
 
-// Dynamic atoms is more parallel, but seems to have memory leak
-#define DYNAMIC_ATOMS
-
 #define MAX_EXPRESSIONS 12
 
 class Atomic;
@@ -34,25 +31,16 @@ class Expression
 		Expression(const char *);
 		virtual ~Expression();
 	
-#ifdef DYNAMIC_ATOMS
 		// const methods
 		double EvaluateFunction(unordered_map<string, double>) const;
+		double EvaluateFunction(double *) const;
 		double EvaluateTokens(Atomic *,bool) const;
 		void DoFunction(Atomic *) const;
 		void OperateTerms(Atomic *firstOpAtom,int,int) const;
 		Atomic *GetFunctionArg(Atomic *,Atomic *,double &) const;
 		double XYZTValue(Vector *,double) const;
 		double TValue(double) const;
-#else
-		// methods (non-const when using working copy of atoms)
-		double EvaluateFunction(unordered_map<string, double>);
-		double EvaluateTokens(Atomic *,bool);
-		void DoFunction(Atomic *);
-		void OperateTerms(Atomic *firstOpAtom,int,int);
-		Atomic *GetFunctionArg(Atomic *,Atomic *,double &);
-		double XYZTValue(Vector *,double);
-		double TValue(double);
-#endif
+	
 		// non-const methods
 		void TokenizeExpr(void);
 		void AddToken(Atomic *);
@@ -79,10 +67,6 @@ class Expression
 		Atomic *currentAtom;
 		bool exprHasGroups;
 		int numAtoms;
-#ifndef DYNAMIC_ATOMS
-		Atomic **evalCopy;
-#endif
-	
 };
 
 #endif

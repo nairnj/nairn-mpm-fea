@@ -55,12 +55,6 @@ NodalTempBC *NodalTempBC::PasteNodalValue(NodalPoint *nd)
 	return (NodalTempBC *)GetNextObject();
 }
 
-// initialize reaction flow at constant temperature boundary conditions
-void NodalTempBC::InitQReaction(void) { qreaction = 0.; }
-
-// add flow required to bring global nodal temperature to the BC temperature
-void NodalTempBC::SuperposeQReaction(double qflow) { qreaction += qflow; }
-
 // when getting total heat reaction, add qreaction to input double
 // if matchID==0 include it, otherwise include only if matchID equals bcID
 NodalTempBC *NodalTempBC::AddHeatReaction(double *totalReaction,int matchID)

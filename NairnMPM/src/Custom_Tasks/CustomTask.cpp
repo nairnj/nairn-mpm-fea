@@ -39,7 +39,12 @@ void CustomTask::SetTextParameter(char *value,char *ptr)
 
 #pragma mark GENERIC TASK METHODS
 
-// called once at start of MPM analysis - initialize and print info
+// Called while reading when done setting all parameters
+// Make and needed settings, throw SAXExecption on error
+void CustomTask::Finalize(void) {}
+
+// called once at start of MPM analysis in CreateTasks (which is after Preliminary calcs)
+// Print details on the tasks (errors might be better flagged in Finalize()
 CustomTask *CustomTask::Initialize(void)
 {
     cout << "Unknown custom task" << endl;

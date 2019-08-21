@@ -20,7 +20,7 @@ EndHeader
 ! ********** Parameters Section **********
 
 ! pick analysis type - "Plane Strain MPM" for cylinder or "Axisymmetric MPM" for sphere
-#type$="Axisymmetric MPM"
+#type$="Plane Strain MPM"
 
 #cell=2                	! cell size (square cells)
 #outerradius=20         ! outer radius mm (mult of cell)
@@ -38,7 +38,7 @@ EndHeader
 #pmax=500
 
 ! load by "force" or "traction"
-#load$="traction"
+#load$="force"
 
 Analysis #type$
 MPMMethod USF,CPDI
@@ -162,14 +162,15 @@ EndRegion
 ! ********** Optional Calculations Section **********
 if #load$="force"
   if #type$="Axisymmetric MPM"
-    #pp=(#prate*#cell/2)&"*D"
+    #pp=(#prate*#cell/2)&"*x"
   else
-    #pp=#prate*#cell*#thickness/2
+    #pp=(#prate*#cell*#thickness/2)
   endif
-  LoadArc -#outerradius,-#outerradius,#outerradius,#outerradius,-#cwAngle,#ccwAngle,#cell/2
+  ParticleBC
+    Arc -#outerradius,#outerradius,-#outerradius,#outerradius,-#cwAngle,#ccwAngle,#cell/2
     Load x,function,#pp&"*t*x/sqrt(x^2+y^2)"
     Load y,function,#pp&"*t*y/sqrt(x^2+y^2)"
-  EndLoadArc
+  EndParticleBC
 
 else if #load$="traction"
   if #cell!=2
@@ -201,17 +202,19 @@ else if #load$="traction"
   #xn=#outerradius-#cell/4
   Repeat "#i",1,#ns
     #xend=#xloc+#x[#i]*#cell
-    LoadLine #xloc,#yn,#xend,#yn
+    ParticleBC
+      Line #xloc,#xend,#yn,#yn
       Traction "y",3,"linear",#prate
-    EndLoadLine
+    EndParticleBC
     #xloc=#xend
     #ind=#ns+1-#i
     #yn-=#x[#ind]*#cell
     
     #yend=#yloc+#x[#i]*#cell
-    LoadLine #xn,#yloc,#xn,#yend
+    ParticleBC
+      Line #xn,#xn,#yloc,#yend
       Traction "x",2,"linear",#prate
-    EndLoadLine
+    EndParticleBC
     #yloc=#yend
     #ind=#ns+1-#i
     #xn-=#x[#ind]*#cell
@@ -220,33 +223,39 @@ else if #load$="traction"
 endif
 
 if #cwAngle=0
-  MoveLine -#cell,-#cell/2,#xmax,-#cell/2,0.51*#cell
+  GridBC
+    Line -#cell,#xmax,-#cell/2,-#cell/2,0.51*#cell
     Velocity y,constant,0
-  EndMoveLine
+  EndGridBC
 else if #cwAngle=90
-  MoveLine -#cell/2,#cell,-#cell/2,#ymin,0.51*#cell
+  GridBC
+    Line -#cell/2,-#cell/2,#cell,#ymin,0.51*#cell
     Velocity x,constant,0
-  EndMoveLine
+  EndGridBC
 endif
 
 if #ccwAngle=0
-  MoveLine -#cell,#cell/2,#xmax,#cell/2,0.51*#cell
+  GridBC
+    Line -#cell,#xmax,#cell/2,#cell/2,0.51*#cell
     Velocity y,constant,0
-  EndMoveLine
+  EndGridBC
 else if #ccwAngle=90
-  MoveLine -#cell/2,-#cell,-#cell/2,#ymax,0.51*#cell
+  GridBC
+    Line -#cell/2,-#cell/2,-#cell,#ymax,0.51*#cell
     Velocity x,constant,0
-  EndMoveLine
+  EndGridBC
 else if #ccwAngle=180
   if #cwAngle!=180
-    MoveLine -#cell,-#cell/2,#xmin,-#cell/2,0.51*#cell
+    GridBC
+      Line -#cell,#xmin,-#cell/2,-#cell/2,0.51*#cell
       Velocity y,constant,0
-    EndMoveLine
+    EndGridBC
   endif
 else
   #cs=cos(#degtorad*#ccwAngle)
   #sn=sin(#degtorad*#ccwAngle)
-  MoveLine 0,0,#xmax*#cs,#xmax*#sn,0.25*#cell
+  GridBC
+    Line 0,#xmax*#cs,0,#xmax*#sn,0.25*#cell
     Velocity skewxy,constant,0,0,90-#ccwAngle
-  EndMoveLine
+  EndGridBC
 endif

@@ -23,7 +23,7 @@ class PostForcesTask : public MPMTask
 		PostForcesTask(const char *);
 	
 		// required methods
-		virtual void Execute(void);
+		virtual void Execute(int);
 	
 	protected:
 };

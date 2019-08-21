@@ -15,12 +15,8 @@
 
 #include "Materials/MaterialBase.hpp"
 
-// This option switches to using Kirchoff stress even in this small strain material
-// The shear parts are not implemented yet
-#define USE_KIRCHOFF_STRESS
-
 enum {XX_HISTORY=0,YY_HISTORY,XY_HISTORY,ZZ_HISTORY,XZ_HISTORY,YZ_HISTORY};
-enum {MGJ_HISTORY,MGJRES_HISTORY};
+enum {MGJ_HISTORY=0,MGJRES_HISTORY};
 enum {LINEAR_PRESSURE=0,MGEOS_PRESSURE};
 
 class Viscoelastic : public MaterialBase
@@ -46,12 +42,8 @@ class Viscoelastic : public MaterialBase
 		// methods
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
         virtual double GetCpMinusCv(MPMBase *) const;
-#ifdef USE_KIRCHOFF_STRESS
 		virtual void UpdatePressure(MPMBase *,double,ResidualStrains *,double,double,double,double,double &,double &) const;
-#else
-		virtual void UpdatePressure(MPMBase *,double,ResidualStrains *,double,const Matrix3 *,double,double &,double &) const;
-#endif
-		
+	
 		// accessors
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
         virtual double WaveSpeed(bool,MPMBase *) const;
@@ -61,9 +53,7 @@ class Viscoelastic : public MaterialBase
 		virtual void IncrementThicknessStress(double dszz,MPMBase *mptr) const;
 		virtual bool SupportsArtificialViscosity(void) const;
 		virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;
-#ifdef USE_KIRCHOFF_STRESS
 		virtual double GetCurrentRelativeVolume(MPMBase *,int) const;
-#endif
 		virtual bool SupportsDiffusion(void) const;
 	
     private:

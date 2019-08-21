@@ -23,7 +23,7 @@ class UpdateMomentaTask : public MPMTask
 		UpdateMomentaTask(const char *);
 	
 		// required methods
-		virtual void Execute(void);
+		virtual void Execute(int);
 	
 		// class methods
 		static void ContactAndMomentaBCs(int);

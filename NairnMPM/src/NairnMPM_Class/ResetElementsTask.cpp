@@ -44,7 +44,7 @@ ResetElementsTask::ResetElementsTask(const char *name) : MPMTask(name)
 // See if any particles have changed elements
 // Stop if off the grid
 // throws CommonException()
-void ResetElementsTask::Execute(void)
+void ResetElementsTask::Execute(int taskOption)
 {
 	// update feedback damping now if needed
 	bodyFrc.UpdateAlpha(timestep,mtime);
@@ -130,6 +130,13 @@ void ResetElementsTask::Execute(void)
 			{
 #pragma omp critical (error)
 				resetErr = new CommonException(err);
+			}
+		}
+		catch(CommonException* err)
+		{	if(resetErr==NULL)
+			{
+#pragma omp critical (error)
+				resetErr = new CommonException(*err);
 			}
 		}
 		catch(std::bad_alloc&)
@@ -245,7 +252,7 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
 	try
 	{   int j = mpmgrid.FindElementFromPoint(&mpt->pos,mpt)-1;		// elem ID (0 based)
 		if(theElements[j]->OnTheEdge()) return LEFT_GRID;
-		if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
+		if(fmobj->IsAxisymmetric() && mpt->pos.x<=0.) return LEFT_GRID;
 		mpt->ChangeElemID(j,!mpmgrid.IsStructuredEqualElementsGrid());
 		return NEW_ELEMENT;
 	}

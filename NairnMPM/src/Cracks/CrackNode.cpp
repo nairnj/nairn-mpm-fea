@@ -50,11 +50,11 @@ CrackNode *CrackNode::GetPrevNode(void) { return prevNode; }
 
 // On last pass (for USAVG or SZS), will already know which
 // nodes are crack nodes and now need to adjust forces
-void CrackNode::ContactOnKnownNodes(double deltime,int passType)
+bool CrackNode::ContactOnKnownNodes(double deltime,int passType)
 {
 	// anything to do?
 	long numCrackNodes = crackContactNodes.size();
-	if(numCrackNodes==0) return;
+	if(numCrackNodes==0) return false;
 	
 	// prepare for parallel
 	CommonException *ccErr = NULL;
@@ -80,6 +80,8 @@ void CrackNode::ContactOnKnownNodes(double deltime,int passType)
 	
 	// throw error now
 	if(ccErr!=NULL) throw *ccErr;
+	
+	return true;
 }
 
 // delete the contact node (which delink to node), clear vector of pointers

@@ -39,6 +39,7 @@ class NairnMPM : public CommonAnalysis
 		bool hasNoncrackingParticles;	// TRUE is some particles are ignoring the cracks
 		bool skipPostExtrapolation;		// Skip post update extrapolation
 		double timeStepMinMechanics;	// time step for  mechanics
+		bool exactTractions;			// implement exact tractions
 	
         //  Constructors and Destructor
 		NairnMPM();
@@ -69,7 +70,6 @@ class NairnMPM : public CommonAnalysis
         double GetPropagationCFLCondition(void);
 		virtual const char *MPMAugmentation(void);
 		bool HasDiffusion(void);
-		bool HasPoroelasticity(void);
 		bool HasFluidTransport(void);
 	
     protected:

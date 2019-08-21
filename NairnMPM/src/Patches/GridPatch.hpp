@@ -50,6 +50,7 @@ class GridPatch
 		void MoveParticlesToNewPatches(void);
 		void AddParticle(MPMBase *);
 		void RemoveParticleAfter(MPMBase *,MPMBase *);
+		void XPICSupport(int,int,NodalPoint *,double,int,int,double);
 	
 		// accessors
 		MPMBase *GetFirstBlockPointer(int);

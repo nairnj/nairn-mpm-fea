@@ -94,7 +94,7 @@ public class JNUnits
 		{	// Legacy units
 			outputLengthScale = 1.;				// mm to mm
 			outputTimeScale = 1000.;			// s to ms
-			outputAltTimeScale = 1.;			// ms to s
+			outputAltTimeScale = 1.;			// ms to ms
 			outputMassScale = 1.;				// g to g
 			outputVelocityScale = 0.001;		// mm/s to m/s
 			outputForceScale = 1.;				// N to N

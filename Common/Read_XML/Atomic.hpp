@@ -20,7 +20,7 @@ enum { ATOM_NUMBER,ATOM_VARIABLE,FUNCTION_NAME,
 // supported functions (set string to for debugging)
 enum { SIN_FXN=0,COS_FXN,TAN_FXN,ASIN_FXN,ACOS_FXN,ATAN_FXN,SINH_FXN,COSH_FXN,TANH_FXN,
 	LOG_FXN,LOG10_FXN,ABS_FXN,INT_FXN,SQRT_FXN,SIGN_FXN,EXP_FXN,RAND_FXN,ERF_FXN,ERFC_FXN,
-	COSRAMP_FXN,RAMP_FXN,BOX_FXN,SINBOX_FXN,SGN_FXN};
+	COSRAMP_FXN,RAMP_FXN,BOX_FXN,SINBOX_FXN,SGN_FXN,TRI_FXN};
 
 class Atomic
 {
@@ -45,6 +45,7 @@ class Atomic
 		double GetValue(void) const;
 		void SetValue(double);
 		char *GetVarName(void) const;
+		int GetVarID(void) const;
 		void SetReadOnlyVarName(bool);
 		int GetFunctionCode(void) const;
 		const char *GetFunctionName(void) const;

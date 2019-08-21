@@ -18,6 +18,9 @@ class ContactLaw;
 
 #include "Nodes/CrackVelocityField.hpp"
 
+#define MASS_MIN 1.e-5
+#define MASS_MAX 0.99999
+
 class CrackVelocityFieldMulti : public CrackVelocityField
 {
 	public:
@@ -34,17 +37,16 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void AddMassTask1(int,double,int);
 		virtual double GetTotalMassAndCount(bool &);
 		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
-		virtual void CopyVolumeGradient(int,Vector *);
+		virtual void AddVolumeGradient(int,Vector *);
 		virtual void CopyMassAndMomentum(NodalPoint *);
         virtual void CopyMassAndMomentumLast(NodalPoint *);
 	
 		virtual void AddFtotSpreadTask3(Vector *);
 		virtual void CopyGridForces(NodalPoint *);
-		virtual void AddGravityAndBodyForceTask3(Vector *);
+		virtual void AddGravityAndBodyForceTask3(Vector *,double,double);
 		virtual void RestoreMomenta(void);
 	
-		virtual void UpdateMomentaOnField(double);
-
+		virtual void UpdateMomentum(double);
 		virtual void RezeroNodeTask6(double);
 
 		// standard mathod
@@ -52,23 +54,23 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		void MaterialContactOnCVFLumped(MaterialContactNode *,double,int,int *,int,Vector,double);
 		virtual void RigidMaterialContactOnCVF(int,bool,MaterialContactNode *mcn,double,int);
 	
-		// contract support method
-		Vector GetNormalVector(MaterialContactNode *,int,int,double,Vector *,double,double,bool &,double &);
+		// contact support methods
+		Vector GetNormalVector(MaterialContactNode *,int,int,double,Vector *,double,double,bool &,double &,double *);
 		bool NonRigidCustomNormal(NodalPoint *,int,int,Vector &);
 		bool RigidCustomNormal(NodalPoint *,int,int,Vector &);
 		virtual Vector GetDisplacementVector(NodalPoint *,Vector *,double,Vector *,double,bool,double,Vector *,Vector *,Vector *,bool &);
-		virtual bool HasVolumeGradient(int) const;
 		virtual void GetVolumeGradient(int,const NodalPoint *,Vector *,double) const;
-		virtual double GetContactArea(NodalPoint *,double,double,Vector *,Vector *,Vector *,double *,double *) const;
-		virtual void CalcVelocityForStrainUpdate(void);
+		virtual void GridValueCalculation(int);
 	
 		// boundary conditions
-        virtual void SetMomVel(Vector *,int);
-        virtual void AddMomVel(Vector *,double,int);
-		virtual void ReflectMomVel(Vector *,CrackVelocityField *,double,double,int);
-        virtual void SetFtotDirection(Vector *,double,Vector *);
-        virtual void AddFtotDirection(Vector *,double,double,Vector *);
-		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,double,double,Vector *);
+        virtual void ZeroVelocityBC(Vector *,int,double,Vector *);
+        virtual void AddVelocityBC(Vector *,double,int,double,Vector *);
+		virtual void ReflectVelocityBC(Vector *,CrackVelocityField *,double,double,int,double,Vector *);
+
+		// contact accessors
+		virtual double GetContactVolumeNonrigid(bool) const;
+		virtual Vector GetCMDisplacement(NodalPoint *,bool,bool) const;
+		virtual Vector GetCMatFtot(void);
 	
 		// accessors
 		virtual bool HasPointsNonrigid(void) const;
@@ -76,30 +78,31 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void SumAndClearRigidContactForces(Vector *,bool,double,Vector *);
 		virtual double GetTotalMass(bool) const;
 		virtual void AddKineticEnergyAndMass(double &,double &);
-		virtual double GetVolumeNonrigid(bool) const;
-		virtual double GetVolumeTotal(NodalPoint *) const;
-		virtual Vector GetCMatMomentum(bool &,double *,Vector *) const;
-		virtual Vector GetCMDisplacement(NodalPoint *,bool) const;
-		virtual Vector GetCMatFtot(void);
+		virtual Vector GetCMatMomentum(bool &,double *,Vector *,bool) const;
 		virtual void ChangeCrackMomentum(Vector *,int,double);
 		virtual int CopyFieldMomenta(Vector *,int);
-#ifdef ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
+#if ADJUST_COPIED_PK == 1
 		virtual void AdjustForSymmetryBC(NodalPoint *);
 #endif
 		virtual int PasteFieldMomenta(Vector *,int);
 		virtual int GetNumberMaterials(void);
 		virtual int GetNumberNonrigidMaterials(void);
 		virtual void Describe(void) const;
+
+		// XPIC methods
+		virtual void XPICSupport(int,int,NodalPoint *,double,int,int,double);
+	
+		// class methods
+		static double GetTangentCOD(Vector *,Vector *,Vector *);
+		static double GetContactArea(NodalPoint *,double,double,Vector *,double *);
 	
 		virtual void MirrorFieldsThatIgnoreCracks(MatVelocityField *,int);
 		virtual MatVelocityField *GetRigidMaterialField(int *);
-	
+
 	private:
 		// variables (changed in MPM time step)
 		int numberMaterials;		// number of materials in this crack velocity field
 		int numberRigidPoints;		// number of rigid particles in this velocity field
-	
-		// constants (not changed in MPM time step)
 
 };
 

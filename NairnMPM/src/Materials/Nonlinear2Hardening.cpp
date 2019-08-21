@@ -20,6 +20,7 @@ Nonlinear2Hardening::Nonlinear2Hardening() {}
 // Constructors
 Nonlinear2Hardening::Nonlinear2Hardening(MaterialBase *pair) : NonlinearHardening(pair)
 {
+	lawID = NONLINEAR2HARENDING_ID;
 }
 
 // get reduced stress than done

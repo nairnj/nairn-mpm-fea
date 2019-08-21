@@ -63,15 +63,14 @@ class MPMBase : public LinkedObject
         virtual void SetVelocity(Vector *) = 0;
 		virtual void UpdateStrain(double,int,int,void *,int) = 0;
 		virtual void GetFintPlusFext(Vector *,double,double,double,double) = 0;
-		virtual void MovePosition(double,Vector *,Vector *,double) = 0;
+		virtual void MoveParticle(GridToParticleExtrap *) = 0;
 		virtual void MovePosition(double) = 0;
-		virtual void MoveVelocity(double) = 0;
 		virtual void SetVelocitySpeed(double) = 0;
 		virtual void AddTemperatureGradient(int);
 		virtual void AddTemperatureGradient(int,Vector *) = 0;
-		virtual double FCond(int,double,double,double,TransportProperties *) = 0;
 		virtual void AddConcentrationGradient(void);
 		virtual void AddConcentrationGradient(Vector *) = 0;
+		virtual double FCond(int,double,double,double,TransportProperties *) = 0;
 		virtual double FDiff(double,double,double,TransportProperties *) = 0;
 		virtual double KineticEnergy(void) = 0;
 		virtual Matrix3 GetDeformationGradientMatrix(void) const = 0;
@@ -83,6 +82,7 @@ class MPMBase : public LinkedObject
         virtual double GetRelativeVolume(void) = 0;
 		virtual double GetVolume(int) = 0;
         virtual void GetSemiSideVectors(Vector *,Vector *,Vector *) const = 0;
+		virtual void ScaleSemiSideVectorsForCPDI(Vector *,Vector *,Vector *) const = 0;
 		virtual double GetDeformedRadius(Vector *) const = 0;
 		virtual void GetUndeformedSemiSides(double *,double *,double *) const = 0;
 		virtual void GetCPDINodesAndWeights(int) = 0;
@@ -191,14 +191,15 @@ class MPMBase : public LinkedObject
 		double GetRho(void);
 		double GetConcSaturation(void);
 		double GetDiffusionCT(void);
+		virtual void GetExactTractionInfo(int,int,int *,Vector *,Vector *,int *) const;
 	
 	protected:
 		// variables (changed in MPM time step)
 		Vector mpm_lp;				// Dimensionless size relative to current element (radius in -1 to 1 natural coordinates)
 		Vector pFext;				// external force
 		Vector ncpos;				// natural coordinates position
-		char *cpdi_or_gimp;          // Should make pointer and allocate only what is needed
-        Vector *faceArea;           // make pointer then needed
+		char *cpdi_or_gimp;         // Should make pointer and allocate only what is needed
+        Vector *faceArea;           // make pointer when needed
 		Vector acc;					// acceleration (hold velocity of rigid particle in hold phase)
 		Tensor *velGrad;			// used for J Integral only on non-rigid particles only
 		Tensor sp;					// stress tensor (init 0)

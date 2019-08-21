@@ -109,9 +109,15 @@ MatPtLoadBC *MatPtHeatFluxBC::AddMPFluxBC(double bctime)
     {	// coupled surface flux
 		if(bctime>=GetBCFirstTime())
 		{	// time variable (t) is replaced by particle temperature, result should be E/(T-L^2)
+#ifdef USE_ASCII_MAP
+			double vars[7];
+			vars[0] = 6.5;
+			vars[1] = mpmptr->pPreviousTemperature;		//t
+#else
 			unordered_map<string, double> vars;
-			GetPosition(vars);
 			vars["t"] = mpmptr->pPreviousTemperature;
+#endif
+			GetPositionVars(vars);
 			
 			// Legacy scaling of W/m^2 to nW/mm^2
 			fluxMag.x = scale*function->EvaluateFunction(vars);
@@ -139,7 +145,7 @@ MatPtLoadBC *MatPtHeatFluxBC::AddMPFluxBC(double bctime)
 		int numnds = nds[0];
 		
 		// add flux to each node. fluxMag has units Energy/(sec-L^2)
-		// tscaled has units L^2 for final flux is Energy/sec
+		// wtNorm has units L^2 for final flux is Energy/sec
 		double flux;
 		for(int i=1;i<=numnds;i++)
 		{	if(fmobj->IsAxisymmetric())

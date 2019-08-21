@@ -87,13 +87,6 @@ double HyperElastic::GetIncrementalResJ(MPMBase *mptr,ResidualStrains *res) cons
     return exp(3.*dJres);
 }
 
-// When inactive, track residual strains
-void HyperElastic::TrackResidualStrain(MPMBase *mptr,double dJres,int historyOffset) const
-{	// account for residual stresses
-	double Jres = dJres*mptr->GetHistoryDble(J_History+1,historyOffset);
-	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
-}
-
 /*  Given matrix of incremental deformation dF = exp(dt*grad v), increment particle strain,
         rotation, and LeftCauchy Green strain (latter is assumed to be stored in the particle's
         plastic strain tensor (which is accessed also with GetAltStrainTensor().
@@ -247,4 +240,6 @@ int HyperElastic::AltStrainContains(void) const { return LEFT_CAUCHY_TOTAL_B_STR
 // not supported yet, need to deal with aniostropi properties
 // Need to check increments if allow negative PP
 bool HyperElastic::SupportsDiffusion(void) const
-{	return DiffusionTask::HasPoroelasticity() ? false : true; }
+{
+    return true;
+}

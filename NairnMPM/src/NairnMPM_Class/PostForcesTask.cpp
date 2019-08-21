@@ -37,7 +37,7 @@ PostForcesTask::PostForcesTask(const char *name) : MPMTask(name)
 
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
-void PostForcesTask::Execute(void)
+void PostForcesTask::Execute(int taskOption)
 {
 	// restore nodal momenta
 #pragma omp parallel for
@@ -62,18 +62,18 @@ void PostForcesTask::Execute(void)
 	// Add gravity and body forces (if any are present)
 	// Note: If ever need to implement body force that depend on particle state (stress, strain, etc.)
 	//			then move the body force addition into GridForcesTask loop where gravity is commented out
-	// When used to keep Fext, this section would also add fint and fext to get ftot (and it was always needed)
+	double gridAlpha = -1.,gridForceAlpha = -1.;
 	Vector gridBodyForce;
-	if(bodyFrc.gravity || bodyFrc.hasGridBodyForce)
+	if(bodyFrc.HasGridDampingForces())
 	{	CommonException *bfErr = NULL;
 
-#pragma omp parallel for
+#pragma omp parallel for private(gridBodyForce)
 		for(int i=1;i<=*nda;i++)
 		{	NodalPoint *ndptr = nd[nda[i]];
 			try
 			{	Vector fpos = MakeVector(ndptr->x,ndptr->y,ndptr->z);
 				bodyFrc.GetGridBodyForce(&gridBodyForce,&fpos,mtime);
-				ndptr->AddGravityAndBodyForceTask3(&gridBodyForce);
+				ndptr->AddGravityAndBodyForceTask3(&gridBodyForce,gridAlpha,gridForceAlpha);
 			}
 			catch(CommonException &err)
 			{   if(bfErr==NULL)
@@ -89,7 +89,7 @@ void PostForcesTask::Execute(void)
 	}
 
     // Impose BCs on ftot to get correct grid BCs for velocity
-    NodalVelBC::ConsistentGridForces();
+	NodalVelBC::GridVelocityConditions(GRID_FORCES_CALL);
 	
 	// Transport force BCs
 	TransportTask::TransportForceBCs(timestep);

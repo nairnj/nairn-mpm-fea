@@ -68,10 +68,6 @@ const char *LiquidContact::VerifyAndLoadProperties(int np)
 	// set to be sure parent class friction handled correctly
 	frictionStyle = FRICTIONAL;
 	
-	// not support yet in NairnMPM
-	Dc = -1.;
-	displacementOnly = 0.0;
-	
 	// no super class tasks allowed
 	return NULL;
 }
@@ -90,9 +86,21 @@ void LiquidContact::PrintContactLaw(void) const
 	else
 		cout << "(invalid ID " << liquidPhaseID << ")" << endl;
 	
-	// Dc and displacementOnly not support in NairnMPM
-	cout << "   Stress found by perfect interface methods" << endl;
-	cout << "   Detection by negative separation and stress < 0" << endl;
+	if(Dc<0.)
+		cout << "   Stress found by perfect interface methods" << endl;
+	else
+	{	cout << "   Stress found by linear imperfect interface with Dc = ";
+		cout << Dc*UnitsController::Scaling(1.e-6) << " " << UnitsController::Label(INTERFACEPARAM_UNITS) << endl;
+	}
+	if(displacementOnly>0.1)
+		cout << "   Detection by only negative separation" << endl;
+	else if(displacementOnly<0.)
+	{	const char *label = UnitsController::Label(PRESSURE_UNITS);
+		cout << "   Detection by negative separation and stress < " <<
+					-displacementOnly*UnitsController::Scaling(1.e-6) << " " << label << endl;
+	}
+	else
+		cout << "   Detection by negative separation and stress < 0" << endl;
 }
 
 #pragma mark LiquidContact:Step Methods

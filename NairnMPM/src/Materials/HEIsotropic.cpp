@@ -59,8 +59,11 @@ char *HEIsotropic::InputMaterialProperty(char *xName,int &input,double &gScaling
 bool HEIsotropic::AcceptHardeningLaw(HardeningLawBase *pLaw,int lawID)
 {   delete plasticLaw;
     plasticLaw = pLaw;
-    return TRUE;
+    return true;
 }
+
+// return plastic law ID (or 0 if none)
+HardeningLawBase *HEIsotropic::GetPlasticLaw(void) const { return plasticLaw; }
 
 // verify settings and maybe some initial calculations
 const char *HEIsotropic::VerifyAndLoadProperties(int np)
@@ -144,7 +147,7 @@ char *HEIsotropic::InitHistoryData(char *pchr,MPMBase *mptr)
 	double *p = CreateAndZeroDoubles(pchr,J_History+2);
     plasticLaw->InitPlasticHistoryData(p);
 	p[J_History]=1.;					// J
-	p[J_History+1]=1.;					// J
+	p[J_History+1]=1.;					// Jres
 	return (char *)p;
 }
 

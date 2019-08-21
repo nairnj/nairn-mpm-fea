@@ -53,24 +53,72 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 		sprintf(nameStr,"%s mat %d",quant,whichMat);
 	else
 		strcpy(nameStr,quant);
+	FinishNewQuantity(nameStr);
+}
+
+// throws std::bad_alloc
+GlobalQuantity::GlobalQuantity(char *quant,Vector *ptLoc)
+{
+	char nameStr[200];
+	
+	quantity = DecodeGlobalQuantity(quant,&subcode);
+	
+	// save room for particle number
+    sprintf(nameStr,"%s pt ",quant);
+	FinishNewQuantity(nameStr);
+	
+	// store point and any material allowed
+	ptPos = ptLoc;
+	whichMat = 0;
+}
+
+// Find closet point to tracer particle coordinates
+// Not that ptNum is zero based number
+GlobalQuantity *GlobalQuantity::FindTracerParticle(int p,Vector *ploc)
+{
+	// skip if not a point
+	if(ptPos==NULL) return nextGlobal;
+	
+	// find distance
+	double dx = ploc->x-ptPos->x;
+	double dy = ploc->y-ptPos->y;
+	double dz = fmobj->IsThreeD() ? ploc->z-ptPos->z : 0.;
+	double dist = sqrt(dx*dx+dy*dy+dz*dz);
+	if(dist<minDist)
+	{	ptNum = p;
+		minDist = dist;
+	}
+	
+	return nextGlobal;
+}
+
+// finish global quantity settings
+void GlobalQuantity::FinishNewQuantity(char *nameStr)
+{
+	// store quantity name
 	name=new char[strlen(nameStr)+1];
 	strcpy(name,nameStr);
-	
+
 	// set color ID
 	colorID=numGlobal % 10;
-	
+
 	// this object is currently the last one
 	SetNextGlobal(NULL);
-	
+
 	// adjust previous global quantity or set firstGlobal if this is the first one
 	if(lastGlobal!=NULL)
 		lastGlobal->SetNextGlobal(this);
 	else
 		firstGlobal=this;
 	lastGlobal=this;
-	
+
 	// count the number of objects
 	numGlobal++;
+	
+	// assume not a point
+	ptPos = NULL;
+	ptNum = -1;
+	minDist = 1.e99;
 }
 
 // decode quant it to quantity ID and subcode (used for history variables)
@@ -234,6 +282,9 @@ int GlobalQuantity::DecodeGlobalQuantity(const char *quant,int *hcode)
 	else if(strcmp(quant,"heatWatts")==0)
 		theQuant=TOT_REACTQ;
 	
+	else if(strcmp(quant,"Decohesion")==0)
+		theQuant=DECOHESION;
+	
 	else
 	{	theQuant=UNKNOWN_QUANTITY;
 		
@@ -259,7 +310,7 @@ GlobalQuantity *GlobalQuantity::AppendName(char *fline)
 {
 	char nameStr[100];
 	
-	if(quantity==UNKNOWN_QUANTITY)
+	if(quantity==UNKNOWN_QUANTITY || quantity==DECOHESION)
 		return nextGlobal;
 	
 	sprintf(nameStr,"\t%c%s%c",quote,name,quote);
@@ -272,7 +323,11 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 {
 	int p;
 	double value=0.,rho0,Vtot=0.,mp,Jp,Vp;
-	int matid,qid=0;
+	int matid,qid=0,p0=0,pend=nmpms;
+	if(ptNum>=0)
+	{	p0 = ptNum;
+		pend = ptNum+1;
+	}
 	
 	switch(quantity)
 	{   // stresses (MPa in Legacy)
@@ -291,7 +346,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 			// Volume weighted average is Sum (Vp rhop stressp) / Sum Vp = Sum (mp stressp) / Sum Vp
 			// where Vp = J mp/rho0
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid=mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -325,7 +380,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 			// Volume weighted average is Sum (Vp strainp) / Sum Vp 
 			// where Vp = J mp/rho0
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid=mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -373,7 +428,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 			// Volume weighted average is Sum (Vp strainp) / Sum Vp
 			// where Vp = J mp/rho0
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid=mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -416,7 +471,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 			// Volume weighted average is Sum (Vp strainp) / Sum Vp
 			// where Vp = J mp/rho0
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid=mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -453,7 +508,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 			// Volume weighted average is Sum (Vp strainp) / Sum Vp
 			// where Vp = J mp/rho0
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -477,7 +532,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
         case INTERNAL_ENERGY:
         case HELMHOLZ_ENERGY:
 		{	bool threeD = fmobj->IsThreeD();
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	switch(quantity)
@@ -528,7 +583,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// energies (Volume*energy) (J in Legacy)
 		case PLAS_ENERGY:
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
                 {   value+=mpm[p]->mp*mpm[p]->GetPlastEnergy();
@@ -539,7 +594,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		
 		// velocity x
 		case AVG_VELX:
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -554,7 +609,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// velocity y
 		case AVG_VELY:
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -569,7 +624,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// velocity z
 		case AVG_VELZ:
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -584,7 +639,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// x displacement
 		case AVG_DISPX:
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -599,7 +654,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// y displacement
 		case AVG_DISPY:
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -614,7 +669,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// z displacement
 		case AVG_DISPZ:
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -629,7 +684,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		// temperature
 		case AVG_TEMP:
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -646,7 +701,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		{	if(fmobj->HasDiffusion())
 			{	// get total solvent content divided by total mass for total weight fraction
 					double totalWeight=0.;
-					for(p=0;p<nmpms;p++)
+					for(p=p0;p<pend;p++)
 					{	matid = mpm[p]->MatID();
 						if(IncludeThisMaterial(matid))
 						{	double csat = mpm[p]->GetConcSaturation();
@@ -674,15 +729,15 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			break;
 
 		case GRID_ALPHA:
-			value=bodyFrc.GetNonPICDamping(mtime);
+			value=bodyFrc.GetGridDamping(mtime);
 			break;
 		
 		case PARTICLE_ALPHA:
-			value=bodyFrc.GetNonPICParticleDamping(mtime);
+			value=bodyFrc.GetParticleDamping(mtime);
 			break;
             
 		case HISTORY_VARIABLE:
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
@@ -786,7 +841,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		
 		// linear momentum (Legacy N-sec)
 		case LINMOMX:
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 					value += mpm[p]->mp*mpm[p]->vel.x;
@@ -795,7 +850,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			break;
 			
 		case LINMOMY:
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 					value += mpm[p]->mp*mpm[p]->vel.y;
@@ -804,7 +859,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			break;
 			
 		case LINMOMZ:
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 					value += mpm[p]->mp*mpm[p]->vel.z;
@@ -818,7 +873,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		case ANGMOMZ:
 		{	Vector Ltot = MakeVector(0.,0.,0.);
 			Vector cp;
-			for(p=0;p<nmpms;p++)
+			for(p=p0;p<pend;p++)
 			{	matid = mpm[p]->MatID();
 				if(IncludeThisMaterial(matid))
 				{	// get Mp Xp X Vp
@@ -845,7 +900,8 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			break;
 		}
 
-		// skip unknown
+		// skip decoheion and unknown
+		case DECOHESION:
 		case UNKNOWN_QUANTITY:
 			return nextGlobal;
 		
@@ -863,7 +919,8 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 // append tab and color string
 GlobalQuantity *GlobalQuantity::AppendColor(char *fline)
 {
-	if(quantity==UNKNOWN_QUANTITY) return nextGlobal;
+	if(quantity==UNKNOWN_QUANTITY || quantity==DECOHESION)
+		return nextGlobal;
 	
 	strcat(fline,"\t");
 	switch(colorID)
@@ -932,4 +989,21 @@ bool GlobalQuantity::IsSameQuantity(int qval,int qcode,int qmat)
 {	if(quantity==qval && subcode==qcode && qmat==whichMat) return true;
 	return false;
 }
+
+// return the global quantity by integer ID
+int GlobalQuantity::GetQuantity(void) { return quantity; }
+
+// true if is tracer particle
+bool GlobalQuantity::IsTracerParticle(void) { return ptPos!=NULL; }
+
+// Set name when known
+GlobalQuantity *GlobalQuantity::SetTracerParticle(void)
+{	if(ptPos!=NULL)
+	{	char pnum[25];
+		sprintf(pnum,"%d",ptNum+1);
+		strcat(name,pnum);
+	}
+	return nextGlobal;
+}
+
 

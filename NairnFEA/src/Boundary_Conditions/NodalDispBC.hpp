@@ -26,7 +26,7 @@ class NodalDispBC : public FEABoundaryCondition
 		void DefaultSetup(int,int,double);
 		
         // methods
-        NodalDispBC *PrintBC(ostream &);
+        virtual NodalDispBC *PrintBC(ostream &);
         NodalDispBC *FixOrRotate(double **,double *,int,int,int);
 		NodalDispBC *Unrotate(double *,int);
         void PrintReaction(void);

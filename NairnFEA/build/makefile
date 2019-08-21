@@ -94,7 +94,7 @@ ifeq ($(SYSTEM),mac)
     CC= /opt/local/bin/g++-mp-4.9
 endif
 ifeq ($(SYSTEM),mac-clang)
-    CC= /opt/local/bin/clang-mp-4.0
+    CC= /opt/local/bin/clang-mp-7.0
 endif
 RM= rm
 CP= cp

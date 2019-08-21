@@ -27,6 +27,11 @@
 #include "Materials/DDBHardening.hpp"
 #include "System/UnitsController.hpp"
 #include "Materials/ContactLaw.hpp"
+#include "Materials/LinearSoftening.hpp"
+#include "Materials/ExponentialSoftening.hpp"
+#include "Materials/SmoothStep3.hpp"
+#include "Global_Quantities/BodyForce.hpp"
+#include "Materials/FailureSurface.hpp"
 #include <vector>
 
 // global
@@ -345,18 +350,10 @@ void MaterialBase::PrintCommonProperties(void) const
 		PrintProperty("AV-A2",avA2,"");
 		cout << endl;
 	}
-
+	
 	// particle damping
 	if(matUsePDamping)
-	{	cout << "Particle damping: " << matPdamping << " /sec";
-		if(matUsePICDamping)
-		{	cout << ", PIC damping fraction: " << matFractionPIC;
-		}
-		cout << endl;
-	}
-	else if(matUsePICDamping)
-	{	cout << "Particle PIC damping fraction: " << matFractionPIC;
-		cout << endl;
+	{	cout << "Particle damping: " << matPdamping << " /sec" << endl;
 	}
 	
 	// optional color
@@ -496,7 +493,7 @@ void MaterialBase::SetHardeningLaw(char *lawName)
     HardeningLawBase *pLaw = NULL;
     int lawID = 0;
     
-    // check options
+    // check options the numbers should match the IDs defined in their headers
     if(strcmp(lawName,"Linear")==0 || strcmp(lawName,"1")==0)
     {   pLaw = new LinearHardening(this);
         lawID = 1;
@@ -549,6 +546,9 @@ void MaterialBase::SetHardeningLaw(char *lawName)
 // A Material that allows hardening laws should accept this one or it can
 // veto the choice by returning FALSE
 bool MaterialBase::AcceptHardeningLaw(HardeningLawBase *pLaw,int lawID) { return false; }
+
+// Materials that have plastic loaws, should return the law ID
+HardeningLawBase *MaterialBase::GetPlasticLaw(void) const { return NULL; }
 
 #pragma mark MaterialBase:velocities fields
 
@@ -671,63 +671,21 @@ void MaterialBase::SetFriction(int lawID,int matID)
 }
 
 // Custom material damping.
-// Note that matPIC will be -1 unless this material changed it with PIC attribute on the
-//		the Damping command. Thus particle can do FLIP my matPIC=0 resulting
-//		in matFractionPIC=0 too.
-void MaterialBase::SetDamping(double matDamping,double matPIC)
+void MaterialBase::SetDamping(double matDamping)
 {	if(matDamping>-1e12)
 	{	matPdamping = matDamping;
 		matUsePDamping = true;
 	}
 	else
 		matUsePDamping = false;
-    if(matPIC>=0.)
-	{   matFractionPIC = matPIC;
-        matUsePICDamping = true;
-    }
-    else
-        matUsePICDamping = false;
 }
 
 // Change damping if this material requests it
-// On input, particleAlpha and gridAlpha should be the global settings
-// if material has particle damping (matUsePDamping)
-//	 Changes PIC fraction (including to zero) (matUsePICDamping), change to
-//      particleAlpha   = matFractionPIC/dt + matPdamping(t)
-//      gridAlpha       = -m*matFractionPIC/dt + damping(t)
-//		localXPIC		= m*matFractionPIC/dt
-//   Uses global PIC fraction, change to
-//      particleAlpha   = globalPIC + matPdamping(t)
-//		localXPIC		= m*globalPIC
-// if material has no damping, but wants to change PIC fraction (including to zero) (matUsePICDamping)
-//      particleAlpha   = matFractionPIC/dt + pdamping(t) = matFractionPIC/dt + (particleAlpha - globalPIC)
-//      gridAlpha       = -m*matFractionPIC/dt + damping(t)
-//		localXPIC		= m*matFractionPIC/dt
-// if material has no damping return
-//		localXPIC		= m*globalPIC
-double MaterialBase::GetMaterialDamping(double &particleAlpha,double &gridAlpha,double nonPICGridAlpha,double globalPIC) const
-{
-	double localXPIC = 0.;
-	
-	// has either type
-	if(matUsePDamping)
-	{	if(matUsePICDamping)
-		{	particleAlpha = matFractionPIC/timestep + matPdamping;
-			gridAlpha = -matFractionPIC/timestep + nonPICGridAlpha;
-		}
-		else
-		{   particleAlpha = globalPIC + matPdamping;
-		}
-	}
-	
-	// if has particle PIC only
-	else if(matUsePICDamping)
-	{	particleAlpha += matFractionPIC/timestep - globalPIC;
-		gridAlpha = -matFractionPIC/timestep + nonPICGridAlpha;
-	}
-	
-	return localXPIC;
+// On input, particleAlpha is global values. Return it or a custom value
+double MaterialBase::GetMaterialDamping(double particleAlpha) const
+{	return matUsePDamping ? matPdamping : particleAlpha;
 }
+
 
 // Look for contact to a given material and return contact law ID
 // by checking on friction settings for this material.
@@ -829,7 +787,13 @@ double *MaterialBase::CreateAndZeroDoubles(char *pchr,int numDoubles) const
 
 #pragma mark MaterialBase::Methods
 
-// All maternal classes must override to handle their constitutive law
+// Material classes thet need grid/non local stress must override this law to get that stresses
+void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,
+									  ResidualStrains *res,int historyOffset,Tensor *gStress) const
+{	MPMConstitutiveLaw(mptr,dv,delTime,np,properties,res,historyOffset);
+}
+
+// Material classes thet do not need nonlocal stress can overide this isntead (or above and ingore stress)
 void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res,int historyOffset) const
 {
 }
@@ -862,6 +826,8 @@ Matrix3 MaterialBase::LRGetStrainIncrement(int axes,MPMBase *mptr,Matrix3 du,Mat
     // two decompositions
     pFnm1.RightDecompose(Rnm1Ptr,NULL);
     pF.LeftDecompose(RnPtr,NULL);
+	
+	// Rtot = dR*Rnm1 or dR = Rtot*Rnm1^T
     *dR = (*RnPtr)*Rnm1Ptr->Transpose();
     
     // get strain increments in
@@ -1342,7 +1308,6 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
 	crackDir. If selected return TRUE or return FALSE for criterion to
 	pick its own direction
 */
-
 bool MaterialBase::SelectDirection(CrackSegment *crkTip,Vector &crackDir,CrackHeader *theCrack,int critIndex)
 {
 	Vector cod;
@@ -1684,32 +1649,34 @@ double MaterialBase::GetArtificalViscosity(double Dkk,double c,MPMBase *mptr) co
 // Can only ignore cracks in multimaterial mode.
 int MaterialBase::AllowsCracks(void) const { return allowsCracks; }
 
+// Get current bulk modulus in MGEOS material - assumes adiabatic and ignores internal energy
+// Return -1 if beyond the singular point
+// See Mathematica notes for MGEOS Adiabatic and materials tech notes
+double MaterialBase::GetMGEOSKRatio(double xr,double gamma0,double S1,double S2,double S3) const
+{	double denom = 1./(1. - xr*(S1 + xr*(S2 + xr*S3)));
+	if(denom<0.) return -1.;
+	return (1.-xr)*(1. - gamma0*xr*(1.+xr*xr*(S2+2.*S3*xr)) + xr*(S1+xr*(3.*S2 + 5*S3*xr)))*denom*denom*denom;
+}
+
 // Find the compression needed for bulk modulus to increase Kmax fold
 double MaterialBase::GetMGEOSXmax(double gamma0,double S1,double S2,double S3,double &Kmax)
 {
 	// increase until passes kmax or become negative
 	double xl = 0.,xr = 0.;
-	double step = 0.05,denom,kr,kl=1.;
+	double step = 0.05,kr,kl=1.;
 	while(true)
 	{	xr += step;
-		denom = 1./(1. - xr*(S1 + xr*(S2 + xr*S3)));
+		kr = GetMGEOSKRatio(xr,gamma0,S1,S2,S3);
 		
-		// if less then zero, went too far
-		if(denom<=0.)
+		// if less then zero, backstep and try smaller step
+		if(kr<=0.)
 		{	xr -= step;
 			step /= 2.;
 			continue;
 		}
 		
 		// check ratio
-		kr = (1.-0.5*gamma0*xr)*denom*denom;
 		if(kr>Kmax) break;
-		
-		// did it pass a maximum
-		if(kr<kl)
-		{	Kmax = kl;
-			return xl;
-		}
 		
 		// update and continue
 		kl = kr;
@@ -1720,8 +1687,7 @@ double MaterialBase::GetMGEOSXmax(double gamma0,double S1,double S2,double S3,do
 	double xmid;
 	for(int i=0;i<15;i++)
 	{	xmid = (xl+xr)/2.;
-		denom = 1./(1. - xmid*(S1 + xmid*(S2 + xmid*S3)));
-		kr = (1.-0.5*gamma0*xmid)*denom*denom;
+		kr = GetMGEOSKRatio(xmid,gamma0,S1,S2,S3);
 		if(kr<Kmax)
 			xl = xmid;
 		else
@@ -1747,3 +1713,94 @@ double MaterialBase::BracketContactLawShearRate(double gmaxdot,double k,double &
 	y2 = k*GetViscosity(gmaxdot);
 	return -1;
 }
+
+// for initial conditions (usually in history data)
+void MaterialBase::SetInitialConditions(InitialCondition *ic,MPMBase *mptr,bool is3D) {}
+
+// Material that allow damage initiaion laws must accept
+// the final call and use if supported
+// Newly created laws should be added here
+// throws std::bad_alloc, SAXException()
+void MaterialBase::SetInitiationLaw(char *lawName)
+{
+	FailureSurface *iLaw = NULL;
+	int lawID = 0;
+	
+	// check initiation loaw options
+	if(strcmp(lawName,"MaxPrinciple")==0 || strcmp(lawName,"1")==0)
+	{   iLaw = new FailureSurface(this);
+		lawID = MAXPRINCIPALSTRESS;
+	}
+	
+#ifdef OSPARTICULAS
+	// check options
+	else if(strcmp(lawName,"TIFailure")==0 || strcmp(lawName,"2")==0)
+	{   iLaw = (FailureSurface *)new TIFailureSurface(this);
+		lawID = TIFAILURESURFACE;
+	}
+#endif
+	
+	// was it found
+	if(iLaw==NULL)
+	{	ThrowSAXException("The damage initiation law '%s' is not valid",lawName);
+		return;
+	}
+	
+	// pass on to the material
+	if(!AcceptInitiationLaw(iLaw,lawID))
+	{	delete iLaw;
+		ThrowSAXException("The damage initiaion law '%s' is not allowed by material",lawName);
+		return;
+	}
+}
+
+// A Material that allows damage initiaion laws should accept this one or it can
+// veto the choice by returning FALSE
+bool MaterialBase::AcceptInitiationLaw(FailureSurface *iLaw,int lawID) { return false; }
+
+// Material that allows softening laws must accept
+// the final call and use if supported
+// Newly created laws should be added here
+// xData (characters of command) is name of law (e.g., "Linear" or number) or ID (e.g. "1")
+// mode is type of law from list beginning in SOFTI_LAW_SELECTION
+// throws std::bad_alloc, SAXException()
+void MaterialBase::SetSofteningLaw(char *lawName,int mode)
+{
+	SofteningLaw *sLaw = NULL;
+	int lawID = 0;
+	
+	// this section is list of supported softening laws
+	if(strcmp(lawName,"Linear")==0 || strcmp(lawName,"1")==0)
+	{   sLaw = new LinearSoftening();
+		lawID = 1;
+	}
+	else if(strcmp(lawName,"Exponential")==0 || strcmp(lawName,"2")==0)
+	{   sLaw = new ExponentialSoftening();
+		lawID = 2;
+	}
+	else if(strcmp(lawName,"CubicStep")==0 || strcmp(lawName,"3")==0)
+	{   sLaw = new SmoothStep3();
+		lawID = 2;
+	}
+	
+	// was it found
+	if(sLaw==NULL)
+	{	ThrowSAXException("The softening law '%s' is not valid",lawName);
+		return;
+	}
+	
+	// pass on to the material
+	if(!AcceptSofteningLaw(sLaw,lawID,mode))
+	{	delete sLaw;
+		ThrowSAXException("The softening law '%s' is not allowed by material",lawName);
+		return;
+	}
+}
+
+// A Material that allows damage initiaion laws should accept this one or it can
+// veto the choice by returning false
+bool MaterialBase::AcceptSofteningLaw(SofteningLaw *sLaw,int lawID,int mode) { return false; }
+
+// zero-offset to damage mechanics history data - all damage mechanics materials must override
+// if material returns NULL, it is not a damage mechanics material
+double *MaterialBase::GetSoftHistoryPtr(MPMBase *mptr) const { return NULL; }

@@ -25,8 +25,20 @@
 #define VSTAR_VEC 0
 #define VSTARPREV_VEC 1
 #define VSTARNEXT_VEC 2
+#define DELTA_VSTARPREV_VEC 3
+#define DELTA_VSTARNEXT_VEC 4
+#define DELTA_VSTORE_VEC 5
+
+// calculations options
+enum { INITIALIZE_XPIC=0,UPDATE_VSTAR,COPY_VSTARNEXT };
 
 class NodalPoint;
+
+// contact extrapolations
+typedef struct {
+	double cvolume;				// volume for contact
+	Vector *terms;				// array of contact vectors to extrapolate
+} ContactTerms;
 
 class MatVelocityField
 {
@@ -35,10 +47,10 @@ class MatVelocityField
 		int numberPoints;			// number of material points in this field
 		double mass;				// total mass of this field
 		Vector pk;					// momentum
-		Vector disp;				// displacement for contact calculations
-		Vector *volumeGrad;			// volume gradient allocated in multimaterial mode
-		Vector *xpic;				// For XPIC (OSParticulas) or copy momenta (nfm)
-		static int pkCopy;			// which xpic vector to store pk
+		Vector *vk;					// vk in [0], extra entries for XPIC and to copy pk
+		ContactTerms *contactInfo;	// extrapolations for contact
+	
+		static int pkCopy;			// which vk vector to store pk
 	
 		// constants (not changed in MPM time step)
 				
@@ -46,24 +58,33 @@ class MatVelocityField
         MatVelocityField(int);
 		~MatVelocityField();
 		void Zero(void);
-		
+		void ZeroContactTerms(void);
+	
 		// methods
 		void AddMomentumTask1(Vector *,Vector *,int);
 		void CopyMassAndMomentum(NodalPoint *,int,int);
         void CopyMassAndMomentumLast(NodalPoint *,int,int);
+		double GetTotalMassAndCount(void);
 		void CopyGridForces(NodalPoint *,int,int);
 		void RestoreMomenta(void);
 		void ChangeMatMomentum(Vector *,int,double);
 		void AddContactForce(Vector *);
-		void CalcVelocityForStrainUpdate(void);
-		void AddGravityAndBodyForceTask3(Vector *);
+		void GridValueCalculation(int);
+		void AddGravityAndBodyForceTask3(Vector *,double,double);
+		void AddPk(Vector *);
+		void AddPkScaled(Vector *,double);
         void AddFtot(Vector *);
         void AddFtotScaled(Vector *,double);
         void UpdateMomentum(double);
 		virtual void IncrementNodalVelAcc(double,GridToParticleExtrap *gp) const;
-	
-        // only called if ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY is defined
+		void RezeroNodeTask6(void);
+		const Vector *GetContactDispPtr(bool) const;
+		void AddContactVector(int,Vector *,double);
+		void AddContactVector(int,Vector *);
+
+#if ADJUST_COPIED_PK == 1
         void AdjustForSymmetryBC(int);
+#endif
 	
 		// accessors
 		void Describe(int) const;
@@ -71,10 +92,12 @@ class MatVelocityField
 		void SetContactVolume(double);
 		double GetContactVolume(void) const;
         Vector GetVelocity(void);
-        void SetMomentVelocityDirection(Vector *,int);
-        void AddMomentVelocityDirection(Vector *,double,int);
-        void SetFtotDirection(Vector *,double,Vector *);
-        void AddFtotDirection(Vector *,double,double,Vector *);
+		Vector *GetVStarPrev(void) const;
+	
+		// boundary conditions
+        void ZeroVelocityBC(Vector *,int,double,Vector *);
+        void AddVelocityBC(Vector *,double,int,double,Vector *);
+	
         Vector GetFtot(void) const;
         Vector *GetFtotPtr(void);
 		bool IsRigidField(void) const;
@@ -91,11 +114,13 @@ class MatVelocityField
 		static bool ActiveNonrigidSourceField(MatVelocityField *,int);
 		static bool ActiveNonrigidSeesCracksField(MatVelocityField *,bool);
 	
+		// XPIC
+		virtual void XPICSupport(int,int,NodalPoint *,double,int,int,double);
+		virtual void AddVStarNext(Vector *,Vector *,Vector *,Matrix3 *,double,double);
+
 	protected:
 		int flags;					// bitwise flags for some field properties
-		double volume;				// only for contact (cracks or multimaterial)
 
-        Vector vk;					// velocity
         Vector ftot;				// total force or contact force for rigid material
 };
 

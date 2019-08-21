@@ -31,6 +31,8 @@ SCGLHardening::SCGLHardening(MaterialBase *pair) : HardeningLawBase(pair)
 	
 	GPp=0.01e-3*UnitsController::Scaling(1.e-6);
 	GTp=-2.2e-4;
+	
+	lawID = SCGLHARDENING_ID;
 }
 
 #pragma mark LinearHardening::Initialize

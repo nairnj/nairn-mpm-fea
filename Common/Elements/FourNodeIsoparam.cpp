@@ -562,20 +562,23 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int *nds,int getDeriv,doub
 		nr = ri/dx;						// radial node number (should be an integer)
 		
 		// truncate to zero if node at negative r value
-		if(nr<-0.01) continue;
+		if(nr<-0.5) continue;
 		
 		// shape function i
 		
 		// truncate near r=0
-		if(fabs(nr)<0.01)
-			n=0;				// node at r=0
-		else if(fabs(nr-1.)<0.01)
-			n=1;				// node at r=dx
+		if(nr<0.5)
+		{	// node at r=0 (note that xp<0 never occurs and no need to check)
+			n=0;
+		}
+		else if(nr<1.5)
+		{	// node at r=dx *note that xp<-2 never occurs and no need to check)
+			n=1;
+		}
 		else
-			n=2;				// node at r>=2dx
-		
-		if(n==0 && xp<0.) cout << "#found xp<0 for n=0" << endl;
-		if(n==1 && xp<-2) cout << "#found xp<-2 for n=1" << endl;
+		{	// node at r>=2dx
+			n=2;
+		}
 		
 		// X direction with truncation
 		// note argx used below and only set for xp<-q2x (n>=2) and xp>q2x
@@ -712,6 +715,8 @@ void FourNodeIsoparam::BGimpShapeFunction(Vector *xi,int *nds,int getDeriv,doubl
 		inv_dx = 2.0 / GetDeltaX();
 		inv_dy = 2.0 / GetDeltaY();
 	}
+	double lpx2=lp.x*lp.x;
+	double lpy2=lp.y*lp.y;
 
 	int i=0;
 	for(int id=0;id<16;id++)
@@ -726,16 +731,14 @@ void FourNodeIsoparam::BGimpShapeFunction(Vector *xi,int *nds,int getDeriv,doubl
 		// shape function i
 		
 		if(xp < b1x)
-			Svpx = (9.-lp.x*lp.x-3*xp*xp)*oneTwelth;
+			Svpx = (9.-lpx2-3.*xp*xp)*oneTwelth;
 		else if(xp < b2x)
 		{	arg = xp-1.;
-			double lp2 = lp.x*lp.x;
-			double lp3 = lp2*lp.x;
-			Svpx = (9.*lp2*arg + 3.*arg*arg*arg + 3.*lp.x*(15.-xp*(6.+xp)) - lp3)*inv_size_x;
+			Svpx = (lpx2*(9.*arg-lp.x) + 3.*arg*arg*arg + 3.*lp.x*(15.-xp*(6.+xp)))*inv_size_x;
 		}
 		else if (xp <= b3x)
 		{	arg = xp-3.;
-			Svpx = (lp.x*lp.x+3.*arg*arg)*0.5*oneTwelth;
+			Svpx = (lpx2+3.*arg*arg)*0.5*oneTwelth;
 		}
 		else
 		{	arg = 3. + lp.x - xp;
@@ -743,16 +746,14 @@ void FourNodeIsoparam::BGimpShapeFunction(Vector *xi,int *nds,int getDeriv,doubl
 		}
 		
 		if(yp < b1y)
-			Svpy = (9.-lp.y*lp.y-3*yp*yp)*oneTwelth;
+			Svpy = (9.-lpy2-3.*yp*yp)*oneTwelth;
 		else if(yp < b2y)
 		{	arg = yp-1.;
-			double lp2 = lp.y*lp.y;
-			double lp3 = lp2*lp.y;
-			Svpy = (9.*lp2*arg + 3.*arg*arg*arg + 3.*lp.y*(15.-yp*(6.+yp)) - lp3)*inv_size_y;
+			Svpy = (lpy2*(9.*arg-lp.y) + 3.*arg*arg*arg + 3.*lp.y*(15.-yp*(6.+yp)))*inv_size_y;
 		}
 		else if (yp <= b3y)
 		{	arg = yp-3.;
-			Svpy = (lp.y*lp.y+3.*arg*arg)*0.5*oneTwelth;
+			Svpy = (lpy2+3.*arg*arg)*0.5*oneTwelth;
 		}
 		else
 		{	arg = 3. + lp.y - yp;
@@ -771,7 +772,7 @@ void FourNodeIsoparam::BGimpShapeFunction(Vector *xi,int *nds,int getDeriv,doubl
 				dSvpx = -0.5*xp;
 			else if(xp < b2x)
 			{	arg = xp-1.;
-				dSvpx = (3*lp.x*lp.x + 3.*arg*arg - 2.*lp.x*(3.+xp))*3.*inv_size_x;
+				dSvpx = (3*lpx2 + 3.*arg*arg - 2.*lp.x*(3.+xp))*3.*inv_size_x;
 			}
 			else if (xp <= b3x)
 				dSvpx = 0.25*(xp-3.);
@@ -784,7 +785,7 @@ void FourNodeIsoparam::BGimpShapeFunction(Vector *xi,int *nds,int getDeriv,doubl
 				dSvpy = -0.5*yp;
 			else if(yp < b2y)
 			{	arg = yp-1.;
-				dSvpy = (3*lp.y*lp.y + 3.*arg*arg - 2.*lp.y*(3.+yp))*3.*inv_size_y;
+				dSvpy = (3*lpy2 + 3.*arg*arg - 2.*lp.y*(3.+yp))*3.*inv_size_y;
 			}
 			else if (yp <= b3y)
 				dSvpy = 0.25*(yp-3.);
@@ -806,7 +807,278 @@ void FourNodeIsoparam::BGimpShapeFunction(Vector *xi,int *nds,int getDeriv,doubl
 	nds[0] = i;
 }
 
-#endif
+// get B2GIMP shape functions and optionally derivatives wrt x and y
+// assumed to be properly numbered regular array
+// input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
+void FourNodeIsoparam::BGimpShapeFunctionAS(Vector *xi,int *nds,int getDeriv,double *sfxn,
+										  double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
+{
+	int i;
+	double xp,yp,Svpx,Svpy,dSvpx,dSvpy,ysign,arg,ri,nr,Tr;
+	
+	// L is the cell spacing, 2*lpi is the current particle size (dimensionless range -1 to 1).
+	// Breakpoints on positive side of the node
+	double b1x = 1.-lp.x,b2x = 1.+lp.x,b3x = 3.-lp.x,b4x = 3.+lp.x;
+	double b1y = 1.-lp.y,b2y = 1.+lp.y,b3y = 3.-lp.y,b4y = 3.+lp.y;
+	
+	// Pre-compute expensive divisions
+	double inv_size_x = 1. / (48.*lp.x);
+	double inv_size_y = 1. / (48.*lp.y);
+	double oneTwelth = 1./12.;
+	double dx = GetDeltaX();
+	double midx = GetCenterX();
+	double dy = GetDeltaY();
+	double inv_dx = 0;
+	double inv_dy = 0;
+	if (getDeriv) {
+		inv_dx = 2.0 / dx;
+		inv_dy = 2.0 / dy;
+	}
+	double lpx2 = lp.x*lp.x;
+	double lpy2 = lp.y*lp.y;
+
+	i = 0;
+	for(int id=0;id<16;id++)
+	{	// x direction
+		xp = xi->x - gxii[id];
+		if(fabs(xp)>=b4x) continue;
+		
+		// y direction
+		yp = fabs(xi->y - geti[id]);
+		if(yp>=b4y) continue;
+		
+		// find nodal position based on node numbers and nodal column number
+		ri = midx+0.5*gxii[id]*dx;		// -1.5dx, -.5dx, +.5dx, 1.5dx  from element center
+		nr = ri/dx;						// radial node number (should be an integer when r<=2*dx in grid)
+		
+		// shape function i
+		// Particle radial position xp+2nr and radial extent xp-lp.x+2nr to xp+lp.x+2nr
+		// Because xp+2nr>=0, then always have xp > -2nr
+		// truncate if left edge<0 or xp < lp.x-2nr
+		
+		// Handle special case nodes first
+		bool truncated = false;
+		if(nr<-1.5)
+		{	// node at r=-2dx should never occur
+			continue;
+		}
+		else if(nr<-0.5)
+		{	// nodes at r = -dx (n=-1), is left edge<0
+			if(xp<2.+lp.x)
+			{	arg = lp.x+xp-2.;
+				if(xp<b3x)
+					Svpx = 0.25*(6.-arg*(8.-3.*arg))*oneTwelth;
+				else
+					Svpx = 1./(48.*arg*arg);
+				truncated = true;
+			}
+		}
+		else if(nr<0.5)
+		{	// nodes at r = 0 (n=0), is left edge<0
+			if(xp<lp.x)
+			{	arg = lp.x+xp;
+				if(xp<=b1x)
+					Svpx = 0.125*(6.-arg*arg);
+				else
+					Svpx = 0.0625*(18.-arg*(8.-arg)-1./(arg*arg));
+				truncated = true;
+			}
+		}
+		else if(nr<1.5)
+		{	// nodes at r = dx (n=1), is left edge<0
+			if(xp<-2.+lp.x)
+			{	arg = lp.x+xp+2.;
+				if(xp<=-b2x)
+					Svpx = 0.25*(6.+arg*(8.+3.*arg))*oneTwelth;
+				else
+					Svpx = 2.*arg/3. - 0.0625*(4.+2.*arg*arg-1./(arg*arg));
+				truncated = true;
+			}
+		}
+		
+		double twonix = 1./(2.*nr+xp);
+		if(!truncated)
+		{	// Seven pieces in function
+			if(xp<-b3x)
+			{	arg = 3. + lp.x + xp;
+				Tr = arg*arg*arg*inv_size_x;
+				Svpx = Tr*(1. - 0.25*(3.*(1.-lp.x)+xp)*twonix);
+			}
+			else if(xp<-b2x)
+			{	arg = xp+3.;
+				Tr = 0.5*(lpx2+3.*arg*arg)*oneTwelth;
+				Svpx = Tr + lpx2*arg*twonix*oneTwelth;
+			}
+			else if(xp<-b1x)
+			{	arg = xp+1.;
+				double arg2 = arg*arg;
+				Tr = (-lpx2*(9.*arg +lp.x) - 3.*arg2*arg + 3.*lp.x*(15.+xp*(6.-xp)))*inv_size_x;
+				Svpx = Tr + 0.25*(3.*arg2*(arg2-6.*lpx2) - lpx2*lp.x*(9.*lp.x+8.*(xp-3.)))*twonix*inv_size_x;
+			}
+			else if(xp<b1x)
+			{	Tr = (9.-lpx2 - 3.*xp*xp)*oneTwelth;
+				Svpx = Tr - 2.*lpx2*xp*twonix*oneTwelth;
+			}
+			else if(xp<b2x)
+			{	arg = xp-1.;
+				double arg2 = arg*arg;
+				Tr = (lpx2*(9.*arg-lp.x) + 3.*arg2*arg + 3.*lp.x*(15.-xp*(6.+xp)))*inv_size_x;
+				Svpx = Tr + 0.25*(3.*arg2*(6.*lpx2-arg2) + lpx2*lp.x*(9.*lp.x-8.*(xp+3.)))*twonix;
+			}
+			else if(xp<b3x)
+			{	arg = xp-3.;
+				Tr = 0.5*(lpx2+3.*arg*arg)*oneTwelth;
+				Svpx = Tr + lpx2*arg*twonix*oneTwelth;
+			}
+			else
+			{	arg = 3. + lp.x - xp;
+				Tr = arg*arg*arg*inv_size_x;
+				Svpx = Tr*(1. + 0.25*(3.*(1.-lp.x)-xp)*twonix);
+			}
+		}
+
+		if(yp < b1y)
+			Svpy = (9.-lpy2-3.*yp*yp)*oneTwelth;
+		else if(yp < b2y)
+		{	arg = yp-1.;
+			Svpy = (lpy2*(9.*arg-lp.y) + 3.*arg*arg*arg + 3.*lp.y*(15.-yp*(6.+yp)))*inv_size_y;
+		}
+		else if (yp <= b3y)
+		{	arg = yp-3.;
+			Svpy = (lpy2+3.*arg*arg)*0.5*oneTwelth;
+		}
+		else
+		{	arg = 3. + lp.y - yp;
+			Svpy = arg*arg*arg*inv_size_y;
+		}
+		
+		sfxn[i] = Svpx*Svpy;
+		
+		if(getDeriv)
+		{	// Handle truncated nodes first
+			if(truncated)
+			{	// if handle is true from above, then not need to check range again
+				if(nr<-0.5)
+				{	// nodes at r = -dx (n=-1)
+					arg = lp.x+xp-2.;
+					if(xp<b3x)
+					{	dSvpx = (2.*arg - 3.)*oneTwelth;
+						Tr = (3./arg-3.+arg)*oneTwelth;
+					}
+					else
+					{	dSvpx = -oneTwelth/(arg*arg);
+						Tr = -dSvpx;
+					}
+				}
+				else if(nr<0.5)
+				{	// nodes at r = 0 (n=0)
+					arg=lp.x+xp;
+					if(xp<=b1x)
+					{	dSvpx = -arg/3.;
+						Tr = (9./arg-arg)/6.;
+					}
+					else
+					{	dSvpx = (3. - arg*arg*(9. - 2.*arg))/(12.*arg*arg);
+						Tr = (-3.+arg*(27.-arg*(9.-arg)))/(12.*arg*arg);
+					}
+				}
+				else
+				{	// nodes at r = dx (n=1)
+					arg=lp.x+xp+2.;
+					if(xp<=-b2x)
+					{	dSvpx = (2.*arg + 3.)*oneTwelth;
+						Tr = (3./arg+3.+arg)*oneTwelth;
+					}
+					else
+					{	dSvpx = -(3.-arg*arg*(12.-4.*arg))/(12.*arg*arg);
+						Tr = (3.-arg*(6.-2.*arg*(6.-arg)))/(12.*arg*arg);
+					}
+				}
+			}
+			else
+			{	if(xp<-b3x)
+				{	arg = 3. + lp.x + xp;
+					dSvpx = arg*arg*inv_size_x*(3.-(3.-2.*lp.x+xp)*twonix);
+				}
+				else if(xp<-b2x)
+				{	dSvpx = 0.25*(xp+3.) + lpx2*oneTwelth*twonix;
+				}
+				else if(xp<-b1x)
+				{	arg = xp+1.;
+					double arg2=arg*arg;
+					dSvpx = -(3.*(3*lpx2 + 3.*arg2 - 2.*lp.x*(3.-xp))
+									+(lpx2*(2.*lp.x+9.*arg) - 3.*arg2*arg)*twonix)*inv_size_x;
+				}
+				else if(xp<b1x)
+				{	dSvpx = -0.5*xp - 2.*lpx2*oneTwelth*twonix;
+				}
+				else if(xp<b2x)
+				{	arg = xp-1.;
+					double arg2 = arg*arg;
+					dSvpx = (3.*(3*lpx2 + 3.*arg2 - 2.*lp.x*(3.+xp))
+								- (lpx2*(2.*lp.x-9.*arg) + 3.*arg*arg2)*twonix)*inv_size_x;
+				}
+				else if(xp<b3x)
+				{	dSvpx = 0.25*(xp-3.) + lpx2*oneTwelth*twonix;
+				}
+				else
+				{	arg = 3. + lp.x - xp;
+					dSvpx = -arg*arg*inv_size_x*(3.+(3.-2.*lp.x-xp)*twonix);
+				}
+				
+				// scale Tr by 1/r
+				Tr *= twonix;
+			}
+			
+			if(yp < b1y)
+				dSvpy = -0.5*yp;
+			else if(yp < b2y)
+			{	arg = yp-1.;
+				dSvpy = (3*lpy2 + 3.*arg*arg - 2.*lp.y*(3.+yp))*3.*inv_size_y;
+			}
+			else if (yp <= b3y)
+				dSvpy = 0.25*(yp-3.);
+			else
+			{	arg = 3. + lp.y - yp;
+				dSvpy = -arg*arg*3.*inv_size_y;
+			}
+			
+			xDeriv[i] = dSvpx*Svpy*inv_dx;
+			ysign = xi->y>geti[id] ? 1. : -1.;
+			yDeriv[i] = ysign*Svpx*dSvpy*inv_dy;
+			zDeriv[i] = Tr*Svpy*inv_dx;
+			if(Tr>2.) cout << Tr << "," << truncated << "," << nr << endl;
+		}
+		
+		// the node
+		i++;
+		nds[i] = nodes[0] + xoff[id]*mpmgrid.xplane + yoff[id]*mpmgrid.yplane;
+	}
+	
+	// number of nodes found - may be has high as 16 and that is OK
+	nds[0] = i;
+}
+
+// Get shape functions for exact traction calculations in 2D MPM
+void FourNodeIsoparam::GridTractionFunction(Vector *xi1,Vector *xi2,bool isAxisymmetric,double *tfxn,int *nds,double rmid,double dr) const
+{
+	// get the nodes (1 based)
+	int numnds;
+	GetNodes(&numnds,nds);
+	nds[0] = numnds;
+	
+	// get shape functions (0 based)
+	for(int i=0;i<4;i++)
+	{	tfxn[i] = 1. + 0.5*xii[i]*(xi1->x+xi2->x) + 0.5*eti[i]*(xi1->y+xi2->y)
+		+ (xii[i]*eti[i]/6.)*(2.*(xi1->x*xi1->y+xi2->x*xi2->y) + xi1->x*xi2->y + xi2->x*xi1->y);
+		if(isAxisymmetric)
+		{	tfxn[i] = rmid*tfxn[i] + dr*( xii[i]*(xi2->x-xi1->x) + eti[i]*(xi2->y-xi1->x)
+										 + xii[i]*eti[i]*(xi2->x*xi2->y - xi1->x*xi1->y) );
+		}
+	}
+}
+
+#endif		// MPM_CODE
 
 #pragma mark FourNodeIsoparam::Accessors
 

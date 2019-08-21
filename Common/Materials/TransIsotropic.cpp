@@ -37,6 +37,7 @@ TransIsotropic::TransIsotropic(char *matName,int matID) : Elastic(matName,matID)
 	kCondA=0.;
 	kCondT=0.;
 #else
+	// For FEA_CODE
     hasMatProps=FALSE;
 #endif
 	betaA=0.;
@@ -688,8 +689,10 @@ double TransIsotropic::GetKcondZ(void) const { return AxialDirection()==AXIAL_Z 
 
 // not supported yet, need to deal with aniostropi properties
 bool TransIsotropic::SupportsDiffusion(void) const
-{	return DiffusionTask::HasPoroelasticity() ? false : true; }
+{
+    return DiffusionTask::HasPoroelasticity() ? false : true;
+}
 
-#endif
+#endif	// MPM_CODE
 
 

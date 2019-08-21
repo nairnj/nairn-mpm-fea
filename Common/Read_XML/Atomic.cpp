@@ -13,7 +13,7 @@
 static char opChar[] = {' ',' ',' ',')','+','-','*','/','^','(',','};
 static const char *fxnName[] = {"sin","cos","tan","asin","acos","atan","sinh","cosh",
 						"tanh","log","log10","abs","int","sqrt","sign","exp","rand",
-						"erf","erfc","cosramp","ramp","box","sinbox","sgn"};
+						"erf","erfc","cosramp","ramp","box","sinbox","sgn","tri"};
 
 #pragma mark CONTRUCTORS AND DESTRUCTORS
 
@@ -189,6 +189,9 @@ const char *Atomic::GetFunctionName(void) const { return fxnName[fxnCode]; }
 // get variable name
 char *Atomic::GetVarName(void) const { return varname; }
 
+// first letter as number based on ASCII value from 'A' up
+int Atomic::GetVarID(void) const { return (int)varname[0]-65; }
+
 // make read only (to no delete when atom deleted)
 void Atomic::SetReadOnlyVarName(bool setting) { readOnlyVarName = setting; }
 
@@ -221,6 +224,7 @@ int Atomic::FindFunctionCode(char *fxn) const
 	if(strcmp(fxn,"box")==0) return BOX_FXN;
 	if(strcmp(fxn,"sinbox")==0) return SINBOX_FXN;
 	if(strcmp(fxn,"sgn")==0) return SGN_FXN;
+	if (strcmp(fxn, "tri") == 0) return TRI_FXN;
 	
 	return -1;
 }

@@ -17,7 +17,26 @@
 // include this to write tasks to a .log file during the calculation
 // If a crash occurs, the log file can be consulted to see where it
 // crashed in the time step
+// For quicker check, activate COUT_PROGRESS in NairnMPM.cpp
 //#define LOG_PROGRESS
+
+// Grid boundary conditions
+// When activated, the copied momenta are adjusted for BCs too (regular ones always are)
+// Set to 0 (do not adjust), 1, to adjust only those on symmetry planes, 2 to adjust all with BCs
+// If 2 is best, probably better to copy after contact and BCs are done (or not copy at all?)
+#define ADJUST_COPIED_PK 1
+
+// This option adds new terms in multimaterial mode
+// 0: no changes for contact, 1: Correction in paper applied to delta p^\alpha only, 2: future
+#define MM_XPIC 1
+
+// MOVECRACKS_EARLY: move cracks right after particle update instead of after custom tasks
+//		Issues: does it affect J calculation?
+#define MOVECRACKS_EARLY
+
+// Define this to use ASCII map to speed up expressions. This approach limited to small set
+// of single character variables, but only a small set is used here
+#define USE_ASCII_MAP
 
 // C includes
 #ifdef WINDOWS_EXE
@@ -74,7 +93,7 @@ extern int maxShapeNodes;
 #define NEED_JANDK 3
 
 // MPM method
-enum { USF_METHOD=0,USL_METHOD,USAVG_METHOD,SZS_METHOD};
+enum { USF_METHOD=0,UNUSED_METHOD,USAVG_METHOD,USL_METHOD};
         
 // analysis type
 // also defined in FEAPrefix.hpp - keep same
@@ -87,6 +106,9 @@ enum { NOGROWTH=0,GROWNOW };
 // crack velocity fields
 enum { NO_CRACK=0,ABOVE_CRACK,BELOW_CRACK};
 
+// grid value calculations
+#define VELOCITY_FOR_STRAIN_UPDATE 0
+
 // GIMP methods
 #define POINT_GIMP 0
 #define UNIFORM_GIMP 1
@@ -98,7 +120,4 @@ enum { NO_CRACK=0,ABOVE_CRACK,BELOW_CRACK};
 #define BSPLINE_GIMP 7
 #define BSPLINE 8
 #define BSPLINE_CPDI 9
-
-
-
-
+#define BSPLINE_GIMP_AS 10

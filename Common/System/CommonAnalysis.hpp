@@ -13,7 +13,7 @@
 
 #define _COMMONANALYSIS_
 
-#define NUMBER_DEVELOPMENT_FLAGS 10
+#define NUMBER_DEVELOPMENT_FLAGS 20
 
 class CommonAnalysis
 {
@@ -48,9 +48,7 @@ class CommonAnalysis
 		void SetDescription(const char *);
 		char *GetDescription(void);
 		bool IsThreeD(void);
-		static bool IsThreeD(int);
 		bool IsAxisymmetric(void);
-		static bool IsAxisymmetric(int);
 		virtual const char *MPMAugmentation(void);
 		void SetNumberOfProcessors(int);
 		int GetNumberOfProcessors(void);

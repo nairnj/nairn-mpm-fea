@@ -13,6 +13,7 @@
 
 // Global variable settings
 char *origfile=NULL;
+double minMean = 0.;
 
 #pragma mark MAIN AND INPUT PARAMETERS
 
@@ -48,6 +49,20 @@ int main(int argc, char * const argv[])
 				if(origfile!=NULL) delete [] origfile;
 				origfile=new char[strlen(parm)+1];
 				strcpy(origfile,parm);
+			}
+			
+			// ignore values with SM < 1e-(value)
+			else if(argv[parmInd][opt]=='m')
+			{	parm=NextArgument(++parmInd,argv,argc,'m');
+				if(parm==NULL) return BadOptionErr;
+				int mpow;
+				sscanf(parm,"%d",&mpow);
+				if(mpow<=0)
+				{   cerr << "CompareGlobal option 'm' must be a positive integer" << endl;
+					return BadOptionErr;
+				}
+				minMean = 2.*pow(10.,(double)(-mpow));
+				break;
 			}
 			
 			else
@@ -105,7 +120,7 @@ void Usage(const char *msg)
         "  Options:\n"
 		"    -o path            Original file name (required)\n"
 		"		                       (quoted if name has spaces)\n"
-		"  Other options\n"
+		"    -m pow             Ignore values with symmetric mean < 1.e(-pow)\n"
         "    -H (or -?)         Show this help and exit\n"
 		"\n"
           <<  endl;
@@ -281,7 +296,8 @@ void CompareGlobalFiles(const char *mpmFile,int fileIndex,int lastIndex)
 			{	stats[i][0] += diff;
 				if(diff>stats[i][1])
 					stats[i][1] = diff;
-				if(mean>0.)
+				// ignore points much smaller than mean (won't help initial points)
+				if(mean>minMean && mean>1.e-12*stats[i][4])
 				{	double relDiff = 2.*diff/mean;
 					stats[i][2] += relDiff;
 					if(relDiff>stats[i][3])
@@ -303,6 +319,8 @@ void CompareGlobalFiles(const char *mpmFile,int fileIndex,int lastIndex)
 	{	cout << "Found " << (100.*(double)nmismatches/(double)nevaluated)
 					<< "% of entries mismatched" << endl;
 	}
+	if(minMean>0.)
+		cout << "Ignore values with symmetric mean < " << 0.5*minMean << endl;
 	cout << "-----------------------------------------------------------------------------------\n";
 	cout << "Column Name          Max SM         MAE        Max AE      SMAPE (%)   Max APE (%)\n";
 	cout << "-----------------------------------------------------------------------------------\n";

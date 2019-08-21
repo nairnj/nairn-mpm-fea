@@ -84,7 +84,7 @@ void LinearInterface::PrintContactLaw(void) const
 //      the material's position is forced to pass the center of mass position by the calculated force
 // On input, fImp = Delta f_a = ma Fc/Mc - Fa
 // Inputs are: tangDel, deltaDotn, deltaDott and they refer to cod vector
-// Outputs are fImp, rawEnergy, and possibly changed depPi.
+// Outputs are fImp, rawEnergy, and possibly changed delPi.
 void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEnergy,double surfaceArea,Vector *delPi,
 												double dPDotn,double mred,Vector *tangDel,double deltaDotn,double deltaDott,double hperp) const
 {
@@ -104,7 +104,7 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
     if(Dt>=0.)
 	{	// get force and compare to maximum force
 
-		// The following code is documented in contactetc.tex in OSParticulas
+		// The following code is documented in contactetc.tex
 		double dPDott=sqrt(DotVectors(delPi,delPi));
 		double d = Dt*surfaceArea*timestep;
 		

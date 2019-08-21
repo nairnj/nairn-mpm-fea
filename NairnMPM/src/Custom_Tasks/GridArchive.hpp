@@ -42,6 +42,7 @@ class GridArchive : public CustomTask
 		double customArchiveTime,nextCustomArchiveTime;
 		bool getExtrapolations;			// flag to do extrapolations this step
 		bool doExport;					// flag to export the file this step
+		int thisMaterial;				    // archive just this material (if makes sense in subclass)
 };
 
 #endif

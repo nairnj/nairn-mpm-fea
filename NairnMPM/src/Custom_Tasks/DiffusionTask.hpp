@@ -41,7 +41,7 @@ class DiffusionTask : public TransportTask
 		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *,short,int);
 	
 		// update particles task
-		virtual TransportTask *MoveTransportValue(MPMBase *,double,double) const;
+		virtual TransportTask *MoveTransportValue(MPMBase *,double,double,double) const;
 	
         // accessors
         virtual const char *TaskName(void);

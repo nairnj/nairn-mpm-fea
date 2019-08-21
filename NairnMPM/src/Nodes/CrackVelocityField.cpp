@@ -18,6 +18,7 @@
 #include "Materials/MaterialBase.hpp"
 #include "Materials/RigidMaterial.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "Global_Quantities/BodyForce.hpp"
 
 #pragma mark INITIALIZATION
 
@@ -123,16 +124,17 @@ void CrackVelocityField::AddMomentumTask1(int matfld,Vector *addPk,Vector *vel,i
 }
 
 // Called only in task 1 - add rigid velcity
-// Uses mvf[0]->pk, mvf[0]->disp, numberPoints
+// Temporarily uses mvf[0]->pk, mvf[0]->vk[0], numberPoints
 // This only used when extrapolating rigid BCs
 void CrackVelocityField::AddRigidVelocityAndFlags(Vector *addPk,double fnmp,int setFlags)
 {
 	// save momentum if any direction is controlled
 	if(setFlags & CONTROL_ANY_DIRECTION)
-	{	AddVector(&mvf[0]->pk,addPk);
+	{	// here addPk = fnmp*vel
+		AddVector(&mvf[0]->pk,addPk);
 	
 		// add separate mass for each velocity that is set
-		Vector *rmass = &mvf[0]->disp;
+		Vector *rmass = mvf[0]->vk;
 		if(setFlags & CONTROL_X_DIRECTION) rmass->x += fnmp;
 		if(setFlags & CONTROL_Y_DIRECTION) rmass->y += fnmp;
 		if(setFlags & CONTROL_Z_DIRECTION) rmass->z += fnmp;
@@ -142,7 +144,8 @@ void CrackVelocityField::AddRigidVelocityAndFlags(Vector *addPk,double fnmp,int 
 	numberPoints |= setFlags;
 }
 
-// read and erase rigid BC info
+// Read extrapolation get the velocity
+// Restore mvf[0]->pk, mvf[0]->vk[0], and numberPoints to zero
 int CrackVelocityField::ReadAndZeroRigidVelocity(Vector *rvel)
 {
 	// if not used, return 0
@@ -152,7 +155,7 @@ int CrackVelocityField::ReadAndZeroRigidVelocity(Vector *rvel)
 	int tempFlags = numberPoints;
 	if(tempFlags & CONTROL_ANY_DIRECTION)
 	{	Vector *rpk = &mvf[0]->pk;
-		Vector *rmass = &mvf[0]->disp;
+		Vector *rmass = mvf[0]->vk;
 		if(tempFlags & CONTROL_X_DIRECTION) rvel->x = rpk->x/rmass->x;
 		if(tempFlags & CONTROL_Y_DIRECTION) rvel->y = rpk->y/rmass->y;
 		if(tempFlags & CONTROL_Z_DIRECTION) rvel->z = rpk->z/rmass->z;
@@ -175,9 +178,7 @@ void CrackVelocityField::AddMassTask1(int matfld,double mnode,int numPts) { }
 
 // Add to mass gradient (overridden in CrackVelocityFieldMulti where it is needed)
 void CrackVelocityField::AddVolumeGradient(int matfld,MPMBase *mptr,double dNdx,double dNdy,double dNdz) {}
-
-// Add to mass gradient (overridden in CrackVelocityFieldMulti where it is needed)
-void CrackVelocityField::CopyVolumeGradient(int matfld,Vector *grad) {}
+void CrackVelocityField::AddVolumeGradient(int matfld,Vector *grad) {}
 
 // Copy mass and momentum from ghost to real node
 void CrackVelocityField::CopyMassAndMomentum(NodalPoint *real)
@@ -208,6 +209,22 @@ void CrackVelocityField::CopyGridForces(NodalPoint *real)
 }
 
 #pragma mark TASK 5 METHODS
+
+// add to vStarNext
+void CrackVelocityField::AddVStarNext(int matfld,Vector *vStarPrevj,Vector *delXiMpPtr,Vector *delXjPtr,
+											 Matrix3 *Dpinv,double weight,double weightContact)
+{	mvf[matfld]->AddVStarNext(vStarPrevj,delXiMpPtr,delXjPtr,Dpinv,weight,weightContact);
+}
+
+// Get vStarPrev pointer
+Vector *CrackVelocityField::GetVStarPrev(int matfld) const
+{	return mvf[matfld]->GetVStarPrev();
+}
+
+// Get real node mass for material
+double CrackVelocityField::GetMaterialMass(int matfld) const
+{	return mvf[matfld]->mass;
+}
 
 // Increment velocity and acceleration for this material point using one velocity field which must be there
 void CrackVelocityField::IncrementDelvaTask5(int matfld,double fi,GridToParticleExtrap *gp) const
@@ -272,7 +289,7 @@ short CrackVelocityField::IncrementDelvTask8(double fi,Vector *delV,Vector *dela
 	bool hasParticles;
 	Vector totalFtot;
 	ZeroVector(&totalFtot);
-	Vector totalPk = GetCMatMomentum(hasParticles,&totalMass,&totalFtot);
+	Vector totalPk = GetCMatMomentum(hasParticles,&totalMass,&totalFtot,false);
 
 	// skip no particles
 	if(!hasParticles) return false;
@@ -285,22 +302,22 @@ short CrackVelocityField::IncrementDelvTask8(double fi,Vector *delV,Vector *dela
 	
 	// mass weighted normalization
 	*fieldMass = fi*totalMass;
-	
+
 	return true;
 }
 
 // Collect momenta and add to vector when finding CM velocity to move crack planes
 // Also increment the mass
 // return if found nonrigid points that see cracks
-bool CrackVelocityField::CollectMomentaTask8(Vector *totalPk,double *velocityMass,Vector *totalFtot) const
+bool CrackVelocityField::CollectMomentaInCrackField(Vector *totalPk,double *velocityMass,Vector *totalFtot,bool useVelocity) const
 {	bool hasParticles;
 	double fieldMass;
 	Vector fieldFtot;
 	ZeroVector(&fieldFtot);
-	Vector fieldPk = GetCMatMomentum(hasParticles,&fieldMass,totalFtot);
+	Vector fieldPk = GetCMatMomentum(hasParticles,&fieldMass,totalFtot,useVelocity);
 	if(hasParticles)
 	{	AddVector(totalPk,&fieldPk);
-		AddVector(totalFtot,&fieldFtot);
+		if(totalFtot!=NULL) AddVector(totalFtot,&fieldFtot);
 		*velocityMass += fieldMass;
 	}
 	return hasParticles;
@@ -332,17 +349,14 @@ void CrackVelocityField::MaterialContactOnCVF(MaterialContactNode *mcn,double de
 {	
 }
 
-// retrieve volume gradient for matnum (1 based) in crack field only (or zero if
-// not there or not tracked (subclass overrides)
-bool CrackVelocityField::HasVolumeGradient(int matfld) const { return FALSE; }
-
 // retrieve mass gradient (overridden in CrackVelocityFieldMulti where it is needed
 void CrackVelocityField::GetVolumeGradient(int matfld,const NodalPoint *ndptr,Vector *grad,double scale) const { ZeroVector(grad); }
 
 // Adjust vector for symmetry planes, if keepNormalized, renormalize on any change
+// Component of vector normal to symmetry plane direction is set to zero
 void CrackVelocityField::AdjustForSymmetry(NodalPoint *ndptr,Vector *norm,bool keepNormalized) const
 {
-    // if has any, have to check eachone
+    // if has any, have to check each one
     bool renormalize = false;
     if(ndptr->fixedDirection&XSYMMETRYPLANE_DIRECTION)
     {   norm->x = 0.;
@@ -366,17 +380,26 @@ void CrackVelocityField::AdjustForSymmetry(NodalPoint *ndptr,Vector *norm,bool k
 void CrackVelocityField::AddNormals(Vector *cnorm,int which)
 {	
 	AddVector(&norm[which], cnorm);
-
 }
 
-// Add displacements
-void CrackVelocityField::AddDisplacement(int matfld,double wt,Vector *pdisp)
-{	AddScaledVector(&mvf[matfld]->disp,pdisp,wt);
-}
-
-// Add volume
-void CrackVelocityField::AddVolume(int matfld,double wtVol)
+// Add displacements and position (getting different as needed)
+void CrackVelocityField::AddVolumeDisplacement(int matfld,double wtVol,double wt,Vector ppos,Vector *pdisp)
 {	mvf[matfld]->AddContactVolume(wtVol);
+	if(mpmgrid.positionIndex>=0)
+		mvf[matfld]->AddContactVector(mpmgrid.positionIndex,&ppos,wt);
+	if(mpmgrid.displacementIndex>=0)
+		mvf[matfld]->AddContactVector(mpmgrid.displacementIndex,SubVector(&ppos,pdisp),wt);
+}
+
+// Add contact terms to selected field
+void CrackVelocityField::AddContactTerms(int matfld,ContactTerms *contactInfo)
+{	if(mpmgrid.positionIndex>=0)
+		mvf[matfld]->AddContactVector(mpmgrid.positionIndex,&contactInfo->terms[mpmgrid.positionIndex]);
+	if(mpmgrid.displacementIndex>=0)
+		mvf[matfld]->AddContactVector(mpmgrid.displacementIndex,&contactInfo->terms[mpmgrid.displacementIndex]);
+	mvf[matfld]->AddContactVolume(contactInfo->cvolume);
+	if(mpmgrid.volumeGradientIndex>=0)
+		mvf[matfld]->AddContactVector(mpmgrid.volumeGradientIndex,&contactInfo->terms[mpmgrid.volumeGradientIndex]);
 }
 
 #pragma mark ACCESSORS
@@ -438,7 +461,7 @@ bool CrackVelocityField::HasPointsNonrigid(void) const { return numberPoints>0; 
 void CrackVelocityField::Describe(void) const
 {
 	cout << "# Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass(true) << " cracking mass=" << GetTotalMass(false)
-		<< " vol=" << GetVolumeTotal(NULL) << endl;
+		<< " vol=(" << GetContactVolumeNonrigid(false) << "," << GetContactVolumeNonrigid(false) << ")" << endl;
 	if(crackNum[0]>0)
 	{	cout << "#     crack 1=#" << crackNum[0] << ", loc=";
 		if(loc[0]==ABOVE_CRACK) cout << "above"; else cout << "below";
@@ -466,6 +489,14 @@ int CrackVelocityField::GetFieldNum(void) const { return fieldNum; }
 // return true if referenced field is active in this time step
 bool CrackVelocityField::ActiveField(CrackVelocityField *cvf)
 { return cvf==NULL ? false : (cvf->numberPoints>0) ; }
+
+// return true if this crack velocity field has material field active
+bool CrackVelocityField::HasActiveMatField(CrackVelocityField *cvf,int matfld)
+{	if(cvf==NULL) return false;
+	if(cvf->numberPoints<=0) return false;
+	MatVelocityField *mvf = cvf->GetMaterialVelocityField(matfld);
+	return MatVelocityField::ActiveNonrigidField(mvf);
+}
 
 // return true if referenced field is active in this time step during velocity field allocation
 bool CrackVelocityField::ActiveCrackField(CrackVelocityField *cvf)

@@ -192,13 +192,23 @@ MatPtLoadBC *MatPtLoadBC::AddMPFluxBC(double bctime)
 
 #pragma mark MatPtLoadBC:Accessors
 
-// get current position of particle
-void MatPtLoadBC::GetPosition(unordered_map<string,double> &vars)
+#ifdef USE_ASCII_MAP
+// put x,y,z,q into fixed places in array
+void MatPtLoadBC::GetPositionVars(double *vars)
+{	vars[2] = mpm[ptNum-1]->pos.x;		//x
+	vars[3] = mpm[ptNum-1]->pos.y;		//y
+	vars[4] = mpm[ptNum-1]->pos.z;		//z
+	vars[6] = mpm[ptNum-1]->GetParticleRotationZ();		//q
+}
+#else
+// put x,y,z,q into unordered map
+void MatPtLoadBC::GetPositionVars(unordered_map<string,double> vars)
 {	vars["x"] = mpm[ptNum-1]->pos.x;
 	vars["y"] = mpm[ptNum-1]->pos.y;
 	vars["z"] = mpm[ptNum-1]->pos.z;
 	vars["q"] = mpm[ptNum-1]->GetParticleRotationZ();
 }
+#endif
 
 // set value (and scale legacy N to uN, and MPa to Pa)
 void MatPtLoadBC::SetBCValue(double bcvalue)

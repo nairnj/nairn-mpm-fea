@@ -62,11 +62,13 @@ class HardeningLawBase
 	
         // accessors
         virtual const char *GetHardeningLawName(void) const = 0;
+		virtual int GetHardeningID(void) const;
     
     protected:
         double yield,yldred;
 		double yieldMin,yldredMin;
         MaterialBase *parent;
+		int lawID;
 	
 		virtual void BracketSolution(MPMBase *,int,double,Tensor *,double,double,double,
 									 double,double *,double *,HardeningAlpha *a,void *,int) const;

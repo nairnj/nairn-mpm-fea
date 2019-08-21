@@ -225,62 +225,63 @@ public class Regions
 
 				// check if this level is less than parent level
 				if(level <= currentLevel && currentPiece != null)
-				{ // climb
-						// back
-					// up
-					// the
-					// tree
+				{	// climb back up the tree
 					currentLevel = insertPriorElements(level, myXML);
 				}
 
 				switch(obj.getType())
-				{ // Standard shapes
-				case RegionPiece.RECT_OR_OVAL:
-				case RegionPiece.SHAPE_3D:
-					obj.setParent(currentPiece);
-					currentLevel = level;
-					currentPiece = obj;
-					break;
+				{	// Standard shapes
+					case RegionPiece.RECT_OR_OVAL:
+					case RegionPiece.SHAPE_3D:
+						obj.setParent(currentPiece);
+						currentLevel = level;
+						currentPiece = obj;
+						break;
 
-				// 2D Polygons
-				case RegionPiece.POLY_PT:
-					obj.setParent(currentPiece);
-					currentLevel = level;
-					currentPiece = obj;
-					String ptIndent = indent;
-					for(int ii = 0; ii < level; ii++)
-						ptIndent = ptIndent + "  ";
+					// 2D Polygons and 3D Polyhedrons
+					case RegionPiece.POLY_PT:
+						obj.setParent(currentPiece);
+						currentLevel = level;
+						currentPiece = obj;
+						String ptIndent = indent;
+						for(int ii = 0; ii < level; ii++)
+							ptIndent = ptIndent + "  ";
 
-					// loop until done
-					while (i < numPieces - 1)
-					{
-						obj = myPieces.get(i + 1);
+						// loop until done
+						while (i < numPieces - 1)
+						{	obj = myPieces.get(i + 1);
 
-						// exit if new level or not a polygon
-						if(obj.getLevel() != level || obj.getType() != RegionPiece.POLY_PT)
-							break;
+							// exit if new level or not a polygon
+							if(obj.getLevel() != level || obj.getType() != RegionPiece.POLY_PT)
+								break;
 
-						// add a polypt
-						currentPiece.appendXmlStart(ptIndent + obj.getXmlStart());
-						i++;
-					}
+							// add a polypt
+							currentPiece.appendXmlStart(ptIndent + obj.getXmlStart());
+							i++;
+						}
 
-					// skip a break piece
-					if(i < numPieces - 1 && obj.getType() == RegionPiece.END_POLYGON)
-						i++;
-					break;
+						// skip a break piece
+						if(i < numPieces - 1 && obj.getType() == RegionPiece.END_POLYGON)
+						{	// for 3D surround currentPiece with faces
+							if(doc.isMPM3D())
+							{	currentPiece.setXmlStart(ptIndent+obj.getXmlStart()+ptIndent
+									+currentPiece.getXmlStart()+ptIndent+"    </faces>\n");
+							}
+							i++;
+						}
+						break;
 
-				case RegionPiece.END_POLYGON:
-					// POLYPT_PIECE should always handle this
-					break;
+					case RegionPiece.END_POLYGON:
+						// POLYPT_PIECE should always handle this
+						break;
 
-				// non shape options (must be at level 0)
-				case RegionPiece.COMMAND_PIECE:
-					myXML.append(obj.getXmlStart());
-					break;
+						// non shape options (must be at level 0)
+					case RegionPiece.COMMAND_PIECE:
+						myXML.append(obj.getXmlStart());
+						break;
 
-				default:
-					break;
+					default:
+						break;
 				}
 
 				// next object
@@ -518,13 +519,13 @@ public class Regions
 
 			newShape.append(" start='" + doc.formatDble(arcStart) + "' end='" + doc.formatDble(arcEnd) + "'");
 			if(tolerance > 0.)
-				newShape.append(" tolerance='" + tolerance + "'");
+				newShape.append(" tolerance='" + doc.formatDble(tolerance) + "'");
 			arcStart = -1.;
 		}
 		else if(shape.equals("Line"))
 		{
 			if(arcStart > 0.)
-				newShape.append(" tolerance='" + arcStart + "'");
+				newShape.append(" tolerance='" + doc.formatDble(arcStart) + "'");
 			arcStart = -1.;
 		}
 
@@ -562,28 +563,63 @@ public class Regions
 			throw new Exception("'PolyPt' command is only allowed within a polygon sequence:\n" + args);
 
 		// this is a 2D shape
-		if(doc.isMPM3D())
-			throw new Exception("'PolyPt' command is only allowed within 2D MPM:\n" + args);
+		//if(doc.isMPM3D())
+		//	throw new Exception("'PolyPt' command is only allowed within 2D MPM:\n" + args);
 
 		// create a piece
 		RegionPiece newPiece;
 
 		// end the polygon
 		if(args.size() == 1)
-		{
-			newPiece = new RegionPiece(RegionPiece.END_POLYGON, "", "", doc);
+		{	newPiece = new RegionPiece(RegionPiece.END_POLYGON, "", "", doc);
 		}
 
-		else
-		{ // needs two arguments
+		else if(!doc.isMPM3D())
+		{ 	// 2D needs two arguments
 			if(args.size() < 3)
-				throw new Exception("'PolyPt' command has too few parameters:\n" + args);
+				throw new Exception("'PolyPt' command in 2D has too few parameters:\n" + args);
 			double x = doc.readDoubleArg(args.get(1));
 			double y = doc.readDoubleArg(args.get(2));
 
 			// add it
 			String ptStr = "    <pt x='" + doc.formatDble(x) + "' y='" + doc.formatDble(y) + "'/>\n";
 			newPiece = new RegionPiece(RegionPiece.POLY_PT, ptStr, "Polygon", doc);
+		}
+		
+		else
+		{	// 3D needs three points or (style),(details)
+			Object xval = doc.readStringOrDoubleArg(args.get(1));
+			if(xval.getClass().equals(Double.class))
+			{	if(args.size() < 4)
+					throw new Exception("'PolyPt' command in 3D has too few parameters:\n" + args);
+				double x = ((Double) xval).doubleValue();
+				double y = doc.readDoubleArg(args.get(2));
+				double z = doc.readDoubleArg(args.get(3));
+				// add it
+				String ptStr = "  "+doc.formatDble(x)+" "+doc.formatDble(y)
+								+" "+doc.formatDble(z)+"\n";
+				newPiece = new RegionPiece(RegionPiece.POLY_PT, ptStr, "Polyhedron", doc);
+			}
+			else
+			{	// box, pyramid, tripts, or trivectors
+				String style = (String)xval;
+				if(style.equals("box"))
+				{	// needs details
+					if(args.size() < 3)
+						throw new Exception("Polyhedron box needs list of points:\n" + args);
+					String details = doc.readStringArg(args.get(2));
+					if(details.length()!=8)
+						throw new Exception("Polyhedron box must specify order of corners in 8 integers:\n" + args);
+					for(int ii=0;ii<details.length();ii++)
+					{	char anum = details.charAt(ii);
+						if(anum<'1' || anum>'8')
+							throw new Exception("Polyhedron box must specify order of corners in 8 integers:\n" + args);
+					}
+					style = details;
+				}
+				style = "<faces style='"+style+"'>\n";
+				newPiece = new RegionPiece(RegionPiece.END_POLYGON, style, "", doc);
+			}
 		}
 
 		// add to BC block or current region
@@ -655,7 +691,7 @@ public class Regions
 			{
 				double tolerance = doc.readDoubleArg(args.get(7));
 				if(tolerance > 0.)
-					newShape.append(" tolerance='" + tolerance + "'");
+					newShape.append(" tolerance='" + doc.formatDble(tolerance) + "'");
 			}
 		}
 

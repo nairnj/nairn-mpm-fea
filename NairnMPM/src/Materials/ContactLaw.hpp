@@ -45,7 +45,8 @@ class ContactLaw : public MaterialBase
 		virtual void PrintContactLaw(void) const;
 	
 		// methods
-		virtual bool GetFrictionalDeltaMomentum(Vector *,Vector *,double,double,double *,double,bool,double,double,Vector *) const;
+		virtual bool GetFrictionalDeltaMomentum(Vector *,Vector *,double,double,double *,double,bool,double,
+												double,Vector *,NodalPoint *) const;
 		virtual void GetInterfaceForces(Vector *,Vector *,double *,double,Vector *,double,double,Vector *,double,double,double) const;
 		virtual double GetSslideAcDt(double,double,double,double,bool &,double) const;
 		virtual double GetTerms(double d,double m,double &sineTerm,double &sincosTerm) const;

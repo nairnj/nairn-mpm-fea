@@ -54,6 +54,8 @@ DDBHardening::DDBHardening(MaterialBase *pair) : HardeningLawBase(pair)
 	SHM0=50;			// (unitless)
 	N0=10;				// (unitless)
 	tempDepend = 0;		// option for fixed m and n or temperature dependence
+	
+	lawID = DDBHARDENING_ID;
 
 }
 

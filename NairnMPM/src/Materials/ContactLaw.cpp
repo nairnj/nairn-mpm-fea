@@ -98,7 +98,7 @@ void ContactLaw::PrintContactLaw(void) const
 //		true is returned or false if decide now not in contact
 //		*mredDelWf set to heat energy (actually mred*heat energy) (only if getHeating is true)
 bool ContactLaw::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double deltaDotn,double *mredDelWf,double mred,
-											bool getHeating,double contactArea,double deltime,Vector *delFi) const
+											bool getHeating,double contactArea,double deltime,Vector *delFi,NodalPoint *ndptr) const
 {
 	return false;
 }

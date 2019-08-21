@@ -39,3 +39,10 @@ NodalValueBC *NodalValueBC::PasteNodalValue(NodalPoint *nd)
     gTrans->gTValue = valueNoBC;
     return (NodalValueBC *)GetNextObject();
 }
+
+// initialize reaction flow at constant temperature boundary conditions
+void NodalValueBC::InitQReaction(void) { qreaction = 0.; }
+
+// add flow required to bring global nodal temperature to the BC temperature
+void NodalValueBC::SuperposeQReaction(double qflow) { qreaction += qflow; }
+

@@ -14,8 +14,8 @@ EndHeader
 
 #analysis$="Plane Strain MPM"
 Analysis #analysis$
-MPMMethod "USAVG+","uGIMP"
-Processors 4
+MPMMethod "USAVG-","uGIMP"
+Processors 12
 
 ! ********** Parameters Section **********
 #cwidth=.5				! cell width
@@ -23,15 +23,15 @@ Processors 4
 #length=150				! Length in mm (mult of cwidth)
 #depth=3				! Depth in mm (mult of cheight)
 #width=1				! Width in mm (i.e. thickness)
-#tip=100					! crack tip location
+#tip=100			    ! crack tip location
 #lmat=0					! left side material length (or <=0 to omit)
 #shift=#cheight/2		! shift specimen to move crack the element center
 
 #damp=0					! damping (<0 for feedback, >0 for global)
 #target$=".1*sign(t-20)"				! kinetic energy (microJ) determined by simulation prior to crack
-#fractionPIC=1				! amount of PIC in the simulation (0 to 1)
+#xpic=-1					! options FMPM (<0) or XPIC (<0), use FLUP (0)
 
-#endld$="rigid"	    	! "load", "rigid"
+#endld$="load"	    	! "load", "rigid"
 #rvel=100				! Single arm end velocity (mm/sec)
 
 ! isotropic material
@@ -92,15 +92,10 @@ TimeStep 1000,#maxTime
 
 ! optional damping
 if #damp<0
-  FeedbackDamping -#damp,#target$,#fractionPIC
+  FeedbackDamping -#damp,#target$
 else
-  Damping #damp,#fractionPIC
+  Damping #damp
 endif
-
-! crac propagation
-Propagate "critical err"
-Friction "none"
-MovePlane avg
 
 ! ********** MATERIALS SECTION **********
 Material "beamtop","Polymer","Isotropic"
@@ -149,6 +144,10 @@ else if #endld$="rigid"
   GlobalArchive "reactiony","rigidbot"
 endif
 
+Material "friction","Crack contact law","CoulombFriction"
+  coeff 0
+Done
+
 ! Global Archiving
 GlobalArchive "syy","beamtop"
 GlobalArchive "Grid Kinetic Energy"
@@ -157,6 +156,10 @@ if #damp<0
   GlobalArchive "alpha"
 endif
 
+! crack propagation
+Propagate "critical err"
+ContactCracks "friction"
+MovePlane avg
 
 ! ********** GRID SECTION ***********
 #ledge=#cwidth			 					! left edge extra space (mult of cwidth)
@@ -207,22 +210,25 @@ GrowCrackLine #length-#cwidth/4,-0.000001+#shift,#res,"exterior"
 
 
 ! ***** BOUNDARY CONDITION SECTION *****
-MoveLine -#cwidth,0,0,0
+GridBC
+  Line -#cwidth,0,0,0
   Velocity y,constant
-EndMoveLine
+EndGridBC
 
 ! end loads on beam arms
 if #endld$="load"
-  LoadRect #length-(#cwidth/2),#length,#shift,#depth+#shift
+  ParticleBC 
+    Rect #length-(#cwidth/2),#length,#shift,#depth+#shift
     LoadType "net"
     Load y,linear,#loadRate
     !Load y,linear,-#loadRate,#tinit
-  EndLoadRect
-  LoadRect #length-(#cwidth/2),#length,-#depth+#shift,#shift
+  EndParticleBC
+  ParticleBC
+    Rect #length-(#cwidth/2),#length,-#depth+#shift,#shift
     LoadType "net"
     Load y,linear,-#loadRate
     !Load y,linear,#loadRate,#tinit
-  EndLoadRect
+  EndParticleBC
 else if #endld$="traction"
   Stop "Use traction command instead"
 else if #endld$="rigid"
@@ -238,3 +244,13 @@ EndIf
 CustomTask ReverseLoad
 Parameter style,"abort"
 Parameter maxLength,100
+
+if #xpic!=0
+  CustomTask PeriodicXPIC
+  if #xpic>0
+    Parameter FMPMOrder,#xpic
+  else
+    Parameter XPICOrder,-#xpic
+  endif
+  Parameter "periodicSteps",1
+endif

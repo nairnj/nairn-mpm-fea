@@ -26,7 +26,7 @@ class MassAndMomentumTask : public MPMTask
 		MassAndMomentumTask(const char *);
 	
 		// required methods
-		virtual void Execute(void);
+		virtual void Execute(int);
 		int GetParticleFunctions(MPMBase *,int **,double *,double *,double *,double *);
 	
 	protected:

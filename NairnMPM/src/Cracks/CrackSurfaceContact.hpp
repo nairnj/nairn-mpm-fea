@@ -28,44 +28,29 @@ enum { NOCONTACT=0,STICK,FRICTIONLESS,FRICTIONAL,IMPERFECT_INTERFACE};
 
 enum { IN_CONTACT=0,SEPARATED };
 
-// method to find the normal (0|1|2|3)
-enum { MAXIMUM_VOLUME_GRADIENT=0,MAXIMUM_VOLUME,AVERAGE_MAT_VOLUME_GRADIENTS,EACH_MATERIALS_MASS_GRADIENT,
-		SPECIFIED_NORMAL };
-
 class CrackSurfaceContact
 {
     public:
-		static int warnLRConvergence;
+		int crackContactLawID;
+		bool crackContactByDisplacements;	// true if crack contact using displacements, false if need to adjust normal COD
+		double crackPositionCutoff;			// cut off for normal contact when using position for cracks
 	
-		int materialContactLawID,crackContactLawID;
-		ContactLaw *materialContactLaw;
-		bool hasImperfectInterface;
-		double rigidGradientBias;
-		int materialNormalMethod;
-		Vector contactNormal;
-		
         // constructors and destructors
         CrackSurfaceContact();
     
         // methods
 		short HasContact(int);
 		bool GetDeltaMomentum(NodalPoint *np,Vector *,CrackVelocityField *,CrackVelocityField *,Vector *,int,int,double,int *);
-		double MaterialSeparation(Vector *,Vector *,Vector *,Vector *,NodalPoint *);
+		double MaterialSeparation(double,double,Vector *,NodalPoint *,bool,double);
 		void Output(void);
 		void CustomCrackContactOutput(int &,int);
-		void MaterialOutput(void);
 		bool GetMoveOnlySurfaces(void) const;
 		void SetMoveOnlySurfaces(bool);
 		bool GetPreventPlaneCrosses(void) const;
 		void SetPreventPlaneCrosses(bool);
-		ContactLaw *GetMaterialContactLaw(int,int);
-		void SetContactNormal(double,double);
-	
-		void MaterialContactPairs(int);
 	
 	private:
 		ContactLaw **crackContactLaw;
-		ContactLaw ***mmContactLaw;
 		bool moveOnlySurfaces;
         bool preventPlaneCrosses;
 };

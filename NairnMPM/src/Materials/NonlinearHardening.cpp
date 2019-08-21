@@ -24,6 +24,7 @@ NonlinearHardening::NonlinearHardening(MaterialBase *pair) : HardeningLawBase(pa
 	beta = 0.;
 	npow = 1.;
 	alphaMax = 1.e50;
+	lawID = NONLINEARHARENDING_ID;
 }
 
 #pragma mark LinearHardening::Initialize

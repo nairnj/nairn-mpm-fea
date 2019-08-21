@@ -28,10 +28,8 @@ class NodalTempBC: public NodalValueBC
         // methods
  		NodalTempBC *CopyNodalValue(NodalPoint *);
 		NodalTempBC *PasteNodalValue(NodalPoint *);
-    
+	
         // reaction heat calculation
-		void InitQReaction(void);
-		void SuperposeQReaction(double);
 		NodalTempBC *AddHeatReaction(double *,int);
 	
 		// class methods
@@ -40,10 +38,6 @@ class NodalTempBC: public NodalValueBC
         // accessors
         virtual int GetSetDirection(void) const;
         virtual TransportField *GetTransportFieldPtr(NodalPoint *) const;
-	
-	protected:
-		double qreaction;
-
 };
 
 // variables (changed in MPM time step)

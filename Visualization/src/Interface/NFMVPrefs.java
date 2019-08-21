@@ -114,6 +114,18 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	public static Color meshNodesColorDef = new Color(212, 212, 212); // 0.83f,0.83f,0.83f
 	public static String textColorKey = "Text Label Color";
 	public static Color textColorDef = new Color(255, 255, 255); // 1.f,1.f,1.f
+	
+	public static String cplaneColorKey = "Crack Plane Color";
+	public static Color cplaneColorDef = new Color(0,0,0);
+	public static String caboveColorKey = "Crack Top Surface Color";
+	public static Color caboveColorDef = new Color(0,0,255);
+	public static String cbelowColorKey = "Crack Top Surface Color";
+	public static Color cbelowColorDef = new Color(255,0,0);
+	public static String dispMeshLineColorKey = "Displaced Mesh Line Color";
+	public static Color dispMeshLineColorDef = new Color(191, 191, 191); // 0.75f,0.75f,0.75f
+
+	
+	// plot colors not yed editable
 	public static String tempBCColorKey = "Temperature BC Color";
 	public static Color tempBCColorDef = Color.red;
 	public static String concBCColorKey = "Temperature BC Color";
@@ -452,7 +464,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		wellsPan.add(mlWell);
 
 		JLabel elab3 = new JLabel("Labels: ");
-		ec.insets = new Insets(10, 0, 6, 0); // tlbr
+		ec.insets = new Insets(10, 0, 0, 0); // tlbr
 		ec.anchor = GridBagConstraints.EAST;
 		ec.gridx = 0;
 		ec.weightx = 0.5;
@@ -482,6 +494,72 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		ec.weightx = 1.0;
 		wellsBag.setConstraints(npWell, ec);
 		wellsPan.add(npWell);
+
+		JLabel elab5 = new JLabel("Disp. Mesh Lines: ");
+		ec.fill = GridBagConstraints.NONE;
+		ec.anchor = GridBagConstraints.EAST;
+		ec.insets = new Insets(10, 0, 0, 0); // tlbr
+		ec.gridx = 0;
+		ec.weightx = 0.5;
+		ec.gridwidth = 1;
+		wellsBag.setConstraints(elab5, ec);
+		wellsPan.add(elab5);
+
+		JNColorWell dmlWell = new JNColorWell(getPrefColor(dispMeshLineColorKey,dispMeshLineColorDef));
+		dmlWell.addActionListener(this, "dmlColor", "Choose Displaced Mesh Line Color");
+		ec.anchor = GridBagConstraints.WEST;
+		ec.gridx = 1;
+		ec.weightx = 1.0;
+		wellsBag.setConstraints(dmlWell, ec);
+		wellsPan.add(dmlWell);
+
+		JLabel elab6 = new JLabel("Crack Planes: ");
+		ec.anchor = GridBagConstraints.EAST;
+		ec.gridx = 2;
+		ec.weightx = 0.5;
+		wellsBag.setConstraints(elab6, ec);
+		wellsPan.add(elab6);
+
+		JNColorWell cpWell = new JNColorWell(getPrefColor(cplaneColorKey,cplaneColorDef));
+		cpWell.addActionListener(this, "cpColor", "Choose Crack Plane Color");
+		ec.anchor = GridBagConstraints.WEST;
+		ec.gridx = 3;
+		ec.weightx = 1.0;
+		wellsBag.setConstraints(cpWell, ec);
+		wellsPan.add(cpWell);
+
+		JLabel elab7 = new JLabel("Above Crack Planes: ");
+		ec.fill = GridBagConstraints.NONE;
+		ec.anchor = GridBagConstraints.EAST;
+		ec.insets = new Insets(10, 0, 6, 0); // tlbr
+		ec.gridx = 0;
+		ec.weightx = 0.5;
+		ec.gridwidth = 1;
+		wellsBag.setConstraints(elab7, ec);
+		wellsPan.add(elab7);
+
+		JNColorWell caboveWell = new JNColorWell(getPrefColor(caboveColorKey,caboveColorDef));
+		caboveWell.addActionListener(this, "caboveColor", "Choose Crack Above Surface Color");
+		ec.anchor = GridBagConstraints.WEST;
+		ec.gridx = 1;
+		ec.weightx = 1.0;
+		wellsBag.setConstraints(caboveWell, ec);
+		wellsPan.add(caboveWell);
+
+		JLabel elab8 = new JLabel("Below Crack Planes: ");
+		ec.anchor = GridBagConstraints.EAST;
+		ec.gridx = 2;
+		ec.weightx = 0.5;
+		wellsBag.setConstraints(elab8, ec);
+		wellsPan.add(elab8);
+
+		JNColorWell cbelowWell = new JNColorWell(getPrefColor(cbelowColorKey,cbelowColorDef));
+		cbelowWell.addActionListener(this, "cbelowColor", "Choose Crack Below Surface Color");
+		ec.anchor = GridBagConstraints.WEST;
+		ec.gridx = 3;
+		ec.weightx = 1.0;
+		wellsBag.setConstraints(cbelowWell, ec);
+		wellsPan.add(cbelowWell);
 
 		// add plot element color wells box to pane
 		gridbag.setConstraints(wellsPan, pc);
@@ -766,6 +844,30 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		else if(theCmd.equals("npColor"))
 		{	JNColorWell cWell=(JNColorWell)e.getSource();
 			setPrefColor(meshNodesColorKey,cWell.getWellColor());
+			return;
+		}
+		
+		else if(theCmd.equals("dmlColor"))
+		{	JNColorWell cWell=(JNColorWell)e.getSource();
+			setPrefColor(dispMeshLineColorKey,cWell.getWellColor());
+			return;
+		}
+		
+		else if(theCmd.equals("cpColor"))
+		{	JNColorWell cWell=(JNColorWell)e.getSource();
+			setPrefColor(cplaneColorKey,cWell.getWellColor());
+			return;
+		}
+		
+		else if(theCmd.equals("caboveColor"))
+		{	JNColorWell cWell=(JNColorWell)e.getSource();
+			setPrefColor(caboveColorKey,cWell.getWellColor());
+			return;
+		}
+		
+		else if(theCmd.equals("cbelowColor"))
+		{	JNColorWell cWell=(JNColorWell)e.getSource();
+			setPrefColor(cbelowColorKey,cWell.getWellColor());
 			return;
 		}
 		

@@ -20,11 +20,16 @@ class Expression;
 class MPMBase;
 class NodalPoint;
 
+#define VSTAR_NOT_USED 0
+#define VSTAR_NO_CONTACT 1
+#define VSTAR_WITH_CONTACT 2
+#define FMPM_WITH_CONTACT 2
+
 class BodyForce
 {
     public:
 		double damping;				// external damping
-		bool useDamping;            // true when constant grid or grid feedback damping is on
+		bool useDamping;            // true when grid damping (alpha, feedback, or forceAlpha)
 		double dampingCoefficient;	// 1/Q in Nose-Hoover feedback damping
 		bool useFeedback;           // true when grid feedback damping is on (useDamping true too)
     
@@ -44,21 +49,23 @@ class BodyForce
     
         // methods
 		void Activate(void);
+		bool HasGridDampingForces(void);
 		void GetGridBodyForce(Vector *,Vector *,double);
-		double GetDamping(double);
-		double GetPICDamping(void);
-        double GetParticleDamping(double);
-        double GetNonPICDamping(double);
-        double GetNonPICParticleDamping(double);
+		double GetParticleDamping(double);
+		double GetGridDamping(double);
 		void Output(void);
 		void UpdateAlpha(double,double);
 		void SetTargetFunction(char *,bool);
         void SetMaxAlpha(double,bool);
 		void SetGridDampingFunction(char *,bool);
 		void SetGridBodyForceFunction(char *,int);
-		void SetFractionPIC(double);
-		double GetFractionPIC(void);
-		bool IsUsingPICDamping(void);
+	
+		void SetXPICOrder(int);
+		int GetXPICOrder(void);
+		int UsingVstar(void);
+		void SetUsingVstar(int);
+		int XPICVectors(void);
+		void SetXPICVectors(int);
 
 	private:
 		double alpha,maxAlpha;
@@ -68,10 +75,9 @@ class BodyForce
 		double palpha,maxPAlpha;
 		Expression *pgridfunction;
 		Expression *pfunction;
-
-		double fractionPIC;         // (1-beta) in my notes or alpha(PIC) = fractionPIC/dt
-		bool usePICDamping;         // true when PIC damping activated (damping and pdamping need not be true)
 		int XPICOrder;				// XPIC oder (1=normal PIC or 2 or higher for extended PIC, always 1 in NairnMPM)
+		int isUsingVstar;			// if current time step uses vstar (0=0, 1=no contact, 2=when contact)
+		int xpicVectors;			// 3 or 1 as needed
 
 		Expression *gridBodyForceFunction[3];
 };

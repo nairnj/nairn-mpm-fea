@@ -12,7 +12,7 @@ EndHeader
 ! "Plane Strain MPM" or "3D MPM"
 #analysis$="Plane Strain MPM"
 Analysis #analysis$
-MPMMethod USF,lCPDI
+MPMMethod "USL-",lCPDI
 Processors 4
 
 ! ********** Parameters Section **********
@@ -192,9 +192,10 @@ else
     Region "plug",0,0,#zwidth
       Rect #length,#length+2*#cell,0,#ywidth
     EndRegion
-    LoadLine #length+2*#cell,#cell/2,#length+2*#cell,#ywidth-#cell/2,#cell/2
+    ParticleBC
+      Line #length+2*#cell,#length+2*#cell,#cell/2,#ywidth-#cell/2,#cell/2
       Traction "x",2,"constant",-0.101
-    EndLoadLine
+    EndParticleBC
   else
     Region "rigid",1,0, #zwidth
       Rect #length,#length+#cell,-2*#cell,#ywidth+2*#cell

@@ -23,6 +23,12 @@ class ConductionTask;
 class MPMBase;
 class HardeningLawBase;
 
+// softening
+class FailureSurface;
+class SofteningLaw;
+class InitialCondition;
+enum { VARY_STRENGTH=1,VARY_TOUGHNESS,VARY_STRENGTH_AND_TOUGHNESS };
+
 #else
 
 // C is stiffness matrix and some other things
@@ -97,12 +103,14 @@ class MaterialBase : public LinkedObject
    		virtual int NumberOfHistoryDoubles(void) const;
 		virtual double GetHistory(int,char *) const;
 		double *CreateAndZeroDoubles(char *,int) const;
+        virtual void SetInitialConditions(InitialCondition *,MPMBase *,bool);
 		virtual Vector GetDamageNormal(MPMBase *,bool) const;
 	
 		virtual void FillTransportProperties(TransportProperties *);
 		virtual void SetHardeningLaw(char *);
 		virtual bool AcceptHardeningLaw(HardeningLawBase *,int);
-	
+		virtual HardeningLawBase *GetPlasticLaw(void) const;
+
 		virtual void ValidateForUse(int) const;
 		virtual void PrintTransportProperties(void) const;
         virtual void SetInitialParticleState(MPMBase *,int,int) const;
@@ -125,6 +133,7 @@ class MaterialBase : public LinkedObject
 		virtual double GetCpMinusCv(MPMBase *) const;
 		virtual double GetDiffusionCT(void) const;
         virtual void IncrementHeatEnergy(MPMBase *,double,double) const;
+		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int,Tensor *) const;
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
 		virtual double GetIncrementalResJ(MPMBase *,ResidualStrains *) const;
     	virtual Matrix3 LRGetStrainIncrement(int,MPMBase *,Matrix3,Matrix3 *,Matrix3 *,Matrix3 *,Matrix3 *) const;
@@ -178,6 +187,7 @@ class MaterialBase : public LinkedObject
 		virtual int AltStrainContains(void) const;
 		virtual double GetMaterialConcentrationSaturation(MPMBase *) const;
 		virtual double GetMGEOSXmax(double,double,double,double,double &);
+		virtual double GetMGEOSKRatio(double,double,double,double,double) const;
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif
@@ -196,8 +206,8 @@ class MaterialBase : public LinkedObject
 		virtual void IncrementThicknessStressPandDev(double,MPMBase *) const;
 	
 		// material damping
-		virtual void SetDamping(double,double);
-		virtual double GetMaterialDamping(double &,double &,double,double) const;
+		virtual void SetDamping(double);
+		virtual double GetMaterialDamping(double) const;
     
 		// for liquid contact
 		virtual double GetViscosity(double) const;
@@ -205,7 +215,15 @@ class MaterialBase : public LinkedObject
 	
         // material in cracks
         virtual int AllowsCracks(void) const;
-#endif
+
+		// for softening materials
+		virtual void SetInitiationLaw(char *);
+		virtual bool AcceptInitiationLaw(FailureSurface *,int);
+		virtual void SetSofteningLaw(char *,int);
+		virtual bool AcceptSofteningLaw(SofteningLaw *,int,int);
+		virtual double *GetSoftHistoryPtr(MPMBase *) const;
+	
+#endif	// MPM_CODE
 	
 		// class methods
 		static void PrintProperty(const char *,double,const char *);
@@ -228,17 +246,16 @@ class MaterialBase : public LinkedObject
         double avA1,avA2;               // artificial viscosity coefficients
 		TransportProperties tr;			// transport tensors
 		double diffusionCon,kCond;		// for isotropic properties
-		double diffusionCT;				// eta*alpha and eta/Q for poroelasticity
+		double diffusionCT;				// eta*alpha and eta/Q for poroelasticity, 1 for diffusion
 		ContactPair *lastFriction;
-		double matPdamping,matFractionPIC;		// particle damping
-		bool matUsePDamping;                // true it particle damping or PIC damping changed in this material
-		bool matUsePICDamping;              // true if PIC damping was set
-        int allowsCracks;					// false to ignore cracks (option ignored in multimaterial mode)
-#endif
+		double matPdamping;				// particle damping
+		bool matUsePDamping;            // true it particle damping or PIC damping changed in this material
+        int allowsCracks;				// false to ignore cracks (option ignored in multimaterial mode)
+#endif	// MPM_CODE
 	
 		// constants (changed in MPM time step)
 		double C11,C12,C13,C22,C23,C33,C44,C55,C66;
-		double S13,S23,S33;						// for generalized plane stress and strain
+		double S13,S23,S33;				// for generalized plane stress and strain
 		double CTE1,CTE2,CTE3;
 #ifdef MPM_CODE
 		double CME1,CME2,CME3;

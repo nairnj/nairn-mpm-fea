@@ -132,7 +132,7 @@ public class MPMGridBCs
 				{	String theAttrs = "<BCLine x1='" + doc.formatDble(x1) + "' y1='" + doc.formatDble(y1)
 							+ "' x2='" + doc.formatDble(x2) + "' y2='" + doc.formatDble(y2) + "'";
 					if (tolerance > 0.)
-						theAttrs = theAttrs + " tolerance='" + tolerance + "'>\n";
+						theAttrs = theAttrs + " tolerance='" + doc.formatDble(tolerance) + "'>\n";
 					else
 						theAttrs = theAttrs + ">\n";
 					doc.mpmParticleBCs.SetLoadLine(theAttrs,LOADLINE_BC,"BCLine");
@@ -260,6 +260,7 @@ public class MPMGridBCs
 	// add velocity condition
 	// Velocity (x or y or z),type,<arg1>,<arg2>
 	// Velocity (skewed),type,arg1,arg2,angle1,<angle2>
+	// Velocity (x or y or z),"gradient",velFxn,0,depth,<gradFxn>,<dispFxn>
 	public void AddVelocity(ArrayList<String> args) throws Exception
 	{	// MPM only
 		doc.requiresMPM(args);
@@ -298,10 +299,11 @@ public class MPMGridBCs
 		options.put("sine", new Integer(3));
 		options.put("cosine", new Integer(4));
 		options.put("function", new Integer(6));
+		options.put("gradient", new Integer(7));
 		int style = doc.readIntOption(args.get(2), options, "Velocity style");
 
-		// all need a arg1 except constant
-		if (style != 1 && args.size() < 4)
+		// all need an arg1 except constant
+		if(style!=1 && args.size()<4)
 			throw new Exception("'Velocity' has too few parameters:\n" + args);
 
 		// read arg1 and arg2
@@ -309,43 +311,76 @@ public class MPMGridBCs
 		String function = null;
 		boolean hasArg2 = false;
 
-		// arg1
-		if (args.size() > 3)
-		{	if (style == 6)
+		// arg1 (function or double)
+		if(args.size()>3)
+		{	if(style==6 || style==7)
 				function = doc.readStringArg(args.get(3));
 			else
 				arg1 = doc.readDoubleArg(args.get(3));
 		}
 
-		// arg2
-		if (args.size() > 4)
+		// arg2 (a double always)
+		if(args.size()>4)
 		{	hasArg2 = true;
 			arg2 = doc.readDoubleArg(args.get(4));
 		}
 
-		// angles
-		double angle1 = 0., angle2 = 0.;
-		if (dof > 10)
+		// normal is done, skewed needs one or two angles, gradient needs depth and two functions
+		double angle1=0., angle2=0., depth=0.;
+		String gradFxn = null, dispFxn = null;
+		
+		if(dof>10)
 		{	angle1 = doc.readDoubleArg(args.get(5));
-			if (args.size() > 6)
+			if(args.size()>6)
 				angle2 = doc.readDoubleArg(args.get(6));
+		}
+		else if(style==7)
+		{	// requires dof 1 to 3
+			if(dof<1 || dof>3)
+				throw new Exception("Velocity gradient conditions must in in x, y, or z directions:\n" + args);
+
+			// required depth
+			if(args.size()>5)
+				depth = doc.readDoubleArg(args.get(5));
+			else
+				throw new Exception("'Velocity' gradient requires depth parameter:\n" + args);
+			if(depth==0.)
+				throw new Exception("'Velocity' gradient depth cannot be zero:\n" + args);
+			
+			// options grad and disp functions
+			if(args.size()>6)
+				gradFxn = doc.readStringArg(args.get(6));
+			if(args.size()>7)
+				dispFxn = doc.readStringArg(args.get(7));
 		}
 
 		// add to xml
-		bcSettings.append("      <DisBC dir='" + dof + "' style='" + style + "'");
-		if (style == 6)
+		if(style==7)
+		{	bcSettings.append("      <DisBC dir='" + dof + "' style='6'");
 			bcSettings.append(" function='" + function + "'");
+			bcSettings.append(" depth='" + doc.formatDble(depth) + "'");
+			if(gradFxn!=null)
+				bcSettings.append(" gradfxn='" + gradFxn + "'");
+			if(dispFxn!=null)
+				bcSettings.append(" dispfxn='" + dispFxn + "'");
+		}
 		else
-			bcSettings.append(" vel='" + doc.formatDble(arg1) + "'");
-		if (hasArg2)
-			bcSettings.append(" time='" + doc.formatDble(arg2) + "'");
+		{	bcSettings.append("      <DisBC dir='" + dof + "' style='" + style + "'");
+			if(style==6)
+				bcSettings.append(" function='" + function + "'");
+			else
+				bcSettings.append(" vel='" + doc.formatDble(arg1) + "'");
+			if(hasArg2)
+				bcSettings.append(" time='" + doc.formatDble(arg2) + "'");
 
-		if (dof > 10)
-			bcSettings.append(" angle='" + doc.formatDble(angle1) + "'");
-		if (dof > 100)
-			bcSettings.append(" angle2='" + doc.formatDble(angle2) + "'");
+			if(dof>10)
+				bcSettings.append(" angle='" + doc.formatDble(angle1) + "'");
+			if(dof>100)
+				bcSettings.append(" angle2='" + doc.formatDble(angle2) + "'");
+		}
 
-		if (boundaryID != 0)
+		// BC ID
+		if(boundaryID!=0)
 			bcSettings.append(" id='" + boundaryID + "'");
 		bcSettings.append("/>\n");
 	}

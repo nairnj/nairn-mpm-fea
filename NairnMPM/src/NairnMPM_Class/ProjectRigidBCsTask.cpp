@@ -35,8 +35,16 @@ ProjectRigidBCsTask::ProjectRigidBCsTask(const char *name) : MPMTask(name)
 
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
-void ProjectRigidBCsTask::Execute(void)
+void ProjectRigidBCsTask::Execute(int taskOption)
 {
+#ifdef CONST_ARRAYS
+	double fn[MAX_SHAPE_NODES];
+	int ndsArray[MAX_SHAPE_NODES];
+#else
+	double fn[maxShapeNodes];
+	int ndsArray[maxShapeNodes];
+#endif
+	
 	// undo dynamic velocity, temp, and conc BCs from rigid materials
 	// and get pointer to first empty one in reuseRigid...BC
 	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
@@ -53,13 +61,16 @@ void ProjectRigidBCsTask::Execute(void)
 		int matid0 = mpmptr->MatID();
 		const MaterialBase *matID = theMaterials[matid0];				// material object for this particle
 		RigidMaterial *rigid=(RigidMaterial *)matID;
-		
+
 		const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
-		int numnds=elref->NumberNodes();
-		
+		int *nds = ndsArray;
+		elref->GetShapeFunctions(fn,&nds,mpmptr);
+		int numnds = nds[0];
+
 		double rvalue;
 		for(int i=1;i<=numnds;i++)
-		{   int mi=elref->nodes[i-1];		// 1 based node
+		{
+			int mi=nds[i];
 			
 			// look for setting function in one to three directions in rigid BC particle
 			// GetVectorSetting() returns true if function has set the velocity, otherwise it returns FALSE
@@ -133,7 +144,10 @@ void ProjectRigidBCsTask::Execute(void)
 
 // Unset nodal dof for rigid BCs so can try to reuse
 //   them without needing new memory allocations
-// No rigid BCs are deleted and when done, reuseRigidBC is set to first empty one
+// No rigid BCs are deleted and when done, reuseRigidBC is set to first empty one (excess deleted later)
+// Note that set BC will set a direction thereby preventing any dynamic BC in the same direction
+//		Thus dynamic ones should not be in the same direction
+//		Furthermore, nodal set direction will always be correct indicator of any BC (set of dynamic) on that node
 void ProjectRigidBCsTask::UnsetRigidBCs(BoundaryCondition **firstBC,BoundaryCondition **lastBC,
 										BoundaryCondition **firstRigidBC,BoundaryCondition **reuseRigidBC)
 {
@@ -184,16 +198,6 @@ void ProjectRigidBCsTask::SetRigidBCs(int mi,int matid0,int type,double value,do
 				newBC=(BoundaryCondition *)(new NodalVelBC(mi,newType,CONSTANT_VALUE,value,(double)0.,(double)0.,(double)0.));
 			}
 			((NodalVelBC *)newBC)->SetMirrorSpacing(mirrored);
-			/*
-			if(mirrored!=0)
-			{	if(type==X_DIRECTION)
-					nd[mi]->SetFixedDirection(XSYMMETRYPLANE_DIRECTION);
-				else if(type==Y_DIRECTION)
-					nd[mi]->SetFixedDirection(YSYMMETRYPLANE_DIRECTION);
-				else
-					nd[mi]->SetFixedDirection(ZSYMMETRYPLANE_DIRECTION);
-			}
-			*/
 			break;
 			
 		case TEMP_DIRECTION:
@@ -229,16 +233,16 @@ void ProjectRigidBCsTask::SetRigidBCs(int mi,int matid0,int type,double value,do
 	}
 	else
 	{	if(*reuseRigidBC!=NULL)
-	{	// next object of last BC is already set
-		// firstRigidBC is already valid
-		// advance to reuse next one (or could get to NULL if all used up)
-		*reuseRigidBC=(BoundaryCondition *)(*reuseRigidBC)->GetNextObject();
-	}
-	else
-	{	// created a new one or ran out of ones to reuse
-		(*lastBC)->SetNextObject(newBC);
-		if(*firstRigidBC==NULL) *firstRigidBC=newBC;
-	}
+		{	// next object of last BC is already set
+			// firstRigidBC is already valid
+			// advance to reuse next one (or could get to NULL if all used up)
+			*reuseRigidBC=(BoundaryCondition *)(*reuseRigidBC)->GetNextObject();
+		}
+		else
+		{	// created a new one or ran out of ones to reuse
+			(*lastBC)->SetNextObject(newBC);
+			if(*firstRigidBC==NULL) *firstRigidBC=newBC;
+		}
 	}
 	*lastBC=newBC;
 }

@@ -12,6 +12,8 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "Global_Quantities/BodyForce.hpp"
+#include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
 
 // Nodal velocity BC globals
 NodalVelBC *firstVelocityBC=NULL;
@@ -37,8 +39,8 @@ NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTi
     SetNormalVector();						// get normal vector depending on dir and angles
     ZeroVector(&freaction);
 	
-    // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
-    nd[nodeNum]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
+	// old dir==0 was skewed condition, now do by setting two velocities, thus never 0 here
+	nd[nodeNum]->SetFixedDirection(dir);		// three bits (1-8) for x, y, z or skewed in 2 or three directions
 }
 
 // Reuse Rigid properties
@@ -120,7 +122,7 @@ void NodalVelBC::SetNormalVector(void)
                               cos(PI_CONSTANT*angle1/180.));
             break;
         default:
-            throw CommonException("Invalid direction bits (should be 0x000 to 0x111).",
+            throw CommonException("Invalid direction bits (should be 0x001 to 0x111).",
                                   "NodalVelBC::SetNormalVector");
             break;
     }
@@ -163,27 +165,41 @@ BoundaryCondition *NodalVelBC::PrintBC(ostream &os)
 	return (BoundaryCondition *)GetNextObject();
 }
 
-// set to zero in x, y, or z velocity
-NodalVelBC *NodalVelBC::ZeroVelBC(double bctime,int passType)
+// Get BC value for this time step
+// superpose x, y, or z velocity
+NodalVelBC *NodalVelBC::GetCurrentBCValue(double bctime)
 {	// set if has been activated
 	int i = GetNodeNum(bctime);
-	if(i>0) nd[i]->SetMomVel(&norm,passType);
+	currentValue = i>0 ? BCValue(bctime) : 0. ;
+	return (NodalVelBC *)GetNextObject();
+}
+
+// Set to zero in x, y, or z velocity
+// For grid forces subtraction ((Ftot.norm) + (pk.norm)/deltime)*norm from current force
+// freaction will be sum over all material velocity fields for this BC only
+// freaction will be zero for second BC on same node with same norm
+// total reaction on node is sum of freaction over all BCs
+NodalVelBC *NodalVelBC::ZeroVelocityBC(double bctime,int passType)
+{	// set if has been activated
+	int i = GetNodeNum(bctime);
+	if(passType==GRID_FORCES_CALL) ZeroVector(&freaction);
+	if(i>0) nd[i]->ZeroVelocityBC(&norm,passType,timestep,&freaction);
     return (NodalVelBC *)GetNextObject();
 }
 
 // superpose x, y, or z velocity
-NodalVelBC *NodalVelBC::AddVelBC(double bctime,int passType)
+NodalVelBC *NodalVelBC::AddVelocityBC(double bctime,int passType)
 {	// set if has been activated
 	int i = GetNodeNum(bctime);
 	if(i>0)
-    {   currentValue = BCValue(bctime);
+    {	//currentValue = BCValue(bctime);
 		if(reflectedNode<0)
 		{	// scalar value in norm direction
-			nd[i]->AddMomVel(&norm,currentValue,passType);
+			nd[i]->AddVelocityBC(&norm,currentValue,passType,timestep,&freaction);
 		}
 		else
 		{	// reflect one component at a symmetry plane
-			nd[i]->ReflectMomVel(&norm,nd[reflectedNode],currentValue,reflectRatio,passType);
+			nd[i]->ReflectVelocityBC(&norm,nd[reflectedNode],currentValue,reflectRatio,passType,timestep,&freaction);
 		}
 	}
     return (NodalVelBC *)GetNextObject();
@@ -213,42 +229,11 @@ NodalVelBC *NodalVelBC::SetMirroredVelBC(double bctime)
                         
                         // found node to reflect
                         reflectedNode = mirror;
-						
 						reflectRatio = 1.;
                     }
                 }
             }
         }
-	}
-	return (NodalVelBC *)GetNextObject();
-}
-
-// Initialize ftot to -(pk.norm/deltime) norm in each material velocity field
-// freaction will be sum over all material velocity fields for this BC only
-// freaction will be zero for second BC on same node with same norm
-// total reaction on node is sum of freaction over all BCs
-NodalVelBC *NodalVelBC::InitFtotDirection(double bctime)
-{	// set if has been activated
-	int i = GetNodeNum(bctime);
-    ZeroVector(&freaction);
-	if(i>0) nd[i]->SetFtotDirection(&norm,timestep,&freaction);
-	return (NodalVelBC *)GetNextObject();
-}
-
-// superpose force in direction normal
-// add force for this BC to freaction
-NodalVelBC *NodalVelBC::SuperposeFtotDirection(double bctime)
-{	// set if has been activated
-	int i = GetNodeNum(bctime);
-	if(i>0)
-	{	if(reflectedNode<0)
-		{	// use currentValue set earlier in this step
-			nd[i]->AddFtotDirection(&norm,timestep,currentValue,&freaction);
-		}
-		else
-		{	// use reflected velocity
-			nd[i]->ReflectFtotDirection(&norm,timestep,nd[reflectedNode],currentValue,reflectRatio,&freaction);
-		}
 	}
 	return (NodalVelBC *)GetNextObject();
 }
@@ -296,58 +281,109 @@ void NodalVelBC::SetMirrorSpacing(int mirrored)
 #pragma mark NodelVelBC::Class Methods
 
 /*******************************************************************
-    Impose specified momenta at selected nodes.
-    The imposed momenta are needed before any strain update.
-	Called in Tasks 1 and 6
+ Get BC value once per time step after mass and momentum
+ update and after dynamic grid BCs are set up
+ This avoid recalculation of currentValue, which only matters
+	when it is function
 */
-void NodalVelBC::GridMomentumConditions(int passType)
+void NodalVelBC::GridVelocityBCValues(void)
 {
-    int i;
-    NodalVelBC *nextBC;
-
-#ifdef ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
-	// adjust for symmetry plane option
-	nextBC=firstVelocityBC;
+	// skip if no BCs or ot development mode that omits this calculation
+	if(firstVelocityBC==NULL) return;
+	
+	// Now zero nodes with velocity set by BC
+	NodalVelBC *nextBC=firstVelocityBC;
 	while(nextBC!=NULL)
-	{	i=nextBC->GetNodeNum();
-		if(nd[i]->fixedDirection&ANYSYMMETRYPLANE_DIRECTION)
-		{	int j;
-			for(j=0;j<maxCrackFields;j++)
-			{	if(CrackVelocityField::ActiveField(nd[i]->cvf[j]))
-					nd[i]->cvf[j]->AdjustForSymmetryBC(nd[i]);
+		nextBC = nextBC->GetCurrentBCValue(mtime);
+}
+
+/*****************************************************************************
+ Impose specified momenta, force, or velocity at selected nodes.
+ The passTypes are
+	MASS_MOMENTUM_CALL: after momentum extrapolation, use lumped mass
+		matrix method to change pk
+	GRID_FORCES_CALL: After force extrapolation, use lumped method
+		to get grid forces corresponding to lumped momentum change
+	UPDATE_MOMENTUM_CALL: after momentum update, use lumped mass matrix
+		method to change pk and ftot. It is usually small change
+		caused by contact or mirroring (might not be needed)
+	UPDATE_STRAINS_LAST_CALL: prior to USL+ or USAVG+ use lumped mass
+		matrix method to change pk
+	UPDATE_GRID_STRAINS_CALL: For FMPM(k>1) impose velocity BCs in vk[0]
+ Be sure to precheck simulations wants this calculation BEFORE calling
+*/
+void NodalVelBC::GridVelocityConditions(int passType)
+{
+	// skip in no velocity BCs
+	if(firstVelocityBC==NULL) return;
+	
+	switch(passType)
+	{	case UPDATE_GRID_STRAINS_CALL:
+			// Only called for FMPM(k>1) after grid velocities are found by XPIC
+			// BC options 0 and 1 impose BCs in these velocties now
+			VelocityBCLoop(UPDATE_GRID_STRAINS_CALL);
+			break;
+		
+		case MASS_MOMENTUM_CALL:
+		{
+#if ADJUST_COPIED_PK == 1
+			// I think this should only be done after initial extrapolation
+			// adjust for symmetry plane option
+			NodalVelBC *nextBC=firstVelocityBC;
+			while(nextBC!=NULL)
+			{	int i=nextBC->GetNodeNum();
+				if(nd[i]->fixedDirection&ANYSYMMETRYPLANE_DIRECTION)
+				{	for(int j=0;j<maxCrackFields;j++)
+					{	if(CrackVelocityField::ActiveField(nd[i]->cvf[j]))
+						nd[i]->cvf[j]->AdjustForSymmetryBC(nd[i]);
+					}
+				}
+				nextBC = (NodalVelBC *)nextBC->GetNextObject();
 			}
-		}
-		nextBC = (NodalVelBC *)nextBC->GetNextObject();
-	}
 #endif
-    
-    // Now zero nodes with velocity set by BC
-    nextBC=firstVelocityBC;
-    while(nextBC!=NULL)
-		nextBC = nextBC->ZeroVelBC(mtime,passType);
-    
-    // Now add all velocities to nodes with velocity BCs
-    nextBC=firstVelocityBC;
-    while(nextBC!=NULL)
-		nextBC = nextBC->AddVelBC(mtime,passType);
+			// no need when no strain update being done
+			if(USFTask==NULL) return;
+			
+			// Do the loop
+			VelocityBCLoop(passType);
+			break;
+		}
+		case UPDATE_STRAINS_LAST_CALL:
+		case GRID_FORCES_CALL:
+			// Here for grid forces and update strains last
+			VelocityBCLoop(passType);
+			break;
+			
+		case UPDATE_MOMENTUM_CALL:
+			// after update, momenta should be about correct
+			// may be better to repeat if contact or mirrored BCs
+			// Not sure what FMPM should do yet, so does nothing for now
+			if(bodyFrc.GetXPICOrder()<=1)
+			{	// FLIP and FMPM(1)
+				VelocityBCLoop(passType);
+			}
+			break;
+		
+		default:
+			break;
+	}
 }
 
 /**********************************************************
-    Set forces on nodes with set velocity such that
-    momentum after the update will match the BC
-    velocity (and momentum)
+	Loop of BCs zeroing and then adding BCs
+ 	Loop using specified passType
 */
-void NodalVelBC::ConsistentGridForces(void)
+void NodalVelBC::VelocityBCLoop(int passType)
 {
-    // Second set force to -p(interpolated)/timestep
-    NodalVelBC *nextBC = firstVelocityBC;
-    while(nextBC!=NULL)
-		nextBC = nextBC->InitFtotDirection(mtime);
-    
-	// Now add each superposed velocity BC at incremented time
-    nextBC=firstVelocityBC;
-    while(nextBC!=NULL)
-		nextBC = nextBC->SuperposeFtotDirection(mtime);
+	// Now zero nodes with velocity set by BC
+	NodalVelBC *nextBC=firstVelocityBC;
+	while(nextBC!=NULL)
+		nextBC = nextBC->ZeroVelocityBC(mtime,passType);
+	
+	// Now add all velocities to nodes with velocity BCs
+	nextBC=firstVelocityBC;
+	while(nextBC!=NULL)
+		nextBC = nextBC->AddVelocityBC(mtime,passType);
 }
 
 /**********************************************************
@@ -367,6 +403,3 @@ Vector NodalVelBC::TotalReactionForce(int matchID)
 	
 	return reactionTotal;
 }
-	
-
-

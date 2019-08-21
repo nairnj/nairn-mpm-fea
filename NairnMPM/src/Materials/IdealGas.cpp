@@ -96,7 +96,7 @@ void IdealGas::PrintMechanicalProperties(void) const
 // For example, ideal gas initializes to base line pressure
 void IdealGas::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 {
-    // The initial state has particle mass mp = Vp * rho at T = thermal.reference
+    // The initial state has particle mass mp = Vref * rho0 at T = thermal.reference
     // Imagine heating from T0 to T holding volume constant and find Kirchoff stress / rho0
     double Psp = -P0sp * (thermal.reference/T0);
     
@@ -106,11 +106,27 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 	sp->yy = Psp;
 	sp->zz = Psp;
     
-    // Initial particle strains are zero (because J=1)
+    // Initial particle strains are zero or define Jref=1 for undeformed particle
     
     // call super class for Cauchy Green strain
     HyperElastic::SetInitialParticleState(mptr,np,offset);
 }
+
+#pragma mark Mooney::History Data Methods
+
+// return number of bytes needed for history data
+int IdealGas::SizeOfHistoryData(void) const { return sizeof(double); }
+
+// Store J, which is calculated incrementally, and available for archiving
+// initialize to 1
+char *IdealGas::InitHistoryData(char *pchr,MPMBase *mptr)
+{	double *p = CreateAndZeroDoubles(pchr,2);
+	p[0] = 1.;
+	return (char *)p;
+}
+
+// Number of history variables
+int IdealGas::NumberOfHistoryDoubles(void) const { return 1; }
 
 #pragma mark IdealGas::Methods
 
@@ -128,19 +144,42 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
     double detf = IncrementDeformation(mptr,du,NULL,np);
 	double delV = 1. - 1./detf;
 	
+	// Get new J and save result on the particle (not really needed, by tracked for phase transitions)
+	double Jprev = mptr->GetHistoryDble(J_History,historyOffset);
+	double J = detf * Jprev;
+	mptr->SetHistoryDble(J_History,J,historyOffset);
+	
+	// store pressure strain as elastic B (only needed for phase transition materials)
+	Tensor *pB = mptr->GetAltStrainTensor() ;
+	if(np==THREED_MPM || np==AXISYMMETRIC_MPM)
+	{	double J23 = pow(J,2./3.);
+		pB->xx = J23;
+		pB->yy = J23;
+		pB->zz = J23;
+	}
+	else
+	{	pB->xx = J;
+		pB->yy = J;
+	}
+	
     // update stress (which is -P)
 	Tensor *sp=mptr->GetStressTensor();
     double mPnsp = sp->xx;
-    
+
+//#define INCREMENTAL_PSP
 	// compute specific pressure as p/rho = P0sp * (T/T0)
+#ifdef INCREMENTAL_PSP
 	// incrementally p(n+1)/rho = P0sp * (T(n+1)/T0)
 	//							= P0sp * (Tn/T0) * (T(n+1)/Tn)
-	//							= pn * (T(n+1)/Tn)
+	//							= (pn/rho) * (T(n+1)/Tn) = pn * (1+dT/Tn)
 	// (note: pPreviousTemperature is set in particle update, which will differ
 	//			in update before and after time step)
-	// double mPsp = (sp->xx/(1.-res->dT/mptr->pPreviousTemperature));
-	// (note: CpminusCv = P0/(T0 rho))
+	double mPsp = mPnsp*(1.+res->dT/mptr->pPreviousTemperature);
+#else
+	// Calculate based on current temperature
+	//   (note: CpminusCv = P0/(T0 rho))
 	double mPsp = -CpMinusCv*mptr->pPreviousTemperature;
+#endif
 
 	// artificial viscosity
 	double QAVred = 0.;

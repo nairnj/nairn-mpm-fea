@@ -65,7 +65,7 @@ class CrackHeader : public LinkedObject
 		// crack setup
 		bool addSegment(CrackSegment *,bool);
 		bool addSegmentTip(CrackSegment *, int);
-		virtual void PreliminaryCrackCalcs(double);
+		virtual void PreliminaryCrackCalcs(double,bool);
 	
 		// crack hierarchy
 		virtual bool CreateHierarchy(void);

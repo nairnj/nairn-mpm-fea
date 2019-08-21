@@ -91,7 +91,7 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
     	int flagNum=(int)(flagNumDble+0.5);
 		// must be from 0 to NUMBER_DEVELOPMENT_FLAGS-1
 		if(flagNum<0 || flagNum>=NUMBER_DEVELOPMENT_FLAGS)
-			throw SAXException("The <DevelFlag> 'Number' must be from 0 to 9");
+			throw SAXException("The <DevelFlag> 'Number' must be from 0 to 19");
 		input=INT_NUM;
 		inputPtr=(char *)&fmobj->dflag[flagNum];
     }

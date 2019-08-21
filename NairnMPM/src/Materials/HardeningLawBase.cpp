@@ -29,6 +29,9 @@ HardeningLawBase::HardeningLawBase(MaterialBase *pair)
 
 HardeningLawBase::~HardeningLawBase() {}
 
+// return law ID
+int HardeningLawBase::GetHardeningID(void) const { return lawID; }
+
 #pragma mark LinearHardening::Initialize
 
 // Read hardening law properties

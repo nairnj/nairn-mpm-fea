@@ -53,6 +53,8 @@ MaterialBase::MaterialBase(char *matName,int matID)
 	initTime=-1.;
 	initSpeed=1.;
 	diffusionCon=0.;
+	// For diffusion. Materials that support poroelasticy change it in VerifyAndLoadProps()
+	diffusionCT=1.;
     // KIexp and KIIexp are the parameters of the empirical fracture criterion:
     // (KI/KIc)^KIexp+(KII/KIIc)^KIIexp=1.
     // Set the default values to 2 for elliptical fracture locus.
@@ -74,9 +76,7 @@ MaterialBase::MaterialBase(char *matName,int matID)
     avA1 = 0.2;
     avA2 = 2.0;
 	matPdamping=0;
-	matFractionPIC=0.;
 	matUsePDamping=false;
-	matUsePICDamping=false;
     allowsCracks= true;
 #endif
 }

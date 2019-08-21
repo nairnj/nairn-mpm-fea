@@ -42,21 +42,21 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	int ndsArray[maxShapeNodes];
 	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 #endif
- 	int i,numnds;
 	Vector vel;
     Matrix3 dv;
-	
+	Tensor *gStressPtr=NULL;
+
 	// don't need to zero zDeriv for 2D planar because never used in this function
     
 	// find shape functions and derviatives
 	const ElementBase *elemRef = theElements[ElemID()];
 	int *nds = ndsArray;
 	elemRef->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,this);
-	numnds = nds[0];
-    
+	int numnds = nds[0];
+
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle and each node and the right material
-    for(i=1;i<=numnds;i++)
+    for(int i=1;i<=numnds;i++)
 	{	vel = nd[nds[i]]->GetVelocity((short)vfld[i],matFld);
         dv += Matrix3(vel.x*xDeriv[i],vel.x*yDeriv[i],vel.y*xDeriv[i],vel.y*yDeriv[i],0.);
     }
@@ -69,53 +69,82 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	
 	// pass on to material class to handle
 	ResidualStrains res = ScaledResidualStrains(secondPass);
-	PerformConstitutiveLaw(dv,strainTime,np,props,&res);
+	PerformConstitutiveLaw(dv,strainTime,np,props,&res,gStressPtr);
 }
 
 // Pass on to material class
-void MatPoint2D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void *props,ResidualStrains *res)
+void MatPoint2D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void *props,ResidualStrains *res,Tensor *gStress)
 {
     // update particle strain and stress using its constitutive law
 	const MaterialBase *matRef = theMaterials[MatID()];
-    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res,0);
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res,0,gStress);
 }
 
-// Move position (2D) (in mm)
-// First finish accEeff by subtracting ap*Vp(n), then update
-// Must be called BEFORE velocity update, because is needs vp(n) at start of timestep
-void MatPoint2D::MovePosition(double delTime,Vector *vgpn,Vector *accEff,double particleAlpha)
+// Move position and velocity (2D)
+void MatPoint2D::MoveParticle(GridToParticleExtrap *gp)
 {
-	// finish extra acceleration terms by subtractinh ap*Vp(n)
-	accEff->x -= particleAlpha*vel.x;
-	accEff->y -= particleAlpha*vel.y;
-	
-	// position change (in this code, vgpn = vgpnp1)
-	pos.x += delTime*(vgpn->x - 0.5*delTime*(acc.x - accEff->x));
-	pos.y += delTime*(vgpn->y - 0.5*delTime*(acc.y - accEff->y));
-	
-	// finish acceleration
-	acc.x += accEff->x;
-	acc.y += accEff->y;
-	
-//#define ADD_DAMPING_TO_HEAT
-#ifdef ADD_DAMPING_TO_HEAT
-	// If works: Add to all MPM classes, add option to convert damping to heat, and add to Adams-Bashforth method too
-	// This gets energy per unit mass, which I think is what is needed (otherwise, multiple Edisp by mp)
-	Vector vdamp = MakeVector(vgpnp1->x - 0.5*accExtra->x*delTime, vgpnp1->y - 0.5*accExtra->y*delTime, 0.);
-	double Edisp = delTime*(vdamp.x*accExtra->x + vdamp.y*accExtra->y);
-	const MaterialBase *matRef = theMaterials[MatID()];
-	matRef->IncrementHeatEnergy(this,,0.,Edisp);
-#endif
-}
+	// get vm = S(v-a dt) for FLIP and Sv^+ FMPM (and PIC)
+	Vector vm;
+	if(gp->m>-2)
+	{	// FLIP and XPIC(1) damps with Sv (which is initial lumped velocity)
+		vm.x = gp->Svtilde.x - gp->Sacc.x*timestep;
+		vm.y = gp->Svtilde.y - gp->Sacc.y*timestep;
+	}
+	else
+	{	// XPIC(k>1) damps by initial lumped velocity, and Svtilde holds Sv(k)
+		vm.x = gp->Svlumped.x - gp->Sacc.x*timestep;
+		vm.y = gp->Svlumped.y - gp->Sacc.y*timestep;
+	}
 
-// Move velocity (3D) (in mm/sec)
-// First get final acceleration on the particle
-//		accEff = acc - accExtra
-// Then update using Vp(n+1) = Vp(n) + accEff*dt
-void MatPoint2D::MoveVelocity(double delTime)
-{
-	vel.x += delTime*acc.x;
-	vel.y += delTime*acc.y;
+	// find Adamp0
+	Vector Adamp0;
+	Adamp0.x = gp->particleAlpha*vel.x;
+	Adamp0.y = gp->particleAlpha*vel.y;
+	
+	Vector delV;
+	if(gp->m>=0)
+	{	// FLIP update velcity change
+		delV.x = (gp->Sacc.x - Adamp0.x)*timestep;
+		delV.y = (gp->Sacc.y - Adamp0.y)*timestep;
+		
+		// velocity
+		vel.x += delV.x;
+		vel.y += delV.y;
+		
+		// position update
+		Vector delXRate;
+		delXRate.x = vm.x + 0.5*delV.x;
+		delXRate.y = vm.y + 0.5*delV.y;
+		pos.x += delXRate.x*timestep;
+		pos.y += delXRate.y*timestep;
+	}
+	else
+	{	// XPIC update
+		
+		// save initial particle velocity
+		Vector delXRate;
+		delXRate.x = vel.x;
+		delXRate.y = vel.y;
+		
+		// XPIC(k) velocity update
+		// For XPIC(1) Svtilde has Sv+, for XPIC(k>1) Svtilde has S(v(k)+a*dt)
+		vel.x = gp->Svtilde.x - Adamp0.x*timestep;
+		vel.y = gp->Svtilde.y - Adamp0.y*timestep;
+		
+		// find change in velocity
+		delV.x = vel.x - delXRate.x;
+		delV.y = vel.y - delXRate.y;
+		
+		// position update
+		delXRate.x = vm.x + 0.5*delV.x;
+		delXRate.y = vm.y + 0.5*delV.y;
+		pos.x += delXRate.x*timestep;
+		pos.y += delXRate.y*timestep;
+	}
+	
+	// J Integral needs effective particle acceleration
+	acc = MakeVector(delV.x/timestep,delV.y/timestep,0.);
+	
 }
 
 // Move rigid particle by new current velocity
@@ -275,7 +304,8 @@ Matrix3 MatPoint2D::GetElasticBiotStrain(void)
 
 // get relative volume from det J for large deformation material laws
 double MatPoint2D::GetRelativeVolume(void)
-{   double pF[3][3];
+{
+    double pF[3][3];
     GetDeformationGradient(pF);
     return pF[2][2]*(pF[0][0]*pF[1][1]-pF[1][0]*pF[0][1]);
 }
@@ -318,14 +348,69 @@ void MatPoint2D::GetSemiSideVectors(Vector *r1,Vector *r2,Vector *r3) const
 	r2->z = 0.;
 }
 
+// rescale vectors if needed in CPDI calcualtions
+void MatPoint2D::ScaleSemiSideVectorsForCPDI(Vector *r1,Vector *r2,Vector *r3) const
+{	// skip if not activated
+	if(ElementBase::rcrit<0.) return;
+	
+	// convert rcrit to dimensions based smallest dimension this element
+	Vector cellSize = theElements[ElemID()]->GetDeltaBox();
+	double rcrit = ElementBase::rcrit*fmin(cellSize.x,cellSize.y);
+	
+	bool rescale = false;
+	
+	// check r1+r2
+	Vector la = MakeVector(r1->x+r2->x, r1->y+r2->y, 0.);
+	double lamag = sqrt(la.x*la.x+la.y*la.y);
+	if(lamag>rcrit)
+	{	ScaleVector(&la,rcrit/lamag);
+		rescale = true;
+	}
+	
+	// check r1-r2
+	Vector lb = MakeVector(r1->x-r2->x, r1->y-r2->y, 0.);
+	double lbmag = sqrt(lb.x*lb.x+lb.y*lb.y);
+	if(lbmag>rcrit)
+	{	ScaleVector(&lb,rcrit/lbmag);
+		rescale = true;
+	}
+	
+	// exit if no scale
+	if(!rescale) return;
+	
+	// redefine r1 and r2
+	r1->x = 0.5*(la.x+lb.x);
+	r1->y = 0.5*(la.y+lb.y);
+	
+	r2->x = 0.5*(la.x-lb.x);
+	r2->y = 0.5*(la.y-lb.y);
+}
+
+#define ELLIPSE_METHOD_2D
 // Get distance from particle center to surface of deformed particle
 // along the provided unit vector
 double MatPoint2D::GetDeformedRadius(Vector *norm) const
-{	Vector r1,r2,r3;
+{
+#ifdef ELLIPSE_METHOD_2D
+	// unnormalized normal in undeformed config (n0x,n0y) = F^{-1}n
+	double F[3][3];
+	GetDeformationGradient(F);
+	double rdet2D = 1./(F[0][0]*F[1][1]-F[0][1]*F[1][0]);
+	double n0x =  (F[1][1]*norm->x - F[1][0]*norm->y)*rdet2D;
+	double n0y = (-F[0][1]*norm->x + F[0][0]*norm->y)*rdet2D;
+	
+	// return radius to deformed inscribed ellipse
+	// see JANOSU-014-82
+	Vector psz = GetParticleSize();
+	double rd = sqrt(n0x*n0x/(psz.x*psz.x) + n0y*n0y/(psz.y*psz.y));
+	return 1./rd;
+#else
+	Vector r1,r2,r3;
 	GetSemiSideVectors(&r1,&r2,&r3);
 	double amag = fabs(norm->x*r1.y-norm->y*r1.x);
 	double bmag = fabs(norm->x*r2.y-norm->y*r2.x);
 	return fabs(r1.x*r2.y-r1.y*r2.x)/fmax(amag,bmag);
+#endif
 }
 
 // Get undeformed size (only called by GIMP traction and Custom thermal ramp)
@@ -347,6 +432,9 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
     //      and generalize semi width lp in 1D GIMP
 	Vector r1,r2,c;
     GetSemiSideVectors(&r1,&r2,NULL);
+	
+	// rescale if needed
+	ScaleSemiSideVectorsForCPDI(&r1,&r2,NULL);
 	
     // Particle domain area is area of the full parallelogram
     // Assume positive due to orientation of initial vectors, and sign probably does not matter
@@ -482,6 +570,205 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
     }
 }
 
+// To support exact tractions get a list of elements containining the edge, the coordinates
+// of the endpoints of intersection of edge with that element, and a scaling factor normal
+// to traction and proportional to length of intersected segment.
+// On input numDnds is maximum number of elements that can be found
+// throws CommonException() if edge has left the grid
+void MatPoint2D::GetExactTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds) const
+{
+	int maxFoundElements = *numDnds;
+	
+	// get polygon vectors - these are from particle to edge
+	//      and generalize semi width lp in 1D GIMP
+	Vector r1,r2,c1,c2;
+	GetSemiSideVectors(&r1,&r2,NULL);
+	
+	// find end points of edge 1, 2, 3, or 4 and c1 and c2
+	switch(face)
+	{	case 1:
+			// lower edge 1 to 2
+			c1.x = pos.x-r1.x-r2.x;
+			c1.y = pos.y-r1.y-r2.y;
+			c2.x = pos.x+r1.x-r2.x;
+			c2.y = pos.y+r1.y-r2.y;
+			break;
+			
+		case 2:
+			// right edge 2 to 3
+			c1.x = pos.x+r1.x-r2.x;
+			c1.y = pos.y+r1.y-r2.y;
+			c2.x = pos.x+r1.x+r2.x;
+			c2.y = pos.y+r1.y+r2.y;
+			break;
+			
+		case 3:
+			// top edge 3 to 4
+			c1.x = pos.x+r1.x+r2.x;
+			c1.y = pos.y+r1.y+r2.y;
+			c2.x = pos.x-r1.x+r2.x;
+			c2.y = pos.y-r1.y+r2.y;
+			break;
+			
+		default:
+			// left edge 4 to 1
+			c1.x = pos.x-r1.x+r2.x;
+			c1.y = pos.y-r1.y+r2.y;
+			c2.x = pos.x-r1.x-r2.x;
+			c2.y = pos.y-r1.y-r2.y;
+			break;
+	}
+	c1.z = 0.;
+	c2.z = 0.;
+	
+	// Find range of elements with this edge
+	int lx,ly,lz,ux,uy,uz;
+	try
+	{	mpmgrid.FindElementCoordinatesFromPoint(&c1,lx,ly,lz);
+		mpmgrid.FindElementCoordinatesFromPoint(&c2,ux,uy,uz);
+	}
+	catch(CommonException& err)
+	{   char msg[200];
+		sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
+		throw CommonException(msg,"MatPoint2D::GetExactTractionInfo");
+	}
+	
+	// swap if needed
+	if(uy<ly)
+	{	int temp = uy;
+		uy = ly;
+		ly = temp;
+	}
+	if(ux<lx)
+	{	int temp = ux;
+		ux = lx;
+		lx = temp;
+	}
+	
+	// get edge vector
+	double ex = c2.x-c1.x;
+	double ey = c2.y-c1.y;
+	double p[4],q[4];
+	p[0] = -ex;
+	p[1] = ex;
+	p[2] = -ey;
+	p[3] = ey;
+	
+	// get normal vector in direction of the traction divided by 4 (n/4)
+	Vector tnorm;
+	double enorm;
+	switch(dof)
+	{	case 1:
+			// normal is x direction
+			tnorm = MakeVector(0.25,0.,0.);
+			break;
+		case 2:
+			// normal is y direction
+			tnorm = MakeVector(0.,0.25,0.);
+			break;
+		case N_DIRECTION:
+			// cross product of edge vector with (0,0,1) = (ey, -ex)
+			enorm = ey;
+			ey = -ex;
+			ex = enorm;
+		case T1_DIRECTION:
+			// load in direction specified by normalized (ex,ey)
+			enorm = 4.*sqrt(ex*ex+ey*ey);
+			tnorm = MakeVector(ex/enorm,ey/enorm,0.);
+			break;
+		default:
+			// normal is z direction (not used in 2D)
+			break;
+	}
+	
+	// loop over possible elements
+	int iel,iel0,foundElement=0,foundCorner=0;
+	for(int row=ly;row<=uy;row++)
+	{	// element at start of row
+		iel0 = row*(mpmgrid.yplane-1);
+		
+		for(int col=lx;col<=ux;col++)
+		{	// zero based element number
+			iel = iel0 + col;
+			ElementBase *elem = theElements[iel];
+			
+			// Liang-Barsky algorithm terms
+			q[0] = c1.x - elem->xmin;
+			q[1] = elem->xmax - c1.x;
+			q[2] = c1.y - elem->ymin;
+			q[3] = elem->ymax - c1.y;
+			
+			// check for vertical line in element, but not on the right edge
+			double t1 = 0., t2 = 1.;
+			if(p[0]==0.)
+			{	// keep only if intersects this element
+				if(c1.x<elem->xmin || c1.x>elem->xmax) continue;
+				if(p[2]<0.)
+				{	t1 = fmax(t1,q[2]/p[2]);
+					t2 = fmin(t2,q[3]/p[3]);
+				}
+				else
+				{	t1 = fmax(t1,q[3]/p[3]);
+					t2 = fmin(t2,q[2]/p[2]);
+				}
+			}
+			
+			// check for horizontal line in element, but not on the top edge
+			else if(p[2]==0.)
+			{	// keep only if intersects this element
+				if(c1.y<elem->ymin || c1.y>elem->ymax) continue;
+				if(p[0]<0.)
+				{	t1 = fmax(t1,q[0]/p[0]);
+					t2 = fmin(t2,q[1]/p[1]);
+				}
+				else
+				{	t1 = fmax(t1,q[1]/p[1]);
+					t2 = fmin(t2,q[0]/p[0]);
+				}
+			}
+			
+			// non-vertical and non-horizontal lines
+			else
+			{	for(int k=0;k<4;k++)
+				{	if(p[k]<0.)
+						t1 = fmax(t1,q[k]/p[k]);
+					else
+						t2 = fmin(t2,q[k]/p[k]);
+				}
+			}
+			
+			// line is from t1 to t2
+			if(t1>=t2) continue;				// no intersection with this element
+			
+			// Is there room?
+			if(foundElement>=maxFoundElements)
+			{   char msg[200];
+				sprintf(msg,"A Traction edge intersects more than %d elements",maxFoundElements);
+				throw CommonException(msg,"MatPoint2D::GetExactTractionInfo");
+			}
+			
+			// store element and dimensioned end points
+			cElem[foundElement] = iel;
+			corners[foundCorner] = MakeVector(c1.x + t1*p[1],c1.y + t1*p[3],0.);
+			Vector x2 = MakeVector(c1.x + t2*p[1],c1.y + t2*p[3],0.);
+			corners[foundCorner+1] = x2;
+			SubVector(&x2,&corners[foundCorner]);
+			
+			// Store weighting factor
+			// B vec n |x2-x1| / 4 for planar and vec n |x2-x1| / 4 for axisymmetric
+			// Calling code will need to add the B factor if not axisymmetric
+			CopyScaleVector(&tscaled[foundElement],&tnorm,sqrt(DotVectors2D(&x2,&x2)));
+			
+			// increment number of found elements
+			foundElement++;
+			foundCorner+=2;
+		}
+	}
+	
+	// store number of elements found
+	*numDnds = foundElement;
+}
+
 // Given face, find dimensionless coordinates of corners (2 in 2D), elements for those corners (2 in 2D),
 //     and deformed particle radii (2 in 2D)
 // Return number of corners in numDnds
@@ -495,6 +782,38 @@ Vector MatPoint2D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Ve
 	
 	// get polygon vectors - these are from particle to edge
 	GetSemiSideVectors(&r1,&r2,NULL);
+	double uGIMPsize = -1.;
+#ifndef TRACTION_ALWAYS_DEFORMED
+	switch(ElementBase::useGimp)
+	{	case UNIFORM_GIMP:
+		case UNIFORM_GIMP_AS:
+		case BSPLINE_GIMP:
+		case BSPLINE_GIMP_AS:
+		case BSPLINE:
+		case POINT_GIMP:
+		{	double rx,ry;
+			switch(face)
+			{	case 1:
+				case 3:
+					uGIMPsize = sqrt(DotVectors(&r1,&r1));
+					break;
+					
+				case 2:
+				default:
+					uGIMPsize = sqrt(DotVectors(&r2,&r2));
+					break;
+			}
+			GetUndeformedSemiSides(&rx,&ry,NULL);
+			ZeroVector(&r1);
+			ZeroVector(&r2);
+			r1.x = rx;
+			r2.y = ry;
+			break;
+		}
+		default:
+			break;
+	}
+#endif
 	
 	// handle axisymmetric
 	if(fmobj->IsAxisymmetric())
@@ -509,6 +828,8 @@ Vector MatPoint2D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Ve
 		}
 	}
 	
+	// Find positions along edge from c1 o c2
+	// The third point is node before c1
 	switch(face)
 	{	case 1:
 			// lower edge nodes 1 to 2
@@ -554,6 +875,7 @@ Vector MatPoint2D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Ve
 			c3.y = pos.y+r1.y+r2.y;
 			break;
 	}
+	c1.z=c2.z=c3.z=0.;
 	
 	// get elements and xipos for the two corners
 	try
@@ -578,11 +900,11 @@ Vector MatPoint2D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Ve
 	// get face weighting
  	// if planar then 1/2 the face area = |r|B
 	// if axisymmetric then |r| and load redge
-	double faceWt = sqrt(DotVectors(&radii[0],&radii[0]));
+	double faceWt = uGIMPsize<0. ? sqrt(DotVectors(&radii[0],&radii[0])) : uGIMPsize ;
 	if(fmobj->IsAxisymmetric())
 		*redge = pos.x - radii[1].x;
 	else
-		faceWt *= mpmgrid.GetThickness();
+		faceWt *= thickness();
 	
 	// get traction normal vector multiplied by 1/2 the face area = |r|B
 	double enorm,ex,ey;

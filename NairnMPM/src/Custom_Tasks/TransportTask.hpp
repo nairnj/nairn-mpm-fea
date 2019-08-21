@@ -46,11 +46,12 @@ class TransportTask
 		virtual void Task1ContactReduction(NodalPoint *,NodalPoint *);
 		virtual TransportTask *GetTransportNodalValue(NodalPoint *);
 		virtual void GetContactNodalValue(NodalPoint *);
-		virtual void ImposeValueBCs(double);
+		virtual void ImposeValueBCs(double,bool);
+		virtual TransportTask *SetTransportForceAndFluxBCs(double);
 		virtual TransportTask *GetGradients(double);
 		virtual void ZeroTransportGradients(MPMBase *) = 0;
-		virtual void ZeroTransportContactGradients(MPMBase *);
 		virtual void AddTransportGradients(MPMBase *,Vector *,NodalPoint *,short) = 0;
+		virtual void ZeroTransportContactGradients(MPMBase *);
 		virtual void AddTransportContactGradients(MPMBase *,Vector *,NodalPoint *,short);
 	
 		// find forces for transport calculation
@@ -58,16 +59,15 @@ class TransportTask
 		virtual void AddContactForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *,short,int);
         virtual TransportTask *ForcesReduction(NodalPoint *,NodalPoint *);
 		virtual void ForcesContactReduction(NodalPoint *,NodalPoint *);
-		virtual TransportTask *SetTransportForceBCs(double);
 		virtual void AddFluxCondition(NodalPoint *,double,bool);
 		
 		// update momentum task and contact flow
-		virtual TransportTask *GetTransportRates(NodalPoint *,double);
+		virtual TransportTask *UpdateTransport(NodalPoint *,double);
 		virtual void TransportContactRates(NodalPoint *,double);
 		
 		// update particles task
-		virtual TransportTask *IncrementTransportRate(NodalPoint *,double,double &,short,int) const;
-		virtual TransportTask *MoveTransportValue(MPMBase *,double,double) const;
+		virtual double IncrementTransportRate(NodalPoint *,double,short,int) const;
+		virtual TransportTask *MoveTransportValue(MPMBase *,double,double,double) const;
 	
 		// update particle strains
 		virtual double IncrementValueExtrap(NodalPoint *,double,short,int) const;
@@ -98,7 +98,7 @@ class TransportTask
 		// static methods
 		static void GetTransportValues(NodalPoint *);
 		static void TransportBCsAndGradients(double);
-		static void GetTransportRatesOnNode(NodalPoint *);
+		static void UpdateTransportOnGrid(NodalPoint *);
 		static void TransportForceBCs(double);
 
 };

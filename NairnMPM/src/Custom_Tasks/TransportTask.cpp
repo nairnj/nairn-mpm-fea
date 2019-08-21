@@ -5,49 +5,63 @@
     Created by John Nairn on 7/18/06.
     Copyright (c) 2006 John A. Nairn, All rights reserved.
  
-	Transport calculations
-   -------------------------
-    Prepare for Calculations
-		Verify time step for all cells and transport properties (TransportTimeStepFactor())
-		Call Initialize() - allocate particle gradients, print details, and other needs
-	Initialization:
-		Set gTValue, gVCT, and gQ on node to zero;
-	Mass and Momentum Task
-		Extrapolate gTValue, gVCT (Task1Extrapolation())
-			If contact implemented, add extrapolations m... and c...
-		In reduction, copy gTValue and gV from ghost to real (Task1Reduction())
-			If contact implemented, add extrapolations m... and c...
-		Post Extrapolation Task
-			Divide gTvale by gVCT (GetTransportNodalValue())
-				If contact implemented, get values m... and c...
-			Impose grid Tvalue BCs (ImposeValueBCs())
-				If contact implemented, apply to m... and c...
-			Find grad Tvalue on particles (GetGradients(), ZeroTransportGradients(), AddTransportGradients())
-				If contact implemented, get for m... and c...
-	Update strains first (if used)
-		Read changes in value to input to constitutive laws
+ 	Transport Calculations with FMPM Option
+   ------------------------------------------
+ 	Prepare for Calculations
+ 		Verify time step for all cells and transport properties (TransportTimeStepFactor())
+ 		Call Initialize() - allocate tranport data (pTemp and pDiffusion), print details, and other needs
+ 	Initialization:
+ 		Set gTValue, gVCT, and gQ on node to zero (in gDiff and gCond)
+ 	Mass and Momentum Task
+ 		Extrapolate gTValue, gVCT (Task1Extrapolation())
+ 			If contact implemented, add extrapolations m... and c...
+		In reduction, copy gTValue and gVCT from ghost to real (Task1Reduction())
+ 			If contact implemented, add extrapolations m... and c...
+	Post M&M Extrapolation Task
+		Divide gTValue by gVCT (GetTransportValues() -> GetTransportNodalValues())
+			If contact implemented, get values m... and c...
+ 		Call TransportBCsAndGradients()
+ 			Copy no BC value and impose grid Tvalue BCs (ImposeValueBCs())
+ 				If contact implemented, apply to m... and c...
+ 			Find grad Tvalue on particles (GetGradients(), ZeroTransportGradients(), AddTransportGradients())
+ 				If contact implemented, get gradients for m... and c...
+		Paste back initial gTValue (but only done in FMPM version, even if using FLIP it that version?)
+ 	Update strains first (if used)
+ 		Read changes in value to input to constitutive laws
  	Grid Forces Task
-		Add transport force to gQ (AddForces())
-			If contact implemented, add for m... and c...
-		Material point classes must return force give gradient and gradient shape functinos
-		In reduction, copy gQ from ghost to real (Task1Reduction())
-			If contact implemented, add extrapolations m... and c...
-		Post Forces Task
-			Finish grid BCs and impose flux BCs in gQ (SetTransportForceBCs())
-				If contact implemented, impose in m... and c...
+ 		Add transport force to gQ (AddForces())
+ 			If contact implemented, add for m... and c...
+ 			Material point classes must return force given gradient and gradient shape functinos
+ 		In reduction, copy gQ from ghost to real (Task1Reduction())
+ 			If contact implemented, add extrapolations m... and c...
+	Post Forces Task
+ 		Old Method
+ 			Impose force (grid BC in gQ) and add flux BCs (SetTransportForceAndFluxBCs())
+ 				If contact implemented, add for m... and c... (only in force part)
+ 		FMPM Method
+ 			Impose only flux BCs in gQ (SetTransportFluxBCs())
  	Update Momenta Task
-		Divide gQ by gVCT to get transport rates (GetTransportRates()) and update nodal value
-			If contact implemented, get rates in m... and c...
-	Update Particles Task
-        Each particle: zero rate and value, extrapolate both from nodes to particle
-		Find d(value) from change in extrapolated value (GetDeltaValue())
-		Update particle value using rate (MoveTransportRate())
-		Special Tasks: conduction does adiabatic heating, energy, entropy, and phase transitions
-			poroelasticity does adiabatic pressure
-		Store d(value) on particle for input to next strain updates
-	Update strains last (if used and if second extrapolation)
-		Read changes in value to input to constitutive laws
- 
+ 		Divide gQ by gVCT to get transport rates (UpdateTransport()) and update nodal value
+ 			If contact implemented, get rates in m... and c...
+ 		FMPM approach onlu
+ 			Impose grid BCs (ImposeValueGridBCs(UPDATE_MOMENTUM_CALL))
+ 				This is lumped mass matrix preliminary calculations
+ 	XPIC/FMPM Calculations
+ 		Calculate gTstar = Sum gTk starting with gTk = m*gTValue
+ 	Update Particles Task
+ 		Copy gTstar to gTValue (if order>1)
+ 			Impose grid BCs (ImposeValueBCs(time,false)) (optional)
+ 		Each particle: zero rate and value, extrapolate both from nodes to particle
+ 		Find d(value) from change in extrapolated value (GetDeltaValue())
+ 		Update particle value using rate (MoveTransportValue())
+ 		Special Tasks: conduction does adiabatic heating, energy, entropy, and phase transitions
+ 			poroelasticity does adiabatic pressure
+ 		Store d(value) on particle for input to next strain updates
+ 		Find grad Tvalue on particles (GetGradients(), ZeroTransportGradients(), AddTransportGradients())
+ 			If contact implemented, get for m... and c...
+ 	Update strains last (if used and if second extrapolation)
+ 		Read changes in value to input to constitutive laws
+
 	Material Point class support
 		Place to store pTValue, pPreviousTValue, and extraolated gradient
 		Allocate memory for extrapolated gradient (1 or 2 more gradients if contact implemented)
@@ -75,10 +89,11 @@
 #include "Boundary_Conditions/NodalValueBC.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 
+// Task list
 TransportTask *transportTasks=NULL;
 
 // true if either conduction or diffusion are doing contact calculations
-bool TransportTask::hasContactEnabled=false;
+bool TransportTask::hasContactEnabled = false;
 
 #pragma mark INITIALIZE
 
@@ -132,17 +147,20 @@ TransportTask *TransportTask::GetTransportNodalValue(NodalPoint *ndptr)
 void TransportTask::GetContactNodalValue(NodalPoint *ndptr) {}
 
 // Task 1b - impose grid-based transport value BCs
-void TransportTask::ImposeValueBCs(double stepTime)
+void TransportTask::ImposeValueBCs(double stepTime,bool copyFirst)
 {
     int i;
+	NodalValueBC *nextBC;
     
     // Copy no-BC transport value
-    NodalValueBC *nextBC = GetFirstBCPtr();
-    while(nextBC!=NULL)
-    {   i = nextBC->GetNodeNum(stepTime);
-        if(i!=0) nextBC->CopyNodalValue(nd[i]);
-        nextBC = (NodalValueBC *)nextBC->GetNextObject();
-    }
+	if(copyFirst)
+	{	nextBC = GetFirstBCPtr();
+		while(nextBC!=NULL)
+		{   i = nextBC->GetNodeNum(stepTime);
+			if(i!=0) nextBC->CopyNodalValue(nd[i]);
+			nextBC = (NodalValueBC *)nextBC->GetNextObject();
+		}
+	}
     
     // Zero them all
     nextBC = GetFirstBCPtr();
@@ -206,10 +224,10 @@ TransportTask *TransportTask::GetGradients(double stepTime)
 		}
 		catch(CommonException& err)
 		{   if(transErr!=NULL)
-		{
+			{
 #pragma omp critical (error)
-			transErr = new CommonException(err);
-		}
+				transErr = new CommonException(err);
+			}
 		}
 	}
 	
@@ -217,7 +235,6 @@ TransportTask *TransportTask::GetGradients(double stepTime)
 	if(transErr!=NULL) throw *transErr;
 	return nextTask;
 }
-
 
 // Zero gradients on the particles for contact calculations (overridden by contact classes)
 void TransportTask::ZeroTransportContactGradients(MPMBase *mptr) {}
@@ -258,14 +275,13 @@ void TransportTask::AddFluxCondition(NodalPoint *ndptr,double extraFlux,bool pos
 // adjust forces at grid points with concentration BCs to have rates be correct
 // to carry extrapolated concentrations (before impose BCs) to the correct
 // one selected by grid based BC
-TransportTask *TransportTask::SetTransportForceBCs(double deltime)
+TransportTask *TransportTask::SetTransportForceAndFluxBCs(double deltime)
 {
-	int i;
-	TransportField *gTrans;
-	
 	// --------- consistent forces for grid transport BCs ------------
 	// note that conducution overrides and gets reaction energy
-	
+	int i;
+	TransportField *gTrans;
+
 	// Paste back noBC transport value
 	NodalValueBC *nextBC = GetFirstBCPtr();
 	while(nextBC!=NULL)
@@ -307,7 +323,7 @@ TransportTask *TransportTask::SetTransportForceBCs(double deltime)
 #pragma mark UPDATE MOMENTA TASK AND CONTACT FLOW
 
 // Get transport rate but active nodes only
-TransportTask *TransportTask::GetTransportRates(NodalPoint *ndptr,double deltime)
+TransportTask *TransportTask::UpdateTransport(NodalPoint *ndptr,double deltime)
 {	if(ndptr->NodeHasNonrigidParticles())
 	{	TransportField *gTrans = GetTransportFieldPtr(ndptr);
 		gTrans->gQ /= gTrans->gVCT;
@@ -323,16 +339,15 @@ void TransportTask::TransportContactRates(NodalPoint *ndptr,double deltime) {}
 #pragma mark UPDATE PARTICLES TASK
 
 // increment temperature rate on the particle
-TransportTask *TransportTask::IncrementTransportRate(NodalPoint *ndptr,double shape,double &rate,short vfld,int matfld) const
+double TransportTask::IncrementTransportRate(NodalPoint *ndptr,double shape,short vfld,int matfld) const
 {	TransportField *gTrans = GetTransportFieldPtr(ndptr);
-	rate += gTrans->gQ*shape;
-	return nextTask;
+	return gTrans->gQ*shape;
 }
 
 // increment particle concentration (time is always timestep)
-TransportTask *TransportTask::MoveTransportValue(MPMBase *mptr,double deltime,double rate) const
+TransportTask *TransportTask::MoveTransportValue(MPMBase *mptr,double deltime,double rate,double value) const
 {   double *pValue = GetParticleValuePtr(mptr);
-    *pValue += deltime*rate;
+	*pValue += deltime*rate;
     return nextTask;
 }
 
@@ -373,31 +388,31 @@ void TransportTask::GetTransportValues(NodalPoint *ndptr)
 // Impose transport BCs and extrapolate gradients to the particles
 void TransportTask::TransportBCsAndGradients(double bctime)
 {
+	// impose BCs in lumped capacity values
+	// and get gradients from lumped capacity values
 	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
-	{   nextTransport->ImposeValueBCs(bctime);
+	{   nextTransport->ImposeValueBCs(bctime,true);
 		nextTransport = nextTransport->GetGradients(bctime);
 	}
 }
 
-// Get grid transport rates during momentum update
-// The transport properties are updated when particle state updated
-// (do first so both material and crack contact will have actual rates)
-void TransportTask::GetTransportRatesOnNode(NodalPoint *ndptr)
-{
-	TransportTask *nextTransport=transportTasks;
-	while(nextTransport!=NULL)
-		nextTransport = nextTransport->GetTransportRates(ndptr,timestep);
-
-}
-
-
 // Set transport BCs (not parallel because small and possible use of function/global variables)
 void TransportTask::TransportForceBCs(double dtime)
 {
+    TransportTask *nextTransport=transportTasks;
+    while(nextTransport!=NULL)
+        nextTransport=nextTransport->SetTransportForceAndFluxBCs(dtime);
+}
+
+// Called suring the momentum update
+// Get grid transport rates and updated value (lumped mass matrix method)
+// For contact, do material and crack contact updates too
+void TransportTask::UpdateTransportOnGrid(NodalPoint *ndptr)
+{
 	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
-		nextTransport=nextTransport->SetTransportForceBCs(dtime);
-
+		nextTransport = nextTransport->UpdateTransport(ndptr,timestep);
 }
+
 

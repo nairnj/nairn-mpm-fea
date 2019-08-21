@@ -22,7 +22,7 @@ EndHeader
 
 ! "force" or "traction" or "rigid" or "contact"
 ! Tries to load to approximate #maxStrain (%)
-#style$="contact"
+#style$="traction"
 ! may need small #factor and faster loading to get high tension
 #maxstrain=-10				
 
@@ -47,13 +47,13 @@ EndHeader
 ! mesh details
 #cell=2
 #border=3
-#rconfine$="no"				! yes to fix outer radius
+#rconfine$="yes"				! yes to fix outer radius
 
 ! ********** Calculations Section **********
 
 ! Start analysis
 Analysis "Axisymmetric MPM"
-MPMMethod USAVG,#method$
+MPMMethod "USAVG+",#method$
 
 ! convert to contact
 if #style$="contact"
@@ -178,7 +178,8 @@ else if #style$="contact"
     Rect 0,#Ro+#border*#cell,#length,#length+2*#cell
   EndRegion
 else
-  LoadLine 0,#length,#Ro,#length,#cell/2
+  ParticleBC
+    Line 0,#Ro,#length,#length,#cell/2
     if #style$="force"
       ! #stress*pi*(#cell/2)*2*rp/(2*pi) = #stress*#cell*rp/2
       #pfrc = (#stress*#cell/(2*#ramp))&"*x*(t-(t-"&#ramp&")*sign(t-"&#ramp&"))"
@@ -187,13 +188,14 @@ else
       Traction y,3,linear,#stress/#ramp
       Traction y,3,linear,-#stress/#ramp,#ramp
     endif
-  EndLoadLine
+  EndParticleBC
 endif
 
 if #rconfine$="yes"
-  MoveLine #Ro+#cell/2,-(#border+1)*#cell,#Ro+#cell/2,#length+(#extra+1)*#cell,0.55*#cell
+  GridBC
+    Line #Ro+#cell/2,#Ro+#cell/2,-(#border+1)*#cell,#length+(#extra+1)*#cell,0.55*#cell
     Velocity x,constant,0
-  EndMoveLine
+  EndGridBC
 endif
 
 ! archive grid contact forces
@@ -203,4 +205,3 @@ if #style$="contact"
   Parameter "stress"
   Parameter "strain"
 endif
-

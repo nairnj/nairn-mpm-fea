@@ -21,6 +21,7 @@ int nelems=0;			// number of elements
 int ElementBase::useGimp=POINT_GIMP;
 int ElementBase::gridNiNodes=4;
 int ElementBase::numCPDINodes=4;
+double ElementBase::rcrit=-1.;
 #endif
 
 #pragma mark ElementBase::Methods

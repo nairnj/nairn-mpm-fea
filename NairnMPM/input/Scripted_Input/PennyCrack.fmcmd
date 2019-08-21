@@ -11,7 +11,7 @@ Header
 EndHeader
 
 Analysis "Axisymmetric MPM"
-MPMMethod USAVG,GIMP
+MPMMethod "USAVG+",GIMP
 Processors 4
 
 ! ********** Parameters Section **********
@@ -121,26 +121,31 @@ endif
 if #crackBC$!="pressure"
   if #loadtime>0
     #time=#loadtime*#maxTime
-    LoadLine 0,#height,#radius,#height,#cell/2
+    ParticleBC
+      Line 0,#radius,#height,#height,#cell/2
       Traction "y",3,"linear",#stress/#time
       Traction "y",3,"linear",-#stress/#time,#time
-    EndLoadLine
-    LoadLine 0,-#height,#radius,-#height,#cell/2
+    EndParticleBC
+    ParticleBC
+      Line 0,#radius,-#height,-#height,#cell/2
       Traction "y",1,"linear",-#stress/#time
       Traction "y",3,"linear",#stress/#time,#time
-    EndLoadLine
+    EndParticleBC
   else
-    LoadLine 0,#height,#radius,#height,#cell/2
+    ParticleBC
+      Line 0,#radius,#height,#height,#cell/2
       Traction "y",3,"constant",#stress
-    EndLoadLine
-    LoadLine 0,-#height,#radius,-#height,#cell/2
+    EndParticleBC
+    ParticleBC
+      Line 0,#radius,-#height,-#height,#cell/2
       Traction "y",1,"constant",-#stress
-    EndLoadLine
+    EndParticleBC
   endif
 endif
 
 if #rBC$!="ZeroStress"
-  MoveLine #radius,-#height,#radius,#height
+  GridBC
+    Line #radius,#radius,-#height,#height
     Velocity x,"constant"
-  EndMoveLine
+  EndGridBC
 endif

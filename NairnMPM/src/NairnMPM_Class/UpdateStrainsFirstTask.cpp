@@ -29,6 +29,12 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Boundary_Conditions/NodalVelBC.hpp"
+#include "NairnMPM_Class/XPICExtrapolationTask.hpp"
+#include "Global_Quantities/BodyForce.hpp"
+
+// class globals
+UpdateStrainsFirstTask *USFTask = NULL;
 
 // one copy of property buffers for each thread
 void **UpdateStrainsFirstTask::matBuffer = NULL;
@@ -43,9 +49,9 @@ UpdateStrainsFirstTask::UpdateStrainsFirstTask(const char *name) : MPMTask(name)
 #pragma mark REQUIRED METHODS
 
 // Update strains with just-extrapolated momenta
-void UpdateStrainsFirstTask::Execute(void)
+void UpdateStrainsFirstTask::Execute(int taskOption)
 {
-	FullStrainUpdate(strainTimestepFirst,false,fmobj->np);
+	FullStrainUpdate(strainTimestepFirst,false,fmobj->np,false);
 }
 
 #pragma mark UpdateStrainFirstTask Class Methods
@@ -87,14 +93,14 @@ void UpdateStrainsFirstTask::CreatePropertyBuffers(int numThreads)
     secondPass will be TRUE only for USAVG method
 	throws CommonException()
 **********************************************************/
-void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,int np)
+void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,int np,bool postUpdate)
 {
 	CommonException *usfErr = NULL;
 
 	// Get Grid velocities needed for strain updates
 #pragma omp parallel for
 	for(int i=1;i<=*nda;i++)
-		nd[nda[i]]->CalcVelocityForStrainUpdate();
+		nd[nda[i]]->GridValueCalculation(VELOCITY_FOR_STRAIN_UPDATE);
 
 	// loop over nonrigid particles
 	// This works as parallel when material properties change with particle state because
@@ -106,7 +112,7 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 		
         // this particle's material
         const MaterialBase *matRef = theMaterials[mptr->MatID()];
-        
+		
 		try
 		{	// make sure have mechanical properties for this material and angle
             int tn = GetPatchNumber();

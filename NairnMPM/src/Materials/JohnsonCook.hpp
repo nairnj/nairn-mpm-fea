@@ -13,6 +13,8 @@
 
 #define _JOHNSONCOOKHARDENING_
 
+#define JOHNSONCOOOK_ID 3
+
 #include "Materials/HardeningLawBase.hpp"
 
 // plastic law properties
@@ -52,7 +54,7 @@ class JohnsonCook : public HardeningLawBase
         virtual const char *GetHardeningLawName(void) const;
     
     protected:
-		double Bjc,Cjc,njc,ep0jc,Tmjc,mjc;
+		double Bjc,Cjc,njc,ep0jc,Tmjc,mjc,Djc,n2jc;
 		double Bred,edotMin,eminTerm;
 
 };

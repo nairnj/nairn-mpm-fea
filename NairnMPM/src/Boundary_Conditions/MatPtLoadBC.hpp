@@ -35,7 +35,11 @@ class MatPtLoadBC: public BoundaryCondition
         MatPtLoadBC *MakeConstantLoad(double);
 	
 		// accessors
-		virtual void GetPosition(unordered_map<string,double> &);
+#ifdef USE_ASCII_MAP
+		virtual void GetPositionVars(double *);
+#else
+		virtual void GetPositionVars(unordered_map<string,double>);
+#endif
 		virtual void SetBCValue(double);
     
 		// overridden by flux sub classes

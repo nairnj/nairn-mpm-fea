@@ -139,7 +139,7 @@ bool GridPatch::CreateGhostNodes(void)
 #pragma mark GridPatch: Methods
 
 // initialize ghost nodes for next time step
-void GridPatch::InitializeForTimeStep()
+void GridPatch::InitializeForTimeStep(void)
 {   for(int i=0;i<numGhosts;i++)
 		ghosts[i]->InitializeForTimeStep();
 }
@@ -154,6 +154,12 @@ void GridPatch::InitializationReduction(void)
 void GridPatch::MassAndMomentumReduction(void)
 {	for(int i=0;i<numGhosts;i++)
 		ghosts[i]->MassAndMomentumReduction();
+}
+
+// Support XPIC calculations (always xpicCalculation==COPY_VSTARNEXT, and k-pass in XPIC loop)
+void GridPatch::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int m,int k,double vsign)
+{	for(int i=0;i<numGhosts;i++)
+	ghosts[i]->XPICSupport(xpicCalculation,xpicOption,real,timestep,m,k,vsign);
 }
 
 // initialize ghost nodes for next time step

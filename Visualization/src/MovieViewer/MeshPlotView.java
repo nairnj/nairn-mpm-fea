@@ -131,7 +131,9 @@ public class MeshPlotView extends JPanel
 		
 		// displaced mesh - if requested and if available
 		if(showDisplaced)
-		{	if(resDoc.feaArchFormat[ReadArchive.ARCH_FEADisplacements]=='Y')
+		{	Color dispMeshLineColor=NFMVPrefs.getPrefColor(NFMVPrefs.dispMeshLineColorKey,NFMVPrefs.dispMeshLineColorDef);
+			g2Loc.setColor(dispMeshLineColor);
+			if(resDoc.feaArchFormat[ReadArchive.ARCH_FEADisplacements]=='Y')
 			for(i=0;i<resDoc.elements.size();i++)
 			{	(resDoc.elements.get(i)).stroke(this,true);
 			}

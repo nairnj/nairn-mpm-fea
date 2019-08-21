@@ -68,8 +68,11 @@ const char *IsoPlasticity::VerifyAndLoadProperties(int np)
 bool IsoPlasticity::AcceptHardeningLaw(HardeningLawBase *pLaw,int lawID)
 {   delete plasticLaw;
     plasticLaw = pLaw;
-    return TRUE;
+    return true;
 }
+
+// return plastic law ID (or 0 if none)
+HardeningLawBase *IsoPlasticity::GetPlasticLaw(void) const { return plasticLaw; }
 
 // print mechanical properties to the results
 void IsoPlasticity::PrintMechanicalProperties(void) const
@@ -295,7 +298,8 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,i
 		}
 		else if(np==PLANE_STRESS_MPM)
 		{	// zz deformation
-			mptr->IncrementDeformationGradientZZ(-p->psLr2G*(dexxr+deyyr) + eres);
+			de.set(2,2,-p->psLr2G*(dexxr+deyyr) + eres);
+			mptr->IncrementDeformationGradientZZ(de(2,2));
 			mptr->AddWorkEnergy(sp->xx*de(0,0) + sp->yy*de(1,1) + sp->xy*dgxy);
 		}
 		else
@@ -341,7 +345,8 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,i
 		dfds.xy = txy;				// tensorial shear strain
 		
 		// zz deformation
-		mptr->IncrementDeformationGradientZZ(-p->psLr2G*(dexxr+deyyr - lambdak*(dfds.xx+dfds.yy)) + eres + lambdak*dfds.zz);
+		de.set(2,2,-p->psLr2G*(dexxr+deyyr - lambdak*(dfds.xx+dfds.yy)) + eres + lambdak*dfds.zz);
+		mptr->IncrementDeformationGradientZZ(de(2,2));
 	}
 	else
 	{   // get final direction
@@ -408,7 +413,6 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,i
 	// heat energy
 	IncrementHeatEnergy(mptr,dTq0,dispEnergy);
 	
-
 	// Task 9: Update Internal Variables
 	//----------------------------------
 	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha,0);

@@ -260,7 +260,7 @@ ElasticProperties *AnisoPlasticity::GetElasticPropertiesPointer(void *properties
 
 // Once stress deformation has been decomposed, finish calculations in the material axis system
 // When stress are found, they are rotated back to the global axes (using Rtot and dR)
-// Similar, strain increments are rotated back to find work energy (done in global system)
+// Similarly, strain increments are rotated back to find work energy (done in global system)
 void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3 &er,Matrix3 &Rtot,Matrix3 &dR,
 											   Matrix3 &Rnm1tot,int np,void *properties,ResidualStrains *res) const
 {
@@ -391,6 +391,7 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3
 	
 	// update hardening variable
 	mptr->SetHistoryDble(0,p->aint,0);
+	
 }
 
 // Solve numerically plastic strain increment by explicit radial return

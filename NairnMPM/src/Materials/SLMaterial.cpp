@@ -29,6 +29,8 @@ SLMaterial::SLMaterial(MaterialBase *pair) : SCGLHardening(pair)
 	YP = 1000.*UnitsController::Scaling(1.e6);
 	C1 = 0.71e6;
 	C2 = 0.012*UnitsController::Scaling(1.e6);
+	
+	lawID = SLHARDENING_ID;
 }
 
 #pragma mark SLMaterial::Initialization

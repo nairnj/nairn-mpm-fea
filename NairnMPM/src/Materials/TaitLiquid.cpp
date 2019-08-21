@@ -17,12 +17,18 @@
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "System/UnitsController.hpp"
 #include "Read_XML/Expression.hpp"
+#include "Materials/HardeningLawBase.hpp"
+#include "Materials/ClampedNeohookean.hpp"
 
 // This model tracks only volume change. It does prevent particles degenerating into
 // needles, but it is probably not correct thing to do for correct shape functions.
 // The better approach might be just to not plot the transformed particles
 // Note that CPDI will soon fail if particle become needles, but uGIMP can procees
 //#define NO_SHEAR_MODEL
+
+// Find pressure by incremental equation in constitutive law
+// Leaving it out seems best. It may not get artificial viscosity correct if on
+//#define INCREMENTAL_PRESSURE
 
 // This tracks full deformation, but B matrix is set to volume change only so B
 // is Diagonal with Bii = J^(2/3) axisymmetric and 3D or Bxx=Byy=J for plane strain
@@ -141,7 +147,6 @@ void TaitLiquid::ValidateForUse(int np) const
 }
 
 // If needed, a material can initialize particle state
-// (Don't call from parallel code due to function)
 void TaitLiquid::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 {
 	// is a pressure being set?
@@ -264,7 +269,6 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 
     // new Kirchhoff pressure (over rho0) from Tait equation
 	double p0=mptr->GetPressure();
-//#define INCREMENTAL_PRESSURE
 #ifdef INCREMENTAL_PRESSURE
 	double Jeffprev = Jprev/Jresprev;
 	double DeltaJeff = (detdF-dJres)*Jeffprev/dJres;
@@ -498,5 +502,4 @@ double TaitLiquid::GetViscosity(double shearRate) const { return 0.5*rho*GetTwoE
 
 // if a subclass material supports artificial viscosity, override this and return TRUE
 bool TaitLiquid::SupportsArtificialViscosity(void) const { return true; }
-
 

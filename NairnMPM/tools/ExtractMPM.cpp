@@ -228,7 +228,7 @@ int main(int argc, char * const argv[])
 			
 			// select one material (must be M, space, number)
 			else if(argv[parmInd][optInd]=='M')
-			{	parm=NextArgument(++parmInd,argv,argc,'m');
+			{	parm=NextArgument(++parmInd,argv,argc,'M');
 				if(parm==NULL) return BadOptionErr;
 				int included;
 				sscanf(parm,"%d",&included);

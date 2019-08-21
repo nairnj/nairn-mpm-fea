@@ -74,7 +74,7 @@ void CommonAnalysis::StartResultsOutput(void)
     cout << GetDescription() << endl;
 
 	/*	NairnMPM: Current Flags in Use
-	 *	 none
+	 *   dflag[3]==xxyyzz - custom patch method for parallel (ignored if xx*yy*zz != numProcs)
 	 *
 	 */
 	int i;

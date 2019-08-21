@@ -28,7 +28,8 @@ class CoulombFriction : public ContactLaw
 		virtual void PrintContactLaw(void) const;
 	
 		// methods
-		virtual bool GetFrictionalDeltaMomentum(Vector *,Vector *,double,double,double *,double,bool,double,double,Vector *) const;
+		virtual bool GetFrictionalDeltaMomentum(Vector *,Vector *,double,double,double *,double,bool,
+												double,double,Vector *,NodalPoint *) const;
 		virtual void GetSeparationAndForce(double &,double &,double,double,double,double) const;
 		virtual double GetSslideAcDt(double,double,double,double,bool &,double) const;
 	

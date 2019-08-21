@@ -17,6 +17,8 @@
 
 #define _SLMATERIAL_
 
+#define SLHARDENING_ID 5
+
 #define YT_HISTORY 1
 #define EPDOT_HISTORY 2
 #define MAX_ITERATIONS 10

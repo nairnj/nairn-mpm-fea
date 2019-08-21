@@ -46,6 +46,7 @@ public class RegionPiece
 	public void appendXmlStart(String moreXml)
 	{	xmlStart = xmlStart + moreXml;
 	}
+	public void setXmlStart(String newXML) { xmlStart = newXML; }
 	
 	// convert to XML string
 	public String xmlString(String indent)
@@ -56,7 +57,7 @@ public class RegionPiece
 		// build xml buffer
 		StringBuffer xmlText;
 		if(type==POLY_PT)
-		{	xmlText = new StringBuffer(indent + levelIndent + "  <Polygon>\n" + indent + levelIndent + xmlStart);
+		{	xmlText = new StringBuffer(indent + levelIndent + "  <"+shapeName+">\n" + indent + levelIndent + xmlStart);
 		
 			// add children
 			for(int i=0;i<children.size();i++)
@@ -65,7 +66,7 @@ public class RegionPiece
 			}
 		
 			// finish up
-			xmlText.append(indent + levelIndent + "  </Polygon>\n");
+			xmlText.append(indent + levelIndent + "  </"+shapeName+">\n");
 		}
 		
 		else

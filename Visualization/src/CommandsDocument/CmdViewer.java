@@ -69,6 +69,8 @@ public class CmdViewer extends JNCmdTextDocument
 	private String timeStep;
 	private String maxTime;
 	private String cflFactor;
+	private String CPDIrcrit;
+	private String exactTractions;
 	private String transCflFactor;
 	private String globalArchive;
 	private String damping;
@@ -88,13 +90,13 @@ public class CmdViewer extends JNCmdTextDocument
 	private String feaTemp;
 	private double stressFreeTemp;
 	private boolean stopCommand;
-	private double MMVmin;
-	private int MMDcheck;
+	private int MMLump;
 	private int MMNormals; // <0 means no multimaterial mode
 	private double MMRigidBias;
 	private double MMAzimuth;
 	private double MMPolar;
 	private String ContactPosition;
+	private String ContactPositionCracks;
 	private String FrictionMM;
 	private StringBuffer customTasks;
 	private String currentCustomTask = null;
@@ -255,8 +257,7 @@ public class CmdViewer extends JNCmdTextDocument
 		// System.out.println("Check real file");
 		// only allowed if the commands have been saved
 		if(getFile() == null)
-		{
-			JNApplication.appBeep();
+		{	JNApplication.appBeep();
 			JOptionPane.showMessageDialog(this,
 					"The input commands have to be saved to a file before running an analysis.");
 			return;
@@ -276,8 +277,7 @@ public class CmdViewer extends JNCmdTextDocument
 		// what if process is currently running?
 		// System.out.println("Check nothing running");
 		if(nfmAnalysis.isRunning())
-		{
-			JNApplication.appBeep();
+		{	JNApplication.appBeep();
 			String message = "An FEA or MPM process is currently running.\nDo you want stop it and start a new process?";
 			int result = JOptionPane.showConfirmDialog(this, message, "Continue?", JOptionPane.OK_CANCEL_OPTION);
 			if(result == JOptionPane.CANCEL_OPTION)
@@ -310,11 +310,9 @@ public class CmdViewer extends JNCmdTextDocument
 			processors = 1;
 			offset = cmdField.getCommands().indexOf("<!--processors ");
 			if(offset > 0)
-			{
-				int endoffset = cmdField.getCommands().indexOf("-->", offset);
+			{	int endoffset = cmdField.getCommands().indexOf("-->", offset);
 				if(endoffset > 0)
-				{
-					String procs = cmdField.getCommands().substring(offset + 15, endoffset);
+				{	String procs = cmdField.getCommands().substring(offset + 15, endoffset);
 					Scanner getProcs = new Scanner(procs);
 					if(getProcs.hasNextInt())
 						processors = getProcs.nextInt();
@@ -337,8 +335,7 @@ public class CmdViewer extends JNCmdTextDocument
 			return;
 
 		if(runningScript)
-		{
-			toFront();
+		{	toFront();
 			return;
 		}
 
@@ -381,6 +378,8 @@ public class CmdViewer extends JNCmdTextDocument
 		maxTime = "";
 		cflFactor = "";
 		transCflFactor = "";
+		CPDIrcrit = "";
+		exactTractions = "";
 		globalArchive = "";
 		feaTemp = null;
 		stressFreeTemp = 0.;
@@ -396,13 +395,13 @@ public class CmdViewer extends JNCmdTextDocument
 		diffusion = null;
 		conduction = null;
 		gravity = null;
-		MMVmin = 0.0;
-		MMDcheck = 0;
+		MMLump = -1;
 		MMNormals = -1;
 		MMRigidBias = 1.0;
 		MMAzimuth = 0.0;
 		MMPolar = 0.0;
 		ContactPosition = null;
+		ContactPositionCracks = null;
 		FrictionMM = null;
 		customTasks = new StringBuffer("");
 
@@ -412,21 +411,18 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// is it called from a script?
 		if(theScript != this)
-		{
-			variables.put("_ScriptMode_", new Double(1.));
-			variables.putAll(theScript.getVariables());
+		{	variablesStrs.put("_ScriptMode_","1");
 			variablesStrs.putAll(theScript.getVariablesStrs());
 		}
 	}
 
 	// handle commands
 	public void doCommand(String theCmd,ArrayList<String> args) throws Exception
-	{ 	//System.out.println(theCmd+":"+args);
+	{	//System.out.println(theCmd+":"+args);
 
 		// if script, switch to script commands
 		if(runningScript)
-		{
-			doScriptCommand(theCmd, args);
+		{	doScriptCommand(theCmd, args);
 		}
 
 		else if(theCmd.equals("script"))
@@ -471,10 +467,8 @@ public class CmdViewer extends JNCmdTextDocument
 			header.append(readVerbatim("endheader"));
 
 		else if(theCmd.equals("comment"))
-		{
-			int i;
-			header.append("Comment: ");
-			for(i = 1; i < args.size(); i++)
+		{	header.append("Comment: ");
+			for(int i=1; i<args.size(); i++)
 			{
 				if(i > 1)
 					header.append(", ");
@@ -484,8 +478,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 
 		else if(theCmd.equals("processors"))
-		{
-			processors = readIntArg(args.get(1));
+		{	processors = readIntArg(args.get(1));
 			if(processors < 1)
 				processors = 1;
 		}
@@ -526,6 +519,12 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("cflfactor"))
 			doCFLFactor(args);
 
+		else if(theCmd.equals("cpdircrit"))
+			doCPDIrcrit(args);
+
+		else if(theCmd.equals("exacttractions"))
+			doExactTractions(args);
+
 		else if(theCmd.equals("element"))
 			doElement(args);
 
@@ -563,8 +562,7 @@ public class CmdViewer extends JNCmdTextDocument
 			feaBCs.StartFixLine(args);
 
 		else if(theCmd.equals("selectline"))
-		{
-			feaBCs.StartFixLine(args);
+		{	feaBCs.StartFixLine(args);
 			feaBCs.AddSelect(args);
 			feaBCs.EndFixLine(args);
 		}
@@ -576,8 +574,7 @@ public class CmdViewer extends JNCmdTextDocument
 			feaBCs.StartFixPoint(args);
 
 		else if(theCmd.equals("selectpoint"))
-		{
-			feaBCs.StartFixPoint(args);
+		{	feaBCs.StartFixPoint(args);
 			feaBCs.AddSelect(args);
 			feaBCs.EndFixPoint(args);
 		}
@@ -589,21 +586,19 @@ public class CmdViewer extends JNCmdTextDocument
 			feaBCs.AddDisplacement(args);
 
 		else if(theCmd.equals("load"))
-		{
-			if(isFEA())
+		{	if(isFEA())
 				feaBCs.AddLoad(args);
 			else
 				mpmParticleBCs.AddCondition(args, MPMParticleBCs.ADD_LOAD);
 		}
 
 		else if(theCmd.equals("rotate"))
-		{
-			if(isFEA())
+		{	if(isFEA())
 				feaBCs.AddRotate(args);
 			else
 				regions.AddRotate(args);
 		}
-		
+
 		else if(theCmd.equals("transform"))
 			regions.AddTransform(args);
 
@@ -656,8 +651,7 @@ public class CmdViewer extends JNCmdTextDocument
 			mpmGridBCs.AddTempConc(args, MPMGridBCs.ADD_CONCENTRATION);
 
 		else if(theCmd.equals("temperature"))
-		{
-			if(isFEA())
+		{	if(isFEA())
 				doTemperature(args);
 			else
 				mpmGridBCs.AddTempConc(args, MPMGridBCs.ADD_TEMPERATURE);
@@ -833,7 +827,10 @@ public class CmdViewer extends JNCmdTextDocument
 			doMultimaterialMode(args);
 
 		else if(theCmd.equals("contactposition"))
-			doContactPosition(args);
+			doContactPosition(args,false);
+
+		else if(theCmd.equals("contactpositioncracks"))
+			doContactPosition(args,true);
 
 		else if(theCmd.equals("contactcracks"))
 			doContactLaw(args, 0);
@@ -910,7 +907,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 
 		else
-		{ 	//System.out.println(args);
+		{ //System.out.println(args);
 			super.doCommand(theCmd, args);
 		}
 	}
@@ -931,15 +928,13 @@ public class CmdViewer extends JNCmdTextDocument
 			// file by path or null
 			File oneDoc = null;
 			if(args.size() > 2)
-			{
-				oneDoc = scriptPath(readStringArg(args.get(2)), args, false);
+			{	oneDoc = scriptPath(readStringArg(args.get(2)), args, false);
 				oneDoc = new File(oneDoc.getCanonicalPath());
 
 				// see if already open
 				JNDocument currentDoc = NairnFEAMPMViz.main.findDocument(oneDoc);
 				if(currentDoc != null)
-				{
-					currentDoc.setVisible(true);
+				{	currentDoc.setVisible(true);
 					currentDoc.toFront();
 					objs.put(objectVar, currentDoc);
 					return;
@@ -950,11 +945,7 @@ public class CmdViewer extends JNCmdTextDocument
 			JNDocument currentDoc = NairnFEAMPMViz.main.frontDocument();
 			NairnFEAMPMViz.main.openDocument(oneDoc);
 			if(currentDoc == NairnFEAMPMViz.main.frontDocument())
-			{ // open
-					// failed
-				// or
-				// was
-				// canceled
+			{	// open failed or was canceled
 				running = false;
 				return;
 			}
@@ -962,23 +953,23 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 
 		else if(theCmd.equals("openfolder"))
-		{ // openFolder - string var
-				// name,title
+		{	// openFolder - string var name,title
 			if(args.size() < 2)
-				throw new Exception(
-						"The first argument in an 'OpenFolder' command must be string variable name.\n" + args);
+			{	throw new Exception(
+						"The first argument in an 'OpenFolder' command must be a variable name.\n" + args);
+			}
 
 			String varName = args.get(1);
-			if(!JNEvaluatorStrs.validStrVariableName(varName))
-				throw new Exception(
-						"The first argument in an 'OpenFolder' command must be  a valid string variable name.\n"
+			if(!JNExpression.validVariableName(varName))
+			{	throw new Exception(
+						"The first argument in an 'OpenFolder' command must be  a valid variable name.\n"
 								+ args);
+			}
 
 			// optional dialog title
 			String fldrTitle = "Select a folder";
 			if(args.size() > 2)
-			{
-				String userTitle = readStringArg(args.get(2));
+			{	String userTitle = readStringArg(args.get(2));
 				if(userTitle.length() > 0)
 					fldrTitle = userTitle;
 			}
@@ -986,13 +977,11 @@ public class CmdViewer extends JNCmdTextDocument
 			// if path use it, otherwise dialog box
 			String fldrPath = "";
 			if(args.size() > 3)
-			{
-				File oneFldr = scriptPath(readStringArg(args.get(3)), args, true);
+			{	File oneFldr = scriptPath(readStringArg(args.get(3)), args, true);
 
 				// only need to create if does not exist
 				if(!oneFldr.exists())
-				{
-					if(!oneFldr.mkdirs())
+				{	if(!oneFldr.mkdirs())
 						throw new Exception("File error creating the folder(s).\n" + args);
 				}
 
@@ -1000,22 +989,19 @@ public class CmdViewer extends JNCmdTextDocument
 				fldrPath = oneFldr.getCanonicalPath();
 			}
 			else
-			{
-				JFileChooser fldrChooser = new JFileChooser();
+			{	JFileChooser fldrChooser = new JFileChooser();
 				fldrChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				NFMVPrefs.setWorkspace(fldrChooser);
 				fldrChooser.setDialogTitle(fldrTitle);
 				int result = fldrChooser.showSaveDialog(this);
 				if(result == JFileChooser.APPROVE_OPTION)
-				{
-					fldrPath = fldrChooser.getSelectedFile().getPath();
+				{	fldrPath = fldrChooser.getSelectedFile().getPath();
 				}
 			}
 
 			// save in variable with terminal path delimiter
 			if(fldrPath.length() > 0)
-			{
-				if(JNApplication.isWindowsOS())
+			{	if(JNApplication.isWindowsOS())
 					fldrPath += "\\";
 				else
 					fldrPath += "/";
@@ -1028,8 +1014,7 @@ public class CmdViewer extends JNCmdTextDocument
 			String objCmd = args.get(0);
 			int dot = objCmd.indexOf(".");
 			if(dot > 0)
-			{
-				String objName = objCmd.substring(0, dot);
+			{	String objName = objCmd.substring(0, dot);
 				Object obj = objs.get(objName);
 				if(obj != null)
 				{
@@ -1047,9 +1032,7 @@ public class CmdViewer extends JNCmdTextDocument
 	public void doObjectCommand(Object obj,String theCmd,ArrayList<String> args) throws Exception
 	{
 		if(theCmd.equals("interpret"))
-		{ // interpret the commands (no
-				// arguments)
-
+		{	// interpret the commands (no arguments)
 			if(!obj.getClass().equals(CmdViewer.class))
 				throw new Exception("The 'interpret' command can only by used on commands documents.\n" + args);
 
@@ -1058,20 +1041,18 @@ public class CmdViewer extends JNCmdTextDocument
 
 			// wait for interpret to be done
 			while (runningScript)
-			{
-				Thread.sleep(100);
+			{	Thread.sleep(100);
 				if(!((CmdViewer) obj).isRunning())
 					break;
 			}
 			if(((CmdViewer) obj).isRunning())
-			{
-				((CmdViewer) obj).stopRunning();
+			{	((CmdViewer) obj).stopRunning();
 				throw new Exception("The script was stopped.\n" + args);
 			}
 		}
 
 		else if(theCmd.equals("run"))
-		{ // run obj,outpath
+		{	// run obj,outpath
 			if(!obj.getClass().equals(CmdViewer.class))
 				throw new Exception("The 'run' command can only by used on command documents.\n" + args);
 
@@ -1098,26 +1079,22 @@ public class CmdViewer extends JNCmdTextDocument
 
 			// wait for run to be done
 			while (runningScript)
-			{
-				Thread.sleep(1000);
+			{	Thread.sleep(1000);
 				if(!((CmdViewer) obj).isRunning())
 					break;
 			}
 			if(((CmdViewer) obj).isRunning())
-			{
-				((CmdViewer) obj).stopRunning();
+			{	((CmdViewer) obj).stopRunning();
 				throw new Exception("The script was stopped.\n" + args);
 			}
 			NFMVPrefs.restoreRemoteMode();
-			;
 
 			// set obj to output document
 			objs.put(objectVar, ((DocViewer) NairnFEAMPMViz.main.frontDocument()).resDoc);
 		}
 
 		else if(theCmd.equals("runremote"))
-		{ // runRemote
-				// obj,outpath,outoption,localpath,localoption
+		{	// runRemote obj,outpath,outoption,localpath,localoption
 			if(!obj.getClass().equals(CmdViewer.class))
 				throw new Exception("The 'run' command can only by used on command documents.\n" + args);
 
@@ -1142,8 +1119,7 @@ public class CmdViewer extends JNCmdTextDocument
 			// get output option (default is overwrite or unique or clear)
 			String remoteOption = "overwrite";
 			if(args.size() > 3)
-			{
-				remoteOption = readStringArg(args.get(3)).toLowerCase();
+			{	remoteOption = readStringArg(args.get(3)).toLowerCase();
 				if(!remoteOption.equals("overwrite") && !remoteOption.equals("unique") && !remoteOption.equals("clear"))
 					throw new Exception("Invalid remote output option (" + remoteOption + "?)\n" + args);
 			}
@@ -1151,8 +1127,7 @@ public class CmdViewer extends JNCmdTextDocument
 			// get local save option first
 			String localOption = "download";
 			if(args.size() > 5)
-			{
-				localOption = readStringArg(args.get(5)).toLowerCase();
+			{	localOption = readStringArg(args.get(5)).toLowerCase();
 				if(!localOption.equals("download") && !localOption.equals("nodownload") && !localOption.equals("home"))
 					throw new Exception("Invalid local folder option (" + localOption + "?)\n" + args);
 			}
@@ -1160,18 +1135,15 @@ public class CmdViewer extends JNCmdTextDocument
 			// get local save path
 			String outFolder = "";
 			if(args.size() > 4)
-			{
-				outFolder = readStringArg(args.get(4));
+			{	outFolder = readStringArg(args.get(4));
 				if(!localOption.equals("nodownload"))
-				{
-					File outDoc = scriptPath(outFolder, args, true);
+				{	File outDoc = scriptPath(outFolder, args, true);
 					if(!outDoc.exists())
 						throw new Exception("The local download folder must already exist\n" + args);
 					outFolder = outDoc.getCanonicalPath();
 				}
 				else
-				{
-					outFolder = "";
+				{	outFolder = "";
 				}
 			}
 			else
@@ -1190,18 +1162,15 @@ public class CmdViewer extends JNCmdTextDocument
 
 			// wait for run to be done
 			while (runningScript)
-			{
-				Thread.sleep(1000);
+			{	Thread.sleep(1000);
 				if(!((CmdViewer) obj).isRunning())
 					break;
 			}
 			if(((CmdViewer) obj).isRunning())
-			{
-				((CmdViewer) obj).stopRunning();
+			{	((CmdViewer) obj).stopRunning();
 				throw new Exception("The script was stopped.\n" + args);
 			}
 			NFMVPrefs.restoreRemoteMode();
-			;
 
 			// set obj to output document
 			if(!localOption.equals("nodownload"))
@@ -1209,15 +1178,14 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 
 		else if(theCmd.equals("export"))
-		{ // run obj,outpath
+		{	// run obj,outpath
 			if(!obj.getClass().equals(CmdViewer.class))
 				throw new Exception("The 'export' command can only by used on commands documents.\n" + args);
 
 			// file by path or null
 			File oneDoc = null;
 			if(args.size() > 1)
-			{
-				String fPath = readStringArg(args.get(1));
+			{	String fPath = readStringArg(args.get(1));
 				if(fPath.length() < 2)
 					throw new Exception("'export' command has empty path name.\n" + args);
 				if(fPath.charAt(0) != '/' && fPath.charAt(1) != ':')
@@ -1237,16 +1205,14 @@ public class CmdViewer extends JNCmdTextDocument
 	// object names begin in letter (not '#')
 	// Rest letters, numbers, and underscore
 	public static boolean validObjectName(String v)
-	{ // need at least letter
+	{	// need at least letter
 		if(v.length() < 1)
 			return false;
 		// other letters letter or number
 		for(int i = 0; i < v.length() - 1; i++)
-		{
-			char c = v.charAt(i);
+		{	char c = v.charAt(i);
 			if((c > 'z' || c < 'a') && (c > 'Z' || c < 'A'))
-			{ // first must be
-					// letter
+			{	// first must be letter
 				if(i == 0)
 					return false;
 				// others can be numbers of underscore
@@ -1261,10 +1227,7 @@ public class CmdViewer extends JNCmdTextDocument
 	// allows relative or full path and allows Mac/Linux or Windows
 	// if file exists, it must be folder or file if wantFolder is true or false
 	public File scriptPath(String fPath,ArrayList<String> args,boolean wantFolder) throws Exception
-	{ // empty
-			// is
-		// not
-		// allowed
+	{	// empty is not allowed
 		if(fPath.length() == 0)
 			throw new Exception("'" + args.get(0) + "' command has empty path name.\n" + args);
 
@@ -1277,8 +1240,7 @@ public class CmdViewer extends JNCmdTextDocument
 			oneDoc = new File(fPath);
 		}
 		else if(fPath.length() > 3)
-		{ // full Windows full path needs "c:\a"
-				// or at least 4 letters with : an \
+		{	// full Windows full path needs "c:\a" or at least 4 letters with : an \
 			// in 2nd and 3rd
 			if(fPath.charAt(1) == ':' && fPath.charAt(2) == '\\')
 				oneDoc = new File(fPath);
@@ -1290,22 +1252,18 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// if already exists, it better be a folder
 		if(oneDoc.exists())
-		{
-			if(wantFolder)
-			{
-				if(!oneDoc.isDirectory())
+		{	if(wantFolder)
+			{	if(!oneDoc.isDirectory())
 					throw new Exception("A specified folder name already exists but is not a folder.\n" + args);
 			}
 			else
-			{
-				if(oneDoc.isDirectory())
+			{	if(oneDoc.isDirectory())
 					throw new Exception("A specified file name already exists but it is a folder.\n" + args);
 			}
 		}
 
 		// return it
 		return oneDoc;
-
 	}
 
 	// Analysis (type),(element)
@@ -1433,19 +1391,21 @@ public class CmdViewer extends JNCmdTextDocument
 		options.put("usl", new Integer(3));
 		options.put("usl+", new Integer(3));
 		options.put("usl-", new Integer(3));
-		String uoption = readStringArg(args.get(1));
-		mpmMethod = readIntOption(uoption, options, "MPM update method");
+		mpmMethod = readIntOption(args.get(1), options, "MPM update method");
 
 		// look for skipping extrapolations
+		String uoption = readStringArg(args.get(1));
 		int nu = uoption.length();
-		if(nu > 1)
+		if(nu>1 && mpmMethod!=0)
 		{	if(uoption.charAt(nu - 1) == '-')
 				skipExtrap = true;
 			else if(uoption.charAt(nu - 1) == '+')
 				skipExtrap = false;
-			else if(mpmMethod!=0)
+			else
 				throw new Exception("The USAVG and USL methods must now specify '+' or '-':\n" + args);
 		}
+		else
+			skipExtrap = false;
 
 		// shape functions
 		if(args.size() > 2)
@@ -1513,10 +1473,21 @@ public class CmdViewer extends JNCmdTextDocument
 		if(type.length() == 0)
 			throw new Exception("'" + args.get(0) + "' quantity to archive has zero length:\n" + args);
 
-		// optional material ID
+		// optional material ID or tracer particle position
 		int matnum = 0;
-		if(args.size() > 2)
-		{
+		if(args.size() > 3)
+		{	// look for x, y, z
+			double xpos = readDoubleArg(args.get(2));
+			double ypos = readDoubleArg(args.get(3));
+			String pos = formatDble(xpos)+","+formatDble(ypos);
+			if(args.size() > 4)
+			{	double zpos = readDoubleArg(args.get(4));
+				pos = pos + "," + formatDble(zpos);
+			}
+			globalArchive = globalArchive + "    <GlobalArchive type='" + type + "' pt='" + pos + "'/>\n";
+		}
+		else if(args.size() > 2)
+		{	// look for material IS
 			matnum = mats.getMatID(readStringArg(args.get(2)));
 			if(matnum <= 0)
 			{
@@ -1538,8 +1509,7 @@ public class CmdViewer extends JNCmdTextDocument
 	// ArchiveTime #1,#2,#3 (archive time and optional first archive time and
 	// optional max props)
 	public void doArchiveTime(ArrayList<String> args) throws Exception
-	{ // MPM
-			// Only
+	{	// MPM Only
 		requiresMPM(args);
 
 		// read analysis type
@@ -1570,8 +1540,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 	// GlobalArchiveTime #1
 	public void doGlobalArchiveTime(ArrayList<String> args) throws Exception
-	{ // MPM
-			// Only
+	{ 	// MPM Only
 		requiresMPM(args);
 
 		// read analysis type
@@ -1585,8 +1554,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 	// TimeStep #1,#2,#3 (time step and optional max time and Courant factor)
 	public void doTimeStep(ArrayList<String> args) throws Exception
-	{ // MPM
-			// Only
+	{ 	// MPM Only
 		requiresMPM(args);
 
 		// read analysis type
@@ -1606,15 +1574,15 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// Courant time
 		if(args.size() > 3)
-		{	aTime = readDoubleArg(args.get(3));
+		{
+			aTime = readDoubleArg(args.get(3));
 			cflFactor = "    <TimeFactor>" + formatDble(aTime) + "</TimeFactor>\n";
 		}
 	}
 
 	// CFLFactor #1,<#2>
 	public void doCFLFactor(ArrayList<String> args) throws Exception
-	{ // MPM
-			// Only
+	{	// MPM Only
 		requiresMPM(args);
 
 		// read analysis type
@@ -1623,17 +1591,31 @@ public class CmdViewer extends JNCmdTextDocument
 
 		double aCFL = readDoubleArg(args.get(1));
 		cflFactor = "    <TimeFactor>" + formatDble(aCFL) + "</TimeFactor>\n";
-		
+
 		// Transport Courant time
 		if(args.size() > 2)
-		{	aCFL = readDoubleArg(args.get(2));
+		{
+			aCFL = readDoubleArg(args.get(2));
 			cflFactor = "    <TransTimeFactor>" + formatDble(aCFL) + "</TransTimeFactor>\n";
 		}
+	}
+	
+	// CPDIrcrit #1
+	public void doCPDIrcrit(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+
+		// read analysis type
+		if(args.size() < 2)
+			throw new Exception("'CFLFactor' has too few parameters:\n" + args);
+
+		double rcrit = readDoubleArg(args.get(1));
+		CPDIrcrit = "    <CPDIrcrit>" + formatDble(rcrit) + "</CPDIrcrit>\n";
 	}
 
 	// TimeStep #1,#2,#3 (time step and optional max time and courant factor)
 	public void doMaxTime(ArrayList<String> args) throws Exception
-	{ // MPM Only
+	{	// MPM Only
 		requiresMPM(args);
 
 		// read analysis type
@@ -1647,8 +1629,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 	// ToArchive #1,...
 	public void doToArchive(ArrayList<String> args) throws Exception
-	{
-		// MPM Only
+	{	// MPM Only
 		requiresMPM(args);
 
 		// needs at least one
@@ -1681,8 +1662,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// set all options in this command
 		for(i = 1; i < args.size(); i++)
-		{
-			String archive = readStringArg(args.get(i)).toLowerCase();
+		{	String archive = readStringArg(args.get(i)).toLowerCase();
 			int loc = -1;
 			int cloc = -1;
 			if(archive.equals("velocity"))
@@ -1755,8 +1735,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// replace the history character
 		if(history != origHistory)
-		{
-			char hchr = history == 0x31 ? 'Y' : (char) history;
+		{	char hchr = history == 0x31 ? 'Y' : (char) history;
 			mpmOrder.setCharAt(ReadArchive.ARCH_History, hchr);
 		}
 	}
@@ -1785,8 +1764,7 @@ public class CmdViewer extends JNCmdTextDocument
 		lnameEl = readIntOption(args.get(1), options, "Element type");
 
 		if(!ElementBase.CompatibleElements(lnameEl, oldnameEl, np))
-		{
-			throw new Exception("Element type (" + args.get(1) + ") not allowed or\nincompatible with other elements.");
+		{	throw new Exception("Element type (" + args.get(1) + ") not allowed or\nincompatible with other elements.");
 		}
 
 		// pass to FEA areas
@@ -1810,8 +1788,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// check for material section
 		if(section.equals("material"))
-		{
-			if(args.size() < 3)
+		{	if(args.size() < 3)
 				throw new Exception("XMLData command for a material needs to specify a material ID");
 			String matID = readStringArg(args.get(2));
 			mats.StartXMLMaterial(matID, newXML);
@@ -1821,8 +1798,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// check GridBCs block and intersperse
 		else if(section.equals("gridbcs"))
-		{
-			if(isFEA())
+		{	if(isFEA())
 				feaBCs.AddXML(newXML);
 			else
 				mpmGridBCs.AddXML(newXML);
@@ -1831,8 +1807,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// check MaterialPoints block and intersperse
 		else if(section.equals("materialpoints"))
-		{
-			if(regions.isInRegion())
+		{	if(regions.isInRegion())
 				throw new Exception("XMLData insert in 'materialpoints' must be between regions");
 			if(isFEA())
 				regions.AddXML(newXML);
@@ -1840,9 +1815,10 @@ public class CmdViewer extends JNCmdTextDocument
 				regions.AddXML(newXML);
 			return;
 		}
-		
+
 		else if(section.equals("cracklist"))
-		{	cracks.appendXMLCrack(newXML);
+		{
+			cracks.appendXMLCrack(newXML);
 			return;
 		}
 
@@ -1951,8 +1927,7 @@ public class CmdViewer extends JNCmdTextDocument
 	// Damping #1 (number or function),#2 (0 to 1 for PIC),#3 (>0 int for XPIC)
 	// also does PDamping command
 	public void doDamping(ArrayList<String> args,String dcmd) throws Exception
-	{ // MPM
-			// Only
+	{	// MPM Only
 		requiresMPM(args);
 
 		// read analysis type
@@ -1964,20 +1939,17 @@ public class CmdViewer extends JNCmdTextDocument
 		String dampcmd;
 		Object dampArg = readStringOrDoubleArg(args.get(1));
 		if(dampArg.getClass().equals(Double.class))
-		{
-			damp = ((Double) dampArg).doubleValue();
+		{	damp = ((Double) dampArg).doubleValue();
 			dampcmd = "    <" + dcmd;
 		}
 		else
-		{
-			dampcmd = "    <" + dcmd + " function='" + dampArg + "'";
+		{	dampcmd = "    <" + dcmd + " function='" + dampArg + "'";
 		}
 
 		// PIC fraction (optional)
 		double pic = -1.;
 		if(args.size() > 2)
-		{
-			pic = readDoubleArg(args.get(2));
+		{	pic = readDoubleArg(args.get(2));
 			if(pic < 0 || pic > 1)
 				throw new Exception("PIC damping in '" + dcmd + "' must be from 0 to 1:\n" + args);
 			dampcmd = dampcmd + " PIC='" + pic + "'>" + formatDble(damp) + "</" + dcmd + ">\n";
@@ -1992,8 +1964,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// XPIC (optional)
 		if(args.size() > 3)
-		{
-			int xpicOrder = readIntArg(args.get(3));
+		{	int xpicOrder = readIntArg(args.get(3));
 			if(xpicOrder < 1)
 				throw new Exception("XPIC order in '" + dcmd + "' must be integer > 0:\n" + args);
 			xpic = "    <XPIC order='" + xpicOrder + "'/>\n";
@@ -2004,38 +1975,30 @@ public class CmdViewer extends JNCmdTextDocument
 			xpic = null;
 	}
 
-	// MultimaterialMode Vmin,Dcheck,Normals,RigidBias
+	// MultimaterialMode Lumping,Dcheck,Normals,RigidBias
 	public void doMultimaterialMode(ArrayList<String> args) throws Exception
-	{ // MPM
-			// Only
+	{	// MPM Only
 		requiresMPM(args);
 
 		// turn it on
-		MMVmin = 0.; // zero by default
-		MMNormals = 2; // avggrad default
-		MMDcheck = 1; // enabled by default
+		MMLump = -1; // not used by default
+		MMNormals = 2; // avggrad default (>=0 means multimaterial mode)
 		MMRigidBias = 1.0;
 		MMAzimuth = 0.0;
 		MMPolar = 0.0;
 
-		// Vmin
+		// Lumping (used to be Vmin), but current not used even if set
 		if(args.size() > 1)
-		{
-			MMVmin = readDoubleArg(args.get(1));
-			if(MMVmin < 0.)
-				MMVmin = 0.;
+		{	MMLump = readIntArg(args.get(1));
 		}
 
-		// Dcheck
-		if(args.size() > 2)
-		{
-			HashMap<String, Integer> options = new HashMap<String, Integer>(4);
-			options.put("enabled", new Integer(1));
-			options.put("yes", new Integer(1));
-			options.put("disabled", new Integer(0));
-			options.put("no", new Integer(0));
-			MMDcheck = readIntOption(args.get(2), options, "Displacement check option");
-		}
+		// Dcheck (but no longer used)
+		/*
+		 * if(args.size() > 2) { HashMap<String, Integer> options = new HashMap<String, Integer>(4);
+		 * options.put("enabled", new Integer(1)); options.put("yes", new Integer(1)); options.put("disabled", new
+		 * Integer(0)); options.put("no", new Integer(0)); MMDcheck = readIntOption(args.get(2), options,
+		 * "Displacement check option"); }
+		 */
 
 		// Normals
 		if(args.size() > 3)
@@ -2046,6 +2009,8 @@ public class CmdViewer extends JNCmdTextDocument
 			options.put("avggrad", new Integer(2));
 			options.put("owngrad", new Integer(3));
 			options.put("specify", new Integer(4));
+			options.put("linreg", new Integer(5));
+			options.put("logreg", new Integer(6));
 			MMNormals = readIntOption(args.get(3), options, "Normals option");
 		}
 
@@ -2065,9 +2030,8 @@ public class CmdViewer extends JNCmdTextDocument
 	}
 
 	// ContactPosition Value
-	public void doContactPosition(ArrayList<String> args) throws Exception
-	{ // MPM
-			// Only
+	public void doContactPosition(ArrayList<String> args,boolean forCracks) throws Exception
+	{	// MPM Only
 		requiresMPM(args);
 
 		// read analysis type
@@ -2075,15 +2039,17 @@ public class CmdViewer extends JNCmdTextDocument
 			throw new Exception("'" + args.get(0) + "' has too few parameters:\n" + args);
 
 		double cp = readDoubleArg(args.get(1));
-		ContactPosition = "      <ContactPosition>" + formatDble(cp) + "</ContactPosition>\n";
+		if(forCracks)
+			ContactPositionCracks = "      <ContactPosition>" + formatDble(cp) + "</ContactPosition>\n";
+		else
+			ContactPosition = "      <ContactPosition>" + formatDble(cp) + "</ContactPosition>\n";
 	}
 
 	// ContactMM (LawID),<material ID (only as material prop)>
 	// MMMode = 0 (cracks), 1 (multimaterial), 2 (material property), 3 an
 	// attribute
 	public String doContactLaw(ArrayList<String> args,int MMMode) throws Exception
-	{ // MPM
-			// Only
+	{	// MPM Only
 		requiresMPM(args);
 
 		// read analysis type
@@ -2124,7 +2090,7 @@ public class CmdViewer extends JNCmdTextDocument
 	// MMMode = 0 (cracks), 1 (multimaterial), 2 (material property), 3 an
 	// attribute for CrackList
 	public String doFriction(ArrayList<String> args,int MMMode) throws Exception
-	{   // MPM  Only
+	{ // MPM  Only
 		requiresMPM(args);
 
 		// read analysis type
@@ -2239,8 +2205,7 @@ public class CmdViewer extends JNCmdTextDocument
 	// FeedbackDamping #1,#2,#3 (number,function,number)
 	// PFeedbackDamping #1,#2,#3 (same for particle damping)
 	public void doFBDamping(ArrayList<String> args,String dfbcmd) throws Exception
-	{ // MPM
-			// Only
+	{	// MPM Only
 		requiresMPM(args);
 
 		// read analysis type
@@ -2277,16 +2242,14 @@ public class CmdViewer extends JNCmdTextDocument
 
 	// LeaveLimit #1 (integer)
 	public void doExtrapolateRigid(ArrayList<String> args) throws Exception
-	{ // MPM
-			// Only
+	{	// MPM Only
 		requiresMPM(args);
 
 		// activate with no argument
 		if(args.size() < 2)
 			extrapolateRigid = "    <ExtrapolateRigid/>\n";
 		else
-		{
-			String option = readStringArg(args.get(1));
+		{	String option = readStringArg(args.get(1));
 			if(option.toLowerCase().equals("yes"))
 				extrapolateRigid = "    <ExtrapolateRigid/>\n";
 			else
@@ -2294,10 +2257,26 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 	}
 
+	// ExactTraction (yes or no)
+	public void doExactTractions(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+
+		// activate with no argument
+		if(args.size() < 2)
+			exactTractions = "    <ExactTractions/>\n";
+		else
+		{	String option = readStringArg(args.get(1));
+			if(option.toLowerCase().equals("yes"))
+				exactTractions = "    <ExactTractions/>\n";
+			else
+				exactTractions = "";
+		}
+	}
+
 	// LeaveLimit #1 (integer)
 	public void doLeaveLimit(ArrayList<String> args) throws Exception
-	{ // MPM
-			// Only
+	{	// MPM Only
 		requiresMPM(args);
 
 		// read analysis type
@@ -2330,18 +2309,21 @@ public class CmdViewer extends JNCmdTextDocument
 
 		double ref = 0.;
 		if(args.size() > 2)
-		{	ref = readDoubleArg(args.get(2));
+		{
+			ref = readDoubleArg(args.get(2));
 			if(ref < 0.)
 				throw new Exception("'" + args.get(0) + "' second parameter must >= 0:\n" + args);
 			if(isMoisture && ref > 0.)
 				throw new Exception("'" + args.get(0) + "' second parameter must <= 1:\n" + args);
 		}
-		
+
 		// viscosity for poroelasticity
 		double visc = 1.;
 		if(!isMoisture)
-		{	if(args.size() > 3)
-			{	visc = readDoubleArg(args.get(3));
+		{
+			if(args.size() > 3)
+			{
+				visc = readDoubleArg(args.get(3));
 				if(visc <= 0.)
 					throw new Exception("'" + args.get(0) + "' third parameter must positive:\n" + args);
 			}
@@ -2351,16 +2333,16 @@ public class CmdViewer extends JNCmdTextDocument
 		if(isMoisture)
 			diffusion = "    <Diffusion reference='" + formatDble(ref) + "'/>\n";
 		else
-		{	diffusion = "    <Poroelasticity reference='" + formatDble(ref) + 
-						"' viscosity='" + formatDble(visc) + "'/>\n";
+		{
+			diffusion = "    <Poroelasticity reference='" + formatDble(ref) + "' viscosity='" + formatDble(visc)
+					+ "'/>\n";
 		}
 	}
 
 	// Conduction (yes or no),<adibatic (or mechanical energy) or isothermal or
 	// "Crack Tips">
 	public void doConduction(ArrayList<String> args) throws Exception
-	{ // MPM
-			// Only
+	{	// MPM Only
 		requiresMPM(args);
 
 		// read analysis type
@@ -2461,7 +2443,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// handle special commands in some tasks
 		if(currentCustomTask.equals("ReverseLoad"))
-		{	// quantity combines into a single command
+		{ // quantity combines into a single command
 			if(paramName.equals("quantity") && args.size() > 2)
 			{
 				String value = readStringArg(args.get(2));
@@ -2469,7 +2451,7 @@ public class CmdViewer extends JNCmdTextDocument
 				return;
 			}
 			else if(paramName.equals("material") && args.size() > 2)
-			{	// material looks for material ID
+			{ // material looks for material ID
 				int matnum = mats.getMatID(readStringArg(args.get(2)));
 				if(matnum <= 0)
 				{ // negative is allowed for reaction forces
@@ -2585,22 +2567,6 @@ public class CmdViewer extends JNCmdTextDocument
 		ptsPerElement = "    <MatlPtsPerElement>" + numCell + "</MatlPtsPerElement>\n";
 	}
 
-	// convert @ expression to Double
-	public Double getAtDouble(String s)
-	{ // get as string and see if a number
-		String expr = getAtString(s);
-		if(expr == null)
-			return null;
-		try
-		{
-			return new Double(Double.parseDouble(expr));
-		}
-		catch (Exception e)
-		{
-		}
-		return null;
-	}
-
 	// convert @ expression to String
 	public String getAtString(String s)
 	{ // split at periods
@@ -2645,8 +2611,7 @@ public class CmdViewer extends JNCmdTextDocument
 					}
 
 					else if(nextAtom.equals("get"))
-					{
-						i++;
+					{	i++;
 						if(i >= atoms.length)
 							throw new Exception("get property missing variable name");
 						if(!obj.getClass().equals(CmdViewer.class))
@@ -2655,8 +2620,7 @@ public class CmdViewer extends JNCmdTextDocument
 					}
 
 					else if(nextAtom.equals("section"))
-					{
-						i++;
+					{	i++;
 						if(i >= atoms.length)
 							throw new Exception("The section name is missing");
 						atoms[i] = atomString(atoms[i], variablesStrs);
@@ -2669,7 +2633,7 @@ public class CmdViewer extends JNCmdTextDocument
 					{
 						if(!obj.getClass().equals(DocViewer.class))
 							throw new Exception("timeplot property can only be used for results documents");
-						return ((DocViewer) obj).resDoc.collectTimePlotData(atoms, variables, variablesStrs);
+						return ((DocViewer) obj).resDoc.collectTimePlotData(atoms, variablesStrs);
 					}
 
 				}
@@ -2686,14 +2650,13 @@ public class CmdViewer extends JNCmdTextDocument
 	}
 
 	// check atom in a property and return string which can be
-	// In quoted, then unquoted text, if string variable,value of the variable,
+	// quoted text (then unquoted the text) or string variable (value of the variable)
 	// or the text
 	public static String atomString(String atom,HashMap<String, String> variablesStrsLoc)
 	{ // check for quoted text
 		int clen = atom.length();
 		if(clen > 1)
-		{
-			if(atom.charAt(0) == '"' && atom.charAt(clen - 1) == '"')
+		{	if(atom.charAt(0) == '"' && atom.charAt(clen - 1) == '"')
 				return atom.substring(1, clen - 1);
 		}
 
@@ -2707,18 +2670,15 @@ public class CmdViewer extends JNCmdTextDocument
 	}
 
 	// check atom in a property and return an expected integer
-	public static int atomInt(String atom,HashMap<String, Double> variablesLoc) throws Exception
+	public static int atomInt(String atom,HashMap<String, String> variablesLoc) throws Exception
 	{
-		Double atomDble = variablesLoc.get(atom);
-		if(atomDble != null)
-			return atomDble.intValue();
+		String atomDble = variablesLoc.get(atom);
+		if(atomDble == null) atomDble = atom;
 		try
-		{
-			return Integer.parseInt(atom);
+		{	return Integer.parseInt(atomDble);
 		}
 		catch (Exception e)
-		{
-			new Exception("Invalid object property should be an integer (" + atom + ")");
+		{	new Exception("Invalid object property should be an integer (" + atom + ")");
 		}
 		return 0;
 	}
@@ -2769,8 +2729,7 @@ public class CmdViewer extends JNCmdTextDocument
 		// FEA section: Mesh
 		// -----------------------------------------------------------
 		if(isFEA())
-		{
-			xml.append("  <Mesh>\n" + areas.toXMLString());
+		{	xml.append("  <Mesh>\n" + areas.toXMLString());
 
 			// check added xml
 			more = xmldata.get("mesh");
@@ -2787,15 +2746,17 @@ public class CmdViewer extends JNCmdTextDocument
 		// MPM sections: MPMHeader, Mesh, MaterialPoints, CrackList
 		// -----------------------------------------------------------
 		if(isMPM())
-		{ // MPM Header
+		{ 	// MPM Header
 			// -----------------------------------------------------------
 			xml.append("  <MPMHeader>\n");
 
 			// MPM method and GIMP
 			xml.append("    <MPMMethod>" + mpmMethod + "</MPMMethod>\n");
-			if(skipExtrap)
+			if(skipExtrap && mpmMethod != 0)
 				xml.append("    <SkipPostExtrapolation/>\n");
 			xml.append("    <GIMP type='" + shapeMethod + "'/>\n");
+			if(shapeMethod.equals("lCPDI") || shapeMethod.equals("qCPDI") || shapeMethod.equals("B2CPDI"))
+				xml.append(CPDIrcrit);
 			if(plusSpin)
 				xml.append("    <TrackParticleSpin/>\n");
 			if(ptsPerElement != null)
@@ -2836,25 +2797,32 @@ public class CmdViewer extends JNCmdTextDocument
 				xml.append(diffusion);
 
 			// cracks
-			more = cracks.getSettings(MMNormals, ContactPosition);
+			if(MMNormals<0)
+			{	// for backward compatibility, single material mode without
+				// ContactPositionCracks setting, will use its ContactPosition one
+				if(ContactPositionCracks==null) ContactPositionCracks = ContactPosition;
+			}
+			more = cracks.getSettings(MMNormals, ContactPositionCracks);
 			if(more != null)
 				xml.append(more);
 
-			// Multimaterial mode <MultiMaterialMode Vmin='0.0' Dcheck='0'
-			// Normals='0' RigidBias='100'>
+			// Multimaterial mode <MultiMaterialMode Lumping='1'
+			// 							Normals='0' RigidBias='100'>
+			// Add Aximuth and Polor for specify
 			// Subordinate friction and contact position
 			if(MMNormals >= 0)
 			{
+				xml.append("    <MultiMaterialMode");
+				if(MMLump >= 0)
+					xml.append(" Lumping='" + formatDble(MMLump) + "'");
 				if(MMNormals == 4)
 				{
-					xml.append("    <MultiMaterialMode Vmin='" + formatDble(MMVmin) + "' Dcheck='" + MMDcheck
-							+ "' Normals='" + MMNormals + "' Azimuth='" + formatDble(MMAzimuth) + "' Polar='"
+					xml.append(" Normals='" + MMNormals + "' Azimuth='" + formatDble(MMAzimuth) + "' Polar='"
 							+ formatDble(MMPolar) + "'>\n");
 				}
 				else
 				{
-					xml.append("    <MultiMaterialMode Vmin='" + formatDble(MMVmin) + "' Dcheck='" + MMDcheck
-							+ "' Normals='" + MMNormals + "' RigidBias='" + formatDble(MMRigidBias) + "'>\n");
+					xml.append(" Normals='" + MMNormals + "' RigidBias='" + formatDble(MMRigidBias) + "'>\n");
 				}
 				if(FrictionMM != null)
 					xml.append(FrictionMM);
@@ -2866,6 +2834,9 @@ public class CmdViewer extends JNCmdTextDocument
 			// stress free temperature
 			if(stressFreeTemp != 0.)
 				xml.append("    <StressFreeTemp>" + formatDble(stressFreeTemp) + "</StressFreeTemp>\n");
+			
+			// exact tractions
+			xml.append(exactTractions);
 
 			// check added xml
 			more = xmldata.get("mpmheader");
@@ -2921,8 +2892,7 @@ public class CmdViewer extends JNCmdTextDocument
 		// ParticleBCs
 		// -----------------------------------------------------------
 		if(isMPM())
-		{
-			String partXml = mpmParticleBCs.toXMLString();
+		{	String partXml = mpmParticleBCs.toXMLString();
 			more = xmldata.get("particlebcs");
 			if(partXml.length() > 0 || more != null)
 			{
@@ -2936,12 +2906,11 @@ public class CmdViewer extends JNCmdTextDocument
 		// FEA: Thermal, MPM: Thermal, Gravity, CustomTasks
 		// -----------------------------------------------------------
 		if(isFEA())
-		{ // FEA: Thermal
+		{ 	// FEA: Thermal
 			// -----------------------------------------------------------
 			more = xmldata.get("thermal");
 			if(more != null || feaTemp != null || stressFreeTemp != 0.)
-			{
-				xml.append("  <Thermal>\n");
+			{	xml.append("  <Thermal>\n");
 
 				if(feaTemp != null)
 					xml.append("    <Temperature>" + feaTemp + "</Temperature>\n");
@@ -2959,12 +2928,11 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 
 		else
-		{ // MPM: Thermal
+		{ 	// MPM: Thermal
 			// -----------------------------------------------------------
 			more = xmldata.get("thermal");
 			if(more != null || conduction != null)
-			{
-				xml.append("  <Thermal>\n");
+			{	xml.append("  <Thermal>\n");
 
 				// conduction
 				if(conduction != null)
@@ -2982,8 +2950,7 @@ public class CmdViewer extends JNCmdTextDocument
 			// -----------------------------------------------------------
 			more = xmldata.get("gravity");
 			if(more != null || gravity != null)
-			{
-				xml.append("  <Gravity>\n");
+			{	xml.append("  <Gravity>\n");
 
 				// check added xml
 				if(gravity != null)
@@ -2999,13 +2966,11 @@ public class CmdViewer extends JNCmdTextDocument
 			// -----------------------------------------------------------
 			more = xmldata.get("customtasks");
 			if(customTasks.length() > 0 || more != null)
-			{
-				xml.append("  <CustomTasks>\n");
+			{	xml.append("  <CustomTasks>\n");
 
 				// add tasks
 				if(customTasks.length() > 0)
-				{
-					xml.append(customTasks);
+				{	xml.append(customTasks);
 					xml.append("    </Schedule>\n");
 				}
 
@@ -3151,14 +3116,30 @@ public class CmdViewer extends JNCmdTextDocument
 	// format double and remove trailing zeros from number string (unless has e)
 	public String formatDble(double dval)
 	{
-		String dstr = String.format(Locale.US, "%g", dval);
-		if(dstr.indexOf('e') > 0 || dstr.indexOf('E') > 0)
-			return dstr;
-		if(dstr.indexOf('.') < 0)
-			return dstr;
-
+		String dstr = String.format(Locale.US, "%.8g", dval);
+		int dloc = dstr.indexOf('.');
+		int eloc = dstr.indexOf('e');
+		int lastChar;
+		if(eloc<0) eloc = dstr.indexOf('E');
+		
+		// exponential forms
+		if(eloc>=0)
+		{	// java might insert zeros after the decimal point
+			if(dloc<0)	return dstr;
+			
+			// find last nonzero
+			lastChar = eloc-1;
+			while(lastChar>0 && dstr.charAt(lastChar)=='0')
+				lastChar--;
+			
+			return dstr.substring(0,lastChar+1)+dstr.substring(eloc,dstr.length());
+		}
+		
+		// done if no deciment
+		if(dloc<0) return dstr;
+		
 		// remove trailing zeros (if has decimal point)
-		int lastChar = dstr.length() - 1;
+		lastChar = dstr.length() - 1;
 		while (lastChar > 0 && dstr.charAt(lastChar) == '0')
 			lastChar--;
 
@@ -3206,11 +3187,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 	// return variable value (or null if none) as string
 	public String getVariable(String varName)
-	{
-		Double nvar = variables.get(varName);
-		if(nvar != null)
-			return JNUtilities.formatDouble(nvar.doubleValue());
-		String svar = variablesStrs.get(varName);
+	{	String svar = variablesStrs.get(varName);
 		return svar;
 	}
 
@@ -3228,8 +3205,7 @@ public class CmdViewer extends JNCmdTextDocument
 			etitle = "Export contents of output panel";
 
 		if(exportFile == null)
-		{
-			JFileChooser expChooser = new JFileChooser();
+		{	JFileChooser expChooser = new JFileChooser();
 			expChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 			NFMVPrefs.setWorkspace(expChooser);
 			expChooser.setDialogTitle(etitle);
@@ -3237,19 +3213,21 @@ public class CmdViewer extends JNCmdTextDocument
 			if(result != JFileChooser.APPROVE_OPTION)
 				return false;
 			exportFile = expChooser.getSelectedFile();
+			
+			// check if overwriting
+			exportFile = JNUtilities.CheckFileStatus(this, exportFile);
+			if(exportFile == null) return false;
 		}
 
 		// save output text to exportFile
 		try
-		{
-			FileWriter theFile = new FileWriter(exportFile);
+		{	FileWriter theFile = new FileWriter(exportFile);
 			theFile.write(soutConsole.console.getText());
 			theFile.flush();
 			theFile.close();
 		}
 		catch (Exception fe)
-		{
-			Toolkit.getDefaultToolkit().beep();
+		{	Toolkit.getDefaultToolkit().beep();
 			JOptionPane.showMessageDialog(this, "Error exporting output results: " + fe);
 			return false;
 		}
@@ -3330,17 +3308,14 @@ public class CmdViewer extends JNCmdTextDocument
 
 	// action for stop analysis menu command
 	protected class ExportXMLAction extends JNAction
-	{
-		private static final long serialVersionUID = 1L;
+	{	private static final long serialVersionUID = 1L;
 
 		public ExportXMLAction()
-		{
-			super("Export Output...", KeyEvent.VK_S, true);
+		{	super("Export Output...", KeyEvent.VK_S, true);
 		}
 
 		public void actionPerformed(ActionEvent e)
-		{
-			exportOutput(null, null);
+		{	exportOutput(null, null);
 		}
 	}
 

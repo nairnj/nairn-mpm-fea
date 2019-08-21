@@ -16,6 +16,7 @@
 #include "System/CommonArchiveData.hpp"
 
 class BoundaryCondition;
+class MPMBase;
 
 // Archiving both points and cracks
 #define ARCH_ByteOrder 0
@@ -55,7 +56,7 @@ class ArchiveData : public CommonArchiveData
 		bool MakeArchiveFolder(void);
 		bool BeginArchives(bool,int);
 		void ArchiveResults(double);
-		void ArchiveVTKFile(double,vector< int >,vector< int >,vector< char * >,vector< int >,double **);
+		void ArchiveVTKFile(double,vector< int >,vector< int >,vector< char * >,vector< int >,double **,int);
 		void ArchiveHistoryFile(double,vector< int >);
 		void FileError(const char *,const char *,const char *);
 		char *CreateFileInArchiveFolder(char *);
@@ -90,7 +91,7 @@ class ArchiveData : public CommonArchiveData
 		double *GetGlobalTimePtr(void);
 		Vector *GetLastContactForcePtr(void);
 		double GetLastArchived(int);
-	
+		void Decohesion(double,MPMBase *,double,double,double,double,double,double,double);
 
 	private:
 		int archBlock;
@@ -114,6 +115,8 @@ class ArchiveData : public CommonArchiveData
 		char *logFile;							// file for tracking progress
 		double logStartTime;
 #endif
+		char *decohesionFile;					// decohesion file
+		int decohesionModes[11];				// initial modes (0 teminated) - softening materials max of 10
 	
 		// methods
 		void CalcArchiveSize(void);

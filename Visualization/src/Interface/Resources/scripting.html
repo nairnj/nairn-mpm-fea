@@ -64,7 +64,7 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 
 <div id="pagetitle"><h1>NairnFEAMPMViz Scripting Language</h1></div>
 
-<p>The same <a href="commands.html#language">interpretive language</a> used by <b>NairnFEAMPMViz</b> to set up FEA and MPM calculations can also be used to provide scripted control of those calculations. This section explains how to create and run scripts and documents all scripting commands. 
+<p>The same <a href="commands.html#language">interpretive language</a> used by <b>NairnFEAMPMViz</b> to set up FEA and MPM calculations can also be used to provide scripted control of this application to automate running of multiple calculations. This section explains how to create and run scripts and documents all application scripting commands. 
 </p>
 
 <h2><a name="cindex"></a>Documentation Outline</h2>
@@ -85,7 +85,7 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 
 <p>Before a script can be run, the new document must be saved. You should save it with extension <code>.fmcmd</code> or <code>.cmd</code>. Several scripting commands deal with files and it is usually best to specify those files using a relative path from the saved script control document. It is therefore best to save scripts in the same folder (or near the folder) as files that the script commands will access.</p>
 
-<p>To run a script, use the "Interpret Commands..." menu command (in the "Analyze" menu) or click the "script" icon in the tool bar. The script will run. The script may write results to it's console as calculations proceed. When the script is done, the script window will return to the front and any written results wil be visible.</p>
+<p>To run a script, use the "Interpret Commands..." menu command (in the "Analyze" menu) or click the "script" icon in the tool bar. The script will run. The script may write results to it's console as calculations proceed. When the script is done, the script window will return to the front and any written results will be visible.</p>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
@@ -95,19 +95,19 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 
 <p>When a script tells a commands document to interpret its commands or to interpret and run calculations, all variables defined in the script are transferred to the document. The typical script will define variables to control a calculation and then run one or more calculations.</p>
 
-<p>Now, most FEA and MPM commands documents are stand-alone documents, which means they define all their own variables. To allow such documents to use script-defined variables when run from a script but their own variables when run on their own, a running script will also define a read only variable named <code>_ScriptMode_</code>. Thus, an FEA or MPM commands document can contain a section like:</p>
+<p>Most FEA and MPM commands documents are written as stand-alone documents, which means they define all their own variables. To allow such documents to use script-defined variables when run from a script but their own variables when run on their own, a running script will also define a read only variable named <code>_ScriptMode_</code>. Thus, an FEA or MPM commands document can contain a section like:</p>
 
 <blockquote>ifNDef _ScriptMode_<br>
   &nbsp;&nbsp;&nbsp;#myVar = 23<br>
-  &nbsp;&nbsp;&nbsp;(define all other variables)<br>
+  &nbsp;&nbsp;&nbsp;(define variables to run as stand-alone file)<br>
   &nbsp;&nbsp;&nbsp;...<br>
 endif</blockquote>
 
-<p>When this FEA or MPM commands document is run in script control, the script will be expected to define all the variables defined in the above block and the commands document will use the script-defined variables instead of it's local variables. When that document is run by itself, it will execute the above section and define all needed variables.</p>
+<p>When this FEA or MPM commands document is run in script control, the script will be expected to define all the variables defined in the above block and the commands document will use the script-defined variables instead of it's local variables. When that document is run by itself, however, it will execute the above section and define all variables need to run as a stand-alone file.</p>
 
 <h2><a name="basic"></a>Basic Scripting Commands</h2>
 
-<p>These are basic scripting commands.</p>
+<p>These are the basic scripting commands.</p>
 
 <ul>
 <li><code>Script</code><br>
@@ -125,16 +125,16 @@ If optional <code>(path)</code> is provided, that folder will be created (along 
 The <code>(path)</code> can be a full path or relative to the script file (note: when providing <code>(path)</code>,
 you must also provide <code>(title)</code>, but it can be an empty string ("")).<br>
 &nbsp;&nbsp;&nbsp;&nbsp;When done, the <code>(strVar)</code>
-(which must contain an unquoted and valid string variable name and cannot be an expression) will be set to the full path
-to the selected or created folder. If a selection process is cancelled, the string variable will be
+(which must contain an unquoted and valid variable name and cannot be an expression) will be set to the full path
+to the selected or created folder. If a selection process is cancelled, the variable will be
 set to an empty string. The returned path will be terminated by the system-dependent path separator.
 For example, the folder path might be:
 <blockquote>C:\Users\MyName\Documents\MyFolder\</blockquote>
 when running in Windows or
 <blockquote>/Users/MyName/Documents/MyFolder/</blockquote>
 when running in Mac or Linux. You can provide a system-independent path to files in the folder by using
-<blockquote>#fldr$&amp;"NewFile.mpm"</blockquote>
-where <code>#fldr$</code> was the <code>(strVar)</code> argument to the <code>OpenFolder</code> command.
+<blockquote>#fldr&amp;"NewFile.mpm"</blockquote>
+where <code>#fldr</code> was the <code>(strVar)</code> argument to the <code>OpenFolder</code> command.
 </li>
 
 </ul>

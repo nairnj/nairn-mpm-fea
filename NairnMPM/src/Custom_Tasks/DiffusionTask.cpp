@@ -126,7 +126,7 @@ TransportTask *DiffusionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double s
 #pragma mark UPDATE PARTICLES TASK
 
 // increment particle concentration with check in valid range
-TransportTask *DiffusionTask::MoveTransportValue(MPMBase *mptr,double deltime,double rate) const
+TransportTask *DiffusionTask::MoveTransportValue(MPMBase *mptr,double deltime,double rate,double value) const
 {
 	mptr->pConcentration += deltime*rate;
 	

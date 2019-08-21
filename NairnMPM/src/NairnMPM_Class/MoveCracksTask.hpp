@@ -23,7 +23,7 @@ class MoveCracksTask : public MPMTask
 		MoveCracksTask(const char *);
 	
 		// required methods
-		virtual void Execute(void);
+		virtual void Execute(int);
 	
 	protected:
 	

@@ -67,57 +67,89 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     for(i=1;i<=numnds;i++)
 	{	vel=nd[nds[i]]->GetVelocity((short)vfld[i],matFld);
 		Vector grad = MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
-        dv += Matrix3(&vel,&grad);
+		dv += Matrix3(&vel,&grad);
     }
-	    
+	
 	// convert to strain increments
     dv.Scale(strainTime);
     
 	// pass on to material class to handle
 	ResidualStrains res = ScaledResidualStrains(secondPass);
-	PerformConstitutiveLaw(dv,strainTime,np,props,&res);
+	PerformConstitutiveLaw(dv,strainTime,np,props,&res,NULL);
 }
 
 // Pass on to material class
-void MatPoint3D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void *props,ResidualStrains *res)
+void MatPoint3D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void *props,ResidualStrains *res,Tensor *gStress)
 {
     // update particle strain and stress using its constitutive law
 	const MaterialBase *matRef = theMaterials[MatID()];
-    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res,0);
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res,0,gStress);
 }
 
-// Move position (3D) (in mm)
-// First finish accEeff by subtractin ap*Vp(n) and get adjucted acceleration base on last time step
-// Then Update using dx = dt*(vgpn + 0.5*accEff*dt)
-// Must be called BEFORE velocity update, because is needs vp(n) at start of timestep
-void MatPoint3D::MovePosition(double delTime,Vector *vgpn,Vector *accEff,double particleAlpha)
+// Move position and velocity (2D)
+void MatPoint3D::MoveParticle(GridToParticleExtrap *gp)
 {
-	// finish extra acceleration terms by subtracting ap*Vp(n)
-	accEff->x -= particleAlpha*vel.x;
-	accEff->y -= particleAlpha*vel.y;
-	accEff->z -= particleAlpha*vel.z;
+	// get vm = S(v-a dt) for FLIP and Sv^+ FMPM (and PIC)
+	Vector vm;
+	if(gp->m>-2)
+	{	// FLIP and XPIC(1) damps with Sv (which is initial lumped velocity)
+		vm = gp->Svtilde;
+		AddScaledVector(&vm,&gp->Sacc,-timestep);
+	}
+	else
+	{	// XPIC(k>1) damps by initial lumped velocity, and Svtilde holds Sv(k)
+		vm = gp->Svlumped;
+		AddScaledVector(&vm,&gp->Sacc,-timestep);
+	}
 	
-	// in this code, vgpn = vgpnp1
-	// position change
-	pos.x += delTime*(vgpn->x - 0.5*delTime*(acc.x - accEff->x));
-	pos.y += delTime*(vgpn->y - 0.5*delTime*(acc.y - accEff->y));
-	pos.z += delTime*(vgpn->z - 0.5*delTime*(acc.z - accEff->z));
+	// find Adamp0
+	Vector Adamp0;
+	Adamp0 = SetScaledVector(&vel,gp->particleAlpha);
 	
-	// finish acceleration
-	acc.x += accEff->x;
-	acc.y += accEff->y;
-	acc.z += accEff->z;
-}
+	Vector delV;
+	if(gp->m>=0)
+	{	// FLIP update velocity change
+		delV.x = (gp->Sacc.x - Adamp0.x)*timestep;
+		delV.y = (gp->Sacc.y - Adamp0.y)*timestep;
+		delV.z = (gp->Sacc.z - Adamp0.z)*timestep;
+		
+		// velocity
+		AddVector(&vel,&delV);
+		
+		// position update
+		Vector delXRate;
+		delXRate.x = vm.x + 0.5*delV.x;
+		delXRate.y = vm.y + 0.5*delV.y;
+		delXRate.z = vm.z + 0.5*delV.z;
+		AddScaledVector(&pos,&delXRate,timestep);
+	}
+	else
+	{	// XPIC update
+		
+		// save initial particle velocity
+		Vector delXRate = vel;
+		
+		// XPIC(k) velocity update
+		// For XPIC(1) Svtilde has Sv+, for XPIC(k>1) Svtilde has S(v(k)+a*dt)
+		vel.x = gp->Svtilde.x - Adamp0.x*timestep;
+		vel.y = gp->Svtilde.y - Adamp0.y*timestep;
+		vel.z = gp->Svtilde.z - Adamp0.z*timestep;
 
-// Move velocity (3D) (in mm/sec)
-// First get final acceleration on the particle
-//		accEff = acc - accExtra
-// Then update using Vp(n+1) = Vp(n) + accEff*dt
-void MatPoint3D::MoveVelocity(double delTime)
-{
-	vel.x += delTime*acc.x;
-	vel.y += delTime*acc.y;
-	vel.z += delTime*acc.z;
+		// find change in velocity
+		delV.x = vel.x - delXRate.x;
+		delV.y = vel.y - delXRate.y;
+		delV.z = vel.z - delXRate.z;
+
+		// position update
+		delXRate.x = vm.x + 0.5*delV.x;
+		delXRate.y = vm.y + 0.5*delV.y;
+		delXRate.z = vm.z + 0.5*delV.z;
+		AddScaledVector(&pos,&delXRate,timestep);
+	}
+
+	// J Integral needs effective particle acceleration
+	acc = MakeVector(delV.x/timestep,delV.y/timestep,delV.z/timestep);
+	
 }
 
 // Move rigid particle by new current velocity
@@ -336,11 +368,84 @@ void MatPoint3D::GetSemiSideVectors(Vector *r1,Vector *r2,Vector *r3) const
 	r3->z = pF[2][2]*psz.z;
 }
 
+// rescale vectors if needed in CPDI calcualtions
+void MatPoint3D::ScaleSemiSideVectorsForCPDI(Vector *r1,Vector *r2,Vector *r3) const
+{	// skip if not activated
+	if(ElementBase::rcrit<0.) return;
+	
+	// convert rcrit to dimensions based smallest dimension this element
+	Vector cellSize = theElements[ElemID()]->GetDeltaBox();
+	double rcrit = ElementBase::rcrit*fmin(cellSize.x,fmin(cellSize.y,cellSize.z));
+	
+	// check r1+r2+r3
+	bool rescale = false;
+	Vector la = MakeVector(r1->x+r2->x+r3->x, r1->y+r2->y+r3->y, r1->z+r2->z+r3->z);
+	double lamag = sqrt(la.x*la.x+la.y*la.y+la.z*la.z);
+	if(lamag>rcrit)
+	{	ScaleVector(&la,rcrit/lamag);
+		rescale = true;
+	}
+	
+	// check r1-r2+r3
+	Vector lb = MakeVector(r1->x-r2->x+r3->x, r1->y-r2->y+r3->y, r1->z-r2->z+r3->z);
+	double lbmag = sqrt(lb.x*lb.x+lb.y*lb.y+lb.z*lb.z);
+	if(lbmag>rcrit)
+	{	ScaleVector(&lb,rcrit/lbmag);
+		rescale = true;
+	}
+	
+	// check -r1+r2+r3
+	Vector lc = MakeVector(-r1->x+r2->x+r3->x, -r1->y+r2->y+r3->y, -r1->z+r2->z+r3->z);
+	double lcmag = sqrt(lc.x*lc.x+lc.y*lc.y+lc.z*lc.z);
+	if(lcmag>rcrit)
+	{	ScaleVector(&lc,rcrit/lcmag);
+		rescale = true;
+	}
+	
+	// check -r1-r2+r3
+	Vector ld = MakeVector(-r1->x-r2->x+r3->x, -r1->y-r2->y+r3->y, -r1->z-r2->z+r3->z);
+	double ldmag = sqrt(ld.x*ld.x+ld.y*ld.y+ld.z*ld.z);
+	if(ldmag>rcrit)
+	{	ScaleVector(&ld,rcrit/ldmag);
+		rescale = true;
+	}
+	
+	// exit if no scale
+	if(!rescale) return;
+	
+	// redefine r1 and r2 and r3
+	r1->x = 0.25*(la.x+lb.x-lc.x-ld.x);
+	r1->y = 0.25*(la.y+lb.y-lc.y-ld.y);
+	r1->z = 0.25*(la.z+lb.z-lc.z-ld.z);
+	
+	r2->x = 0.25*(la.x-lb.x+lc.x-ld.x);
+	r2->y = 0.25*(la.y-lb.y+lc.y-ld.y);
+	r2->z = 0.25*(la.z-lb.z+lc.z-ld.z);
+	
+	r3->x = 0.25*(la.x+lb.x+lc.x+ld.x);
+	r3->y = 0.25*(la.y+lb.y+lc.y+ld.y);
+	r3->z = 0.25*(la.z+lb.z+lc.z+ld.z);
+}
+
+#define ELLIPSE_METHOD_3D
 // Get distance from particle center to surface of deformed particle
 // along the provided unit vector
-// See JANOSU-13-74 to 77
 double MatPoint3D::GetDeformedRadius(Vector *norm) const
-{	Vector a,b,c;
+{
+#ifdef ELLIPSE_METHOD_3D
+	// unnormalized normal in undeformed config (n0x,n0y) = F^{-1}n
+	Matrix3 F = GetDeformationGradientMatrix();
+	Matrix3 Finv = F.Inverse();
+	Vector n0 = Finv.Times(norm);
+	
+	// return radius to deformed inscribed ellipsoid
+	// see JANOSU-014-82
+	Vector psz = GetParticleSize();
+	double rd = sqrt(n0.x*n0.x/(psz.x*psz.x) + n0.y*n0.y/(psz.y*psz.y) + n0.z*n0.z/(psz.z*psz.z));
+	return 1./rd;
+#else
+	// See JANOSU-13-74 to 77
+	Vector a,b,c;
 	GetSemiSideVectors(&a,&b,&c);
 	Vector aXb,aXc,bXc;
 	CrossProduct(&aXb,&a,&b);
@@ -350,6 +455,7 @@ double MatPoint3D::GetDeformedRadius(Vector *norm) const
 	double nac = fabs(DotVectors(norm,&aXc));
 	double nbc = fabs(DotVectors(norm,&bXc));
 	return fabs(DotVectors(&a,&bXc))/fmax(nab,fmax(nac,nbc));
+#endif
 }
 
 // Get undeformed size (only called by GIMP traction and Custom thermal ramp)
@@ -371,6 +477,9 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
     //      and generalize semi width lp in 1D GIMP
 	Vector c,r1,r2,r3;
     GetSemiSideVectors(&r1,&r2,&r3);
+	
+	// rescale if needed
+	ScaleSemiSideVectorsForCPDI(&r1,&r2,&r3);
 	
     // Particle domain volume is 8 * volume of the parallelepiped defined by r1, r2, and r3
 	// V = 8 * (r1 . (r2 X r3))
@@ -459,6 +568,50 @@ Vector MatPoint3D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Ve
 	
 	// get polygon vectors - these are from particle to edge
 	GetSemiSideVectors(&r1,&r2,&r3);
+	double uGIMPsize = -1.;
+#ifndef TRACTION_ALWAYS_DEFORMED
+	switch(ElementBase::useGimp)
+	{	case UNIFORM_GIMP:
+		case UNIFORM_GIMP_AS:
+		case BSPLINE_GIMP:
+		case BSPLINE_GIMP_AS:
+		case BSPLINE:
+		case POINT_GIMP:
+		{	double rx,ry,rz;
+			
+			// get deformed area
+			Vector Ap;
+			switch(face)
+			{	case 1:
+				case 3:
+					CrossProduct(&Ap,&r1,&r3);
+					break;
+				case 4:
+				case 2:
+					CrossProduct(&Ap,&r2,&r3);
+					break;
+				case 5:
+				default:
+					CrossProduct(&Ap,&r1,&r2);
+					break;
+
+			}
+			uGIMPsize = sqrt(DotVectors(&Ap,&Ap));
+			
+			// for extrapolations, however, switch to uGIMP nodes
+			GetUndeformedSemiSides(&rx,&ry,&rz);
+			ZeroVector(&r1);
+			ZeroVector(&r2);
+			ZeroVector(&r3);
+			r1.x = rx;
+			r2.y = ry;
+			r3.z = rz;
+			break;
+		}
+		default:
+			break;
+	}
+#endif
 	
 	switch(face)
 	{	case 1:
@@ -610,7 +763,7 @@ Vector MatPoint3D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Ve
 	// Face Area/4 = mag of cross product vector
 	Vector Ap;
 	CrossProduct(&Ap,&radii[0],&radii[1]);
-	double faceWt = sqrt(DotVectors(&Ap,&Ap));
+	double faceWt = uGIMPsize<0. ? sqrt(DotVectors(&Ap,&Ap)) : uGIMPsize ;
 
 	// get traction normal vector times 1/4 area
 	Vector wtNorm;
@@ -626,6 +779,8 @@ Vector MatPoint3D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Ve
 			break;
 		case N_DIRECTION:
 			// vector Ap is normal to the face with magnitude area/4
+			if(uGIMPsize>0.)
+				ScaleVector(&Ap,uGIMPsize/sqrt(DotVectors(&Ap,&Ap)));
 			wtNorm = Ap;
 			break;
 		default:

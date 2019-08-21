@@ -66,13 +66,63 @@ MatPtLoadBC *MatPtTractionBC::AddMPFluxBC(double bctime)
     // condition value
 	MPMBase *mpmptr = mpm[ptNum-1];
 	double tmag = BCValue(bctime);
-	Vector theFrc;
 
 	// Particle information about field
 	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
 	int matfld = matID->GetField();									// material velocity field
+
+    // only in 2D and when activated
+	if(fmobj->np!=THREED_MPM && fmobj->exactTractions)
+	{	int cElem[4],numElements=4;
+		Vector ends[8],nscale[4];
+		mpmptr->GetExactTractionInfo(face,direction,cElem,ends,nscale,&numElements);
+		
+		int j=0;
+		double rmid=1.,dr=1.;
+		bool isAxisymmetric = fmobj->np==AXISYMMETRIC_MPM;
+		double thick = isAxisymmetric ? 1. : mpmptr->thickness();
+		Vector xi1,xi2;
+		int ndsT[5];
+		double fnT[4];
+
+		for(int e=0;e<numElements;e++)
+		{	// element containing endpoint j and j+1
+			const ElementBase *elref = theElements[cElem[e]];		// element containing this particle
+			
+			// Get dimensionless points
+			elref->GetXiPos(&ends[j],&xi1);
+			elref->GetXiPos(&ends[j+1],&xi2);
+			
+			// get radial terms if needed
+			if(isAxisymmetric)
+			{	rmid = 0.5*(ends[j].x+ends[j+1].x);
+				dr = 0.5*(ends[j+1].x-ends[j].x);
+			}
+		
+			// Get shape functions
+			elref->GridTractionFunction(&xi1,&xi2,isAxisymmetric,fnT,ndsT,rmid,dr);
+			Vector theFrc;
+			for(int i=1;i<=ndsT[0];i++)
+			{	// external force vector - nscale has direction and length, scale by function and thickness
+				CopyScaleVector(&theFrc,&nscale[e],thick*tmag*fnT[i-1]);
+				
+				// may need changes to handle cracks
+				
+				short vfld = 0;
+				nd[ndsT[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
+			}
+			
+			// next corner pair
+			j += 2;
+		}
+		
+		// next boundary condition
+		return (MatPtTractionBC *)GetNextObject();
+	}
 	
-    // get corners and radii from deformed material point (2 in 2D and 4 in 3D)
+	// otherwise try to continue with regular tractions
+
+	// get corners and radii from deformed material point (2 in 2D and 4 in 3D)
 	int cElem[4],numDnds;
 	Vector corners[4],radii[3];
 	double redge;
@@ -115,6 +165,8 @@ MatPtLoadBC *MatPtTractionBC::AddMPFluxBC(double bctime)
 			{   // skip empty nodes
 				if(nd[nds[i]]->NodeHasNonrigidParticles())
 				{   // external force vector
+					Vector theFrc;
+					ZeroVector(&theFrc);		// otherwise VS optimization fails
 					if(fmobj->IsAxisymmetric())
 					{	// wtNorm has direction and |r1|. Also scale by axisymmetric term
 						efffn = fn[i]*shapeScale;
@@ -125,15 +177,16 @@ MatPtLoadBC *MatPtTractionBC::AddMPFluxBC(double bctime)
 						efffn = fn[i]*shapeScale;
 						CopyScaleVector(&theFrc,&wtNorm,tmag*efffn);
 					}
-					netshape += efffn;
 				
 					// Find the matching velocity field
+					bool addedForce = false;
 					if(firstCrack!=NULL)
 					{	vfld = -1;
 						for(int ii=1;ii<=numnds;ii++)
 						{	if(nds[i] == snds[ii])
 							{	vfld = mpmptr->vfld[ii];
-								nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
+								if(nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc))
+									addedForce = true;
 								break;
 							}
 						}
@@ -142,11 +195,17 @@ MatPtLoadBC *MatPtTractionBC::AddMPFluxBC(double bctime)
 						//  add force to field 0 in this case
 						if(vfld<0)
 						{	vfld = 0;
-							nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
+							if(nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc))
+								addedForce = true;
 						}
 					}
 					else
-						nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
+					{	if(nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc))
+							addedForce = true;
+					}
+					
+					// if added force track net shape functions
+					if(addedForce) netshape += efffn;
 				}
 			}
 			
@@ -163,7 +222,7 @@ MatPtLoadBC *MatPtTractionBC::AddMPFluxBC(double bctime)
 			//			" by " << shapeScale << endl;
 		}
 	}
-	
+
     // next boundary condition
     return (MatPtTractionBC *)GetNextObject();
 }

@@ -35,7 +35,7 @@ GridForcesTask::GridForcesTask(const char *name) : MPMTask(name)
 
 // Get total grid point forces (except external forces)
 // throws CommonException()
-void GridForcesTask::Execute(void)
+void GridForcesTask::Execute(int taskOption)
 {
 	CommonException *forceErr = NULL;
 	
@@ -56,7 +56,7 @@ void GridForcesTask::Execute(void)
         
         // patch for this thread
         int pn = GetPatchNumber();
-        
+		
 		try
 		{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
 			while(mpmptr!=NULL)
@@ -124,7 +124,7 @@ void GridForcesTask::Execute(void)
 			}
 		}
 	}
-	
+
 	// throw errors now
 	if(forceErr!=NULL) throw *forceErr;
 	

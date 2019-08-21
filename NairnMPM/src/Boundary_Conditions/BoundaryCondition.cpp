@@ -88,9 +88,16 @@ double BoundaryCondition::BCValue(double stepTime)
             break;
 		case FUNCTION_VALUE:
 			if(stepTime>=ftime)
-			{	unordered_map<string, double> vars;
-				GetPosition(vars);
+			{
+#ifdef USE_ASCII_MAP
+				double vars[7];
+				vars[0] = 6.5;
+				vars[1] = UnitsController::Scaling(1.e3)*(stepTime-ftime);		//t
+#else
+				unordered_map<string, double> vars;
 				vars["t"] = UnitsController::Scaling(1.e3)*(stepTime-ftime);
+#endif
+				GetPositionVars(vars);
 				currentValue = scale*function->EvaluateFunction(vars);
 			}
         default:
@@ -135,7 +142,10 @@ int BoundaryCondition::GetNodeNum(void) { return nodeNum; }
 // throws std::bad_alloc, SAXException()
 void BoundaryCondition::SetFunction(char *bcFunction)
 {
+	// skip if not needed
 	if(style!=FUNCTION_VALUE) return;
+	
+	// if needed, cannot be NULL, empty, or a duplicate
 	if(bcFunction==NULL)
 	{	ThrowSAXException("Boundary condition function of time and position is missing");
 		return;
@@ -155,13 +165,25 @@ void BoundaryCondition::SetFunction(char *bcFunction)
 	// value=1.;
 }
 
-void BoundaryCondition::GetPosition(unordered_map<string,double> &vars)
+#ifdef USE_ASCII_MAP
+// put x,y,z,q into fixed places in array
+void BoundaryCondition::GetPositionVars(double *vars)
+{	int i=GetNodeNum();
+	vars[2] = nd[i]->x;		//x
+	vars[3] = nd[i]->y;		//y
+	vars[4] = nd[i]->z;		//z
+	vars[6] = 0.;			//q
+}
+#else
+// put x,y,z,q into unordered map
+void BoundaryCondition::GetPositionVars(unordered_map<string,double> vars)
 {	int i=GetNodeNum();
 	vars["x"] = nd[i]->x;
 	vars["y"] = nd[i]->y;
 	vars["z"] = nd[i]->z;
 	vars["q"] = 0.;
 }
+#endif
 
 // Boundary condition ID may be used for some purpose by certain conditions
 // Be sure to set it whenever create or reuse a boundary conditions

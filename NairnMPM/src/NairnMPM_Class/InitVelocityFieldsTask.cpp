@@ -42,7 +42,7 @@ InitVelocityFieldsTask::InitVelocityFieldsTask(const char *name) : MPMTask(name)
 //
 // This task only used if have cracks or in multimaterial mode
 // throws CommonException()
-void InitVelocityFieldsTask::Execute(void)
+void InitVelocityFieldsTask::Execute(int taskOption)
 {
 	CommonException *initErr = NULL;
 	

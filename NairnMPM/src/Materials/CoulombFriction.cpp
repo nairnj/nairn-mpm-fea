@@ -22,7 +22,7 @@ CoulombFriction::CoulombFriction(char *matName,int matID) : ContactLaw(matName,m
 {
 	frictionCoeff = 0.0;			// <0 is stick
 	frictionCoeffStatic = -1.;		// ignored if negative or if frictionCoeff < 0
-	displacementOnly = 0.;
+	displacementOnly = 0.;			// >0 means displacementOnly, <=0 means tensile stress < abs(displacementOnly)
 	Dc = -1.;
 }
 
@@ -80,10 +80,6 @@ const char *CoulombFriction::VerifyAndLoadProperties(int np)
 			frictionStyle = FRICTIONAL;
 	}
 	
-	// not support yet in NairnMPM
-	Dc = -1.;
-	displacementOnly = 0.0;
-	
 	// must call super class
 	return ContactLaw::VerifyAndLoadProperties(np);
 }
@@ -113,11 +109,21 @@ void CoulombFriction::PrintContactLaw(void) const
 		cout << hline << endl;
 	}
 	
-	// Dc not support yet in NairnMPM
-	cout << "   Stress found by perfect interface methods" << endl;
-	
-	// displacementOnly not support in NairnMPM
-	cout << "   Detection by negative separation and stress < 0" << endl;
+	if(Dc<0.)
+		cout << "   Stress found by perfect interface methods" << endl;
+	else
+	{	cout << "   Stress found by linear imperfect interface with Dc = ";
+		cout << Dc*UnitsController::Scaling(1.e-6) << " " << UnitsController::Label(INTERFACEPARAM_UNITS) << endl;
+	}
+	if(displacementOnly>0.1)
+		cout << "   Detection by only negative separation" << endl;
+	else if(displacementOnly<0.)
+	{	const char *label = UnitsController::Label(PRESSURE_UNITS);
+		cout << "   Detection by negative separation and stress < " <<
+			-displacementOnly*UnitsController::Scaling(1.e-6) << " " << label << endl;
+	}
+	else
+		cout << "   Detection by negative separation and stress < 0" << endl;
 }
 
 #pragma mark CoulombFriction:Step Methods
@@ -140,7 +146,7 @@ void CoulombFriction::PrintContactLaw(void) const
 //		*mredDelWf set to heat energy (actually mred*heat energy) (only if getHeating is true)
 bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double deltaDotn,
 							double *mredDelWf,double mred,bool getHeating,double contactArea,
-							double deltime,Vector *delFi) const
+							double deltime,Vector *delFi,NodalPoint *ndptr) const
 {
 	// indicate no frictional heat yet
 	*mredDelWf=-1.;
@@ -164,6 +170,10 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
 		if(delEnd<0.)
 		{	// Get stress cutoff
 			double fnaDtMax = 0.;
+			if(displacementOnly>0.1)
+				fnaDtMax = fnaDt+1.;
+			else if(displacementOnly<0.)
+				fnaDtMax = -displacementOnly*contactArea*deltime;
 			if(fnaDt<fnaDtMax)
 			{	// frictionless contact - return normal component
 				CopyScaleVector(delPi,norm,fnaDt);
@@ -190,6 +200,10 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
 	if(delEnd<0.)
 	{	// check stress or use just this displacement
 		double fnaDtMax = 0.;
+		if(displacementOnly>0.1)
+			fnaDtMax = fnaDt+1.;
+		else if(displacementOnly<0.)
+			fnaDtMax = -displacementOnly*contactArea*deltime;
 		if(fnaDt<fnaDtMax)
 			inContact = true;
 	}
@@ -329,7 +343,7 @@ bool CoulombFriction::IgnoreContact(void) const { return false; }
 
 // All interfaces need the law, if friction law needs it, must override and return true
 bool CoulombFriction::ContactLawNeedsContactArea(void) const
-{ 	return false;
+{ 	return Dc>=0. || displacementOnly<0.;
 }
 
 // Return true is frictionless contact and no adhesion

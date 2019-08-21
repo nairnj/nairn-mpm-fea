@@ -25,13 +25,13 @@ BodyForce bodyFrc;
 // Constructors
 BodyForce::BodyForce()
 {
-	gravity=FALSE;
-	hasGridBodyForce=FALSE;
+	gravity = false;
+	hasGridBodyForce = false;
 	
 	damping=0.;                 // constant damping
 	useDamping = false;
 	dampingCoefficient=0.;		// 1/Q in Nose-Hoover feedback
-	useFeedback=FALSE;
+	useFeedback = false;
 	alpha=0.;					// evolving damping coefficient
     maxAlpha=-1.;               // max evolving alpha
 	function=NULL;              // target kinetic energy function
@@ -40,7 +40,8 @@ BodyForce::BodyForce()
 	pdamping=0.;                // same for particle damping
 	usePDamping = false;
 	pdampingCoefficient=0.;
-	usePFeedback=FALSE;
+	usePFeedback = false;
+	
     palpha=0.;                  // evoloving particle damping coefficient
     maxPAlpha=-1.;              // max evolving particle alpha
 	pfunction=NULL;              // target kinetic energy function
@@ -49,9 +50,9 @@ BodyForce::BodyForce()
 	useGridFeedback=TRUE;		// base feedback on grid kinetic energy
 								// provide option to change to allow particle kintic energy instead
 	
-	fractionPIC = 0.;			// fraction PIC implemeted by damping
-	usePICDamping = false;		// off by default
-	XPICOrder = 1;				// default to normal PIC (if PIC is used) (always 1 in NairnMPM)
+	XPICOrder = 0;				// default to FLIP
+	isUsingVstar = 0;			// XPIC being used (always 0 in NairnMPM)
+	xpicVectors = 1;			// to store vk and one is added to store pk
 	
 	gridBodyForceFunction[0]=NULL;
 	gridBodyForceFunction[1]=NULL;
@@ -76,7 +77,7 @@ void BodyForce::Activate(void)
 {
     // zero to start, components get set directly by BodyXForce, etc., XML commands
     ZeroVector(&gforce);
-	gravity=TRUE;
+	gravity = true;
 }
 
 // Get gravity (constant body force) and grid based functions (in mm/sec^2)
@@ -96,11 +97,20 @@ void BodyForce::GetGridBodyForce(Vector *theFrc,Vector *fpos,double utime)
 	// exit if no grid functions
 	if(!hasGridBodyForce) return;
 
+#ifdef USE_ASCII_MAP
+	double vars[5];
+	vars[0] = 4.5;
+	vars[1] = utime*UnitsController::Scaling(1.e3);		//t
+	vars[2] = fpos->x;		//x
+	vars[3] = fpos->y;		//y
+	vars[4] = fpos->z;		//z
+#else
 	unordered_map<string,double> vars;
 	vars["t"] = utime*UnitsController::Scaling(1000.);
 	vars["x"] = fpos->x;
 	vars["y"] = fpos->y;
 	vars["z"] = fpos->z;
+#endif
 	
 	// body force functions
 	if(gridBodyForceFunction[0]!=NULL)
@@ -126,7 +136,7 @@ void BodyForce::SetGridBodyForceFunction(char *bcFunction,int input)
 	}
 	
 	// turn it on
-	hasGridBodyForce = TRUE;
+	hasGridBodyForce = true;			// true if any functions provided
 	Expression *newFunction =  Expression::CreateExpression(bcFunction,"Grid body force function is not valid");
 	
 	// assign to direction
@@ -149,75 +159,54 @@ void BodyForce::SetGridBodyForceFunction(char *bcFunction,int input)
 
 #pragma mark BodyForce:Grid and Particle Damping
 
-// Get sum of damping and feedback damping to apply to the grid
-// (Don't call from parallel code due to function)
-double BodyForce::GetDamping(double utime)
+// Return true if need to add any forces in the post forces task
+bool BodyForce::HasGridDampingForces()
 {
-    double totalDamping;
-    
-    // simple damping
-	if(gridfunction==NULL)
-        totalDamping = damping;
-    else
-	{	totalDamping =  gridfunction->TValue(utime*UnitsController::Scaling(1000.));
-    }
-    
-    // add feedback damping
-    if(useFeedback) totalDamping += alpha;
+	// True is body forces (gravity or functions)
+	if(gravity || bodyFrc.hasGridBodyForce) return true;
 	
-    // PIC Damping
-	if(usePICDamping)
-	{	totalDamping -= (double)XPICOrder*fractionPIC/timestep;
+	// nothing needed to change forces
+	return false;
+}
+
+// Get sum of damping and feedback damping to apply to the grid
+double BodyForce::GetGridDamping(double utime)
+{
+	if(!useDamping) return 0.;
+	
+	double totalDamping;
+	
+	// simple damping
+	if(gridfunction==NULL)
+		totalDamping = damping;
+	else
+	{	totalDamping =  gridfunction->TValue(utime*UnitsController::Scaling(1000.));
 	}
-    
-    return totalDamping;
+	
+	// add feedback damping
+	if(useFeedback) totalDamping += alpha;
+	
+	return totalDamping;
 }
 
 // Get sum of damping and feedback damping to apply in particle velocity update
 double BodyForce::GetParticleDamping(double utime)
 {
-    double totalDamping;
-    
-    // simple damping
-	if(pgridfunction==NULL)
-        totalDamping = pdamping;
-    else
-	{	totalDamping =  pgridfunction->TValue(utime*UnitsController::Scaling(1000.));
-    }
-    
-    // add feedback damping
-    if(usePFeedback) totalDamping += palpha;
-    
-    // PIC Damping
-	if(usePICDamping) totalDamping += fractionPIC/timestep;
+	if(!usePDamping) return 0.;
 	
-    return totalDamping;
-}
-
-// Get grid damping without the PIC term
-// (Don't call from parallel code due to function in GetDamping())
-double BodyForce::GetNonPICDamping(double utime)
-{
-    bool hold = usePICDamping;
-    usePICDamping = false;
-    double nonPICDamping = GetDamping(utime);
-    usePICDamping = hold;
-    return nonPICDamping;
-}
-
-// Get particle damping without the PIC term
-double BodyForce::GetNonPICParticleDamping(double utime)
-{
-    bool hold = usePICDamping;
-    usePICDamping = false;
-    double nonPICDamping = GetParticleDamping(utime);
-    usePICDamping = hold;
-    return nonPICDamping;
-}
-
-// Get PIC damping term alone
-double BodyForce::GetPICDamping(void)
-{   return usePICDamping ? fractionPIC/timestep : 0.;
+	double totalDamping;
+	
+	// simple damping
+	if(pgridfunction==NULL)
+		totalDamping = pdamping;
+	else
+	{	totalDamping =  pgridfunction->TValue(utime*UnitsController::Scaling(1000.));
+	}
+	
+	// add feedback damping
+	if(usePFeedback) totalDamping += palpha;
+	
+	return totalDamping;
 }
 
 // display gravity settings
@@ -308,13 +297,6 @@ void BodyForce::Output(void)
             cout << hline << endl;
         }
 	}
-
-    // PIC damping
-	if(usePICDamping)
-	{	cout << "PIC damping fraction: " << fractionPIC;
-		cout << endl;
-	}
-
 }
 
 // update alpha normalized to number of particles
@@ -452,28 +434,17 @@ void BodyForce::SetGridDampingFunction(char *bcFunction,bool gridDamp)
 	}
 }
 
-// Implement fraction PIC by setting damping values
-// throws SAXException()
-void BodyForce::SetFractionPIC(double fract)
-{
-	if(fract<0. || fract>1.)
-	{	ThrowSAXException("Fraction PIC damping parameter must be from 0 to 1.");
-		return;
-	}
-	
-	if(fract>0.)
-	{	fractionPIC = fract;
-		usePICDamping = true;
-	}
-	else
-	{	fractionPIC = 0.;
-		usePICDamping = false;
-	}
-}
+// Implement extended PIC (but only allow 1 or higher)
+void BodyForce::SetXPICOrder(int newOrder) { XPICOrder = newOrder>=0 ? newOrder : 0 ; }
 
-// bool if fracturePIC is ot zero
-bool BodyForce::IsUsingPICDamping(void) { return usePICDamping;}
+// return XPIC order (1 is normal PIC, 2 or higher is XPIC/FMPM )
+int BodyForce::GetXPICOrder(void) { return XPICOrder; }
 
-// get fraction PIC
-double BodyForce::GetFractionPIC(void) { return fractionPIC; }
+// return if simulations is using high-order XPIC/FMPM (2 or higher)
+// called during set up and to allocate XPIC tasks
+int BodyForce::UsingVstar(void) { return isUsingVstar; }
+void BodyForce::SetUsingVstar(int setting) { isUsingVstar = setting; }
 
+// change the number needed if add PeriodicXPIC custom task
+int BodyForce::XPICVectors(void) { return xpicVectors; }
+void BodyForce::SetXPICVectors(int vnum) { xpicVectors = vnum; }

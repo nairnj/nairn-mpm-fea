@@ -12,7 +12,7 @@ EndHeader
 
 Analysis "Axisymmetric MPM"
 #method$="CPDI"
-MPMMethod USAVG,#method$
+MPMMethod "USAVG+",#method$
 Processors 4
 
 ! ********** Parameters Section **********
@@ -146,12 +146,14 @@ endif
 
 ! Internal pressure or fixed dislacement
 if #inner<=0
-  MoveLine #inner-#cell/2,-#border*#cell,#inner-#cell/2,#depth+#border*#cell,0.55*#cell
+  GridBC
+    Line #inner-#cell/2,#inner-#cell/2,-#border*#cell,#depth+#border*#cell,0.55*#cell
     Velocity x,constant,0
-  EndMoveLine
+  EndGridBC
 else if #style$!="rigid"
   if #Pi!=0
-    LoadLine #inner,0,#inner,#depth,#cell/2
+    ParticleBC
+      Line #inner,#inner,0,#depth,#cell/2
       if #style$="force"
         LoadType net
         Load x,linear,-#Pi*#depth*#length/#ramp
@@ -160,7 +162,7 @@ else if #style$!="rigid"
         Traction x,2,linear,-#Pi/#ramp
         Traction x,2,linear,#Pi/#ramp,#ramp
       endif
-    EndLoadLine
+    EndParticleBC
   endif
 endif
 
@@ -171,7 +173,8 @@ if #style$="rigid"
   EndRegion
 else
   if #Po!=0
-    LoadLine #length,0,#length,#depth,#cell/2
+    ParticleBC
+      Line #length,#length,0,#depth,#cell/2
       if #style$="force"
         LoadType net
         Load x,linear,#Po*#depth*#length/#ramp
@@ -180,6 +183,6 @@ else
         Traction x,2,linear,#Po/#ramp
         Traction x,2,linear,-#Po/#ramp,#ramp
       endif
-    EndLoadLine
+    EndParticleBC
   endif
 endif

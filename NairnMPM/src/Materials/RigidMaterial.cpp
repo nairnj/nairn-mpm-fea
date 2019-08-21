@@ -328,7 +328,6 @@ bool RigidMaterial::RigidConcentration(void) const { return setConcentration; }
 int RigidMaterial::SetDirection(void) const { return setDirection; }
 
 // get value function (temperature and concentration use only)
-// (Don't call from parallel code due to function)
 bool RigidMaterial::GetValueSetting(double *setting,double theTime,Vector *pos) const
 {	if(Vfunction==NULL) return false;
 	*setting=Vfunction->XYZTValue(pos,theTime*UnitsController::Scaling(1.e3));
@@ -358,10 +357,10 @@ bool RigidMaterial::IsConstantVelocity(void) const
 	return false;
 }
 
-// If not using control functionsm other wise evaulate functions and set
+// If not using control functions, other wise evaulate functions and set
 //    material point velocity in that direction (it is in vel)
 // If change a direction set hasDir[i] (although really only needed for control velocity custom task)
-// Note that hasDir[i] differ from set direstions only when using control velocity. If that
+// Note that hasDir[i] differ from set directions only when using control velocity. If that
 //     code changed to use set direction instead of controlVelocity, hasDir could be removed
 // If call in parallel, use try block to catch possible function errors
 bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vector *pos) const
@@ -411,12 +410,22 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
 		// here is rigid contact material and has at least one function
 
 		// set variables
+#ifdef USE_ASCII_MAP
+		double vars[6];
+		vars[0] = 5.5;
+		vars[1] = theTime*UnitsController::Scaling(1.e3);		//t
+		vars[2] = pos->x;		//x
+		vars[3] = pos->y;		//y
+		vars[4] = pos->z;		//z
+		vars[5] = timestep*UnitsController::Scaling(1.e3);		//dt or d
+#else
 		unordered_map<string,double> vars;
 		vars["t"] = theTime*UnitsController::Scaling(1.e3);
 		vars["x"] = pos->x;
 		vars["y"] = pos->y;
 		vars["z"] = pos->z;
 		vars["dt"] = timestep*UnitsController::Scaling(1.e3);
+#endif
 		
 		// set those controlled
 		if(function!=NULL)
@@ -432,13 +441,13 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
 			hasDir[2] = true;
 		}
 		
-		// at least on direction controlled
+		// at least one direction controlled
         return true;
 	}
 	
 	// here will never have function(N+1) unless have function N
 	
-	// If no function, look for controal velocity or exit with false
+	// If no function, look for control velocity or exit with false
 	if(function == NULL)
 	{	if(useControlVelocity)
 		{   if(controlDirection == 1)
@@ -467,12 +476,22 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
 	}
 	
 	// set variables
+#ifdef USE_ASCII_MAP
+	double vars[6];
+	vars[0] = 5.5;
+	vars[1] = theTime*UnitsController::Scaling(1.e3);		//t
+	vars[2] = pos->x;		//x
+	vars[3] = pos->y;		//y
+	vars[4] = pos->z;		//z
+	vars[5] = timestep*UnitsController::Scaling(1.e3);		//dt or d
+#else
 	unordered_map<string,double> vars;
 	vars["t"] = theTime*UnitsController::Scaling(1.e3);
 	vars["x"] = pos->x;
 	vars["y"] = pos->y;
 	vars["z"] = pos->z;
 	vars["dt"] = timestep*UnitsController::Scaling(1.e3);
+#endif
 
 	// BC rigid materials - has at least one function
 	// Change velocity only if have function, otherwise leave at input particle velocity

@@ -32,7 +32,7 @@ HEMGEOSMaterial::HEMGEOSMaterial(char *matName,int matID) : HEIsotropic(matName,
 	S2=0.;				// dimsionless
 	S3=0.;				// dimsionless
 	Kbulk = 1.;			// not used
-	Kmax=20.;			// maxium relative increase allows in K
+	Kmax = 0;			// maxium relative increase allows in K (<1 not limit)
 }
 
 #pragma mark HEMGEOSMaterial::Initialization
@@ -110,9 +110,13 @@ const char *HEMGEOSMaterial::VerifyAndLoadProperties(int np)
     Ka2sp = Ksp*CTE1*CTE1;
 	
 	// warning
-	if(warnExcessiveX<0)
-		warnExcessiveX = warnings.CreateWarning("compressive strain has exceeded MGEOS law range in HEMGEOSMaterial",-1,0);
-	Xmax = GetMGEOSXmax(gamma0,S1,S2,S3,Kmax);
+	if(Kmax>1.)
+	{	if(warnExcessiveX<0)
+			warnExcessiveX = warnings.CreateWarning("compressive strain has exceeded MGEOS law range in HEMGEOSMaterial",-1,0);
+		Xmax = GetMGEOSXmax(gamma0,S1,S2,S3,Kmax);
+	}
+	else
+		Xmax = 10.;		// i.e. never
 	
 	// skip Hyperelstic methods
 	return MaterialBase::VerifyAndLoadProperties(np);
@@ -143,8 +147,12 @@ void HEMGEOSMaterial::PrintMechanicalProperties(void) const
 	cout <<  endl;
 	
 	// Kmax
-	PrintProperty("Kmax",Kmax," K0");
-	PrintProperty("Xmax",Xmax,"");
+	if(Kmax>1.)
+	{	PrintProperty("Kmax",Kmax," K0");
+		PrintProperty("Xmax",Xmax,"");
+	}
+	else
+		cout << "Kmax= no limit";
 	cout <<  endl;
     
     plasticLaw->PrintYieldProperties();
@@ -224,38 +232,44 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,
 	{	// new compression J(k+1) = 1-x(k+1)
 		double x = 1.-J;
 		
-		if(x<=Xmax)
-		{	// compression law
-			// denominator = 1 - S1*x - S2*x^2 - S3*x^3
-			double denom = 1./(1. - x*(S1 + x*(S2 + x*S3)));
-		
-			// current effective and reduced (by rho0) bulk modulus
-			p->Kred = C0squared*(1.-0.5*gamma0*x)*denom*denom;
-		}
-		else
-        {	// law not valid if gets too high
-        	if(warnings.Issue(warnExcessiveX,-1)==GAVE_WARNING)
+		if(x>Xmax)
+		{	// law not valid if gets too high
+			if(warnings.Issue(warnExcessiveX,-1)==GAVE_WARNING)
 			{
 #pragma omp critical (output)
 				{	cout << "# Excessive x = " << x << " causing Kred to increase more than " << Kmax << " fold" << endl;
 					mptr -> Describe();
 				}
 			}
-		   
-		   // truncate effective and reduced (by rho0) bulk modulus
-		   p->Kred = C0squared*Kmax;
-        }
+			
+			// reset
+			x = Xmax;
+		}
+		
+		// get reduced bulk modulus (used in AV and maybe hardening)
+		p->Kred = C0squared*GetMGEOSKRatio(x,gamma0,S1,S2,S3);
+		
+		// compression law
+		// denominator = 1 - S1*x - S2*x^2 - S3*x^3
+		double denom = 1./(1. - x*(S1 + x*(S2 + x*S3)));
+		
+		// current effective and reduced (by rho0) bulk modulus
+		double Klawred = C0squared*(1.-0.5*gamma0*x)*denom*denom;
         
 		// Pressure from bulk modulus and an energy term
 		double e = mptr->GetInternalEnergy();
-		P = J*(p->Kred*x + gamma0*e);
+		P = J*(Klawred*x + gamma0*e);
 		
-		// particle isentropic temperature increment
+		// particle isoentropic temperature increment
+		//double Kratio = p->Kred/Ksp;
+		//dTq0 += -J*Kratio*gamma0*mptr->pPreviousTemperature*delV;
 		dTq0 += -J*gamma0*mptr->pPreviousTemperature*delV;
     }
     else
-    {   // In tension hyperelastic law P = - K0(J-1)
+    {	// get reduced bulk modulus (used in AV and maybe hardening)
         p->Kred = C0squared*Jeff;
+		
+		// In tension hyperelastic law P = - K(J-1)
 		P = -J*C0squared*(Jeff-1.);
 		//P = P0 - J*p->Kred*delV;
 		
@@ -266,14 +280,14 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,
 	
     // artifical viscosity
 	// delV is total incremental volumetric strain = total Delta(V)/V
-    double QAVred = 0.;
     if(delV<0. && artificialViscosity)
-	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(p->Kred*J),mptr);
+	{	double QAVred = GetArtificalViscosity(delV/delTime,sqrt(p->Kred*J),mptr);
         AVEnergy += fabs(QAVred*delV);
+		P += QAVred;
     }
     
     // set final pressure
-    mptr->SetPressure(P+QAVred);
+    mptr->SetPressure(P);
     
     // work energy is dU = -P dV + s.de(total)
 	// Here do hydrostatic terms, deviatoric later
@@ -303,22 +317,25 @@ double HEMGEOSMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) c
     // get K/rho0, but this ignores slope of energy term
     double KcurrRed,pressure;
     if(x>0.)
-	{	if(x<=Xmax)
-		{   // compression law
-			// denominator = 1 - S1*x - S2*x^2 - S3*x^3
-			double denom = 1./(1. - x*(S1 + x*(S2 + x*S3)));
-        
-			// current effective and reduced (by rho0) bulk modulus
-			KcurrRed = C0squared*(1.-0.5*gamma0*x)*denom*denom;
+	{	// get bulk modulus
+		if(x<=Xmax)
+		{	KcurrRed = C0squared*GetMGEOSKRatio(x,gamma0,S1,S2,S3);
 		}
 		else
-		{	// truncate if law seems bad
-			KcurrRed = C0squared*Kmax;
+		{	KcurrRed = C0squared*Kmax;
+			x = Xmax;
 		}
+		
+		// compression law for pressure
+		// denominator = 1 - S1*x - S2*x^2 - S3*x^3
+		double denom = 1./(1. - x*(S1 + x*(S2 + x*S3)));
+        
+		// current effective and reduced (by rho0) bulk modulus
+		double Klawred = C0squared*(1.-0.5*gamma0*x)*denom*denom;
 		
 		// get pressure
 		double e = mptr->GetInternalEnergy();
-		pressure = J*(KcurrRed*x + gamma0*e);
+		pressure = J*(Klawred*x + gamma0*e);
     }
     else
     {   // In tension hyperelastic law P = - K0(J-1)

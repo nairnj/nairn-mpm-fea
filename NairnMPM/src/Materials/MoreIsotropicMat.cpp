@@ -374,7 +374,8 @@ double IsotropicMat::GetMagnitudeSFromTotal(Tensor *st,int np) const
 // Uses sqrt((K +4G/3)/rho) which is dilational wave speed
 // Identity also: K + 4G/3 = Lambda + 2G = 2G(1-nu)/(1-2 nu)
 double IsotropicMat::WaveSpeed(bool threeD,MPMBase *mptr) const
-{	return sqrt(2.*G*(1.-nu)/(rho*(1.-2.*nu)));
+{
+    return sqrt(2.*G*(1.-nu)/(rho*(1.-2.*nu)));
 }
 
 // Calculate shear wave speed in L/sec

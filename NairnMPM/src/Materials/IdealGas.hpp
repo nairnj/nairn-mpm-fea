@@ -35,10 +35,15 @@ class IdealGas : public HyperElastic
 		virtual void PrintMechanicalProperties(void) const;
         void SetInitialParticleState(MPMBase *,int,int) const;
  		
+		// history data
+		virtual int SizeOfHistoryData(void) const;
+		virtual char *InitHistoryData(char *,MPMBase *);
+		virtual int NumberOfHistoryDoubles(void) const;
+
 		// methods
 		virtual double GetCpMinusCv(MPMBase *) const;
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
-    
+
 		// accessors
 		virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual const char *MaterialType(void) const;

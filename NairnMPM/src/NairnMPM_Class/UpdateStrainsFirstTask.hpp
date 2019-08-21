@@ -25,13 +25,15 @@ class UpdateStrainsFirstTask : public MPMTask
 		UpdateStrainsFirstTask(const char *);
 	
 		// required methods
-		virtual void Execute(void);
+		virtual void Execute(int);
 	
         // class methods
-        static void FullStrainUpdate(double,int,int);
+        static void FullStrainUpdate(double,int,int,bool);
         static void CreatePropertyBuffers(int);
 	
 	protected:
 };
+
+extern UpdateStrainsFirstTask *USFTask;
 
 #endif

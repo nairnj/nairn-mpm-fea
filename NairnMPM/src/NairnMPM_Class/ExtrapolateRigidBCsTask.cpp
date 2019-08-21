@@ -12,7 +12,7 @@
 	  (these are from nmpmsRC to nmpms and excludes rigid block and contact particles)
 	* First loop extrapolates rigid vel, T, and c to nodes
 	* Second loop sets BCs on those nodes (and clears nodal values
-	  because they are used need on subsequent steps and this step
+	  because they are needed on subsequent steps and this step
 	  is before any are needed).
 	* May be velocity, temperature, and concentration
 ********************************************************************************/
@@ -39,7 +39,7 @@ ExtrapolateRigidBCsTask::ExtrapolateRigidBCsTask(const char *name) : MPMTask(nam
 
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
-void ExtrapolateRigidBCsTask::Execute(void)
+void ExtrapolateRigidBCsTask::Execute(int taskOption)
 {
 #ifdef CONST_ARRAYS
 	double fn[MAX_SHAPE_NODES];
@@ -61,10 +61,10 @@ void ExtrapolateRigidBCsTask::Execute(void)
 	bool hasDir[3];
 	double tempValue,concValue;
 	
-	// this loop not parallel because of possible function in getting rigid settings
-	// also will usually be small loop
+	// This loop not parallel because because it is normally small (only loops over rigid BC particles)
+	// To make parallel, need ghost nodes and reduction step
 	for(int p=nmpmsRC;p<nmpms;p++)
-	{	// bet material point and the rigid material
+	{	// get material point and the rigid material
 		MPMBase *mpmptr = mpm[p];
 		const RigidMaterial *rigid = (RigidMaterial *)theMaterials[mpmptr->MatID()];				// material object for this particle
 		
@@ -96,9 +96,9 @@ void ExtrapolateRigidBCsTask::Execute(void)
 			if(rigid->GetValueSetting(&concValue,mtime,&mpmptr->pos)) mpmptr->pConcentration = concValue;
 		}
 		
-		// get nodes and shape function for material point p
+		// get nodes and classic shape function for rigid material point p
 		const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
-		elref->ShapeFunction(mpmptr->GetNcpos(),FALSE,&fn[1],NULL,NULL,NULL);
+		elref->ShapeFunction(mpmptr->GetNcpos(),false,&fn[1],NULL,NULL,NULL);
 		numnds=elref->NumberNodes();
 		
 		// Add particle property to each node in the element
@@ -106,7 +106,7 @@ void ExtrapolateRigidBCsTask::Execute(void)
 		{   // get node pointer and set values
 			int mi=elref->nodes[i-1];		// 1 based node
 			
-			// it might possible need a velocity field (does nothing in single material mode or if already there)
+			// it might possibly need a velocity field (does nothing in single material mode or if already there)
 			nd[mi]->AddMatVelocityField(0,0);
 			
 			// add BC info
@@ -118,7 +118,8 @@ void ExtrapolateRigidBCsTask::Execute(void)
 	for(int i=1;i<=nnodes;i++)
 	{	NodalPoint *ndptr = nd[i];
 		setFlags = ndptr->ReadAndZeroRigidBCInfo(&rvel,&tempValue,&concValue);
-		
+		if(setFlags==0) continue;
+
 		if(setFlags&CONTROL_X_DIRECTION)
 		{	ProjectRigidBCsTask::SetRigidBCs(i,-40,X_DIRECTION,rvel.x,0.,0,
 						(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,

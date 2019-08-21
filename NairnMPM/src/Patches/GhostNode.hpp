@@ -34,6 +34,7 @@ class GhostNode
         void ZeroDisp(void);
         void JKTaskReduction(void);
         void DeleteDisp(void);
+		void XPICSupport(int,int,NodalPoint *,double,int,int,double);
 	
 		// accessors
 		NodalPoint *GetNodePointer(void);

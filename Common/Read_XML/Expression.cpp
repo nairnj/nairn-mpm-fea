@@ -57,6 +57,15 @@ double erfcc(double x);
 // globals
 Expression *exfxn[12]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 
+// All variables in faster calls (no use of unordered map)
+// In this mode, only use first letter on variable, must be unique, rest ingnored
+// Supported variables are:
+// t:1, 2:x, 3:y, 4:z, 5:dt 6:q 7:r 8:R 9:Z 10:D 11:T h:12
+// Create vars[7], set needed values, set var[0] last index+0.5
+//                     A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,[,\,],^,_,`,
+static short vmap[58]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	                   0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0,1,0,0,0,2,3,4};
+//                     a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z
 
 #pragma mark CONSTRUCTORS AND DESTRUCTORS
 
@@ -66,9 +75,6 @@ Expression::Expression(const char *s)
 	exprStr = NULL;
 	firstAtom = NULL;
 	numAtoms = 0;
-#ifndef DYNAMIC_ATOMS
-	evalCopy = NULL;
-#endif
 	SetString(s);
 }
 
@@ -83,16 +89,6 @@ Expression::~Expression()
 		delete nextAtom;
 		nextAtom = tempAtom;
 	}
-
-#ifndef DYNAMIC_ATOMS
-	// delete working copy atoms
-	if(evalCopy!=NULL)
-	{	for(int i=0;i<numAtoms;i++)
-		{	delete evalCopy[i];
-		}
-	}
-#endif
-	
 }
 
 #pragma mark METHODS
@@ -247,47 +243,59 @@ void Expression::TokenizeExpr(void)
 		throw CommonException("Unmatched parentheses in expression",exprStr);
 	else if(prevCode>=OP_PLUS)
 		throw CommonException("Expression ends in an operator",exprStr);
-	
-#ifndef DYNAMIC_ATOMS
-	// create copy for evalulation purposes
-	// make 0-based array of material points
-	evalCopy = new (std::nothrow) Atomic *[numAtoms];
-	if(evalCopy==NULL)
-		throw CommonException("Out of memory copying Aomics for evaluation",exprStr);
-	
-	// fill the array
-	Atomic *obj = firstAtom;
-	numAtoms = 0;
-	while(obj!=NULL)
-	{	evalCopy[numAtoms] = obj->GetCopy();
-		numAtoms++;
-		obj = obj->GetNextAtom();
-	}
-#endif
 }
 
 // evaluate current expression with set a variables
-#ifndef DYNAMIC_ATOMS
-// Cannot be called in parallel unless each thread has separate copy of the function. The evaluation process
-//		changes element of this object.
-#endif
 // When called in parallel, must trap exceptions in that thread
-#ifdef DYNAMIC_ATOMS
-double Expression::EvaluateFunction(unordered_map<string, double> usevar) const
-#else
-double Expression::EvaluateFunction(unordered_map<string, double> usevar)
-#endif
+double Expression::EvaluateFunction(double *usevar) const
 {
-#ifdef DYNAMIC_ATOMS
-	// ust tokenize before call this const method
+	// must tokenize before call this const method
 	if(firstAtom==NULL)
 		throw CommonException("Expression has no tokens",exprStr);
-#else
-	// if not yet tokenized, tokenize now
-	if(firstAtom==NULL) TokenizeExpr();
-#endif
+
+	// Copy all atomics and replace variables with their values
+	int maxVar = (int)usevar[0];
+	Atomic *tmpFirstAtom = NULL,*nextAtom = NULL;
+	Atomic *sourceAtom = firstAtom;
+	while(sourceAtom!=NULL)
+	{	// copy Atomic to new list
+		Atomic *copiedAtom = sourceAtom->GetCopy(true);
+		if(tmpFirstAtom==NULL)
+			tmpFirstAtom = copiedAtom;
+		else
+			nextAtom->SetNextAtom(copiedAtom);
+		nextAtom = copiedAtom;
+		
+		if(nextAtom->GetCode()==ATOM_VARIABLE)
+		{	// get the value (caller better provide them all)
+			int mapID = vmap[nextAtom->GetVarID()];
+			if(mapID > maxVar || mapID<1)
+				throw CommonException("Expression has an undefined variable",nextAtom->GetVarName());
+			double varValue = usevar[mapID];
+			
+			// change atomic to number
+			nextAtom->SetCode(ATOM_NUMBER);
+			nextAtom->SetValue(varValue);
+		}
+		
+		// next one
+		sourceAtom = sourceAtom->GetNextAtom();
+	}
 	
-#ifdef DYNAMIC_ATOMS
+	// evalute expression and delete the last copy
+	double varValue=EvaluateTokens(tmpFirstAtom,exprHasGroups);
+	delete tmpFirstAtom;
+	return varValue;
+}
+
+// evaluate current expression with set a variables
+// When called in parallel, must trap exceptions in that thread
+double Expression::EvaluateFunction(unordered_map<string, double> usevar) const
+{
+	// must tokenize before call this const method
+	if(firstAtom==NULL)
+		throw CommonException("Expression has no tokens",exprStr);
+	
 	// Copy all atomics and replace variables with their values
 	Atomic *tmpFirstAtom = NULL,*nextAtom = NULL;
 	Atomic *sourceAtom = firstAtom;
@@ -305,8 +313,8 @@ double Expression::EvaluateFunction(unordered_map<string, double> usevar)
 			string key = nextAtom->GetVarName();
 			if(usevar.find(key) == usevar.end())
 				throw CommonException("Expression has an undefined variable",nextAtom->GetVarName());
-			
 			double varValue = usevar[key];
+			
 			// change atomic to number
 			nextAtom->SetCode(ATOM_NUMBER);
 			nextAtom->SetValue(varValue);
@@ -320,43 +328,10 @@ double Expression::EvaluateFunction(unordered_map<string, double> usevar)
 	double varValue=EvaluateTokens(tmpFirstAtom,exprHasGroups);
 	delete tmpFirstAtom;
 	return varValue;
-#else
-	// transfer source atoms to working copy atoms
-	Atomic *sourceAtom = firstAtom;
-	for(int i=0;i<numAtoms;i++)
-	{	// copy source Atom to evalCopy[i]
-		evalCopy[i]->TransferAtom(sourceAtom);
-		if(i>0)
-			evalCopy[i-1]->SetNextAtom(evalCopy[i]);
-		
-		if(evalCopy[i]->GetCode()==ATOM_VARIABLE)
-		{	// get the value
-			string key = evalCopy[i]->GetVarName();
-			if(usevar.find(key) == usevar.end())
-				throw CommonException("Expression has an undefined variable",evalCopy[i]->GetVarName());
-			
-			double varValue = usevar[key];
-			// change atomic to number
-			evalCopy[i]->SetCode(ATOM_NUMBER);
-			evalCopy[i]->SetValue(varValue);
-		}
-		
-		sourceAtom = sourceAtom->GetNextAtom();
-	}
-	evalCopy[numAtoms-1]->SetNextAtom(NULL);
-	
-	// evalute expression
-	double varValue=EvaluateTokens(evalCopy[0],exprHasGroups);
-	return varValue;
-#endif
 }
 
 // evaluate tokens starting at callFirstAtom
-#ifdef DYNAMIC_ATOMS
 double Expression::EvaluateTokens(Atomic *callFirstAtom,bool hasGroups) const
-#else
-double Expression::EvaluateTokens(Atomic *callFirstAtom,bool hasGroups)
-#endif
 {
 	Atomic *atom,*prevAtom,*startAtom,*nextAtom;
 	int groupDepth,opCode;
@@ -394,7 +369,6 @@ double Expression::EvaluateTokens(Atomic *callFirstAtom,bool hasGroups)
 						atom->SetCode(ATOM_NUMBER);
 						atom->SetValue(exprValue);
 
-#ifdef DYNAMIC_ATOMS
 						// current subexpression from startAtom to prevAtom (the close)
 						// and prevAtom has changed its next atom to NULL
 						// delete startAtom to prevAtom
@@ -403,16 +377,16 @@ double Expression::EvaluateTokens(Atomic *callFirstAtom,bool hasGroups)
 							delete startAtom;
 							startAtom = prevAtom;
 						}
-#endif
+
 						// all done if was close group
 						if(groupDepth==0)
 						{	// atom, which was open group, now the expression value and it
 							// should be followed by atom after the close group in nextAtom
 							atom->SetNextAtom(nextAtom->GetNextAtom());		// To outside the grounp
-#ifdef DYNAMIC_ATOMS
+							
 							// delete close group in nextAtom too
 							delete nextAtom;
-#endif
+							
 							break;
 						}
 						
@@ -477,9 +451,7 @@ double Expression::EvaluateTokens(Atomic *callFirstAtom,bool hasGroups)
 		
 		// skip over the previoius number
 		callFirstAtom->SetNextAtom(nextAtom->GetNextAtom());
-#ifdef DYNAMIC_ATOMS
 		delete nextAtom;
-#endif
 
 #ifdef DEBUGEXPR
 		cout << "***** Uniary Sign Done: ";
@@ -517,11 +489,8 @@ double Expression::EvaluateTokens(Atomic *callFirstAtom,bool hasGroups)
 // The function is in atom and consective ATOM_NUMBER atomics are arguments
 // Evaulate function, set atom to value of function
 // Delete arguments and point atom to first one after the arguments
-#ifdef DYNAMIC_ATOMS
 void Expression::DoFunction(Atomic *atom) const
-#else
-void Expression::DoFunction(Atomic *atom)
-#endif
+
 {
 	// get first argument (need special case if add zero-argument function
 	int fxnCode = atom->GetFunctionCode();
@@ -636,6 +605,12 @@ void Expression::DoFunction(Atomic *atom)
 			else if(arg1>0.)
 				fxnValue = 1.;
 			break;
+		case TRI_FXN:
+		{
+			fxnValue = 1. - fabs(arg1);
+			fxnValue = fmax(0, fxnValue);
+			break;
+		}
 		default:
 			// will be zero
 			break;
@@ -643,9 +618,8 @@ void Expression::DoFunction(Atomic *atom)
 	
 	// point to one after the argument(s) and delete argument
 	Atomic *nextAtom = arg->GetNextAtom();
-#ifdef DYNAMIC_ATOMS
 	delete arg;
-#endif
+	
 	if(nextAtom!=NULL)
 	{	if(nextAtom->GetCode()==ATOM_NUMBER)
 			throw CommonException("Function does has too many numeric arguments",atom->GetFunctionName());
@@ -661,11 +635,7 @@ void Expression::DoFunction(Atomic *atom)
 
 // Group next atom as function argument and find its value
 // Also delete current arg atom and return new one
-#ifdef DYNAMIC_ATOMS
 Atomic *Expression::GetFunctionArg(Atomic *atom,Atomic *arg,double &argValue) const
-#else
-Atomic *Expression::GetFunctionArg(Atomic *atom,Atomic *arg,double &argValue)
-#endif
 {	// value next argument
 	Atomic *tmpArg = arg->GetNextAtom();
 	if(tmpArg==NULL)
@@ -676,21 +646,15 @@ Atomic *Expression::GetFunctionArg(Atomic *atom,Atomic *arg,double &argValue)
 	// get value
 	argValue = tmpArg->GetValue();
 
-#ifdef DYNAMIC_ATOMS
 	// delete prior (no longer needed)
 	delete arg;
-#endif
 	
 	// return new one
 	return tmpArg;
 }
 
 // operate from firstOpAtom doing one or two types of numeric operations with equal precedence
-#ifdef DYNAMIC_ATOMS
 void Expression::OperateTerms(Atomic *firstOpAtom,int op1,int op2) const
-#else
-void Expression::OperateTerms(Atomic *firstOpAtom,int op1,int op2)
-#endif
 {
 	Atomic *prevAtom = firstOpAtom,*nextAtom;
 	Atomic *atom = firstOpAtom->GetNextAtom();
@@ -739,11 +703,9 @@ void Expression::OperateTerms(Atomic *firstOpAtom,int op1,int op2)
 			// to to past right argument
 			prevAtom->SetNextAtom(nextAtom->GetNextAtom());
 
-#ifdef DYNAMIC_ATOMS
 			// delete operator and right argument
 			delete atom;
 			delete nextAtom;
-#endif
 			
 			// point to prior result
 			atom = prevAtom;
@@ -917,29 +879,36 @@ void Expression::ValidateCodeOrder(int prevCode,int nextCode) const
 }
 
 // Evaluate function at specific values of x,y,z, and time
-#ifdef DYNAMIC_ATOMS
 double Expression::XYZTValue(Vector *vec,double etime) const
-#else
-double Expression::XYZTValue(Vector *vec,double etime)
-#endif
 {
+#ifdef USE_ASCII_MAP
+	double vars[5];
+	vars[0] = 4.5;
+	vars[1] = etime;		//t
+	vars[2] = vec->x;		//x
+	vars[3] = vec->y;		//y
+	vars[4] = vec->z;		//z
+#else
 	unordered_map<string,double> vars;
 	vars["t"] = etime;
 	vars["x"] = vec->x;
 	vars["y"] = vec->y;
 	vars["z"] = vec->z;
+#endif
 	return EvaluateFunction(vars);
 }
 
 // Evaluate function at specific values time
-#ifdef DYNAMIC_ATOMS
 double Expression::TValue(double etime) const
-#else
-double Expression::TValue(double etime)
-#endif
 {
+#ifdef USE_ASCII_MAP
+	double vars[2];
+	vars[0] = 1.5;
+	vars[1] = etime;		//t
+#else
 	unordered_map<string,double> vars;
 	vars["t"] = etime;
+#endif
 	return EvaluateFunction(vars);
 }
 
@@ -1085,8 +1054,8 @@ double erfcc(double x)
 {	double z=fabs(x);
 	double t=1.0/(1.0+0.5*z);
 	double ans=t*exp(-z*z-1.26551223+t*(1.00002368+t*(0.37409196+t*(0.09678418+
-																	t*(-0.18628806+t*(0.27886807+t*(-1.13520398+t*(1.48851587+
-																												   t*(-0.82215223+t*0.17087277)))))))));
+						t*(-0.18628806+t*(0.27886807+t*(-1.13520398+t*(1.48851587+
+						t*(-0.82215223+t*0.17087277)))))))));
 	return x>=0. ? ans : 2.-ans;
 }
 

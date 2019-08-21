@@ -11,10 +11,6 @@ import java.awt.*;
 
 public class CrackHeader
 {
-	// variables and constants
-	static Color planeColor=new Color((float)1.,(float)0.,(float)0.);
-	static Color surfaceColor=new Color((float)0.,(float)0.,(float)1.);
-
 	public ArrayList<CrackSegment> segments;
 	
 	//---------------------------------------------------------------------
@@ -41,13 +37,17 @@ public class CrackHeader
 		if(segments.size()==0) return;
 		
 		if(showCrackPlanes)
-		{	pv.drawColor(planeColor);
+		{	Color cplaneColor = NFMVPrefs.getPrefColor(NFMVPrefs.cplaneColorKey,NFMVPrefs.cplaneColorDef);
+			pv.drawColor(cplaneColor);
 			drawCrack(pv,CrackSegment.PLANE_POS);
 		}
 		
 		if(showCrackSurfaces)
-		{	pv.drawColor(surfaceColor);
+		{	Color csurfaceColor = NFMVPrefs.getPrefColor(NFMVPrefs.caboveColorKey,NFMVPrefs.caboveColorDef);
+			pv.drawColor(csurfaceColor);
 			drawCrack(pv,CrackSegment.ABOVE_POS);
+			csurfaceColor = NFMVPrefs.getPrefColor(NFMVPrefs.cbelowColorKey,NFMVPrefs.cbelowColorDef);
+			pv.drawColor(csurfaceColor);
 			drawCrack(pv,CrackSegment.BELOW_POS);
 			
 			// draw traction lines

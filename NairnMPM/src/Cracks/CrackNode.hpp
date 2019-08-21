@@ -32,7 +32,7 @@ class CrackNode
 		virtual void NodalCrackContact(double,int);
 
 		// class methods
-		static void ContactOnKnownNodes(double,int);
+		static bool ContactOnKnownNodes(double,int);
 		static void ReleaseContactNodes(void);
 	
 	protected:

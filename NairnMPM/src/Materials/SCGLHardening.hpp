@@ -13,6 +13,8 @@
 
 #define _SCGLHARDENING_
 
+#define SCGLHARDENING_ID 4
+
 #include "Materials/HardeningLawBase.hpp"
 
 // plastic law properties

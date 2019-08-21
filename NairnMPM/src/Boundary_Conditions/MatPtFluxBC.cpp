@@ -102,29 +102,28 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
         bcDir = N_DIRECTION;
 	}
 	else if(direction==EXTERNAL_FLUX)
-	{	if(fmobj->HasPoroelasticity())
-		{	// provided value in (dV/V)/(L^2-T), scale by V to get L/T
-			fluxMag.x = BCValue(bctime)*mpmptr->GetVolume(DEFORMED_VOLUME);
-		}
-		else
+	{	if(fmobj->HasDiffusion())
 		{	// provided value in M/(L^2-T), scale by current density to get L/T
 			fluxMag.x = BCValue(bctime)*mpmptr->GetVolume(DEFORMED_VOLUME)/mpmptr->mp;
 		}
 	}
 	else
-    {	// moisture f(c-cres) (units potential) and function should give flux in M/(L^2-T)
-		// poroelasticity f(p-pres) (units P) and function should give flux in (dV/V)/(L^2-T)
-		
-		// time variable (t) is replaced by c-cres, where c is the particle value and cres is reservoir
-		// Poroelasticity used particle value to support changed flux when void space
+    {
 		double cmcres;
-		if(fmobj->HasPoroelasticity())
-			cmcres = mpmptr->pConcentration-GetBCFirstTime();
-		else
+		if(fmobj->HasDiffusion())
+		{	// moisture f(c-cres) (units potential) and function should give flux in M/(L^2-T)
+			// time variable (t) is replaced by c-cres, where c is the particle value and cres is reservoir
 			cmcres = mpmptr->pPreviousConcentration-GetBCFirstTime();
+		}
+#ifdef USE_ASCII_MAP
+		double vars[7];
+		vars[0] = 6.5;
+		vars[1] = cmcres;		//t
+#else
 		unordered_map<string, double> vars;
-		GetPosition(vars);
 		vars["t"] = cmcres;
+#endif
+		GetPositionVars(vars);
 		
 		// scaling only used when in Legacy units
 		double currentValue = fabs(scale*function->EvaluateFunction(vars));
@@ -132,11 +131,7 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 		// change direction to match sign of the difference
 		if(cmcres>0.) currentValue=-currentValue;
 		
-		if(fmobj->HasPoroelasticity())
-		{	// provided value in (dV/V)/(L^2-T), scale by V to get L/T
-			fluxMag.x = currentValue*mpmptr->GetVolume(DEFORMED_VOLUME);
-		}
-		else
+		if(fmobj->HasDiffusion())
 		{	// provided value in M/(L^2-T), scale by current density to get L/T
 			fluxMag.x = currentValue*mpmptr->GetVolume(DEFORMED_VOLUME)/mpmptr->mp;
 		}

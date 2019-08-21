@@ -41,7 +41,9 @@
 	#include "Materials/AdhesionFriction.hpp"
 	#include "Materials/LiquidContact.hpp"
 	#include "Read_MPM/CrackController.hpp"
+	#include "Materials/IsoSoftening.hpp"
 #else
+	// FEA code materials
 	#include "Materials/ImperfectInterface.hpp"
 #endif
 
@@ -179,7 +181,11 @@ int MaterialController::AddMaterial(int matID,char *matName)
         case LIQUIDCONTACT:
             newMaterial=new LiquidContact(matName,matID);
             break;
+		case ISOSOFTENING:
+			newMaterial=new IsoSoftening(matName,matID);
+			break;
 #else
+		// FEA code materials
 		case INTERFACEPARAMS:
 			newMaterial=new ImperfectInterface(matName,matID);
 			break;
@@ -332,22 +338,7 @@ void MaterialController::SetMaterialFriction(int lawID,int otherMatID)
 
 // Called when material that had PDamping command is done
 void MaterialController::SetMaterialDamping(void)
-{	((MaterialBase *)lastObject)->SetDamping(matPdamping,matFractionPIC);
-}
-
-// Implement fraction PIC by setting damping values
-// It is initialized to -1 on PDamping command, but always between 0 and 1 if has PIC attribute
-// also set matPdamping to large negative number
-void MaterialController::SetFractionPIC(void)
-{	matFractionPIC = -1.;
-	matPdamping = -1.1e12;
-}
-void MaterialController::SetFractionPIC(double fract)
-{	matFractionPIC = fract;
-	if(fract<0.)
-		matFractionPIC = 0.;
-	else if (fract>1.)
-		matFractionPIC = 1.;
+{	((MaterialBase *)lastObject)->SetDamping(matPdamping);
 }
 
 // cache Contact law from old style input to be added later at end of material array

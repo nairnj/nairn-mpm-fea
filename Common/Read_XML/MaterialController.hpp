@@ -21,7 +21,7 @@ class MaterialController : public ParseController
 {
     public:
 #ifdef MPM_CODE
-		double matPdamping,matFractionPIC;		// temporary variables when reading particle damping
+		double matPdamping;		// temporary variables when reading particle damping
 		ParseController *autoContactCtrl;
 #endif
 		ParseController *nameCtrl;
@@ -43,8 +43,6 @@ class MaterialController : public ParseController
 		int AddAutoContactLaw(ContactLaw *);
 		int NumAutoContactLaws(void);
 		void SetMaterialDamping(void);
-		void SetFractionPIC(void);
-		void SetFractionPIC(double);
 #endif
 		int GetIDFromName(char *);
 		int GetIDFromNewName(char *);

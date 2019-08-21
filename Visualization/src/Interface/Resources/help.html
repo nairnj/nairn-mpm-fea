@@ -59,11 +59,16 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 <ul>
 <li><a href="#intro">Introduction</a></li>
 
+<li><a href="#opencmds">Commands Files</a>
+<ul>
+<li><a href="#opencmds">Opening or Creating a Commands File</a></li>
+<li><a href="#entercmds">Entering Commands</a></li>
+</ul>
+</li>
+
 <li><a href="#running">Running Calculations</a>
 <ul>
 <li><a href="#setup">Setting up the System</a></li>
-<li><a href="#opencmds">Opening or Creating a Commands File</a></li>
-<li><a href="#entercmds">Entering Commands</a></li>
 <li><a href="#start">Starting FEA or MPM Analysis</a></li>
 <li><a href="#script">Using Script Control</a></li>
 </ul>
@@ -96,11 +101,58 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 
 <p><b>NairnFEAMPMViz</b> is a graphical interface and front end to running and
 visualizing finite element calculations (FEA) and material point method calculations
-(MPM) in the <code>nairn-mpm-fea</code> computational mechanics package. The calculations are done that package's code engines called <code>NairnFEA</code> (for FEA) and <code>NairnMPM</code> (for MPM). This Java application, launches tasks using these code engines to <a href="#running">run calculations</a> and opens the
-results files to <a href="#viz">visualize</a> the results.
-</p>
+(MPM) in the <code>nairn-mpm-fea</code> computational mechanics package. The calculations are done by the package's code engines called <code>NairnFEA</code> (for FEA) and <code>NairnMPM</code> (for MPM). In brief, this Java application does the following tasks:</p>
+
+<ul>
+<li>Interprets <a href="#opencmds">input command files</a> that are usually scripts to define a calculation. The result of the interpretation will be <code>XML</code> command to input to the code engines.</li>
+<li>Launches tasks using the code engines to <a href="#running">run calculations</a> based on the interpreted <code>XML</code> commands.</li>
+<li>When done, the output of the calculations are opened to  to <a href="#viz">visualize</a> the results.</li>
+<li>If desired, the above steps can be automated by <a href="#script">application-level scripting</a>. For example, an application can automate running multiple calculations and compiling of results.</li>
+</ul>
+
+<p>Another use of this application is just to interpret a script and save the resulting <code>XML</code> commands to a file. This file can be copied to a server to run long calculations remotely. Once done, the remove calculations can be opened in this application for <a href="#viz">visualization</a>. The task of running on a remote server (<i>i.e.</i>, copy <code>XML</code> commands to a server, launching a calculation, and then opening (or copying and opening) the remote results in this application)can be  automated using <a href="#runserver">remote calculation</a> options.</p> 
 
 <p>This documentation is very brief. More complete documentation of the <code>nairn-mpm-fea</code> package is given on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a> (which can also be accessed using the "internet" icon in this help window's tool bar.</p>
+
+<p>| <a href="#index">index</a> |</p>
+
+<h1><a name="opencmds"></a>Commands Files</h1>
+
+<h2>Opening or Creating a Commands File<hr></h2>
+
+<p>To open an existing commands file, choose the &quot;Open...&quot; menu command
+(or click the&quot; Open...&quot; icon) and select the file from the file choosing dialog box or choose
+file from the &quot;Open Recent&quot; submenu.
+Command files usually have extension <code>fmcmd</code> but can also have <code>fcmd</code>,
+<code>mcmd</code>, or just <code>cmd</code>. To restrict the files you can open to just
+command files, choose &quot;MPM and FEA Command Files&quot; from the file format menu.
+If the file you want to open does not show up, you can try selecting &quot;All Files&quot;
+from the menu instead.
+</p>
+
+<p>To create a new commands file, select &quot;New FEA Commands&quot; or &quot;New MPM Commands&quot;
+menu command (or click the &quot;F&quot; or &quot;M&quot; icon, respectively. These options
+will open a new file with a template of commands for that type of calculation.
+Before you run calculations using new commands, they must be saved to disk. Use the &quot;Save&quot;
+or &quot;Save As...&quot; menu commands (or the &quot;Save&quot; icon) to save to any location.
+The commands loaded also provide an example FEA calculation (for bending of a cantilever beam) or
+MPM calculation (for simple tensile test). You can <a href="#start">run</a> them to see example calculation results.
+</p>
+
+<p>| <a href="#index">index</a> |</p>
+
+<h2><a name="entercmds"></a>Entering Commands<hr></h2>
+
+<p>Once commands are open, you can edit the commands using basic text editing methods. You 
+can choose font to use for "Editing" in the "Fonts" tab of the preferences window.</p>
+
+<p>There are two types of command files. The recommended approach is to use the built-in scripting language. Using scripts provides maximum flexibility in setting up calculations because they can contain things like variables, conditionals, repeat loop, <i>etc</i>. When you interpret a script, the commands create XML commands that are sent to the code engines. See the help topic on <a href="commands.html">scripting commands</a> for more details (or click the "note pad" icon in this window's tool bar to access that help).</p>
+
+<p>An alternate approach is to directly enter the XML commands supported by the <code>NairnFEA</code> and <code>NairnMPM</code> code engines This approach is much less flexible than scripted commands and this help has no information of the format for XML commands. If you need to know about XML commands, you can refer to the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a> (the wiki's XML information is sometimes useful when debugging scripted files too).</p>
+
+<p>You can save the commands at any time using the &quot;Save&quot; or &quot;Save As...&quot; menu 
+commands (or the &quot;Save&quot; icon).
+</p>
 
 <p>| <a href="#index">index</a> |</p>
 
@@ -159,15 +211,15 @@ check the &quot;Validate&quot; option (recommended); uncheck it to skip validati
 
 <dl>
 <dt>Windows Native</dt>
-<dd>This option means the <code>.exe</code> files were created using Visual Studio and can be run using a Windows command line. When using this option, the "Shell Command" should be set to "$(windows)". Click the "Change..." button and enter file name as "$(windows)". When using this option, you must also compile xerces in Visual Studio and place the resulting xerces dll file in the same folder as the compiled <code>.exe</code> files.</dd>
-
-<dt>Windows using Cygwin</dt>
-<dd>Before "Windows Native" was available, code could be compiled using cygwin. This option is still supported (but not recommended because comipled code is slower). To use it, click the &quot;Change...&quot; button for the &quot;Shell Command&quot;
-and select the <code>bash.exe</code>. It is normally in the <code>/bin</code> folder that is located within the <code>cygwin</code> folder.</dd>
+<dd>This option means the <code>.exe</code> files that were created using Visual Studio and can be run using a Windows command line. When using this option, the "Shell Command" should be set to "$(windows)". Click the "Change..." button and enter file name as "$(windows)". When using this option, you must also compile xerces in Visual Studio and place the resulting xerces dll file in the same folder as the compiled <code>.exe</code> files.</dd>
 
 <dt>Mac, Unix, or Linux</dt>
 <dd>The "Shell Command" is only used when running background jobs. To allow that option, click the &quot;Change...&quot; button for the &quot;Shell Command&quot;
 and select the <code>bash</code> file (which is usually at <code>/bin/bash</code>).</dd>
+
+<dt>Windows using Cygwin</dt>
+<dd>Before "Windows Native" was available, code could be compiled using cygwin. This option is still supported (but not recommended because compiled code is slower). To use it, click the &quot;Change...&quot; button for the &quot;Shell Command&quot;
+and select the <code>bash.exe</code>. It is normally in the <code>/bin</code> folder that is located within the <code>cygwin</code> folder.</dd>
 
 </dl>
 
@@ -177,44 +229,6 @@ and select the <code>bash</code> file (which is usually at <code>/bin/bash</code
 in the &quot;Work Space Directory&quot; section. Select any folder and that folder
 will be the default folder when opening and saving files. Any change made to the
 work space will only affect new windows.
-</p>
-
-<p>| <a href="#index">index</a> |</p>
-
-<h2><a name="opencmds"></a>Opening or Creating a Commands File<hr></h2>
-
-<p>To open an existing commands file, choose the &quot;Open...&quot; menu command
-(or click the&quot; Open...&quot; icon) and select the file from the file choosing dialog box or choose
-file from the &quot;Open Recent&quot; submenu.
-Command files usually have extension <code>fmcmd</code> but can also have <code>fcmd</code>,
-<code>mcmd</code>, or just <code>cmd</code>. To restrict the files you can open to just
-command files, choose &quot;MPM and FEA Command Files&quot; from the file format menu.
-If the file you want to open does not show up, you can try selecting &quot;All Files&quot;
-from the menu instead.
-</p>
-
-<p>To create a new commands file, select &quot;New FEA Commands&quot; or &quot;New MPM Commands&quot;
-menu command (or click the &quot;F&quot; or &quot;M&quot; icon, respectively. These options
-will open a new file with a template of commands for that type of calculation.
-Before you run calculations using new commands, they must be saved to disk. Use the &quot;Save&quot;
-or &quot;Save As...&quot; menu commands (or the &quot;Save&quot; icon) to save to any location.
-The commands loaded also provide an example FEA calculation (for bending of a cantilever beam) or
-MPM calculation (for simple tensile test). You can <a href="#start">run</a> them to see example calculation results.
-</p>
-
-<p>| <a href="#index">index</a> |</p>
-
-<h2><a name="entercmds"></a>Entering Commands<hr></h2>
-
-<p>Once commands are open, you can edit the commands using basic text editing methods. You 
-can choose font to use for "Editing" in the "Fonts" tab of the preferences window.</p>
-
-<p>There are two types of command files. The recommended approach is to use the built-in scripting language. Using scripts provides maximum flexibility in setting up calculations because they can contain things like variables, conditionals, repeat loop, <i>etc</i>. When you interpret a script, the commands create XML commands that are sent to the code engines. See the help topic on <a href="commands.html">scripting commands</a> for more details (or click the "note pad" icon in this window's tool bar to access that help).</p>
-
-<p>An alternate approach is to directly enter the XML commands supported by the <code>NairnFEA</code> and <code>NairnMPM</code> code engines This approach is much less flexible than scripted commands and this help has no information of the format for XML commands. If you need to know about XML commands, you can refer to the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a> (the wiki's XML information is sometimes useful when debugged scripted files too).</p>
-
-<p>You can save the commands at any time using the &quot;Save&quot; or &quot;Save As...&quot; menu 
-commands (or the &quot;Save&quot; icon).
 </p>
 
 <p>| <a href="#index">index</a> |</p>
@@ -625,7 +639,7 @@ text-editing application. The pasted text will be a tab-delimited table of the r
 </li>
 
 <li>The &quot;Annotations&quot; submenu in the &quot;Edit&quot; menu will add various plot
-annotations to the plot suach as labels, arrows, and shapes. You can also add labels and annotations using the icons in the tool bar (click and hold on symbols icon to get a menur for selecting the type of annotation). Once annotations are added you can move them around
+annotations to the plot such as labels, arrows, and shapes. You can also add labels and annotations using the icons in the tool bar (click and hold on symbols icon to get a menu for selecting the type of annotation). Once annotations are added you can move them around
 the plot or click the end points to reorient and resize them. You can double click to open
 the plot inspector to change more properties of the annotations (and to change the text
 of plot labels).</li>
@@ -786,7 +800,7 @@ new options (while the previous plot window is still open) and then clicking the
 
 <ul>
 <li>Type: Pick color rainbow from low value to high value.</li>
-<li>Contours: Pick number of contours to use within the choosen rainbow, which will be total number of colors in the plot. If this value is 1, the colors will be continous resulting in smooth transitions in the plot with many colors.</li>
+<li>Contours: Pick number of contours to use within the chosen rainbow, which will be total number of colors in the plot. If this value is 1, the colors will be continuous resulting in smooth transitions in the plot with many colors.</li>
 <li>Subelements: For <a href="#meshplots">mesh plots</a> based on nodal data, each element is divided into n X n subelements and then nodal values are extrapolated to those elements and plotted. If n=1, each element gets an average value and a single color. As n increase, the plots get smoother, but also get slower.</li>
 </ul></li>
 

@@ -20,6 +20,7 @@ class CrackNode;
 class TransportTask;
 class MaterialContactNode;
 #include "Nodes/CrackVelocityField.hpp"
+#include "Nodes/MatVelocityField.hpp"
 #include "Cracks/CrackHeader.hpp"
 
 #endif
@@ -85,19 +86,20 @@ class NodalPoint : public LinkedObject
 	
 		void AddFtotTask3(short,int,Vector *);
 		void AddFtotSpreadTask3(short,Vector);
-		void AddTractionTask3(MPMBase *,short,int,Vector *);
-		void AddGravityAndBodyForceTask3(Vector *);
+		bool AddTractionTask3(MPMBase *,short,int,Vector *);
+		void AddGravityAndBodyForceTask3(Vector *,double,double);
 		void CopyGridForces(NodalPoint *);
-		void UpdateMomentaOnNode(double);
+		void UpdateMomentum(double);
 		void IncrementDelvaTask5(short,int,double,GridToParticleExtrap *) const;
 
+		double GetCrackSurfaceMass(short,int,double,CrackSegment *) const;
 		bool IncrementDelvSideTask8(short,int,double,Vector *,Vector *,double *,CrackSegment *,double) const;
 		bool GetCMVelocityTask8(Vector *,Vector *) const;
 		short GetFieldForSurfaceParticle(short,int,CrackSegment *) const;
 		void SurfaceCrossesCracks(Vector *,Vector *,CrackField *) const;
 		int SurfaceCrossesOneCrack(Vector *,Vector *,int) const;
 		int SurfaceCrossesOtherCrack(Vector *,Vector *,int) const;
-		void CalcCMVelocityTask8(void);
+		bool GetCenterOfMassVelocity(Vector *,bool);
 	
 		// specific task methods
 		void PrepareForFields(void);
@@ -114,8 +116,7 @@ class NodalPoint : public LinkedObject
 		bool NodeHasParticles(void) const;
 		double GetNodalMass(bool) const;
 		void Describe(bool) const;
-		void AddDisplacement(short,int,double,Vector *);
-		void AddVolume(short,int,double);
+		void AddContactTerms(short,int,ContactTerms *);
         void AddUGradient(short,double,double,double,double,double,int,double);
 		void AddMatWeights(double,double *);
 		// GRID_JTERMS
@@ -124,7 +125,7 @@ class NodalPoint : public LinkedObject
         void AddStress(short,double,Tensor *);
         Vector GetVelocity(short,int);
 		void AddKineticEnergyAndMass(double &,double &);
-		void CalcVelocityForStrainUpdate(void);
+		void GridValueCalculation(int);
         short GetCMVelocity(Vector *);
         void CalcStrainField(void);
 		void Interpolate(NodalPoint *,NodalPoint *,double,int);
@@ -133,12 +134,9 @@ class NodalPoint : public LinkedObject
 		void CrackContactThree(int,int,double);
 		void MaterialContactOnNode(double,int,MaterialContactNode *);
         void GetMatVolumeGradient(int,Vector *) const;
-        void SetMomVel(Vector *,int);
-        void AddMomVel(Vector *,double,int);
-		void ReflectMomVel(Vector *,NodalPoint *,double,double,int);
-        void SetFtotDirection(Vector *,double,Vector *);
-        void AddFtotDirection(Vector *,double,double,Vector *);
-		void ReflectFtotDirection(Vector *,double,NodalPoint *,double,double,Vector *);
+        void ZeroVelocityBC(Vector *,int,double,Vector *);
+        void AddVelocityBC(Vector *,double,int,double,Vector *);
+		void ReflectVelocityBC(Vector *,NodalPoint *,double,double,int,double,Vector *);
 		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);
 		bool CalcTotalMassAndCount(void);
@@ -147,14 +145,21 @@ class NodalPoint : public LinkedObject
 		void AddRigidBCInfo(MPMBase *,double,int,Vector *);
 		int ReadAndZeroRigidBCInfo(Vector *,double *,double *);
 		void MirrorIgnoredCrackFields(void);
+	
+		// XPIC
+		void XPICSupport(int,int,NodalPoint *,double,int,int,double);
+		void AddVStarNext(short,int,Vector *,Vector *,Vector *,Matrix3 *,double,double);
+		virtual Vector *GetVStarPrev(short,int) const;
+		double GetMaterialMass(short,int) const;
 #else
+		// FEA code
         void InitForceField(void);
         void PrintAvgStress(void);
 #endif
 	
 		// class methods
 #ifdef MPM_CODE
-		static void PreliminaryCalcs(void);
+		static void PrepareNodeCrackFields(void);
 		static NodalPoint *CreateGhostFromReal(NodalPoint *);
 #endif
 		static NodalPoint *Create2DNode(int,double,double);
@@ -163,6 +168,7 @@ class NodalPoint : public LinkedObject
 	protected:
 #ifdef MPM_CODE
 		double nodalMass;				// total mass
+		bool hasParticles;				// true if node has particles
 #endif
     
     private:

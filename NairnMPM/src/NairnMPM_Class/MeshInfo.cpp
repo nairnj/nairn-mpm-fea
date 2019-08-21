@@ -18,10 +18,14 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Materials/MaterialBase.hpp"
+#include "Materials/ContactLaw.hpp"
+#include "Exceptions/MPMWarnings.hpp"
 #include <algorithm>
 
 // global class for grid information
 MeshInfo mpmgrid;
+int MeshInfo::warnLRConvergence = -1;
 
 #pragma mark MeshInfo:Constructors and Destructors
 
@@ -29,10 +33,19 @@ MeshInfo::MeshInfo(void)
 {
 	cartesian=UNKNOWN_GRID;
 	horiz=0;                        // also flag that used <Grid> command (i.e. structured grid)
-	contactByDisplacements=true;	// contact by displacements
-	positionCutoff=0.8;             // element fraction when contact by positions
 	cellMinSize=-1.;				// calculated when needed
 	minParticleSize = MakeVector(1.e50,1.e50,1.e50);
+	
+	// for contact
+	materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;		// method to find normals in multimaterial contact
+	hasImperfectInterface = false;							// flag for any imperfect interfaces
+	materialContactLawID = -1;
+	rigidGradientBias=1.;						// Use rigid gradient unless material volume gradient is this much higher (only normal method 2)
+	lumpingMethod = LUMP_OTHER_MATERIALS;
+	volumeGradientIndex = -1;		// turned on in multimaterial mode only
+	positionIndex = -1;				// index to position extrapolation for contact
+	displacementIndex = -1;			// index to displacement extrapolation for contact
+	contactByDisplacements=true;				// contact by displacements for materials
 }
 
 #pragma mark MeshInfo:Methods
@@ -99,23 +112,17 @@ void MeshInfo::Output(int pointsPerCell,bool isAxisym)
 }
 
 // output contact method by displacements or position with a cutoff
-void MeshInfo::OutputContactByDisplacements(bool regressionMethod)
+void MeshInfo::OutputContactByDisplacements(bool regressionMethod,bool byDisplacements,double cutoff)
 {
-	// special case for material contact when using a regression method
-	if(regressionMethod)
-	{	cout << "   (normal cod found in regression methods)" << endl;
-		return;
-	}
-	
 	// other material contact and crack contact methods
-    if(contactByDisplacements)
+    if(byDisplacements)
 		cout << "   (normal cod from displacements)" << endl;
-	else if(positionCutoff>0.)
-	{	cout << "   (normal cod from position with contact when separated less than " << positionCutoff
+	else if(cutoff>0.)
+	{	cout << "   (normal cod from position with contact when separated less than " << cutoff
                 << " of cell)" << endl;
 	}
 	else
-	{	cout << "   (normal cod from position with contact by separation using a " << -positionCutoff
+	{	cout << "   (normal cod from position with contact by separation using a " << -cutoff
 						<< " power-law correction)" << endl;
 	}
 	
@@ -327,9 +334,141 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 	neighbor[i]=0;
 }
 
+// For structured, find node for input to moving velocity boundary conditions. It will find the closest
+// 		node to n0 but inside the object (higher number for side=-1 or lower for side=1). If
+// 		position is on a node move -side nodes away.
+// Also returns the gap between nodes in the input direction in dir to step through
+// 		the nodes
+// dir is only X_DIRECTION, Y_DIRECTION, or Z_DIRECTION, side is -1 or +1
+// Handles both equal an unequal element sizes
+// throws CommonException() if position has left the grid
+int MeshInfo::FindShiftedNodeFromNode(int n0,double position,int dir,int side,int &nodeStep,double depth)
+{
+	int shift,firstNode = n0;
+	bool leftGrid = false;
+	
+	// Find step size from inside to outside nodes in nodeStep
+	// Check if left the grid
+	switch(dir)
+	{	case X_DIRECTION:
+			nodeStep = side*xplane;
+			if(position>=xmax || position<=xmin) leftGrid = true;
+			break;
+		case Y_DIRECTION:
+			nodeStep = side*yplane;
+			if(position>=ymax || position<=ymin) leftGrid = true;
+			break;
+		default:
+			nodeStep = side*zplane;
+			if(position>=zmax || position<=zmin) leftGrid = true;
+			break;
+	}
+	
+	// Exception if left the grid
+	if(leftGrid)
+	{   char msg[100];
+		sprintf(msg,"Moving condition starting on node %d has left the grid",n0);
+		throw CommonException(msg,"");
+	}
+
+	// For equal element sizes, find first node such that
+	//     depth-1 < abs(position-firstNodes)/cell <= depth
+	// In other words firstNode is last node within depth cells from the wall
+	// For unequal element sizes, depth is currently 1
+	// For side=1, first node is before position, for side=-1 it is after
+	// For equal element algorithm, see JANOSU-14-43
+	switch(dir)
+	{	case X_DIRECTION:
+			if(equalElementSizes)
+			{	double d0 = (double)side*(position - nd[n0]->x)/grid.x;
+				shift = (int)floor(depth-d0);
+				if((double)shift == depth-d0-1.) shift++;
+				firstNode = n0 - side*shift*xplane;
+			}
+			else
+			{	// find firstNode before position
+				if(nd[firstNode]->x<=position)
+				{	firstNode += xplane;
+					while(nd[firstNode]->x<=position)
+						firstNode += xplane;
+				}
+				else
+				{	firstNode -= xplane;
+					while(nd[firstNode]->x>position)
+						firstNode -= xplane;
+				}
+				// Now nd[firstNode-xplane]->x <= position < nd[firstNode]->x
+				// For side=1 shift to previous interval
+				if(side==1)
+				{	while(nd[firstNode]->x>=position)
+						firstNode -= xplane;
+				}
+			}
+			break;
+		
+		case Y_DIRECTION:
+			if(equalElementSizes)
+			{	double d0 = (double)side*(position - nd[n0]->y)/grid.y;
+				shift = (int)floor(depth-d0);
+				if((double)shift == depth-d0-1.) shift++;
+				firstNode = n0 - side*shift*yplane;
+			}
+			else
+			{	// find firstNode before position
+				if(nd[firstNode]->y<=position)
+				{	firstNode += yplane;
+					while(nd[firstNode]->y<=position)
+						firstNode += yplane;
+				}
+				else
+				{	firstNode -= yplane;
+					while(nd[firstNode]->y>position)
+						firstNode -= yplane;
+				}
+				// Now nd[firstNode-yplane]->y <= position < nd[firstNode]->y
+				// For side=1 shift to previous interval
+				if(side==1)
+				{	while(nd[firstNode]->y>=position)
+						firstNode -= yplane;
+				}
+			}
+			break;
+		
+		default:
+			if(equalElementSizes)
+			{	double d0 = (double)side*(position - nd[n0]->z)/grid.z;
+				shift = (int)floor(depth-d0);
+				if((double)shift == depth-d0-1.) shift++;
+				firstNode = n0 - side*shift*zplane;
+			}
+			else
+			{	// find firstNode before position
+				if(nd[firstNode]->z<=position)
+				{	firstNode += zplane;
+					while(nd[firstNode]->z<=position)
+						firstNode += zplane;
+				}
+				else
+				{	firstNode -= zplane;
+					while(nd[firstNode]->z>position)
+						firstNode -= zplane;
+				}
+				// Now nd[firstNode-zplane]->z <= position < nd[firstNode]->z
+				// For side=1 shift to previous interval
+				if(side==1)
+				{	while(nd[firstNode]->z>=position)
+						firstNode -= zplane;
+				}
+			}
+			break;
+	}
+	
+	return firstNode;
+}
+
 // For structured, find element from location and return result (1-based element number)
 // Calling code must be sure it is structured grid
-// NairnMPM requires equal element sizes,but OSParticulas allows Tartan grid
+// NairnMPM requires equal element sizes, but OSParticulas allows unequal (in Tartan grid)
 // throws CommonException()
 int MeshInfo::FindElementFromPoint(const Vector *pt,MPMBase *mptr)
 {
@@ -341,9 +480,7 @@ int MeshInfo::FindElementFromPoint(const Vector *pt,MPMBase *mptr)
 		{	if(pt->x == xmin+horiz*grid.x)
 				col = horiz-1;
 			else
-			{   char msg[100];
-				sprintf(msg,"column for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
-				throw CommonException(msg,"");
+			{	throw CommonException("column out of range","");
 			}
 		}
     
@@ -352,9 +489,7 @@ int MeshInfo::FindElementFromPoint(const Vector *pt,MPMBase *mptr)
 		{	if(pt->y == ymin+vert*grid.y)
 				row = vert-1;
 			else
-			{   char msg[100];
-				sprintf(msg,"row for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
-				throw CommonException(msg,"");
+			{	throw CommonException("row out of range","");
 			}
 		}
     
@@ -365,9 +500,7 @@ int MeshInfo::FindElementFromPoint(const Vector *pt,MPMBase *mptr)
 			{	if(pt->z == zmin+depth*grid.z)
 					zrow = depth-1;
 				else
-				{   char msg[100];
-					sprintf(msg,"rank for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
-					throw CommonException(msg,"");
+				{	throw CommonException("rank out of range","");
 				}
 			}
 			theElem = horiz*(zrow*vert + row) + col + 1;
@@ -403,28 +536,22 @@ int MeshInfo::FindElementFromPoint(const Vector *pt,MPMBase *mptr)
 		// x axis elements 0 to horiz-1
 		col = BinarySearchForElement(0,pt->x,horiz-1,1);
 		if(col<0)
-		{   char msg[100];
-			sprintf(msg,"column for tartan point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
-			throw CommonException(msg,"");
+		{	throw CommonException("column for tartan grid out of range","");
 		}
 
 		// y axis elements 0 to (vert-1)*horiz
 		row = BinarySearchForElement(1,pt->y,vert-1,horiz);
 		if(row<0)
-		{   char msg[100];
-			sprintf(msg,"row for tartan point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
-			throw CommonException(msg,"");
+		{	throw CommonException("row for tartan grid out of range","");
 		}
 
 		if(fmobj->IsThreeD())
 		{	// z axis element 0 to (depth-1)*horiz*vert
 			zrow = BinarySearchForElement(2,pt->z,depth-1,horiz*vert);
 			if(zrow<0)
-			{   char msg[100];
-				sprintf(msg,"rank for tartan point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
-				throw CommonException(msg,"");
+			{	throw CommonException("rank for tartan grid out of range","");
 			}
-				
+			
 			theElem = horiz*(zrow*vert + row) + col + 1;
 		}
 		
@@ -722,6 +849,143 @@ GridPatch **MeshInfo::CreateOnePatch(int np)
     return patch;
 }
 
+#pragma mark MeshInfo::Multimaterial contact info
+
+// Called if multimaterial mode active: Print mode settings and contact law details
+// throws CommonException()
+void MeshInfo::MaterialOutput(void)
+{
+	// Global material contact law (must be set, if not force to frictionless)
+	materialContactLawID = MaterialBase::GetContactLawNum(materialContactLawID);
+	if(materialContactLawID<0)
+		throw CommonException("Multimaterial mode must select a default contact law","MeshInfo::MaterialOutput");
+	materialContactLaw = (ContactLaw *)theMaterials[materialContactLawID];
+	cout << "Default Contact Law: " << materialContactLaw->name << " (number " << (materialContactLawID+1) << ")" << endl;
+	if(materialContactLaw->IsImperfectInterface()) hasImperfectInterface=true;
+	
+	// request volume gradient extrapolations
+	volumeGradientIndex = 0;
+	
+	// print contact detection method
+	cout << "Contact Detection: (Normal dv < 0) & (Normal cod < 0)" << endl;
+	OutputContactByDisplacements(materialNormalMethod>=LINEAR_REGRESSION,contactByDisplacements,positionCutoff);
+	cout << "Normal Calculation: ";
+	switch(materialNormalMethod)
+	{	case MAXIMUM_VOLUME_GRADIENT:
+			cout <<                     "Gradient of material or paired material (if all nonrigid), or the rigid" << endl;
+			cout << "                    material (if one rigid material), that has highest magnitude. When has" << endl;
+			cout << "                    rigid material, prefer rigid material gradient with bias factor = " << rigidGradientBias;
+			break;
+		case MAXIMUM_VOLUME:
+			cout << " gradient of material with maximum volume";
+			break;
+		case AVERAGE_MAT_VOLUME_GRADIENTS:
+			cout <<                     "Volume-weighted mean gradient of material and other materials lumped (if all" << endl;
+			cout << "                    nonrigid), on just the rigid material (if one rigid material). When has" << endl;
+			cout << "                    rigid material, prefer rigid material gradient with bias factor = " << rigidGradientBias;
+			break;
+		case EACH_MATERIALS_MASS_GRADIENT:
+			cout << "Each material's own mass gradient";
+			break;
+		case SPECIFIED_NORMAL:
+			volumeGradientIndex = -1;
+			cout << "Use the specified normal of ";
+			PrintVector("",&contactNormal);
+			break;
+		default:
+			break;
+	}
+	rigidGradientBias*=rigidGradientBias;       // algorithms assume it is squared (to compare to squared mag of other vectors)
+	cout << endl;
+	
+	// lumping method
+	cout << "3+ Material Contact Nodes: ";
+	switch(lumpingMethod)
+	{
+		case LUMP_OTHER_MATERIALS:
+		default:
+			lumpingMethod = LUMP_OTHER_MATERIALS;
+			cout << "Lump other materials into a virtual material" << endl;
+			break;
+	}
+	cout << endl;
+}
+
+// set contact normal when normal is specified
+void MeshInfo::SetContactNormal(double polarAngle,double aximuthAngle)
+{
+	double angle,sinp;
+	
+	if(fmobj->IsThreeD())
+	{	angle = PI_CONSTANT*polarAngle/180.;
+		contactNormal.z = cos(angle);
+		sinp = sin(angle);
+	}
+	else
+	{	contactNormal.z = 0.;
+		sinp = 1.0;
+	}
+	angle = PI_CONSTANT*aximuthAngle/180.;
+	contactNormal.x = cos(angle)*sinp;
+	contactNormal.y = sin(angle)*sinp;
+}
+
+// prepare array for material contact details
+// throws CommonException()
+void MeshInfo::MaterialContactPairs(int maxFields)
+{
+	// create double array of pairs
+	mmContactLaw = new (nothrow) ContactLaw **[maxFields];
+	if(mmContactLaw==NULL)
+	{	throw CommonException("Memory error creating contact pairs array","MeshInfo::MaterialContactPairs");
+	}
+	
+	// fill all pairs with default material properties
+	int i,j;
+	for(i=0;i<maxFields-1;i++)
+	{	mmContactLaw[i] = new (nothrow) ContactLaw *[maxFields-1-i];
+		if(mmContactLaw[i]==NULL)
+		{	throw CommonException("Memory error creating contact pairs array","MeshInfo::MaterialContactPairs");
+		}
+		
+		// to default law
+		for(j=i+1;j<maxFields;j++) mmContactLaw[i][j-i-1] = mpmgrid.materialContactLaw;
+	}
+	
+	// check all active materials and change laws that were specified
+	for(i=0;i<nmat;i++)
+	{	int mati=theMaterials[i]->GetField();			// may be a shared field
+		if(mati<0) continue;							// skip if not used
+		
+		// loop over all other materials
+		for(j=0;j<nmat;j++)
+		{	int matj=theMaterials[j]->GetField();		// may be a shared field
+			if(matj<0 || i==j) continue;				// skip if no field or same material
+			
+			// look from custom friction from mat i to mat j
+			int pairContactID=theMaterials[i]->GetContactToMaterial(j+1);
+			if(pairContactID<0) continue;
+			pairContactID = MaterialBase::GetContactLawNum(pairContactID);
+			
+			// setting more than one shared material overwrite previous ones
+			if(mati<matj)
+			{	mmContactLaw[mati][matj-mati-1]=(ContactLaw *)theMaterials[pairContactID];
+				if(mmContactLaw[mati][matj-mati-1]->IsImperfectInterface()) mpmgrid.hasImperfectInterface=true;
+			}
+			else
+			{	mmContactLaw[matj][mati-matj-1]=(ContactLaw *)theMaterials[pairContactID];
+				if(mmContactLaw[matj][mati-matj-1]->IsImperfectInterface()) mpmgrid.hasImperfectInterface=true;
+			}
+		}
+	}
+}
+
+// material contact law for field mati to field matj
+ContactLaw *MeshInfo::GetMaterialContactLaw(int mati,int matj)
+{	// index based on smaller of the two indices
+	return mati<matj ? mmContactLaw[mati][matj-mati-1] : mmContactLaw[matj][mati-matj-1] ;
+}
+
 #pragma mark MeshInfo:Accessors
 
 // find data for creating symmetry BCs
@@ -931,6 +1195,19 @@ int MeshInfo::GetCartesian(void) { return cartesian; }
 // see if 3D grid
 bool MeshInfo::Is3DGrid(void) { return cartesian > BEGIN_3D_GRIDS; }
 
+// check if mesh allowed for axisymmetric GIMP shape functions
+// Need equal element sizes and if min<2*cell, need 0,cell,... on grid lines
+bool MeshInfo::ValidateASForGIMP(void)
+{	if(!equalElementSizes) return false;
+	if(xmin>=2.*grid.x) return true;
+	
+	// verify r=cell on grid line
+	double ccell = 1.-xmin/grid.x;
+	if(!DbleEqual(ccell,(double)int(ccell)) && !DbleEqual(ccell,(double)(int(ccell)+1)))
+	    return false;
+	return true;
+}
+
 // return minimum cell dimension if the grid is cartesian (-1 if not)
 // should find the minimum size in preliminary calculations (after setting cartesian)
 //     and store result for later use
@@ -1014,96 +1291,22 @@ void MeshInfo::GetGridPoints(int *ptx,int *pty,int *ptz)
 // Feature that calls this method must require the problem to have a structured <Grid>
 double MeshInfo::GetCellVolume(NodalPoint *ndptr)
 {
-	// structured grid with equal element sizes
-	if(equalElementSizes) return cellVolume;
-	
-	// structured grid (assumed) with variable element sizes
-	double dx1,dx2,dy1,dy2,dz1,dz2;
-	GetLocalCellSizes(ndptr,dx1,dx2,dy1,dy2,dz1,dz2);
-	return 0.125*(dx1+dx2)*(dy1+dy2)*(dz1+dz2) ;
-}
-
-// get element lengths around 1 node in variable element cell.
-// if on edge, one direction will be zero.
-void MeshInfo::GetLocalCellSizes(NodalPoint *ndptr,double &dx1,double &dx2,double &dy1,double &dy2,double &dz1,double &dz2)
-{	// 1 base node number, which is how they are stored in nd[]
-	int num = ndptr->num;
-	
-	// x axis
-	double x = ndptr->x;
-	dx1 = num<2 ? 0. : x - nd[num-1]->x;
-	if(dx1<0.) dx1 = 0.;
-	dx2 = num>=nnodes ? 0. : nd[num+1]->x - x;
-	if(dx2<0.) dx2 = 0.;
-	
-	// y axis
-	double y = ndptr->y;
-	dy1 = num-yplane<1 ? 0 : y - nd[num-yplane]->y;
-	if(dy1<0.) dy1 = 0.;
-	dy2 = num+yplane>nnodes ? 0 : nd[num+yplane]->y - y;
-	if(dy2<0.) dy2 = 0.;
-	
-	// z axis
-	if(depth>0)
-	{	double z = ndptr->z;
-		dz1 = num-zplane<1 ? 0 : z - nd[num-zplane]->z;
-		if(dz1<0.) dz1 = 0.;
-		dz2 = num+zplane>nnodes ? 0 : nd[num+zplane]->z - z;
-		if(dz2<0.) dz2 = 0.;
-	}
-	else
-	{	dz1 = zmin;
-		dz2 = zmin;
-	}
+	return cellVolume;
 }
 
 // Get ratio of element size to the right to element size to the left
+//		if mirrorSpacing>0 get left to right ratio instead
 // Used by rigid particle mirrored BCs and must be an interior node
-double MeshInfo::GetCellRatio(NodalPoint *ndptr,int dir)
-{	// easy if regular grid
-	if(equalElementSizes) return 1.;
-	
-	// rest for Tartan grid
-	int num = ndptr->num;
-	double dx1,dx2;
-	if(dir==X_DIRECTION)
-	{	// x axis
-		double x = ndptr->x;
-		dx1 = x - nd[num-1]->x;
-		dx2 = nd[num+1]->x - x;
-	}
-	
-	else if(dir==Y_DIRECTION)
-	{	// y axis
-		double y = ndptr->y;
-		dx1 = y - nd[num-yplane]->y;
-		dx2 = nd[num+yplane]->y - y;
-	}
-	
-	else
-	{	// z axis
-		double z = ndptr->z;
-		dx1 = z - nd[num-zplane]->z;
-		dx2 = nd[num+zplane]->z - z;
-	}
-	
-	return dx2/dx1;
+double MeshInfo::GetCellRatio(NodalPoint *ndptr,int dir,int mirrorSpacing)
+{
+    return 1;
 }
 
 // cell size in mm
 // Feature that calls this method must require the problem to have a structured <Grid>
 double MeshInfo::GetAverageCellSize(MPMBase *mptr)
 {
-	// precalculated for equal element sizes
-	if(equalElementSizes) return avgCellSize;
-	
-	// any other grid get from the element
-	Vector box = theElements[mptr->ElemID()]->GetDeltaBox();
-	if(Is3DGrid())
-		return (box.x+box.y+box.z)/3.;
-	else
-		return 0.5*(box.x+box.y);
-
+    return avgCellSize;
 }
 
 // grid thickness. For 3D returns z extent but not used in 3D
@@ -1119,8 +1322,6 @@ double MeshInfo::GetDefaultThickness()
 }
 
 // find hperp distance used in contact calculations in interface force calculations
-// Vector tangDel and magnitude delt only needed for 3D calculations. If not known
-// or has zero magnitude, it will use normal vector method instead
 Vector MeshInfo::GetPerpendicularDistance(Vector *norm,NodalPoint *ndptr)
 {
 	// magnitude of hperp and hperp before and after the node
@@ -1134,54 +1335,7 @@ Vector MeshInfo::GetPerpendicularDistance(Vector *norm,NodalPoint *ndptr)
     //    whole block gets skipped
     // See JANOSU-6-60 and JANOSU-6-74 and method #1 in paper
     if(Is3DGrid())
-	{	if(!mpmgrid.IsStructuredEqualElementsGrid())
-		{	// Tartan 3D Grid
-			
-			// get element sizes
-			double dx1,dx2,dy1,dy2,dz1,dz2;
-			GetLocalCellSizes(ndptr,dx1,dx2,dy1,dy2,dz1,dz2);
-			
-			// get two tangents
-			Vector t1,t2;
-			if(norm->z>norm->x && norm->z>norm->y)
-			{	// z is largest
-				t1 = MakeVector(0.,-norm->z,norm->y);
-			}
-			else
-			{	// x  or yis largest)
-				t1 = MakeVector(-norm->y,norm->x,0.);
-			}
-			
-			// second tangent from t1 X norm
-			t2.x = norm->y*t1.z - norm->z*t1.y;
-			t2.y = norm->z*t1.x - norm->x*t1.z;
-			t2.z = norm->x*t1.y - norm->y*t1.x;
-			
-			// first tangent
-			double a1,a2,b1,b2,c1,c2;
-			ScaleTangent(t1.x,dx1,dx2,a1,a2);
-			ScaleTangent(t1.y,dy1,dy2,b1,b2);
-			ScaleTangent(t1.z,dz1,dz2,c1,c2);
-			double h11 = 1./sqrt(a1*a1 + b1*b1 +c1*c1);
-			double h12 = 1./sqrt(a2*a2 + b2*b2 + c2*c2);
-			
-			ScaleTangent(t2.x,dx1,dx2,a1,a2);
-			ScaleTangent(t2.y,dy1,dy2,b1,b2);
-			ScaleTangent(t2.z,dz1,dz2,c1,c2);
-			double h21 = 1./sqrt(a1*a1 + b1*b1 + c1*c1);
-			double h22 = 1./sqrt(a2*a2 + b2*b2 + c2*c2);
-			
-			dist.x = 0.5*(dx1+dx2)*(dy1+dy2)*(dz1+dz2)/((h11+h12)*(h21+h22));
-
-			// partition two sides of the node
-			ScaleTangent(norm->x,dx1,dx2,a1,a2);
-			ScaleTangent(norm->y,dy1,dy2,b1,b2);
-			ScaleTangent(norm->z,dz1,dz2,c1,c2);
-			double rn = sqrt((a1*a1 + b1*b1 + c1*c1)/(a2*a2 + b2*b2 + c2*c2));
-			dist.y = 0.5*(1.+rn);				// hperp/h1
-			dist.z = dist.y/rn;					// hperp/h2
-		}
-        else if(cartesian!=CUBIC_GRID)
+	{	if(cartesian!=CUBIC_GRID)
 		{	// get two tangents
 			Vector t1,t2;
 			if(norm->z>norm->x && norm->z>norm->y)
@@ -1207,40 +1361,6 @@ Vector MeshInfo::GetPerpendicularDistance(Vector *norm,NodalPoint *ndptr)
 			dist.x = grid.x*grid.y*grid.z*sqrt((a1*a1 + b1*b1 + c1*c1)*(a2*a2 + b2*b2 + c2*c2));
         }
     }
-	else if(!mpmgrid.IsStructuredEqualElementsGrid())
-	{	// Tartan 2D grid
-		
-		// get element sizes
-		double dx1,dx2,dy1,dy2,dz1,dz2;
-		GetLocalCellSizes(ndptr,dx1,dx2,dy1,dy2,dz1,dz2);
-		
-		// if locally regular
-		if(DbleEqual(dx1,dx2) && DbleEqual(dy1,dy2))
-		{   double a=0.5*(dx1+dx2)*norm->x;
-			double b=0.5*(dy1+dy2)*norm->y;
-			dist.x = sqrt(a*a + b*b);
-		}
-		
-		else
-		{	// tangent Vector
-			Vector t1 = MakeVector(-norm->y, norm->x, 0.);
-		
-			// get size to ellipse in tangential direction
-			double a1,a2,b1,b2;
-			ScaleTangent(t1.x,dx1,dx2,a1,a2);
-			ScaleTangent(t1.y,dy1,dy2,b1,b2);
-			double h1 = 1./sqrt(a1*a1 + b1*b1);
-			double h2 = 1./sqrt(a2*a2 + b2*b2);
-			dist.x = 0.5*(dx1+dx2)*(dy1+dy2)/(h1+h2);
-			
-			// partition two sides of the node
-			ScaleTangent(norm->x,dx1,dx2,a1,a2);
-			ScaleTangent(norm->y,dy1,dy2,b1,b2);
-			double rn = sqrt((a1*a1 + b1*b1)/(a2*a2 + b2*b2));
-			dist.y = 0.5*(1.+rn);				// hperp/h1
-			dist.z = dist.y/rn;					// hperp/h2
-		}
-	}
     else if(cartesian!=SQUARE_GRID)
     {   double a=grid.x*norm->x;
         double b=grid.y*norm->y;
@@ -1263,13 +1383,5 @@ void MeshInfo::ScaleTangent(double tc,double d1,double d2,double &a1,double &a2)
 	}
 }
 
-// return current setting for contact method
-bool MeshInfo::GetContactByDisplacements(void) { return contactByDisplacements; }
-void MeshInfo::SetContactByDisplacements(bool newContact) { contactByDisplacements=newContact; }
-
 // Cell size for grid with constant element size only
 Vector MeshInfo::GetCellSize(void) { return grid; }
-
-
-
-

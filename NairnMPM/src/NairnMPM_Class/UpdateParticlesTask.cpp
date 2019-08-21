@@ -28,6 +28,8 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "NairnMPM_Class/XPICExtrapolationTask.hpp"
+#include "Boundary_Conditions/NodalVelBC.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -39,7 +41,7 @@ UpdateParticlesTask::UpdateParticlesTask(const char *name) : MPMTask(name)
 
 // Update particle position, velocity, temp, and conc
 // throws CommonException()
-void UpdateParticlesTask::Execute(void)
+void UpdateParticlesTask::Execute(int taskOption)
 {
 	CommonException *upErr = NULL;
 #ifdef CONST_ARRAYS
@@ -50,22 +52,35 @@ void UpdateParticlesTask::Execute(void)
 	double fn[maxShapeNodes];
 #endif
 
-    // Damping terms on the grid or on the particles
-    //      particleAlpha   =  (1-beta)/dt + pdamping(t)
-    //      gridAlpha       = -m*(1-beta)/dt + damping(t)
-    double particleAlpha = bodyFrc.GetParticleDamping(mtime);
-	double gridAlpha = bodyFrc.GetDamping(mtime);
+	// data structure for extrapolations
+	GridToParticleExtrap gp;
+	
+	// Damping terms on the grid or on the particles
+	//      particleAlpha   =  pdamping(t)
+	//      gridAlpha       = damping(t)
+	double particleAlpha = bodyFrc.GetParticleDamping(mtime);
+	double gridAlpha = bodyFrc.GetGridDamping(mtime);
+	
+	// Calculate velocities on the grid
+	int m = bodyFrc.GetXPICOrder();
+	if(m>1)
+	{	// FLIP(k>1) or XPIC(k>1) always has XPICMechanicsTask
+		XPICMechanicsTask->Execute(0);
+	}
+	else
+	{	// FLIP and PIC (FMPM(1) or XPIC(1)) use lumped mass matrix here
+#pragma omp parallel for
+		for(int i=1;i<=*nda;i++)
+			nd[nda[i]]->GridValueCalculation(VELOCITY_FOR_STRAIN_UPDATE);
+	}
 
-	//		nonPICGridAlpha = damping(t)
-	//		globalPIC       = (1-beta)/dt
-    double nonPICGridAlpha = bodyFrc.GetNonPICDamping(mtime);
-    double globalPIC = bodyFrc.GetPICDamping();
+	// for compatibility with OSParticulas, change sign of m
+	m = -m;
 
-    // Update particle position, velocity, temp, and conc
-#pragma omp parallel for private(ndsArray,fn)
-    for(int p=0;p<nmpmsNR;p++)
+	// Update particle position, velocity, temp, and conc
+#pragma omp parallel for private(ndsArray,fn,gp)
+	for(int p=0;p<nmpmsNR;p++)
 	{	MPMBase *mpmptr = mpm[p];
-
 		try
 		{	// get shape functions
 			const ElementBase *elemRef = theElements[mpmptr->ElemID()];
@@ -76,25 +91,28 @@ void UpdateParticlesTask::Execute(void)
 			// Update particle position and velocity
 			const MaterialBase *matRef=theMaterials[mpmptr->MatID()];
 			int matfld=matRef->GetField();
-
+			
 			// Allow material to override global settings
-            double localParticleAlpha = particleAlpha;
-            double localGridAlpha = gridAlpha;
-            matRef->GetMaterialDamping(localParticleAlpha,localGridAlpha,nonPICGridAlpha,globalPIC);
+			gp.m = m;
+			gp.gridAlpha = gridAlpha;
+			gp.particleAlpha = matRef->GetMaterialDamping(particleAlpha);
+
+			// extrapolate nodal velocity from grid to particle S v+(k)
+			ZeroVector(&gp.Svtilde);
 			
-			// data structure for extrapolations
-			GridToParticleExtrap *gp = new GridToParticleExtrap;
-			
-			// acceleration on the particle or S a
-			gp->acc = mpmptr->GetAcc();
-			ZeroVector(gp->acc);
-			
-			// extrapolate nodal velocity from grid to particle S v+
-			ZeroVector(&gp->vgpnp1);
+			if(m<=0)
+			{	// acceleration on the particle or S a (for FLIP and XPIC)
+				ZeroVector(&gp.Sacc);
+				
+				// XPIC(k>1) needs separate velocity extrapolation
+				if(m<-1) ZeroVector(&gp.Svlumped);
+			}
 			
 			// only two possible transport tasks
 			double rate[2],value[2];
-			rate[0] = rate[1] = value[0] = value[1] = 0.;
+			if(transportTasks!=NULL)
+			{	rate[0] = rate[1] = value[0] = value[1] = 0.;
+			}
 			int task;
 			TransportTask *nextTransport;
 			
@@ -102,34 +120,24 @@ void UpdateParticlesTask::Execute(void)
 			for(int i=1;i<=numnds;i++)
 			{	// increment velocity and acceleraton
 				NodalPoint *ndptr = nd[nds[i]];
-                short vfld = (short)mpmptr->vfld[i];
-				
-				// increment
-				ndptr->IncrementDelvaTask5(vfld,matfld,fn[i],gp);
+				short vfld = (short)mpmptr->vfld[i];
 
+				// increment
+				ndptr->IncrementDelvaTask5(vfld,matfld,fn[i],&gp);
+				
 				// increment transport rates
 				nextTransport=transportTasks;
 				task=0;
 				while(nextTransport!=NULL)
 				{	value[task] += nextTransport->IncrementValueExtrap(ndptr,fn[i],vfld,matfld);
-					nextTransport = nextTransport->IncrementTransportRate(ndptr,fn[i],rate[task++],vfld,matfld);
+					rate[task] += nextTransport->IncrementTransportRate(ndptr,fn[i],vfld,matfld);
+					nextTransport = nextTransport->GetNextTransportTask();
+					task++;
 				}
 			}
 			
-			// Find initial velocity vgp = vgpnp1 - a dt (may be better to not need this calculation)
-			Vector vgpn = gp->vgpnp1;
-			AddScaledVector(&vgpn, gp->acc, -timestep);
-
-			// get extra particle acceleration Aextra = -ag*Vgp(n) - ap*Vp - m(1-beta)Sv^*/dt
-			// (the -ap*Vp term is done in MovePosition, others done here)
-			Vector accExtra = SetScaledVector(&vgpn,-localGridAlpha);
-			
-			// update position, and must be before velocity update because updates need initial velocity
-            // This section does second order update
-			mpmptr->MovePosition(timestep,&gp->vgpnp1,&accExtra,localParticleAlpha);
-			
-			// update velocity in mm/sec
-			mpmptr->MoveVelocity(timestep);
+			// Update velocity and position
+			mpmptr->MoveParticle(&gp);
 			
 			// update transport values
 			ResidualStrains res;
@@ -140,12 +148,13 @@ void UpdateParticlesTask::Execute(void)
 			while(nextTransport!=NULL)
 			{	// mechanics would need to add to store returned value on particle (or get delta from rate?)
 				if(nextTransport == conduction)
-				{	dTcond = rate[task]*timestep;
-					res.dT = nextTransport->GetDeltaValue(mpmptr,value[task]);;
+				{	res.dT = nextTransport->GetDeltaValue(mpmptr,value[task]);
+					dTcond = rate[task]*timestep;
 				}
 				else
-					res.dC = nextTransport->GetDeltaValue(mpmptr,value[task]);;
-				nextTransport=nextTransport->MoveTransportValue(mpmptr,timestep,rate[task++]);
+					res.dC = nextTransport->GetDeltaValue(mpmptr,value[task]);
+				nextTransport=nextTransport->MoveTransportValue(mpmptr,timestep,rate[task],value[task]);
+				task++;
 			}
 			
 			// energy coupling here adds adiabatic temperature rise
@@ -177,15 +186,19 @@ void UpdateParticlesTask::Execute(void)
 			// store increments on the particles
 			mpmptr->dTrans = res;
 			
-			// delete grid to particle extrap data
-			delete gp;
-			
 		}
 		catch(CommonException& err)
 		{	if(upErr==NULL)
 			{
 #pragma omp critical (error)
 				upErr = new CommonException(err);
+			}
+		}
+		catch(CommonException* err)
+		{	if(upErr==NULL)
+			{
+#pragma omp critical (error)
+				upErr = new CommonException(*err);
 			}
 		}
 		catch(std::bad_alloc&)
@@ -202,7 +215,7 @@ void UpdateParticlesTask::Execute(void)
 				upErr = new CommonException("Unexpected error","UpdateParticlesTask::Execute");
 			}
 		}
-    }
+	}
 	
 	// throw any errors
 	if(upErr!=NULL) throw *upErr;

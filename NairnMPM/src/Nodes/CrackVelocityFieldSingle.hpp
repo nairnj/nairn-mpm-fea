@@ -28,39 +28,38 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		virtual double GetTotalMassAndCount(bool &);
 	
 		virtual void AddFtotSpreadTask3(Vector *);
-		virtual void AddGravityAndBodyForceTask3(Vector *);
+		virtual void AddGravityAndBodyForceTask3(Vector *,double,double);
 		virtual void RestoreMomenta(void);
 	
-		virtual void UpdateMomentaOnField(double);
-
+		virtual void UpdateMomentum(double);
 		virtual void RezeroNodeTask6(double);
 	
-		virtual void CalcVelocityForStrainUpdate(void);
+		virtual void GridValueCalculation(int);
 	
 		// boundary conditions
-        virtual void SetMomVel(Vector *,int);
-        virtual void AddMomVel(Vector *,double,int);
-		virtual void ReflectMomVel(Vector *,CrackVelocityField *,double,double,int);
-        virtual void SetFtotDirection(Vector *,double,Vector *);
-        virtual void AddFtotDirection(Vector *,double,double,Vector *);
-		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,double,double,Vector *);
+        virtual void ZeroVelocityBC(Vector *,int,double,Vector *);
+        virtual void AddVelocityBC(Vector *,double,int,double,Vector *);
+		virtual void ReflectVelocityBC(Vector *,CrackVelocityField *,double,double,int,double,Vector *);
+	
+		// contact accessors
+		virtual double GetContactVolumeNonrigid(bool) const;
+		virtual Vector GetCMDisplacement(NodalPoint *,bool,bool) const;
+		virtual Vector GetCMatFtot(void);
 	
 		// accessors
 		virtual double GetTotalMass(bool) const;
 		virtual void AddKineticEnergyAndMass(double &,double &);
-		virtual double GetVolumeNonrigid(bool) const;
-		virtual double GetVolumeTotal(NodalPoint *) const;
-		virtual Vector GetCMatMomentum(bool &,double *,Vector *) const;
-		virtual Vector GetCMDisplacement(NodalPoint *,bool) const;
-		virtual Vector GetCMatFtot(void);
+		virtual Vector GetCMatMomentum(bool &,double *,Vector *,bool) const;
 		virtual void ChangeCrackMomentum(Vector *,int,double);
 		virtual int CopyFieldMomenta(Vector *,int);
-#ifdef ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
+#if ADJUST_COPIED_PK == 1
 		virtual void AdjustForSymmetryBC(NodalPoint *);
 #endif
 		virtual int PasteFieldMomenta(Vector *,int);
 		virtual void Describe(void) const;
 	
+		// XPIC
+		virtual void XPICSupport(int,int,NodalPoint *,double,int,int,double);
 };
 
 #endif

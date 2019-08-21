@@ -13,6 +13,8 @@
 
 #define _LINEARHARDENING_
 
+#define LINEARHARENDING_ID 1
+
 #include "Materials/HardeningLawBase.hpp"
 
 class LinearHardening : public HardeningLawBase

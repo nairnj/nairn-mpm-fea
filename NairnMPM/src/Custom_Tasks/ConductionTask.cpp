@@ -148,7 +148,7 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double 
 // adjust forces at grid points with temperature BCs to have rates be correct
 // to carry extrapolated temperatures (before impose BCs) to the correct
 // one selected by grid based BC
-TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
+TransportTask *ConductionTask::SetTransportForceAndFluxBCs(double deltime)
 {
     // Paste back noBC temperature
     int i;
@@ -170,7 +170,7 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mtime);
 		if(i!=0)
-		{	// but only once per node in case more than on Temperature BC on the node
+		{	// but only once per node in case more than one Temperature BC on the node
 			if(nd[i]->gCond.gQ==0.)
 			{	// Power (energy/time)
 				double qflow = -nd[i]->gCond.gVCT*nd[i]->gCond.gTValue/deltime;

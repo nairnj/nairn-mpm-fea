@@ -84,7 +84,7 @@ CrackHeader::~CrackHeader()
 
 // preliminary calculations (throw CommonException on problem)
 // throws CommonException()
-void CrackHeader::PreliminaryCrackCalcs(double dcell)
+void CrackHeader::PreliminaryCrackCalcs(double dcell,bool shiftOption)
 {
     // it does not make sense unless there are two segments (and at least one line)
     if(firstSeg==NULL)

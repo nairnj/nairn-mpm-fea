@@ -23,7 +23,7 @@ public:
 	InitializationTask(const char *);
 	
 	// required methods
-	virtual void Execute(void);
+	virtual void Execute(int);
 	
 protected:
 };

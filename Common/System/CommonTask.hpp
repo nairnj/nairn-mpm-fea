@@ -23,7 +23,7 @@ class CommonTask
 		virtual ~CommonTask();
 	
 		// abstract methods
-		virtual void Execute(void) = 0;
+		virtual void Execute(int) = 0;
 	
 		// accessors
 		void SetTaskName(const char *);

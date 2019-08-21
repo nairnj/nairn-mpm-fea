@@ -13,6 +13,8 @@
 
 #define _NONLINEAR2HARDENING_
 
+#define NONLINEAR2HARENDING_ID 6
+
 #include "Materials/NonlinearHardening.hpp"
 
 class Nonlinear2Hardening : public NonlinearHardening

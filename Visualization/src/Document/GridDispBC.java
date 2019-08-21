@@ -8,10 +8,17 @@
 
 import java.awt.Color;
 import java.awt.geom.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import geditcom.JNFramework.*;
 
 public class GridDispBC extends BoundaryCondition
 {
 	protected double angle2;
+	protected double depth;
+	protected JNExpression dispFxn;
+	protected boolean movingWall;
 	
 	public static float lineWidth=(float)2.0;
 	
@@ -20,9 +27,19 @@ public class GridDispBC extends BoundaryCondition
 	{	super(nodeNum,bcDof,theID,theVal,theArg,theAngle);
 		if(dof==SKEWXY_DIRECTION) dof = XY_SKEWED_INPUT;
 		angle2 = xyzAngle;
+		depth = 0.;
+		movingWall = false;
+		dispFxn = null;
+	}
+	
+	// change to velocity gradient function with moving wall
+	public void setVelGradBC(double gd,String df)
+	{	depth = gd;
+		movingWall = depth!=0. ? true : false;
+		dispFxn = new JNExpression(df,null);
 	}
 
-	// draw the boundary conditino
+	// draw the boundary condition
 	public void stroke(MeshPlotView pv,ResultsDocument doc)
 	{	// exit if not on yet
 		if(doc.currentTime()<argument)
@@ -39,6 +56,7 @@ public class GridDispBC extends BoundaryCondition
 		double diam=height/6;
 		NodalPoint nd=doc.nodes.get(node);
 		
+		double dispx=0.,dispy=0.,disp=0.;
 		GeneralPath theBC=new GeneralPath();
 		if(dof==TEMPERATURE_DIR)
 		{	// diamond on the node
@@ -63,6 +81,22 @@ public class GridDispBC extends BoundaryCondition
 			theBC.lineTo(0.f,0.f);
 			theBC.append(new Ellipse2D.Double(-width,-height-diam,diam,diam),false);
 			theBC.append(new Ellipse2D.Double(width-diam,-height-diam,diam,diam),false);
+			
+			if(movingWall && dispFxn!=null)
+			{	HashMap<String,String> usevars = new HashMap<String,String>(3);
+				usevars.put("x",JNUtilities.formatDouble(nd.x/doc.units.lengthScale()));
+				usevars.put("y",JNUtilities.formatDouble(nd.y/doc.units.lengthScale()));
+				usevars.put("t", JNUtilities.formatDouble(doc.currentTime()/doc.units.altTimeScale()));
+				String errMsg = dispFxn.evaluateWith(usevars);
+				if(errMsg==null)
+				{	try
+					{	disp = dispFxn.getNumericValue()*doc.units.lengthScale();
+					}
+					catch(Exception e)
+					{	disp = 0.;
+					}
+				}
+			}
 		}
 		
 		double rotationAngle;
@@ -73,6 +107,14 @@ public class GridDispBC extends BoundaryCondition
 		AffineTransform transform=new AffineTransform();
 		switch(dof)
 		{   case X_DIRECTION:
+				if(movingWall)
+				{	dispx = disp;
+					if(depth<0.)
+						transform.rotate(-Math.PI/2.);
+					else
+						transform.rotate(Math.PI/2.);
+					break;
+				}
 			case XY_SKEWED_INPUT:
 				if(Math.abs(rotationAngle)<=45.)
 				{	if(nd.x<pv.xyBounds.getCenterX())
@@ -100,7 +142,12 @@ public class GridDispBC extends BoundaryCondition
 				}
 				break;
 			case Y_DIRECTION:
-				if(Math.abs(rotationAngle)<=45.)
+				if(movingWall)
+				{	dispy = disp;
+					if(depth>0.)
+						transform.rotate(Math.PI);
+				}
+				else if(Math.abs(rotationAngle)<=45.)
 				{	if(nd.y>pv.xyBounds.getCenterY())
 						transform.rotate(Math.PI);
 				}
@@ -143,7 +190,7 @@ public class GridDispBC extends BoundaryCondition
 		theBC.transform(transform);
 		
 		transform=new AffineTransform();
-		transform.translate(nd.x,nd.y);
+		transform.translate(nd.x+dispx,nd.y+dispy);
 		theBC.transform(transform);
 		
 		Color bcColor;
@@ -158,6 +205,14 @@ public class GridDispBC extends BoundaryCondition
 		else
 		{	bcColor=NFMVPrefs.getPrefColor(NFMVPrefs.meshLineColorKey,NFMVPrefs.meshLineColorDef);
 			pv.setLineWidth(ElementBase.lineWidth);
+			
+			if(movingWall)
+			{	float [] comps = bcColor.getRGBComponents(null);
+				comps[3] = 0.5f;
+				Color fillColor = new Color(comps[0],comps[1],comps[2],comps[3]);
+				pv.drawColor(fillColor);
+				pv.fillShape(theBC);
+			}
 		}
 		pv.drawColor(bcColor);
 		pv.strokeShape(theBC);

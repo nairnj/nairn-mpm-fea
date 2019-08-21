@@ -75,7 +75,7 @@ public class Cracks
 		}
 		
 		// use grid for energies
-		int useGrid=1;
+		int useGrid=0;
 		if(args.size()>3)
 		{	// options
 			HashMap<String,Integer> options = new HashMap<String,Integer>(10);

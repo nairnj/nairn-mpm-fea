@@ -45,6 +45,7 @@
 #include "System/UnitsController.hpp"
 #include "Materials/ContactLaw.hpp"
 #include "Elements/FourNodeIsoparam.hpp"
+#include "Boundary_Conditions/InitialCondition.hpp"
 
 int cracksDim = MUST_BE_2D;
 
@@ -227,6 +228,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		quantityName[0]=0;
 		char whichMat[200];
 		whichMat[0]=0;
+		Vector *ptLoc = NULL;
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -238,13 +240,33 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			{	if(strlen(value)>199) value[200]=0;
 				strcpy(whichMat,value);
 			}
+			else if(strcmp(aName,"pt")==0)
+			{	if(ptLoc!=NULL)
+					ThrowCompoundErrorMessage(xName,"has more than one pts attribute","");
+				vector<double> pts;
+				if(!CommonReadHandler::GetFreeFormatNumbers(value,pts,1.0))
+					ThrowCompoundErrorMessage(xName,"pts attribute has invalid number format","");
+				int numpts = (int)pts.size();
+				ptLoc = new Vector;
+				if(numpts==2)
+					*ptLoc = MakeVector(pts[0],pts[1],0.);
+				else if(numpts==3)
+					*ptLoc = MakeVector(pts[0],pts[1],pts[2]);
+				else
+					ThrowCompoundErrorMessage(xName,"pts attribute requires 2 or three numbers","");
+			}
             delete [] aName;
             delete [] value;
         }
 		// if gave a matname, it takes precedence over mat number
-		if(strlen(whichMat)>0)
-			setWhichMat = matCtrl->GetIDFromNewName(whichMat);
-		new GlobalQuantity(quantityName,setWhichMat);
+		if(ptLoc!=NULL)
+		{	new GlobalQuantity(quantityName,ptLoc);
+		}
+		else
+		{	if(strlen(whichMat)>0)
+				setWhichMat = matCtrl->GetIDFromNewName(whichMat);
+			new GlobalQuantity(quantityName,setWhichMat);
+		}
     }
 	
 	// Damping in MPMHEADER only, PDamping in MPMHEADER or in MATERIAL
@@ -258,12 +280,14 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             bodyFrc.useDamping = true;
         }
         else if(block==MATERIAL)
-		{	inputPtr=(char *)&(matCtrl->matPdamping);
-			matCtrl->SetFractionPIC();
+		{   // material properties
+			inputPtr=(char *)&(matCtrl->matPdamping);
+			matCtrl->matPdamping = -1.e12;
 			matDamp = true;
 		}
 		else
-        {   if(block!=MPMHEADER)
+        {	// particle damping in the header
+			if(block!=MPMHEADER)
 				ThrowCompoundErrorMessage(xName,"command found at invalid location","");
 			inputPtr=(char *)&bodyFrc.pdamping;
             bodyFrc.usePDamping = true;
@@ -281,13 +305,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 					bodyFrc.SetGridDampingFunction(value,gridDamp);
 			}
             else if(strcmp(aName,"PIC")==0)
-            {	double fractionPIC;
-                sscanf(value,"%lf",&fractionPIC);
-				if(matDamp)
-					matCtrl->SetFractionPIC(fractionPIC);
-				else
-					bodyFrc.SetFractionPIC(fractionPIC);
-            }
+				ThrowSAXException("PIC attribute on damping remove; use PeriodicXPIC task intead");
             delete [] aName;
             delete [] value;
         }
@@ -298,12 +316,14 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	input=DOUBLE_NUM;
         bool gridDamp = true;
         if(strcmp(xName,"FeedbackDamping")==0)
-		{   bodyFrc.useFeedback=TRUE;
+		{	// on the grid
+			bodyFrc.useFeedback = true;
             inputPtr=(char *)&bodyFrc.dampingCoefficient;
             bodyFrc.useDamping = true;
         }
         else
-		{   bodyFrc.usePFeedback=TRUE;
+		{	// for particles
+			bodyFrc.usePFeedback = true;
             inputPtr=(char *)&bodyFrc.pdampingCoefficient;
             gridDamp = false;
             bodyFrc.usePDamping = true;
@@ -327,8 +347,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     }
 
 	// XPIC option - get order (1=PIC, 2 is XPIC, <1 invalid)
-	else if(strcmp(xName,"XPIC")==0)
-	{	throw SAXException("<XPIC> command requires OSParticulas.");
+    else if(strcmp(xName,"XPIC")==0)
+	{	throw SAXException("<XPIC> command no longer allowed; use PeriodicXPIC custom task.");
 	}
 
     else if(strcmp(xName,"Diffusion")==0)
@@ -375,10 +395,11 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		// ignore because always doing mechanics
 	}
 
-	else if(strcmp(xName,"ExactTractions")==0 )
-	{	throw SAXException("<ExactTractions> command requires OSParticulas.");
+	else if(strcmp(xName,"ExactTractions")==0)
+	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+		fmobj->exactTractions = true;
 	}
-	
+
 	else if(strcmp(xName,"GIMP")==0)
     {   // no attribute or empty implies uGIMP (backward compatibility) or look for key words
 		ValidateCommand(xName,MPMHEADER,ANY_DIM);
@@ -436,16 +457,22 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 					ElementBase::gridNiNodes = fmobj->np==THREED_MPM ? 27 : 9 ;
 				}
                 else
-                    throw SAXException("GIMP type must be Classic, uGIMP, lCPDI, qCPDI, B2SPLINE, B2GIMP, or B2CPDI");
+                    throw SAXException("GIMP type must be Classic, uGIMP, lCPDI, qCPDI, B2SPLINE, B2GIMP, B2CPDI, or Finite");
 				delete [] value;
 			}
 			delete [] aName;
         }
     }
 
-    else if(strcmp(xName,"MultiMaterialMode")==0)
+	else if(strcmp(xName,"CPDIrcrit")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
-		fmobj->multiMaterialMode=true;
+		input=DOUBLE_NUM;
+		inputPtr=(char *)&ElementBase::rcrit;
+	}
+
+	else if(strcmp(xName,"MultiMaterialMode")==0)
+	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+		fmobj->multiMaterialMode = true;
 		block=MULTIMATERIAL;
         numAttr=(int)attrs.getLength();
 		double scanInput,polarAngle=0.,azimuthAngle=0.;
@@ -455,20 +482,20 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			sscanf(value,"%lf",&scanInput);
             if(strcmp(aName,"Normals")==0)
  			{	if(scanInput<0.5 && scanInput>-0.5)
-					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;           // 0 - MAXG
+					mpmgrid.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;           // 0 - MAXG
 				else if(scanInput<1.5)
-					contact.materialNormalMethod=MAXIMUM_VOLUME;                    // 1 - MAXV
+					mpmgrid.materialNormalMethod=MAXIMUM_VOLUME;                    // 1 - MAXV
 				else if(scanInput<2.5)
-					contact.materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;      // 2 - AVGG
+					mpmgrid.materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;      // 2 - AVGG
 				else if(scanInput<3.5)
-					contact.materialNormalMethod=EACH_MATERIALS_MASS_GRADIENT;		// 3 - OWNG
+					mpmgrid.materialNormalMethod=EACH_MATERIALS_MASS_GRADIENT;		// 3 - OWNG
 				else if(scanInput<4.5)
-					contact.materialNormalMethod=SPECIFIED_NORMAL;					// 4 - SN
+					mpmgrid.materialNormalMethod=SPECIFIED_NORMAL;					// 4 - SN
 				else
 					throw SAXException("Normals attribute on MultiMaterialMode must be 0 to 4.");
 			}
             else if(strcmp(aName,"RigidBias")==0)
-			{	contact.rigidGradientBias=scanInput;
+			{	mpmgrid.rigidGradientBias=scanInput;
 			}
             else if(strcmp(aName,"Polar")==0)
 			{	polarAngle=scanInput;
@@ -476,14 +503,17 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             else if(strcmp(aName,"Azimuth")==0)
 			{	azimuthAngle=scanInput;
 			}
+			else if(strcmp(aName,"Lumping")==0)
+			{	mpmgrid.lumpingMethod=(int)(scanInput+0.5);
+			}
 			// Note old Vmin and Dcheck are now ignored
 			delete [] aName;
             delete [] value;
         }
 		
 		// set normal if specified
-		if(contact.materialNormalMethod==SPECIFIED_NORMAL)
-			contact.SetContactNormal(polarAngle,azimuthAngle);
+		if(mpmgrid.materialNormalMethod==SPECIFIED_NORMAL)
+			mpmgrid.SetContactNormal(polarAngle,azimuthAngle);
     }
 
     else if(strcmp(xName,"ArchiveRoot")==0)
@@ -757,11 +787,18 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     }
 
     else if(strcmp(xName,"ContactPosition")==0)
-    {	if(block!=CRACKHEADER && block!=MULTIMATERIAL)
+	{	if(block==CRACKHEADER)
+		{	contact.crackContactByDisplacements = false;
+			input=DOUBLE_NUM;
+			inputPtr=(char *)&contact.crackPositionCutoff;
+		}
+		else if(block==MULTIMATERIAL)
+		{	mpmgrid.contactByDisplacements = false;
+			input=DOUBLE_NUM;
+			inputPtr=(char *)&mpmgrid.positionCutoff;
+		}
+		else
 			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
-		mpmgrid.SetContactByDisplacements(false);
-    	input=DOUBLE_NUM;
-        inputPtr=(char *)&mpmgrid.positionCutoff;
     }
 	
 	else if(strcmp(xName,"CrackParticleSize")==0)
@@ -788,6 +825,10 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         }
     }
 
+	else if(strcmp(xName,"ShiftCracks")==0 )
+	{	throw SAXException("<ShiftCracks> command requires OSParticulas.");
+	}
+	
     //-------------------------------------------------------
     // <Mesh> section
 	
@@ -1007,7 +1048,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"CrackList")==0)
 	{	ValidateCommand(xName,NO_BLOCK,cracksDim);
     	block=CRACKLIST;
-		CrackHeader *newCrack=new CrackHeader();
+		CrackHeader *newCrack = new CrackHeader();
 		crackCtrl->AddCrack(newCrack);
 		
 		// only needed for 2D
@@ -1151,7 +1192,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         
         // create object and get input
         // note that dof is input style (1,2,3,12,13,23, or 123)
-        NodalVelBC *newVelBC=new NodalVelBC(node,dof,style,(double)0.,ftime,angle,angle2);
+        NodalVelBC *newVelBC = new NodalVelBC(node,dof,style,(double)0.,ftime,angle,angle2);
         newVelBC->SetID(velID);
 		velocityBCs->AddObject(newVelBC);
 		
@@ -1177,6 +1218,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		mpTractionCtrl=new ParseController();
 		mpConcFluxCtrl=new ParseController();
 		mpHeatFluxCtrl=new ParseController();
+        damageICCtrl=new ParseController();
     }
 
     // Loads on material points (deprecated method)
@@ -1277,7 +1319,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     //-------------------------------------------------------
     // <Gravity> section
 	
-	// begin Gravity section
+	// begin Gravity section - starts block
+	// Use Body(XYZ)Force to set gravity or GridBody(XYZ)Force to set using functions
     else if(strcmp(xName,"Gravity")==0)
 	{	ValidateCommand(xName,NO_BLOCK,ANY_DIM);
     	block=GRAVITY;
@@ -1291,6 +1334,20 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         inputPtr=(char *)&bodyFrc.gforce.x;
     }
     
+	// Gravity in Y direction
+	else if(strcmp(xName,"BodyYForce")==0)
+	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
+		input=DOUBLE_NUM;
+		inputPtr=(char *)&bodyFrc.gforce.y;
+	}
+	
+	// Gravity in Y direction
+	else if(strcmp(xName,"BodyZForce")==0)
+	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
+		input=DOUBLE_NUM;
+		inputPtr=(char *)&bodyFrc.gforce.z;
+	}
+	
 	// Grid Body Force in X direction
     else if(strcmp(xName,"GridBodyXForce")==0)
 	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
@@ -1298,13 +1355,6 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         inputPtr=(char *)&bodyFrc;		// although not needed
     }
     
-	// Gravity in Y direction
-    else if(strcmp(xName,"BodyYForce")==0)
-	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
-    	input=DOUBLE_NUM;
-        inputPtr=(char *)&bodyFrc.gforce.y;
-    }
-
 	// Grid Body Force in Y direction
     else if(strcmp(xName,"GridBodyYForce")==0)
 	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
@@ -1312,13 +1362,6 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         inputPtr=(char *)&bodyFrc;		// although not needed
     }
     
-	// Gravity in Y direction
-    else if(strcmp(xName,"BodyZForce")==0)
-	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
-    	input=DOUBLE_NUM;
-        inputPtr=(char *)&bodyFrc.gforce.z;
-    }
-
 	// Grid Body Force in Z direction
     else if(strcmp(xName,"GridBodyZForce")==0)
 	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
@@ -1376,12 +1419,12 @@ void MPMReadHandler::myEndElement(char *xName)
 	}
 	
 	else if(strcmp(xName,"GridBCs")==0)
-	{	firstVelocityBC=(NodalVelBC *)velocityBCs->firstObject;
-		lastVelocityBC=(NodalVelBC *)velocityBCs->lastObject;
-		firstConcBC=(NodalConcBC *)concBCs->firstObject;
-		lastConcBC=(NodalConcBC *)concBCs->lastObject;
-		firstTempBC=(NodalTempBC *)tempBCs->firstObject;
-		lastTempBC=(NodalTempBC *)tempBCs->lastObject;
+	{	firstVelocityBC = (NodalVelBC *)velocityBCs->firstObject;
+		lastVelocityBC = (NodalVelBC *)velocityBCs->lastObject;
+		firstConcBC = (NodalConcBC *)concBCs->firstObject;
+		lastConcBC = (NodalConcBC *)concBCs->lastObject;
+		firstTempBC = (NodalTempBC *)tempBCs->firstObject;
+		lastTempBC = (NodalTempBC *)tempBCs->lastObject;
 		delete velocityBCs;
 		delete concBCs;
 		delete tempBCs;
@@ -1393,6 +1436,7 @@ void MPMReadHandler::myEndElement(char *xName)
 		firstTractionPt=(MatPtTractionBC *)mpTractionCtrl->firstObject;
 		firstFluxPt=(MatPtFluxBC *)mpConcFluxCtrl->firstObject;
 		firstHeatFluxPt=(MatPtHeatFluxBC *)mpHeatFluxCtrl->firstObject;
+        firstDamagedPt=(InitialCondition *)damageICCtrl->firstObject;
 		delete mpLoadCtrl;
 		delete mpTractionCtrl;
 		delete mpConcFluxCtrl;
@@ -1425,15 +1469,16 @@ void MPMReadHandler::myEndElement(char *xName)
     
     else if(strcmp(xName,"MultiMaterialMode")==0)
     {	// install frictionless if not provded
-		if(contact.materialContactLawID<0)
-		{	contact.materialContactLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,NULL,0.,"MultiMaterialMode default");
+		if(mpmgrid.materialContactLawID<0)
+		{	mpmgrid.materialContactLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,NULL,0.,"MultiMaterialMode default");
 		}
 		block=MPMHEADER;
     }
     
     else if(strcmp(xName,"Schedule")==0)
-    {	block=CUSTOMTASKS;
-    }
+	{	((CustomTask *)currentTask)->Finalize();
+		block=CUSTOMTASKS;
+	}
     
     else if(strcmp(xName,"Friction")==0)
     {	// Transfer contact law to appropriate location
@@ -1448,7 +1493,7 @@ void MPMReadHandler::myEndElement(char *xName)
 		{	contact.crackContactLawID = finalLawID;
 		}
 		else if(block==MULTIMATERIAL)
-		{	contact.materialContactLawID = finalLawID;
+		{	mpmgrid.materialContactLawID = finalLawID;
 		}
 		else
 		{	// custom material/material contact
@@ -1558,6 +1603,15 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
             ((MaterialBase *)inputPtr)->SetHardeningLaw(xData);
             break;
 
+        case INITIATION_LAW_SELECTION:
+            ((MaterialBase *)inputPtr)->SetInitiationLaw(xData);
+            break;
+			
+        case SOFTI_LAW_SELECTION:
+		case SOFTII_LAW_SELECTION:
+            ((MaterialBase *)inputPtr)->SetSofteningLaw(xData,input);
+            break;
+			
 		case TEXT_PARAMETER:
 			// must be in active custom tasks
 			((CustomTask *)currentTask)->SetTextParameter(xData,inputPtr);

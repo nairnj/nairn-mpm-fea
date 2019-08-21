@@ -605,3 +605,206 @@ double RationalApproximation(double t)
 	return t - ((c[2]*t + c[1])*t + c[0]) /
 	(((d[2]*t + d[1])*t + d[0])*t + 1.0);
 }
+
+#ifdef MPM_CODE
+/****************************************************************
+ *  Functions for an intersect of plane and  unit cube
+ ****************************************************************/
+
+double ci[5]={-1.,1.,1.,-1.,-1.};
+
+// Find intersected edges
+// Prechecked to have intersection and intersection is not a corner
+// On input v = 0.5*(dx,dy,dz)
+Vector IntersectEdges(int i,int j,Vector *v,Vector *n)
+{
+	// corner vectors (0,1,2,3 on +dx face, 4,5,6,7 on -dx face)
+	Vector Vertex_i = (i<4) ? MakeVector(v->x,ci[i]*v->y,-ci[i+1]*v->z) :
+						MakeVector(-v->x,ci[i-4]*v->y,-ci[i-3]*v->z);
+	Vector Edge_ij = (j<4) ? MakeVector(v->x,ci[j]*v->y,-ci[j+1]*v->z) :
+						MakeVector(-v->x,ci[j-4]*v->y,-ci[j-3]*v->z);
+	
+	// Fined edge vector difference of coordinates
+	Edge_ij.x -=Vertex_i.x;
+	Edge_ij.y -=Vertex_i.y;
+	Edge_ij.z -=Vertex_i.z;
+	
+	// Start calculating lambda (assume has an intersection
+	double lambda = -DotVectors(&Vertex_i,n)/DotVectors(&Edge_ij,n);
+	
+	// if not in [0,1] then it doesn't intersect
+	if(lambda>1.0 || lambda<0.0)
+	{	cout << "# failed to find intersection " << i << "," << j ;
+		PrintVector(", c=",&Vertex_i);
+		PrintVector(", e=",&Edge_ij);
+		cout << ", lambda=" << lambda << endl;
+	}
+	
+	// Find point and return it
+	AddScaledVector(&Vertex_i,&Edge_ij,lambda);
+	return Vertex_i;
+}
+
+// Find are of parallelogram by vectors (v-c) and (-v-c) in plane with normal n
+double PGramArea(Vector *c,Vector *v,Vector *n)
+{
+	// get sides of parallelogram (v-c and -v-c)
+	Vector v1 = *v;
+	SubVector(&v1,c);
+	Vector v2 = SetScaledVector(v,-1.);
+	SubVector(&v2,c);
+	
+	// get cross product
+	Vector cp;
+	CrossProduct(&cp,&v1,&v2);
+	
+	// return area of parallogram enclosed by v1 and v2
+	// assume in plane with normal n
+	return fabs(DotVectors(&cp,n));
+}
+
+// get the area of interection between plane through center of box (dx,dy,dz) and the box
+double AreaOverVolume3D(Vector *norm,double dx,double dy,double dz)
+{
+	// For notes see JANOSU-14-44+
+	
+	// examine corners on face with n=(1,0,0)
+	double cx = -dx*norm->x;
+	int sgn[5],firstZero=-1;;
+	
+	// look at corners in order (dx,-dy,-dz),(dx,dy,-dz),(dx,dy,dz),(dx,-dy,dz)
+	for(int i=0;i<4;i++)
+	{	double cyz = ci[i]*dy*norm->y - ci[i+1]*dz*norm->z;
+		
+		// find sign (or zero) of n.xc = cyz - cx
+		if(DbleEqual(cx,cyz))
+		{	// n.xc is zero
+			if(firstZero>=0)
+			{	// Case 1: found two intersections. Found  diagonal plane, but which diagonal?
+				if(i==1)
+				{	// edge 0-1
+					return sqrt(dx*dx+dz*dz)/(dx*dz);
+				}
+				else if(i==2)
+				{	// diagonal 0-2 or edge 1-2, respectively
+					double area = firstZero==0 ? sqrt(dy*dy+dz*dz)/(dy*dz) : sqrt(dx*dx+dy*dy)/(dx*dy);
+					return area;
+				}
+				// corner 3 with 0, 1, or 2
+				if(firstZero==0)
+				{	// edge 0-3
+					return sqrt(dx*dx+dy*dy)/(dx*dy);
+				}
+				else if(firstZero==1)
+				{	// diagonal 1-3
+					return sqrt(dy*dy+dz*dz)/(dy*dz);
+				}
+				// edge 2-3
+				return sqrt(dx*dx+dz*dz)/(dx*dz);
+			}
+			
+			// first one
+			firstZero = i;
+			sgn[i]=0;
+		}
+		else if(cyz>cx)
+			sgn[i]=1;
+		else
+			sgn[i]=-1;
+	}
+	
+	// store the size
+	Vector v1,v2,sz = MakeVector(0.5*dx,0.5*dy,0.5*dz);
+	sgn[4]=sgn[0];			// to help some algorithms
+	
+	// count postive values
+	int numPositive=0;
+	for(int i=0;i<4;i++)
+	{	if(sgn[i]>0) numPositive++;
+	}
+	
+	// Was there one intersection?
+	if(firstZero>=0)
+	{	// The one corner
+		Vector c = MakeVector(0.5*dx,0.5*ci[firstZero]*dy,-0.5*ci[firstZero+1]*dz);
+		
+		if(numPositive==0 || numPositive==3)
+		{	// Case 2: one corner intersection, zero edge intersections
+			//cout << "# Case 2: one corner intersection, zero edge intersections" << endl;
+			// find any edge except the one ending in the 0 corner
+			int c1 = firstZero==0 ? 3 : firstZero-1;
+			v1 = IntersectEdges(c1,c1+4,&sz,norm);
+		}
+		
+		else
+		{	// Case 3: one corner intersection, one edge intersections
+			// a sign change - find it
+			int i;
+			for(i=0;i<4;i++)
+			{	if(sgn[i]*sgn[i+1]<0)
+				{	int c1 = i==3 ? 0 : i+1;
+					v1 = IntersectEdges(i,c1,&sz,norm);
+					break;
+				}
+			}
+			if(i==4) cout << "# failed to find intersected edge" << endl;
+		}
+				
+		// area of parallelogram
+		return PGramArea(&c,&v1,norm)/(dx*dy*dz);
+	}
+	
+	// No corner intersections
+	
+	if(numPositive==4 || numPositive==0)
+	{	// Case 4: no intersections or all nodes on +dx face same side of plane
+		// It is parallelgram intersecting edges opn the for dx edges; pick any two
+		Vector c = IntersectEdges(0,4,&sz,norm);
+		v1 = IntersectEdges(1,5,&sz,norm);
+		return PGramArea(&c,&v1,norm)/(dx*dy*dz);
+	}
+	
+	else if(numPositive==1 || numPositive==3)
+	{	// Case 5: two intersections on adjacent edges will intersect with a hexagon
+		// find the corner with differing sign
+		int c1 = -1;
+		for(int i=0;i<4;i++)
+		{	if((numPositive==1 && sgn[i]==1) || (numPositive==3 && sgn[i]==-1))
+			{	c1 = i;
+				break;
+			}
+		}
+		if(c1<0) cout << "# cound not find the one corner" << endl;
+		
+		// find two instersection on +dx plane
+		int c2 = c1==3 ? 0 : c1+1;				// corner after c1
+		v1 = IntersectEdges(c1,c2,&sz,norm);
+		c2 = c1==0 ? 3 : c1-1;					// corner before c1
+		v2 = IntersectEdges(c1,c2,&sz,norm);
+		Vector v3 = IntersectEdges(c2,c2+4,&sz,norm);	// one edge to -dx face
+		
+		// first parallolgram
+		double area = PGramArea(&v2,&v1,norm);
+		
+		// second parallogram v2-v3 and -v1-v3
+		SubVector(&v2,&v3);
+		ScaleVector(&v1,-1.);
+		SubVector(&v1,&v3);
+		Vector cp;
+		CrossProduct(&cp,&v1,&v2);
+		area += fabs(DotVectors(&cp,norm));
+		return area/(dx*dy*dz);
+	}
+	
+	// Case 6: intersects 2 opposite edges: parallelogram  with corners on along dy or dz edges
+	if(sgn[0]==sgn[1])
+	{	v1 = IntersectEdges(1,2,&sz,norm);
+		v2 = IntersectEdges(3,0,&sz,norm);
+	}
+	else
+	{	v1 = IntersectEdges(0,1,&sz,norm);
+		v2 = IntersectEdges(2,3,&sz,norm);
+	}
+	return PGramArea(&v1,&v2,norm)/(dx*dy*dz);
+}
+#endif

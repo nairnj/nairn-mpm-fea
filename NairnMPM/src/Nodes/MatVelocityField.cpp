@@ -7,10 +7,9 @@
  
 	Special case for rigid material
 		pk will be sum of Vp*vel
-		disp will be sum Vp*disp
-		mass grad will be volume gradient
-		unscaled volume if the volume
-	
+ 		ContactInfo
+			disp will be sum Vp*(pos-origpos), expos will be sum of Vp*pos
+			and volume will be unscaled volume
 ********************************************************************************/
 
 #include "stdafx.h"
@@ -22,6 +21,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Global_Quantities/BodyForce.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 
 // class statics
 int MatVelocityField::pkCopy=0;
@@ -31,14 +31,28 @@ int MatVelocityField::pkCopy=0;
 // Constructors
 // throws std::bad_alloc
 MatVelocityField::MatVelocityField(int setFlags)
-{	if(fmobj->multiMaterialMode)
-		volumeGrad=new Vector;
+{	// for contact
+	if(fmobj->multiMaterialMode || firstCrack!=NULL)
+	{	contactInfo = new ContactTerms;
+		if(mpmgrid.numContactVectors>0)
+			contactInfo->terms = new Vector[mpmgrid.numContactVectors];
+		else
+			contactInfo->terms = NULL;
+	}
 	else
-		volumeGrad=NULL;
-    
-	// New one vector to copy momenta
-	xpic = new  Vector[1];
-	pkCopy = 0;
+		contactInfo = NULL;
+
+	// XPIC in single material mode needs 3 vectors (v* and two working copies in XPIC tasks)
+	//		FMPM needs just 2 (v-v*) in [0] and two working copies in XPIC tasks)
+	// XPIC in multimaterial modes needs 6 vectors (v* four working copies for XPIC tasks, stored delta p^alpha) (for MM_XPIC)
+	//		FMPM also needs 6, extra is for persistent store of delta p due to contact
+	// ...note that DELTA_VSTAR_PREV must be VSTAR_PREV+2 - XPIC calcs assume that
+	// FLIP and PIC need only 1 vector (to copy momenta)
+	
+	// add one more to store pk outside the xpic space
+	int numVecs = bodyFrc.XPICVectors()+1;
+	vk = new Vector[numVecs];
+	pkCopy = numVecs-1;
 	
 	SetRigidField(false);
 	Zero();
@@ -47,9 +61,13 @@ MatVelocityField::MatVelocityField(int setFlags)
 
 // Destructor
 MatVelocityField::~MatVelocityField()
-{	if(volumeGrad!=NULL)
-		delete volumeGrad;
-	delete [] xpic;
+{	// delete contact data
+	if(contactInfo!=NULL)
+	{	if(contactInfo->terms!=NULL)
+			delete contactInfo->terms;
+		delete contactInfo;
+	}
+	delete [] vk;
 }
 
 // zero data at start of time step
@@ -62,21 +80,17 @@ void MatVelocityField::Zero(void)
 		// but RigidBlock fields do clear it
 		ZeroVector(&ftot);
 	}
-	ZeroVector(&vk);
-	ZeroVector(&disp);
-	if(volumeGrad!=NULL) ZeroVector(volumeGrad);
+	ZeroVector(vk);
+	ZeroVector(&vk[pkCopy]);
+	ZeroContactTerms();
 	numberPoints=0;
-	volume=0.;
-	ZeroVector(&xpic[pkCopy]);
 }
 
 #pragma mark METHODS
 
-// add to momentum in task 1. Save velocity for the first point in case only
-// has one point (for more accurate velocity calculation)
-// Momentum is g-mm/sec
+// add to momentum in task 1. Legacy momentum is g-mm/sec
 void MatVelocityField::AddMomentumTask1(Vector *addPk,Vector *vel,int numPts)
-{	AddVector(&pk,addPk);
+{	AddPk(addPk);
 	numberPoints += numPts;
 }
 
@@ -91,12 +105,7 @@ void MatVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld,int matfld)
 	
 	// if cracks and/or multimaterial mode
 	if(firstCrack!=NULL || fmobj->multiMaterialMode)
-	{	real->AddDisplacement((short)vfld,matfld,1.,&disp);
-		real->AddVolume((short)vfld,matfld,volume);
-        
-        // volume gradient
-        if(fmobj->multiMaterialMode)
-            real->CopyVolumeGradient((short)vfld,matfld,volumeGrad);
+	{	real->AddContactTerms((short)vfld,matfld,contactInfo);
 	}
 	
 	// if rigid particle in multimaterial mode
@@ -121,13 +130,25 @@ void MatVelocityField::CopyMassAndMomentumLast(NodalPoint *real,int vfld,int mat
 	
 	// if cracks and multimaterial mode
 	if(firstCrack!=NULL || fmobj->multiMaterialMode)
-	{	real->AddDisplacement((short)vfld,matfld,1.,&disp);
-		real->AddVolume((short)vfld,matfld,volume);
-        
-        // volume gradient
-        if(fmobj->multiMaterialMode)
-            real->CopyVolumeGradient((short)vfld,matfld,volumeGrad);
+	{	real->AddContactTerms((short)vfld,matfld,contactInfo);
 	}
+}
+
+// Make copy of momenta, to be restored after strain update and forces
+// Zero MM contact if needed
+// return mass in this field
+double MatVelocityField::GetTotalMassAndCount(void)
+{
+	// copy the extrapolated momenta
+	vk[pkCopy] = pk;
+	
+#if MM_XPIC == 1
+	// When doing XPIC in multimaterial modes, need to track change in momenta too
+	if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
+		ZeroVector(&vk[DELTA_VSTORE_VEC]);
+#endif
+	
+	return mass;
 }
 
 // Copy grid forces from this ghost node to the real node (nonrigid only)
@@ -144,21 +165,43 @@ void MatVelocityField::CopyGridForces(NodalPoint *real,int vfld,int matfld)
 void MatVelocityField::RestoreMomenta(void)
 {
 	// paste the extrapolated momenta back and zero storage location
-	pk = xpic[pkCopy];
+	pk = vk[pkCopy];
+
 }
 
 // in response to contact, change the momentum
 // for a single point, calculate the velocity
-// if postUpdate is true, then adjust ftot as well to keep in sync with momentum change
-// Momentum is g-mm/sec
+// callType == MASS_MOMENTUM_CALL, UPDATE_MOMENTUM_CALL, UPDATE_STRAINS_LAST_CALL
 void MatVelocityField::ChangeMatMomentum(Vector *delP,int callType,double deltime)
-{	AddVector(&pk,delP);
+{
+	// add to momentum
+	AddPk(delP);
+	
+	// callType dependent changes
 	if(callType==UPDATE_MOMENTUM_CALL)
-	{	AddScaledVector(&ftot, delP, 1./deltime);
+	{	// add to force too
+		AddFtotScaled(delP, 1./deltime);
 	}
 	else if(callType==MASS_MOMENTUM_CALL)
-	{	xpic[pkCopy] = pk;
+	{	// hack to skip the first contact corrections - i.e.,do not change anything
+		//return;
+		
+		// for contact to be correct, need contact correction to be in initial momenta
+		vk[pkCopy] = pk;
+#if MM_XPIC == 1
+		// For XPIC in multimaterial mode, track sum of contact changes
+		if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
+			AddVector(&vk[DELTA_VSTORE_VEC],delP);
 	}
+	else
+	{	// update strains last, for FMPM in multimaterial mode, track sum of contact changes in all modes
+		if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
+		{	AddVector(&vk[DELTA_VSTORE_VEC],delP);
+		}
+	}
+#else
+	}
+#endif
 }
 
 // in response to contact, and only for rigid materials, add contact force to ftot
@@ -171,30 +214,49 @@ void MatVelocityField::AddContactForce(Vector *delP)
 	ftot.z += delP->z;
 }
 
-// Calculate velocity at a node from current momentum and mass matrix in all velocity fields
-// Velocity is mm/sec
+// Several calculations for grid values
+// 1. Velocity prior to strain update
 // Note: do not call for rigid fields in multimaterial mode
-void MatVelocityField::CalcVelocityForStrainUpdate(void)
+void MatVelocityField::GridValueCalculation(int calcOption)
 {	// exit if nothing there
 	if(numberPoints==0 || mass==0.) return;
 	
-	// get velocity
-	CopyScaleVector(&vk,&pk,1./mass);
+	switch(calcOption)
+	{	case VELOCITY_FOR_STRAIN_UPDATE:
+			// get velocity
+			CopyScaleVector(vk,&pk,1./mass);
+			break;
+		default:
+			break;
+	}
 }
 
 // Add grid damping force at a node in g mm/sec^2
-void MatVelocityField::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
+void MatVelocityField::AddGravityAndBodyForceTask3(Vector *gridBodyForce,double gridAlpha,double gridForceAlpha)
 {	ftot.x += mass*gridBodyForce->x;
 	ftot.y += mass*gridBodyForce->y;
 	ftot.z += mass*gridBodyForce->z;
 }
 
-// internal force - add or scale and add
+// total momentum - add
+void MatVelocityField::AddPk(Vector *f)
+{	pk.x += f->x;
+	pk.y += f->y;
+	pk.z += f->z;
+}
+// total momentum - scale and add
+void MatVelocityField::AddPkScaled(Vector *f,double scaled)
+{	pk.x += f->x*scaled;
+	pk.y += f->y*scaled;
+	pk.z += f->z*scaled;
+}
+// total force - add
 void MatVelocityField::AddFtot(Vector *f)
 {	ftot.x += f->x;
 	ftot.y += f->y;
 	ftot.z += f->z;
 }
+// internal force - scale and add
 void MatVelocityField::AddFtotScaled(Vector *f,double scaled)
 {	ftot.x += f->x*scaled;
 	ftot.y += f->y*scaled;
@@ -205,25 +267,193 @@ void MatVelocityField::AddFtotScaled(Vector *f,double scaled)
 //  pk(i+1) = pk(i) + ftot * dt
 void MatVelocityField::UpdateMomentum(double timestep)
 {	// update momenta
-    AddScaledVector(&pk,&ftot,timestep);
+    AddPkScaled(&ftot,timestep);
+}
+
+// Support XPIC calculations
+void MatVelocityField::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int m,int k,double vsign)
+{
+	switch(xpicCalculation)
+	{	case INITIALIZE_XPIC:
+		{	// these are needed zero on ghost and real nodes
+			ZeroVector(&vk[VSTARNEXT_VEC]);
+#if MM_XPIC == 1
+			if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
+				ZeroVector(&vk[DELTA_VSTARNEXT_VEC]);
+#endif
+			
+			// skip if none or if ghost node setting
+			if(numberPoints==0 || timestep<0.) return;
+			
+			// set vStarPrev to k*v^+ = k*pi^+/mi, which is updated velocity
+			double korder = (double)bodyFrc.GetXPICOrder();
+			{	// For XPIC (only called during particle update), set to k*v = k(pi^+-fi*dt)/mi
+				vk[VSTARPREV_VEC] = pk;
+				AddScaledVector(&vk[VSTARPREV_VEC], &ftot, -timestep);
+				ScaleVector(&vk[VSTARPREV_VEC],korder/mass);
+				
+				// set v* = vStarPrev * a*dt (build v-v^* + a*dt directly in v*)
+				vk[VSTAR_VEC] = vk[VSTARPREV_VEC];
+				AddScaledVector(&vk[VSTAR_VEC], &ftot, timestep/mass);
+			}
+			
+			
+#if MM_XPIC == 1
+			// in multimaterial mode, get delta v from stored delta p due to contact
+			if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
+			{	CopyScaleVector(&vk[DELTA_VSTARPREV_VEC],&vk[DELTA_VSTORE_VEC],(korder-1.)/mass);
+			}
+#endif
+			break;
+		}
+		
+		case UPDATE_VSTAR:
+		{	// Add to Vstar and reset for next iteration
+			if(numberPoints==0) return;
+			
+			// add to vStar += (-1)^k * vStarNext
+			vk[VSTAR_VEC].x += vsign*vk[VSTARNEXT_VEC].x;
+			vk[VSTAR_VEC].y += vsign*vk[VSTARNEXT_VEC].y;
+			vk[VSTAR_VEC].z += vsign*vk[VSTARNEXT_VEC].z;
+			
+			// copy to previous
+			vk[VSTARPREV_VEC] = vk[VSTARNEXT_VEC];
+			
+			// zero vStarNext
+			ZeroVector(&vk[VSTARNEXT_VEC]);
+			
+#if MM_XPIC == 1
+			if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
+			{	// add to v += (-1)^k * deltaVStarPrev
+				// This adding previous
+				vk[VSTAR_VEC].x += vsign*vk[DELTA_VSTARPREV_VEC].x;
+				vk[VSTAR_VEC].y += vsign*vk[DELTA_VSTARPREV_VEC].y;
+				vk[VSTAR_VEC].z += vsign*vk[DELTA_VSTARPREV_VEC].z;
+				
+				// copy to previous
+				vk[DELTA_VSTARPREV_VEC] = vk[DELTA_VSTARNEXT_VEC];
+				
+				// zero deltaVStarNext
+				ZeroVector(&vk[DELTA_VSTARNEXT_VEC]);
+			}
+#endif
+			break;
+		}
+			
+		case COPY_VSTARNEXT:
+		{	// Copy to real node and zero vStarNext on this ghose node
+			if(numberPoints==0) return;
+			
+			// add to real node (note that vfld in xpicOption and matfld in m
+			Vector *vStarNextj = &vk[VSTARNEXT_VEC];
+			real->AddVStarNext((short)xpicOption,m,vStarNextj,NULL,NULL,NULL,1.,1.);
+			
+			// zero on this material field on this ghost node for next loop
+			ZeroVector(vStarNextj);
+#if MM_XPIC == 1
+			// Assume vector for multimaterial mode is shifted by 2
+			if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT) ZeroVector(vStarNextj+2);
+#endif
+			break;
+		}
+	
+		default:
+			break;
+	}
+}
+
+// add to vStarNext
+void MatVelocityField::AddVStarNext(Vector *vStarPrevj,Vector *delXiMpPtr,Vector *delXjPtr,
+									  Matrix3 *Dpinv,double weight,double weightContact)
+{
+	// no particle spin
+	vk[VSTARNEXT_VEC].x += weight*vStarPrevj->x;
+	vk[VSTARNEXT_VEC].y += weight*vStarPrevj->y;
+	vk[VSTARNEXT_VEC].z += weight*vStarPrevj->z;
+	
+#if MM_XPIC == 1
+	// add contact term - assume in vector +2 from vStarPrevj
+	if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
+	{	Vector *deltaVStarPrevj = vStarPrevj+2;
+		vk[DELTA_VSTARNEXT_VEC].x += weightContact*deltaVStarPrevj->x;
+		vk[DELTA_VSTARNEXT_VEC].y += weightContact*deltaVStarPrevj->y;
+		vk[DELTA_VSTARNEXT_VEC].z += weightContact*deltaVStarPrevj->z;
+	}
+#endif
 }
 
 // on particle updates, increment nodal velocity and acceleration and others as needed
 // fi is shape function
 void MatVelocityField::IncrementNodalVelAcc(double fi,GridToParticleExtrap *gp) const
 {
-    double mnode = fi/mass;					// Ni/mass
+ 	// Summing S v+ (FMPM has Sv+(k) and XPIC has Sv(k))
+	gp->Svtilde.x += vk->x*fi;				// velocity += v[0]
+	gp->Svtilde.y += vk->y*fi;
+	gp->Svtilde.z += vk->z*fi;
 	
-	// Summing S v+
-	gp->vgpnp1.x += pk.x*mnode;				// velocity += p/mass
-	gp->vgpnp1.y += pk.y*mnode;
-	gp->vgpnp1.z += pk.z*mnode;
+	if(gp->m<=0)
+	{	double mnode = fi/mass;					// Ni/mass
 	
-	// Summing S a
-	gp->acc->x += ftot.x*mnode;				// acceleration += f/mass
-	gp->acc->y += ftot.y*mnode;
-	gp->acc->z += ftot.z*mnode;
+		// Summing S a (for FLIP and XPIC)
+		gp->Sacc.x += ftot.x*mnode;
+		gp->Sacc.y += ftot.y*mnode;
+		gp->Sacc.z += ftot.z*mnode;
+		
+		if(gp->m<-1)
+		{	// Summing S v^+ lumped for XPIC(k>1)
+			gp->Svlumped.x += pk.x*mnode;
+			gp->Svlumped.y += pk.y*mnode;
+			gp->Svlumped.z += pk.z*mnode;
+		}
+	}
 }
+
+// zero momentum and displacement at a node for new calculations
+void MatVelocityField::RezeroNodeTask6(void)
+{	ZeroVector(&pk);
+	ZeroContactTerms();
+#if MM_XPIC == 1
+	// When doing FMPM in multimaterial modes, rzero vector to track delta p
+	if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
+		ZeroVector(&vk[DELTA_VSTORE_VEC]);
+#endif
+}
+
+#pragma mark CONTACTINFO METHODS
+
+// Zero contact terms (if used)
+void MatVelocityField::ZeroContactTerms(void)
+{	if(contactInfo==NULL) return;
+	contactInfo->cvolume=0.;
+	if(contactInfo->terms!=NULL)
+	{	for(int i=0;i<mpmgrid.numContactVectors;i++)
+			ZeroVector(&contactInfo->terms[i]);
+	}
+}
+
+// pointer to extrapolated position or displacement
+// must have contactInfo and must have the requested term
+const Vector *MatVelocityField::GetContactDispPtr(bool useDisps) const
+{	return useDisps ? &contactInfo->terms[mpmgrid.displacementIndex] :
+						&contactInfo->terms[mpmgrid.positionIndex] ;
+}
+
+// add to a contact extrapolation vector with scaling. Do not call unless the index>=0
+// must have contactInfo and must have the specified index
+void MatVelocityField::AddContactVector(int index,Vector *toadd,double weight)
+{	AddScaledVector(&contactInfo->terms[index],toadd,weight);
+}
+
+// add toa contact extrapolation vector. Do not call unless the index>=0
+// must have contactInfo  and must have the specified index
+void MatVelocityField::AddContactVector(int index,Vector *toadd)
+{	AddVector(&contactInfo->terms[index],toadd);
+}
+
+// volume for contact calculations
+void MatVelocityField::AddContactVolume(double vol) { contactInfo->cvolume += vol; }
+void MatVelocityField::SetContactVolume(double vol) { contactInfo->cvolume = vol; }
+double MatVelocityField::GetContactVolume(void) const { return contactInfo->cvolume; }
 
 #pragma mark ACCESSORS
 
@@ -235,76 +465,108 @@ void MatVelocityField::Describe(int fldnum) const
     cout << " ftot=(" << ftot.x << "," << ftot.y << "," << ftot.z << ")" << endl;
 }
 
-// volume for contact calculations
-void MatVelocityField::AddContactVolume(double vol) { volume += vol; }
-void MatVelocityField::SetContactVolume(double vol) { volume = vol; }
-double MatVelocityField::GetContactVolume(void) const { return volume; }
+// get velocity
+Vector MatVelocityField::GetVelocity(void) { return vk[0]; }
 
-// Get velocity
-Vector MatVelocityField::GetVelocity(void) { return vk; }
+// Get vStarPrev pointer
+Vector *MatVelocityField::GetVStarPrev(void) const { return &vk[VSTARPREV_VEC]; };
 
 // moment zero for direction of velocity
 // Let pk = (pk.norm) norm + (pk.tang) tang
 // Here we want to subtract component in norm direction using pk - (pk.norm) norm
-void MatVelocityField::SetMomentVelocityDirection(Vector *norm,int passType)
-{	double dotn = DotVectors(&pk, norm);
-	AddScaledVector(&pk, norm, -dotn);
-	if(passType==UPDATE_MOMENTUM_CALL)
-		AddScaledVector(&ftot,norm,-dotn/timestep);
+// When have forces, subtract their normal component too
+void MatVelocityField::ZeroVelocityBC(Vector *norm,int passType,double deltime,Vector *freaction)
+{
+	double dotn;
+	
+	switch(passType)
+	{	case UPDATE_MOMENTUM_CALL:
+			dotn = DotVectors(&pk, norm);
+			AddPkScaled(norm, -dotn);
+			AddFtotScaled(norm,-dotn/timestep);
+			break;
+		case MASS_MOMENTUM_CALL:
+		case UPDATE_STRAINS_LAST_CALL:
+			dotn = DotVectors(&pk, norm);
+			AddPkScaled(norm, -dotn);
+			break;
+		case GRID_FORCES_CALL:
+		{	// Start adjusting force for nodal velocity BC
+			//      Ftot = (Ftot.norm) norm + (Ftot.tang) tang
+			// But, now we want it to start with
+			//      Ftotnew = -(pk.norm)/deltime norm + (Ftot.tang) tang
+			//      Ftotnew = Ftot - ((Ftot.norm) + (pk.norm)/deltime) norm
+			// Note that if have same norm on same node, the net result after first pass is
+			//      Ftot1 = -(pk.norm)/deltime norm + (Ftot.tang) tang
+			// Then on second pass, change in force is:
+			//		dotf = Ftot1.norm = -(pk.norm)/deltime
+			//      -dotf-dotp/deltime = (pk.norm)/deltime - (pk.norm)/deltime = 0
+			// But might have physical issues if components of norm overlap on the same node such as
+			//    	x axis and  skew xy or xz on the same node
+			double dotf = DotVectors(&ftot, norm);
+			double dotp = DotVectors(&pk, norm);
+			// the change in force is (-dotf-dotp/deltime)*norm, which is zero for second BC with same norm
+			Vector deltaF;
+			CopyScaleVector(&deltaF,norm,-dotf-dotp/deltime);
+			AddFtot(&deltaF);
+			AddVector(freaction,&deltaF);
+			break;
+		}
+		case UPDATE_GRID_STRAINS_CALL:
+			dotn = DotVectors(vk, norm);
+			AddScaledVector(vk, norm, -dotn);
+			break;
+		default:
+			break;
+	}
 }
 
-// add moment for one component only
-void MatVelocityField::AddMomentVelocityDirection(Vector *norm,double vel,int passType)
-{	AddScaledVector(&pk, norm, mass*vel);
-	if(passType==UPDATE_MOMENTUM_CALL)
-		AddScaledVector(&ftot,norm,mass*vel/timestep);
+// add one component of velocity (FMPM only), momentum, or force
+void MatVelocityField::AddVelocityBC(Vector *norm,double vel,int passType,double deltime,Vector *freaction)
+{
+	switch(passType)
+	{	case MASS_MOMENTUM_CALL:
+			AddPkScaled(norm, mass*vel);
+#if ADJUST_COPIED_PK == 2
+			vk[pkCopy] = pk;
+#endif
+			break;
+		case UPDATE_MOMENTUM_CALL:
+		{	double pvel = mass*vel;
+			AddPkScaled(norm,pvel);
+			AddFtotScaled(norm,pvel/timestep);
+			break;
+		}
+		case UPDATE_STRAINS_LAST_CALL:
+			AddPkScaled(norm, mass*vel);
+			break;
+		case GRID_FORCES_CALL:
+		{	// the change in force is (mass*vel/deltime)*norm
+			Vector deltaF;
+			CopyScaleVector(&deltaF,norm,mass*vel/deltime);
+			AddFtot(&deltaF);
+			AddVector(freaction,&deltaF);
+			break;
+		}
+		case UPDATE_GRID_STRAINS_CALL:
+			AddScaledVector(vk, norm, vel);
+			break;
+		default:
+			break;
+	}
 }
 
-// set symmetry plane momenta to zero
-// only called when ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY is defined
+#if ADJUST_COPIED_PK == 1
+// set symmetry plane momenta to zero in copied momenta
 void MatVelocityField::AdjustForSymmetryBC(int fixedDirection)
 {   if(fixedDirection&XSYMMETRYPLANE_DIRECTION)
-    {   pk.x = 0.;
-		xpic[pkCopy].x=0.;
-    }
+ 		vk[pkCopy].x=0.;
     if(fixedDirection&YSYMMETRYPLANE_DIRECTION)
-    {   pk.y = 0.;
-		xpic[pkCopy].y=0.;
-    }
+		vk[pkCopy].y=0.;
     if(fixedDirection&ZSYMMETRYPLANE_DIRECTION)
-    {   pk.z = 0.;
-		xpic[pkCopy].z=0.;
-    }
+		vk[pkCopy].z=0.;
 }
-
-// Start adjusting force for nodal velocity BC
-//      Ftot = (Ftot.norm) norm + (Ftot.tang) tang
-// But, now we want it to start with
-//      Ftotnew = -(pk.norm)/deltime norm + (Ftot.tang) tang
-//      Ftotnew = Ftot - ((Ftot.norm) + (pk.norm)/deltime) norm
-// Note that if have same norm on same node, the net result after first pass is
-//      Ftot1 = -(pk.norm)/deltime norm + (Ftot.tang) tang
-// Then on second pass, change in force is:
-//		dotf = Ftot1.norm = -(pk.norm)/deltime
-//      -dotf-dotp/deltime = -(pk.norm)/deltime + (pk.norm)/deltime = 0
-// But might have physical issues if components of norm overlap on the same node such as
-//    x axis and  skew xy or xz on the same node
-void MatVelocityField::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
-{   double dotf = DotVectors(&ftot, norm);
-	double dotp = DotVectors(&pk, norm);
-	// the change in force is (-dotf-dotp/deltime) norm, which is zero for second BC with same norm
-	CopyScaleVector(freaction,norm,-dotf-dotp/deltime);
-	AddVector(&ftot,freaction);
-}
-
-// add one component of force such that updated momentum will be mass*velocity
-void MatVelocityField::AddFtotDirection(Vector *norm,double deltime,double vel,Vector *freaction)
-{	// the change in force is (mass*vel/deltime) norm
-	Vector deltaF;
-	CopyScaleVector(&deltaF,norm,mass*vel/deltime);
-	AddVector(&ftot,&deltaF);
-	AddVector(freaction,&deltaF);
-}
+#endif
 
 // total force
 Vector MatVelocityField::GetFtot(void) const { return ftot; }

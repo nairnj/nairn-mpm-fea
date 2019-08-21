@@ -22,9 +22,6 @@ extern char angleAxes[4];
 
 #define WEIGHT_TOL 1.e-10
 
-// file type allowed in BMP command
-enum { BMP_INPUT_FILE=0,FPG_INPUT_FILE,UNKNOWN_INPUT_FILE};
-
 //-----------------------------------------------------------
 // Check for bmp element, return false if not
 // throws std::bad_alloc, SAXException()

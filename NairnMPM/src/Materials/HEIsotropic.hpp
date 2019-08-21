@@ -35,7 +35,8 @@ class HEIsotropic : public HyperElastic
 		// initialize
         virtual char *InputMaterialProperty(char *,int &,double &);
         virtual bool AcceptHardeningLaw(HardeningLawBase *,int );
-        virtual const char *VerifyAndLoadProperties(int);
+		virtual HardeningLawBase *GetPlasticLaw(void) const;
+		virtual const char *VerifyAndLoadProperties(int);
 	
 		// history data
 		virtual int SizeOfHistoryData(void) const;

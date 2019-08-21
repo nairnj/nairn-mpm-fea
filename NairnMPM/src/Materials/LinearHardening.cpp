@@ -30,6 +30,7 @@ LinearHardening::LinearHardening(MaterialBase *pair) : HardeningLawBase(pair)
     beta = 0.;
     Ep = -1.;
 	alphaMax = 1.e50;
+	lawID = LINEARHARENDING_ID;
 }
 
 #pragma mark LinearHardening::Initialize

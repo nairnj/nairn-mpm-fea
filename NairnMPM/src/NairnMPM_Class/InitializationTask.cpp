@@ -40,7 +40,7 @@ InitializationTask::InitializationTask(const char *name) : MPMTask(name)
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
 // throws CommonException()
-void InitializationTask::Execute(void)
+void InitializationTask::Execute(int taskOption)
 {
 	CommonException *initErr = NULL;
 	
@@ -58,10 +58,9 @@ void InitializationTask::Execute(void)
         // zero ghost nodes in patch for this thread
         int pn = GetPatchNumber();
         patches[pn]->InitializeForTimeStep();
-
-		// particle calculations get CPDI or GIMP info for each nonrigid, rigid block, and rigid contact particle
+		
 #pragma omp for nowait
-		for(int p=0;p<nmpmsRC;p++)
+		for(int p=0;p<nmpms;p++)
         {   MPMBase *mpmptr = mpm[p];                                       // pointer
 			const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
 			try

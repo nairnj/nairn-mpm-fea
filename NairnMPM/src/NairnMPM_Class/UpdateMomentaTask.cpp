@@ -29,6 +29,7 @@
 #include "Exceptions/CommonException.hpp"
 #include "Nodes/MaterialContactNode.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
+#include "Global_Quantities/BodyForce.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -40,17 +41,17 @@ UpdateMomentaTask::UpdateMomentaTask(const char *name) : MPMTask(name)
 
 // Update grid momenta and transport rates
 // throws CommonException()
-void UpdateMomentaTask::Execute(void)
-{
+void UpdateMomentaTask::Execute(int taskOption)
+{	
 #pragma omp parallel for
 	for(int i=1;i<=*nda;i++)
 	{	NodalPoint *ndptr = nd[nda[i]];
 		
 		// update nodal momenta
-		ndptr->UpdateMomentaOnNode(timestep);
+		ndptr->UpdateMomentum(timestep);
 		
 		// get grid transport rates
-		TransportTask::GetTransportRatesOnNode(ndptr);
+		TransportTask::UpdateTransportOnGrid(ndptr);
 	}
 	
 	// contact and BCs
@@ -58,6 +59,7 @@ void UpdateMomentaTask::Execute(void)
 }
 
 // do contact calculations and impose momenta conditions
+// passType == MASS_MOMENTUM_CALL, UPDATE_MOMENTUM_CALL, UPDATE_STRAINS_LAST_CALL
 void UpdateMomentaTask::ContactAndMomentaBCs(int passType)
 {
 	// material contact
@@ -66,7 +68,7 @@ void UpdateMomentaTask::ContactAndMomentaBCs(int passType)
 	// adjust momenta and forces for crack contact on known nodes
 	CrackNode::ContactOnKnownNodes(timestep,passType);
 
-	// Impose velocity BCs
-	NodalVelBC::GridMomentumConditions(passType);
-
+	// Reimmpose velocity BCs (if needed)
+	// Probably needed if have contact or mirrored BCs
+	NodalVelBC::GridVelocityConditions(passType);
 }

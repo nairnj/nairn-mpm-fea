@@ -273,7 +273,7 @@ and rubber elastic materials as special cases.</td>
 <td><a href="#visc"><code>Viscoelastic</code></a></td>
 <td>6</td>
 <td width="50%">Linear viscoelastic material with sum of relaxation times</td>
-<td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 </table>
@@ -583,7 +583,7 @@ and rubber elastic materials as special cases.</td>
 <li>S2 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
 <li>S3 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
 <li>gamma0 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
-<li>Kmax - maximum increase allowed in bulk modulus (by ratio and dimensionless) (OSParticulas only) (default is 20).</li>
+<li>Kmax - maximum increase allowed in bulk modulus (by ratio and dimensionless) (default -1 or no max).</li>
 <li>G0 - the steady-state (or long time) shear modulus (in <a href="commands.html#units">pressure units</a>)</li>
 <li>Gk - the shear modulus for the next relaxation time (in <a href="commands.html#units">pressure units</a>)</li>
 <li>tauk - the next relaxation time (in <a href="commands.html#units">time units</a>)</li>
@@ -593,6 +593,8 @@ and rubber elastic materials as special cases.</td>
 
 <p>The relaxation shear modulus is given by G(t) = G<sub>0</sub> + G<sub>1</sub>exp(-t/tau<sub>1</sub>) + G<sub>2</sub>exp(-t/tau<sub>2</sub>) + ... +
 G<sub>ntaus</sub>exp(-t/tau<sub>n</sub>), where n is the number of relation times entered (and that number must exactly match the number of Gk shear moduli entered).</p>
+
+<p>This material can be used in plane stress analysis, but only if <code>pressureLaw=0</code> and <a href="#cmn5">artificial visocity</a> is not used.</p>
 
 <h3>History Data for Linear Viscoelastic, Isotropic Materials</h3>
 
@@ -798,7 +800,7 @@ You must enter K and G, E and nu, or Lame and G  (moduli in <a href="commands.ht
 <li>S2 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
 <li>S3 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
 <li>gamma0 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
-<li>Kmax - maximum increase allowed in bulk modulus (by ratio and dimensionless) (OSParticulas only) (default is 20).</li>
+<li>Kmax - maximum increase allowed in bulk modulus (by ratio and dimensionless) (default is -1 or no max).</li>
 <li>G - the shear modulus at zero pressure and the reference temperature (in <a href="commands.html#units">pressure units</a>).</li>
 <li>Hardening - this property selects the <a href="#hardening">hardening law</a>. It should be followed by entering all yielding properties required by the hardening law within the material's definition block.</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a>. This material requires <a href="#common">heat capacity <code>Cv</code></a> and a <a href="commands.html#thermal"><code>StressFreeTemp</code></a> in K.</li>
@@ -1177,6 +1179,8 @@ It is ignored if it is negative (default is -1)</li>
 
 <li><code>coeff</code> for the dynamic coefficient of friction (default is 0).</li>
 <li><code>coeffStatic</code> for the static coefficient of friction (default is -1).</li>
+<li><code>displacementOnly</code> 0 for contact by separation and stress, 1 for contact by separation only, or &lt;0 for contact by sepaction and interfacial stress &lt; <code>-displacementOnly</code> (in <a href="commands.html#units">pressure units/length units</a>) (default is 0).</li>
+<li><code>Dc</code> &lt;0 to find separation assuming perfect interfaciall contact, &ge;0 to use <a href="#linearimp">imperfect interface methods</a> to find separation (in <a href="commands.html#units">pressure units/length units</a>) (default is -1)</li>
 </ul>
 
 <p>If the optional static coefficient of friction is changed to a positive number, it must be greater than the dynamic coefficient. The sliding will begin when it overcomes the static frictional force, but thereafter will slide with the dynamic coefficient of friction.</p>
@@ -1218,6 +1222,8 @@ the frictional sliding force is
 <li><code>Na</code> for normal adhesion strength (in <a href="commands.html#units">pressure units</a>) (default is 0).</li>
 <li>kmu - slope of coefficient of friction vs. velocity (in <a href="commands.html#units">1/velocity units</a>) (default is 0).</li>
 <li>vhalf - velocity at which µ is half way from µ<sub>s</sub> to µ<sub>d</sub> (in <a href="commands.html#units">velocity units</a>) (default is 0).</li>
+<li><code>displacementOnly</code> 0 for contact by separation and stress, 1 for contact by separation only, or &lt;0 for contact by sepaction and interfacial stress &lt; <code>-displacementOnly</code> (in <a href="commands.html#units">pressure units/length units</a>) (default is 0).</li>
+<li><code>Dc</code> &lt;0 to find separation assuming perfect interfaciall contact, &ge;0 to use <a href="#linearimp">imperfect interface methods</a> to find separation (in <a href="commands.html#units">pressure units/length units</a>) (default is -1)</li>
 </ul>
 
 <p>If the optional static coefficient of friction is changed to a positive number,
@@ -1244,6 +1250,8 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 <ul>
 <li><code>coeff</code> for the scaling factor <i>k</i> in the contact law (default is 2 <a href="commands.html#units">(length units)<sup>-1</sup></a>).</li>
 <li><code>LiquidPhase</code> for the liquid phase material by ID (default is none).</li>
+<li><code>displacementOnly</code> 0 for contact by separation and stress, 1 for contact by separation only, or &lt;0 for contact by sepaction and interfacial stress &lt; <code>-displacementOnly</code> (in <a href="commands.html#units">pressure units/length units</a>) (default is 0).</li>
+<li><code>Dc</code> &lt;0 to find separation assuming perfect interfaciall contact, &ge;0 to use <a href="#linearimp">imperfect interface methods</a> to find separation (in <a href="commands.html#units">pressure units/length units</a>) (default is -1)</li>
 </ul>
 
 <p>Note that this contact law uses the viscosity provided by the entered <code>LiquidPhase</code> material for all contact situations.</p>
@@ -1367,7 +1375,7 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 <p>The Johnson-Cook hardening law is:
 </p>
 <blockquote>
-     &sigma;<sub>y</sub> = (Ajc + Bjc &epsilon;<sub>p</sub><sup>njc</sup>) [1 + Cjc ln(d&epsilon;<sub>p</sub>/ep0jc) ] (1 - Tr<sup>mjc</sup>)
+     σ<sub>y</sub> = (Ajc + Bjc ε<sub>p</sub><sup>njc</sup>) [1 + Cjc ln(dε<sub>p</sub>/ep0jc) + Djc ln(max(dε<sub>p</sub>/ep0jc,1))<sup>n2jc</sup>] (1 - Tr<sup>mjc</sup>)
 </blockquote>
 <p>where &epsilon;<sub>p</sub> is equivalent plastic strain, d&epsilon;<sub>p</sub> is plastic strain rate, and the reduced temperature (Tr) is given by</p>
 <blockquote>
@@ -1380,7 +1388,9 @@ found using the velocity dependent dynamic coefficient of friction.</p>
 <li>Bjc - hardening term in the yield stress (in <a href="commands.html#units">pressure units</a>).</li>
 <li>njc - exponent for power-law hardening term (dimensionless).</li>
 <li>Cjc - coefficient for rate-dependent term (dimensionless).</li>
-<li>ep0jc - reference strain rate for reference yield stress in <code>Ajc</code> (in <a href="commands.html#units">1/time units</a>).</li>
+<li><Djc - coefficient for second rate-dependent term. (dimensionless)</li>
+<li>n2jc - exponent on second rate-dependent term with D (dimensionless).</li>
+<li>ep0jc - reference strain rate for reference yield stress in <code>Ajc</code> (in <a href="commands.html#units">1/time units</a>). (default is 1)</li>
 <li>Tmjc - the material's melting point (in K).</li>
 <li>mjc - exponent in the thermal term (dimensionless).</li>
 </ul>

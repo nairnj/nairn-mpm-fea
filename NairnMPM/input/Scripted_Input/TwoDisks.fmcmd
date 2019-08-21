@@ -9,7 +9,7 @@ The contact is handle my multimaterial MPM methgods
 EndHeader
 
 ! Analysis can be "Plane Stress MPM", "Plane Strain MPM", or "3D MPM"
-#analysis$="Plane Strain MPM"
+#analysis$="3D MPM"
 
 ! Strain update method "USAVG" or "USF"
 #update$="USAVG+"
@@ -173,4 +173,3 @@ else
     endif
   EndRegion
 endif
-

@@ -13,9 +13,7 @@
 
 CrackController *crackCtrl=NULL;
 
-/********************************************************************************
-	CrackController: methods
-********************************************************************************/
+#pragma mark CrackController: methods
 
 // start new crack
 void CrackController::AddCrack(CrackHeader *newCrack)

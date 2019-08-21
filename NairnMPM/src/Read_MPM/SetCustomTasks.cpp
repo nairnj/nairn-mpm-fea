@@ -17,6 +17,7 @@
 #include "Custom_Tasks/AdjustTimeStepTask.hpp"
 #include "Custom_Tasks/CarnotCycle.hpp"
 #include "Custom_Tasks/CustomThermalRamp.hpp"
+#include "Custom_Tasks/PeriodicXPIC.hpp"
 
 // Create custom task
 void MPMReadHandler::ScheduleCustomTask(const Attributes& attrs)
@@ -38,9 +39,7 @@ void MPMReadHandler::ScheduleCustomTask(const Attributes& attrs)
 			}
 			
 			else if(strcmp(value,"VTKArchive")==0)
-			{   if(vtkArchiveTask!=NULL) throw SAXException("Only one VTKArchive custom task is allowed.");
-				vtkArchiveTask = new VTKArchive();
-				nextTask=(CustomTask *)vtkArchiveTask;
+			{   nextTask=(CustomTask *)(new VTKArchive());
 				if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
 			}
 			
@@ -63,6 +62,11 @@ void MPMReadHandler::ScheduleCustomTask(const Attributes& attrs)
 			{   nextTask=(CustomTask *)(new CustomThermalRamp());
 				if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
 				ConductionTask::activeRamp = true;
+			}
+
+			else if(strcmp(value,"PeriodicXPIC")==0)
+			{   nextTask=(CustomTask *)(new PeriodicXPIC());
+				if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
 			}
 			
 			else

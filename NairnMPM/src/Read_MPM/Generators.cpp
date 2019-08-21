@@ -18,6 +18,7 @@
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
+#include "Boundary_Conditions/NodalVelGradBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
@@ -45,6 +46,7 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Read_XML/Expression.hpp"
 #include "NairnMPM_Class/ResetElementsTask.hpp"
+#include "Boundary_Conditions/InitialCondition.hpp"
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
@@ -345,7 +347,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		for(i=0;i<numRotations;i++) delete [] angleExpr[i];
 		rotationAxes[0]=0;
 	}
-    
+
     else if(strcmp(xName,"vel0X")==0 || strcmp(xName,"vel0Y")==0 || strcmp(xName,"vel0Z")==0)
     {   if(block!=BODYPART)
 			ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
@@ -711,9 +713,9 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,BCSHAPE,ANY_DIM);
 		if(!theShape->RequiredBlock(GRIDBCHEADER))
 			ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
-        double dispvel=0.0,ftime=0.0,angle=0.,angle2=0.;
+        double dispvel=0.0,ftime=0.0,angle=0.,angle2=0.,gradDepth=1.e30;
 		int dof=0,style=CONSTANT_VALUE,velID=0;
-		char *function=NULL;
+		char *function=NULL,*gradFunction=NULL,*dispFunction=NULL;
         numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -735,6 +737,18 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				function=new char[strlen(value)+1];
 				strcpy(function,value);
 			}
+			else if(strcmp(aName,"gradfxn")==0)
+			{	if(gradFunction!=NULL) delete [] gradFunction;
+				gradFunction=new char[strlen(value)+1];
+				strcpy(gradFunction,value);
+			}
+			else if(strcmp(aName,"dispfxn")==0)
+			{	if(dispFunction!=NULL) delete [] dispFunction;
+				dispFunction=new char[strlen(value)+1];
+				strcpy(dispFunction,value);
+			}
+			else if(strcmp(aName,"depth")==0)
+				sscanf(value,"%lf",&gradDepth);
             else if(strcmp(aName,"id")==0)
                 sscanf(value,"%d",&velID);
             delete [] aName;
@@ -748,6 +762,11 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             throw SAXException("'dir' in DisBC element must be 1, 2, or 12 for 2D analyses.");
         if(velID>0)
             throw SAXException("'id' for velocity boundary conditions must be <= 0.");
+		if(gradDepth<1.e20)
+		{	int maxDof = fmobj->IsThreeD() ? 3 : 2 ;
+			if(dof<1 || dof>maxDof)
+				throw SAXException("'dir' in DisBC element for gradient velocity BCs must be 1, 2, or 3 (3D only).");
+		}
 		
 		// convert some to single axis
 		if(dof>10)
@@ -765,10 +784,20 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         // note that dof is input style (1,2,3,12,13,23, or 123)
 		theShape->resetNodeEnumerator();
 		while((i=theShape->nextNode()))
-		{	NodalVelBC *newVelBC=new NodalVelBC(nd[i]->num,dof,style,dispvel,ftime,angle,angle2);
-			newVelBC->SetFunction(function);
-			newVelBC->SetID(velID);
-			velocityBCs->AddObject(newVelBC);
+		{	if(gradDepth>1.e20)
+			{	NodalVelBC *newVelBC=new NodalVelBC(nd[i]->num,dof,style,dispvel,ftime,angle,angle2);
+				newVelBC->SetFunction(function);
+				newVelBC->SetID(velID);
+				velocityBCs->AddObject(newVelBC);
+			}
+			else
+			{	NodalVelGradBC *newVelGradBC=new NodalVelGradBC(nd[i]->num,dof,style,ftime,gradDepth);
+				newVelGradBC->SetFunction(function);
+				if(gradFunction!=NULL) newVelGradBC->SetGradFunction(gradFunction,true);
+				if(dispFunction!=NULL) newVelGradBC->SetGradFunction(dispFunction,false);
+				newVelGradBC->SetID(velID);
+				velocityBCs->AddObject(newVelGradBC);
+			}
 		}
 		if(function!=NULL) delete [] function;
     }
@@ -988,9 +1017,46 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
     }
 	
     // Read into initial conditions on current shape
-	else if(strcmp(xName,"Damage")==0)
-	{	throw SAXException("<Damage> command requires OSParticulas");
-	}
+    else if(strcmp(xName,"Damage")==0)
+    {   // must be in BCShape in particle BC section
+        ValidateCommand(xName,BCSHAPE,ANY_DIM);
+        if(!theShape->RequiredBlock(PARTICLEBCHEADER))
+            ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
+        
+        Vector dnorm = MakeVector(0.,0.,0.);
+        Vector dvals = MakeVector(1.,1.,1.);
+		double dmode = 1.;			// user must override if aniostropic
+        numAttr=(int)attrs.getLength();
+        for(i=0;i<numAttr;i++)
+        {   aName=XMLString::transcode(attrs.getLocalName(i));
+            value=XMLString::transcode(attrs.getValue(i));
+            if(strcmp(aName,"nx")==0)
+                sscanf(value,"%lf",&dnorm.x);
+            else if(strcmp(aName,"ny")==0)
+                sscanf(value,"%lf",&dnorm.y);
+            else if(strcmp(aName,"nz")==0)
+                sscanf(value,"%lf",&dnorm.z);
+            else if(strcmp(aName,"dn")==0)
+                sscanf(value,"%lf",&dvals.x);
+            else if(strcmp(aName,"dxy")==0 || strcmp(aName,"dyx")==0)
+                sscanf(value,"%lf",&dvals.y);
+            else if(strcmp(aName,"dxz")==0 || strcmp(aName,"dzx")==0)
+                sscanf(value,"%lf",&dvals.z);
+			else if(strcmp(aName,"mode")==0)
+				sscanf(value,"%lf",&dmode);
+            delete [] aName;
+            delete [] value;
+        }
+        
+        InitialCondition *newIC;
+        theShape->resetParticleEnumerator();
+        while((i=theShape->nextParticle())>=0)
+        {   newIC = new InitialCondition(INITIAL_DAMAGE,i+1);
+            newIC->SetInitialDamage(&dnorm,&dvals,dmode);
+            damageICCtrl->AddObject(newIC);
+        }
+        cout << endl;
+    }
 	
 	// Not recognized as a generator element
 	else
@@ -1321,10 +1387,8 @@ char *MPMReadHandler::LastBC(char *firstBC)
 	return (char *)lastBC;
 }
 
-//-----------------------------------------------------------
 // Create a regular MPM grid
 // throws std::bad_alloc
-//-----------------------------------------------------------
 void MPMReadHandler::grid()
 {
 	int i,j,k,curPt=0,curEl=0;
@@ -1553,10 +1617,13 @@ void MPMReadHandler::CreateSymmetryBCs()
 {  	// If axisymmetric, automatrically put symmetry plane at r=0 with direction -1
 	if(fmobj->IsAxisymmetric())
 	{	Xsym = 0.;				// only r=0 is allowed
-		xsymdir = -1;			// to left, but extra BCs not created
+		xsymdir = -1;			// to left, but extra BCs only used for B2CPDI and B2GIMP
 		
 		// not needed if not in the grid
-		if(mpmgrid.xmin>0) return;
+		if(mpmgrid.xmin>0.) return;
+		
+		// hack to not force symmetry plane at r=0
+		//xsymdir = 0;
 	}
 	
 	// allow one plane in each direction
@@ -1597,7 +1664,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 		throw SAXException(msg);
 	}
 	
-	// remove current velocites at or beyond the symmetry plane
+	// remove current velocities at or beyond the symmetry plane
 	int i;
 	double ni;
 	NodalVelBC *lastValidBC = NULL;
@@ -1649,7 +1716,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 	{	int node = nnum;
 		while(node<=nnodes)
 		{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
-			NodalVelBC *newVelBC=new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+			NodalVelBC *newVelBC = new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 			nd[node]->SetFixedDirection(XSYMMETRYPLANE_DIRECTION);
             newVelBC->SetID(velID);
 			
@@ -1666,11 +1733,11 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 			}
 			
 			// create neighboring BC for velocity reflected in x
-			// but not needed if axisymmtric
-			if(!fmobj->IsAxisymmetric() || symdir>0)
+			// but not needed if axisymmtric an linear shape functions
+			if(!fmobj->IsAxisymmetric() || symdir>0 || ElementBase::useGimp==BSPLINE_GIMP || ElementBase::useGimp==BSPLINE_CPDI)
 			{	int neighbor = node + symdir;
 				if(neighbor>0 && neighbor<=nnodes)
-				{	newVelBC=new NodalVelBC(neighbor,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+				{	newVelBC = new NodalVelBC(neighbor,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
                     newVelBC->SetID(velID);
 				
 					// reflected node
@@ -1693,7 +1760,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 		{	node = node0;
 			for(i=0;i<mpmgrid.yplane;i++)
 			{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
-				NodalVelBC *newVelBC=new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+				NodalVelBC *newVelBC = new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 				nd[node]->SetFixedDirection(YSYMMETRYPLANE_DIRECTION);
                 newVelBC->SetID(velID);
 				
@@ -1712,7 +1779,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 				// create neighboring BC for velocity reflected in y
 				int neighbor = node + symdir*mpmgrid.yplane;
 				if(neighbor>0 && neighbor<=nnodes)
-				{	newVelBC=new NodalVelBC(neighbor,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+				{	newVelBC = new NodalVelBC(neighbor,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
                     newVelBC->SetID(velID);
 					
 					// reflected node
@@ -1736,7 +1803,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 	{	int node = (nnum-1)*mpmgrid.zplane + 1;
 		for(i=0;i<mpmgrid.zplane;i++)
 		{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
-			NodalVelBC *newVelBC=new NodalVelBC(node,Z_DIRECTION_INPUT,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+			NodalVelBC *newVelBC = new NodalVelBC(node,Z_DIRECTION_INPUT,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 			nd[node]->SetFixedDirection(ZSYMMETRYPLANE_DIRECTION);
             newVelBC->SetID(velID);
 			
@@ -1755,7 +1822,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 			// create neighboring BC for neighboring BC for velocity reflected in z
 			int neighbor = node + symdir*mpmgrid.zplane;
 			if(neighbor>0 && neighbor<=nnodes)
-			{	newVelBC=new NodalVelBC(neighbor,Z_DIRECTION_INPUT,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+			{	newVelBC = new NodalVelBC(neighbor,Z_DIRECTION_INPUT,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
                 newVelBC->SetID(velID);
 				
 				// reflected node

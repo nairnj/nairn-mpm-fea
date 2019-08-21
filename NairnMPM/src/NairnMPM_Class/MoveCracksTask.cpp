@@ -31,7 +31,7 @@ MoveCracksTask::MoveCracksTask(const char *name) : MPMTask(name)
 
 // Run this task to move cracks and update tactions
 // throws CommonException() if crack surface or position has left the grid
-void MoveCracksTask::Execute(void)
+void MoveCracksTask::Execute(int taskOption)
 {
 	CommonException *mcErr = NULL;
     
@@ -100,7 +100,7 @@ void MoveCracksTask::Execute(void)
 	{
 #pragma omp parallel for
 		for(int i=1;i<=nnodes;i++)
-		{	nd[i]->CalcCMVelocityTask8();
+		{	nd[i]->GetCenterOfMassVelocity(NULL,false);
 		}
 	}
 

@@ -26,7 +26,7 @@ enum { UNKNOWN_QUANTITY,AVG_SXX,AVG_SYY,AVG_SXY,AVG_SZZ,AVG_SXZ,AVG_SYZ,
             ENTROPY_ENERGY,INTERNAL_ENERGY,HELMHOLZ_ENERGY,PARTICLE_ALPHA,
 			AVG_FXX,AVG_FXY,AVG_FXZ,AVG_FYX,AVG_FYY,AVG_FYZ,AVG_FZX,AVG_FZY,AVG_FZZ,
 			TOT_REACTQ,FRICTION_WORK,LINMOMX,LINMOMY,LINMOMZ,ANGMOMX,ANGMOMY,ANGMOMZ,
-			LPMOMX,LPMOMY,LPMOMZ,ANGVELX,ANGVELY,ANGVELZ};
+			LPMOMX,LPMOMY,LPMOMZ,ANGVELX,ANGVELY,ANGVELZ,DECOHESION};
 
 class GlobalQuantity
 {
@@ -34,7 +34,10 @@ class GlobalQuantity
         // constructors and destructors
         GlobalQuantity();
 		GlobalQuantity(char *,int);
-    
+		GlobalQuantity(char *quant,Vector *ptLoc);
+		void FinishNewQuantity(char *);
+		GlobalQuantity *FindTracerParticle(int,Vector *);
+	
         // methods
 		GlobalQuantity *AppendName(char *);
 		GlobalQuantity *AppendColor(char *);
@@ -45,7 +48,10 @@ class GlobalQuantity
 		GlobalQuantity *GetNextGlobal(void);
 		void SetNextGlobal(GlobalQuantity *);
 		bool IsSameQuantity(int,int,int);
-		
+		int GetQuantity(void);
+		bool IsTracerParticle(void);
+		GlobalQuantity *SetTracerParticle(void);
+	
 		// class methods
 		static int DecodeGlobalQuantity(const char *,int *);
 	
@@ -56,6 +62,9 @@ class GlobalQuantity
 		int colorID;
 		GlobalQuantity *nextGlobal;
 		char *name;
+		Vector *ptPos;
+		int ptNum;
+		double minDist;
 };
 
 extern GlobalQuantity *firstGlobal;

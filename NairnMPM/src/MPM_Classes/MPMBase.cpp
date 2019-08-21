@@ -169,7 +169,8 @@ MPMBase::~MPMBase() { }
 // holdFirst == true, store velocity in acc and zero the velocity
 // holdFirst == false, if holding, reverse using stored velocity otherwise just reverse
 void MPMBase::ReverseParticle(bool holdFirst,bool holding)
-{   if(holdFirst)
+{
+	if(holdFirst)
     {   acc = vel;
         ZeroVector(&vel);
     }
@@ -190,6 +191,9 @@ void MPMBase::StopParticle(void)
     vel.y=0.;
 	vel.z=0.;
 }
+
+// Subclass must override to support exact tractions
+void MPMBase::GetExactTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds) const {}
 
 #pragma mark MPMBase::Accessors
 
@@ -559,7 +563,7 @@ double MPMBase::GetPressure(void) { return pressure; }
 // The only reason for two names is to make the code more readable
 Tensor *MPMBase::GetAltStrainTensor(void) { return &eplast; }
 
-// history data
+// history data (offset is in bytes and not in number of doubles)
 char *MPMBase::GetHistoryPtr(int offset) { return matData+offset; }
 void MPMBase::SetHistoryPtr(char *createMatData)
 {	if(matData!=NULL) delete [] matData;
@@ -605,7 +609,8 @@ void MPMBase::Describe(void)
     cout << "#       P= " << pressure*rho << " " << UnitsController::Label(PRESSURE_UNITS) << endl;
     cout << "# sigmaii=(" << sp.xx*rho << "," << sp.yy*rho << "," << sp.zz*rho << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
     cout << "#   tauij=(" << sp.xy*rho << "," << sp.xz*rho << "," << sp.yz*rho << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
-	cout << "#       T= " << pTemperature << " prev T=" << pPreviousTemperature << endl;
+	cout << "#       T= " << pTemperature << " prev T=" << pPreviousTemperature;
+	cout << " c= " << pConcentration << " prev c=" << pPreviousConcentration << endl;
 }
 
 

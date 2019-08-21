@@ -9,16 +9,15 @@
 	mass and momentum to the grid. The tasks are:
 	---------------------------------------------
 	* Mirror crack fields (if needed)
-	* Get total mass and count particles
-	* Multimaterial contact (save the nodes for imperfect interfaces)
-	* Crack contact (save the crack nodes)
+	* Get total mass and count particles and copy no BC momentum
+	* Find nodes with material or crack contact
 	* Transport tasks get value
 	  (also do for CVF and MVF if contact flow activated)
 	* After main loop
-		- Extrapolate temperature and concentration gradients to the grid
-		- Set mirrored BCs
-		- Copy no BC velocity and then impose all boundary conditions
-		  (GridMomentumConditions())
+ 		- Find active nodes
+ 		- locate mirrored BCs
+ 		- material and crack contact
+ 		- impose velocity BCs
 ********************************************************************************/
 
 #include "stdafx.h"
@@ -44,7 +43,7 @@ PostExtrapolationTask::PostExtrapolationTask(const char *name) : MPMTask(name)
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
 // throws CommonException()
-void PostExtrapolationTask::Execute(void)
+void PostExtrapolationTask::Execute(int taskOption)
 {
 	CommonException *massErr = NULL;
 	
@@ -143,8 +142,6 @@ void PostExtrapolationTask::Execute(void)
 	}
 	nda[0] = numActive;
 
-#pragma mark ... FIND NODES WITH MIRRORED BCs, CONTACT, and
-	
 	// locate BCs with reflected nodes
 	if(firstRigidVelocityBC!=NULL)
 	{   NodalVelBC *nextBC=firstRigidVelocityBC;
@@ -152,10 +149,12 @@ void PostExtrapolationTask::Execute(void)
 			nextBC = nextBC->SetMirroredVelBC(mtime);
 	}
 	
+	// precalculate velocity BC values
+	NodalVelBC::GridVelocityBCValues();
+	
+	// contact and grid velocity conditions
 	UpdateMomentaTask::ContactAndMomentaBCs(MASS_MOMENTUM_CALL);
-	
-#pragma mark ... IMPOSE BOUNDARY CONDITIONS
-	
+
 	// Impose transport BCs and extrapolate gradients to the particles
 	TransportTask::TransportBCsAndGradients(mtime);
 }

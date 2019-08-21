@@ -21,7 +21,7 @@
 	* Reduction to copy from ghost to real nodes
 	* Update nodal transport values
 	* Material contact and crack contact
-	* Get grid BCs using GridMomentumConditions()
+	* Get grid BCs using GridVelocityConditions()
 	* Full strain update
 		- Get grid velocities (p/m)
 		- Copy mechanical properties of a material
@@ -57,7 +57,7 @@ UpdateStrainsLastContactTask::UpdateStrainsLastContactTask(const char *name) : M
 
 // Get total grid point forces (except external forces)
 // throws CommonException()
-void UpdateStrainsLastContactTask::Execute(void)
+void UpdateStrainsLastContactTask::Execute(int taskOption)
 {
 	CommonException *uslErr = NULL;
 #ifdef CONST_ARRAYS
@@ -146,5 +146,5 @@ void UpdateStrainsLastContactTask::Execute(void)
 	UpdateMomentaTask::ContactAndMomentaBCs(UPDATE_STRAINS_LAST_CALL);
 
 	// update strains based on current velocities
-	UpdateStrainsFirstTask::FullStrainUpdate(strainTimestepLast,(fmobj->mpmApproach==USAVG_METHOD),fmobj->np);
+	UpdateStrainsFirstTask::FullStrainUpdate(strainTimestepLast,(fmobj->mpmApproach==USAVG_METHOD),fmobj->np,true);
 }

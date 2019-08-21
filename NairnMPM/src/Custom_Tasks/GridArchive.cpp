@@ -19,6 +19,7 @@ GridArchive::GridArchive()
 {
 	customArchiveTime = -1.;          // input in ms, stored in sec
 	nextCustomArchiveTime = -1.;      // input in ms, stored in sec
+	thisMaterial = -1;				  // all by default
 }
 
 // Read task parameter - if pName is valid, set input for type
@@ -36,7 +37,13 @@ char *GridArchive::InputParam(char *pName,int &input,double &gScaling)
 		return UnitsController::ScaledPtr((char *)&nextCustomArchiveTime,gScaling,1.e-3);
     }
 	
-	// check remaining commands in suprt class
+	// trap VTK archive parameters and return if found
+	else if(strcmp(pName, "selectMaterial") == 0)
+	{	input = INT_NUM;
+		return (char *)&thisMaterial;
+	}
+	
+	// check remaining commands in super class
     return CustomTask::InputParam(pName,input,gScaling);
 }
 

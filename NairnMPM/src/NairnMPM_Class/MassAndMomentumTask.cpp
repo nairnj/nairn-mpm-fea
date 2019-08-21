@@ -32,6 +32,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Patches/GridPatch.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -44,7 +45,7 @@ MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
 // throws CommonException()
-void MassAndMomentumTask::Execute(void)
+void MassAndMomentumTask::Execute(int taskOption)
 {   
 	CommonException *massErr = NULL;
 #ifdef CONST_ARRAYS
@@ -54,7 +55,7 @@ void MassAndMomentumTask::Execute(void)
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
     int ndsArray[maxShapeNodes];
 #endif
-
+	
 	// loop over non-rigid and rigid contact particles - this parallel part changes only particle p
 	// mass, momenta, etc are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
     //for(int pn=0;pn<4;pn++)
@@ -132,7 +133,7 @@ int MassAndMomentumTask::GetParticleFunctions(MPMBase *mpmptr,int **nds,double *
 		
 	// get nodes and shape function for material point p
 	const ElementBase *elref = theElements[mpmptr->ElemID()];
-	if(fmobj->multiMaterialMode)
+	if(mpmgrid.volumeGradientIndex>=0)
 		elref->GetShapeGradients(fn,nds,xDeriv,yDeriv,zDeriv,mpmptr);
 	else
 		elref->GetShapeFunctions(fn,nds,mpmptr);

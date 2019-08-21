@@ -54,6 +54,7 @@ class MPMReadHandler : public CommonReadHandler
         //  Private data members
 		ParseController *velocityBCs,*concBCs,*tempBCs,*mpLoadCtrl,*mpTractionCtrl;
 		ParseController *mpConcFluxCtrl,*mpHeatFluxCtrl;
+    	ParseController *damageICCtrl;
 		ContactLaw *currentContact;
         char *currentTask;
         

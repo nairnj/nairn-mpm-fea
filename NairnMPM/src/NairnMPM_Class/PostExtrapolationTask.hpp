@@ -23,7 +23,7 @@ class PostExtrapolationTask : public MPMTask
 		PostExtrapolationTask(const char *);
 	
 		// required methods
-		virtual void Execute(void);
+		virtual void Execute(int);
 	
 		// custom methods
 	

@@ -61,7 +61,7 @@ endif
 #loading$="force"		! Loading = "rigid", "force", "traction"
 #rate=.05				! fraction on axial wave speed
 #endDisp=2				! end deflection in mm
-#propagate$="elliptical"	        ! empty for none, or "critical err", "max energy release", "elliptical"
+#propagate$="max energy release"	        ! empty for none, or "critical err", "max energy release", "elliptical"
 
 ! Loading rate
 #hold=0				! hold time (multiple of loading time)
@@ -202,10 +202,11 @@ if #trtip>0
 endif
 
 ! ***** BOUNDARY CONDITION SECTION *****
-MoveLine -#cwidth/2,-#depth-#top,-#cwidth/2,#depth+#top,0.51*#cwidth
+GridBC
+  Line -#cwidth/2,-#cwidth/2,-#depth-#top,#depth+#top,0.51*#cwidth
   Velocity x,constant,0
   Velocity y,constant,0
-EndMoveLine
+EndGridBC
 
 ! time part
 !    = t for t < loadtime
@@ -219,14 +220,16 @@ endif
 
 ! end loads on beam arms
 if #loading$="force"
-  LoadRect #length-(#cwidth/2),#length,0,#depth
+  ParticleBC
+    Rect #length-(#cwidth/2),#length,0,#depth
     LoadType net
     Load y,function,#forcerate&"("&#ftime$&")"
-  EndLoadRect
-  LoadRect #length-(#cwidth/2),#length,-#depth,0
+  EndParticleBC
+  ParticleBC
+    Rect #length-(#cwidth/2),#length,-#depth,0
     LoadType net
     Load y,function,(-#forcerate)&"("&#ftime$&")"
-  EndLoadRect
+  EndParticleBC
 else if #loading$="traction"
   Stop "traction not ready yet"
 else if #loading$="rigid"
