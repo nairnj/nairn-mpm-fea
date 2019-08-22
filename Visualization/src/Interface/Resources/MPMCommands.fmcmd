@@ -10,7 +10,7 @@ Header
 EndHeader
 
 Analysis "Plane Stress MPM"
-MPMMethod USAVG,GIMP
+MPMMethod "USL-",GIMP
 Archive "Results/MPM"
 ArchiveTime 1
 MaximumTime 10
@@ -37,7 +37,7 @@ GridVert (#height+2*#border*#cell)/#cell
 GridThickness #thickness
 GridRect -#border*#cell,#width+#border*#cell,-#border*#cell,#height+#border*#cell
 
-Region #matname$,0,0,#thickness
+Region #matname$,100*#cell,100*#cell,#thickness
   Rect 0,#width,0,#height
 EndRegion
 
