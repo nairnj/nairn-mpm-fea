@@ -1,4 +1,47 @@
 -------------------------------------------------------------------
+New Script Opitons
+-------------------------------------------------------------------
+New Command Ideas
+* user input (string)
+* user option (buttons)
+* user choice (list)
+* Crack Closure
+* user openFile (is it needed?)
+* user save (is it needed?)
+
+New Properties
+* Find Node near (x,y)
+
+-------------------------------------------------------------------
+Interface Options
+-------------------------------------------------------------------
+* Can Windows exe run in background mode?
+
+* Plot angle - add slider in the movie window before PS slider (do quantities work?)
+
+* Control click plot for pop-up menu of plot options
+** Including export graphics (is preference needed for export format?)
+
+* Preferences
+** Spectra inversion and brightness
+** Support setup of multiple servers
+
+* Remote execution
+** Background submits (use submit commands instead of run, and no download) add exception until it is implemented
+** Trap error returns and show error stream in window
+** Download progress bar?
+
+* When clip to particles in mesh plot and zoom, it draws outside the view port
+
+* FEA Crack Closure Calculations
+
+* Language
+** Maintain library of subroutines to load
+** Entity - Look for other commands to support its use
+** Maintain library of material definitions
+** See if NairnFEAMPM can allow same commands and assignments in materials
+
+-------------------------------------------------------------------
 Development Notes
 -------------------------------------------------------------------
 

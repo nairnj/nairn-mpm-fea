@@ -203,7 +203,12 @@ check the &quot;Validate&quot; option (recommended); uncheck it to skip validati
 
 </ol>
 
-<p>Another option, which is available only in Windows, is to enter file name as "$(bundle)" for any (or all) of the code or <code>DTD</code> file locations. When this specific text is entered, the corresponding file will be expected to be in a folder called "bundle" that is in the same folder as the <b>NairnFEAMPMViz</b> jar file.</p>
+<p>Another option is to click the "Use Bundle" button, which will change all file names
+to "$(bundle)". When this specific text is entered, the corresponding file will be
+expected to be in a folder called "bundle" that is in the same folder as the
+<b>NairnFEAMPMViz</b> jar file. If that folder also has xerces library and dll libraries
+needed in Windows, the folder contain the jar file and the bundle folder can be copied
+to another computer and run as a stand-alone system.</p>
 
 <h3><a name="native"></a>Setting the Shell Command Path</h3>
 
@@ -799,7 +804,9 @@ new options (while the previous plot window is still open) and then clicking the
 <li>Color Plot Spectrum: this section picks colors used for plot data and style of those colors.
 
 <ul>
-<li>Type: Pick color rainbow from low value to high value.</li>
+<li>Type: Pick color rainbow from low value to high value. The Viridis, Magma, Inferno, and Plasma
+options provide perceptionally-consistent spectra that provide the same scientific information
+in color, if printed in black and white, and to viewers who are color blind.</li>
 <li>Contours: Pick number of contours to use within the chosen rainbow, which will be total number of colors in the plot. If this value is 1, the colors will be continuous resulting in smooth transitions in the plot with many colors.</li>
 <li>Subelements: For <a href="#meshplots">mesh plots</a> based on nodal data, each element is divided into n X n subelements and then nodal values are extrapolated to those elements and plotted. If n=1, each element gets an average value and a single color. As n increase, the plots get smoother, but also get slower.</li>
 </ul></li>

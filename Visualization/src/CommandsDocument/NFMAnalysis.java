@@ -77,6 +77,7 @@ public class NFMAnalysis  implements Runnable
 		String commandSep = ";";
 		String pathDelim = "/";
 		String bracket = "'";
+		String exe = "";
 		String bashPath = NFMVPrefs.prefs.get(NFMVPrefs.ShellKey,NFMVPrefs.ShellDef);
 		if(NairnFEAMPMViz.isWindowsOS())
 		{	if(bashPath.indexOf("$(windows)")<0)
@@ -86,6 +87,7 @@ public class NFMAnalysis  implements Runnable
 				commandSep = " &";
 				pathDelim = "\\";
 				bracket = "\"";
+				exe = ".exe";
 			}
 		}
 		
@@ -113,7 +115,7 @@ public class NFMAnalysis  implements Runnable
 				myDTD=NFMVPrefs.prefs.get(NFMVPrefs.NairnMPMDTDKey,NFMVPrefs.NairnMPMDTDDef);
 				doValidate=NFMVPrefs.prefs.getBoolean(NFMVPrefs.NairnMPMValidateKey,NFMVPrefs.NairnMPMValidateDef);
 				if(myCmd.indexOf("$(bundle)")>=0)
-					myCmd=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnMPM.exe";
+					myCmd=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnMPM"+exe;
 				if(myDTD.indexOf("$(bundle)")>=0)
 					myDTD=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnMPM.dtd";
 			}
@@ -123,7 +125,7 @@ public class NFMAnalysis  implements Runnable
 				myDTD=NFMVPrefs.prefs.get(NFMVPrefs.NairnFEADTDKey,NFMVPrefs.NairnFEADTDDef);
 				doValidate=NFMVPrefs.prefs.getBoolean(NFMVPrefs.NairnFEAValidateKey,NFMVPrefs.NairnFEAValidateDef);
 				if(myCmd.indexOf("$(bundle)")>=0)
-					myCmd=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnFEA.exe";
+					myCmd=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnFEA"+exe;
 				if(myDTD.indexOf("$(bundle)")>=0)
 					myDTD=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnFEA.dtd";
 			}

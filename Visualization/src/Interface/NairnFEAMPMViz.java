@@ -29,7 +29,7 @@ public class NairnFEAMPMViz extends JNApplication
 		URL jarURL = getClass().getProtectionDomain().getCodeSource().getLocation();
 		File jarFile = new java.io.File(jarURL.getPath()).getAbsoluteFile();
 		jarFolder = jarFile.getPath();
-		int slash = jarFolder.lastIndexOf('\\');
+		int slash = jarFolder.lastIndexOf('/');
 		if(slash<0) slash = jarFolder.lastIndexOf('\\');
 		if(slash>=0) jarFolder = jarFolder.substring(0, slash+1);
 

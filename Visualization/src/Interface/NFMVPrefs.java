@@ -357,7 +357,8 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 
 		String[] lines = { "Rainbow 1 (Purple to Red)",
 				"Rainbow 2 (Blue to Red)", "Rainbow 3 (Purple to Orange)",
-				"Grayscale (Black to White)", "Cool Diverging (Blue to Red)" };
+				"Grayscale (Black to White)", "Cool Diverging (Blue to Red)",
+				"Viridis", "Magma", "Inferno", "Plasma" };
 		spectrumBox = new JComboBox<String>(lines);
 		spectrumBox.setSelectedIndex(ColorPicker.getSpectrumType());
 		spectrumBox.addActionListener(this);
@@ -749,6 +750,18 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 			filePanel.add(validate);
 			rowWidth++;
 		}
+		else if(pathName.equals("MPM Code"))
+		{	c.gridx++;
+			c.fill = GridBagConstraints.NONE;
+			JButton bundle = new JButton("Use Bundle");
+			bundle.setActionCommand("Use Bundle");
+			bundle.addActionListener(this);
+			bundle.setToolTipText("Click to use binaries in the bundle folder");
+			bundle.setFocusable(false);
+			gridbag.setConstraints(bundle, c);
+			filePanel.add(bundle);
+			rowWidth++;
+		}
 
 		c.fill = GridBagConstraints.NONE;
 		c.anchor = GridBagConstraints.EAST;
@@ -821,6 +834,18 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		
 		else if(theCmd.equals("FEA DTD File Use"))
 		{	prefs.putBoolean(NairnFEAValidateKey,validateFEA.isSelected());
+		}
+		
+		else if(theCmd.equals("Use Bundle"))
+		{	String newPath = "$(bundle)";
+			mpmCodePath.setText(newPath);
+			prefs.put(NairnMPMKey,newPath);
+			mpmDTDPath.setText(newPath);
+			prefs.put(NairnMPMDTDKey,newPath);
+			feaCodePath.setText(newPath);
+			prefs.put(NairnFEAKey,newPath);
+			feaDTDPath.setText(newPath);
+			prefs.put(NairnFEADTDKey,newPath);
 		}
 		
 		else if(theCmd.equals("bgColor"))
@@ -1030,6 +1055,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		
 		// default settings
 		ColorPicker.setNumberOfContours();
+		ColorPicker.setSpectrumType();
 		ElementBase.setSubelementDensity();
 	}
 
