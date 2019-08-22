@@ -1067,8 +1067,8 @@ public class ColorPicker
 		
 		// get the color
 		Color theColor;
-		int rgb,index;
-		float hue;
+		int rgb;
+		float hue,red,green,blue;
 		switch(spectrum)
 		{	case GRAY_SCALE:
 				theColor=new Color((float)fraction,(float)fraction,(float)fraction);
@@ -1094,7 +1094,6 @@ public class ColorPicker
 			case COOL_DIVERGING:
 				// diverging colors from RGB = (35,61,181) to (172,36,32) through (223,223,223)
 				//                           = (0.13672,0.23828,0.70703) to (0.67188,0.14063,0.125) through (0.87109 x 3)
-				float red,green,blue;
 				if(fraction<0.5)
 				{	red=(float)(0.13672 + 1.4688*fraction);
 					green=(float)(0.23828 + 1.2656*fraction);
@@ -1108,24 +1107,39 @@ public class ColorPicker
 				theColor=new Color(red,green,blue);
 				break;
 			case VIRIDIS:
-				index = Math.min((int)(fraction*256.),255);
-				theColor=new Color((float)viridis[index][0],(float)viridis[index][1],
-										(float)viridis[index][2]);
-				break;
 			case MAGMA:
-				index = Math.min((int)(fraction*256.),255);
-				theColor=new Color((float)magma[index][0],(float)magma[index][1],
-										(float)magma[index][2]);
-				break;
 			case INFERNO:
-				index = Math.min((int)(fraction*256.),255);
-				theColor=new Color((float)inferno[index][0],(float)inferno[index][1],
-										(float)inferno[index][2]);
-				break;
 			case PLASMA:
-				index = Math.min((int)(fraction*256.),255);
-				theColor=new Color((float)plasma[index][0],(float)plasma[index][1],
-										(float)plasma[index][2]);
+				// Perceptually uniform maps from matplotlib
+				// pick from color map
+				fraction *= 255;			// 0 to 255
+				int fmin =(int)fraction;
+				if(fmin==255) fmin=254;
+				double f = fraction-(double)fmin;
+				switch(spectrum)
+				{	case MAGMA:
+						red = (float)((1-f)*magma[fmin][0] + f*magma[fmin+1][0]);
+						green = (float)((1-f)*magma[fmin][1] + f*magma[fmin+1][1]);
+						blue = (float)((1-f)*magma[fmin][2] + f*magma[fmin+1][2]);
+						break;
+					case PLASMA:
+						red = (float)((1-f)*plasma[fmin][0] + f*plasma[fmin+1][0]);
+						green = (float)((1-f)*plasma[fmin][1] + f*plasma[fmin+1][1]);
+						blue = (float)((1-f)*plasma[fmin][2] + f*plasma[fmin+1][2]);
+						break;
+					case INFERNO:
+						red = (float)((1-f)*inferno[fmin][0] + f*inferno[fmin+1][0]);
+						green = (float)((1-f)*inferno[fmin][1] + f*inferno[fmin+1][1]);
+						blue = (float)((1-f)*inferno[fmin][2] + f*inferno[fmin+1][2]);
+						break;
+					case VIRIDIS:
+					default:
+						red = (float)((1-f)*viridis[fmin][0] + f*viridis[fmin+1][0]);
+						green = (float)((1-f)*viridis[fmin][1] + f*viridis[fmin+1][1]);
+						blue = (float)((1-f)*viridis[fmin][2] + f*viridis[fmin+1][2]);
+						break;
+				}
+				theColor=new Color(red,green,blue);
 				break;
 			default:
 				theColor=new Color((float)fraction,(float)fraction,(float)fraction);
