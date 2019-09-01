@@ -1,0 +1,157 @@
+! ---------- Preamble
+! Daamge growth from an initially damaged line of particles
+! Uses aniostropic damage mechanics or IsoSoftening material
+! Material properties are for aluminimum
+! Some options in the parameters are:
+! 1. Change method, shape functions, CFL, and XPIC
+! 2. Shape specimen type, size, resolution, and initial crack length
+! 3. Change damage mechanics properties
+! 4. Change loadin grate
+Title "Damage Mechanics Crack Growth"
+Name "Sample NairnMPM File"
+
+! Header
+Header
+   Crack growth by damage mechanics
+EndHeader
+
+! Note Stress=MPa, Force=N, Toughness=N/mm
+ConsistentUnits "mm","g","ms"
+
+! ----------- Parameters
+#method = "USL-"
+#shape = "GIMP"
+#cfl=0.25
+#processors = 12
+
+! >0 FMPM, <0 XPIC, =0 FLIP
+#xpic = 0				
+
+! "CN" (right half, full width=2*#width) or "SENT" (full specimtn)
+#type = "CN"
+#width = 50	
+#height = 100
+#ncells = 50
+#crack = 25
+
+! Damage mechanics properties
+! Damage toughness if #Gc*#GIScale
+#Gc=8
+#GIScale=0.345
+#sigmaI=330
+
+! loading rate sich that stress wave cross sample
+! #transits times when loaded to 1% strain
+#transits=25
+
+! Make large enough to fail
+#strain=1.5
+
+! --------- Analysis Type and Materials
+Analysis "Plane Strain MPM"
+MPMMethod #method,#shape
+Processors #processors
+
+! isotropic material properties (Aluminum)
+#Emat=74000
+#numat=0.34
+#rhomat=0.00278
+! shear damage mechanics properties set so not used
+#sigmaII=#sigmaI
+#GIIScale=#GIScale*1.5*2*(1+#numat)
+Comment "KIc = "&(sqrt(#Gc*1000*#Emat/(1-#numat*#numat))/1000)&" MPa sqrt(m)"
+
+! Timing
+#wave=sqrt(#Emat/#rhomat)
+#transitTime=#height/#wave	
+#time1=#transits*#transitTime
+#maxtime=#strain*#time1
+#disp=#strain*#height/200
+#vel=#disp/#maxtime
+
+Comment "Wave speed = "&#wave&" mm/ms"
+Comment "Transit Time = "&#transitTime&" ms"
+Comment "Transits to Maxtime = "&(#maxtime/#transitTime)
+Comment "Displacement Rate = "&#vel&" mm/ms (="&(100*#vel/#wave)&"% of wave speed)"
+Comment "Strain Rate = "&(#strain/#maxtime)&"% sec^-1"
+
+! Archiving
+Archive "Results/Damage"
+ArchiveTime #maxtime/200
+MaximumTime #maxtime
+CFLFactor #cfl
+ToArchive velocity,stress,strain,jintegral,stressintensity,rotstrain,workenergy,shearcomponents,strainenergy
+ToArchive history1,history2,history3,history4,plasticenergy,damagenormal,plasticstrain
+
+#matname="isosoftening"
+Material #matname,"Aluminum ADaM","Isosoftening"
+  rho #rhomat
+  largeRotation 1
+  E #Emat
+  nu #numat
+  a 20
+  sigmac #sigmaI
+  tauc #sigmaII
+  SofteningI Linear
+  I-Gc #Gc*#GIScale
+  SofteningII Linear
+  II-Gc #Gc*#GIIScale
+Done
+
+GlobalArchive "syy"
+GlobalArchive "eyy"
+GlobalArchiveTime #maxtime/200
+
+! ------- Grid and Material Points
+#thickness=1
+#hborder=2
+#vborder=3
+#cell=#width/#ncells
+#shift=#cell/2
+#halfheight=#height/2
+
+if #type="CN"
+  GridHoriz int((#width+2*#hborder*#cell)/#cell+0.5),0,-1
+else
+  GridHoriz int((#width+2*#hborder*#cell)/#cell+0.5)
+endif
+GridVert int(((1+0.01*#strain)*#height+2*#vborder*#cell)/#cell+0.5)
+GridThickness #thickness
+GridRect -#hborder*#cell,#width+#hborder*#cell,-#halfheight-#vborder*#cell,#halfheight+#vborder*#cell
+
+Region #matname,0,0,#thickness
+  Rect 0,#width,-#halfheight+#shift,#halfheight+#shift
+EndRegion
+
+!----------- Boundary Condicitons
+GridBC
+  Line 0,#width,#halfheight,#halfheight
+  Velocity "y","gradient",#vel,0,1.5,"mirror",#vel&"*t+"&#shift
+EndGridBC
+GridBC
+  Line 0,#width,-#halfheight,-#halfheight
+  Velocity "y","gradient",-#vel,0,-1.5,"mirror",-#vel&"*t+"&#shift
+EndGridBC
+
+! Initial Damage
+#tipy=#shift
+ParticleBC
+  Rect 0,#crack,#tipy-#cell/2,#tipy+#cell/2
+  Damage 0,1
+EndParticleBC
+
+! --------- Custom Tasks
+CustomTask "ReverseLoad"
+Parameter "quantity","syy"
+Parameter "maxValue",-5
+Parameter Style,"abort"
+
+if #xpic!=0
+  CustomTask "PeriodicXPIC"
+  if #xpic>0
+    Parameter "FMPMOrder",#xpic
+  else
+    Parameter "XPICOrder",-#xpic
+  endif
+  Parameter "periodicSteps",1
+endif

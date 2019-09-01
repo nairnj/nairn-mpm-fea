@@ -1,0 +1,178 @@
+! -------- Preamble
+! Models a DCB spcimen with an explicit crack and crack propagation
+! Parameters to edit are:
+! 1. Analysis type, update method, shape functions, and XPIC
+! 2. Beam dimensions, , crack length, and maximum crfack length
+! 3. Beam material modulus, density, and toughness
+! 4. Grid cell sizes and crack along grid line or shifted
+! 5. Loading rate (in #transits). Note that DCB needs to
+!    be loaded slow compare to transverse vibration time
+!    to approach quasi-static crack growth
+Title "DCB Specimen with Crack Growth"
+Name "Sample NairnMPM File"
+
+! Header
+Header
+Mode I DCB specimen with crack growth
+EndHeader
+
+! Note: stress=MPa, Force=N, Toughness=N/mm
+ConsistentUnits "mm","g","ms"
+
+! -------- Parameters Section
+#analysis="Plane Strain MPM"
+#update="USL-"
+#shape="CPDI"
+#processors=4
+
+! options FMPM (>0) or XPIC (<0), use FLIP (0)
+#xpic=0					
+
+! beam length, arm depth, width, and crack length
+#length=100
+#depth=6
+#width=1
+#a=25
+#maxCrack=60
+
+! isotropic material properties
+#Ebase=2300
+#nubase=.33
+#rho=0.0015
+#JIc=.2
+
+! cell size (can be rectangles
+#cwidth=1				! cell width
+#cheight=1				! cell height
+
+! 0 for crack on grid line, #cheight/2 for mid cells
+#shift=#cheight/2
+
+! Number of transit times to crack tip to initiate (approximate)
+#transits=20					
+
+! -------- Analysis Type and materials
+Analysis #analysis
+MPMMethod #update,#shape
+Processors #processors
+
+! Full opening Delta = 2 delta = 2Pa^3/(3EI)
+! Compliance C = Delta/P = 2a^3/(3EI)
+! Energy Releae Rate G = P^2/2B (dC/da) = P^2a^2/(BEI)
+if #analysis="Plane Strain MPM"
+  #Estar = #Ebase/(1-#nubase*#nubase)
+else
+  #Estar = #Ebase
+endif
+#Ibeam=#width*#depth^3/12
+#C=2*#a^3/(3*#Estar*#Ibeam)
+
+! Initiation when P = sqrt(BEI JIc)/a
+#Pinit=sqrt(#Estar*#width*#Ibeam*#JIc)/#a
+
+! wave speed
+#vwave=sqrt(#Estar/#rho)
+#ttime=#a/#vwave
+Comment "Arm wave speed = "&#vwave&" mm/ms, arm transit = "&#ttime&" ms"
+
+! estimate initiation in #transits to crack tip
+#tinit=#ttime*#transits
+#loadRate=#Pinit/#tinit
+Comment "Initiation time (est) = "&#tinit&" ms, Load rate = "&#loadRate&" N/ms"
+
+! vibration frequency = (1.875^2/(2 pi)) (1/L^2) sqrt(EI/(rho A))
+!    and = 2pi/1.875^2 = 1.787
+#tvib = 1.787*sqrt(#rho*#width*#depth/(#Estar*#Ibeam))*(#a*#a)
+Comment "(Initiation Time)*(Arm Vibration Freq) = "&(#tinit/#tvib)&" (higher better for quasi static)"
+
+! Rate of G loading
+#Grate = #loadRate^2*#a^2/(#width*#Estar*#Ibeam)
+Comment "G (before cracking) = "&(1000*#Grate)&"*t^2 J/m^2 (t in ms)"
+
+! Load 5 times initiation time
+#maxTime=25*#tinit
+MaximumTime #maxTime
+
+Archive "Results/FullDCB/beam"
+ArchiveTime #tinit/25
+ToArchive velocity,stress,strain,rotstrain
+ToArchive strainenergy,stressintensity,jintegral
+
+Material "beam","Polymer","Isotropic"
+  E #Ebase
+  nu #nubase
+  a 60
+  rho #rho
+  JIc #JIc
+Done
+
+Material "friction","Crack contact law","CoulombFriction"
+  coeff 0
+Done
+
+! Global Archiving
+GlobalArchive "Kinetic Energy"
+GlobalArchive "Strain Energy"
+
+! crack propagation
+Propagate "critical err"
+ContactCracks "friction"
+
+! -------- Grid and material point
+! edge dimensions
+#ledge=#cwidth
+#redge=3*#cwidth
+#top=int(2*#depth/#cheight+3*#cheight)*#cheight 
+
+! horizontal and verticle number of cells
+#horiz=(#length+#ledge+#redge)/#cwidth
+#vert=(#depth+#top)/#cheight
+
+GridThickness #width
+GridHoriz #horiz
+GridVert 2*#vert
+GridRect -#ledge,#length+#redge,-#depth-#top,#depth+#top
+
+! Beam
+Region "beam",0,0,#width
+  Rect 0,#length,-#depth+#shift,#depth+#shift
+EndRegion
+
+! Crack
+#tip=#length-#a
+#res=2*int((#length-#tip)/#cwidth)+1
+NewCrack #tip+(#cwidth/10),-0.000001+#shift,"beam"
+GrowCrackLine #length-#cwidth/4,-0.000001+#shift,#res,"exterior"
+
+! ------- Boundary Conditions
+GridBC
+  Line -#cwidth,0,0,0
+  Velocity y,constant
+EndGridBC
+
+! end loads on beam arms
+ParticleBC 
+  Rect #length-(#cwidth/2),#length,#shift,#depth+#shift
+  LoadType "net"
+  Load y,linear,#loadRate
+EndParticleBC
+ParticleBC
+  Rect #length-(#cwidth/2),#length,-#depth+#shift,#shift
+  LoadType "net"
+  Load y,linear,-#loadRate
+EndParticleBC
+
+! Stop when crack gets to #maxCrack
+CustomTask ReverseLoad
+Parameter style,"abort"
+Parameter maxLength,#maxCrack
+
+if #xpic!=0
+  CustomTask PeriodicXPIC
+  if #xpic>0
+    Parameter FMPMOrder,#xpic
+  else
+    Parameter XPICOrder,-#xpic
+  endif
+  Parameter "periodicSteps",1
+endif

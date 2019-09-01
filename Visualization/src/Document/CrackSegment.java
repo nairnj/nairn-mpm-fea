@@ -65,21 +65,21 @@ public class CrackSegment
 		
 		// J1 and J2 in J/m^2
 		if(crackOrder[ReadArchive.ARCH_JIntegral]=='Y')
-		{	J1=bb.getDouble();
-			J2=bb.getDouble();
+		{	J1=bb.getDouble()*units.outputERRScale();
+			J2=bb.getDouble()*units.outputERRScale();
 		}
 		
-		// KI ad KII in MPa mm^1/2
+		// KI ad KII in MPa m^1/2
 		if(crackOrder[ReadArchive.ARCH_StressIntensity]=='Y')
-		{	KI=bb.getDouble();
-			KII=bb.getDouble();
+		{	KI=bb.getDouble()*units.outputSIScale();
+			KII=bb.getDouble()*units.outputSIScale();
 		}
 		
 		// Energy flow in J/m^2
 		if(crackOrder[ReadArchive.ARCH_BalanceResults]=='Y')
 		{	crackIncrements=bb.getInt();
-			release=bb.getDouble();
-			absorb=bb.getDouble();
+			release=bb.getDouble()*units.outputERRScale();
+			absorb=bb.getDouble()*units.outputERRScale();
 		}
 	}
 	

@@ -65,7 +65,6 @@ public class ConsolePane extends JNConsolePane
 				chooser.setCurrentDirectory(inputFile);
 			else
 				chooser.setSelectedFile(outputFile);
-			
 			// REMOTE_ACCESS - customize to get path on server or a local file
 			//System.out.println("...debug get file from chooser "+chooser);
 			try

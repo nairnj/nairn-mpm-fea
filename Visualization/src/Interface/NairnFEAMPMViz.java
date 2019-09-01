@@ -6,11 +6,16 @@
 	Copyright 2008 RSAC Software. All rights reserved.
 */
 
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 
 import javax.swing.JFileChooser;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+
 import geditcom.JNFramework.*;
 
 public class NairnFEAMPMViz extends JNApplication
@@ -21,7 +26,7 @@ public class NairnFEAMPMViz extends JNApplication
 	//----------------------------------------------------------------------------
 	
 	public NairnFEAMPMViz()
-	{	super("NairnFEAMPMViz","Version 7.3",
+	{	super("NairnFEAMPMViz","Version 7.4",
 				"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
 		NFMVPrefs.setWorkspace(chooser);
 		
@@ -41,18 +46,38 @@ public class NairnFEAMPMViz extends JNApplication
 	// Override document methods
 	//----------------------------------------------------------------------------
 	
+	// open example files
+	public void actionPerformed(ActionEvent e)
+	{	String theCmd=e.getActionCommand();
+	
+		if(theCmd.startsWith("$SAMPLE$"))
+		{	String exFile = theCmd.substring(8);
+			newDocument("MPMCmd"+exFile);
+		}
+		else
+			super.actionPerformed(e);;
+	}
+		
+
 	// create new document
 	public void newDocument(String docType)
 	{	// initial text in new document
 		String readData=new String();
 	
-		if(docType.equals("FEACmd") || docType.equals("MPMCmd"))
-		{	// read default commands
+		if(docType.startsWith("FEACmd") || docType.startsWith("MPMCmd"))
+		{	// read default commands or an example file
+			docType = docType.length()>6 ? docType.substring(6) : docType ;
+			
 			InputStream ins=null;
 			if(docType.equals("MPMCmd"))
 				ins=NairnFEAMPMViz.class.getResourceAsStream("Resources/MPMCommands.fmcmd");
-			else
+			else if(docType.equals("FEACmd"))
 				ins=NairnFEAMPMViz.class.getResourceAsStream("Resources/FEACommands.fmcmd");
+			else
+			{	// an example files
+				String resName = "Resources/"+docType.replace(' ','_')+".fmcmd";
+				ins=NairnFEAMPMViz.class.getResourceAsStream(resName);
+			}
 		
 			// read commands
 			try
@@ -193,4 +218,55 @@ public class NairnFEAMPMViz extends JNApplication
 		new NairnFEAMPMViz();
     }
     
+    // add menu of examples
+    public static void addExamplesMenu(JMenuBar menuBar,String menuName)
+    {
+		// read list of examples
+		String readData=new String();
+		InputStream ins=NairnFEAMPMViz.class.getResourceAsStream("Resources/examples.txt");
+		try
+		{	if(ins==null)
+				throw new Exception("examples list not found");
+			int remaining;
+			while(true)
+			{	remaining=ins.available();
+				if(remaining==0) break;
+				byte [] buffer=new byte[remaining];
+				ins.read(buffer,0,remaining);
+				readData=readData+(new String(buffer));
+			}
+			String[] examples = readData.split("\\r\\n|\\n|\\r");
+			if(examples.length==0)
+				throw new Exception("examples list is empty");
+			
+			// get menu
+			JMenu fileMenu = null;
+			int count = menuBar.getMenuCount();
+			for(int i=0;i<count;i++)
+			{	JMenu testMenu = menuBar.getMenu(0);
+				if(testMenu.getText().equals(menuName))
+				{	fileMenu = testMenu;
+					break;
+				}
+			}
+			if(fileMenu==null)
+				throw new Exception(menuName+" menu not found");
+			
+			// add examples menu
+			JMenu examplesMenu = new JMenu("Examples");
+			fileMenu.add(examplesMenu);
+			
+			// add examples to submenu
+			for(int i=0;i<examples.length;i++)
+			{	JMenuItem menuItem = new JMenuItem(examples[i]);
+				menuItem.setActionCommand("$SAMPLE$"+examples[i]);
+				menuItem.addActionListener(JNApplication.main);
+				examplesMenu.add(menuItem);
+			}
+		}
+		catch (Exception e)
+		{	System.out.println("Error reading list of examples: " + e);
+			readData="";
+		}
+    }
 }

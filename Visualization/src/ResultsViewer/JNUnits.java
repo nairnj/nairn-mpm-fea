@@ -70,6 +70,9 @@ public class JNUnits
 	double energyScale;
 	private double outputEnergyScale;
 	
+	private double outputERRScale;
+	private double outputSIScale;
+	
 	// initialize
 	public JNUnits()
 	{	lengthScaleIndex = 2;			// mm
@@ -101,6 +104,8 @@ public class JNUnits
 			outputFeaStressScale = 1.;			// MPa to MPa
 			outputMpmStressScale = 1.e-6;		// Pa to MPa
 			outputEnergyScale = 1.;				// J to J
+			outputERRScale = 1.;				// J/m^2 to J/m^2
+			outputSIScale = 1.;					// MPa m^0.5 to MPam^0.5
 			
 			// check for old version
 			if(style.equals("_none_"))
@@ -155,12 +160,15 @@ public class JNUnits
 				outputFeaStressScale = Math.pow(10.,(double)(mexp-3-lexp-2*texp-6));
 				outputMpmStressScale = outputFeaStressScale;
 				outputEnergyScale = Math.pow(10.,(double)(mexp-3+2*lexp-2*texp));
-			}
+				outputERRScale = Math.pow(10.,(double)(mexp-3-2*texp));
+				outputSIScale = outputMpmStressScale*Math.pow(10,(double)lexp/2.);			}
 			else
 			{	outputForceScale = 1.;
 				outputFeaStressScale = 1.;
 				outputMpmStressScale = 1.;
 				outputEnergyScale = 1.;
+				outputERRScale = 1.;
+				outputSIScale = 1.;
 			}
 			
 		}
@@ -567,5 +575,8 @@ public class JNUnits
 	public String energyUnits() { return energyUnits; }
 	public void setEnergyUnits(String argStr) { energyUnits = new String(argStr); }
 	public double energyScale() { return energyScale; }
+
+	public double outputERRScale() { return outputERRScale; }
+	public double outputSIScale() { return outputSIScale; }
 
 }

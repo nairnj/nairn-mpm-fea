@@ -26,7 +26,7 @@ public class NFMVStartUp extends JNStartUpBase
 		
 		// menus
 		makeMenuBar(false);
-		
+	    NairnFEAMPMViz.addExamplesMenu(getJMenuBar(),"File");
 		setLayout(new BorderLayout());
 		
 		// icon (optional) and name in large font

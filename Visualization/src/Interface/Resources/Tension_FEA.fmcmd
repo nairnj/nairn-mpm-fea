@@ -1,0 +1,161 @@
+! --------- Preamble
+! This example loads a elastic material
+! Some options are
+! 1. Analysis and element type
+! 2. Material type
+! 3. Dimensions and number of elements
+! 4. Loading method
+
+Title "Tension Test"
+Name "Example NairnMPM File"
+
+! Note: stress in MPa, Load in N
+ConsistentUnits "mm","g","ms"
+
+Header
+   This file has sample of all elastic materials in NairnFEA.
+   You can try each material with any supported element type as well
+   For anisotropic materials, you can set a rotation angle
+EndHeader
+
+! --------- Parameters
+! Most customization done by editing only this section
+
+! Analysis type: "Plane Strain", "Plane Stress", or "Axisymmetric"
+#analysis = "Plane Strain"
+#processors = 4
+
+! Element type "4 Node Quadrilateral","3 Node Triangle"
+!       "8 Node Quadrilateral","8 Node Quadrilateral","9 Node Lagrange"
+#elem = "8 Node Quadrilateral"
+
+! Material types "Isotropic", "Transverse_2", "Transverse_1", "Orthortopic"
+#matID = "Isotropic"
+#angle = 0			! rotate anisotropic materials
+
+! Specimen
+#length = 100
+#width = 20
+#thick = 1
+
+! Mesh density
+#vert = 4
+#horiz = 20
+
+! Loads "stress" (by #stress MPa),"force" (by #force N, total),
+!             or "displacement" (by #disp mm)
+#loading = "displacement"
+#stress = 100
+#force = 100*#width*#thick
+#disp = 0.01*#length
+
+! --------- Analysis Type and Materials
+Analysis #analysis
+Element #elem
+
+if #matID="Isotropic"
+  Material #matID,"Isotropic Polymer","Isotropic"
+    E 2300
+    nu .33
+    a 60
+  Done
+
+else if #matID="Orthortopic"
+  Material #matID,"Orthotropic Material","Orthotropic"
+    Ex 46000
+    Ey 4000
+    Ez 14600
+    Gxy 1500
+    Gxz 6000
+    Gyz 1500
+    nuxy 0.4
+    nuxz 0.3
+    nuyz 0.05
+  Done
+
+else if #matID$="Transverse_2"
+  Material #matID,"TI Carbon Fiber, Axial=y direction","Transverse 2"
+    EA 220000
+    ET 20000
+    GA 18000
+    nuT 0.3
+    nuA .2
+    alphaA -.4
+    alphaT 18
+    rho 1.76
+  Done
+
+else if #matID="Transverse_1"
+  Material #matID,"TI Carbon Fiber, Axial=z direction","Transverse 1"
+    EA 220000
+    ET 20000
+    GA 18000
+    nuT 0.3
+    nuA .2
+    alphaA -.4
+    alphaT 18
+    rho 1.76
+  Done
+
+endif
+
+! --------- Create the Mesh
+
+! Keypoints
+Keypoint "BL",0,0
+Keypoint "BR",#length,0
+Keypoint "TR",#length,#width
+Keypoint "TL",0,#width
+
+! Area with paths
+Area #matID,#thick,#angle
+  Path "Left",#vert
+    Keypoints "TL","BL"
+  EndPath
+  Path "Bottom",#horiz
+    Keypoints "BL","BR"
+  EndPath
+  Path "Right",#vert
+    Keypoints "BR","TR"
+  EndPath
+  Path "Top",#horiz
+    Keypoints "TR","TL"
+  EndPath
+EndArea
+
+! --------- Boundary Conditions
+Resequence "BL"
+
+FixLine "Left"
+  Displacement x
+EndFixLine
+FixPoint "BL"
+  Displacement y
+EndFixPoint
+
+if #loading="stress"
+  FixLine "Right"
+    Stress "n",#stress
+  EndFixLine
+
+else if #loading="force"
+  if #elem="4 Node Quadrilateral"
+    #nodes=#vert+1
+  else if #elem="3 Node Triangle"
+    #nodes=#vert+1
+  else
+    #nodes=2*#vert+1
+  endif
+  FixLine "Right"
+    Load "x",#force/#nodes
+  EndFixLine
+
+else if #loading="displacement"
+  FixLine "Right"
+    Displacement "x",#disp
+  EndFixLine
+  
+else
+  Stop "The #loading = '"&#loading&"' parameter is not recognized"
+  
+endif

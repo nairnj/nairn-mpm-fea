@@ -81,6 +81,7 @@ public class DocViewer extends JNDocument
 		if(!JNApplication.isMacLNF())
 			menuBar.add(defaultApplicationMenu());		// Application menu
 		menuBar.add(CmdViewer.defaultFileMenu(this));				// File menu
+		NairnFEAMPMViz.addExamplesMenu(menuBar,"File");
 		
 		// Edit menu
 		JMenu menu = new JMenu("Edit");

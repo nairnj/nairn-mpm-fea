@@ -182,6 +182,7 @@ public class CmdViewer extends JNCmdTextDocument
 		JMenu fileMenu = defaultFileMenu(this);
 		fileMenu.add(exportXMLCommand);
 		menuBar.add(fileMenu); // File menu
+		NairnFEAMPMViz.addExamplesMenu(menuBar,"File");
 
 		// Edit menu
 		JMenu menu = defaultEditMenu(true);
@@ -2443,7 +2444,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// handle special commands in some tasks
 		if(currentCustomTask.equals("ReverseLoad"))
-		{ // quantity combines into a single command
+		{	// quantity combines into a single command
 			if(paramName.equals("quantity") && args.size() > 2)
 			{
 				String value = readStringArg(args.get(2));
@@ -2451,16 +2452,30 @@ public class CmdViewer extends JNCmdTextDocument
 				return;
 			}
 			else if(paramName.equals("material") && args.size() > 2)
-			{ // material looks for material ID
+			{	// material looks for material ID
 				int matnum = mats.getMatID(readStringArg(args.get(2)));
 				if(matnum <= 0)
-				{ // negative is allowed for reaction forces
+				{	// negative is allowed for reaction forces
 					matnum = readIntArg(args.get(2));
 					if(matnum >= 0)
 						throw new Exception(
 								"'" + args.get(0) + "' command has unknown material ID or invalid BC ID:\n" + args);
 				}
 				customTasks.append("      <Parameter name='mat'>" + matnum + "</Parameter>\n");
+				return;
+			}
+			else if(paramName.equals("style") && args.size()>2)
+			{	// allow text entery
+				HashMap<String, Integer> options = new HashMap<String, Integer>(10);
+				options.put("reverse", new Integer(0));
+				options.put("hold", new Integer(1));
+				options.put("continue", new Integer(2));
+				options.put("abort", new Integer(3));
+				int styleNum = readIntOption(args.get(2), options, "ReverseLoad style");
+				if(styleNum<0 || styleNum>3)
+				{	throw new Exception("ReverseLoad 'style' must be 0 to 3");
+				}
+				customTasks.append("      <Parameter name='style'>" + styleNum + "</Parameter>\n");
 				return;
 			}
 		}

@@ -1,0 +1,169 @@
+! --------- Preamble
+! This example loads a small-strain, hypoelastic material
+! Some options are (edit next section to customize):
+!  1. Analysis type and method
+!  2. Sample dimensions
+!  3. Loading amount, rate, and hold time
+!  4. Loading boundary conditions
+!  5. Damping and XPIC
+
+Title "Low Strain, Hypoelastic Tensile Loading"
+Name "Example NairnMPM File"
+
+! Note: pressure = MPa
+ConsistentUnits "mm","g","ms"
+
+! --------- Parameters
+! Most customization done by editing only this section
+
+! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "Axisymmetric MPM"
+#analysis = "Plane Strain MPM"
+#processors = 4
+#CFLfactor = 0.4
+
+! pick a method: "CPDI", "uGIMP", "B2GIMP", or "B2CPDI"
+#method = "CPDI"
+
+! material options: isotropic
+#matID="isotropic"
+
+! Dimensions
+#length = 40
+#width = 6
+#thickness = 1
+#cell = 1
+
+! Loading conditions
+#loading = "traction"	! Loading = "wall", "traction", or "rigid"
+#strain = 2				! Maximum strain (in %)
+#relRate = .1			! loading rate as percent of wave speed
+#hold = 1				! hold time (multiple of loading time)
+
+! Add damping or use XPIC
+#damp = 0
+#XPIC = 0
+
+! Material Properties
+#E = 1000
+#rho = 0.001
+#nu = 0.33
+
+! --------- Analysis Type and Materials
+Analysis #analysis
+MPMMethod "USL-",#method
+Processors #processors
+
+! Get reduced modulus if needed
+#Ered=#E
+if #analysis="Plane Strain MPM"
+  #Ered=#E/(1-#nu^2)
+else if #analysis="Axisymmetric MPM"
+  #Ered=#E/(1-#nu)
+endif
+
+! calculate time to reach peak state
+#speed = sqrt(#Ered/#rho)		      ! tensile wave speed
+#disprate = #relRate*#speed/100		  ! disp rate
+if #strain<0
+  #disprate=-#disprate
+endif
+
+! get loading time and max time
+#maxDisp = #strain*#length/100
+#time = abs(#maxDisp/#disprate)			! time to strain (in ms)
+#maxTime=(1+#hold)*#time
+
+! Archiving
+Archive "Results/Tension-"&#analysis&"-"&#method&"-"&#loading&"/"&#matID
+MaximumTime #maxTime
+CFLFactor #CFLfactor
+ArchiveTime #maxTime/50
+ToArchive velocity,stress,strain,strainenergy
+
+! Optional damping
+Damping #damp
+
+! Available materials
+if #matID="isotropic"
+  Material "isotropic","Isotropic Material","Isotropic"
+    E #E
+    nu #nu
+    a 60
+    rho #rho
+    largeRotation 1
+  Done
+else
+  Stop "Material type '"&#matID&" is not available"
+endif
+
+! Global archive including reaction force at symmtry BC
+GlobalArchiveTime #maxTime/200
+GlobalArchive sxx,#matID
+GlobalArchive exx,#matID
+GlobalArchive "reactionx",-10
+
+! --------- Grid and Material Points
+
+! Grid dimensions allowing for extension and Poisson's effectts
+#gleft=-2*#cell
+if #strain<0
+  #gright=#length+4*#cell
+  #sides=(int(-#strain*#width/200/#cell)+2)
+else
+  #xtra=(int(1.6*#strain*#length/100/#cell)+2)
+  #gright=#length+#xtra*#cell
+  #sides=2
+endif
+#gbot=-#sides*#cell
+#gtop=#width+#sides*#cell
+
+! x uses symmetry plane BC on the left
+GridHoriz int((#gright-#gleft)/#cell+.5),0,-1
+GridVert int((#gtop-#gbot)/#cell+.5)
+GridThickness #thickness
+GridRect #gleft,#gright,#gbot,#gtop
+
+! material points
+Region #matID,0,0,#thickness
+  Rect 0,#length,0,#width
+EndRegion
+
+! --------- Boundary Conditions
+
+! loading conditions rigid, traction, or wall
+if #loading="rigid"
+  #maxDisp=#disprate*#time
+  Comment "Load to displacement = "&#maxDisp&" mm at "&abs(#disprate)&" mm/msec"
+  Material "rigid","Loading Clamp","RigidBC"
+    direction 1
+    SettingFunction "box("&#disprate&",t/"&#time&")"
+    mirrored 1
+  Done
+  Region "rigid",1,0,#thickness
+    Rect #length,#length+#cell,-#sides*#cell,#width+#sides*#cell
+  EndRegion
+
+else if #loading="traction"
+  #stress=#Ered*#strain/100					
+  Comment "Load to stress = "&#stress&" MPM at "&(#stress/#time)&" MPa/msec"
+  ParticleBC
+    Rect #length-#cell/2,#length,0,#width
+    Traction x,2,function,"ramp("&#stress&",t/"&#time&")",0,-1
+  EndParticleBC
+
+else
+  #maxDisp=#disprate*#time
+  Comment "Load to displacement = "&#maxDisp&" mm at "&abs(#disprate)&" mm/msec"
+  GridBC
+    Line #length,#length,#gbot,#gtop
+    Velocity "x","gradient","box("&#disprate&",t/"&#time&")",0,1.5,"mirror","ramp("&#maxDisp&",t/"&#time&")"
+  EndGridBC
+endif
+
+! --------- Custom Tasks
+
+if #XPIC>0
+  CustomTask "PeriodicXPIC"
+  Parameter "XPICOrder",#XPIC
+  Parameter "periodicSteps",1
+endif

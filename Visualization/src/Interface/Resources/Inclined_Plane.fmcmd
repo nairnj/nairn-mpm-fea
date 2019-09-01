@@ -1,0 +1,155 @@
+! -------- Preamble Section
+! Simulate a block sliding down an inclined plane
+! The plane can be tilted or be flat with gravity tilted
+! The sliding block can be a block or a ball
+! Other options
+! 1. Analysis method, shape funcitons, and xpic
+! 2. Plane angle and length
+! 3. Block type, size, and resoluiton
+! 3. Contact method
+! Note that tilted plane uses Transform command
+Title "Inclined plane"
+Name "John Nairn"
+
+! Header
+Header
+Ball or block rolling down an inclined plane
+EndHeader
+
+! Note: stress=MPA, force=N
+ConsistentUnits "mm","g","ms"
+
+! -------- Parameters
+#method = "USL-"
+#shape = "CPDI"
+
+! FMPM (>0), XPIC (<0), FLIP (=0)
+#xpic = 0
+
+! ramp length and angle
+! #angle<0 is flat ramp with tilted gravity
+#ramp = 150
+#angle = 30
+
+! "ball" or "block" radius
+#radius = 10
+#block = "block"
+#cell = #radius/10
+
+! contact ("specify" only appropriate for "block")
+#norms = "AvgGrad"
+#contactPos = -0.58
+#coeff = 0.3
+
+!--------- Analysis and Materials
+Analysis "Plane Strain MPM"
+MPMMethod #method,#shape
+CFLFactor 0.25
+
+! calculate time
+#g=9.80665e-3
+#alpha=3.14159286*abs(#angle)/180
+#denom=#g*(tan(#alpha)-#coeff)
+if #denom<0
+  Stop "Angle too low for sliding"
+endif
+#maxtime=sqrt(2*(#ramp-2*#radius)/#denom)
+MaximumTime #maxtime
+
+! theoretical velocity
+#vl=#g*(sin(#alpha)-#coeff*cos(#alpha))
+if #angle>0
+  Comment "vx(t=x) = "&(#vl*cos(#alpha))&"*x"
+  Comment "vy(t=x) = "&(-#vl*sin(#alpha))&"*x"
+else
+  Comment "vx(t=x) = "&#vl&"*x"
+endif
+
+Material "ramp","Polymer","RigidContact"
+Done
+
+Material "ball","Polymer","Isotropic"
+  E 10
+  nu .33
+  a 60
+  rho 1
+Done
+
+Material "contact","Incline Contact","CoulombFriction"
+  coeff #coeff
+Done
+
+if #norms="specify"
+  if #angle>0
+    MultimaterialMode 0,"enabled",#norms,-#angle-90
+  else
+    MultimaterialMode 0,"enabled",#norms,-90
+  endif
+else
+  MultimaterialMode 0,"enabled",#norms
+endif
+ContactPosition #contactPos
+ContactMM "contact"
+
+Archive "Results/Incline"
+ArchiveTime #maxtime/100
+
+GlobalArchiveTime #maxtime/200
+GlobalArchive "velx","ball"
+GlobalArchive "vely","ball"
+
+! ----------- Grid and Material Points
+#thickness=1
+#border=2
+if #angle>0
+  #projRamp=#ramp*cos(#alpha)
+  #width = #cell*int(1.25*#projRamp/#cell)
+  #vert=#projRamp*tan(#alpha)+2*#radius
+  #height=#cell*int(#vert/#cell)+2*#cell
+  #above=#cell*int((2*#radius)/#cell)+#cell
+  #down=#height-#above
+else
+  #above=#cell*int((2*#radius)/#cell)+#cell
+  #down=4*#cell
+  #height=#above+#down
+  #width=#cell*int(#ramp/#cell)+#cell
+endif
+
+GridHoriz (#width+2*#border*#cell)/#cell
+GridVert (#height+2*#border*#cell)/#cell
+GridThickness #thickness
+GridRect -#border*#cell,#width+#border*#cell,-#down-#border*#cell,#above+#border*#cell
+
+Region "ramp",0,0,#thickness
+  if #angle>0
+    Transform -#angle,0,0,0,0
+  endif
+  Rect 0,#ramp,-3*#cell,0
+EndRegion
+Region "ball",0,0,#thickness
+  if #angle>0
+    Transform -#angle,0,0,0,0
+  endif
+  if #block="block"
+    Rect 0,2*#radius,0,2*#radius
+  else
+    Oval 0,2*#radius,0,2*#radius
+  endif
+EndRegion
+
+! ----------- Boundary Conditions
+if #angle>0
+  Gravity 0,-#g
+else
+  Gravity #g*sin(#alpha),-#g*cos(#alpha)
+endif
+
+if #xpic!=0
+  CustomTask "PeriodicXPIC"
+  if #xpic<0
+    Parameter "XPICOrder",-#xpic
+  else
+    Parameter "FMPMOrder","xpic"
+  endif
+  Parameter "periodicSteps",1
+endif

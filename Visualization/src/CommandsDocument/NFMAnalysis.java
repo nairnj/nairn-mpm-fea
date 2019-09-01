@@ -153,7 +153,7 @@ public class NFMAnalysis  implements Runnable
 				return;
 			}
 		}
-				
+			
 		// insert DTD path if validating
 		if(doValidate)
 		{	if(!insertDTD(myDTD,commandStyle))
@@ -180,7 +180,7 @@ public class NFMAnalysis  implements Runnable
 			else
 			{	if(!soutConsole.setOutputPath(inFile,"fea",useOutput)) return;
 			}
-		
+			
 			// get current output file from the output console object
 			outFile = soutConsole.getFile();
 			//System.out.println("...output: "+outFile.getPath());
@@ -355,7 +355,7 @@ public class NFMAnalysis  implements Runnable
 		// Executable (Mac and Exe to process builder, all to shell)
 		// pbcmds will be [(app),[options],(input file)] (but not for cygwin)
 		ArrayList<String> pbcmds=new ArrayList<String>(20);
-		
+				
 		// shell will add path to the app in myCmd
 		if(commandStyle==WINDOWS_CYGWIN)
 		{	myCmd=PathToCygwin(myCmd);
@@ -393,7 +393,7 @@ public class NFMAnalysis  implements Runnable
 		
 		// Finish building commands then launch thread (see run() method)
 		openMesh=runType;
-		
+			
 		if(NFMVPrefs.getRemoteMode())
 		{	// REMOTE_ACCESS ---------------------
 			
@@ -453,9 +453,10 @@ public class NFMAnalysis  implements Runnable
 	
 	// display commands
 	public void displayCommands(ArrayList<String> cmds)
-	{	System.out.println("Launch Commands:");
+	{	String lcmds = "Launch Command:\n ";
 		for(int i=0;i<cmds.size();i++)
-			System.out.println("  "+i+": "+cmds.get(i));
+			lcmds = lcmds + " " + cmds.get(i);
+		System.out.println(lcmds);
 	}
 	
 	// insert DTD path into commands

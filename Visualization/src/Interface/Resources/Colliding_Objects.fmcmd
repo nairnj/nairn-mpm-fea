@@ -1,0 +1,189 @@
+! --------- Preamble
+! Impact between two objects
+! Some options are (edit next section to customize):
+!  1. Analysis shape function, update method, CFL factor
+!  2. Object shape, dimensions, material type, and initial speed
+!  3. Model contact (multimaterial mode) or single material mode bouncing
+!       When using contact, choose contact properties
+!  5. XPIC
+Title "Two objects in bouncing impact"
+Name "Example NairnMPM File"
+
+! Header
+Header
+   Two disks or blocks with normal impact modeled by either
+   single- or multi-material mode MPM
+EndHeader
+
+! Note: pressure = MPa
+ConsistentUnits "mm","g","ms"
+
+! --------- Parameters
+
+! Analysis settings
+#shapeFxns = "CPDI"
+#method = "USAVG+"
+#CFLFactor = 0.2
+#processors = 12
+
+! "disks" or "rectangles"
+#shape="disks"
+
+! left object and initial velocity (fraction of wave speed)
+#lwidth = 20
+#lheight = 20
+#linit = 0.05
+
+! right object and initial velocity (fraction of wave speed)
+#rwidth = 20
+#rheight = 20
+#rinit = 0.05
+
+! cell size and #xpic option (0=FLIP, >0 is XPIC order)
+#cell = 0.5
+
+! initial object separation (in cells)
+#sepcells = 4
+
+! Run a least time for this many stress wave round trips
+#ntrips = 2
+
+! XPIC option (or 0 for FLIP)
+#xpic = 0
+
+! Material properties (both objects the same)
+#Edisk = 10
+#rhodisk = 0.0015
+! Options: eohookean or Isotropic
+#matType = "Neohookean"
+
+! "friction" or "none"
+#contact = "friction"
+#norms = "AvgGrad"
+#contactPos = -0.58
+#coeff = 0
+
+! --------- Analysis Type and Materials
+Analysis "Plane Strain MPM"
+MPMmethod #method,#shapeFxns
+CFLFactor #CFLFactor
+Processors #processors
+
+Material "Left","Polymer Left",#matType
+  E #Edisk
+  nu .33
+  a 60
+  rho #rhodisk
+Done
+
+Material "Right","Polymer Right",#matType
+  E #Edisk
+  nu .33
+  a 60
+  rho #rhodisk
+Done
+
+if #contact="friction"
+  Material "contact","Frictionless Contact","CoulombFriction"
+    coeff #coeff
+  Done
+  
+  if #norms="specify"
+    MultimaterialMode 0,"yes",#norms,0
+  else
+    MultimaterialMode 0,"yes",#norms
+  endif
+  ContactPosition #contactPos
+  ContactMM "contact"
+  
+  #travel=0.5*#sepcells*#cell
+else
+  #travel=0.5*(#sepcells-2)*#cell
+endif
+
+! Disk wave speeds
+#vwave=sqrt(#Edisk/#rhodisk)
+Comment "E = "&#Edisk&" MPa, rho = "&#rhodisk&" g/cm^3, wave spd = "&#vwave&" mm/ms"
+#lspeed=#linit*#vwave	
+#rspeed=#rinit*#vwave
+#imptime=2*#travel/(#lspeed+#rspeed)
+Comment "Impact time = "&#imptime&" ms"
+
+! round trip transit time widest material
+if #lwidth>#rwidth
+  #transit=2*#lwidth/#vwave
+else
+  #transit=2*#rwidth/#vwave
+endif
+Comment #ntrips&" round trip times = "&(#ntrips*#transit)&" ms"
+
+! adjust maximum time to be at least #ntrips round trips
+if #ntrips*#transit>#imptime
+  #maxtime=#imptime+#ntrips*#transit
+else
+  #maxtime=2*#imptime
+endif
+Comment "Adjusted maximum time = "&#maxtime&" ms"
+
+Archive "Results/TwoObjects",#maxtime/50
+MaximumTime #maxtime
+ToArchive velocity,stress,strain,strainenergy
+
+GlobalArchive velx,Left
+GlobalArchive velx,Right
+GlobalArchive "Kinetic Energy"
+GlobalArchive "Work Energy"
+GlobalArchiveTime #maxtime/100
+
+! --------- Grid and Material Points
+
+! Get grid dimensions (width and height multiple of cell)
+#hborder=int(0.2*#lwidth/#cell)
+#vborder=2
+#width=#lwidth+#rwidth+#sepcells*#cell+2*#hborder*#cell
+#height=#lheight
+if #rheight>#height
+  #height=#rheight
+endif
+#height+=2*#vborder*#cell
+
+GridRect 0,#width,0,#height
+GridHoriz #width/#cell
+GridVert #height/#cell
+
+! from separation, find disk lower-left origins
+if #sepcells!=2*int(#sepcells/2)
+  #sepleft=(#sepcells-1)*#cell
+  #sepright=(#sepcells+1)*#cell
+else
+  #sepleft=#sepcells*#cell
+  #sepright=#sepcells*#cell
+endif
+#lx=(#width-#sepleft)/2-#lwidth
+#rx=(#width+#sepright)/2
+#ly=int((#height-#lheight)/(2*#cell))*#cell
+#ry=int((#height-#rheight)/(2*#cell))*#cell
+
+Region "Left",#lspeed,0,1
+  if #shape="disks"
+    Oval #lx,#lx+#lwidth,#ly,#ly+#lheight
+  else
+    Rect #lx,#lx+#lwidth,#ly,#ly+#lheight
+  endif
+EndRegion
+
+Region "Right",-#rspeed,0,1
+  if #shape="disks"
+    Oval #rx,#rx+#rwidth,#ry,#ry+#rheight
+  else
+    Rect #rx,#rx+#rwidth,#ry,#ry+#rheight
+  endif
+EndRegion
+
+! --------- Custom Tasks
+
+if #xpic!=0
+  CustomTask "PeriodicXPIC"
+  Parameter "XPICOrder",#xpic
+  Parameter "periodicSteps",1
+endif

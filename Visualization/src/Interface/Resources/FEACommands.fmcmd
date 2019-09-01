@@ -1,35 +1,43 @@
-! ********** Preamble Section **********
+! --------- Preamble
 Title "FEA Analysis of Cantilever Beam"
-Name "A NairnFEAMPM User"
+Name "FEA Analyst's Name"
 
-! Header
 Header
   A cantilever beam that is clamped at its base and
   loaded on its free end with a single point load.
 EndHeader
 
+! Note: stress in MPa, Load in N
+ConsistentUnits "mm","g","ms"
+
+! --------- Parameters
+! Dimensions
+#length = 50
+#depth = 10
+#thick = 10
+
+! Mesh density
+#horiz=6
+#vert=3
+
+! Material type
+#matname = "polymer"
+
+! End load
+#load=500
+
+! --------- Analysis Type and Materials
 Analysis "Plane Stress FEA"
 Element "8 Node Quadrilateral"
 
-! ********** Parameters Section **********
-! Define variables for more general mesh generation capabilities
-#length=50               ! Length in mm
-#depth=10                ! Depth in mm
-#thick=10                ! Thickness in mm
-#horiz=6                 ! Elements in horizontal direction
-#vert=3                  ! Element in vertical direction
-#load=500                ! End load in N
-#matname$="polymer"      ! which material to use
-
-! ********** Materials Section **********
 Material "polymer","Polymer","Isotropic"
   E 2300
   nu .33
   a 60
 Done
 
-! ********** Meshing Section **********
-Area #matname$,#thick
+! --------- Create the Mesh
+Area #matname,#thick
   Path "Bottom",#horiz
     Keypoint "BotLeft",0,0
     Keypoint "BotRight",#length,0
@@ -47,9 +55,10 @@ Area #matname$,#thick
     Keypoint "BotLeft"
   EndPath
 EndArea
+
+! --------- Boundary Conditions
 Resequence "BotRight"
 
-! ********** Boundary Condition Section **********
 FixLine 0,0,0,#depth
   Displacement x
   Displacement y

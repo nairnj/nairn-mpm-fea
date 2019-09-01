@@ -1,0 +1,212 @@
+! --------- Preamble Section
+! This example command file will generate a mesh for a
+!    analysis of mode I crack in a double
+!    cantilever beam or mode II crack in an
+!    end notch-flexure specimen
+! Editing next sections handle these options
+! 1. Beam size and crack length
+! 2. Arm loading for mode I, mode II, or mixed mode
+! 3. Element density
+! 3. Beam modulus
+Title "Double Cantilever Beam"
+Name "Sample NairnFEA File"
+
+Header
+Full DCB specimen with a crack
+EndHeader
+
+! Note: Stress=MPa, Force=N
+ConsistentUnits "mm","g","ms"
+
+! --------- Paramaters
+#element = "8 Node Quadrilateral"
+#processors = 4
+
+! DCB length, total depth (h), and thickness (B) and crack length (a)
+#length = 150
+#h = 24
+#B = 10
+#a = 75
+
+! "load" for load spread or edge
+! "stress" to apply moment by linear variation in stress
+! #P1 and #P2 on lower and upper arm
+! Mode I is equal and opposite, Mode II is same
+#lstyle = "stress"
+#P1 = -10
+#P2 = 10
+
+! #vertical elements (square element for better accuracy)
+#vert = 16
+
+! Material modulus
+#Ebeam = 2300
+
+! ------------ Analysis Type and material
+Analysis "Plane Stress FEA"
+Element #element
+Processors #processors
+
+#beammat="polymer"
+Material #beammat,"Polymer","Isotropic"
+  E #Ebeam
+  nu .33
+  a 60
+Done
+
+! --------- Create the Mesh
+! two equal arms - 1 is bottom, 2 is top
+#t1=#h/2
+#t2=#h-#t1
+
+! key points
+#horiz=#vert*#length/#h
+#left=#length-#a
+#leftelem=int(#horiz*#left/#length)
+#rightelem=#horiz-#leftelem
+#cell=#left/#leftelem
+#botelem=int(#vert*#t1/#h)
+#topelem=#vert-#botelem
+
+! Keypoint and path IDs
+! 6             5      13         10
+!   ------------------------------
+!  |     (6)    |   UR  (13)      |(12)
+!  |(7)  UL  (5)|       (11)      |
+!  |            | /--------------- 9
+! 4|----------- 3 
+!  |     (3)    | \--------------- 8
+!  |(4)  LL  (2)|       (10)      |
+!  |     (1)    |    LR   (8)     |(9)
+!   ------------------------------
+! 1             2                 7
+
+! LL Area
+Area #beammat,#B
+  Path "1",#leftelem
+    Keypoint "2",0,-#t1
+    Keypoint "1",-#left,-#t1
+  EndPath
+  Path "2",#botelem
+    Keypoint "2"
+    Keypoint "3",0,0
+  EndPath
+  Path "3",#leftelem
+    Keypoint "3"
+    Keypoint "4",-#left,0
+  EndPath
+  Path "4",#botelem
+    Keypoints "4","1"
+  EndPath
+EndArea
+
+! UL Area
+Area #beammat,#B,90
+  Paths "3"
+  Path "5",#topelem
+    Keypoint "3"
+    Keypoint "5",0,#t2
+  EndPath
+  Path "6",#leftelem
+    Keypoint "5"
+    Keypoint "6",-#left,#t2
+  EndPath
+  Path "7",#topelem
+    Keypoints "6","4"
+  EndPath
+EndArea
+
+! LR Area
+Area #beammat,#B,90
+  Path "8",#rightelem
+    Keypoint "2"
+    Keypoint "7",#a,-#t1
+  EndPath
+  Path "9",#botelem
+    Keypoint "7"
+    Keypoint "8",#a,0
+  EndPath
+  Path "10",#rightelem
+    Keypoints "3","8"
+  EndPath
+  Paths "2"
+EndArea
+
+! UR Area
+Area #beammat,#B,90
+  Path "11",#rightelem
+    Keypoint "3"
+    Keypoint "9",#a,0
+  EndPath
+  Path "12",#topelem
+    Keypoint "9"
+    Keypoint "10",#a,#t2
+  EndPath
+  Path "13",#rightelem
+    Keypoints "5","10"
+  EndPath
+  Paths "5"
+EndArea
+
+! ------ Boundary Condition Section 
+Output forces,selected,elementstresses,selected
+SelectLine "3"
+SelectLine "10"
+SelectLine "11"
+
+Resequence 6
+
+FixLine -#left,-#t1,-#left,#t2
+  Displacement x
+EndFixLine
+
+FixPoint -#left,-#t1
+  Displacement y
+EndFixPoint
+
+#M2=0
+#M1=0
+if #P2!=0
+  if #lstyle="stress"
+    #M2=-#B*#P2*#t2*#t2/6
+    FixLine "12"
+      Stress "n",#P2,-#P2
+    EndFixLine
+  else
+    #M2=#P2*#a
+    #shear=#P2/(#t2*#B)
+    FixLine "12"
+      Stress "t",#shear
+    EndFixLine
+  endif
+endif
+if #P1!=0
+  if #lstyle="stress"
+    #M1=-#B*#P1*#t1*#t1/6
+    FixLine "9"
+      Stress "n",#P1,-#P1
+    EndFixLine
+  else
+    #M1=#P1*#a
+    #shear=#P1/(#t1*#B)
+    FixLine "9"
+      Stress "t",#shear
+    EndFixLine
+  endif
+endif
+
+! Get total energy release rate
+if #lstyle="stress"
+  Comment "Moment-loaded arms:"
+else
+  Comment "End-loaded arms:"
+endif
+Comment "  Upper arm moment = "&#M2&" N-mm (cw>0)"
+Comment "  Lower arm moment = "&#M1&" N-mm (cw>0)"
+#I2=#B*#t2*#t2*#t2/12
+#I1=#B*#t1*#t1*#t1/12
+#I3=#B*#h*#h*#h/12
+#M3=#M1+#M2
+#Jff = #M1*#M1/(#Ebeam*#I1)+#M2*#M2/(#Ebeam*#I2)-#M3*#M3/(#Ebeam*#I3)
+Comment "Jff = "&(1000*#Jff/(2*#B))&" J/m^2"
+
