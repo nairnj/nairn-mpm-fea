@@ -36,6 +36,7 @@ class CommonArchiveData
 		char *ExpandOutputPath(const char *);
 		void GetFilePath(char *,const char *);
 		void GetFilePathNum(char *,const char *,int);
+		void GetRelativeFilePathNum(char *, const char *,int);
 
 	protected:
 		char *inputDir,*archiveRoot,*globalFile,*archiveParent,*archiveDosRoot;

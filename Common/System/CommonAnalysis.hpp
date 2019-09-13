@@ -15,6 +15,8 @@
 
 #define NUMBER_DEVELOPMENT_FLAGS 20
 
+class CommonReadHandler;
+
 class CommonAnalysis
 {
     public:
@@ -27,15 +29,28 @@ class CommonAnalysis
 		virtual ~CommonAnalysis();
 		
 		// abstract methods
+		virtual CommonReadHandler *GetReadHandler(void) = 0;
 		virtual void PrintAnalysisTitle(void) = 0;
-		virtual void PrintAnalysisType(void) = 0;
+		virtual void GetAnalysisType(int,char *) = 0;
 		virtual const char *CodeName(void) const = 0;
+		virtual const char *NodesAndElementsTitle(void) const = 0;
 		virtual bool ValidAnalysisType(void) = 0;
-		virtual void MyStartResultsOutput(void) = 0;
+		virtual void CMStartResultsOutput(void) = 0;
+		virtual void CMAnalysis(bool) = 0;
+	
+		// abstract archiver methods
+		virtual void ArchiveNodalPoints(int) = 0;
+		virtual void ArchiveElements(int) = 0;
+		virtual void SetInputDirPath(const char *,bool) = 0;
+	
+		// start the analysis
+		virtual void StartAnalysis(bool);
+		virtual void StartResultsOutput(void);
+		virtual void PrintAnalysisMethod(void);
+		virtual void CMPreparations(void);
 	
 		// methods
 		int ReadFile(const char *,bool);
-		void StartResultsOutput(void);
 		void CoutCodeVersion(void);
 		double CPUTime(void);
 		double ElapsedTime(void);

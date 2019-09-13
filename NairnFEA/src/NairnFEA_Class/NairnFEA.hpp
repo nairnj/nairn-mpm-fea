@@ -15,6 +15,8 @@
 
 #define _NAIRNFEA_
 
+class CommonReadHandler;
+
 // FEA output flags
 enum { DISPLACEMENT_OUT=0,FORCE_OUT,ELEMSTRESS_OUT,AVGSTRESS_OUT,
         REACT_OUT,ENERGY_OUT,NUMBER_OUT };
@@ -37,10 +39,12 @@ class NairnFEA : public CommonAnalysis
         //  Constructors and Destructor
 		NairnFEA();
 		
-		// methods
-		void StartAnalysis(bool);
-		virtual void MyStartResultsOutput(void);
-		void FEAAnalysis(void);
+		// start analysis
+		virtual void PrintAnalysisTitle(void);
+		virtual void CMAnalysis(bool);
+		virtual void CMStartResultsOutput(void);
+	
+		// FEA methods
 		void BeginResults(void);
 		void Usage();
 		void ForcesOnEdges(void);
@@ -51,11 +55,17 @@ class NairnFEA : public CommonAnalysis
 		void AvgNodalStresses(void);
 		void ReactionResults(void);
 		void EnergyResults(void);
-		
+	
+		// archiver access while reading
+		virtual void ArchiveNodalPoints(int);
+		virtual void ArchiveElements(int);
+		virtual void SetInputDirPath(const char *,bool);
+	
 		// accessors
-		virtual void PrintAnalysisTitle(void);
-		virtual void PrintAnalysisType(void);
+		virtual CommonReadHandler *GetReadHandler(void);
+		virtual void GetAnalysisType(int,char *);
 		virtual const char *CodeName(void) const;
+		virtual const char *NodesAndElementsTitle(void) const;
 		virtual bool ValidAnalysisType(void);
 };
 

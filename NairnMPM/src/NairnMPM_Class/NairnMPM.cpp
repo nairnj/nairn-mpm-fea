@@ -7,23 +7,10 @@
 *********************************************************************/
 
 #include "stdafx.h"
-#include "NairnMPM_Class/NairnMPM.hpp"
 #include "System/ArchiveData.hpp"
-#include "Materials/MaterialBase.hpp"
-#include "Custom_Tasks/CustomTask.hpp"
-#include "Custom_Tasks/CalcJKTask.hpp"
-#include "Custom_Tasks/PropagateTask.hpp"
-#include "Custom_Tasks/DiffusionTask.hpp"
-#include "Custom_Tasks/ConductionTask.hpp"
-#include "Cracks/CrackHeader.hpp"
-#include "Elements/ElementBase.hpp"
-#include "Exceptions/CommonException.hpp"
-#include "MPM_Classes/MPMBase.hpp"
+#include "System/UnitsController.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
-#include "Cracks/CrackSurfaceContact.hpp"
-#include "Nodes/CrackVelocityFieldMulti.hpp"
-#include "Global_Quantities/ThermalRamp.hpp"
-#include "Exceptions/MPMWarnings.hpp"
 #include "NairnMPM_Class/MPMTask.hpp"
 #include "NairnMPM_Class/InitializationTask.hpp"
 #include "NairnMPM_Class/InitVelocityFieldsTask.hpp"
@@ -42,17 +29,27 @@
 #include "NairnMPM_Class/RunCustomTasksTask.hpp"
 #include "NairnMPM_Class/MoveCracksTask.hpp"
 #include "NairnMPM_Class/ResetElementsTask.hpp"
+#include "NairnMPM_Class/XPICExtrapolationTask.hpp"
+#include "Materials/MaterialBase.hpp"
+#include "Custom_Tasks/CustomTask.hpp"
+#include "Custom_Tasks/CalcJKTask.hpp"
+#include "Custom_Tasks/PropagateTask.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
+#include "Nodes/CrackVelocityFieldMulti.hpp"
+#include "Cracks/CrackHeader.hpp"
+#include "Cracks/CrackSurfaceContact.hpp"
+#include "Elements/ElementBase.hpp"
+#include "Patches/GridPatch.hpp"
+#include "MPM_Classes/MPMBase.hpp"
+#include "Global_Quantities/ThermalRamp.hpp"
+#include "Global_Quantities/BodyForce.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
-#include "Patches/GridPatch.hpp"
-#include "Boundary_Conditions/NodalConcBC.hpp"
-#include "Boundary_Conditions/NodalTempBC.hpp"
-#include "System/UnitsController.hpp"
 #include "Boundary_Conditions/InitialCondition.hpp"
-#include "NairnMPM_Class/XPICExtrapolationTask.hpp"
-#include "Boundary_Conditions/NodalVelBC.hpp"
-#include "Global_Quantities/BodyForce.hpp"
+#include "Exceptions/CommonException.hpp"
+#include "Exceptions/MPMWarnings.hpp"
 #include <time.h>
 
 // Activate this to print steps as they run. If too many steps happen before failure
@@ -112,51 +109,48 @@ NairnMPM::NairnMPM()
 	timeStepMinMechanics = 1.e30;
 }
 
-#pragma mark METHODS
+#pragma mark CORE MPM
 
 // start analysis
 // throws std::bad_alloc
-void NairnMPM::StartAnalysis(bool abort)
+void NairnMPM::CMPreparations(void)
 {
-	// Active Transport Tasks
-	if(fmobj->HasFluidTransport())
-	{	diffusion = new DiffusionTask();
-		transportTasks = diffusion;
-	}
-	if(ConductionTask::active)
-	{	conduction=new ConductionTask();
-		if(transportTasks)
-			transportTasks->nextTask=conduction;
-		else
-			transportTasks=conduction;
-	}
-	else
-	{	// these can only be on when conduction is active
-		ConductionTask::crackContactHeating = false;
-		ConductionTask::matContactHeating = false;
-		ConductionTask::crackTipHeating = false;
-	}
+	// Transport tasks
+	CreateTransportTasks();
 	
-	// start results file
-	StartResultsOutput();
+	// check grid settings
+	GridAndElementCalcs();
+
+	// Preliminary particle Calculations
+	PreliminaryParticleCalcs();
 	
-	// Do MPM analysis
-	MPMAnalysis(abort);
+	// material mode settings
+	SetupMaterialModeContactXPIC();
+	
+	// create patches or a single patch
+	patches = mpmgrid.CreatePatches(np,numProcs);
+	if(patches==NULL)
+		throw CommonException("Out of memory creating the patches","NairnMPM::PreliminaryParticleCalcs");
+	
+	// create buffers for copies of material properties
+	UpdateStrainsFirstTask::CreatePropertyBuffers(GetTotalNumberOfPatches());
+	
+	// if cracks
+	PreliminaryCrackCalcs();
+	
+	// Output boundary conditions and mass matrix and grid info
+	OutputBCMassAndGrid();
+	
+	// create warnings
+	CreateWarnings();
+	
+	// Create step tasks
+	CreateTasks();
 }
 
 // Do the MPM analysis
-void NairnMPM::MPMAnalysis(bool abort)
+void NairnMPM::CMAnalysis(bool abort)
 {
-    char fline[100];
-	
-	//---------------------------------------------------
-	// Do Preliminary MPM Calculations
-	PreliminaryCalcs();
-
-	//---------------------------------------------------
-	// Create step tasks
-	CreateTasks();
-	
 	try
 	{	//---------------------------------------------------
 		// Archiving
@@ -222,7 +216,8 @@ void NairnMPM::MPMAnalysis(bool abort)
     PrintSection("EXECUTION TIMES AND MEMORY");
     cout << "Calculation Steps: " << mstep << endl;
     
-    sprintf(fline,"Elapsed Time: %.3lf secs\n",execTime);
+	char fline[100];
+	sprintf(fline,"Elapsed Time: %.3lf secs\n",execTime);
     cout << fline;
     
     sprintf(fline,"CPU Time: %.3lf secs\n",cpuTime);
@@ -288,53 +283,58 @@ void NairnMPM::MPMStep(void)
 	}
 }
 
-/**********************************************************
-	Preliminary MPM Calclations prior to analysis
-	1. Make some settings
-		Thermo mode, grid type, Element CPDI data
-	2. Loop over particles
-		Validate material, initialize history and mass and concentration potential
-		Check time steps (mechanics and transport)
-		Set velocity field
-		Allocate GIMP or CPDI info
-	3. Reorder rigid and nonrigid particles and rigid contact particles
-	4. Some checks include final time step check
-	5. Create patches
-	6. Print boundary conditions
-	7. Print particle, grid, and mass matrix info
-	8. NodalPoint preliminary calcs
-	9. Create warnings list
- 
-	throws CommonException()
-**********************************************************/
+#pragma mark PREPARATION TASKS
 
-void NairnMPM::PreliminaryCalcs(void)
+// Create transport tasks if requested
+void NairnMPM::CreateTransportTasks(void)
 {
-    int p,i;
-    short matid;
-    double area,volume,rho;
-    char fline[200];
-	
-    // are both the system and the particles isolated?
-    if(!ConductionTask::active && ConductionTask::IsSystemIsolated())
-    {   MaterialBase::isolatedSystemAndParticles = TRUE;
+	// Active Transport Tasks
+	if(fmobj->HasFluidTransport())
+	{	diffusion = new DiffusionTask();
+		transportTasks = diffusion;
+	}
+	if(ConductionTask::active)
+	{
+        conduction=new ConductionTask();
+        if(transportTasks)
+            transportTasks->nextTask=conduction;
+        else
+            transportTasks=conduction;
     }
-    
+    else
+    {	// these can only be on when conduction is active
+		ConductionTask::crackContactHeating = false;
+		ConductionTask::matContactHeating = false;
+		ConductionTask::crackTipHeating = false;
+	}
+	
+	// are both the system and the particles isolated?
+	if(!ConductionTask::active && ConductionTask::IsSystemIsolated())
+	{   MaterialBase::isolatedSystemAndParticles = TRUE;
+	}
+}
+
+// Check grid settings
+// Unstructure grid (legacy code) checks element by element
+// Initialize CPDI number of nodes
+void NairnMPM::GridAndElementCalcs(void)
+{
 	// only allows grids created with the Grid command
-	// (note: next two section never occur uless support turned back on)
+	// (note: next two sections never occur uless support turned back on)
 	if(mpmgrid.GetCartesian()==UNKNOWN_GRID)
-		throw CommonException("Support for iunstructured grids is currently not available","NairnMPM::PreliminaryCalcs");
+		throw CommonException("Support for iunstructured grids is currently not available","NairnMPM::GridAndElementCalcs");
 	
 	// Loop over elements, if needed, to determine type of grid
 	if(mpmgrid.GetCartesian()==UNKNOWN_GRID)
 	{	int userCartesian = NOT_CARTESIAN;
 		double dx,dy,dz,gridx=0.,gridy=0.,gridz=0.;
-		for(i=0;i<nelems;i++)
+		for(int i=0;i<nelems;i++)
 		{	if(!theElements[i]->Orthogonal(&dx,&dy,&dz))
-            {   // exit if find one that is not orthogonal
+			{   // exit if find one that is not orthogonal
 				userCartesian = NOT_CARTESIAN;
 				break;
 			}
+			
 			if(userCartesian == NOT_CARTESIAN)
 			{	// first element, set grid size (dz=0 in 2D) and set userCartesion flag
 				gridx=dx;
@@ -344,7 +344,7 @@ void NairnMPM::PreliminaryCalcs(void)
 			}
 			else if(userCartesian==SQUARE_GRID)
 			{	// on sebsequent elements, if size does not match current values, than elements differ
-                // in size. Set to variable grid but keep going to check if rest are orthogonal
+				// in size. Set to variable grid but keep going to check if rest are orthogonal
 				if(!DbleEqual(gridx,dx) || !DbleEqual(gridy,dy) || !DbleEqual(gridz,dz))
 				{	if(IsThreeD())
 					{   gridz = 1.;
@@ -352,43 +352,52 @@ void NairnMPM::PreliminaryCalcs(void)
 					}
 					else
 						userCartesian = VARIABLE_RECTANGULAR_GRID;
-                }
+				}
 			}
 		}
 		
 		// unstructured grid - set type, but elements not set so meshInfo will not know many things
-		// and horiz will be <=0 
+		// and horiz will be <=0
 		mpmgrid.SetCartesian(userCartesian,gridx,gridy,gridz);
 	}
 	
 	// only allows orthogonal grids
 	if(mpmgrid.GetCartesian()<=0 || mpmgrid.GetCartesian()==NOT_CARTESIAN_3D)
-		throw CommonException("Support for non-cartesian grids is currently not available","NairnMPM::PreliminaryCalcs");
-
-    // CPDI factors if needed
-    ElementBase::InitializeCPDI(IsThreeD());
+		throw CommonException("Support for non-cartesian grids is currently not available","NairnMPM::GridAndElementCalcs");
 	
+	// Ser number of CPDI nodes being used
+	ElementBase::InitializeCPDI(IsThreeD());
+}
+
+// Preliminary particle Calclations prior to analysis in loop over particles
+//  Verify material type, initialize history, damage, mass, and concentration potential
+//  Get time steps (mechanics and transport) with no CFL
+//  Set velocity field
+//  Allocate GIMP or CPDI info
+//  Reorder rigid and nonrigid particles and rigid contact particles
+// throws CommonException()
+void NairnMPM::PreliminaryParticleCalcs(void)
+{
     // future - make PropFractCellTime a user parameter, which not changed here if user picked it
     if(PropFractCellTime<0.) PropFractCellTime=FractCellTime;
 	double dcell = mpmgrid.GetMinCellDimension();                   // in mm
-    
-    // loop over material points
 	maxMaterialFields = 0;
 	numActiveMaterials = 0;
     nmpmsNR = 0;
 	int hasRigidContactParticles = NO_RIGID_MM;
 	int firstRigidPt = -1;
-    for(p=0;p<nmpms;p++)
-	{	// verify material is defined and set its field number (if in multimaterial mode)
-		matid=mpm[p]->MatID();
+	double area,volume;
+    for(int p=0;p<nmpms;p++)
+	{	// verify material is defined
+		int matid=mpm[p]->MatID();
 		if(matid>=nmat)
-			throw CommonException("Material point with an undefined material type","NairnMPM::PreliminaryCalcs");
+			throw CommonException("Material point with an undefined material type","NairnMPM::PreliminaryParticleCalcs");
 		
 		// material point can't use traction law or contact law
 		if(theMaterials[matid]->MaterialStyle()==TRACTION_MAT)
-			throw CommonException("Material point with traction-law material","NairnMPM::PreliminaryCalcs");
+			throw CommonException("Material point with traction-law material","NairnMPM::PreliminaryParticleCalcs");
 		if(theMaterials[matid]->MaterialStyle()==CONTACT_MAT)
-			throw CommonException("Material point with contact-law material","NairnMPM::PreliminaryCalcs");
+			throw CommonException("Material point with contact-law material","NairnMPM::PreliminaryParticleCalcs");
 		
         // initialize history-dependent material data on this particle
 		// might need initialized history data so set it now, but nonrigid only
@@ -397,7 +406,7 @@ void NairnMPM::PreliminaryCalcs(void)
 		
 		// Set material field (always field [0] and returns 1 in single material mode)
 		// Also verify allowsCracks - can only be true if multimaterial mode; if rigid must be rigid contact material
-		maxMaterialFields=theMaterials[matid]->SetField(maxMaterialFields,multiMaterialMode,matid,numActiveMaterials);
+		maxMaterialFields = theMaterials[matid]->SetField(maxMaterialFields,multiMaterialMode,matid,numActiveMaterials);
 		
 		// see if any particle are ignoring cracks
 		if(!theMaterials[matid]->AllowsCracks())
@@ -405,20 +414,21 @@ void NairnMPM::PreliminaryCalcs(void)
 
 		// element and mp properties
 		if(IsThreeD())
-		{	volume=theElements[mpm[p]->ElemID()]->GetVolume();	// L^3, mm^3 in Legacy
+		{	volume = theElements[mpm[p]->ElemID()]->GetVolume();	// L^3, mm^3 in Legacy
 		}
 		else
 		{	// when axisymmetric, thickness is particle radial position, which gives mp = rho*Ap*Rp
-			area=theElements[mpm[p]->ElemID()]->GetArea();		// L^2, mm^2 in Legacy
-			volume=mpm[p]->thickness()*area;					// L^3, mm^3 in Legacy
+			area = theElements[mpm[p]->ElemID()]->GetArea();		// L^2, mm^2 in Legacy
+			volume = mpm[p]->thickness()*area;					// L^3, mm^3 in Legacy
 		}
-		rho=theMaterials[matid]->GetRho(mpm[p]);				// M/L^3, g/mm^3 in Legacy, Rigid 1/mm^3
+		double rho = theMaterials[matid]->GetRho(mpm[p]);				// M/L^3, g/mm^3 in Legacy, Rigid 1/mm^3
 		
         // assumes same number of points for all elements (but subclass can override)
         // for axisymmetric xp = rho*Ap*volume/(# per element)
 		mpm[p]->InitializeMass(rho,volume/((double)ptsPerElement),false);						// in g
 		
-		// done if rigid - mass will be in mm^3 and will be particle volume
+		// IF rigid, do a few things then continue
+		// mass will be in L^3 and will be particle volume
 		if(theMaterials[matid]->IsRigid())
 		{	// Trap rigid BC (used to be above element and mp properties,
 			//     but moved here to get volume)
@@ -426,7 +436,7 @@ void NairnMPM::PreliminaryCalcs(void)
 			{	if(firstRigidPt<0) firstRigidPt=p;
 				// CPDI or GIMP domain data only for rigid contact particles (non-rigid done below)
 				if(!mpm[p]->AllocateCPDIorGIMPStructures(ElementBase::useGimp,IsThreeD()))
-					throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
+					throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryParticleCalcs");
 				continue;
 			}
 			
@@ -437,7 +447,7 @@ void NairnMPM::PreliminaryCalcs(void)
 
 			// CPDI or GIMP domain data only for rigid contact particles (non-rigid done below)
 			if(!mpm[p]->AllocateCPDIorGIMPStructures(ElementBase::useGimp,IsThreeD()))
-				throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
+				throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryParticleCalcs");
 				
 			continue;
 		}
@@ -452,8 +462,8 @@ void NairnMPM::PreliminaryCalcs(void)
 		if(mpm[p]->pConcentration<0. && fmobj->HasDiffusion())
 		{	double potential=-mpm[p]->pConcentration/mpm[p]->GetConcSaturation();
 			if(potential>1.000001)
-				throw CommonException("Material point with concentration potential > 1","NairnMPM::PreliminaryCalcs");
-			if(potential>1.) potential=1.;
+				throw CommonException("Material point with concentration potential > 1","NairnMPM::PreliminaryParticleCalcs");
+			if(potential>1.) potential = 1.;
 			mpm[p]->pConcentration=potential;
 		}
         
@@ -461,18 +471,18 @@ void NairnMPM::PreliminaryCalcs(void)
         theMaterials[matid]->SetInitialParticleState(mpm[p],np,0);
 
         // check mechanics time step
-        double crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p]);			// in mm/sec
-		double tst=dcell/crot;                                    // in sec
+        double crot = theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p]);
+		double tst = dcell/crot;
         if(tst<timeStepMinMechanics)
 		{	timeStepMinMechanics = tst;
 		}
         
-        // propagation time (in sec)
-        tst=PropFractCellTime*dcell/crot;
-        if(tst<propTime) propTime=tst;
+        // propagation time
+        tst = PropFractCellTime*dcell/crot;
+        if(tst<propTime) propTime = tst;
 		
 		// Transport property time steps
-		TransportTask *nextTransport=transportTasks;
+		TransportTask *nextTransport = transportTasks;
 		while(nextTransport!=NULL)
 		{	// note that diffCon = k/(rho Cv) for conduction and D for diffusion (max values)
 			double diffCon;
@@ -484,92 +494,27 @@ void NairnMPM::PreliminaryCalcs(void)
 		
         // CPDI orGIMP domain data for nonrigid particles
         if(!mpm[p]->AllocateCPDIorGIMPStructures(ElementBase::useGimp,IsThreeD()))
-            throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
+            throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryParticleCalcs");
 		
-	}
-    
-	// reorder NonRigid followed by (Rigid Block, Rigid Contact and Rigid BCs intermixed)
-	if(firstRigidPt<nmpmsNR && firstRigidPt>=0)
-	{	p = firstRigidPt;
-		
-		// loop until reach end of non-rigid materials
-		while(p<nmpmsNR)
-		{	matid=mpm[p]->MatID();
-			if(theMaterials[matid]->IsRigid())
-			{	// if any rigid particle, switch with particle at nmpmsNR-1
-				MPMBase *temp = mpm[p];
-				mpm[p] = mpm[nmpmsNR-1];		// move last nonrigid (#nmpmsNR) to position p (p+1)
-				mpm[nmpmsNR-1] = temp;			// move rigid particle (p+1) to rigid domain (#nmpmNR)
-				nmpmsNR--;						// now 0-based pointer of previous NR particle
-				
-				// fix particle based boundary conditions
-				ReorderPtBCs(firstLoadedPt,p,nmpmsNR);
-				ReorderPtBCs(firstTractionPt,p,nmpmsNR);
-				ReorderPtBCs(firstFluxPt,p,nmpmsNR);
-				ReorderPtBCs(firstHeatFluxPt,p,nmpmsNR);
-                ReorderPtBCs(firstDamagedPt,p,nmpmsNR);
-				
-				// back up to new last nonrigid
-				while(nmpmsNR>=0)
-				{	matid=mpm[nmpmsNR-1]->MatID();
-					if(!theMaterials[matid]->IsRigid()) break;
-					nmpmsNR--;
-				}
-				
-			}
-			
-			// next particle
-			p++;
-		}
 	}
 	
-	// reorder rigid particles as (Rigid Block&Rigid Contact intermixed, Rigid BCs)
-	nmpmsRC = nmpmsNR;
-	nmpmsRB = nmpmsNR;
-	if(hasRigidContactParticles!=NO_RIGID_MM)
-	{	// segment rigid particles if have any for contact or for block
-		
-		// back up to new last rigid contact or block particle
-		nmpmsRC = nmpms;
-		while(nmpmsRC > nmpmsNR)
-		{	matid = mpm[nmpmsRC-1]->MatID();
-			if(!theMaterials[matid]->IsRigidBC()) break;
-			nmpmsRC--;
-		}
-		
-		// loop until reach end of rigid contact or block particles
-		p = nmpmsNR;
-		while(p < nmpmsRC)
-		{	matid=mpm[p]->MatID();
-			if(theMaterials[matid]->IsRigidBC())
-			{	// if rigid BC particle, switch with rigid contact particle at nmpmsRC-1
-				MPMBase *temp = mpm[p];
-				mpm[p] = mpm[nmpmsRC-1];
-				mpm[nmpmsRC-1] = temp;
-				nmpmsRC--;
-				
-				// fix particle based boundary conditions
-				ReorderPtBCs(firstLoadedPt,p,nmpmsRC);
-				
-				// back up to new last nonrigid
-				while(nmpmsRC > nmpmsNR)
-				{	matid=mpm[nmpmsRC-1]->MatID();
-					if(!theMaterials[matid]->IsRigidBC()) break;
-					nmpmsRC--;
-				}
-			}
-			
-			// next particle
-			p++;
-		}
-		
-		// finally reorder rigid particles as (Rigid Block, Rigid Contact, Rigid BCs)
-		nmpmsRB = nmpmsNR;
-	}
+	// get unadjusted time steps to final time steps
+	CFLTimeStep();
 	
+	// reorder the particles
+	ReorderParticles(firstRigidPt,hasRigidContactParticles);
+	
+	// non-standard particle sizes
+	archiver->ArchivePointDimensions();
+}
+
+// If needed, set up multimaterial more
+void NairnMPM::SetupMaterialModeContactXPIC(void)
+{
 	// multimaterial checks and contact initialization
 	if(maxMaterialFields==0 || numActiveMaterials==0)
-		throw CommonException("No material points found with an actual material","NairnMPM::PreliminaryCalcs");
+		throw CommonException("No material points found with an actual material","NairnMPM::SetupMaterialModeContactXPIC");
+	
 	else if(maxMaterialFields==1)
 	{	// Turning off multimaterial mode because only one material is used
 		multiMaterialMode = false;
@@ -580,13 +525,13 @@ void NairnMPM::PreliminaryCalcs(void)
 	{	mpmgrid.MaterialContactPairs(maxMaterialFields);
 	}
 	
-    // ghost particles will need to now this setting when creating patches
-    if(firstCrack!=NULL)
-    {   if(firstCrack->GetNextObject()!=NULL)
-            maxCrackFields=MAX_FIELDS_FOR_CRACKS;
-        else
-            maxCrackFields=MAX_FIELDS_FOR_ONE_CRACK;
-    }
+	// ghost particles will need to know this setting when creating patches
+	if(firstCrack!=NULL)
+	{   if(firstCrack->GetNextObject()!=NULL)
+			maxCrackFields=MAX_FIELDS_FOR_CRACKS;
+		else
+			maxCrackFields=MAX_FIELDS_FOR_ONE_CRACK;
+	}
 	
 	if(firstCrack!=NULL || multiMaterialMode)
 	{	// number of contact extrapolation vectors
@@ -619,169 +564,16 @@ void NairnMPM::PreliminaryCalcs(void)
 			bodyFrc.SetUsingVstar(VSTAR_WITH_CONTACT);
 #endif
 	}
+	
+}
 
-	// get time step
-	
-    // verify time step and make smaller if needed
-	// FractCellTime and TransFractCellTime are CFL factors for mechanics and transport
-	double timeStepMin = FractCellTime*timeStepMinMechanics;
-
-	// Transport property time steps
-	TransportTask *nextTransport=transportTasks;
-	while(nextTransport!=NULL)
-	{	double tst = TransFractCellTime*nextTransport->GetTimeStep();
-		if(tst < timeStepMin) timeStepMin = tst;
-		nextTransport = nextTransport->GetNextTransportTask();
-	}
-	
-	// use timeStepMin, unless specified time step is smaller
-    if(timeStepMin<timestep) timestep = timeStepMin;
-	if(fmobj->mpmApproach==USAVG_METHOD)
-	{	// fraction USF = 0.5, coded with variable in case want to change
-		strainTimestepFirst = fractionUSF*timestep;
-		strainTimestepLast = timestep - strainTimestepFirst;
-	}
-	else
-	{	strainTimestepFirst = timestep;
-		strainTimestepLast = timestep;
-	}
-	
-	// propagation time step (no less than timestep)
-    if(propTime<timestep) propTime=timestep;
-	
-	// create patches or a single patch
-	patches = mpmgrid.CreatePatches(np,numProcs);
-    if(patches==NULL)
-		throw CommonException("Out of memory creating the patches","NairnMPM::PreliminaryCalcs");
-    
-    // create buffers for copies of material properties
-    UpdateStrainsFirstTask::CreatePropertyBuffers(GetTotalNumberOfPatches());
-	
-	//---------------------------------------------------
-	// Finish Results File
-	BoundaryCondition *nextBC;
-	
-    //---------------------------------------------------
-    // Loaded Material Points
-    if(firstLoadedPt!=NULL)
-    {   PrintSection("MATERIAL POINTS WITH EXTERNAL FORCES");
-        cout << "Point   DOF ID     Load (" << UnitsController::Label(FEAFORCE_UNITS) << ")     Arg ("
-			<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
-			<< "----------------------------------------------------------\n";
-        nextBC=(BoundaryCondition *)firstLoadedPt;
-        while(nextBC!=NULL)
-            nextBC=nextBC->PrintBC(cout);
-        cout << endl;
-    }
-	
-	//---------------------------------------------------
-    // Traction Loaded Material Points
-    if(firstTractionPt!=NULL)
-    {   PrintSection("MATERIAL POINTS WITH TRACTIONS");
-        cout << "Point   DOF Face ID   Stress (" << UnitsController::Label(PRESSURE_UNITS) << ")    Arg ("
-			<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
-			<< "----------------------------------------------------------------\n";
-        nextBC=(BoundaryCondition *)firstTractionPt;
-        while(nextBC!=NULL)
-            nextBC=nextBC->PrintBC(cout);
-        cout << endl;
-    }
-	
-	//---------------------------------------------------
-    // Diffusion boundary conditions
-	if(fmobj->HasFluidTransport() && firstConcBC!=NULL)
-	{	if(fmobj->HasDiffusion())
-		{	PrintSection("NODAL POINTS WITH FIXED CONCENTRATIONS");
-			cout << "  Node  ID    Conc (/csat)   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Function";
-		}
-		cout << "\n------------------------------------------------------\n";
-		nextBC=firstConcBC;
-		while(nextBC!=NULL)
-			nextBC=nextBC->PrintBC(cout);
-		cout << endl;
-	}
-	
-	//---------------------------------------------------
-	// Concentration Flux Material Points
-	if(fmobj->HasFluidTransport() && firstFluxPt!=NULL)
-	{	if(fmobj->HasDiffusion())
-		{	PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
-			cout << " Point  DOF Face ID Flux (" << UnitsController::Label(BCCONCFLUX_UNITS) << ") Arg ("
-			<< UnitsController::Label(BCARG_UNITS) << ")  Function";
-		}
-		cout << "\n---------------------------------------------------------------\n";
-		nextBC=(BoundaryCondition *)firstFluxPt;
-		while(nextBC!=NULL)
-			nextBC=nextBC->PrintBC(cout);
-		cout << endl;
-	}
-	
-	//---------------------------------------------------
-    // Conduction boundary conditions
-	if(ConductionTask::active && firstTempBC!=NULL)
-	{   PrintSection("NODAL POINTS WITH FIXED TEMPERATURES");
-		cout << " Node   ID   Temp (-----)   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Function\n"
-			<< "------------------------------------------------------\n";
-		nextBC=firstTempBC;
-		while(nextBC!=NULL)
-			nextBC=nextBC->PrintBC(cout);
-		cout << endl;
-	}
-		
-	//---------------------------------------------------
-	// Heat Flux Material Points
-	if(ConductionTask::active && firstHeatFluxPt!=NULL)
-	{	PrintSection("MATERIAL POINTS WITH HEAT FLUX");
-		cout << " Point  DOF Face ID   Flux (" << UnitsController::Label(BCHEATFLUX_UNITS) << ")    Arg ("
-			<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
-			<< "---------------------------------------------------------------\n";
-		nextBC=(BoundaryCondition *)firstHeatFluxPt;
-		while(nextBC!=NULL)
-			nextBC=nextBC->PrintBC(cout);
-		cout << endl;
-	}
-
-    //---------------------------------------------------
-    // Damaged Material Points
-    if(firstDamagedPt!=NULL)
-    {   PrintSection("MATERIAL POINTS HAVE INITIAL DAMAGE");
-        cout << "Plot history #1 to see initially damage particles" << endl;
-        cout << "Those fully failed have history #1 = 3" << endl;
-        cout << endl;
-        
-        // assign initial conditions and then delete
-        InitialCondition *nextIC=firstDamagedPt,*prevIC;
-        while(nextIC!=NULL)
-        {   prevIC = nextIC;
-            nextIC = prevIC->AssignInitialConditions(IsThreeD());
-            delete prevIC;
-        }
-    }
-	
-	// non-standard particle sizes
-	archiver->ArchivePointDimensions();
-
-    // Print particle information and other preliminary calc results
-    PrintSection("FULL MASS MATRIX");
-    
-    sprintf(fline,"Number of Material Points: %d",nmpms);
-    cout << fline << endl;
-	
-	// background grid info
-	mpmgrid.Output(ptsPerElement,IsAxisymmetric());
-    
-    sprintf(fline,"Adjusted time step (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),timestep*UnitsController::Scaling(1.e3));
-    cout << fline << endl;
-    
-    // propagation time step and other settings when has cracks
-    if(firstCrack!=NULL)
-	{	if(propagate[0])
-		{   sprintf(fline,"Propagation time step (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),propTime*UnitsController::Scaling(1.e3));
-			cout << fline << endl;
-		}
-		
-		// let all cracks do prelimnary calcs
-		CrackHeader *nextCrack=firstCrack;
+// crack calculations
+void NairnMPM::PreliminaryCrackCalcs(void)
+{
+	// propagation time step and other settings when has cracks
+	if(firstCrack!=NULL)
+	{	CrackHeader *nextCrack=firstCrack;
+		double dcell = mpmgrid.GetMinCellDimension();
 		while(nextCrack!=NULL)
 		{
 			nextCrack->PreliminaryCrackCalcs(dcell,false);
@@ -789,13 +581,18 @@ void NairnMPM::PreliminaryCalcs(void)
 				hasTractionCracks=TRUE;
 			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 		}
-		
-		// warnings
+	}
+}
+
+// create warnings
+void NairnMPM::CreateWarnings(void)
+{
+	if(firstCrack!=NULL)
+	{	// crack warnings
 		CrackHeader::warnNodeOnCrack=warnings.CreateWarning("unexpected crack side; possibly caused by node or particle on a crack",-1,5);
 		CrackHeader::warnThreeCracks=warnings.CreateWarning("node with three or more cracks",-1,5);
 	}
-	
-	// create warnings
+
 	if(warnParticleLeftGrid<0)
 	{	// use default setting to quit if 1% of particle leave the grid
 		warnParticleLeftGrid = nmpms/100;
@@ -808,9 +605,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	
 	// finish warnings
 	warnings.CreateWarningList();
-	
-    // blank line
-    cout << endl;
+
 }
 
 // create all the tasks needed for current simulation
@@ -993,6 +788,186 @@ void NairnMPM::CreateTasks(void)
 
 }
 
+#pragma mark PREPARATION SUPPORT METHODS
+
+// Reorder Particles in order
+//	NonRigid, Rigid Blok, Rigid Contact, Rigid BCs
+// Also Initialize RigidBlck particles
+void NairnMPM::ReorderParticles(int firstRigidPt,int hasRigidContactParticles)
+{
+	// Step 1: reorder NonRigid followed by (Rigid Block, Rigid Contact and Rigid BCs intermixed)
+	int p;
+	if(firstRigidPt<nmpmsNR && firstRigidPt>=0)
+	{	p = firstRigidPt;
+		
+		// loop until reach end of non-rigid materials
+		while(p<nmpmsNR)
+		{	int matid = mpm[p]->MatID();
+			if(theMaterials[matid]->IsRigid())
+			{	// if any rigid particle, switch with particle at nmpmsNR-1
+				MPMBase *temp = mpm[p];
+				mpm[p] = mpm[nmpmsNR-1];		// move last nonrigid (#nmpmsNR) to position p (p+1)
+				mpm[nmpmsNR-1] = temp;			// move rigid particle (p+1) to rigid domain (#nmpmNR)
+				nmpmsNR--;						// now 0-based pointer of previous NR particle
+				
+				// fix particle based boundary conditions
+				ReorderPtBCs(firstLoadedPt,p,nmpmsNR);
+				ReorderPtBCs(firstTractionPt,p,nmpmsNR);
+				ReorderPtBCs(firstFluxPt,p,nmpmsNR);
+				ReorderPtBCs(firstHeatFluxPt,p,nmpmsNR);
+				ReorderPtBCs(firstDamagedPt,p,nmpmsNR);
+				
+				// back up to new last nonrigid
+				while(nmpmsNR>=0)
+				{	matid = mpm[nmpmsNR-1]->MatID();
+					if(!theMaterials[matid]->IsRigid()) break;
+					nmpmsNR--;
+				}
+			}
+			
+			// next particle
+			p++;
+		}
+	}
+	
+	// Step 2: reorder rigid particles as (Rigid Block&Rigid Contact intermixed, Rigid BCs)
+	nmpmsRC = nmpmsNR;
+	nmpmsRB = nmpmsNR;
+	if(hasRigidContactParticles!=NO_RIGID_MM)
+	{	// segment rigid particles if have any for contact or for block
+		
+		// back up to new last rigid contact or block particle
+		nmpmsRC = nmpms;
+		while(nmpmsRC > nmpmsNR)
+		{	int matid = mpm[nmpmsRC-1]->MatID();
+			if(!theMaterials[matid]->IsRigidBC()) break;
+			nmpmsRC--;
+		}
+		
+		// loop until reach end of rigid contact or block particles
+		p = nmpmsNR;
+		while(p < nmpmsRC)
+		{	int matid=mpm[p]->MatID();
+			if(theMaterials[matid]->IsRigidBC())
+			{	// if rigid BC particle, switch with rigid contact particle at nmpmsRC-1
+				MPMBase *temp = mpm[p];
+				mpm[p] = mpm[nmpmsRC-1];
+				mpm[nmpmsRC-1] = temp;
+				nmpmsRC--;
+				
+				// fix particle based boundary conditions
+				ReorderPtBCs(firstLoadedPt,p,nmpmsRC);
+				
+				// back up to new last nonrigid
+				while(nmpmsRC > nmpmsNR)
+				{	matid=mpm[nmpmsRC-1]->MatID();
+					if(!theMaterials[matid]->IsRigidBC()) break;
+					nmpmsRC--;
+				}
+			}
+			
+			// next particle
+			p++;
+		}
+		
+		// Step 3: finally reorder rigid particles as (Rigid Block, Rigid Contact, Rigid BCs)
+		nmpmsRB = nmpmsNR;
+#ifdef MODEL_RIGID_BODIES
+		if(hasRigidContactParticles&RIGID_BLOCK_MM && hasRigidContactParticles&RIGID_CONTACT_MM)
+		{	// If has RB and RC, need to reorder that block now
+			// back up to new last rigid block particle
+			nmpmsRB = nmpmsRC;
+			while(nmpmsRB > nmpmsNR)
+			{	int matid = mpm[nmpmsRB-1]->MatID();
+				if(theMaterials[matid]->IsRigidBlock()) break;
+				nmpmsRB--;
+			}
+			
+			// loop until reach end of rigid blocks
+			p = nmpmsNR;
+			while(p < nmpmsRB)
+			{	int matid=mpm[p]->MatID();
+				if(!theMaterials[matid]->IsRigidBlock())
+				{	// if not rigid block, switch with rigid block particle at nmpmsRB-1
+					MPMBase *temp = mpm[p];
+					mpm[p] = mpm[nmpmsRB-1];
+					mpm[nmpmsRB-1] = temp;
+					nmpmsRB--;
+					
+					// fix particle based boundary conditions
+					ReorderPtBCs(firstLoadedPt,p,nmpmsRB);
+					
+					// back up to new last nonrigid
+					while(nmpmsRB > nmpmsNR)
+					{	matid=mpm[nmpmsRB-1]->MatID();
+						if(theMaterials[matid]->IsRigidBlock()) break;
+						nmpmsRB--;
+					}
+				}
+				
+				// next particle
+				p++;
+			}
+		}
+		else if(hasRigidContactParticles&RIGID_BLOCK_MM)
+		{	// if rigid block but no contact already done
+			nmpmsRB=nmpmsRC;
+		}
+		
+		// for Rigid block materials: 1 Get initial values, 2. Find block properties, 3. Apply to particles
+		if(nmpmsRB>nmpmsNR)
+		{	for(p=nmpmsNR;p<nmpmsRB;p++)
+			{	RigidBlock *rbmat = (RigidBlock *)theMaterials[mpm[p]->MatID()];
+				rbmat->InitialBlockValues(mpm[p]->mp,&mpm[p]->vel,&mpm[p]->pos);
+			}
+			
+			// finish material initiationization
+			RigidBlock::FinishInitialValues();
+			
+			for(p=nmpmsNR;p<nmpmsRB;p++)
+			{	RigidBlock *rbmat = (RigidBlock *)theMaterials[mpm[p]->MatID()];
+				rbmat->InitialParticleValues(&mpm[p]->vel,&mpm[p]->pos);
+			}
+		}
+#endif
+	}
+	
+}
+
+// calculate time step
+void NairnMPM::CFLTimeStep()
+{
+	// verify time step and make smaller if needed
+	// FractCellTime and TransFractCellTime are CFL factors for mechanics and transport
+#ifndef TRANSPORT_ONLY
+	double timeStepMin = FractCellTime*timeStepMinMechanics;
+#else
+	double timeStepMin = 1.e30;
+#endif
+	// Transport property time steps
+	TransportTask *nextTransport=transportTasks;
+	while(nextTransport!=NULL)
+	{	double tst = TransFractCellTime*nextTransport->GetTimeStep();
+		if(tst < timeStepMin) timeStepMin = tst;
+		nextTransport = nextTransport->GetNextTransportTask();
+	}
+	
+	// use timeStepMin, unless specified time step is smaller
+	if(timeStepMin<timestep) timestep = timeStepMin;
+	if(fmobj->mpmApproach==USAVG_METHOD)
+	{	// fraction USF = 0.5, coded with variable in case want to change
+		strainTimestepFirst = fractionUSF*timestep;
+		strainTimestepLast = timestep - strainTimestepFirst;
+	}
+	else
+	{	strainTimestepFirst = timestep;
+		strainTimestepLast = timestep;
+	}
+	
+	// propagation time step (no less than timestep)
+	if(propTime<timestep) propTime=timestep;
+}
+
 // When NR particle p2 moves to p1, reset any point-based BCs that use that point
 void NairnMPM::ReorderPtBCs(MatPtLoadBC *firstBC,int p1,int p2)
 {
@@ -1118,12 +1093,6 @@ void NairnMPM::ValidateOptions(void)
 
 #pragma mark ACCESSORS
 
-// return name
-const char *NairnMPM::CodeName(void) const
-{
-    return "NairnMPM";
-}
-
 // verify analysis type
 bool NairnMPM::ValidAnalysisType(void)
 {
@@ -1135,34 +1104,6 @@ bool NairnMPM::ValidAnalysisType(void)
 	}
 		
 	return np>BEGIN_MPM_TYPES && np<END_MPM_TYPES;
-}
-
-// Explain usage of this program
-void NairnMPM::Usage()
-{
-	CoutCodeVersion();
-    cout << "    Expects Xerces 3.1.1 or newer" << endl;
-    cout << "\nUsage:\n"
-            "    NairnMPM [-options] <InputFile>\n\n"
-            "This program reads the <InputFile> and does an MPM analysis.\n"
-            "The results summary is directed to standard output. Errors are\n"
-            "directed to standard error. The numerical results are saved\n"
-            "to archived files as directed in <InputFile>.\n\n"
-            "Options:\n"
-            "    -a          Abort after setting up problem but before\n"
-			"                   MPM steps begin. Initial conditions will\n"
-			"                   be archived\n"
-            "    -H          Show this help\n"
-            "    -np #       Set number of processors for parallel code\n"
-            "    -r          Reverse byte order in archive files\n"
-            "                   (default is to not reverse the bytes)\n"
-            "    -v          Validate input file if DTD is provided in !DOCTYPE\n"
-            "                   (default is to skip validation)\n"
-            "    -w          Output results to current working directory\n"
-            "                   (default is output to folder of input file)\n"
-            "    -?          Show this help\n\n"
-            "See http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page for documentation\n\n"
-          <<  endl;
 }
 
 // if crack develops tractionlaw, call here to turn it on
@@ -1181,9 +1122,12 @@ bool NairnMPM::HasFluidTransport(void) { return DiffusionTask::active!=NO_DIFFUS
 // Get Courant-Friedrichs-Levy condition factor for convergence for propagation calculations
 double NairnMPM::GetPropagationCFLCondition(void) { return PropFractCellTime; }
 
-// string about MPM additions (when printing out analysis type
-const char *NairnMPM::MPMAugmentation(void)
-{
-	return "";
+#pragma mark ARCHIVE PASS THROUGHS
+
+// archiver pass throught while setting up analysis
+void NairnMPM::ArchiveNodalPoints(int np) { archiver->ArchiveNodalPoints(np); }
+void NairnMPM::ArchiveElements(int np) { archiver->ArchiveElements(np); }
+void NairnMPM::SetInputDirPath(const char *xmlFIle,bool useWorkingDir)
+{	archiver->SetInputDirPath(xmlFIle,useWorkingDir);
 }
 

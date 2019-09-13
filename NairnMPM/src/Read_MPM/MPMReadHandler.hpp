@@ -27,6 +27,7 @@ class MPMReadHandler : public CommonReadHandler
         ~MPMReadHandler();
     
         // Handlers for processing FEA data
+		virtual CommonAnalysis *GetCommonAnalysis(void);
 		virtual bool myStartElement(char *xName,const Attributes& attrs);
 		virtual void myEndElement(char *);
 		virtual void myCharacters(char *,const unsigned int);

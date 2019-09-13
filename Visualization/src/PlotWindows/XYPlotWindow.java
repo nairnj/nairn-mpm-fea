@@ -58,6 +58,11 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 		controls=plotControls;
 		component=controls.adjustComponent(controls.getPlotComponent(LoadArchive.MESH2D_PLOT));
 		
+		// plot file of global results
+		if(component==PlotQuantity.IMPORTANDPLOTFILE)
+		{	importAndPlotFile();			
+			return;
+		}
 		// detach thread to gather plot information
 		Thread plot2DThread=new Thread(this);
 		plot2DThread.start();

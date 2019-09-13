@@ -534,7 +534,7 @@ NairnMPM : $(objects)
 # Common: System
 main.o : $(main).cpp $(dprefix) $(NairnMPM).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(main).cpp
-CommonAnalysis.o : $(CommonAnalysis).cpp $(dprefix) $(CommonAnalysis).hpp $(ArchiveData).hpp $(MPMReadHandler).hpp $(CommonException).hpp \
+CommonAnalysis.o : $(CommonAnalysis).cpp $(dprefix) $(CommonAnalysis).hpp $(CommonException).hpp \
 			$(StrX).hpp $(MaterialBase).hpp $(NodalPoint).hpp $(ElementBase).hpp $(CommonReadHandler).hpp \
 			$(CommonArchiveData).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonAnalysis).cpp
@@ -557,9 +557,8 @@ UnitsController.o : $(UnitsController).cpp $(UnitsController).hpp $(CommonReadHa
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UnitsController).cpp
 
 # Common: Read_XML
-CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp $(NairnMPM).hpp $(MaterialController).hpp \
-			$(NodesController).hpp $(ElementsController).hpp $(StrX).hpp $(ElementBase).hpp $(NodalPoint).hpp $(CrackVelocityField).hpp \
-			$(MatVelocityField).hpp
+CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp $(MaterialController).hpp \
+			$(NodesController).hpp $(ElementsController).hpp $(StrX).hpp $(ElementBase).hpp $(NodalPoint).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonReadHandler).cpp
 XYFileImporter.o : $(XYFileImporter).cpp $(dprefix) $(XYFileImporter).hpp $(CommonReadHandler).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(XYFileImporter).cpp
@@ -688,14 +687,15 @@ NairnMPM.o : $(NairnMPM).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveData).hpp $(Com
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(CustomTask).hpp $(MPMWarnings).hpp $(CrackHeader).hpp $(MatPtFluxBC).hpp \
 			$(CrackSurfaceContact).hpp $(MeshInfo).hpp $(TransportTask).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
 			$(MatPtHeatFluxBC).hpp $(InitVelocityFieldsTask).hpp $(ProjectRigidBCsTask).hpp $(PostExtrapolationTask).hpp \
-			$(PostForcesTask).hpp $(NodalPoint).hpp $(BodyForce).hpp $(NodalVelBC).hpp $(InitialCondition).hpp $(XPICExtrapolationTask).hpp \
+			$(PostForcesTask).hpp $(NodalPoint).hpp $(BodyForce).hpp $(InitialCondition).hpp $(XPICExtrapolationTask).hpp \
 			$(RigidMaterial).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NairnMPM).cpp
 StartOutput.o : $(StartOutput).cpp $(dprefix) $(NairnMPM).hpp $(MaterialBase).hpp $(ThermalRamp).hpp $(ArchiveData).hpp \
 			$(CommonArchiveData).hpp $(BodyForce).hpp $(CrackSurfaceContact).hpp $(CommonException).hpp $(ElementBase).hpp \
 			$(NodalPoint).hpp $(DiffusionTask).hpp $(ConductionTask).hpp $(NodalConcBC).hpp $(NodalValueBC).hpp $(BoundaryCondition).hpp \
 			$(NodalTempBC).hpp $(NodalVelBC).hpp $(MatPtLoadBC).hpp $(MatPtFluxBC).hpp $(CrackHeader).hpp $(MatPtHeatFluxBC).hpp \
-			$(TransportTask).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(MatPtTractionBC).hpp $(MeshInfo).hpp
+			$(TransportTask).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(MatPtTractionBC).hpp $(MeshInfo).hpp \
+			$(MPMReadHandler).hpp $(CommonReadHandler).hpp $(InitialCondition).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(StartOutput).cpp
 MeshInfo.o : $(MeshInfo).cpp $(dprefix) $(MeshInfo).hpp $(GridPatch).hpp $(MPMBase).hpp $(CommonException).hpp $(ElementBase).hpp \
 			$(BoundaryCondition).hpp $(NairnMPM).hpp $(NodalPoint).hpp $(MaterialBase).hpp $(ContactLaw).hpp $(MPMWarnings).hpp

@@ -5,7 +5,7 @@
     Created by jnairn on Mon Nov 19 2001.
     Copyright (c) 2001, All rights reserved.
 	
-	Header for NairnMPM.hpp, ReadInput.cpp, and OutputSetup.hpp
+	Header for NairnMPM.hpp, ReadInput.cpp, and OutputSetup.cpp
 
 	Dependencies
 		none
@@ -44,23 +44,35 @@ class NairnMPM : public CommonAnalysis
         //  Constructors and Destructor
 		NairnMPM();
 		
-		// methods
-		void StartAnalysis(bool);
-		virtual void MyStartResultsOutput(void);
-		void OutputSetup(void);
-		void MPMAnalysis(bool);
+		// output
+		virtual void PrintAnalysisTitle(void);
+		virtual void CMStartResultsOutput(void);
+		virtual void PrintAnalysisMethod(void);
+		void OutputBCMassAndGrid(void);
+	
+		// analysis
+		virtual void CMPreparations(void);
+		virtual void CMAnalysis(bool);
 		void MPMStep(void);
-		void PreliminaryCalcs(void);
+	
+		// preparation tasks
+		void CreateTransportTasks(void);
+		void PreliminaryParticleCalcs(void);
+		void GridAndElementCalcs(void);
+		void SetupMaterialModeContactXPIC(void);
+		void PreliminaryCrackCalcs(void);
+		void CreateWarnings(void);
 		void CreateTasks(void);
+	
+		// support
+		void ReorderParticles(int,int);
+		void CFLTimeStep(void);
 		void ReorderPtBCs(MatPtLoadBC *,int,int);
 		void SetForceBCs(void);
 		void ValidateOptions(void);
 		void Usage(void);
     
 		// accessors
-		virtual void PrintAnalysisTitle(void);
-		virtual void PrintAnalysisType(void);
-		virtual const char *CodeName(void) const;
 		virtual bool ValidAnalysisType(void);
 		virtual void SetHasTractionCracks(bool);
         double *GetCFLPtr(void);
@@ -68,11 +80,22 @@ class NairnMPM : public CommonAnalysis
 		double GetCFLCondition(void);
 		double GetTransCFLCondition(void);
         double GetPropagationCFLCondition(void);
-		virtual const char *MPMAugmentation(void);
 		bool HasDiffusion(void);
 		bool HasFluidTransport(void);
 	
-    protected:
+		// archiver access while reading
+		virtual void ArchiveNodalPoints(int);
+		virtual void ArchiveElements(int);
+		virtual void SetInputDirPath(const char *,bool);
+	
+		// output accessors
+		virtual CommonReadHandler *GetReadHandler(void);
+		virtual void GetAnalysisType(int,char *);
+		virtual const char *CodeName(void) const;
+		virtual const char *NodesAndElementsTitle(void) const;
+		virtual const char *MPMAugmentation(void);
+
+	protected:
         double FractCellTime;			// fraction of cell crossed at wave speed (<1)
         double PropFractCellTime;       // separate fraction of cell crossed for propagation time steps (currently not settable)
 		double TransFractCellTime;		// fraction used for finding transport time step (<1)

@@ -220,7 +220,7 @@ const char *MaterialBase::VerifyAndLoadProperties(int np)
 
 #pragma mark MaterialBase::Initialization (optional)
 
-/* This is called after PreliminaryCalcs() and just before first MPM time step and it
+/* This is called after PreliminaryParticleCalcs() and just before first MPM time step and it
  is only called if the material is actually in use by one or more particles
 	If material cannot be used in current analysis type throw an exception
 	Subclass that overrides must pass on to super class

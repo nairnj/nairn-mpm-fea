@@ -159,6 +159,8 @@ public class PlotQuantity extends PlotControl
 	public static int feaMeshQuant=-1;
 	public static int feaMeshComp=-1;
 	
+	static final int IMPORTANDPLOTFILE=5000;
+	
 	// pop-up menus
 	public JComboBox<PlotMenuItem> quant=new JComboBox<PlotMenuItem>();
 	public JComboBox<String> cmpnt=new JComboBox<String>();
@@ -374,6 +376,9 @@ public class PlotQuantity extends PlotControl
 				{	preselect = mpmMovieQuant;
 					preComp = mpmMovieComp;
 				}
+				
+				// import and plot
+				quant.addItem(new PlotMenuItem("Import...",IMPORTANDPLOTFILE));
 			}
 			
 			// FEA plot quantities
@@ -403,6 +408,9 @@ public class PlotQuantity extends PlotControl
 				quant.addItem(new PlotMenuItem("Material",MESHMATERIAL));
 				quant.addItem(new PlotMenuItem("Material Angle",MESHANGLE));
 				
+				// import and plot
+				quant.addItem(new PlotMenuItem("Import...",IMPORTANDPLOTFILE));
+
 				preselect = feaMeshQuant;
 				preComp = feaMeshComp;
 			}
@@ -839,6 +847,9 @@ public class PlotQuantity extends PlotControl
 			
 			case MPMGLOBALRESULTS:
 				return "Global Results";
+			
+			case IMPORTANDPLOTFILE:
+				return "Plot Data";
 			
 			case MPMELEMENTCROSSINGS:
 			case MPMTOTELEMENTCROSSINGS:

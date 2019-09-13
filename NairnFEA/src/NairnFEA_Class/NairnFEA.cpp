@@ -7,16 +7,16 @@
 *********************************************************************/
 
 #include "stdafx.h"
-#include "NairnFEA_Class/NairnFEA.hpp"
-#include "Elements/ElementBase.hpp"
-#include "Exceptions/CommonException.hpp"
-#include "Boundary_Conditions/NodalLoad.hpp"
-#include "Boundary_Conditions/NodalDispBC.hpp"
-#include "Nodes/NodalPoint.hpp"
-#include "Boundary_Conditions/EdgeBC.hpp"
-#include "Boundary_Conditions/Constraint.hpp"
 #include "System/FEAArchiveData.hpp"
 #include "System/UnitsController.hpp"
+#include "NairnFEA_Class/NairnFEA.hpp"
+#include "Elements/ElementBase.hpp"
+#include "Nodes/NodalPoint.hpp"
+#include "Boundary_Conditions/NodalLoad.hpp"
+#include "Boundary_Conditions/NodalDispBC.hpp"
+#include "Boundary_Conditions/EdgeBC.hpp"
+#include "Boundary_Conditions/Constraint.hpp"
+#include "Exceptions/CommonException.hpp"
 #include <time.h>
 
 // global analysis object
@@ -25,9 +25,7 @@ NairnFEA *fmobj=NULL;
 // prototypes to solve banded, symmetric matrix problem
 int gelbnd(double **,int,int,double *,double *,int);
 
-/********************************************************************************
-	NairnFEA: Constructors and Destructor
-********************************************************************************/
+#pragma mark NairnFEA: Constructors and Destructor
 
 // throws std::bad_alloc
 NairnFEA::NairnFEA()
@@ -51,31 +49,17 @@ NairnFEA::NairnFEA()
 	archiver=new FEAArchiveData();		// archiving object
 }
 
-/********************************************************************************
-	NairnMPM: Start Analysis
-********************************************************************************/
+#pragma mark NairnFEA: Run FEA Analysis
 
-void NairnFEA::StartAnalysis(bool abort)
+// Do the FEA analysis
+void NairnFEA::CMAnalysis(bool abort)
 {
-	// start analysis file
-	StartResultsOutput();
 	if(abort)
 	{	cout << "\n***** NairnFEA RUN COMPLETED\n" << endl;
 		return;
 	}
-    
-	// Do FEA analysis
-	FEAAnalysis();
-}
 
-/*********************************************************************
-    NairnFEA: Main entry to read file and decode into objects
-	throws CommonException(), unsigned char *
-*********************************************************************/
-
-void NairnFEA::FEAAnalysis()
-{
-    char nline[200];
+	char nline[200];
     int result;
     int i;
     NodalDispBC *nextBC;
@@ -369,10 +353,9 @@ int NairnFEA::GetBandWidth(void)
     return nband;
 }
 
-/***********************************************************
-	Print Displacement Results
-***********************************************************/
+#pragma mark NairnFEA: Output Results
 
+// Print Displacement Results
 void NairnFEA::DisplacementResults(void)
 {
     int i,ind=0,maxi,ii;
@@ -412,11 +395,8 @@ void NairnFEA::DisplacementResults(void)
     cout << endl;
 }
 
-/**********************************************************
-	Calculate stresses and energies
-	Print stress and forces
-**********************************************************/
-
+// Calculate stresses and energies
+// Print stress and forces
 void NairnFEA::ForceStressEnergyResults(void)
 {
     int i,j,iel,ind,kftemp=0,kstemp=0,numnds;
@@ -538,11 +518,8 @@ void NairnFEA::ForceStressEnergyResults(void)
 		cout << endl;
 }
 
-/**********************************************************
-    Print average modal stresses
-        (Calculated in ForceStressEnergyResults())
-**********************************************************/
-
+// Print average modal stresses
+//  (Calculated in ForceStressEnergyResults())
 void NairnFEA::AvgNodalStresses(void)
 {
     int numshw,ii,i;
@@ -566,10 +543,7 @@ void NairnFEA::AvgNodalStresses(void)
     cout << endl;
 }
 
-/**********************************************************
-	Print reactivities at fixed nodes
-**********************************************************/
-
+// Print reactivities at fixed nodes
 void NairnFEA::ReactionResults(void)
 {
     NodalDispBC *nextBC=firstDispBC;
@@ -591,10 +565,7 @@ void NairnFEA::ReactionResults(void)
     cout << endl;
 }
 
-/**********************************************************
-	Print strain energy results
-**********************************************************/
-
+// Print strain energy results
 void NairnFEA::EnergyResults(void)
 {
     double temp;
@@ -632,40 +603,18 @@ void NairnFEA::EnergyResults(void)
     cout << fline << endl << endl;
 }
 
-/********************************************************************************
-	NairnFEA: accessors
-********************************************************************************/
-
-// return name, caller should delete
-const char *NairnFEA::CodeName(void) const
-{
-	return "NairnFEA";
-}
-
-// Explain usage of this program
-void NairnFEA::Usage()
-{
-    CoutCodeVersion();
-    cout << "    Expects Xerces 3.1.1 or newer" << endl;
-    cout << "\nUsage:\n"
-            "    NairnFEA [-options] <InputFile>\n\n"
-            "This program reads the <InputFile> and does an FEA analysis.\n"
-            "The results summary is directed to standard output.\n\n"
-            "Options:\n"
-            "    -a          Abort after setting up problem but before\n"
-			"                   FEA Analysis\n"
-            "    -H          Show this help\n"
-            "    -np #       Set number of processors for parallel code\n"
-            "    -v          Validate input file if DTD is provided in !DOCTYPE\n"
-            "                   (default is to skip validation)\n"
-            "    -w          Out results to current working directory\n"
-            "                   (default isoutput to folder of input file)\n"
-            "    -?          Show this help\n\n"
-            "See http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page for full documentation\n\n"
-          <<  endl;
-}
+#pragma mark NairnFEA: accessors
 
 // verify analysis type
 bool NairnFEA::ValidAnalysisType(void)
 {	return np>=PLANE_STRAIN && np<END_FEA_TYPES;
+}
+
+#pragma NairnFEA: archiver pass alongs
+
+// archiver pass throught while setting up analysis
+void NairnFEA::ArchiveNodalPoints(int np) { archiver->ArchiveNodalPoints(np); }
+void NairnFEA::ArchiveElements(int np) { archiver->ArchiveElements(np); }
+void NairnFEA::SetInputDirPath(const char *xmlFIle,bool useWorkingDir)
+{	archiver->SetInputDirPath(xmlFIle,useWorkingDir);
 }

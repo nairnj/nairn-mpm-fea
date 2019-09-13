@@ -49,9 +49,7 @@
 
 int cracksDim = MUST_BE_2D;
 
-/********************************************************************************
-	MPMReadHandler: Constructors and Destructor
-********************************************************************************/
+#pragma mark MPMReadHandler: Constructors and Destructor
 
 // throws std::bad_alloc
 MPMReadHandler::MPMReadHandler()
@@ -74,9 +72,10 @@ MPMReadHandler::~MPMReadHandler()
 	delete crackCtrl;
 }
 
-/********************************************************************************
-	MPMReadHandler: Constructors and Destructor
-********************************************************************************/
+#pragma mark MPMReadHandler: Methods
+
+// Return NairnFEA class object
+CommonAnalysis *MPMReadHandler::GetCommonAnalysis(void) { return fmobj; }
 
 // Custom MPM element start
 // throws std::bad_alloc, SAXException()

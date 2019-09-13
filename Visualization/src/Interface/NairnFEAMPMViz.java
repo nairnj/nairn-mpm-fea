@@ -221,13 +221,38 @@ public class NairnFEAMPMViz extends JNApplication
     // add menu of examples
     public static void addExamplesMenu(JMenuBar menuBar,String menuName)
     {
+		// get menu
+		JMenu fileMenu = null;
+		int count = menuBar.getMenuCount();
+		for(int i=0;i<count;i++)
+		{	JMenu testMenu = menuBar.getMenu(i);
+			if(testMenu.getText().equals(menuName))
+			{	fileMenu = testMenu;
+				break;
+			}
+		}
+		if(fileMenu==null)
+		{	System.out.println(menuName+" menu not found");
+			return;
+		}
+		
+		// add examples menu
+		JMenu examplesMenu = new JMenu("Examples");
+		fileMenu.add(examplesMenu);
+
 		// read list of examples
 		String readData=new String();
 		InputStream ins=NairnFEAMPMViz.class.getResourceAsStream("Resources/examples.txt");
+		
+		// erro if not found = insert into menu
+		if(ins==null)
+		{	JMenuItem menuItem = new JMenuItem("(example files list not found)");
+			examplesMenu.add(menuItem);
+			return;
+		}
+		
 		try
-		{	if(ins==null)
-				throw new Exception("examples list not found");
-			int remaining;
+		{	int remaining;
 			while(true)
 			{	remaining=ins.available();
 				if(remaining==0) break;
@@ -236,32 +261,19 @@ public class NairnFEAMPMViz extends JNApplication
 				readData=readData+(new String(buffer));
 			}
 			String[] examples = readData.split("\\r\\n|\\n|\\r");
+			
 			if(examples.length==0)
-				throw new Exception("examples list is empty");
-			
-			// get menu
-			JMenu fileMenu = null;
-			int count = menuBar.getMenuCount();
-			for(int i=0;i<count;i++)
-			{	JMenu testMenu = menuBar.getMenu(0);
-				if(testMenu.getText().equals(menuName))
-				{	fileMenu = testMenu;
-					break;
-				}
-			}
-			if(fileMenu==null)
-				throw new Exception(menuName+" menu not found");
-			
-			// add examples menu
-			JMenu examplesMenu = new JMenu("Examples");
-			fileMenu.add(examplesMenu);
-			
-			// add examples to submenu
-			for(int i=0;i<examples.length;i++)
-			{	JMenuItem menuItem = new JMenuItem(examples[i]);
-				menuItem.setActionCommand("$SAMPLE$"+examples[i]);
-				menuItem.addActionListener(JNApplication.main);
+			{	JMenuItem menuItem = new JMenuItem("(example files list is empty)");
 				examplesMenu.add(menuItem);
+			}
+			else
+			{	// add examples to submenu
+				for(int i=0;i<examples.length;i++)
+				{	JMenuItem menuItem = new JMenuItem(examples[i]);
+					menuItem.setActionCommand("$SAMPLE$"+examples[i]);
+					menuItem.addActionListener(JNApplication.main);
+					examplesMenu.add(menuItem);
+				}
 			}
 		}
 		catch (Exception e)

@@ -82,7 +82,7 @@ public class TextDisplay extends JSplitPane
 			}
 			public void componentShown(ComponentEvent e) {  }
 		});
-}
+	}
 
 	//--------------------------------------------------------------------
 	// Opening new file starts here. This class decodes generic sections

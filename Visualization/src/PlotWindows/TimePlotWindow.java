@@ -62,6 +62,12 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			return;
 		}
 		
+		// plot file of global results
+		else if(component==PlotQuantity.IMPORTANDPLOTFILE)
+		{	importAndPlotFile();			
+			return;
+		}
+		
 		// detach thread to gather plot information
 		Thread plot2DThread=new Thread(this);
 		plot2DThread.start();

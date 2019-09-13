@@ -17,6 +17,7 @@
 #include "Boundary_Conditions/EdgeBC.hpp"
 #include "System/UnitsController.hpp"
 #include "Read_XML/Expression.hpp"
+#include "Read_FEA/FEAReadHandler.hpp"
 
 /*********************************************************************
     Begin results information
@@ -29,12 +30,9 @@ void NairnFEA::PrintAnalysisTitle(void)
 	CoutCodeVersion();
 }
 
-// print analysis type
-void NairnFEA::PrintAnalysisType(void) {}
-    
 // finish start of FEA results file
 // throws std::bad_alloc, CommonException()
-void NairnFEA::MyStartResultsOutput(void)
+void NairnFEA::CMStartResultsOutput(void)
 {
     char hline[200];
     int i;
@@ -44,7 +42,7 @@ void NairnFEA::MyStartResultsOutput(void)
     PrintSection("THERMAL LOAD");
 	if(temperatureExpr!=NULL)
 	{	if(!Expression::CreateFunction(temperatureExpr,1))
-			throw CommonException("The temperature expression is not a valid function","NairnFEA::MyStartResultsOutput");
+			throw CommonException("The temperature expression is not a valid function","NairnFEA::CMStartResultsOutput");
 		for(i=1;i<=nnodes;i++)
 		{	nd[i]->gTemperature = Expression::FunctionValue(1,nd[i]->x,nd[i]->y,0.,0.,0.,0.)-stressFreeTemperature;
 		}
@@ -172,3 +170,65 @@ void NairnFEA::MyStartResultsOutput(void)
 		cout << endl;
 	}
 }
+
+#pragma mark NairnFEA: output accessors
+
+// return name, caller should delete
+const char *NairnFEA::CodeName(void) const { return "NairnFEA"; }
+
+// FEA analysis type
+void NairnFEA::GetAnalysisType(int np,char *fline)
+{
+	// analysis type
+	switch(np)
+	{	case PLANE_STRAIN:
+			strcpy(fline,"2D Plane Strain Analysis");
+			break;
+			
+		case PLANE_STRESS:
+			strcpy(fline,"2D Plane Stress Analysis");
+			break;
+			
+		case AXI_SYM:
+			strcpy(fline,"Axisymmetric Analysis");
+			break;
+			
+		default:
+			throw CommonException("No FEA analysis type was provided.","CommonAnalysis::StartResultsOutput");
+	}
+}
+
+// title for nodes and elements section
+const char *NairnFEA::NodesAndElementsTitle(void) const { return "NODES AND ELEMENTS"; }
+
+// Get file read handler
+CommonReadHandler *NairnFEA::GetReadHandler(void)
+{
+	FEAReadHandler *handler=new FEAReadHandler();
+	return handler;
+}
+
+// Explain usage of this program
+void NairnFEA::Usage()
+{
+	CoutCodeVersion();
+	cout << "    Expects Xerces 3.1.1 or newer" << endl;
+	cout << "\nUsage:\n"
+	"    NairnFEA [-options] <InputFile>\n\n"
+	"This program reads the <InputFile> and does an FEA analysis.\n"
+	"The results summary is directed to standard output.\n\n"
+	"Options:\n"
+	"    -a          Abort after setting up problem but before\n"
+	"                   FEA Analysis\n"
+	"    -H          Show this help\n"
+	"    -np #       Set number of processors for parallel code\n"
+	"    -v          Validate input file if DTD is provided in !DOCTYPE\n"
+	"                   (default is to skip validation)\n"
+	"    -w          Out results to current working directory\n"
+	"                   (default isoutput to folder of input file)\n"
+	"    -?          Show this help\n\n"
+	"See http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page for full documentation\n\n"
+	<<  endl;
+}
+
+

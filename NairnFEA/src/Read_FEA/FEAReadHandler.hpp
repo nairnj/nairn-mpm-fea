@@ -26,11 +26,13 @@ class FEAReadHandler : public CommonReadHandler
         ~FEAReadHandler();
     
         // Handlers for processing FEA data
+		virtual CommonAnalysis *GetCommonAnalysis(void);
 		virtual bool myStartElement(char *,const Attributes&);
 		virtual void myEndElement(char *);
 		virtual void myCharacters(char *,const unsigned int);
 		virtual void TranslateBMPFiles(void);
-		
+		virtual NodesController *DeleteTheNodes(void);
+	
 		// My Methods
 		int GetDOFAttribute(char *);
 		void ResequenceNodes(void);

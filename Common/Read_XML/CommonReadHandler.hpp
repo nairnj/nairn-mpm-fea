@@ -51,6 +51,7 @@ typedef struct
 } DomainMap;
 
 class BMPLevel;
+class NodesController;
 
 // Input blocks
 #define BAD_BLOCK -1
@@ -95,6 +96,7 @@ class CommonReadHandler : public DefaultHandler
         void characters(const XMLCh* const,const XMLSize_t);
 
         // prototypes for abstract methods (must override)
+		virtual CommonAnalysis *GetCommonAnalysis(void) = 0;
         virtual bool myStartElement(char *,const Attributes&) = 0;
 		virtual void myEndElement(char *) = 0;
 		virtual void myCharacters(char *,const unsigned int) = 0;
@@ -107,6 +109,7 @@ class CommonReadHandler : public DefaultHandler
 		short BMPFileCommonInput(char *,const Attributes&,int,bool);
 		short EndBMPInput(char *xName,int);
 		virtual void TranslateBMPFiles(void);
+		virtual NodesController *DeleteTheNodes(void);
 	
         //  Handlers for the SAX ErrorHandler interface
         void warning(const SAXParseException&);

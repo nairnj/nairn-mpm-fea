@@ -20,10 +20,9 @@ char CommonArchiveData::folderDelim = '\\';
 char CommonArchiveData::folderDelim = '/';
 #endif
 
-/********************************************************************************
-	CommonArchiveData: Constructors and Destructor
-********************************************************************************/
+#pragma mark CommonArchiveData: Constructors and Destructor
 
+// Construtor
 CommonArchiveData::CommonArchiveData()
 {
 	// path to folder containing the input command file
@@ -47,19 +46,14 @@ CommonArchiveData::CommonArchiveData()
 	forceUnique=false;		// when TRUE forces unique folder to be created for archiving
 }
 
+// destructor
 CommonArchiveData::~CommonArchiveData()
 {
 }
 
-/********************************************************************************
-	CommonArchiveData: methods
-********************************************************************************/
+#pragma mark CommonArchiveData: methods
 
-/*******************************************************************
-	Output file mesh - list or send to a file
-*******************************************************************/
-
-// Nodal Points
+// Nodal Points - list or send to a file
 void CommonArchiveData::ArchiveNodalPoints(int np)
 {
 	char fname[256];
@@ -90,7 +84,7 @@ void CommonArchiveData::ArchiveNodalPoints(int np)
 	cout << endl;
 }
 
-// Elements
+// Elements - list or send to a file
 void CommonArchiveData::ArchiveElements(int np)
 {
 	char fname[256];
@@ -123,9 +117,7 @@ void CommonArchiveData::ArchiveElements(int np)
     cout << endl;
 }
 
-/*******************************************************************
-	CommonArchiveData: Accessors
-*******************************************************************/
+#pragma mark CommonArchiveData: Accessors
 
 // Set archive mesh option
 void CommonArchiveData::SetArchiveMesh(bool newSetting) { archiveMesh=newSetting; }
@@ -283,3 +275,14 @@ void CommonArchiveData::GetFilePathNum(char *fname, const char *prefix,int pnum)
 	sprintf(fname, prefix, outputDir, archiveRoot,pnum);
 #endif
 }
+
+// build arelative rchiving file path with a number (fname better be long enough)
+void CommonArchiveData::GetRelativeFilePathNum(char *fname, const char *prefix,int pnum)
+{	// build name for unix
+#ifdef WINDOWS_EXE
+	sprintf(fname, prefix, archiveDosRoot,pnum);
+#else
+	sprintf(fname, prefix, archiveRoot,pnum);
+#endif
+}
+

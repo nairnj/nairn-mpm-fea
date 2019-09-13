@@ -7,13 +7,7 @@
 ********************************************************************************/
 
 #include "stdafx.h"
-#ifdef MPM_CODE
-	#include "System/ArchiveData.hpp"
-	#include "Read_MPM/MPMReadHandler.hpp"
-#else
-	#include "System/FEAArchiveData.hpp"
-	#include "Read_FEA/FEAReadHandler.hpp"
-#endif
+#include "Read_XML/CommonReadHandler.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Exceptions/StrX.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -48,7 +42,24 @@ CommonAnalysis::~CommonAnalysis()
 	delete [] description;
 }
 
-#pragma mark CommonAnalysis: methods
+#pragma mark CommonAnalysis: Running Analysis
+
+// Start comuptational mechanics calculations
+void CommonAnalysis::StartAnalysis(bool abort)
+{
+	// start output file
+	StartResultsOutput();
+	
+	// finish with analysis specific items
+	CMStartResultsOutput();
+	
+	// prepare for computational mechanics
+	CMPreparations();
+	
+	// run the computational mechancis
+	CMAnalysis(abort);
+	
+}
 
 // start results file before proceeding to analysis
 // throws CommonException()
@@ -90,14 +101,10 @@ void CommonAnalysis::StartResultsOutput(void)
 	
     //--------------------------------------------------
     // Analysis Type
-	PrintAnalysisType();
+	PrintAnalysisMethod();
 	
-    // start section (Background Grid)
-#ifdef MPM_CODE
-    PrintSection("NODES AND ELEMENTS (Background Grid)");
-#else
-    PrintSection("NODES AND ELEMENTS");
-#endif
+    // start section (nodes and elements in grid)
+	PrintSection(NodesAndElementsTitle());
     
     //---------------------------------------------------
     // Nodes
@@ -108,55 +115,19 @@ void CommonAnalysis::StartResultsOutput(void)
     cout << hline;
     sprintf(hline,"DOF per node: %d     ",nfree);
     cout << hline;
-    
-	// analysis type
-    switch(np)
-    {	case PLANE_STRAIN:
-            cout << "2D Plane Strain Analysis\n";
-            break;
-        
-        case PLANE_STRESS:
-            cout << "2D Plane Stress Analysis\n";
-            break;
-        
-        case AXI_SYM:
-            cout << "Axisymmetric Analysis\n";
-            break;
-        
-    	case PLANE_STRAIN_MPM:
-            cout << "2D Plane Strain MPM" << MPMAugmentation() << " Analysis\n";
-            break;
-        
-        case PLANE_STRESS_MPM:
-            cout << "2D Plane Stress MPM" << MPMAugmentation() << " Analysis\n";
-            break;
-        
-        case THREED_MPM:
-            cout << "3D MPM" << MPMAugmentation() << " Analysis\n";
-            break;
-		
-		case AXISYMMETRIC_MPM:
-            cout << "Axisymmetric MPM" << MPMAugmentation() << " Analysis\n";
-            break;
-        
-        default:
-            throw CommonException("No FEA or MPM analysis type was provided.","CommonAnalysis::StartResultsOutput");
-    }
-#ifdef MPM_CODE
-	cout << "Incremental F Terms: " << MaterialBase::incrementalDefGradTerms << endl;
-#endif
-	cout << endl;
+	GetAnalysisType(np,hline);
+	cout << hline << endl << endl;
 	
     //---------------------------------------------------
     // Nodes
 	sprintf(hline,"NODAL POINT COORDINATES (in %s)",UnitsController::Label(CULENGTH_UNITS));
     PrintSection(hline);
-	archiver->ArchiveNodalPoints(np);
+	ArchiveNodalPoints(np);
 
     //---------------------------------------------------
     // Elements
     PrintSection("ELEMENT DEFINITIONS");
-	archiver->ArchiveElements(np);
+	ArchiveElements(np);
     
     //---------------------------------------------------
     // Defined Materials
@@ -181,9 +152,6 @@ void CommonAnalysis::StartResultsOutput(void)
 		}
    }
 	
-	// finish with analysis specific items
-	MyStartResultsOutput();
-	
 	//---------------------------------------------------
 	// initialize timers
 #ifdef _OPENMP
@@ -194,12 +162,21 @@ void CommonAnalysis::StartResultsOutput(void)
 	startCPU=clock();
 }
 
+// print analysis type (if needed)
+void CommonAnalysis::PrintAnalysisMethod(void) {}
+
+// Do an iniitial preparations before starting the analysis
+// throws CommonException()
+void CommonAnalysis::CMPreparations(void) {}
+
+#pragma mark CommonAnalysis: Base Methods
+
 // Main entry to read file and decode into objects
 // xmlFile are command arg - relative or full path, dos path in windows
 int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
 {
 	// set directory of input file
-	archiver->SetInputDirPath(xmlFile,useWorkingDir);
+	SetInputDirPath(xmlFile,useWorkingDir);
 	
     // Initialize the XML4C2 system
 	SAX2XMLReader* parser;
@@ -239,23 +216,15 @@ int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
     }
 
     // parce the file
-#ifdef MPM_CODE
-	MPMReadHandler *handler=new MPMReadHandler();
-#else
-	FEAReadHandler *handler=new FEAReadHandler();
-#endif
+	CommonReadHandler *handler = GetReadHandler();
     try
 	{	// create the handler
 		parser->setContentHandler(handler);
 		parser->setErrorHandler(handler);
 		parser->parse(xmlFile);
 		
-		// Reading done, not clean up and exit
-#ifdef MPM_CODE
-		delete parser;				// Must be done prior to calling Terminate, below.
-#else
-		// delete parser;			// not sure why cannot delete the parser in FEA code
-#endif
+		// Reading done, now clean up and exit
+		delete parser;
 		handler->FinishUp();
 		delete handler;
 		XMLPlatformUtils::Terminate();

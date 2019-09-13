@@ -15,6 +15,7 @@ import java.awt.geom.Point2D;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.text.NumberFormat;
@@ -263,6 +264,30 @@ public class TwoDPlotWindow extends JNChildWindow
 		{	JOptionPane.showMessageDialog(this,"Error writing PDF plot data: " + fe);
 		}
 		
+	}
+	
+	// import and plot file
+	public void importAndPlotFile() throws Exception
+	{	JFileChooser chooser=new JFileChooser();
+		NFMVPrefs.setWorkspace(chooser);
+		int result=chooser.showOpenDialog(this);
+		if(result==JFileChooser.CANCEL_OPTION) return;
+	
+		String newPath=chooser.getSelectedFile().getPath();
+		File dataFile = new File(newPath);
+		try
+		{	FileReader fr=new FileReader(dataFile);
+			char [] buffer=new char [(int)dataFile.length()];
+			fr.read(buffer);
+			fr.close();
+			String plotData = new String(buffer);
+			plot2DView.readTable(plotData);
+			setVisible(true);
+			toFront();
+		}
+		catch (Exception e)
+		{	throw new Exception("Could not load plot data file:\n   " + e.getMessage());
+		}
 	}
 
 }

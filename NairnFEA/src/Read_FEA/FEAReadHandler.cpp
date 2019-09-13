@@ -32,9 +32,14 @@
 #include "Boundary_Conditions/Constraint.hpp"
 #include <algorithm>
 
-/********************************************************************************
-	FEAReadHandler: Constructors and Destructor
-********************************************************************************/
+#define MAX_CONNECTIVITY 41
+
+typedef struct {
+	int degree;
+	int cons[MAX_CONNECTIVITY];
+} ConnectRec;
+
+#pragma mark FEAReadHandler: Constructors and Destructor
 
 FEAReadHandler::FEAReadHandler()
 {
@@ -72,9 +77,10 @@ FEAReadHandler::~FEAReadHandler()
 	}
 }
 
-/********************************************************************************
-	FEAReadHandler: Methods
-********************************************************************************/
+#pragma mark FEAReadHandler: Methods
+
+// Return NairnFEA class object
+CommonAnalysis *FEAReadHandler::GetCommonAnalysis(void) { return fmobj; }
 
 // Custom FEA element start
 // not thread safe due to push_back()
@@ -897,6 +903,14 @@ void FEAReadHandler::myCharacters(char *xData,const unsigned int length)
     }
 }
 
+// delete nodes controller
+NodesController *FEAReadHandler::DeleteTheNodes(void)
+{	// FEA keeps theNodes until later
+	//delete theNodes;
+	return theNodes;
+}
+
+
 /********************************************************************************
 	 Translate dof attribute into integer. It can be 1 (or n or x),
 	 2 (or t or y), or 3 (or z). Anything else returns zero
@@ -918,16 +932,7 @@ int FEAReadHandler::GetDOFAttribute(char *value)
 	return dof;
 }
 
-/********************************************************************************
-	 Resequence nodes starting at node resequence
-********************************************************************************/
-
-#define MAX_CONNECTIVITY 41
-
-typedef struct {
-	int degree;
-	int cons[MAX_CONNECTIVITY];
-} ConnectRec;
+#pragma mark FEAReadHandler: Node and Element Processing
 
 // throws std::bad_alloc, SAXException()
 void FEAReadHandler::ResequenceNodes(void)

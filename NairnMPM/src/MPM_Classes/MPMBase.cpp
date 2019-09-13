@@ -43,7 +43,7 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
     int i;
     
     inElem=elem;
-	mp=-1.;						// calculated in PreliminaryCalcs, unless set in input file
+	mp=-1.;						// calculated in PreliminaryParticleCalcs, unless set in input file
     matnum=theMatl;
 	SetAnglez0InDegrees(angin);
 	SetAngley0InDegrees(0.0);
@@ -215,7 +215,7 @@ ResidualStrains MPMBase::ScaledResidualStrains(int secondPass)
 	return res;
 }
 
-// set mass in PreliminaryCalcs, but only if input file did not set it first
+// set mass in PreliminaryParticleCalcs, but only if input file did not set it first
 // When tracking spin, make sure particle momentum is initialized
 // throws std::bad_alloc
 void MPMBase::InitializeMass(double rho,double volPerParticle,bool trackSpin)

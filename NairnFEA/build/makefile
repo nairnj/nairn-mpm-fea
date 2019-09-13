@@ -297,7 +297,7 @@ NairnFEA : $(objects)
 # Common: System
 main.o : $(main).cpp $(dprefix) $(NairnFEA).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(main).cpp
-CommonAnalysis.o : $(CommonAnalysis).cpp $(dprefix) $(FEAArchiveData).hpp $(FEAReadHandler).hpp $(CommonException).hpp \
+CommonAnalysis.o : $(CommonAnalysis).cpp $(dprefix) $(CommonException).hpp \
 			$(StrX).hpp $(MaterialBase).hpp $(NodalPoint).hpp $(ElementBase).hpp $(CommonReadHandler).hpp \
 			$(CommonArchiveData).hpp $(NodalPoint).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonAnalysis).cpp
@@ -313,7 +313,7 @@ UnitsController.o : $(UnitsController).cpp $(UnitsController).hpp $(CommonReadHa
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UnitsController).cpp
 
 # Common: Read_XML
-CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp $(NairnFEA).hpp \
+CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp \
 			$(MaterialController).hpp $(NodesController).hpp $(ElementsController).hpp $(StrX).hpp $(ElementBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonReadHandler).cpp
 XYFileImporter.o : $(XYFileImporter).cpp $(dprefix) $(XYFileImporter).hpp $(CommonReadHandler).hpp
@@ -410,7 +410,7 @@ NairnFEA.o : $(NairnFEA).cpp $(dprefix) $(NairnFEA).hpp $(ElementBase).hpp $(Com
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NairnFEA).cpp
 FEAStartResults.o : $(FEAStartResults).cpp $(dprefix) $(NairnFEA).hpp $(ElementBase).hpp $(CommonException).hpp \
 			 $(NodalDispBC).hpp $(NodalLoad).hpp $(EdgeBC).hpp $(NodalPoint).hpp $(MaterialBase).hpp \
-			 $(FEABoundaryCondition).hpp $(Expression).hpp
+			 $(FEABoundaryCondition).hpp $(Expression).hpp $(FEAReadHandler).hpp $(CommonReadHandler).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(FEAStartResults).cpp
 
 # FEA: Read_FEA

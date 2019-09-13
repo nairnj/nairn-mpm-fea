@@ -7,26 +7,18 @@
 ********************************************************************************/
 
 #include "stdafx.h"
-#ifdef MPM_CODE
-	#include "NairnMPM_Class/NairnMPM.hpp"
-	#include "Read_MPM/CrackController.hpp"
-#else
-	#include "NairnFEA_Class/NairnFEA.hpp"
-#endif
+#include "System/UnitsController.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Read_XML/MaterialController.hpp"
 #include "Read_XML/NodesController.hpp"
 #include "Read_XML/ElementsController.hpp"
 #include "Elements/ElementBase.hpp"
-#include "Exceptions/StrX.hpp"
-#include "System/UnitsController.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Exceptions/StrX.hpp"
 
-/********************************************************************************
-	CommonReadHandler: Constructors and Destructor
-	throws std::bad_alloc
-********************************************************************************/
+#pragma mark CommonReadHandler: Constructors and Destructor
 
+// main constuctor
 CommonReadHandler::CommonReadHandler()
 {
 	meshType=UNKNOWN_MESH;
@@ -37,7 +29,7 @@ CommonReadHandler::CommonReadHandler()
     mxmax=mymax=mzmax=-1.;
 };
 
-// throws SAXException()
+// destructor
 CommonReadHandler::~CommonReadHandler()
 {
 	delete matCtrl;
@@ -50,12 +42,10 @@ void CommonReadHandler::FinishUp(void)
 		throw SAXException(emsg);
 }
 
-/********************************************************************************
-	CommonReadHandler: Methods
-	throws std::bad_alloc, SAXException()
-********************************************************************************/
+#pragma mark CommonReadHandler: Methods
 
 // Start a new element
+// throws std::bad_alloc, SAXException()
 void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const localname,
             const XMLCh* const qname,const Attributes& attrs)
 {
@@ -93,7 +83,8 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 		if(flagNum<0 || flagNum>=NUMBER_DEVELOPMENT_FLAGS)
 			throw SAXException("The <DevelFlag> 'Number' must be from 0 to 19");
 		input=INT_NUM;
-		inputPtr=(char *)&fmobj->dflag[flagNum];
+		CommonAnalysis *obj = GetCommonAnalysis();
+		inputPtr=(char *)&obj->dflag[flagNum];
     }
 	
 	else if(strcmp(xName,"ConsistentUnits")==0)
@@ -283,23 +274,18 @@ void CommonReadHandler::endElement(const XMLCh *const uri,const XMLCh *const loc
 	
 	else if(strcmp(xName,"Header")==0)
 	{	block=NO_BLOCK;
-		if(fmobj->np<0)
+		CommonAnalysis *obj = GetCommonAnalysis();
+		if(obj->np<0)
 			throw SAXException("Header did not specify required <Analysis> type.");
 	}
 	
 	else if(strcmp(xName,"Mesh")==0)
-	{	// in MPM, might be in a 3D crack
+	{	// Convert nodes and elements into arrays
 		if(theNodes!=NULL)
 		{	nd = theNodes->SetNodeArray(nnodes,&mxmin,&mxmax,&mymin,&mymax,&mzmin,&mzmax);;
 			if(nd==NULL)
 				throw SAXException("Memory error in <NodeList> or no nodes in the list.");
-#ifdef MPM_CODE
-			delete theNodes;
-			theNodes = NULL;
-#else
-			// FEA keeps the Nodes and deletes after resequencing is done
-			//delete theNodes;
-#endif
+			theNodes = DeleteTheNodes();
 		}
 		if(theElems!=NULL)
 		{	theElements = theElems->SetElementArray(nelems,block==MESHBLOCK);
@@ -309,7 +295,7 @@ void CommonReadHandler::endElement(const XMLCh *const uri,const XMLCh *const loc
 			theElems = NULL;
 		}
 		
-		// return to parent block
+		// return to parent block (CRACKLIST is for MPM)
 		block = block==MESHBLOCK ? NO_BLOCK : CRACKLIST ;
 	}
 	
@@ -345,8 +331,10 @@ void CommonReadHandler::characters(const XMLCh* const chars,const XMLSize_t leng
     {	case TEXT_BLOCK:
 			switch(inputID)
 			{	case DESCRIPTION:
-					fmobj->SetDescription(xData);
+				{	CommonAnalysis *obj = GetCommonAnalysis();
+					obj->SetDescription(xData);
 					break;
+				}
 				case CHAR_ARRAY:
 					if(inputPtr!=NULL) delete [] inputPtr;
 					inputPtr=new char[strlen(xData)+1];
@@ -370,11 +358,12 @@ void CommonReadHandler::characters(const XMLCh* const chars,const XMLSize_t leng
             break;
 		
 		case ANALYSIS_NUM:
-            sscanf(xData,"%d",&fmobj->np);
-			if(!fmobj->ValidAnalysisType())
+		{	CommonAnalysis *obj = GetCommonAnalysis();
+			sscanf(xData,"%d",&obj->np);
+			if(!obj->ValidAnalysisType())
 				throw SAXException("Unknown <Analysis> type in the <Header>.");
 			break;
-			
+		}
 		case NOT_NUM:
 			break;
 		
@@ -531,13 +520,15 @@ void CommonReadHandler::ValidateCommand(char *cmdName,int blockNeed,int dimNeed)
 		
 	// only allowed in 3D calculations
 	if(dimNeed==MUST_BE_3D)
-	{	if(!fmobj->IsThreeD())
+	{	CommonAnalysis *obj = GetCommonAnalysis();
+		if(!obj->IsThreeD())
 			ThrowCompoundErrorMessage(cmdName,"command only allowed in 3D analyses","");
 	}
 	
 	// only allowed in 2D calculations
 	else if(dimNeed==MUST_BE_2D)
-	{	if(fmobj->IsThreeD())
+	{	CommonAnalysis *obj = GetCommonAnalysis();
+		if(obj->IsThreeD())
 			ThrowCompoundErrorMessage(cmdName,"command only allowed in 2D analyses","");
 	}
 	
@@ -572,8 +563,14 @@ void CommonReadHandler::warning(const SAXParseException& e)
          << ": " << StrX(e.getMessage()) << endl;
 }
 
+// delete nodes controller
+NodesController *CommonReadHandler::DeleteTheNodes(void)
+{
+	delete theNodes;
+	return NULL;
+}
 
-#pragma mark ACCESSORS
+#pragma mark CommonReadHandler: Accessors
 
 /********************************************************************************
 	 Read coordinate allowing max or min for current grid
@@ -644,8 +641,6 @@ double CommonReadHandler::ReadGridPoint(char *value,double distScaling,double ax
 	sscanf(value,"%lf",&dval);
 	return dval*distScaling;
 }
-
-#pragma mark ACCESSORS
 
 // decode string delimited by white space, puctuation (, : ;), or tabs and add intervening numbers
 // to the input vector (which is cleared first). Any other characters trigger an error

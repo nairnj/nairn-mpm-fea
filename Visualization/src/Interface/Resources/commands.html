@@ -20,7 +20,9 @@ h3 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 h4 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
 	font-size: 12pt;
 	margin-left: 9pt;
-	color: #005555;}
+	color: #005555;
+	font-style: italic;
+	font-weight: normal;}
 p { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
 	font-size: 12pt;
 	margin-top: 0pt;
@@ -47,13 +49,10 @@ hr { margin-top: 0pt;
 	margin-right: 6pt;
 	padding: 0pt; }
 code { font-size: 12pt; }
-blockquote { font-size: 12pt;
-       font-family: Courier; }
-pre.list {
-	margin-left: 0px;
+pre { margin-left: 24pt;
 	font-size: 12pt;
-	font-family: Courier;
-  margin-bottom: 3px;}
+	line-height: normal;
+	font-family: Courier; }
 dl { margin-left: 12pt; }
 dt {font-family: "Courier";
 	font-size: 12pt; }
@@ -62,8 +61,6 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 table { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
 	font-size: 10pt;
 	margin-top: 0pt;}
-
-	
 </style>
 </head>
 
@@ -130,11 +127,11 @@ table { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-R
 <h3><a name="linesyntax"></a>Line Syntax</h3>
 
 <p>Each line of scripting commands has the format:</p>
-<blockquote>
+<pre>
 Command #1,#2,#3,#4,...
-</blockquote>
+</pre>
 <p>where <code>Command</code> is the command and #1, #2, <i>etc</i>., are arguments to the command. The command
-must be separated from the arguments by a space. The arguments must be separated by commas.
+must be separated from the arguments by a space. The arguments must be separated for each other by commas.
 Leading and trailing spaces in arguments are ignored. Blank lines are ignored.
 Lines whose first non-blank character is &quot;!&quot; are comments and are also ignored.
 </p>
@@ -143,25 +140,25 @@ Lines whose first non-blank character is &quot;!&quot; are comments and are also
 
 <h3><a name="varexp"></a>Variables and Expressions</h3>
 
-<p>The commands can define variables. Variable names must begin
+<p>The commands can define variables that contain numeric or string values. Variable names must begin
 in a letter or #, be followed by only letters, numbers and underscores, and optionally end in "$" (for backward compatibility). You create variables using the Set command:</p>
-<blockquote>
+<pre>
 Set var = expression
-</blockquote>
+</pre>
 <p>where <code>var</code> is any valid variable and <code>expression</code> is any expression. The &quot;Set&quot; command is
 optional and generally not used; <i>i.e.</i>, any line with variable name followed by equals sign is assumed to be a &quot;Set&quot; command:</p>
-<blockquote>
+<pre>
 var = expression
-</blockquote>
+</pre>
 
 <p>Array variables are allowed and initialized using</p>
-<blockquote>
+<pre>
 var[indexExpression] = expression
-</blockquote>
+</pre>
 <p>where square brackets index the array index. The <code>indexExpression</code> can be an expression that evaluates to an integer. Multi-dimensional arrays can be used with more bracketed expressions:</p>
-<blockquote>
+<pre>
 var[expr1][expr2]...[exprn] = expression
-</blockquote>
+</pre>
 <p>where each expression in the square brackets are expressions that evaluate to integers.</p>
 
 <h4><a name="numexprs"></a>Numeric Expressions</h4>
@@ -230,45 +227,45 @@ or tab character into the string.</p>
 <h4>Expression Update Shortcut</h4>
 
 <p>As a short cut, the command</p>
-<blockquote>
+<pre>
 var {op}= expression
-</blockquote>
+</pre>
 <p>is equivalent to</p>
-<blockquote>
+<pre>
 var = var{op}(expression)
-</blockquote>
+</pre>
 <p>where <code>{op}</code> is any valid operator (but note that when <code>{op}</code> is &amp;, the expression is not surrounded by parentheses)</p>
 
 <h3><a name="atexp"></a>"At" Expressions</h3>
 
 <p>Any place a variable can be used, it can be replaced by an "at" expression beginning in an '@' sign and containing specific items separated by periods, such as "<code>@key.TopLeft.x</code>" to evaluate to the x value of the key point named "TopLeft". These expressions are used to allow a script to read properties of objects created earlier in the script. The currently supported "at" expressions for FEA and MPM calculations are:</p>
 <ul>
-<li><code>@key.ID.prop</code> - read a property of <a href="#keypoint">keypoint</a> with "ID" replaced by ID of the key point. The possible properties to replace "prop" are "x" and "y" to give x and y coordinates of the key point.</li>
-<li><code>@path.ID.prop</code> - read a property of a <a href="#path">path</a> with "ID" replaced by ID of the path. The possible properties to replace "prop" are "intervals" (number of intervals long the path), "ratio" (the ratio setting for the path), and "first", "middle" or "last" (for ID of the first, middle or last key point; if the path has only two key points the "middle" will be empty string).</li>
+<li><code>@key.ID.prop</code> - read a property of a <a href="#keypoint">keypoint</a> where "ID" is replaced by ID of the key point. The possible properties to replace "prop" are "x" and "y" to give x and y coordinates of the key point.</li>
+<li><code>@path.ID.prop</code> - read a property of a <a href="#path">path</a> whereis  "ID" replaced by ID of the path. The possible properties to replace "prop" are "intervals" (number of intervals long the path), "ratio" (the ratio setting for the path), and "first", "middle" or "last" (for ID of the first, middle or last key point; if the path has only two key points the "middle" will be empty string).</li>
 </ul>
 <p>Any subelement of an "at" expression can be replaced by a string expression (as long as it does not include a period), such as:</p>
-<blockquote>
-#id$ = "BotLeft"<br>
-x = $key.#id$.x
-</blockquote>
+<pre>
+#id = "BotLeft"
+x = @key.#id.x
+</pre>
 <p><a href="scripting.html">Control scripts</a> support some additional "at" expressions.</p>
 
 <h3><a name="conditionals"></a>Conditionals</h3>
 
 <p>Conditional blocks have the format:</p>
-<blockquote>
-if expr1 == expr2<br>
-   &nbsp;&nbsp;...<br>
-else ifStr expr3 &lt; expr4<br>
-   &nbsp;&nbsp;...<br>
-else ifDef var1<br>
-   &nbsp;&nbsp;...<br>
-else ifNDef var2<br>
-   &nbsp;&nbsp;...<br>
-else<br>
-   &nbsp;&nbsp;...<br>
+<pre>
+if expr1 == expr2
+  ...
+else ifStr expr3 &lt; expr4
+  ...
+else ifDef var1
+  ...
+else ifNDef var2
+  ...
+else
+  ...
 endif
-</blockquote>
+</pre>
 <p>In the standard if, the expressions are compared by numeric comparison, unless one or
 both are strings, in which case string comparison is used. The ifStr command forces string
 comparison between the expressions. The comparison operators
@@ -282,28 +279,28 @@ has not been defined in any Set command.</p>
 
 <p>Repeat loops, which can be nested, have the format:</p>
 
-<blockquote>
-Repeat "#x",start,end,&lt;step&gt;<br>
-  &nbsp;&nbsp;(commands in the loop)<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
-  &nbsp;&nbsp;break<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
-  &nbsp;&nbsp;Repeat "#y",start,end,&lt;step&gt;<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;(commands in nested loop)<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;continue<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;Repeat<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(commands in nested continuous loop)<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;breakAll<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;EndRepeat<br>
-  &nbsp;&nbsp;EndRepeat<br>
+<pre>
+Repeat "#x",start,end,&lt;step&gt;
+  (commands in the loop)
+    ...
+  break
+    ...
+  Repeat "#y",start,end,&lt;step&gt;
+    (commands in nested loop)
+      ...
+    continue
+      ...
+    Repeat
+      (commands in nested continuous loop)
+        ...
+      breakAll
+        ...
+    EndRepeat
+  EndRepeat
 EndRepeat
-</blockquote>
+</pre>
 
-<p>The first parameter is loop variable  (it should be quoted and cannot be an array variable). The range and optional step size are
+<p>The first parameter is a loop variable  (it should be quoted and cannot be an array variable). The range and optional step size are
 in the next three arguments. A <code>Repeat</code> command with no arguments will repeat forever.
 The <code>break</code> command breaks the current loop. The <code>breakAll</code> command breaks out of all nested
 loops. A <code>continue</code> command goes to next item in the current loop.</p>
@@ -312,14 +309,14 @@ loops. A <code>continue</code> command goes to next item in the current loop.</p
 
 <p>The commands can include subroutines. All subroutines must be defined at the start of the commands (i.e., before any other commands) in the style:</p>
 
-<blockquote>
-Sub subname #arg1,#arg2,...,#argn<br>
-  &nbsp;&nbsp;(subroutine commands)<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
-  &nbsp;&nbsp;return<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+<pre>
+Sub subname #arg1,#arg2,...,#argn
+  (subroutine commands)
+    ...
+  return
+    ...
 EndSub
-</blockquote>
+</pre>
 <p>where</p>
 <ul>
 <li><code>subname</code> is the name of the subroutine. The names of all subroutines must be unique.</li>
@@ -329,7 +326,9 @@ EndSub
 </ul>
 
 <p>Once subroutines are defined, then can be called with</p>
-<blockquote>GoSub subname parm1,parm2,...parmn</blockquote>
+<pre>
+GoSub subname parm1,parm2,...parmn
+</pre>
 <p>where <code>subname</code> is the name of the subroutine and <code>parm1,parm2,...parmn</code> are any expressions. The total number of expressions must exactly match the number of arguments in the subroutine definition. The variables in the subroutine definition will be set equal to the values passed in the <code>GoSub</code> command.</p>
 
 <p>Two notes on subroutines are:</p>
@@ -355,10 +354,10 @@ the output console and then stop the calculations.
 <li><code>Clear</code><br>
 Clear all text from the output console.
 </li>
-<li><code>Lines varName$,start,end,expr</code><br>
+<li><code>Lines varName,start,end,expr</code><br>
 Split the string in <code>expr</code> into lines. The results are stored in
-<code>varName$[1]</code>... and the number of lines found is stored in <code>varName$[0]</code> (where <code>varName$</code> argument is an quoted, non-array, valid, string variable name). The command retrieves lines <code>start</code> to <code>end</code> (1 based). Either limit can be &le;0 to indicate that number of lines from the end (where 0 means to the end). For example: (<code>start</code>, <code>end</code>) = (1,0) gets all lines, (0,0) gets the last line only, and (-2,0) gets the last three lines.</li>
-<li><code>Words varName$,start,end,expr,&lt;split&gt;</code><br>
+<code>varName[1]</code>... and the number of lines found is stored in <code>varName[0]</code> (where <code>varName</code> argument is an quoted, non-array, valid, variable name). The command retrieves lines <code>start</code> to <code>end</code> (1 based). Either limit can be &le;0 to indicate that number of lines from the end (where 0 means to the end). For example: (<code>start</code>, <code>end</code>) = (1,0) gets all lines, (0,0) gets the last line only, and (-2,0) gets the last three lines.</li>
+<li><code>Words varName,start,end,expr,&lt;split&gt;</code><br>
 This command is the same as the <code>Lines</code> command except it splits <code>expr</code> into words, where words are character groupings separated by any number of white space characters. The white space characters include line ending characters. If you use the optional <code>split</code> argument, the <code>expr</code> will be split at the entered string. Note that using <code>split=" "</code> will delimit at all space characters, in contrast to no <code>split=</code> where multiple spaces on considered as a single delimiter.</li>
 </ul>
 
@@ -1484,7 +1483,7 @@ For small strain problems it is equivalent to the small strain tensor.
 <h3><a name="HistoryArchive"></a>HistoryArchive</h3>
 
 <p>This custom task provides a method to archive more history variables and also provides an alternate format for archiving history variables 1 through 4. When this task is activated, the history data on each particle will be written to tab-delimited text files in the output results folder. You select which history variables to archive, and their order, using a series of <code>Parameter</code> commands:</p>
-<pre>   Parameter,(number)
+<pre>Parameter,(number)
 </pre>
 <p>where the (number) is the history variable number. Two other parameters are:<p>
 
