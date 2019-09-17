@@ -19,7 +19,6 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "System/UnitsController.hpp"
 #include "System/ArchiveData.hpp"
-
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Boundary_Conditions/InitialCondition.hpp"
 
@@ -215,6 +214,9 @@ char *IsoSoftening::InitHistoryData(char *pchr,MPMBase *mptr)
 
 	double *p = CreateAndZeroDoubles(pchr,SOFT_NUMBER_HISTORY);
 	
+	// set damage state to 0.1 instead of zero for help in plotting on a grid
+	p[SOFT_DAMAGE_STATE] = 0.1;
+	
 	// set relative strength
 	if(softenCV>0.)
 	{	double fract = (double)(rand() % 998 + 1)/1000.;		// .001 to .999, max +/- 3.09 std dev
@@ -256,7 +258,7 @@ void IsoSoftening::SetInitialConditions(InitialCondition *ic,MPMBase *mptr,bool 
 		{	soft[DAMAGENORMAL] = 1.;
 			soft[DAMAGESHEAR] = 1.;
 			soft[DAMAGESHEAR2] = 1.;
-			soft[SOFT_DAMAGE_STATE] = 3.;
+			soft[SOFT_DAMAGE_STATE] = 4.;
 		}
 		else
 		{	soft[SOFT_DAMAGE_STATE] = dmode;
@@ -288,7 +290,7 @@ void IsoSoftening::SetInitialConditions(InitialCondition *ic,MPMBase *mptr,bool 
 		if(dparams.x>=1. || dparams.y>=1.)
 		{	soft[DAMAGENORMAL] = 1.;
 			soft[DAMAGESHEAR] = 1.;
-			soft[SOFT_DAMAGE_STATE] = 3.;
+			soft[SOFT_DAMAGE_STATE] = 4.;
 		}
 		else
 		{	soft[SOFT_DAMAGE_STATE] = dmode;
@@ -373,9 +375,9 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		Tensor deij = de;
 		SubTensor(&deij,&deres);
 		
-		// Not get stress increment in initial configuration
+		// Now get stress increment in initial configuration
 		// Before rev 2593, this used de, which seems a mistake
-		// Using wrong de would affect initiation when thereare residual stresses
+		// Using wrong de would affect initiation when there are residual stresses
 		Tensor dstr = GetStressIncrement(deij,np,properties);
 		
 		// Load str with effective stress in initial configuraiton used to look for initiation of failure
@@ -398,7 +400,7 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 #pragma mark ...... Undamaged Material Just Initiated Damage
 		// initiate failure
 		// 0.9 for tensile failure and and 1.1 for shear failure
-		soft[SOFT_DAMAGE_STATE] = failureMode==TENSILE_FAILURE ? predamageState+0.4 : predamageState+0.6;
+		soft[SOFT_DAMAGE_STATE] = failureMode==TENSILE_FAILURE ? 0.9 : 1.1 ;
 		soft[NORMALDIR1] = norm.x;										// cos(theta) (2D) or Euler alpha (3D) to normal
 		soft[NORMALDIR2] = norm.y;										// sin(theta) (2D) or Euler beta (3D)  to normal
 		soft[NORMALDIR3] = norm.z;										// unused (2D) or Euler gamma (3D) to normal
@@ -599,7 +601,7 @@ Vector IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &d
 			{	alpha = beta>=0. ? acos(alpha) : -acos(alpha) ;
 				beta = 0.;
 			}
-			archiver->Decohesion(mtime,mptr,alpha,beta,gamma,GI,GII,0.0,soft[SOFT_DAMAGE_STATE]+1.);
+			archiver->Decohesion(mtime,mptr,alpha,beta,gamma,GI,GII,0.0,soft[SOFT_DAMAGE_STATE]);
 				
 			if(GI!=GI)
 			{
@@ -615,8 +617,8 @@ Vector IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &d
 			}
 			
 			// now failed
-			// will be 1.9 for tensile failure or 2.1 for shear failure
-			soft[SOFT_DAMAGE_STATE] += 1.;
+			// From 2 to 3 will be fraction mode I
+			soft[SOFT_DAMAGE_STATE] = 2. + GI/(GI+GII);
 			soft[DAMAGENORMAL] = 1.;
 			soft[DAMAGESHEAR] = 1.;
 			soft[DAMAGESHEAR2] = 1.;
@@ -731,7 +733,7 @@ bool IsoSoftening::GetRToCrack(Matrix3 *R,double *soft, int np, int Dstyle) cons
 
 #pragma mark IsoSoftening::Isotropic Elasticity Methods
 
-// For isotropic elastic material, find de(eff). Results some for isotropic material in all coordinate systems
+// For isotropic elastic material, find de(eff). Results same for isotropic material in all coordinate systems
 Tensor IsoSoftening::GetStressIncrement(Tensor &deij,int np,void *properties) const
 {
 	// cast pointer to material-specific data

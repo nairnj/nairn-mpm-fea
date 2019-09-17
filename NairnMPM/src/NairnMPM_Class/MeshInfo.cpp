@@ -372,7 +372,7 @@ int MeshInfo::FindShiftedNodeFromNode(int n0,double position,int dir,int side,in
 	}
 
 	// For equal element sizes, find first node such that
-	//     depth-1 < abs(position-firstNodes)/cell <= depth
+	//     depth-1 < fabs(position-firstNodes)/cell <= depth
 	// In other words firstNode is last node within depth cells from the wall
 	// For unequal element sizes, depth is currently 1
 	// For side=1, first node is before position, for side=-1 it is after

@@ -1348,6 +1348,8 @@ void ArchiveData::Decohesion(double atime,MPMBase *mptr,double alpha,double beta
 		return;
 	}
 	
+	// rest when archiving to file
+	// This first section prints to results file for each new failure mode only
 #pragma omp critical (output)
 	{	// check for first in this mode
 		int mode=0;
@@ -1358,8 +1360,8 @@ void ArchiveData::Decohesion(double atime,MPMBase *mptr,double alpha,double beta
 		if(decohesionModes[mode]==0)
 		{	decohesionModes[mode] = code;
 			decohesionModes[mode+1] = 0;
-			cout << "# Decohesion initiation t=" << atime*UnitsController::Scaling(1000.);
-			cout << " mode=" << decohesionCode << endl;
+			cout << "# Decohesion at t=" << atime*UnitsController::Scaling(1000.);
+			cout << " initiation mode=" << decohesionCode << endl;
 		}
 	}
 	
