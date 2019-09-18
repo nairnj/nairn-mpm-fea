@@ -884,7 +884,7 @@ public class ResultsDocument extends AbstractTableModel
 			sline = null;
 			if(archFormat.length()>ReadArchive.ARCH_MAXMPMITEMS)
 			{	for(int ii=ReadArchive.ARCH_MAXMPMITEMS;ii<archFormat.length();ii++)
-				{	if(archFormat.charAt(ii)=='Y')
+				{	if(archFormat.charAt(ii)!='N')
 					{	s.close();
 						throw new Exception("This archive includes data not supported by this version of NairnFEAMPMViz");
 					}
@@ -899,7 +899,7 @@ public class ResultsDocument extends AbstractTableModel
 			setCrackFormat(sline.next());
 			if(crackFormat.length()>ReadArchive.ARCH_MAXCRACKITEMS)
 			{	for(int ii=ReadArchive.ARCH_MAXCRACKITEMS;ii<crackFormat.length();ii++)
-				{	if(crackFormat.charAt(ii)=='Y')
+				{	if(crackFormat.charAt(ii)!='N')
 					{	s.close();
 						sline.close();
 						throw new Exception("This archive includes data not supported by this version of NairnFEAMPMViz");
