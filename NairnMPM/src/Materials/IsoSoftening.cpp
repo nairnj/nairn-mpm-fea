@@ -218,12 +218,15 @@ char *IsoSoftening::InitHistoryData(char *pchr,MPMBase *mptr)
 	p[SOFT_DAMAGE_STATE] = 0.1;
 	
 	// set relative strength
+	p[RELATIVE_STRENGTH] = 1.;
+	p[RELATIVE_TOUGHNESS] = 1.;
 	if(softenCV>0.)
 	{	double fract = (double)(rand() % 998 + 1)/1000.;		// .001 to .999, max +/- 3.09 std dev
-		p[RELATIVE_STRENGTH] = fmax(1. + softenCV*NormalCDFInverse(fract),0.1);
+		if(softenCVMode&VARY_STRENGTH)
+			p[RELATIVE_STRENGTH] = fmax(1. + softenCV*NormalCDFInverse(fract),0.1);
+		if(softenCVMode&VARY_TOUGHNESS)
+			p[RELATIVE_TOUGHNESS] = fmax(1. + softenCV*NormalCDFInverse(fract),0.1);
 	}
-	else
-		p[RELATIVE_STRENGTH] = 1.;
 	
     return (char *)p;
 }
@@ -389,7 +392,7 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 
 		// check if has failed
 		Vector norm;
-		double relStrength = softenCVMode!= VARY_TOUGHNESS ? soft[RELATIVE_STRENGTH] : 1. ;
+		double relStrength = soft[RELATIVE_STRENGTH];
 		int failureMode = initiationLaw->ShouldInitiateFailure(&str,&norm,np,relStrength);
 		if(failureMode == NO_FAILURE)
 		{	// Store str on the particle (rotating by Rtot to updated current config
@@ -458,8 +461,8 @@ Vector IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &d
 	bool is2D = np == THREED_MPM ? false : true;
 	
 	// some properties
-	double relToughness = softenCVMode!= VARY_STRENGTH ? soft[RELATIVE_STRENGTH] : 1. ;
-	double relStrength = softenCVMode!= VARY_TOUGHNESS ? soft[RELATIVE_STRENGTH] : 1. ;
+	double relToughness = soft[RELATIVE_TOUGHNESS];
+	double relStrength = soft[RELATIVE_STRENGTH];
 	
 	// get effective strains (effective in plane strain)
 	Tensor deres = MakeTensor(eres,eres,eres,0.,0.,0.);
@@ -846,5 +849,4 @@ int IsoSoftening::AltStrainContains(void) const
 double *IsoSoftening::GetSoftHistoryPtr(MPMBase *mptr) const
 {	return (double *)(mptr->GetHistoryPtr(0));
 }
-
 
