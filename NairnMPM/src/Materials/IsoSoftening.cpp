@@ -36,7 +36,7 @@ IsoSoftening::IsoSoftening(char *matName,int matID) : IsotropicMat(matName,matID
 	initiationLaw = new FailureSurface(this);
 	softeningModeI = new LinearSoftening();
 	softeningModeII = new LinearSoftening();
-	shearFailureSurface = ELLIPTICAL_SURFACE;
+	shearFailureSurface = RECTANGULAR_SURFACE;
 	softenCV = 0.;
     softenCVMode = VARY_STRENGTH;
 }
@@ -159,6 +159,9 @@ const char *IsoSoftening::VerifyAndLoadProperties(int np)
     
     if(softenCVMode<VARY_STRENGTH || softenCVMode>VARY_STRENGTH_AND_TOUGHNESS)
         return "Invalid option selected for which softening properties to vary";
+	
+	if(shearFailureSurface!=RECTANGULAR_SURFACE)
+		return "Only the rectangular failure surface is currently implemented";
     
     return NULL;
 }
@@ -194,7 +197,10 @@ void IsoSoftening::PrintMechanicalProperties(void) const
 // Create history variables needed for softening behavior
 char *IsoSoftening::InitHistoryData(char *pchr,MPMBase *mptr)
 {
-	// validate this law (in use) is stable on current grid
+	// Validate this law (in use) is stable on current grid
+	//	This validation uses average values. Large stochastic variations might
+	//	cause some particle to be unstable. Enhancement could be to validate
+	//	using minimum Gc and maximum strength instead
 	// redundant when all particle same size, but general if not
 	double delx = mptr->GetMinParticleLength();
 	double scale = 1./(rho*initiationLaw->sigmaI()*delx);
@@ -265,11 +271,15 @@ void IsoSoftening::SetInitialConditions(InitialCondition *ic,MPMBase *mptr,bool 
 		}
 		else
 		{	soft[SOFT_DAMAGE_STATE] = dmode;
-			double scale = soft[GCSCALING]/initiationLaw->sigmaI();
-			soft[DELTANORMAL] = softeningModeI->GetDeltaFromDamage(dparams.x,scale,en0);
+			double relToughness = soft[RELATIVE_TOUGHNESS];
+			double relStrength = soft[RELATIVE_STRENGTH];
+			double scale = relToughness*soft[GCSCALING]/(relStrength*initiationLaw->sigmaI());
+			double relen0 = relStrength*en0;
+			soft[DELTANORMAL] = softeningModeI->GetDeltaFromDamage(dparams.x,scale,relen0);
 			scale = soft[GCSCALING]/initiationLaw->sigmaII();
-			soft[DELTASHEAR] = softeningModeII->GetDeltaFromDamage(dparams.y,scale,gs0);
-			soft[DELTASHEAR2] = softeningModeII->GetDeltaFromDamage(dparams.z,scale,gs0);
+			double relgs0 = relStrength*gs0;
+			soft[DELTASHEAR] = softeningModeII->GetDeltaFromDamage(dparams.y,scale,relgs0);
+			soft[DELTASHEAR2] = softeningModeII->GetDeltaFromDamage(dparams.z,scale,relgs0);
 		}
 	}
 	else {
@@ -297,10 +307,14 @@ void IsoSoftening::SetInitialConditions(InitialCondition *ic,MPMBase *mptr,bool 
 		}
 		else
 		{	soft[SOFT_DAMAGE_STATE] = dmode;
-			double scale = soft[GCSCALING]/initiationLaw->sigmaI();
-			soft[DELTANORMAL] = softeningModeI->GetDeltaFromDamage(dparams.x,scale,en0);
+			double relToughness = soft[RELATIVE_TOUGHNESS];
+			double relStrength = soft[RELATIVE_STRENGTH];
+			double scale = relToughness*soft[GCSCALING]/initiationLaw->sigmaI();
+			double relen0 = relStrength*en0;
+			soft[DELTANORMAL] = softeningModeI->GetDeltaFromDamage(dparams.x,scale,relen0);
 			scale = soft[GCSCALING]/initiationLaw->sigmaII();
-			soft[DELTASHEAR] = softeningModeII->GetDeltaFromDamage(dparams.y,scale,gs0);
+			double relgs0 = relStrength*gs0;
+			soft[DELTASHEAR] = softeningModeII->GetDeltaFromDamage(dparams.y,scale,relgs0);
 		}
 	}
 }
@@ -401,9 +415,8 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		}
 		
 #pragma mark ...... Undamaged Material Just Initiated Damage
-		// initiate failure
-		// 0.9 for tensile failure and and 1.1 for shear failure
-		soft[SOFT_DAMAGE_STATE] = failureMode==TENSILE_FAILURE ? 0.9 : 1.1 ;
+		// initiate failure (code depends on initiation law
+		soft[SOFT_DAMAGE_STATE] = 0.01*failureMode ;
 		soft[NORMALDIR1] = norm.x;										// cos(theta) (2D) or Euler alpha (3D) to normal
 		soft[NORMALDIR2] = norm.y;										// sin(theta) (2D) or Euler beta (3D)  to normal
 		soft[NORMALDIR3] = norm.z;										// unused (2D) or Euler gamma (3D) to normal
@@ -463,6 +476,7 @@ Vector IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &d
 	// some properties
 	double relToughness = soft[RELATIVE_TOUGHNESS];
 	double relStrength = soft[RELATIVE_STRENGTH];
+	double relShearStrength = relStrength;
 	
 	// get effective strains (effective in plane strain)
 	Tensor deres = MakeTensor(eres,eres,eres,0.,0.,0.);
@@ -515,7 +529,7 @@ Vector IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &d
 		double sigmaI = relStrength*initiationLaw->sigmaI();
 		double scaleI = relToughness*soft[GCSCALING]/sigmaI;
 		if(!SoftenAxis(den,soft,DELTANORMAL,DAMAGENORMAL,sigmaI,scaleI,softeningModeI,
-					   C11,str.xx,en0,decxx,NULL,dispEnergy,criticalStrain))
+					   C11,str.xx,relStrength*en0,decxx,NULL,dispEnergy,criticalStrain))
 		{	// Elastic loading but handle contact if den<0
 			decxx = soft[DAMAGENORMAL]*den;
 			if(den<0.)
@@ -525,33 +539,18 @@ Vector IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &d
 		}
 
 		// shear stress and strains
-		double sigmaII = relStrength*initiationLaw->sigmaII();
+		double sigmaII = relShearStrength*initiationLaw->sigmaII();
 		double scaleII = relToughness*soft[GCSCALING]/sigmaII;
 		if(is2D)
 		{	// 2D shear strain only for x-y shear
 			if(SoftenAxis(dgs,soft,DELTASHEAR,DAMAGESHEAR,sigmaII,scaleII,softeningModeII,
-				Gshear,Txy0,gs0,dgcxy,NULL,dispEnergy,criticalStrain))
+				Gshear,Txy0,relShearStrength*gs0,dgcxy,NULL,dispEnergy,criticalStrain))
 			{	// Adjust sign to match shear stress direction
 				if(str.xy<0.) dgcxy = -dgcxy;
 			}
 			else
 			{	// elastic loading
 				dgcxy = soft[DAMAGESHEAR]*deij.xy;
-			}
-		}
-		else if(shearFailureSurface == ELLIPTICAL_SURFACE)
-		{	// 3D shear strains using elliptical failure surfacce
-			if(SoftenTwoAxes(soft,Txy0,Gshear,deij.xy,sigmaII,scaleII,softeningModeII,DAMAGESHEAR,DELTASHEAR,
-							 Txz0,Gshear,deij.xz,sigmaII,scaleII,softeningModeII,DAMAGESHEAR2,DELTASHEAR2,
-							 dgcxy,dgcxz,dispEnergy,criticalStrain))
-			{	// Adjust sign to match shear stress direction
-				if(str.xy<0.) dgcxy = -dgcxy;
-				if(str.xz<0.) dgcxz = -dgcxz;
-			}
-			else
-			{	// elastic loading
-				dgcxy = soft[DAMAGESHEAR]*deij.xy;
-				dgcxz = soft[DAMAGESHEAR2]*deij.xz;
 			}
 		}
 		else
@@ -560,7 +559,7 @@ Vector IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &d
 			dgs = str.xy>0. ? deij.xy : -deij.xy;
 
 			if(SoftenAxis(dgs,soft,DELTASHEAR,DAMAGESHEAR,sigmaII,scaleII,softeningModeII,
-						  Gshear,Txy0,gs0,dgcxy,NULL,dispEnergy,criticalStrain))
+						  Gshear,Txy0,relShearStrength*gs0,dgcxy,NULL,dispEnergy,criticalStrain))
 			{	// Adjust sign to match shear stress direction
 				if(str.xy<0.) dgcxy = -dgcxy;
 			}
@@ -571,7 +570,7 @@ Vector IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &d
 			Txz0 = fabs(str.xz);
 			dgs = str.xz>0. ? deij.xz : -deij.xz;
 			if(SoftenAxis(dgs,soft,DELTASHEAR2,DAMAGESHEAR2,sigmaII,scaleII,softeningModeII,
-						  Gshear,Txz0,gs0,dgcxz,NULL,dispEnergy,criticalStrain))
+						  Gshear,Txz0,relShearStrength*gs0,dgcxz,NULL,dispEnergy,criticalStrain))
 			{	// Adjust sign to match shear stress direction
 				if(str.xz<0.) dgcxz = -dgcxz;
 			}
@@ -611,8 +610,8 @@ Vector IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &d
 #pragma omp critical (output)
 				{	cout << "#     enmax=" << soft[DELTANORMAL] << "/" << softeningModeI->GetDeltaMax(scaleI) <<
 						", gsmax=" << soft[DELTASHEAR] << "/" << softeningModeII->GetDeltaMax(scaleII) <<
-						", dn=" << (soft[DELTANORMAL]/(soft[DELTANORMAL]+en0*softeningModeI->GetFFxn(soft[DELTANORMAL],scaleI))) <<
-						", ds=" << (soft[DELTASHEAR]/(soft[DELTASHEAR]+gs0*softeningModeII->GetFFxn(soft[DELTASHEAR],scaleII))) <<
+						", dn=" << (soft[DELTANORMAL]/(soft[DELTANORMAL]+relStrength*en0*softeningModeI->GetFFxn(soft[DELTANORMAL],scaleI))) <<
+						", ds=" << (soft[DELTASHEAR]/(soft[DELTASHEAR]+relShearStrength*gs0*softeningModeII->GetFFxn(soft[DELTASHEAR],scaleII))) <<
 						", scaleI/scaleII=" << scaleI << "/" << scaleII <<
 						", relGI/relGII,relGIIxz=" << relGI << "/" << relGII << "/" << relGIIxz <<
 						", Ac/Vp=" << soft[GCSCALING] << endl;

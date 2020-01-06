@@ -64,8 +64,6 @@ class Elastic : public MaterialBase
 		virtual double GetAcOverVp(int,MPMBase *,Vector *) const;
 		virtual bool SoftenAxis(double,double *,int,int,double,double,SofteningLaw *,
 								  double,double,double,double &,double *,double &,bool &) const;
-		virtual bool SoftenTwoAxes(double *,double,double,double,double,double,SofteningLaw *,int,int,
-			double,double,double,double,double,SofteningLaw *,int,int,double &,double &,double &,bool &) const;
 		virtual void PostFailureUpdate(double &,double &,double &,Tensor *,Tensor *,Tensor *,Matrix3,
 									   double,double,double,double,bool) const;
 		virtual void UpdateCrackingStrainStress(int,Tensor *,Tensor *,double,double,double,Tensor *,Tensor *,Matrix3) const;

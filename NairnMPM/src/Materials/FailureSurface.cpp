@@ -4,9 +4,6 @@
 
 	Created by John Nairn, June 26, 2015.
 	Copyright (c) 2008 John A. Nairn, All rights reserved.
-
-	Dependencies
-		FailureSurface.hpp
 ********************************************************************************/
 
 #include "stdafx.h"
@@ -196,12 +193,15 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 				twoTheta = atan(str->xy/sdif);
 			
 			// the correct angle is theta or theta+90
+			// rotate stress by theta (transformation equation uses 2*theta)
 			double cs = cos(twoTheta);
 			double sn = sin(twoTheta);
 			double sigmaxp = ssum + sdif*cs + str->xy*sn;
 			double sigmayp = ssum - sdif*cs - str->xy*sn;
+			
+			// if sigmaxp=sigma1, then use theta, otherwise add 90
 			double theta = fabs(sigmaxp-sigma1)<fabs(sigmayp-sigma1) ?
-			0.5*twoTheta : 0.5*(twoTheta+PI_CONSTANT);
+								0.5*twoTheta : 0.5*(twoTheta+PI_CONSTANT);
 			
 			// if shear failure add -45 ccw rotation about principle z axis
 			if(sigma1 < sigmacRed*relStrength)

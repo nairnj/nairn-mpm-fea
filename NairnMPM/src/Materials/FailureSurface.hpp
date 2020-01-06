@@ -16,13 +16,12 @@
 
 #define MAXPRINCIPALSTRESS 1
 
-// TENSILE_FAILURE is max principle stress for isotropic or max normal
-//    stress in transverse direction for TransIso where
-// SHEAR_FAILURE is max shear stress or isotropic or max shear in transverse
-//	  direcetion for TransIso where
-// EA_FAILURE is tensile failure in axial direction for TransIso
-// GA_FAILURE is axial shear failure for TransIso
-enum { NO_FAILURE=0,TENSILE_FAILURE,SHEAR_FAILURE,EA_FAILURE,GA_FAILURE };
+// TENSILE_FAILURE is max principle stress
+// SHEAR_FAILURE is max shear stress
+// (note these must be 51 to 149
+#define NO_FAILURE 0
+#define TENSILE_FAILURE 90
+#define SHEAR_FAILURE 110
 
 class MaterialBase;
 
