@@ -223,7 +223,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,i
 			eplast->yy += dxy - dyz;
 			eplast->zz += dxz + dyz;
 			eplast->yz += dwrotyz*(ep.yy-ep.zz) + 0.5*(dwrotxz*ep.xy+dwrotxy*ep.xz);
-			eplast->xz += dwrotxz*(ep.xx-ep.xx) + 0.5*(dwrotyz*ep.xy-dwrotxy*ep.yz);
+			eplast->xz += dwrotxz*(ep.xx-ep.zz) + 0.5*(dwrotyz*ep.xy-dwrotxy*ep.yz);
 			eplast->xy += dwrotxy*(ep.xx-ep.yy) - 0.5*(dwrotyz*ep.xz+dwrotxz*ep.yz);
 		}
 		
@@ -243,7 +243,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,i
 			st0.yy += dxy - dyz;
 			st0.zz += dxz + dyz;
 			st0.yz += 0.5*(dwrotyz*(sp->yy-sp->zz) + dwrotxz*sp->xy + dwrotxy*sp->xz);
-			st0.xz += 0.5*(dwrotxz*(sp->xx-sp->xx) + dwrotyz*sp->xy - dwrotxy*sp->yz);
+			st0.xz += 0.5*(dwrotxz*(sp->xx-sp->zz) + dwrotyz*sp->xy - dwrotxy*sp->yz);
 			st0.xy += 0.5*(dwrotxy*(sp->xx-sp->yy) - dwrotyz*sp->xz - dwrotxz*sp->yz);
 		}
 	}
