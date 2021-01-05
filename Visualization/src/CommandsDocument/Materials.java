@@ -72,7 +72,7 @@ public class Materials
 		String matName = doc.readStringArg(args.get(2));
 		
 		// and type
-		HashMap<String,Integer> options = new HashMap<String,Integer>(25);
+		HashMap<String,Integer> options = new HashMap<String,Integer>(60);
 		options.put("isotropic", new Integer(1));
 		options.put("transverse 1", new Integer(2));
 		options.put("transverse 2", new Integer(3));
@@ -85,29 +85,39 @@ public class Materials
 		options.put("bistable", new Integer(10));
 		options.put("rigid", new Integer(11));
 		options.put("rigidbc", new Integer(11));
-		options.put("rigidcontact", new Integer(35));
-		options.put("rigidblock", new Integer(36));
 		options.put("triangulartraction", new Integer(12));
 		options.put("lineartraction", new Integer(13));
 		options.put("cubictraction", new Integer(14));
 		options.put("hillplastic", new Integer(15));
-		options.put("johnsoncook", new Integer(16));
-		options.put("mgscglmaterial", new Integer(17));
-		options.put("mgeosmaterial", new Integer(17));
+		options.put("johnsoncook", new Integer(16));			// historical only
+		options.put("mgscglmaterial", new Integer(17));			// historical only
+		options.put("mgeosmaterial", new Integer(17));			// historical only
 		options.put("trilineartraction", new Integer(20));
 		options.put("heanisotropic", new Integer(21));
 		options.put("idealgas", new Integer(22));
 		options.put("coupledsawtooth", new Integer(23));
+		options.put("coupledtraction", new Integer(23));
 		options.put("heisotropic", new Integer(24));
 		options.put("hemgeosmaterial", new Integer(25));
 		options.put("pressuretraction", new Integer(26));
 		options.put("taitliquid", new Integer(27));
 		options.put("neohookean", new Integer(28));
 		options.put("clampedneohookean", new Integer(29));
+		options.put("phasetransition", new Integer(30));
+		options.put("reactionphase", new Integer(31));
+		options.put("jwlplusplus", new Integer(32));
+		options.put("mixedmodetraction", new Integer(33));
+		options.put("exponentialtraction", new Integer(34));
+		options.put("rigidcontact", new Integer(35));
+		options.put("rigidblock", new Integer(36));
+		options.put("mooneymembrane", new Integer(40));
 		options.put("isosoftening", new Integer(50));
 		options.put("transisosoftening 1", new Integer(51));
 		options.put("transisosoftening 2", new Integer(52));
 		options.put("isoplasticsoftening", new Integer(53));
+		options.put("orthosoftening", new Integer(54));
+		options.put("isoplasticinterface", new Integer(55));
+		options.put("orthoplasticsoftening", new Integer(56));
 		options.put("phasetransition", new Integer(30));
 		options.put("ignorecontact", new Integer(60));
 		options.put("coulombfriction", new Integer(61));
@@ -115,6 +125,7 @@ public class Materials
 		options.put("linearinterface", new Integer(62));
 		options.put("liquidcontact", new Integer(64));
 		options.put("nonlinearinterface", new Integer(65));
+		options.put("debondinginterface", new Integer(66));
 		matType = doc.readIntOption(args.get(3),options,null);
 		if(matType<0)
 			throw new Exception("'Material' type not yet supported in scripting commands.\nUse XML method instead: "+args);
@@ -474,20 +485,52 @@ public class Materials
 		{	xmldata.append("    <SofteningII>"+doc.readStringArg(args.get(1))+"</SofteningII>\n");
 			return;
 		}
-		else if(prop.toLowerCase().equals("softeningea"))
-		{	xmldata.append("    <SofteningEA>"+doc.readStringArg(args.get(1))+"</SofteningEA>\n");
+		else if(prop.toLowerCase().equals("softeningai"))
+		{	xmldata.append("    <SofteningAI>"+doc.readStringArg(args.get(1))+"</SofteningAI>\n");
 			return;
 		}
-		else if(prop.toLowerCase().equals("softeningga"))
-		{	xmldata.append("    <SofteningGA>"+doc.readStringArg(args.get(1))+"</SofteningGA>\n");
+		else if(prop.toLowerCase().equals("softeningtii"))
+		{	xmldata.append("    <SofteningTII>"+doc.readStringArg(args.get(1))+"</SofteningTII>\n");
 			return;
 		}
-		else if(prop.toLowerCase().equals("softeninget"))
-		{	xmldata.append("    <SofteningET>"+doc.readStringArg(args.get(1))+"</SofteningET>\n");
+		else if(prop.toLowerCase().equals("softeningaii"))
+		{	xmldata.append("    <SofteningAII>"+doc.readStringArg(args.get(1))+"</SofteningAII>\n");
 			return;
 		}
-		else if(prop.toLowerCase().equals("softeninggt"))
-		{	xmldata.append("    <SofteningGT>"+doc.readStringArg(args.get(1))+"</SofteningGT>\n");
+		else if(prop.toLowerCase().equals("softeningxx"))
+		{	xmldata.append("    <SofteningXX>"+doc.readStringArg(args.get(1))+"</SofteningXX>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeningyy"))
+		{	xmldata.append("    <SofteningYY>"+doc.readStringArg(args.get(1))+"</SofteningYY>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeningzz"))
+		{	xmldata.append("    <SofteningZZ>"+doc.readStringArg(args.get(1))+"</SofteningZZ>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeningxyx"))
+		{	xmldata.append("    <SofteningXYX>"+doc.readStringArg(args.get(1))+"</SofteningXYX>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeningxyy"))
+		{	xmldata.append("    <SofteningXYY>"+doc.readStringArg(args.get(1))+"</SofteningXYY>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeningxzx"))
+		{	xmldata.append("    <SofteningXZX>"+doc.readStringArg(args.get(1))+"</SofteningXZX>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeningxzz"))
+		{	xmldata.append("    <SofteningXZZ>"+doc.readStringArg(args.get(1))+"</SofteningXZZ>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeningyzy"))
+		{	xmldata.append("    <SofteningYZY>"+doc.readStringArg(args.get(1))+"</SofteningYZY>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("softeningyzz"))
+		{	xmldata.append("    <SofteningYZZ>"+doc.readStringArg(args.get(1))+"</SofteningYZZ>\n");
 			return;
 		}
 		else if(prop.toLowerCase().equals("tauk"))

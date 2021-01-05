@@ -13,7 +13,7 @@
 static char opChar[] = {' ',' ',' ',')','+','-','*','/','^','(',','};
 static const char *fxnName[] = {"sin","cos","tan","asin","acos","atan","sinh","cosh",
 						"tanh","log","log10","abs","int","sqrt","sign","exp","rand",
-						"erf","erfc","cosramp","ramp","box","sinbox","sgn","tri"};
+						"erf","erfc","cosramp","ramp","box","sinbox","sgn","tri","cdfinv"};
 
 #pragma mark CONTRUCTORS AND DESTRUCTORS
 
@@ -225,7 +225,8 @@ int Atomic::FindFunctionCode(char *fxn) const
 	if(strcmp(fxn,"sinbox")==0) return SINBOX_FXN;
 	if(strcmp(fxn,"sgn")==0) return SGN_FXN;
 	if (strcmp(fxn, "tri") == 0) return TRI_FXN;
-	
+    if (strcmp(fxn, "cdfinv") == 0) return NORMALCDFINVERSE_FXN;
+
 	return -1;
 }
 

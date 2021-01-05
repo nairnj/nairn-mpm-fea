@@ -41,7 +41,7 @@ UpdateMomentaTask::UpdateMomentaTask(const char *name) : MPMTask(name)
 
 // Update grid momenta and transport rates
 // throws CommonException()
-void UpdateMomentaTask::Execute(int taskOption)
+bool UpdateMomentaTask::Execute(int taskOption)
 {	
 #pragma omp parallel for
 	for(int i=1;i<=*nda;i++)
@@ -56,6 +56,13 @@ void UpdateMomentaTask::Execute(int taskOption)
 	
 	// contact and BCs
 	ContactAndMomentaBCs(UPDATE_MOMENTUM_CALL);
+	
+#ifdef TRANSPORT_FMPM
+	// impose transport BCs on the grid
+	TransportTask::TransportGridBCs(mtime,timestep,UPDATE_MOMENTUM_CALL);
+#endif
+    
+    return true;
 }
 
 // do contact calculations and impose momenta conditions
@@ -70,5 +77,6 @@ void UpdateMomentaTask::ContactAndMomentaBCs(int passType)
 
 	// Reimmpose velocity BCs (if needed)
 	// Probably needed if have contact or mirrored BCs
-	NodalVelBC::GridVelocityConditions(passType);
+	if(bodyFrc.GetXPICOrder()<=1 || bodyFrc.GridBCOption()!=GRIDBC_VELOCITY_ONLY)
+		NodalVelBC::GridVelocityConditions(passType);
 }

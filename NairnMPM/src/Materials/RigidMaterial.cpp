@@ -204,6 +204,10 @@ void RigidMaterial::PrintMechanicalProperties(void) const
         if(setConcentration)
 		{	if(fmobj->HasDiffusion())
 				cout << "Concentration controlled" << endl;
+#ifdef POROELASTICITY
+			else if(fmobj->HasPoroelasticity())
+				cout << "Pore pressure controlled" << endl;
+#endif
 		}
 	
         // value
@@ -594,6 +598,25 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 		default:
 			break;
 	}
+}
+
+// when delete particle, clear setting functions (assumes all of that material being deleted)
+// critical block prevents deleting same function in two threads
+void RigidMaterial::ClearFunctions(void)
+{
+    if(function==NULL && function2==NULL && function3==NULL && Vfunction==NULL) return;
+    
+#pragma omp critical (deleteFxn)
+    {
+        if(function!=NULL) delete function;
+        if(function2!=NULL) delete function2;
+        if(function3!=NULL) delete function3;
+        if(Vfunction!=NULL) delete Vfunction;
+        function = NULL;
+        function2 = NULL;
+        function3 = NULL;
+        Vfunction = NULL;
+    }
 }
 
 // replace setting function, but HasError() is not called

@@ -24,14 +24,16 @@ public class CrackSegment
 	public double[] ypos;
 	public double J1,J2;
 	public double KI,KII;
-	public int crackIncrements;
-	public double release,absorb;
+	public int czmHasDisp;
+	public double czmGI,czmGII;
+	public double[] tractionData;
 
 	// initialize
 	CrackSegment()
 	{	inElem=new int[4];
 		xpos=new double[4];
 		ypos=new double[4];
+		tractionData = null;
 	}
 	
 	//---------------------------------------------------------------------
@@ -76,13 +78,47 @@ public class CrackSegment
 		}
 		
 		// Energy flow in J/m^2
-		if(crackOrder[ReadArchive.ARCH_BalanceResults]=='Y')
-		{	crackIncrements=bb.getInt();
-			release=bb.getDouble()*units.outputERRScale();
-			absorb=bb.getDouble()*units.outputERRScale();
+		if(crackOrder[ReadArchive.ARCH_CZMDeltaG]=='Y')
+		{	czmHasDisp=bb.getInt();
+			czmGI=bb.getDouble()*units.outputERRScale();
+			czmGII=bb.getDouble()*units.outputERRScale();
+		}
+		
+		// traction history
+		char history=crackOrder[ReadArchive.ARCH_Traction15];
+		if(history=='Y')
+			setTractionHistory(1,bb.getDouble());
+		else if(history!='N')
+		{	if((history&0x01)!=0) setTractionHistory(1,bb.getDouble());
+			if((history&0x02)!=0) setTractionHistory(2,bb.getDouble());
+			if((history&0x04)!=0) setTractionHistory(3,bb.getDouble());
+			if((history&0x08)!=0) setTractionHistory(4,bb.getDouble());
+			if((history&0x10)!=0) setTractionHistory(5,bb.getDouble());
+		}
+		history=crackOrder[ReadArchive.ARCH_Traction610];
+		if(history=='Y')
+			setTractionHistory(6,bb.getDouble());
+		else if(history!='N')
+		{	if((history&0x01)!=0) setTractionHistory(6,bb.getDouble());
+			if((history&0x02)!=0) setTractionHistory(7,bb.getDouble());
+			if((history&0x04)!=0) setTractionHistory(8,bb.getDouble());
+			if((history&0x08)!=0) setTractionHistory(9,bb.getDouble());
+			if((history&0x10)!=0) setTractionHistory(10,bb.getDouble());
 		}
 	}
 	
+	// set history variable (create array if needed)
+	private void setTractionHistory(int num,double value)
+	{	if(tractionData==null) tractionData=new double[10];
+		tractionData[num-1]=value;
+	}
+	
+	// set history variable (create array if needed)
+	public double getTractionHistory(int num)
+	{	if(tractionData==null) return 0.;
+		if(num>tractionData.length) return 0;
+		return tractionData[num-1];
+	}
 	
 	//---------------------------------------------------------------------
 	// accessors

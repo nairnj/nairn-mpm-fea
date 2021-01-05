@@ -25,10 +25,11 @@ class LinearTraction : public CohesiveZone
 		// methods
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintMechanicalProperties(void) const;
-	
+        virtual char *InitHistoryData(char *);
+
 		// the traction law
 		virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);
-		virtual double CrackTractionEnergy(CrackSegment *,double,double,bool);
+		virtual double CrackWorkEnergy(CrackSegment *,double,double);
 		
 		// accessors
 		virtual const char *MaterialType(void) const;

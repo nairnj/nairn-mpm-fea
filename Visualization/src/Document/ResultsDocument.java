@@ -1600,10 +1600,12 @@ public class ResultsDocument extends AbstractTableModel
 			cmpnt = PlotQuantity.MPMKI;
 		else if(atoms[2].equals("KII"))
 			cmpnt = PlotQuantity.MPMKII;
-		else if(atoms[2].equals("CrackRelease"))
-			cmpnt = PlotQuantity.MPMCRACKRELEASE;
-		else if(atoms[2].equals("CrackAbsorb"))
-			cmpnt = PlotQuantity.MPMCRACKABSORB;
+		else if(atoms[2].equals("CZMGI"))
+			cmpnt = PlotQuantity.MPMMODEIFB;
+		else if(atoms[2].equals("CZMGII"))
+			cmpnt = PlotQuantity.MPMMODEIIFB;
+		else if(atoms[2].equals("CZDamageLength"))
+			cmpnt = PlotQuantity.MPMCZLENGTH;
 		else if(atoms[2].equals("Length"))
 			cmpnt = PlotQuantity.MPMLENGTH;
 		else if(atoms[2].equals("DebondLength"))
@@ -1627,13 +1629,14 @@ public class ResultsDocument extends AbstractTableModel
 			case PlotQuantity.MPMJ2:
 			case PlotQuantity.MPMKI:
 			case PlotQuantity.MPMKII:
-			case PlotQuantity.MPMCRACKRELEASE:
-			case PlotQuantity.MPMCRACKABSORB:
+			case PlotQuantity.MPMMODEIFB:
+			case PlotQuantity.MPMMODEIIFB:
 			case PlotQuantity.MPMNORMALCTOD:
 			case PlotQuantity.MPMSHEARCTOD:
 			case PlotQuantity.MPMDEBONDNCTOD:
 			case PlotQuantity.MPMDEBONDSCTOD:
-				// get crack numberand tip number
+			case PlotQuantity.MPMCZLENGTH:
+				// get crack number and tip number
 				if(atoms.length<5) throw new Exception("timeplot property has too few parameters");
 				crackNum = CmdViewer.atomInt(atoms[3],variablesStrs);
 				tipNum = CmdViewer.atomInt(atoms[4],variablesStrs);
@@ -1783,12 +1786,71 @@ public class ResultsDocument extends AbstractTableModel
 					if(crkCmpnt==PlotQuantity.MPMDEBONDLENGTH) yvalue-=bonded;
 					break;
 				
-				case PlotQuantity.MPMCRACKRELEASE:
-					yvalue=seg.release;
+				case PlotQuantity.MPMCZLENGTH:
+					yvalue=0.;
+					lastPt=seg.getMedianPosition();
+					double lastL = 0.;
+					if(seg.tractionMaterial>0)
+						lastL = seg.czmHasDisp>0 ? 1. : 0.;
+					while(true)
+					{   offset+=recSize;
+						if(offset>lastoffset) break;
+						bb.position(offset);
+						seg.readRecord(bb,crackOrder,units);
+						if(seg.startFlag==-1) break;
+						pt=seg.getMedianPosition();
+						
+						double segLength=Math.sqrt((pt.x-lastPt.x)*(pt.x-lastPt.x) +
+										(pt.y-lastPt.y)*(pt.y-lastPt.y));
+						lastPt=pt;
+						
+						double segL = 0.;
+						if(seg.tractionMaterial>0)
+							segL = seg.czmHasDisp>0 ? 1. : 0.;
+						yvalue += 0.5*segLength*(lastL+segL);
+						lastL=segL;
+					}
 					break;
 				
-				case PlotQuantity.MPMCRACKABSORB:
-					yvalue=seg.absorb;
+				case PlotQuantity.MPMMODEIFB:
+				case PlotQuantity.MPMMODEIIFB:
+	                // We intergrate ERR (units F per unit thickesss) over crack
+	                // To get dissipated energy per unit thickness
+	                // The crack ERR is slope is this plot versus crack length
+	                // Shape of curve depends on selection of crack tip.
+					yvalue=0.;
+					
+					// first segment
+					lastPt=seg.getMedianPosition();
+					double lastG = 0.;
+					if(seg.czmHasDisp==1)
+						lastG = crkCmpnt==PlotQuantity.MPMMODEIFB ?  seg.czmGI : seg.czmGII ;
+					
+					while(true)
+					{   // next segement, exit when don
+						offset+=recSize;
+						if(offset>lastoffset) break;
+						bb.position(offset);
+						seg.readRecord(bb,crackOrder,units);
+						if(seg.startFlag==-1) break;
+						
+						// get segment length
+						pt=seg.getMedianPosition();
+						double segLength=Math.sqrt((pt.x-lastPt.x)*(pt.x-lastPt.x) +
+										(pt.y-lastPt.y)*(pt.y-lastPt.y));
+						lastPt=pt;
+						
+						// get dissipated energy
+						double segG = 0.;
+						if(seg.czmHasDisp==1)
+							segG = crkCmpnt==PlotQuantity.MPMMODEIFB ?  seg.czmGI : seg.czmGII ;
+						
+	                    // increment energy*length and length
+	                    yvalue += 0.5*segLength*(lastG+segG);
+	                    
+	                    // save last one
+	                    lastG = segG;
+					}
 					break;
 				
 				case PlotQuantity.MPMDEBONDNCTOD:

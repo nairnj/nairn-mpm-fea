@@ -114,7 +114,16 @@ endif</blockquote>
 This command must be the first command in a script. Its presence is how <b>NairnFEAMPMViz</b> knows to interpret the commands as a script rather than as commands to setup FEA or MPM calculations.</li>
 
 <li><code>Open (doc),&lt;(path)&gt;</code><br>
-Open a document and set the object variable in <code>(doc)</code> (which must be a <a href="#vars">valid object variable name</a> and not an expression) to the opened document. The optional <code>(path)</code> argument is full or relative path to the document to be opened. Relative paths are given from the saved script document. If this variable is omitted, the user is presented a standard file-opening dialog box and asked to select the file to be opened. If the requested file is already opened, its window will be brought to the front.</li>
+Open a document and set the object variable in <code>(doc)</code> (which must be a <a href="#vars">valid object
+variable name</a> and not an expression) to the opened document. The optional <code>(path)</code> argument is full
+or relative path to the document to be opened or is "_results_" or "_commands_". Relative paths are given from
+the saved script document. If this variable is omitted, the user is presented a standard file-opening dialog box
+and asked to select the file to be opened. If the requested file is already opened, its window will be brought to the front.
+If <code>(path)</code> is "_results_" or "_commands_", this command will open (and bring to the front) the first results
+or commands document it finds that is already open (not counting the script itself as a commands document). The order
+of documents is not reliable, which means this option works best when only one such document
+is available.</li>
+
 
 <li><code>OpenFolder (strVar),&lt;(title)&gt;,&lt;(path)&gt;</code><br>
 This command will select a folder and create it if needed. If the optional <code>(path)</code> variable is omitted,
@@ -170,8 +179,23 @@ When the calculations are done the object variable in <code>(resDoc)</code> (whi
 &nbsp;&nbsp;&nbsp;&nbsp;Before this command can be used, you must <a href="help.html#setserver">set up the server</a> for remote calculations. If you do not specify a password when setting up the server, this command will ask for one; thus to run an unattended script of many calculations, you should enter a password in the server setup.</li>
 
 <li><code>object.export &lt;(path)&gt;</code><br>
-This command will save the contents of the console pane in the object document (which can only be a commands document) to the file specified by <code>(path)</code>. The optional <code>(path)</code> can be a full path or a path relative to the script document. The folder to receive the output file must already exist. If <code>(path)</code> is omitted, the user is given a file-saving dialog box to select file name and save location.</li>
+This command will save the contents of the console pane in the object document (which can only be a commands document)
+to the file specified by <code>(path)</code>. The optional <code>(path)</code> can be a full path or a path relative
+to the script document. The folder to receive the output file must already exist.
+If <code>(path)</code> is omitted, the user is given a file-saving dialog box to select file name and save location.</li>
 </ul>
+
+<li><code>object.plottable (table)</code><br>
+This command will plot a table of data as a child window of the object document (which can only be a results document)
+where <code>(table)</code> is a string argument of multiple lines.
+The first column has x data and all subsequent, tab-delimited columns have one or more y data sets. A column with
+no data for specific x can be left empty. The <code>(table)</code> can include a preamble of commands to set styles for the plot.
+These lines are at the beginning of the table, each begin with "#", and can use any commands documented in the
+PublishPlotJ application. A single <code>plottable</code>
+command can plot multiple tables if the are separated by blank lines with the <code>(table)</code> string argument.
+The use of multiple <code>plottable</code> will create multiple plot windows.
+</ul>
+
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 

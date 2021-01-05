@@ -97,9 +97,23 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     }
     
     else if(strcmp(xName,"MatlPtsPerElement")==0)
-	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
-    	input=INT_NUM;
-        inputPtr=(char *)&fmobj->ptsPerElement;
+	{	// XML expects total points pere element, the end element code converts to linear
+		if(block==MPMHEADER)
+		{	input=INT_NUM;
+        	inputPtr=(char *)&fmobj->ptsPerElement;
+		}
+		else if(block==BODYPART)
+		{	if(fmobj->customPtsPerElement<0)
+				ThrowSAXException("MatlPtsPerElement cannot be used in Hole blocks");
+			input=INT_NUM;
+			inputPtr=(char *)&fmobj->customPtsPerElement;
+		}
+        else if(block==BMPBLOCK)
+        {   input=INT_NUM;
+            inputPtr=(char *)&bmpCustomPtsPerElement;      // but supplied per element
+        }
+		else
+			ThrowCompoundErrorMessage(xName,"command found at invalid location","");
     }
 	
 	else if(strcmp(xName,"Timing")==0)
@@ -157,6 +171,30 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         inputPtr=(char *)&timestep;
         gScaling=ReadUnits(attrs,SEC_UNITS);
     }
+    
+#ifdef RESTART_OPTION
+    else if(strcmp(xName,"RestartScaling")==0)
+    {   // If 1.e-6 < fabs(val) < 1, restart if acceleration too high with new time step
+        // If >0 warn once, but then silent. If <0 print each time restared
+        ValidateCommand(xName,MPMHEADER,ANY_DIM);
+        input=DOUBLE_NUM;
+        inputPtr=(char *)&fmobj->restartScaling;
+        numAttr=(int)attrs.getLength();
+        for(i=0;i<numAttr;i++)
+        {   aName=XMLString::transcode(attrs.getLocalName(i));
+            if(strcmp(aName,"CFL")==0)
+            {   value=XMLString::transcode(attrs.getValue(i));
+                sscanf(value,"%lf",&fmobj->restartCFL);
+                delete [] value;
+            }
+            delete [] aName;
+        }
+    }
+#else
+    else if(strcmp(xName,"RestartScaling")==0)
+    {    throw SAXException("<RestartScaling> command requires RESTART_OPTION activated in MPMPrefix.hpp.");
+    }
+#endif
     
 	else if(strcmp(xName,"ArchiveGroup")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
@@ -345,6 +383,9 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         }
     }
 
+    else if(strcmp(xName,"FDamping")==0)
+    {	throw SAXException("<FDamping> command requires OSParticulas.");
+    }
 	// XPIC option - get order (1=PIC, 2 is XPIC, <1 invalid)
     else if(strcmp(xName,"XPIC")==0)
 	{	throw SAXException("<XPIC> command no longer allowed; use PeriodicXPIC custom task.");
@@ -354,15 +395,37 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
 		if(fmobj->HasDiffusion())
 			throw SAXException("Only one 'Diffusion' command allowed in an analysis.");
+#ifdef POROELASTICITY
+		else if(fmobj->HasPoroelasticity())
+			throw SAXException("Cannot use both 'Diffusion' and 'Poroelasticity' in the same analysis.");
+#endif
 		DiffusionTask::active = MOISTURE_DIFFUSION;
 		DiffusionTask::reference=ReadNumericAttribute("reference",attrs,(double)0.0);
 		if(DiffusionTask::reference<0.) DiffusionTask::reference=0.;
 		if(DiffusionTask::reference>1.) DiffusionTask::reference=1.;
     }
 	
+#ifdef POROELASTICITY
 	else if(strcmp(xName,"Poroelasticity")==0)
-	{	throw SAXException("<Poroelasticity> command requires OSParticulas.");
+	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+		if(fmobj->HasPoroelasticity())
+			throw SAXException("Only one 'Poroelasticity' command allowed in an analysis.");
+		else if(fmobj->HasDiffusion())
+			throw SAXException("Cannot use both 'Poroelasticity' and 'Diffusion' in the same analysis.");
+		DiffusionTask::active = POROELASTICITY_DIFFUSION;
+		
+		// Reference pressure: legacy units are MPa - convert to Pa and must be positive
+		DiffusionTask::reference = UnitsController::Scaling(1.e6)*ReadNumericAttribute("reference",attrs,(double)0.0);
+		
+		// Viscosity: Legacy units are cP - 1 cP = 0.001 Pa-sec
+		// Default: .001 Pa-sec in Legacy and 1 in CU
+		DiffusionTask::viscosity = UnitsController::Scaling(1.e-3)*ReadNumericAttribute("viscosity",attrs,(double)1.0);
 	}
+#else
+	else if(strcmp(xName,"Poroelasticity")==0)
+	{	throw SAXException("<Poroelasticity> command requires POROELASTICITY defined in MPMPrefix.hpp.");
+	}
+#endif
 	
 	else if(strcmp(xName,"DefGradTerms")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
@@ -490,8 +553,12 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 					mpmgrid.materialNormalMethod=EACH_MATERIALS_MASS_GRADIENT;		// 3 - OWNG
 				else if(scanInput<4.5)
 					mpmgrid.materialNormalMethod=SPECIFIED_NORMAL;					// 4 - SN
-				else
-					throw SAXException("Normals attribute on MultiMaterialMode must be 0 to 4.");
+				else if(scanInput<5.5)
+					mpmgrid.materialNormalMethod=LINEAR_REGRESSION;					// 5 - LINR
+				else if(scanInput<6.5)
+					mpmgrid.materialNormalMethod=LOGISTIC_REGRESSION;				// 6 - LOGR
+                else
+                    throw SAXException("Normals attribute on MultiMaterialMode must be 0 to 6.");
 			}
             else if(strcmp(aName,"RigidBias")==0)
 			{	mpmgrid.rigidGradientBias=scanInput;
@@ -577,7 +644,22 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 				else if( CIstrcmp(value,"history1")==0 || CIstrcmp(value,"history2")==0
 							|| CIstrcmp(value,"history3")==0 || CIstrcmp(value,"history4")==0 )
 				{	archByte = ARCH_History;
-					historyNum = value[7]&0x0F;
+					historyNum = value[7]&0x0F;				// bit 1,2,3,4 (e.g., 0x31 to 0x01)
+				}
+				else if( CIstrcmp(value,"history5")==0 || CIstrcmp(value,"history6")==0 || CIstrcmp(value,"history7")==0
+						|| CIstrcmp(value,"history8")==0 || CIstrcmp(value,"history9")==0 )
+				{	archByte = ARCH_History59;
+					historyNum = value[7]&0x0F - 4;			// bit 1,2,3,4,5 (e.g., 0x35 to 0x05)
+				}
+				else if( CIstrcmp(value,"history10")==0 || CIstrcmp(value,"history11")==0 || CIstrcmp(value,"history12")==0
+						|| CIstrcmp(value,"history13")==0 || CIstrcmp(value,"history14")==0 )
+				{	archByte = ARCH_History1014;
+					historyNum = value[8]&0x0F + 1;				// bit 1,2,3,4,5 (e.g., 0x31 to 0x01)
+				}
+				else if( CIstrcmp(value,"history15")==0 || CIstrcmp(value,"history16")==0 || CIstrcmp(value,"history17")==0
+						|| CIstrcmp(value,"history18")==0 || CIstrcmp(value,"history19")==0 )
+				{	archByte = ARCH_History1519;
+					historyNum = value[8]&0x0F - 4;			// bit 1,2,3,4,5 (e.g., 0x35 to 0x05)
 				}
 				else if(CIstrcmp(value,"elementcrossings")==0)
 					archByte = ARCH_ElementCrossings;
@@ -588,8 +670,19 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 					archByte = -ARCH_JIntegral;
 				else if(CIstrcmp(value,"stressintensity")==0)
 					archByte = -ARCH_StressIntensity;
-				else if(CIstrcmp(value,"energybalance")==0)
-					archByte = -ARCH_BalanceResults;
+				else if(CIstrcmp(value,"energybalance")==0 || CIstrcmp(value,"czmdisp")==0)
+					archByte = -ARCH_CZMDISP;
+                else if( CIstrcmp(value,"traction1")==0 || CIstrcmp(value,"traction2")==0 || CIstrcmp(value,"traction3")==0
+                        || CIstrcmp(value,"traction4")==0 || CIstrcmp(value,"traction5")==0 )
+                {   archByte = ARCH_Traction15;
+                    historyNum = value[8]&0x0F;            // bit 1,2,3,4,5 (e.g., 0x31 to 0x01, etc.)
+                }
+                else if( CIstrcmp(value,"traction6")==0 || CIstrcmp(value,"traction7")==0 || CIstrcmp(value,"traction8")==0
+                        || CIstrcmp(value,"traction9")==0 || CIstrcmp(value,"traction10")==0 )
+                {   archByte = ARCH_Traction610;
+                    historyNum = value[8]&0x0F-5;            // bit 1,2,3,4,5 (e.g., 0x36 to 0x06 to 0x01, etc.)
+                    if(historyNum<0) historyNum = 5;
+                }
 				delete [] value;
 			}
 			else if(strcmp(aName,"setting")==0)
@@ -603,21 +696,60 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		// set a byte
 		if(archByte==0)
 			throw SAXException("<MPMArchive> command has missing on unrecognized 'result' attribute.");
-		else if(archByte == ARCH_History)
-		{	char history = archiver->GetMPMOrderByte(archByte);
-			if(history=='N') history = 0x30;
-			char historyBit = 1 << (historyNum-1);			// 1, 2, 4, or 8 for 1 to 4
+		else if(archByte == ARCH_History || archByte == ARCH_History59 || archByte == ARCH_History1014 || archByte == ARCH_History1519)
+		{	// get current byte and switch 'Y' and 'N' to 1 bit or no bits
+			char history = archiver->GetMPMOrderByte(archByte);
+			if(history=='Y')
+				history = archByte == ARCH_History ? 0x31 : 0x21 ;
+			else if(history=='N')
+				history = archByte == ARCH_History ? 0x30 : 0x20 ;
+			
+			// convert bit number from above to Hex value (1, 2, 4, 8, or 16 for 1 to 5)
+			char historyBit = 1 << (historyNum-1);
+			
+			// Add or remove this new bit (remove only if was set)
 			if(setting=='Y')
 				history |= historyBit;
 			else if(history&historyBit)
 				history -= historyBit;
-			if(history == 0x30) history = 'N';
+			
+			// convert new setting of no bits to 'N', 1 bit left as is instead of 'Y'
+			if(archByte == ARCH_History)
+			{	if(history == 0x30) history = 'N';
+			}
+			else if(history == 0x20)
+				history = 'N';
+			
+			// replace previous character with new one
 			archiver->SetMPMOrderByte(archByte,history);
 		}
+        else if(archByte == ARCH_Traction15 || archByte == ARCH_Traction610)
+        {    // get current byte and switch 'Y' and 'N' to 1 bit or no bits
+            char history = archiver->GetCrackOrderByte(archByte);
+            if(history=='Y')
+                history = 0x21 ;
+            else if(history=='N')
+                history = 0x20 ;
+            
+            // convert bit number from above to Hex value (1, 2, 4, 8, or 16 for 1 to 5)
+            char historyBit = 1 << (historyNum-1);
+            
+            // Add or remove this new bit (remove only if was set)
+            if(setting=='Y')
+                history |= historyBit;
+            else if(history&historyBit)
+                history -= historyBit;
+            
+            // convert new setting of no bits to 'N', 1 bit left as is instead of 'Y'
+            if(history == 0x20) history = 'N';
+            
+            // replace previous character with new one
+            archiver->SetCrackOrderByte(archByte,history);
+        }
 		else if(archByte>0)
 			archiver->SetMPMOrderByte(archByte,setting);
 		else
-			archiver->SetCrackOrderByte(archByte,setting);
+			archiver->SetCrackOrderByte(-archByte,setting);
 	}
 	
     else if(strcmp(xName,"CrackArchiveOrder")==0)
@@ -637,6 +769,12 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         inputPtr=(char *)&fmobj->warnParticleLeftGrid;
     }
 
+    else if(strcmp(xName,"DeleteLimit")==0)
+    {   ValidateCommand(xName,MPMHEADER,ANY_DIM);
+        input=INT_NUM;
+        inputPtr=(char *)&fmobj->warnParticleDeleted;
+    }
+    
     // Cracks in MPM Header
     else if(strcmp(xName,"Cracks")==0)
 	{	ValidateCommand(xName,MPMHEADER,cracksDim);
@@ -987,6 +1125,15 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 						throw SAXException("Material point weight fraction concentration must be >= 0");
 				}
 			}
+#ifdef POROELASTICITY
+			else if(strcmp(aName,"pp")==0)
+			{	// only used if poroelasticity is active
+				if(fmobj->HasPoroelasticity())
+				{	pConcInitial=dval;
+					pConcInitial *= UnitsController::Scaling(1.e6);
+				}
+			}
+#endif
             else if(strcmp(aName,"temp")==0)
                 pTempInitial=dval;
             else if(strcmp(aName,"angle")==0)
@@ -1058,9 +1205,11 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		char tempName[20];
 		strcpy(tempName,"Input Only");
 		currentContact = new ContactLaw(tempName,CONTACTLAW);
-		char lawname[200];
+		char lawname[200],Tpropname[200];
 		lawname[0]=0;
+		Tpropname[0]=0;
 		bool hasCustomContact = false;
+		int tractionPropID=-1;
 
 		// read crack attributes
 		double dval;
@@ -1080,6 +1229,13 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			else if(strcmp(aName,"lawname")==0)
 			{	if(strlen(value)>199) value[200]=0;
 				strcpy(lawname,value);
+			}
+			else if(strcmp(aName,"Tprop")==0)
+			{	sscanf(value,"%d",&tractionPropID);
+			}
+			else if(strcmp(aName,"Tpropname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(Tpropname,value);
 			}
 			else if(strcmp(aName,"friction")==0)
             {	// deprecated - use law or lawname instead
@@ -1113,8 +1269,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         }
 		
 		// if gave a mat name, it takes precedence over law number
-		if(lawname[0])
-			currentContact->contactProps.contactLawID = matCtrl->GetIDFromNewName(lawname);
+		if(lawname[0]!=0)
+			currentContact->contactProps.contactLawID = matCtrl->GetIDFromName(lawname);
 		
 		// If use old method to create contact or interface properties, convert to contact law now
 		int finalLawID = currentContact->contactProps.contactLawID;
@@ -1127,6 +1283,12 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		// If has a law, put on the crack
 		if(finalLawID>=0)
 			newCrack->SetContactLawID(finalLawID);
+		
+		// if gave traction mat name, it takes precedence over traction number
+		if(Tpropname[0]!=0)
+			tractionPropID = matCtrl->GetIDFromName(Tpropname);
+		if(tractionPropID>0)
+			newCrack->SetTractionPropID(tractionPropID);
 		
 		// done with currentContact
 		delete currentContact;
@@ -1278,7 +1440,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	
 	// thermal ramp
     else if(strcmp(xName,"Isothermal")==0)
-	{	throw SAXException("The <Isothermal> command has been replaced by the ThermalRamp custom task.");
+	{	throw SAXException("The <Isothermal> command has been replaced by the PropertyRamp custom task.");
     }
     
 	// Turn on conduction analysis
@@ -1460,6 +1622,7 @@ void MPMReadHandler::myEndElement(char *xName)
     
     else if(strcmp(xName,"Cracks")==0)
     {	// install frictionless if not provded
+        // but only if Cracks element is in the MPMHeader
 		if(contact.crackContactLawID<0)
 		{	contact.crackContactLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,NULL,0.,"Cracks default");
 		}
@@ -1468,7 +1631,8 @@ void MPMReadHandler::myEndElement(char *xName)
     
     else if(strcmp(xName,"MultiMaterialMode")==0)
     {	// install frictionless if not provded
-		if(mpmgrid.materialContactLawID<0)
+        // but only if MultiMaterialMode element is in the MPMHeader
+        if(mpmgrid.materialContactLawID<0)
 		{	mpmgrid.materialContactLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,NULL,0.,"MultiMaterialMode default");
 		}
 		block=MPMHEADER;
@@ -1520,6 +1684,37 @@ void MPMReadHandler::myEndElement(char *xName)
 	else if(strcmp(xName,"JANFEAInput")==0)
 	{	// all done
 		CreateSymmetryBCs();
+	}
+	
+	else if(strcmp(xName,"MatlPtsPerElement")==0)
+	{	// This guarantees these entries are always valid
+        int totalPoints;
+        if(block==BMPBLOCK)
+            totalPoints = bmpCustomPtsPerElement;
+        else if(block==MPMHEADER)
+            totalPoints = fmobj->ptsPerElement;
+        else
+            totalPoints = fmobj->customPtsPerElement;
+		if(totalPoints<0)
+			throw SAXException("Material points per element must be positive.");
+		int oneSide;
+		if(fmobj->IsThreeD())
+		{	oneSide = pow((double)totalPoints,1./3.)+0.1;
+			if(oneSide*oneSide*oneSide!=totalPoints)
+				throw SAXException("Material points per element in 3D must be a cubed number.");
+		}
+		else
+		{	oneSide = sqrt((double)totalPoints)+0.1;
+			if(oneSide*oneSide!=totalPoints)
+				throw SAXException("Material points per element in 2D must be a squared number.");
+		}
+		// align input number with number per side
+		if(block==MPMHEADER)
+			fmobj->ptsPerSide = oneSide;
+        if(block==BMPBLOCK)
+            bmpCustomPtsPerSide = oneSide;
+		else
+			fmobj->customPtsPerSide = oneSide;
 	}
 }
 

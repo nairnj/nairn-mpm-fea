@@ -21,6 +21,7 @@
 #include "Nodes/MaterialContactNode.hpp"
 #include "Exceptions/MPMWarnings.hpp"
 #include "Global_Quantities/BodyForce.hpp"
+#include "Elements/ElementBase.hpp"
 
 #pragma mark INITIALIZATION
 
@@ -36,8 +37,11 @@ CrackVelocityFieldMulti::~CrackVelocityFieldMulti()
 	// go backwards so unmirror fields before source gets deleted
 	for(int i=maxMaterialFields-1;i>=0;i--)
     {   if(mvf[i]!=NULL)
-		{   // Always delete
-			delete mvf[i];
+		{   // Always delete field [0], delete [i>0] if not ignoring cracks
+			if(MVFInMemory(i))
+				delete mvf[i];
+			else
+				mvf[i] = NULL;
 		}
 	}
 }
@@ -48,7 +52,10 @@ void CrackVelocityFieldMulti::ZeroMatFields(void)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
 	{	if(mvf[i]!=NULL)
-		{	if(mvf[i]->numberPoints>0)
+		{	// If mirrored field that ignores cracks, just set to NULL
+			if(!MVFInMemory(i))
+				mvf[i] = NULL;
+			else if(mvf[i]->numberPoints>0)
 				mvf[i]->Zero();
 		}
 	}
@@ -113,38 +120,28 @@ void CrackVelocityFieldMulti::AddVolumeGradient(int matfld,Vector *grad)
 // This is called for crack field [i]. Each material field in crack source [0] that ignores cracks should be copied
 //    to the corresponding field in this crack velocity field
 // For NairnMPM, a new field is created if needed (instead of just mirroring it) and then filled with copy
-void CrackVelocityFieldMulti::MirrorFieldsThatIgnoreCracks(MatVelocityField *rmvf,int rigidFieldNum)
+void CrackVelocityFieldMulti::MirrorFieldsThatIgnoreCracks(CrackVelocityFieldMulti *cvfSource)
 {
-	// create material field in this crack velocity field if needed, otherwise, just be sure it is zeroed.
-	if(mvf[rigidFieldNum]==NULL)
-	{	mvf[rigidFieldNum] = new MatVelocityField(RIGID_FIELD_BIT);
-		if(mvf[rigidFieldNum]==NULL) throw CommonException("Memory error allocating material velocity field.",
-														   "CrackVelocityFieldMulti::MirrorFieldsThatIgnoreCracks");
+	// get pointer to material velocity field in the target crack velocity field
+	MatVelocityField **mvfSource = cvfSource->GetMaterialVelocityFields();
+	
+	// loop over velocity fields in the source (which is in field [0])
+	for(int i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField::ActiveField(mvfSource[i]))
+		{	if(mvfSource[i]->IgnoresCracks())
+			{	// copy just the pointer
+				mvf[i] = mvfSource[i];
+				int sourcePoints = mvfSource[i]->numberPoints;
+			
+				// add number of rigid points to this crack velocity field
+				if(mvfSource[i]->IsRigidField())
+					numberRigidPoints += sourcePoints;
+				
+				// add total points in this crack velocity field
+				numberPoints += sourcePoints;
+			}
+		}
 	}
-	else
-		mvf[rigidFieldNum]->Zero();
-	
-	// add number rigid points this crack velocity field
-	numberRigidPoints += rmvf->numberPoints;
-	numberPoints += rmvf->numberPoints;
-	
-	// copy all extrapolated items
-	
-	// momentum, number of points, and velocity
-	Vector rvel = rmvf->GetVelocity();
-	mvf[rigidFieldNum]->AddMomentumTask1(&rmvf->pk,&rvel,rmvf->numberPoints);
-	
-	// mass and volume
-	mvf[rigidFieldNum]->mass = rmvf->mass;
-	mvf[rigidFieldNum]->AddContactVolume(rmvf->GetContactVolume());
-	
-	// displacement and volume gradient
-	if(mpmgrid.displacementIndex>=0)
-		CopyVector(&mvf[rigidFieldNum]->contactInfo->terms[mpmgrid.displacementIndex],&rmvf->contactInfo->terms[mpmgrid.displacementIndex]);
-	if(mpmgrid.positionIndex>=0)
-		CopyVector(&mvf[rigidFieldNum]->contactInfo->terms[mpmgrid.positionIndex],&rmvf->contactInfo->terms[mpmgrid.positionIndex]);
-	if(mpmgrid.volumeGradientIndex>=0)
-		CopyVector(&mvf[rigidFieldNum]->contactInfo->terms[mpmgrid.volumeGradientIndex],&rmvf->contactInfo->terms[mpmgrid.volumeGradientIndex]);
 }
 
 // Copy mass and momentum from ghost node to real node
@@ -164,7 +161,7 @@ void CrackVelocityFieldMulti::RezeroNodeTask6(double deltaTime)
         {	if(!mvf[i]->IsRigidField())
 			{	mvf[i]->RezeroNodeTask6();
             }
-            else
+            else if(MVFInMemory(i))
             {   // for rigid particles, keep initial pk
                 // can project displacement using current velocity because
                 // particle mass is its volume
@@ -223,6 +220,19 @@ void CrackVelocityFieldMulti::AddGravityAndBodyForceTask3(Vector *gridBodyForce,
 			mvf[i]->AddGravityAndBodyForceTask3(gridBodyForce,gridAlpha,gridForceAlpha);
 	}
 }
+
+#ifdef RESTART_OPTION
+// check for velocity and acceleration are too high
+bool CrackVelocityFieldMulti::IsTravelTooMuch(double dt,double maxDist) const
+{   for(int i=0;i<maxMaterialFields;i++)
+    {   if(MatVelocityField::ActiveNonrigidSourceField(mvf[i],fieldNum))
+        {   if(mvf[i]->IsTravelTooMuch(dt,maxDist))
+                return true;
+        }
+    }
+    return false;
+}
+#endif
 
 // Copy grid forces ghost node to the real node (nonrigid only)
 void CrackVelocityFieldMulti::CopyGridForces(NodalPoint *real)
@@ -398,6 +408,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 		// some variables
 		Vector norm,delta;					// normal and COD (later if needed)
 		double dotn,deln = 0.;				// normal force and cod components
+		Vector delMats,*delMatsPtr=NULL;	// for distances to materials in get normal call
 		double contactArea = -1.,mredDelWf = -1.,contactGridN = 1.;
 		
 		// Determine if in contact
@@ -428,7 +439,11 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 			// Get normal vector by various options
 			bool hasDeln = false;
 			if(!NonRigidCustomNormal(ndptr,i,j,norm))
-			{	norm = GetNormalVector(mcn,i,-1,voli,&gradj,volj,1.,hasDeln,deln,NULL);
+			{	norm = GetNormalVector(mcn,i,-1,voli,&gradj,volj,1.,hasDeln,&delMats);
+				if(hasDeln)
+				{	deln = delMats.x;
+					delMatsPtr = &delMats;
+				}
 				
 				// nan here means volume gradients zero as gradient normal to a symmetry plane
 				if(norm.x!=norm.x || norm.y!=norm.y || norm.z!=norm.z) continue;
@@ -463,7 +478,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 				
 				// for interfaces or contact laws that need, get area here
 				if(theContactLaw->ContactLawNeedsContactArea())
-				{	contactArea = GetContactArea(ndptr,voli,volj,&norm,&contactGridN);
+				{	contactArea = GetContactArea(ndptr,voli,volj,&norm,&contactGridN,delMatsPtr);
 					
 					if(!mpmgrid.contactByDisplacements && theContactLaw->IsImperfectInterface())
 					{	// recalculate delta using displacements if needed for an interface
@@ -628,11 +643,11 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 		ContactLaw *theContactLaw = mpmgrid.GetMaterialContactLaw(i,rigidFld);
 		
 		// get contact parameters
-		Vector norm,delta;			// normal and COD (if needed)
-		Vector dispRigid;			// displacement of rigid material (might be needed for Yang correction)
-		double dotn,deln=0.;		// normal force amd cod
-		bool hasDeln;				// might be needed for Yang correction
-		double delBeta;				// for Yang correction
+		Vector norm,delta;				// normal and COD (if needed)
+		Vector dispRigid;				// displacement of rigid material (might be needed for Yang correction)
+		double dotn,deln=0.;			// normal force amd cod
+		bool hasDeln;					// might be needed for Yang correction
+		Vector delMats,*delMatsPtr=NULL;		// for distances to the node in get normal calls
 		double contactArea = -1.,mredDelWf = -1.,contactGridN = 1.;
  	
 		// some variables
@@ -664,12 +679,15 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 			
 			// Get normal vector by various options
 			hasDeln = false;
-			delBeta = 0.;
 			if(!RigidCustomNormal(ndptr,i,rigidFld,norm))
 			{	Vector gradj;
 				if(mpmgrid.volumeGradientIndex>=0)
 					GetVolumeGradient(rigidFld,ndptr,&gradj,-1.);
-				norm = GetNormalVector(mcn,i,rigidFld,voli,&gradj,rigidVolume,mpmgrid.rigidGradientBias,hasDeln,deln,&delBeta);
+				norm = GetNormalVector(mcn,i,rigidFld,voli,&gradj,rigidVolume,mpmgrid.rigidGradientBias,hasDeln,&delMats);
+				if(hasDeln)
+				{	deln = delMats.x;
+					delMatsPtr = &delMats;
+				}
 				
 				// nan here means volume gradients zero as gradient normal to a symmetry plane
 				if(norm.x!=norm.x || norm.y!=norm.y || norm.z!=norm.z) continue;
@@ -696,7 +714,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 				
 				if(theContactLaw->ContactLawNeedsContactArea())
 				{	// interface and some laws will need contact area
-					contactArea = GetContactArea(ndptr,voli,rigidVolume,&norm,&contactGridN);
+					contactArea = GetContactArea(ndptr,voli,rigidVolume,&norm,&contactGridN,delMatsPtr);
 					
 					// get COD if might be nneded by an interface
 					if(!mpmgrid.contactByDisplacements && mpmgrid.hasImperfectInterface)
@@ -793,10 +811,10 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 // Get normal vector from material i to j by various options
 // Note 1: j<0 means others lumped. j>0 is for rigid contact, or explicit 3 (not recommended anymore)
 // Note 2: gradj only defined when volumeGradientIndex>=0
-// Note 3: If LR method, hasDeln will change to true and deln will be set to normal separation
-// Note 4: delBeta is distance to node - only found here for LR and only used with Yang correction, which is only for rigid contact
+// Note 3: If LR method, hasDeln will change to true and set delMats to
+//			(dBeta-dAlpha,dAlpha,dBeta) for separation and signed distances of each material to node
 Vector CrackVelocityFieldMulti::GetNormalVector(MaterialContactNode *mcn,int i,int j,double voli,Vector *gradj,double otherVolume,
-												double jBias,bool &hasDeln,double &deln,double *delBeta)
+												double jBias,bool &hasDeln,Vector *delMats)
 {
 	NodalPoint *ndptr = mcn->GetTheNode();
 	Vector norm;
@@ -867,6 +885,36 @@ Vector CrackVelocityFieldMulti::GetNormalVector(MaterialContactNode *mcn,int i,i
 			norm = mpmgrid.contactNormal;
 			AdjustForSymmetry(ndptr,&norm,true);
 			break;
+
+		case LINEAR_REGRESSION:
+			if(jBias>=100.)
+			{	double magj = DotVectors(gradj,gradj);
+				if(DbleEqual(magj,0.))
+					norm = LinearRegressionNormal(mcn,fieldNum,i,j,hasDeln,delMats);
+				else
+				{	CopyScaleVector(&norm,gradj,1./sqrt(magj));		// use rigid material
+					FindSepFromNormalAndPointCloud(&norm,mcn,fieldNum,i,j,delMats);
+					hasDeln = true;
+				}
+			}
+			else
+				norm = LinearRegressionNormal(mcn,fieldNum,i,j,hasDeln,delMats);
+			break;
+			
+		case LOGISTIC_REGRESSION:
+			if(jBias>=100.)
+			{	double magj = DotVectors(gradj,gradj);
+				if(DbleEqual(magj,0.))
+					norm = LogisticRegressionNormal(mcn,fieldNum,i,j,hasDeln,delMats);
+				else
+				{	CopyScaleVector(&norm,gradj,1./sqrt(magj));		// use rigid material
+					FindSepFromNormalAndPointCloud(&norm,mcn,fieldNum,i,j,delMats);
+					hasDeln = true;
+				}
+			}
+			else
+				norm = LogisticRegressionNormal(mcn,fieldNum,i,j,hasDeln,delMats);
+			break;
 			
 		default:
 			break;
@@ -935,17 +983,68 @@ double CrackVelocityFieldMulti::GetTangentCOD(Vector *norm,Vector *delta,Vector 
 // Input is ndptr, voli, volb, norm
 // Ouput is hperp, and return contactArea
 // If tangDel!=NULL also find tangDel and delt = tangDel.t from delta and norm (otherwase delta not even used)
-double CrackVelocityFieldMulti::GetContactArea(NodalPoint *ndptr,double voli,double volb,Vector *norm,double *hperp)
+// If delMats!=NULL, it is (deln, dAlpha, dBeta) for separation and distance of each material to node)
+double CrackVelocityFieldMulti::GetContactArea(NodalPoint *ndptr,double voli,double volb,Vector *norm,double *hperp,Vector *delMats)
 {
 	// perpendicular distance to correct contact area and contact by positions
 	Vector dist = mpmgrid.GetPerpendicularDistance(norm,ndptr);
 	
 	// Get raw surface area, it is divided by hperp to get contact area
-	// Scale voltot=voli+volb to voltot*sqrt(2*vmin/voltot) = sqrt(2*vmin*vtot)
-	// dist weightings to allow for unequal element sizes
 	// multiple by position for axisymmetric
-	double surfaceArea = sqrt(2.*fmin(voli*dist.y,volb*dist.z)*(voli+volb))/dist.x;
-	if(fmobj->IsAxisymmetric()) surfaceArea *= ndptr->x;			// times position if axisym
+	double surfaceArea;
+	if(delMats==NULL)
+	{	// Scale voltot=voli+volb to voltot*sqrt(2*vmin/voltot) = sqrt(2*vmin*vtot)
+		// dist weightings to allow for unequal element sizes
+		// This is approach in my paper and estimates distance from interface to the node
+		if(ElementBase::GetShapeFunctionOrder()==1)
+			surfaceArea = sqrt(2.*fmin(voli*dist.y,volb*dist.z)*(voli+volb))/dist.x;
+		else
+		{	// spline functions
+			double Vcell = voli+volb;
+			
+			// get linear d function and convert for splines
+			double ds = 1. - sqrt(2.*fmin(voli*dist.y,volb*dist.z)/Vcell);
+			double d = fmax(1.193*ds,-4.3248 + ds*(18.5999 - ds*(23.43 - 10.6304*ds)));
+			
+			if(d<0.5)
+				surfaceArea = 0.75 - d*d;
+			else
+			{	double d2 = fmax(0.,3. - 2*d);
+				surfaceArea = 0.125*d2*d2;
+			}
+			
+			// Now contact area is Vcell*S(d)/hperp
+			surfaceArea *= Vcell/dist.x;
+		}
+	}
+	else
+	{	// absolute value of each material to the node
+		double dAlpha = fabs(delMats->y);
+		double dBeta = fabs(delMats->z);
+		//double Vcell = mpmgrid.GetCellVolume(ndptr);
+		double Vcell = voli+volb;
+		
+		// Find material closest to node in cell units (d>0)
+		double d = fmin(dAlpha,dBeta)/dist.x;
+		
+		// get linear or quadratic weighting factor = S(d)
+		if(ElementBase::GetShapeFunctionOrder()==1)
+			surfaceArea = fmax(0.,1.-d);
+		else
+		{	if(d<0.5)
+				surfaceArea = 0.75 - d*d;
+			else
+			{	double d2 = fmax(0.,3. - 2*d);
+				surfaceArea = 0.125*d2*d2;
+			}
+		}
+		
+		// Now contact area is Vcell*S(d)/hperp
+		surfaceArea *= Vcell/dist.x;
+	}
+	
+	// times position if axisym
+	if(fmobj->IsAxisymmetric()) surfaceArea *= ndptr->x;
 	
 	// output results
 	*hperp = dist.x;
@@ -1073,6 +1172,14 @@ Vector CrackVelocityFieldMulti::GetCMatFtot(void)
 
 #pragma mark ACCESSORS
 
+// Return true if this material field is physical field in memory
+// Always true for NairnMPM
+bool CrackVelocityFieldMulti::MVFInMemory(int mi) const
+{	if(fieldNum==0 || !mvf[mi]->IgnoresCracks()) return true;
+	// if here, the material velocity field is link to crack field [0] field
+	return false;
+}
+
 // Look for presence on non rigid points
 // This counts fields that do not see cracks, will need revise to look for nonrigid particles that see cracks
 bool CrackVelocityFieldMulti::HasPointsNonrigid(void) const { return (numberPoints-numberRigidPoints) > 0; }
@@ -1102,7 +1209,7 @@ double CrackVelocityFieldMulti::GetTotalMassAndCount(bool &hasMaterialContact)
 	{	if(MatVelocityField::ActiveField(mvf[i]))
 		{	numberMaterials++;
 			if(!mvf[i]->IsRigidField())
-			{	mass += mvf[i]->mass;
+			{   if(MVFInMemory(i))	mass += mvf[i]->mass;
 				
 				// copy the extrapolated momenta and contact XPIC if needed
 				mvf[i]->GetTotalMassAndCount();
@@ -1120,6 +1227,19 @@ int CrackVelocityFieldMulti::HasPointsThatSeeCracks(void)
 			return 1;
 	}
 	return 0;
+}
+
+// Return true or false if this crack velocity field has any field that ignores cracks
+// This is only called for cvf field [0] on a node
+bool CrackVelocityFieldMulti::HasFieldsThatIgnoreCracks(void) const
+{	int i;
+	for(i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField::ActiveField(mvf[i]))
+		{	if(mvf[i]->IgnoresCracks())
+				return true;
+		}
+	}
+	return false;
 }
 
 // total mass and kinetic energy all velocity fields (rigid particles not counted)
@@ -1183,15 +1303,16 @@ void CrackVelocityFieldMulti::SumAndClearRigidContactForces(Vector *fcontact,boo
 	int i;
 	for(i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveRigidField(mvf[i]))
-		{
-			AddScaledVector(&fcontact[i],mvf[i]->GetFtotPtr(),scale);
-			if(ftotal!=NULL) AddScaledVector(ftotal,mvf[i]->GetFtotPtr(),scale);
-			if(clearForces) ZeroVector(mvf[i]->GetFtotPtr());
+		{   if(MVFInMemory(i))
+			{	AddScaledVector(&fcontact[i],mvf[i]->GetFtotPtr(),scale);
+				if(ftotal!=NULL) AddScaledVector(ftotal,mvf[i]->GetFtotPtr(),scale);
+				if(clearForces) ZeroVector(mvf[i]->GetFtotPtr());
+			}
 		}
 	}
 }
 
-/* in response to crack contact, change momentum by changing velocity of all
+/* in response to crack contact, change momentum by changing velocity of all 
 	nonrigid materials the same amount (and only materials that account
 	for cracks)
  
@@ -1269,26 +1390,3 @@ void CrackVelocityFieldMulti::Describe(void) const
 			mvf[i]->Describe(i);
 	}
 }
-
-// get first active rigid field or return NULL. Also return number in rigidFieldNum
-// Onluy called when copying rigid filed to field [0]
-MatVelocityField *CrackVelocityFieldMulti::GetRigidMaterialField(int *rigidFieldNum)
-{
-	// if none return NULL
-	if(numberRigidPoints==0) return NULL;
-	
-	// find the rigid field
-	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveRigidField(mvf[i]))
-		{	*rigidFieldNum=i;
-			return mvf[i];
-		}
-	}
-	
-	return NULL;
-}
-
-
-
-

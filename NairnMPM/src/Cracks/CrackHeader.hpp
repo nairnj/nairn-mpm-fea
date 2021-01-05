@@ -110,6 +110,7 @@ class CrackHeader : public LinkedObject
 	
 		// Accessors
 		double Length(void) const;
+        double DebondedLength(void) const;
 		int NumberOfSegments(void) const;
 		int NumberOfFacets(void) const;
 		void SetNumber(int);
@@ -122,6 +123,8 @@ class CrackHeader : public LinkedObject
 		void SetAllowAlternate(int,bool);
 		void SetFixedCrack(int);
 		void SetContactLawID(int);
+		void SetTractionPropID(int);
+		int GetTractionPropID(void);
 		void Output(void);
 		int CriterionNeeds(void) const;
 		virtual void Describe(void) const;
@@ -142,6 +145,7 @@ class CrackHeader : public LinkedObject
         int numberSegments;
 		int numberFacets;						// only used for 3D cracks, otherwise 0
 		int fixedCrack,number,customContactLawID;
+		int customTractionPropID;
 		bool hasTractionLaws;
 		Vector initialDirection[2];
 		bool allowAlternate[2];

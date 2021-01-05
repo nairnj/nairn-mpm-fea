@@ -16,6 +16,9 @@
 #include "Exceptions/CommonException.hpp"
 #include "System/UnitsController.hpp"
 
+// needed to access dflag[7]
+#include "NairnMPM_Class/NairnMPM.hpp"
+
 #pragma mark JohnsonCook::Constructors and Destructors
 
 JohnsonCook::JohnsonCook() {}
@@ -121,7 +124,7 @@ const char *JohnsonCook::VerifyAndLoadProperties(int np)
 	// but extend to ep0jc if it is smaller, anything < edotMin is < ep0jc
 	edotMin = fmin(ep0jc,edotMin);
 	
-	// Below this minimum, this terms is contact
+	// Below this minimum, this terms is constant
     eminTerm = 1. + Cjc*log(edotMin) ;
 	
 	// base class never has error
@@ -169,7 +172,7 @@ void JohnsonCook::DeleteCopyOfHardeningProps(void *properties,int np) const
 #pragma mark JohnsonCook::Law Methods
 
 // Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
-// yield = (A + B ep^n + n epdot), where ep=alpint, epdot=dalpha/delTime
+// yield = (A + B ep^n)(1_c ln epdot + D (ln epdot)^n2)*TjcTerm, where ep=alpint, epdot=dalpha/delTime
 double JohnsonCook::GetYield(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
 	JCProperties *p = (JCProperties *)properties;

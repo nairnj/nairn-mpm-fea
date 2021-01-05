@@ -36,6 +36,13 @@ TransIsotropic::TransIsotropic(char *matName,int matID) : Elastic(matName,matID)
 	diffT=0.;
 	kCondA=0.;
 	kCondT=0.;
+#ifdef POROELASTICITY
+	// poroelasticity
+	DarcyA=0.;
+	DarcyT=0.;
+	alphaAPE=0.;
+	alphaTPE=0.;
+#endif
 #else
 	// For FEA_CODE
     hasMatProps=FALSE;
@@ -188,6 +195,20 @@ char *TransIsotropic::InputMaterialProperty(char *xName,int &input,double &gScal
 	
 	else if(strcmp(xName,"kCondT")==0)
 		return UnitsController::ScaledPtr((char *)&kCondT,gScaling,1.e6);
+
+#ifdef POROELASTICITY
+	else if(strcmp(xName,"alphaAPE")==0)
+		return((char *)&alphaAPE);
+	
+	else if(strcmp(xName,"alphaTPE")==0)
+		return((char *)&alphaTPE);
+	
+	else if(strcmp(xName,"DarcyA")==0)
+		return((char *)&DarcyA);
+	
+	else if(strcmp(xName,"DarcyT")==0)
+		return((char *)&DarcyT);
+#endif
 #endif
     
     return Elastic::InputMaterialProperty(xName,input,gScaling);
@@ -195,7 +216,7 @@ char *TransIsotropic::InputMaterialProperty(char *xName,int &input,double &gScal
 
 // calculate properties used in analyses
 const char *TransIsotropic::VerifyAndLoadProperties(int np)
-{
+{	
     // finish input and verify all there
     if(!read[GT_PROP])
     {	GT=ET/(2.*(1.+nuT));
@@ -220,7 +241,57 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
     KT=0.5/((1.-nuT)/ET - 2.*nuA*nuA/EA);
 	nuAp = ET*nuA/EA;
 
-    // set properties
+#ifdef MPM_CODE
+#ifdef POROELASTICITY
+	// poroelasticity conversions
+	if(DiffusionTask::HasPoroelasticity())
+	{	// requires large rotation mode - because not option to rotate pp expansion properties
+		if(useLargeRotation==0) useLargeRotation = 1;
+		
+		// TI bulk modulus and Biot coefficient
+		double Kbulk = 1./(2.*(1.-nuT)/ET + (1.-4.*nuA)/EA);
+		if(Kbulk > Ku)
+			return "Undrained bulk modulus for poroelasticity must be greater than material's bulk modulus";
+		if(alphaAPE < 0. || alphaTPE < 0.)
+			return "Poroelasticity Biot coefficient must be >= 0";
+		
+		// moisture expansion tensor change
+		betaA = (alphaAPE - 2.*nuA*alphaTPE)/EA;
+		betaT = ((1.-nuT)*alphaTPE - nuT*alphaAPE)/ET;
+		concSaturation = 1.;
+		
+		// transport capacity is CT = 1/Q
+		double hii = 2.*betaT + betaA;
+		double hdotalpha = alphaAPE*betaA + 2.*alphaTPE*betaT;
+		diffusionCT = (Kbulk*Ku*hii*hii - (Ku-Kbulk)*hdotalpha)/(Ku-Kbulk);
+		
+		// Get Q alpha
+		if(AxialDirection()==AXIAL_Z)
+		{	Qalphax = alphaTPE/diffusionCT;
+			Qalphay = Qalphax;
+			Qalphaz = alphaAPE/diffusionCT;
+		}
+		else
+		{	Qalphax = alphaTPE/diffusionCT;
+			Qalphay = alphaAPE/diffusionCT;
+			Qalphaz = Qalphax;
+		}
+		
+		// diffusion tensor changed using global viscosity
+		diffA = DarcyA/DiffusionTask::viscosity;
+		diffT = DarcyT/DiffusionTask::viscosity;
+	}
+	else
+	{	// diffusion CT is 1
+		diffusionCT = 1.;
+	}
+#else
+	// diffusion CT is 1
+	diffusionCT = 1.;
+#endif
+#endif
+
+	// set properties
 	const char *err;
     if(AxialDirection()==AXIAL_Z)
     {	err=SetAnalysisProps(np,ET,ET,EA,nuT,nuAp,nuAp,
@@ -229,7 +300,7 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
     }
     else
     {	err=SetAnalysisProps(np,ET,EA,ET,nuAp,nuT,nuA,
-					GA,GA,GT,1.e-6*aT,1.e-6*aA,1.e-6*aT,
+					GA,GT,GA,1.e-6*aT,1.e-6*aA,1.e-6*aT,
 					betaT*concSaturation,betaA*concSaturation,betaT*concSaturation);
     }
 	if(err!=NULL) return err;
@@ -293,6 +364,15 @@ void *TransIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuf
 		FillElasticProperties3D(mptr,p,np);
 	return p;
 }
+
+#ifdef POROELASTICITY
+void TransIsotropic::UndrainedPressIncrement(MPMBase *mptr,double dexx,double deyy,double dezz) const
+{	// exit if not active
+	if(!DiffusionTask::HasPoroelasticity()) return;
+	double dpud = -Qalphax*dexx - Qalphay*deyy - Qalphaz*dezz;
+	mptr->Add_dpud(dpud);
+}
+#endif
 
 #pragma mark TransIsotropic::Methods (Small Rotation)
 
@@ -686,12 +766,6 @@ double TransIsotropic::MaximumDiffusivity(void) const { return fmax(kCondA,kCond
 // diffusion and conductivity in the z direction
 double TransIsotropic::GetDiffZ(void) const { return AxialDirection()==AXIAL_Z ? diffA : diffT; }
 double TransIsotropic::GetKcondZ(void) const { return AxialDirection()==AXIAL_Z ? kCondA : kCondT; }
-
-// not supported yet, need to deal with aniostropi properties
-bool TransIsotropic::SupportsDiffusion(void) const
-{
-    return DiffusionTask::HasPoroelasticity() ? false : true;
-}
 
 #endif	// MPM_CODE
 

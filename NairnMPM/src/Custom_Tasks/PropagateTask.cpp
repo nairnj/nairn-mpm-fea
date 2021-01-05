@@ -135,8 +135,15 @@ CustomTask *PropagateTask::StepCalculation(void)
                     for(iseg=1;iseg<=numSegs;iseg++)
                     {   growTo.x=crkTip->cp.x+(double)iseg*grow.x/(double)numSegs;
                         growTo.y=crkTip->cp.y+(double)iseg*grow.y/(double)numSegs;
-                        newCrkTip=nextCrack->Propagate(growTo,(int)i,theMaterials[inMat-1]->tractionMat[0]);
-                    }
+						
+						// if crack has traction propagation, use it, otherwise use material point
+						int tractionID = nextCrack->GetTractionPropID();
+						if(tractionID<=0)
+						{	tractionID = isAlt[0]==0 ? theMaterials[inMat-1]->tractionMat[0] :
+														theMaterials[inMat-1]->tractionMat[1] ;
+						}
+						newCrkTip=nextCrack->Propagate(growTo,(int)i,tractionID);
+					}
                     crkTip = newCrkTip;
                     
 					if(crkTip!=NULL)

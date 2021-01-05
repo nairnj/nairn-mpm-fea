@@ -18,7 +18,6 @@
 class AdjustTimeStepTask : public CustomTask
 {
     public:
-    
         // constructors and destructors
         AdjustTimeStepTask();
     
@@ -30,6 +29,13 @@ class AdjustTimeStepTask : public CustomTask
         virtual CustomTask *PrepareForStep(bool &);
         virtual CustomTask *StepCalculation(void);
     
+        virtual void SetLastReportedTimeStep(double);
+        virtual bool HasReport(void);
+        virtual CustomTask *Report(void);
+
+        // class methods
+        static void ChangeTimestep(double,double,bool);
+    
     private:
         double customAdjustTime,nextCustomAdjustTime;
         bool doAdjust;			// flag to adjust time step this step
@@ -37,8 +43,12 @@ class AdjustTimeStepTask : public CustomTask
         double lastReportedTimeStep;
 		double velocityCFL;
     	double reportRatio;
+        double maxIncrease;
     
 };
+
+extern AdjustTimeStepTask *adjustTimeStepTask;
+
 
 #endif
 

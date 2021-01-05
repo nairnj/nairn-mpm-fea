@@ -25,6 +25,7 @@ class ElementBase3D : public ElementBase
 			
 		// methods
 		virtual void FindExtent(void);
+        virtual void FindCentroid(Vector *) const;
 		virtual int FaceNodes(void);
 		virtual void GetXYZCentroid(Vector *);
 		virtual double GetDeltaZ(void) const;

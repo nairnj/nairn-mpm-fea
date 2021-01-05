@@ -29,6 +29,8 @@
 	#include "Materials/LinearTraction.hpp"
 	#include "Materials/CubicTraction.hpp"
 	#include "Materials/TrilinearTraction.hpp"
+    #include "Materials/MixedModeTraction.hpp"
+    #include "Materials/ExponentialTraction.hpp"
     #include "Materials/IdealGas.hpp"
     #include "Materials/TaitLiquid.hpp"
 	#include "Materials/HEMGEOSMaterial.hpp"
@@ -123,7 +125,7 @@ int MaterialController::AddMaterial(int matID,char *matName)
 		case RIGIDCONTACTMATERIAL:
 			newMaterial=new RigidMaterial(matName,matID,8);
 			break;
-		case COHESIVEZONEMATERIAL:
+		case TRIANGULARTRACTIONMATERIAL:
 			newMaterial=new CohesiveZone(matName,matID);
 			break;
 		case PRESSURELAWMATERIAL:
@@ -147,6 +149,12 @@ int MaterialController::AddMaterial(int matID,char *matName)
 		case TRILINEARTRACTIONMATERIAL:
 			newMaterial=new TrilinearTraction(matName,matID);
 			break;
+        case MIXEDMODETRACTIONMATERIAL:
+            newMaterial=new MixedModeTraction(matName,matID);
+            break;
+        case EXPONENTIALTRACTIONMATERIAL:
+            newMaterial=new ExponentialTraction(matName,matID);
+            break;
 		case IDEALGASMATERIAL:
 			newMaterial=new IdealGas(matName,matID);
 			break;

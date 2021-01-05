@@ -322,154 +322,45 @@ void ElementBase::GetXiPos(const Vector *pos,Vector *xipos) const
     }
 }
 
-// return dimensionless location for material points
-void ElementBase::MPMPoints(short numPerElement,Vector *mpos) const
+// return dimensionless location for material points in this element
+// mpos vector is assumed long enough (length >= numPerElement)
+// numPerElement is total number and assumed to be cubed number in 3D and squared in 2D
+void ElementBase::MPMPoints(int numPerSide,Vector *mpos) const
 {
-    int i,j,k;
-    double fxn[MaxElNd],row,zrow;
-    
-    if(NumberSides()==4)
-    {	switch(numPerElement)
-        {   case 4:
-                // ENI or FNI - 2D only
-                mpos[0].x=-.5;
-                mpos[0].y=-.5;
-                mpos[0].z=0.;
-                mpos[1].x=.5;
-                mpos[1].y=-.5;
-                mpos[1].z=0.;
-                mpos[2].x=-.5;
-                mpos[2].y=.5;
-                mpos[2].z=0.;
-                mpos[3].x=.5;
-                mpos[3].y=.5;
-                mpos[3].z=0.;
-                break;
-            case 1:
-                // CM of square or brick
-                mpos[0].x=0.;
-                mpos[0].y=0.;
-				mpos[0].z=0.;
-				break;
-			case 8:
-				// 3D box
-                mpos[0].x=-.5;
-                mpos[0].y=-.5;
-				mpos[0].z=-.5;
-                mpos[1].x=.5;
-                mpos[1].y=-.5;
-				mpos[1].z=-.5;
-                mpos[2].x=-.5;
-                mpos[2].y=.5;
-				mpos[2].z=-.5;
-                mpos[3].x=.5;
-                mpos[3].y=.5;
-				mpos[3].z=-.5;
-                mpos[4].x=-.5;
-                mpos[4].y=-.5;
-				mpos[4].z=.5;
-                mpos[5].x=.5;
-                mpos[5].y=-.5;
-				mpos[5].z=.5;
-                mpos[6].x=-.5;
-                mpos[6].y=.5;
-				mpos[6].z=.5;
-                mpos[7].x=.5;
-                mpos[7].y=.5;
-				mpos[7].z=.5;
-				break;
-            case 9:
-                // 2D
-                k=0;
-                row = -2./3.;
-                for(j=0;j<3;j++)
-                {   mpos[k].x=-2./3.;
-                    mpos[k].y=row;
-                    mpos[k].z=0.;
-                    mpos[k+1].x=0.;
-                    mpos[k+1].y=row;
-                    mpos[k+1].z=0.;
-                    mpos[k+2].x=2./3.;
-                    mpos[k+2].y=row;
-                    mpos[k+2].z=0.;
-                    k += 3;
-                    row += 2./3.;
-                }
-                break;
-            case 16:
-                // 2D
-                k=0;
-                row = -0.75;
-                for(j=0;j<4;j++)
-                {   mpos[k].x=-0.75;
-                    mpos[k].y=row;
-                    mpos[k].z=0.;
-                    mpos[k+1].x=-.25;
-                    mpos[k+1].y=row;
-                    mpos[k+1].z=0.;
-                    mpos[k+2].x=.25;
-                    mpos[k+2].y=row;
-                    mpos[k+2].z=0.;
-                    mpos[k+3].x=.75;
-                    mpos[k+3].y=row;
-                    mpos[k+3].z=0.;
-                    k += 4;
-                    row += 0.5;
-                }
-                break;
-            case 25:
-                // 2D
-                k=0;
-                row = -0.8;
-                for(j=0;j<5;j++)
-                {   mpos[k].x=-0.8;
-                    mpos[k].y=row;
-                    mpos[k].z=0.;
-                    mpos[k+1].x=-.4;
-                    mpos[k+1].y=row;
-                    mpos[k+1].z=0.;
-                    mpos[k+2].x=0.;
-                    mpos[k+2].y=row;
-                    mpos[k+2].z=0.;
-                    mpos[k+3].x=.4;
-                    mpos[k+3].y=row;
-                    mpos[k+3].z=0.;
-                    mpos[k+4].x=.8;
-                    mpos[k+4].y=row;
-                    mpos[k+4].z=0.;
-                    k += 5;
-                    row += 0.4;
-                }
-                break;
-            case 27:
-                // 3D
-                k=0;
-                zrow = -2./3.;
-                for(i=0;i<3;i++)
-                {   row = -2./3.;
-                    for(j=0;j<3;j++)
-                    {   mpos[k].x=-2./3.;
-                        mpos[k].y=row;
-                        mpos[k].z=zrow;
-                        mpos[k+1].x=0.;
-                        mpos[k+1].y=row;
-                        mpos[k+1].z=zrow;
-                        mpos[k+2].x=2./3.;
-                        mpos[k+2].y=row;
-                        mpos[k+2].z=zrow;
-                        k += 3;
-                        row += 2./3.;
-                    }
-                    zrow += 2./3.;
-                }
-                break;
-            default:
-                throw CommonException("Invalid number of material points per element.","ElementBase::MPMPoints");
-                break;
-        }
-    }
+    int i,j,k=0;
+    double fxn[MaxElNd],yval,zval,gap=1./((double)numPerSide);
+	
+	if(fmobj->IsThreeD())
+	{	// must be a cube
+		for(i=0;i<numPerSide;i++)
+		{	zval = -1.+(2.*i+1.)*gap;
+			for(int ii=0;ii<numPerSide;ii++)
+			{	yval =-1.+(2.*ii+1.)*gap;
+				for(j=0;j<numPerSide;j++)
+				{	mpos[k].x = -1.+(2.*j+1.)*gap;
+					mpos[k].y = yval;
+					mpos[k].z = zval;
+					k++;
+				}
+			}
+		}
+	}
+	else
+	{	// must be a square
+		for(i=0;i<numPerSide;i++)
+		{	yval = -1.+(2.*i+1.)*gap;
+			for(j=0;j<numPerSide;j++)
+			{	mpos[k].x = -1.+(2.*j+1.)*gap;
+				mpos[k].y = yval;
+				mpos[k].z = 0.;
+				k++;
+			}
+		}
+	}
     
     // covert to x-y-z locations
+	double numPerElement = numPerSide*numPerSide;
+	if(fmobj->IsThreeD()) numPerElement*=numPerSide;
     for(k=0;k<numPerElement;k++)
     {	ShapeFunction(&mpos[k],FALSE,fxn,NULL,NULL,NULL);
 		ZeroVector(&mpos[k]);
@@ -612,7 +503,7 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 		}
 		else
 		{	if(fn[count]>1.e-10)
-			{	count++;		// keep previous one only if shape ends up nonzero (otherwise previous one is removed as too small)
+			{	count++;		// keep previous one only if nonzero (otherwise previous one is removed as too small)
 				if(count>=maxShapeNodes)
                 {
 #pragma omp critical (output)
@@ -864,6 +755,22 @@ void ElementBase::InitializeCPDI(bool isThreeD)
         }
     }
 }
+
+// return 1 for linear elements or 2 for spline elements
+int ElementBase::GetShapeFunctionOrder(void)
+{
+	switch(useGimp)
+	{	case BSPLINE_GIMP:
+		case BSPLINE_GIMP_AS:
+		case BSPLINE:
+		case BSPLINE_CPDI:
+			return 2;
+	}
+	
+	// rest are lineat
+	return 1;
+}
+
 
 
 

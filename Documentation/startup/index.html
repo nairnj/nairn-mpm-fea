@@ -15,7 +15,7 @@ Getting Started
 
 <h1><a name="top"></a>Compiling NairnMPM and NairnFEA Source Code</h1>
 
-<p>After checking out the <code>nairn-mpm-fea</code> project, the next step is to compile it. Detailed instructions for compiling the code engines is available in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Compile_the_Code_Engines">OSUPDocs wiki</a>. This section only describes command line compilation.</p>
+<p>After checking out the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page" target="new"><code>nairn-mpm-fea</code> project</a>, the next step is to compile it. Detailed instructions for compiling the code engines is available in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Compile_the_Code_Engines">OSUPDocs wiki</a>. This section only describes command line compilation.</p>
 
 <p>The code can easily be compiled on any Unix or Linux system with a c++ compiler and with open-source 
 <a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code></a> library for reading <code>XML</code> input files already installed. To compile <code>NairnMPM</code> navigate to its build folder and use the <code>make</code> command:</p>
@@ -37,7 +37,7 @@ make SYSTEM=(system)
 <p>Compiling on any other Linux/Unix system should be straightforward, with the most difficult step usually being installing and linking to the <a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code></a> library. The key steps needed for successful compilation:</p>
 
 <ol>
-<li>Use a compatible <code>C++</code> compiler. The code has been tested up to <code>gcc 7.x</code> and <code>clang-mp 7</code>. Note that <code>gcc 4.8</code> is minimum if you are compiling for parallel execution. It is possible other compilers will need minor changes for compilation, but most should work.</li>
+<li>Use a compatible <code>C++</code> compiler. The code has been tested up to <code>gcc 7.x</code> and <code>clang-mp 9</code>. Note that <code>gcc 4.8</code> is minimum if you are compiling for parallel execution. It is possible other compilers will need minor changes for compilation, but most should work.</li>
 
 <li>Compiling of <code>NairnMPM</code> or <code>NairnFEA</code> needs access to all the <code>xerces</code> header files. These are provided in the <code>xerces</code> source code download. Even if your system has the xerces binary installed, it may not have the header files. You can get them by  <a href="http://xml.apache.org/dist/xerces-c/stable/">downloading the xerces source code</a>, even though you will not need to build it.</li>
 

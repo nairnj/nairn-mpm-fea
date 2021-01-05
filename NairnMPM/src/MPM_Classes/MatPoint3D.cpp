@@ -53,7 +53,8 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	int i,numnds;
 	Vector vel;
     Matrix3 dv;
-	
+	Tensor *gStressPtr=NULL;
+
 	// don't need to zero zDeriv because always set in 3D elements
 	
 	// find shape functions and derviatives
@@ -75,7 +76,7 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     
 	// pass on to material class to handle
 	ResidualStrains res = ScaledResidualStrains(secondPass);
-	PerformConstitutiveLaw(dv,strainTime,np,props,&res,NULL);
+	PerformConstitutiveLaw(dv,strainTime,np,props,&res,gStressPtr);
 }
 
 // Pass on to material class
@@ -91,7 +92,11 @@ void MatPoint3D::MoveParticle(GridToParticleExtrap *gp)
 {
 	// get vm = S(v-a dt) for FLIP and Sv^+ FMPM (and PIC)
 	Vector vm;
-	if(gp->m>-2)
+	if(gp->m>0)
+	{	// FMPM damps with Sk^+(k)
+		vm = gp->Svtilde;
+	}
+	else if(gp->m>-2)
 	{	// FLIP and XPIC(1) damps with Sv (which is initial lumped velocity)
 		vm = gp->Svtilde;
 		AddScaledVector(&vm,&gp->Sacc,-timestep);
@@ -105,9 +110,33 @@ void MatPoint3D::MoveParticle(GridToParticleExtrap *gp)
 	// find Adamp0
 	Vector Adamp0;
 	Adamp0 = SetScaledVector(&vel,gp->particleAlpha);
+	AddScaledVector(&Adamp0,&vm,gp->gridAlpha);
 	
 	Vector delV;
-	if(gp->m>=0)
+	if(gp->m>0)
+	{	// save initial particle velocity
+		Vector delXRate = vel;;
+		
+		// FMPM(m) update
+		vel = vm;
+		AddScaledVector(&vel,&Adamp0,-timestep);
+		
+		// find change in velocity
+		delV = vel;
+		SubVector(&delV,&delXRate);
+		
+		// finish midpoint position update
+		if(gp->m>1 || fmobj->dflag[11]==0)
+		{	// 2*del X = (V(n+1)+V(n))
+			AddVector(&delXRate,&vel);
+		}
+		else
+		{	// Use PIC based on FLIP position update
+			delXRate = vel;
+		}
+		AddScaledVector(&pos,&delXRate,0.5*timestep);
+	}
+	else if(gp->m==0)
 	{	// FLIP update velocity change
 		delV.x = (gp->Sacc.x - Adamp0.x)*timestep;
 		delV.y = (gp->Sacc.y - Adamp0.y)*timestep;
@@ -277,17 +306,23 @@ void MatPoint3D::SetDeformationGradientMatrix(Matrix3 F)
 	wrot.yz = F(2,1) - F(1,2);
 }
 
-// get displacement gradient from grad u = F - I
+// get displacement gradient in current configuration
+// Uses grad u = RFR^T - I = RV - I
 Matrix3 MatPoint3D::GetDisplacementGradientMatrix(void) const
-{	double F[3][3];
-	GetDeformationGradient(F);
-	Matrix3 Fm(F[0][0],F[0][1],F[0][2],F[1][0],F[1][1],F[1][2],F[2][0],F[2][1],F[2][2]);
-	
-	Fm(0,0) -= 1.;
-	Fm(1,1) -= 1.;
-	Fm(2,2) -= 1.;
-	
-	return Fm;
+{	Matrix3 F = GetDeformationGradientMatrix();
+	Matrix3 Rn;
+	Matrix3 V = F.LeftDecompose(&Rn,NULL);
+	V = Rn*V;
+	V(0,0) -= 1.;
+	V(1,1) -= 1.;
+	V(2,2) -= 1.;
+	return V;
+}
+
+// get displacement gradient from grad u = F - I
+Matrix3 MatPoint3D::GetDisplacementGradientForJ(const MaterialBase *matref)
+{
+	throw "Displacement gradient for 3D J calculations not available";
 }
 
 // get the symmetric elastic Left-Cauchy tensor in a Matrix3

@@ -27,12 +27,12 @@ typedef struct {
 
 class SofeningLaw;
 
-// softrning history variables
-enum { SOFT_DAMAGE_STATE=0,DELTANORMAL,DELTASHEAR,DELTASHEAR2,DAMAGENORMAL,DAMAGESHEAR,DAMAGESHEAR2,
-	NORMALDIR1,NORMALDIR2,NORMALDIR3,GCSCALING,RELATIVE_STRENGTH,RELATIVE_TOUGHNESS,
-	SOFT_NUMBER_HISTORY };
-enum { RECTANGULAR_SURFACE=0,ELLIPTICAL_SURFACE};
+// synonyms for DELTASHEAR2 and DAMAGESHEAR2 when storing GI and GII in history variables
+#define DAMAGEGI 3
+#define DAMAGEGII 6
 
+// more softening history need for isoplastic softening material
+enum { ECXX_DAMAGE=0,GCXY_DAMAGE,GCXZ_DAMAGE,NUMBER_CRACKING_STRAINS };
 #endif
 
 class Elastic : public MaterialBase
@@ -62,11 +62,12 @@ class Elastic : public MaterialBase
 
 		// methods for softening materials
 		virtual double GetAcOverVp(int,MPMBase *,Vector *) const;
-		virtual bool SoftenAxis(double,double *,int,int,double,double,SofteningLaw *,
-								  double,double,double,double &,double *,double &,bool &) const;
+		virtual bool SoftenAxis(MPMBase *,double,double *,int,int,double,double,SofteningLaw *,
+								double,double,double,double,double &,double &,bool &) const;
 		virtual void PostFailureUpdate(double &,double &,double &,Tensor *,Tensor *,Tensor *,Matrix3,
-									   double,double,double,double,bool) const;
-		virtual void UpdateCrackingStrainStress(int,Tensor *,Tensor *,double,double,double,Tensor *,Tensor *,Matrix3) const;
+									   double,double,double,double,double,double,bool,double) const;
+		virtual void UpdateCrackingStrain(int,Tensor *,double,double,double,Matrix3,double *) const;
+		virtual void UpdateCrackingStress(int,Tensor *,Tensor *,Tensor *,Matrix3) const;
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif

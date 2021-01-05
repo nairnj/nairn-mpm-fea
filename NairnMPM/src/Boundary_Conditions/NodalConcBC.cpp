@@ -31,6 +31,19 @@ BoundaryCondition *NodalConcBC::PrintBC(ostream &os)
 	// moisture uses parent calss
 	if(DiffusionTask::HasDiffusion())
 		return NodalValueBC::PrintBC(os);
+
+#ifdef POROELASTICITY
+	// poroelasticity uses special case
+	char nline[200];
+	sprintf(nline,"%7d %2d %15.7e %15.7e",nodeNum,style,
+			UnitsController::Scaling(1.e-6)*GetBCValueOut(),GetBCFirstTimeOut());
+	os << nline;
+	PrintFunction(os);
+	
+	// for function input scale for Legacy units
+	if(style==FUNCTION_VALUE)
+		scale = UnitsController::Scaling(1.e3);
+#endif
 	
 	return (BoundaryCondition *)GetNextObject();
 }

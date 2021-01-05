@@ -5,7 +5,8 @@
 # give the command 'make SYSTEM=system' where the lower case system is where
 #    you are compiling. Supported systems are:
 #       mac - MacOS X using gcc
-#       mac-clang - MacOS X using clang-mp
+#       mac-clang - MacOS X using clang-mp 9.0
+#       mac-clang7 - MacOS X using clang-mp 7.0
 #       carbon - OSU carbon/hedera cluster (the default)
 #		gcc7 - OSU cluster using gcc7
 #		mpm - OSU machine
@@ -40,6 +41,9 @@ ifeq ($(SYSTEM),mac)
 	xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
 ifeq ($(SYSTEM),mac-clang)
+	xercesSo = /usr/local/lib/libxerces-c.dylib
+endif
+ifeq ($(SYSTEM),mac-clang7)
 	xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
 ifeq ($(SYSTEM),carbon)
@@ -94,6 +98,9 @@ ifeq ($(SYSTEM),mac)
     CC= /opt/local/bin/g++-mp-4.9
 endif
 ifeq ($(SYSTEM),mac-clang)
+    CC= /opt/local/bin/clang-mp-9.0
+endif
+ifeq ($(SYSTEM),mac-clang7)
     CC= /opt/local/bin/clang-mp-7.0
 endif
 RM= rm
@@ -118,6 +125,9 @@ LFLAGS= -fopenmp
 ifeq ($(SYSTEM),mac-clang)
     LFLAGS= -fopenmp -lc++
 endif
+ifeq ($(SYSTEM),mac-clang7)
+    LFLAGS= -fopenmp -lc++
+endif
 
 # 5. Define executable destination
 #     output = relative or full path to save executable or to find it for a subsequent make install
@@ -139,6 +149,9 @@ std = ../../Common/Headers
 # Macros for headers and all files
 headers = -I$(src) -I$(std) -I$(com) -I$(headersPath)
 ifeq ($(SYSTEM),mac-clang)
+    headers = -I$(src) -I$(std) -I$(com) -I$(headersPath) -I/opt/local/include/libomp
+endif
+ifeq ($(SYSTEM),mac-clang7)
     headers = -I$(src) -I$(std) -I$(com) -I$(headersPath) -I/opt/local/include/libomp
 endif
 ArcController = $(com)/Read_XML/ArcController
@@ -323,7 +336,7 @@ XYBMPImporter.o : $(XYFileImporter).cpp $(dprefix) $(XYBMPImporter).hpp $(XYFile
 BitMapFilesCommon.o : $(BitMapFilesCommon).cpp $(dprefix) $(CommonReadHandler).hpp $(BMPLevel).hpp $(MaterialController).hpp \
 			$(XYFileImporter).hpp $(XYBMPImporter).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BitMapFilesCommon).cpp
-BMPLevel.o : $(BMPLevel).cpp $(dprefix) $(BMPLevel).hpp
+BMPLevel.o : $(BMPLevel).cpp $(dprefix) $(BMPLevel).hpp $(NairnFEA).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BMPLevel).cpp
 ParseController.o : $(ParseController).cpp $(dprefix) $(ParseController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ParseController).cpp

@@ -358,7 +358,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		String[] lines = { "Rainbow 1 (Purple to Red)",
 				"Rainbow 2 (Blue to Red)", "Rainbow 3 (Purple to Orange)",
 				"Grayscale (Black to White)", "Cool Diverging (Blue to Red)",
-				"Viridis", "Magma", "Inferno", "Plasma" };
+				"Viridis", "Magma", "Inferno", "Plasma", "Turbo" };
 		spectrumBox = new JComboBox<String>(lines);
 		spectrumBox.setSelectedIndex(ColorPicker.getSpectrumType());
 		spectrumBox.addActionListener(this);
@@ -957,7 +957,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 			}
 		}
 
-	// REMOTE_ACCESS
+		// REMOTE_ACCESS
 		else if (theCmd.equalsIgnoreCase("Username:"))
 		{	prefs.put(RemoteUserKey, remoteUsername.getText());
 		}

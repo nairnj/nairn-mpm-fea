@@ -386,7 +386,7 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,doub
 	double delV = 1. - 1./detdF;
     double QAVred = 0.;
     if(delV<0. && artificialViscosity)
-	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(p->Kred*J),mptr);
+	{	QAVred = GetArtificialViscosity(delV/delTime,sqrt(p->Kred*J),mptr);
         AVEnergy += fabs(QAVred*delV);
     }
     double Pfinal = -Kterm + QAVred;
@@ -514,6 +514,28 @@ const char *HEIsotropic::MaterialType(void) const { return "Hyperelastic Isotrop
 // calculate wave speed in mm/sec (props in mass/(L sec^2) and rho in mass/L^3)
 double HEIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 {	return sqrt((Kbulk+4.*G1/3.)/rho);
+}
+
+// Calculate current wave speed. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
+// Adjusts K, but not sure how to change G
+double HEIsotropic::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
+{   double Jeff = mptr->GetHistoryDble(J_History,offset)/mptr->GetHistoryDble(J_History+1,offset);
+    double Kratio;
+    switch(UofJOption)
+    {   case J_MINUS_1_SQUARED:
+            Kratio = Jeff;
+            break;
+            
+        case LN_J_SQUARED:
+            Kratio = (1-log(Jeff))/(Jeff*Jeff);
+            break;
+            
+        case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
+        default:
+            Kratio = 0.5*(Jeff + 1./Jeff);
+            break;
+    }
+    return sqrt((Kratio*Kbulk+4.*G1/3.)/rho);
 }
 
 // if a subclass material supports artificial viscosity, override this and return TRUE

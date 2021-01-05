@@ -52,7 +52,8 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	int i,numnds;
 	Vector vel;
     Matrix3 dv;
-	
+	Tensor *gStressPtr=NULL;
+
 	// don't need to zero zDeriv because always set in axisymmetric shape functions
     
 	// find shape functions and derviatives
@@ -78,7 +79,7 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     
 	// pass on to material class to handle
 	ResidualStrains res = ScaledResidualStrains(secondPass);
-	PerformConstitutiveLaw(dv,strainTime,np,props,&res,NULL);
+	PerformConstitutiveLaw(dv,strainTime,np,props,&res,gStressPtr);
 }
 
 // Pass on to material class

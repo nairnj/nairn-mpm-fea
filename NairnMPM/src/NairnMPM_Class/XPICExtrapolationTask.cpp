@@ -36,11 +36,11 @@ XPICExtrapolationTask::XPICExtrapolationTask(const char *name) : MPMTask(name)
 
 // Update particle position, velocity, temp, and conc
 // throws CommonException()
-void XPICExtrapolationTask::Execute(int xpicOption)
+bool XPICExtrapolationTask::Execute(int xpicOption)
 {
 	// get order for this version of XPIC and skip if no calculations needed
 	int m = GetXPICOrder();
-	if(m==0) return;
+	if(m==0) return true;
 	
 	CommonException *xpicErr = NULL;
 #ifdef CONST_ARRAYS
@@ -148,7 +148,7 @@ void XPICExtrapolationTask::Execute(int xpicOption)
 	}
 	
 	// Done unless this XPIC wants to extrapolated back to particles
-	if(!XPICDoesBackExtrapolation()) return;
+	if(!XPICDoesBackExtrapolation()) return true;
 	
 	// Extrapolate back tothe particles
 #pragma omp parallel private(fn,ndsArray)
@@ -198,6 +198,7 @@ void XPICExtrapolationTask::Execute(int xpicOption)
 	// throw now - only possible error if too many CPDI nodes in 3D
 	if(xpicErr!=NULL) throw *xpicErr;
 
+    return true;
 }
 
 // Get order to velocity XPIC calculations

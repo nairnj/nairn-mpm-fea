@@ -18,7 +18,7 @@
 ********************************************************************************/
 
 #include "stdafx.h"
-#include "AnisoPlasticity.hpp"
+#include "Materials/AnisoPlasticity.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
@@ -39,7 +39,7 @@ double maxLambda = 0.;
 // Constructors
 AnisoPlasticity::AnisoPlasticity(char *matName,int matID) : Orthotropic(matName,matID)
 {
-	// negative yield stress implies not yielding in that direction
+	// negative yield stress implies no yielding in that direction
 	syxx=-1.;
 	syyy=-1.;
 	syzz=-1.;
@@ -87,8 +87,14 @@ char *AnisoPlasticity::InputMaterialProperty(char *xName,int &input,double &gSca
 }
 
 // verify settings and some initial calculations
+// NOTE: This code duplicated in OrthoPlasticSoftening. Keep them in sync
 const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
 {
+#ifdef POROELASTICITY
+	if(DiffusionTask::HasPoroelasticity())
+		return "Anisotropic plasticity materials cannot yet be used when poroelasticity is activated";
+#endif
+	
 	// requires large rotation mode
 	if(useLargeRotation==0) useLargeRotation = 1;
 	
@@ -121,57 +127,57 @@ const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
 	
 	// reciprocals of reduced normal yield stresses
 	if(syxx>0.)
-    {	syxxred2=rho/syxx;
-		syxxred2*=syxxred2;
+    {	h.syxx2=rho/syxx;
+		h.syxx2*=h.syxx2;
 	}
 	else
-		syxxred2=0.;		// 1/inf^2
+		h.syxx2=0.;		// 1/inf^2
 	if(syyy>0.)
-    {	syyyred2=rho/syyy;
-		syyyred2*=syyyred2;
+    {	h.syyy2=rho/syyy;
+		h.syyy2*=h.syyy2;
 	}
 	else
-		syyyred2=0.;		// 1/inf^2
+		h.syyy2=0.;		// 1/inf^2
 	if(syzz>0.)
-	{	syzzred2=rho/syzz;
-		syzzred2*=syzzred2;
+    {	h.syzz2=rho/syzz;
+		h.syzz2*=h.syzz2;
 	}
 	else
-		syzzred2=0.;		// 1/inf^2
+		h.syzz2=0.;		// 1/inf^2
 	
 	// reciprocals of reduced shear yield stresses
 	if(tyxy>0.)
-	{	tyxyred2=rho/tyxy;
-		tyxyred2*=tyxyred2;
+    {	h.N=rho/tyxy;
+		h.N*=h.N;
 	}
 	else
-		tyxyred2=0.;		// 1/inf^2
+		h.N=0.;		// 1/inf^2
 	if(tyxz>0.)
-	{	tyxzred2=rho/tyxz;
-		tyxzred2*=tyxzred2;
+    {	h.M=rho/tyxz;
+		h.M*=h.M;
 	}
 	else
-		tyxzred2=0.;		// 1/inf^2
+		h.M=0.;		// 1/inf^2
 	if(tyyz>0.)
-	{	tyyzred2=rho/tyyz;
-		tyyzred2*=tyyzred2;
+    {	h.L=rho/tyyz;
+        h.L*=h.L;
 	}
 	else
-		tyyzred2=0.;		// 1/inf^2
+		h.L=0.;		// 1/inf^2
 	
 	// combination terms
-	fTerm = 0.5*(syyyred2 + syzzred2 - syxxred2);
-	gTerm = 0.5*(syzzred2 + syxxred2 - syyyred2);
-	hTerm = 0.5*(syxxred2 + syyyred2 - syzzred2);
+    h.F = 0.5*(h.syyy2 + h.syzz2 - h.syxx2);
+    h.G = 0.5*(h.syzz2 + h.syxx2 - h.syyy2);
+    h.H = 0.5*(h.syxx2 + h.syyy2 - h.syzz2);
 	
-	// reference yield stress (it is acutally sqrt(2/3)/sigma(Y,ref)
-	sigmaYref = fTerm+gTerm+hTerm;
-	if(sigmaYref<=0.) return "(F+G+H) for Hill plastic potential must be positive";
-	sigmaYref = sqrt(2.*sigmaYref/3.);
+	// reference yield stress (it is actually sqrt(2/3)/sigma(Y,ref))
+    double sumNormal = h.F+h.G+h.H;
+	if(sumNormal<=0.) return "(F+G+H) for Hill plastic potential must be positive";
+	sqrt23OversigmaYref = sqrt(2.*sumNormal/3.);
 	
 	// for convergence problems
-	warnNonconvergence=warnings.CreateWarning("anisotropic plastic algorithm failed to converge",-1,3);
-	
+	warnNonconvergence=warnings.CreateWarning("Anisotropic plastic algorithm failed to converge",-1,3);
+    
 	// call super class
 	return Orthotropic::VerifyAndLoadProperties(np);
 }
@@ -193,44 +199,6 @@ void AnisoPlasticity::PrintMechanicalProperties(void) const
 {	
     Orthotropic::PrintMechanicalProperties();
 	PrintYieldProperties();
-}
-
-// print just yield properties to output window
-void AnisoPlasticity::PrintYieldProperties(void) const
-{
-	if(syxx>=0.)
-		PrintProperty("yld1",syxx*UnitsController::Scaling(1.e-6),"");
-	else
-		PrintProperty("yld1= inf",false);
-		
-	if(syyy>=0.)
-		PrintProperty("yld2",syyy*UnitsController::Scaling(1.e-6),"");
-	else
-		PrintProperty("yld2= inf",false);
-		
-	if(syzz>=0.)
-		PrintProperty("yld3",syzz*UnitsController::Scaling(1.e-6),"");
-	else
-		PrintProperty("yld3= inf",false);
-		
-    cout << endl;
-
-	if(tyyz>=0.)
-		PrintProperty("yld23",tyyz*UnitsController::Scaling(1.e-6),"");
-	else
-		PrintProperty("yld23= inf",false);
-
-	if(tyxz>=0.)
-		PrintProperty("yld13",tyxz*UnitsController::Scaling(1.e-6),"");
-	else
-		PrintProperty("yld13= inf",false);
-	
-	if(tyxy>=0.)
-		PrintProperty("yld12",tyxy*UnitsController::Scaling(1.e-6),"");
-	else
-		PrintProperty("yld12= inf",false);
-	
-    cout << endl;
 }
 
 #pragma mark AnisoPlasticity::Methods
@@ -322,11 +290,11 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3
 	
     // Step 3: Calculate plastic potential f
 	p->aint = mptr->GetHistoryDble(0,0);
-	p->sAsmag = GetMagnitudeHill(strial,np);
+	p->sAsmag = GetHillMagnitude(strial,&h,np);
 	double ftrial = p->sAsmag - GetYield(p);
 	
 	// Step 4: Done if elastic
-	if(ftrial<0.)
+	if(ftrial<=0.)
 	{	// elastic, update stress and strain energy as usual (lazy method is recalculate elastic update)
 		Elastic::LRElasticConstitutiveLaw(mptr,de,er,Rtot,dR,Rnm1tot,np,properties,res);
 		return;
@@ -357,7 +325,7 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3
 		workEnergy = strial.xx*de(0,0) + strial.yy*de(1,1) + strial.zz*de(1,1) + 2.*strial.xy*de(0,1);
 		
 		// Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-		dispEnergy = strial.xx*dep.xx + strial.yy*dep.yy + strial.zz*dep.zz + 2.*strial.xy*dep.xy;
+		dispEnergy = strial.xx*dep.xx + strial.yy*dep.yy + strial.zz*dep.zz + strial.xy*dep.xy;
 		
 		// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 		resEnergy = strial.xx*er(0,0) + strial.yy*er(1,1) + strial.zz*er(2,2) + 2.*strial.xy*er(0,1);
@@ -409,10 +377,12 @@ Tensor AnisoPlasticity::SolveForPlasticIncrement(MPMBase *mptr,int np,double fk,
 	while(nsteps<10)
 	{	// find dlambda = f/((df/dsig)C(df/dsig) + g'(alphak))
 		GetDfCdf(stk,np,p);
-		double dlambda = fk/(p->dfCdf + sigmaYref*GetGPrime(p));
-		
+        double dlambda = fk/(p->dfCdf + sqrt23OversigmaYref*GetGPrime(p));
+        //cout << "     dfCdf=" << p->dfCdf << ", sqrt(2/3)g'(a)/sYRef="
+        //            << sqrt23OversigmaYref*GetGPrime(p) << ", dlambda=" << dlambda << endl;
+
 		// update variables
-		p->aint += sigmaYref*dlambda;
+		p->aint += sqrt23OversigmaYref*dlambda;
 		
 		// next subincrement in plastic strain
 		Tensor ddep = p->dfds;
@@ -432,12 +402,12 @@ Tensor AnisoPlasticity::SolveForPlasticIncrement(MPMBase *mptr,int np,double fk,
 		AddTensor(&dep,&ddep);
 		
 		// get new magniture and potential
-		p->sAsmag = GetMagnitudeHill(stk,np);
+		p->sAsmag = GetHillMagnitude(stk,&h,np);
 		fk = p->sAsmag - GetYield(p);
 		
 		// check for convergence
 		nsteps++;
-		//cout << "   " << nsteps << ": f = " << fk << ", a = " << p->aint << ", dlambda = " << dlambda << endl;;
+		//cout << "   " << nsteps << ": f = " << fk << ", a = " << p->aint << ", dlambda = " << dlambda << endl;
 		if(fabs(fk)<cutoff) break;
 		
 	}
@@ -445,27 +415,14 @@ Tensor AnisoPlasticity::SolveForPlasticIncrement(MPMBase *mptr,int np,double fk,
 	// check number of steps
 	if(nsteps>hstepsMax)
 	{	hstepsMax = nsteps;
-		cout << "# Took " << nsteps << " steps to converge" << endl;
+#pragma omp critical (output)
+        {
+            cout << "# AnisoPlasticity took " << nsteps << " steps to converge" << endl;
+        }
 	}
 	
 	// return full plastic strain increment
 	return dep;
-}
-
-// Get sqrt(s As) where srot is stress in material axis system
-double AnisoPlasticity::GetMagnitudeHill(Tensor &srot,int np) const
-{
-	// initialize (with 3D shear)
-	double sAs = np==THREED_MPM ? srot.xz*srot.xz*tyxzred2 + srot.yz*srot.yz*tyyzred2 : 0. ;
-	
-	// normal and xy shear terms
-	double dyz = srot.yy-srot.zz;
-	double dxz = srot.xx-srot.zz;
-	double dxy = srot.xx-srot.yy;
-	sAs += fTerm*dyz*dyz + gTerm*dxz*dxz + hTerm*dxy*dxy + srot.xy*srot.xy*tyxyred2;
-	
-	// check on negative sAs can happen due to round-off error when stresses near zero
-	return sAs>0. ? sqrt(sAs) : 0 ;
 }
 
 // Find C.df and df.C.df at given stress - store results in plastic property variables active only during the loop
@@ -473,7 +430,7 @@ double AnisoPlasticity::GetMagnitudeHill(Tensor &srot,int np) const
 void AnisoPlasticity::GetDfCdf(Tensor &stk,int np,AnisoPlasticProperties *p) const
 {
 	// Get dfds
-	GetDfDsigma(stk,np,p);
+	GetHillDfDsigma(stk,np,p,&h);
 	
 	// get C df and df C df, which needs df/dsig
 	ElasticProperties *r = p->ep;
@@ -496,26 +453,82 @@ void AnisoPlasticity::GetDfCdf(Tensor &stk,int np,AnisoPlasticProperties *p) con
 	}
 }
 
+#pragma mark AnisoPlasticity::Class Methods
+
+// print just yield properties to output window
+void AnisoPlasticity::PrintAPYieldProperties(double yld1,double yld2,double yld3,double yld23,double yld13,double yld12)
+{
+    if(yld1>=0.)
+        PrintProperty("yld1",yld1*UnitsController::Scaling(1.e-6),"");
+    else
+        PrintProperty("yld1= inf",false);
+        
+    if(yld2>=0.)
+        PrintProperty("yld2",yld2*UnitsController::Scaling(1.e-6),"");
+    else
+        PrintProperty("yld2= inf",false);
+        
+    if(yld3>=0.)
+        PrintProperty("yld3",yld3*UnitsController::Scaling(1.e-6),"");
+    else
+        PrintProperty("yld3= inf",false);
+        
+    cout << endl;
+
+    if(yld23>=0.)
+        PrintProperty("yld23",yld23*UnitsController::Scaling(1.e-6),"");
+    else
+        PrintProperty("yld23= inf",false);
+
+    if(yld13>=0.)
+        PrintProperty("yld13",yld13*UnitsController::Scaling(1.e-6),"");
+    else
+        PrintProperty("yld13= inf",false);
+    
+    if(yld12>=0.)
+        PrintProperty("yld12",yld12*UnitsController::Scaling(1.e-6),"");
+    else
+        PrintProperty("yld12= inf",false);
+    
+    cout << endl;
+}
+
+// Get sqrt(s As) where srot is stress in material axis system
+double AnisoPlasticity::GetHillMagnitude(Tensor &srot,const HillProperties *h,int np)
+{
+    // initialize (with 3D shear)
+    double sAs = np==THREED_MPM ? srot.yz*srot.yz*h->L + srot.xz*srot.xz*h->M : 0. ;
+    
+    // normal and xy shear terms
+    double dyz = srot.yy-srot.zz;
+    double dxz = srot.xx-srot.zz;
+    double dxy = srot.xx-srot.yy;
+    sAs += h->F*dyz*dyz + h->G*dxz*dxz + h->H*dxy*dxy + srot.xy*srot.xy*h->N;
+    
+    // check on negative sAs can happen due to round-off error when stresses near zero
+    return sAs>0. ? sqrt(sAs) : 0 ;
+}
+
 // Find dfds = A sigma/sqrt(sigma.Asigma) in material axes
 // load it into plastic properties
-void AnisoPlasticity::GetDfDsigma(Tensor &stk,int np,AnisoPlasticProperties *p) const
+void AnisoPlasticity::GetHillDfDsigma(Tensor &stk,int np,AnisoPlasticProperties *p,const HillProperties *h)
 {
-	// df = A.sigma/rootSAS
-	if(p->sAsmag>0.)
-	{	p->dfds.xx = (syxxred2*stk.xx - hTerm*stk.yy - gTerm*stk.zz) / p->sAsmag;
-		p->dfds.yy = (-hTerm*stk.xx + syyyred2*stk.yy - fTerm*stk.zz) / p->sAsmag;
-		p->dfds.zz = (-gTerm*stk.xx - fTerm*stk.yy + syzzred2*stk.zz) / p->sAsmag;
-		p->dfds.xy = tyxyred2*stk.xy / p->sAsmag;
-		if(np==THREED_MPM)
-		{	p->dfds.yz = tyyzred2*stk.yz / p->sAsmag;
-			p->dfds.xz = tyxzred2*stk.xz / p->sAsmag;
-		}
-	}
-	
-	else
-	{	// negative root implies zero stress within roundoff error
-		p->dfds.xx = p->dfds.yy = p->dfds.zz = p->dfds.yz = p->dfds.xz = p->dfds.xy = 0.;
-	}
+    // df = A.sigma/rootSAS
+    if(p->sAsmag>0.)
+    {   p->dfds.xx = (h->syxx2*stk.xx - h->H*stk.yy - h->G*stk.zz) / p->sAsmag;
+        p->dfds.yy = (-h->H*stk.xx + h->syyy2*stk.yy - h->F*stk.zz) / p->sAsmag;
+        p->dfds.zz = (-h->G*stk.xx - h->F*stk.yy + h->syzz2*stk.zz) / p->sAsmag;
+        p->dfds.xy = h->N*stk.xy / p->sAsmag;
+        if(np==THREED_MPM)
+        {   p->dfds.yz = h->L*stk.yz / p->sAsmag;
+            p->dfds.xz = h->M*stk.xz / p->sAsmag;
+        }
+    }
+    
+    else
+    {   // negative root implies zero stress within roundoff error
+        p->dfds.xx = p->dfds.yy = p->dfds.zz = p->dfds.yz = p->dfds.xz = p->dfds.xy = 0.;
+    }
 }
 
 #pragma mark AnisoPlasticity::Accessors

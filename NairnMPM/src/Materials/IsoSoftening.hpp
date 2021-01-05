@@ -15,6 +15,18 @@
 
 #include "Materials/IsotropicMat.hpp"
 
+// vector 3D
+typedef struct {
+    double deltaN;
+    double deltaS;
+    double damageN;
+    double damageS;
+    double decxx;
+    double dgcxy;
+    double dgcxz;
+    double ecxx;
+} DamageState;
+
 class FailureSurface;
 class SofteningLaw;
 class InitialCondition;
@@ -30,8 +42,8 @@ class IsoSoftening : public IsotropicMat
 		
 		// initialize
 		virtual char *InputMaterialProperty(char *,int &,double &);
-		bool AcceptInitiationLaw(FailureSurface *,int);
-		bool AcceptSofteningLaw(SofteningLaw *,int,int);
+		virtual bool AcceptInitiationLaw(FailureSurface *,int);
+		virtual bool AcceptSofteningLaw(SofteningLaw *,int,int);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintMechanicalProperties(void) const;
 	
@@ -43,27 +55,40 @@ class IsoSoftening : public IsotropicMat
 	
 		// methods
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int,Tensor *) const;
-		virtual Vector DamageEvolution(MPMBase *,int,double *,Tensor &,Tensor &,double,double,ResidualStrains *,
+		virtual void DamageEvolution(MPMBase *,int,double *,Tensor &,Tensor &,double,double,ResidualStrains *,
 								  			Matrix3 &,Matrix3 &,ElasticProperties *,Tensor *,double) const;
-		virtual bool GetRToCrack(Matrix3 *,double *,int,int) const;
+		virtual bool GetRToCrack(Matrix3 *,double *,bool,int) const;
 	
 		// isotropic elasticity methods
+		virtual bool CoupledShearSoftening(double,double,double *,Tensor &,double,double,double,double,
+											double,double &,double &,double &,bool &) const;
+		virtual bool OvoidSoftening(MPMBase *,bool,double,double,double,DamageState *,
+                                    Tensor &,double,double,double,double,double,
+									double,double,double,double &,double &,bool &) const;
 		virtual Tensor GetStressIncrement(Tensor &,int,void *) const;
 		virtual void AcceptTrialStress(MPMBase *,Tensor &,Tensor *,int,Matrix3 *,void *,Tensor &,double,double) const;
 	
 		// accessors
 		virtual const char *MaterialType() const;
 		virtual int AltStrainContains(void) const;
+		virtual bool GetCrackingStrain(MPMBase *,Tensor *,bool,Matrix3 *) const;
+		virtual Vector GetCrackingCOD(MPMBase *,bool) const;
 		virtual double *GetSoftHistoryPtr(MPMBase *) const;
-	
+		virtual int GetTractionFailureSurface(void) const;
+        virtual void SetRelativeStrength(MPMBase *,double);
+        virtual void SetRelativeToughness(MPMBase *,double);
+
 	protected:
 		FailureSurface *initiationLaw;
 		SofteningLaw *softeningModeI;
 		SofteningLaw *softeningModeII;
 		double en0,gs0;
-		int shearFailureSurface;
+		int tractionFailureSurface;
 		double softenCV;
         int softenCVMode;
+		double frictionCoeff;
+        double pdOvoidTolerance;
+        int maxOvoidPasses;
 };
 
 #endif

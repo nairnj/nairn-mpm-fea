@@ -35,7 +35,7 @@ ProjectRigidBCsTask::ProjectRigidBCsTask(const char *name) : MPMTask(name)
 
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
-void ProjectRigidBCsTask::Execute(int taskOption)
+bool ProjectRigidBCsTask::Execute(int taskOption)
 {
 #ifdef CONST_ARRAYS
 	double fn[MAX_SHAPE_NODES];
@@ -140,6 +140,8 @@ void ProjectRigidBCsTask::Execute(int taskOption)
 	RemoveRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,(BoundaryCondition **)&firstRigidVelocityBC);
 	RemoveRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,(BoundaryCondition **)&firstRigidTempBC);
 	RemoveRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,(BoundaryCondition **)&firstRigidConcBC);
+    
+    return true;
 }
 
 // Unset nodal dof for rigid BCs so can try to reuse

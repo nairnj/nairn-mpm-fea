@@ -15,6 +15,12 @@
 #include "Materials/MaterialBase.hpp"
 #include "Elements/ElementBase.hpp"
 #include "System/UnitsController.hpp"
+#include "Exceptions/CommonException.hpp"
+
+// class globals
+AdjustTimeStepTask *adjustTimeStepTask=NULL;
+
+double minTimeStep=1.e15,maxTimeStep=-1.;
 
 #pragma mark Constructors and Destructors
 
@@ -27,6 +33,7 @@ AdjustTimeStepTask::AdjustTimeStepTask()
     lastReportedTimeStep = -1;
 	velocityCFL = -1.;
     reportRatio = 0.;
+    maxIncrease = -1.;
 }
 
 // Return name of this task
@@ -51,6 +58,11 @@ char *AdjustTimeStepTask::InputParam(char *pName,int &input,double &gScaling)
         return (char *)&velocityCFL;
     }
 	
+    else if(strcmp(pName,"maxIncrease")==0)
+    {   input=DOUBLE_NUM;
+        return (char *)&maxIncrease;
+    }
+    
 	// check remaining commands
     return CustomTask::InputParam(pName,input,gScaling);
 }
@@ -60,6 +72,11 @@ char *AdjustTimeStepTask::InputParam(char *pName,int &input,double &gScaling)
 // called once at start of MPM analysis - initialize and print info
 CustomTask *AdjustTimeStepTask::Initialize(void)
 {
+    // save task to a global
+    if(adjustTimeStepTask!=NULL)
+        throw CommonException("Only one AdjustTimeStepTask allowed in a simulations","AdjustTimeStepTask::Initialize");
+    adjustTimeStepTask = this;
+
     cout << "Periodically adjust MPM time step." << endl;
 	
 	// time interval
@@ -78,6 +95,9 @@ CustomTask *AdjustTimeStepTask::Initialize(void)
 	}
 	else
 		velocityCFL = 1.;
+    
+    if(maxIncrease>0.)
+        cout << "   Time step increases limited to " << (100.*maxIncrease) << "%" << endl;
 	
     // set verbose from entered reportRatio
     // To support all modes, 0 is not verbose, 1 is verbose with reportRatio 2
@@ -85,7 +105,7 @@ CustomTask *AdjustTimeStepTask::Initialize(void)
         verbose = 0;
     else
     {	verbose = 1;
-         if(reportRatio<1.01) reportRatio = 2.;
+        if(reportRatio<1.01) reportRatio = 2.;
     }
     
     if(verbose!=0)
@@ -120,17 +140,23 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     // exit when not needed
     if(!doAdjust) return nextTask;
     
-    // get grid dimensions
-    double dcell = mpmgrid.GetMinCellDimension();
-    
-    if(lastReportedTimeStep<0) lastReportedTimeStep = timestep;
+    // if not reported yet, choose current time step
+    if(lastReportedTimeStep<0)
+        SetLastReportedTimeStep(timestep);
     
     // set globals
-    bool Max_Velocity_Condition = false;
-    timestep = 1.e15;
-    propTime = 1.e15;
+    double maxTimeStep=1.e15,maxPropTime=1.e15;
+    if(maxIncrease>0.)
+    {   maxTimeStep = (1.+maxIncrease)*timestep;
+        maxPropTime = (1.+maxIncrease)*propTime;
+    }
+	double dcell = mpmgrid.GetMinCellDimension();
+    int Max_Velocity_Condition = 0;
+    double newTimestep = 1.e15;
+    double newPropTime = 1.e15;
 	
      // loop over nonrigid material points
+#pragma omp for
     for(int p=0;p<nmpmsNR;p++)
 	{	// material id
 		short matid=mpm[p]->MatID();
@@ -144,33 +170,36 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
 		crot1 /= velocityCFL;
 		
 		// Pick highest speed
-		if(crot1>crot) {
-			crot=crot1;
-			Max_Velocity_Condition = true;
+		if(crot1>crot)
+		{	crot=crot1;
+#pragma omp atomic
+			Max_Velocity_Condition++;
 		}
 		
 		// test time step
-		double tst = fmobj->GetCFLCondition()*dcell/crot;
-        if(tst<timestep)	timestep = tst;
+		double tst = fmin(fmobj->GetCFLCondition()*dcell/crot,maxTimeStep);
+        if(tst<newTimestep)
+		{
+#pragma omp critical (adjustimestep)
+			{
+				newTimestep = tst;
+			}
+		}
         
         // propagation time (in sec)
-        tst = fmobj->GetPropagationCFLCondition()*dcell/crot;
-        if(tst<propTime) propTime = tst;
+        tst = fmin(fmobj->GetPropagationCFLCondition()*dcell/crot,maxPropTime);
+        if(tst<newPropTime)
+		{
+#pragma omp critical (adjustimestep)
+			{
+				newPropTime = tst;
+			}
+		}
 	}
-	
-    // verify time step and make smaller if needed
-	if(fmobj->mpmApproach==USAVG_METHOD)
-	{	strainTimestepFirst = fractionUSF*timestep;
-		strainTimestepLast = timestep - strainTimestepFirst;
-	}
-	else
-	{	strainTimestepFirst = timestep;
-		strainTimestepLast = timestep;
-	}
-	
-	// propagation time step (no less than timestep)
-    if(propTime<timestep) propTime = timestep;
     
+    // change to new values
+    ChangeTimestep(newTimestep,newPropTime,true);
+	
     // report if changed by reportRatio since last reported change
     if(verbose!=0)
     {   double ratio = timestep/lastReportedTimeStep;
@@ -178,13 +207,61 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
 		{	cout << "# Step: " << fmobj->mstep << ": time step changed " << ratio << "X to "
             		<< timestep*UnitsController::Scaling(1.e3) << " "
             		<< UnitsController::Label(ALTTIME_UNITS);
-			if(Max_Velocity_Condition)
+			if(Max_Velocity_Condition>0)
 				cout << " (some velocities exceed wave speed)";
 			cout << endl;
-            lastReportedTimeStep = timestep;
+            SetLastReportedTimeStep(timestep);
 		}
     }
 
     return nextTask;
 }
 
+// set last reported time step
+void AdjustTimeStepTask::SetLastReportedTimeStep(double newReportTime) { lastReportedTimeStep = newReportTime; }
+
+// called after the analysis is done. A task can output a report to the main.mpm
+// file. It should end with an empty line
+bool AdjustTimeStepTask::HasReport(void) { return true; }
+CustomTask *AdjustTimeStepTask::Report(void)
+{
+    // exit if never changed
+    if(maxTimeStep<0.) return nextTask;
+    
+    cout << TaskName() << endl;
+    cout << "    Time step was varied from: " << minTimeStep*UnitsController::Scaling(1.e3) << " to "
+        << maxTimeStep*UnitsController::Scaling(1.e3) << " "
+        << UnitsController::Label(ALTTIME_UNITS) << endl;
+    cout << "    Max/Min range = " << (maxTimeStep/minTimeStep) << endl;
+    cout << endl;
+    return nextTask;
+}
+
+// class method to change time step from anywhere in code
+void AdjustTimeStepTask::ChangeTimestep(double newTimestep,double newPropTime,bool inAdjustTask)
+{
+    // change time steps
+    timestep = newTimestep;
+    propTime = newPropTime;
+    
+    // verify time step and make smaller if needed
+    if(fmobj->mpmApproach==USAVG_METHOD)
+    {   strainTimestepFirst = fractionUSF*timestep;
+        strainTimestepLast = timestep - strainTimestepFirst;
+    }
+    else
+    {   strainTimestepFirst = timestep;
+        strainTimestepLast = timestep;
+    }
+    
+    // propagation time step (no less than timestep)
+    if(propTime<timestep) propTime = timestep;
+    
+    // tell task that outside code made a change
+    if(!inAdjustTask && adjustTimeStepTask!=NULL)
+        adjustTimeStepTask->SetLastReportedTimeStep(timestep);
+    
+    // save limits
+    minTimeStep = fmin(timestep,minTimeStep);
+    maxTimeStep = fmax(timestep,maxTimeStep);
+}

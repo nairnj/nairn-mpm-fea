@@ -37,7 +37,7 @@ NairnFEA::NairnFEA()
 	yax='y';
 	zax='z';
 	temperatureExpr=NULL;		// temperature expression
-	stressFreeTemperature=0.;	// streess free temperature
+	stressFreeTemperature=0.;	// stress free temperature
 	periodic.dof=0;				// periodic analysis
     
 	// Default output flags

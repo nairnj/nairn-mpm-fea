@@ -59,6 +59,17 @@ void CrackVelocityFieldSingle::AddGravityAndBodyForceTask3(Vector *gridBodyForce
 		mvf[0]->AddGravityAndBodyForceTask3(gridBodyForce,gridAlpha,gridForceAlpha);
 }
 
+#ifdef RESTART_OPTION
+// check for velocity and acceleration are too high
+bool CrackVelocityFieldSingle::IsTravelTooMuch(double dt,double maxDist) const
+{   if(mvf[0]->numberPoints>0)
+    {   if(mvf[0]->IsTravelTooMuch(dt,maxDist))
+           return true;
+    }
+    return false;
+}
+#endif
+
 // Restore momenta just prior to momentum update and to setting forces
 // for velocity BCs
 void CrackVelocityFieldSingle::RestoreMomenta(void)

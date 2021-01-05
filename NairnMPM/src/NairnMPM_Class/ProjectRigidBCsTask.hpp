@@ -25,7 +25,7 @@ class ProjectRigidBCsTask : public MPMTask
 		ProjectRigidBCsTask(const char *);
 	
 		// required methods
-		virtual void Execute(int);
+		virtual bool Execute(int);
 	
 		// class methods
 		static void UnsetRigidBCs(BoundaryCondition **,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);

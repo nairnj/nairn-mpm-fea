@@ -42,6 +42,9 @@ class MPMWarnings
 		int Issue(int,int,char *);
 		void Report(void);
 	
+		// accessors
+		int GetMaxIssues(int);
+	
 	private:
 		WarningsData *lastWarning;
 		int numWarnings;

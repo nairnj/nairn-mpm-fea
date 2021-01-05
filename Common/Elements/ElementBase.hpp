@@ -50,7 +50,7 @@ class ElementBase : public LinkedObject
         int num;						// element number (1 based)
         int nodes[MaxElNd];				// 1 based node numbers in nodes[0] to nodes[NumberNodes()-1]
         double xmin,xmax,ymin,ymax;		// element extent
-        int filled;						// flags for loaded material points
+        unsigned int filled;			// flags for loaded material points (32 bits), switcth to long for 64
 #ifdef MPM_CODE
         int *neighbors;					// Elements next to faces
 #else
@@ -106,7 +106,7 @@ class ElementBase : public LinkedObject
 		virtual bool IntersectsBox(Vector,double,double) const;
 		int NodeIndex(int);
         virtual void FindExtent(void);
-		virtual void FindCentroid(Vector *);
+		virtual void FindCentroid(Vector *) const;
 	
 		// const methods
 		virtual Vector GetDeltaBox(void) const;
@@ -127,7 +127,7 @@ class ElementBase : public LinkedObject
 		virtual void AllocateNeighborsArray(void);
 		virtual int Orthogonal(double *,double *,double *);
         virtual int NearestNode(double,double,int *);
-        virtual void MPMPoints(short,Vector *) const;
+        virtual void MPMPoints(int,Vector *) const;
 		virtual void GetPosition(Vector *,Vector *);
 		virtual void Describe(void) const;
 	
@@ -167,6 +167,7 @@ class ElementBase : public LinkedObject
 #ifdef MPM_CODE
 		static void AllocateNeighbors(void);
         static void InitializeCPDI(bool);
+		static int GetShapeFunctionOrder(void);
 #else
 		static void MoveCrackTipNodes(int);
 #endif

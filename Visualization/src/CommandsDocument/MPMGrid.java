@@ -19,6 +19,11 @@ public class MPMGrid
 	private boolean[] hasmin;
 	private boolean[] hasmax;
 	private double xmin,xmax,ymin,ymax,zmin,zmax;
+	
+	private double aoi_x1, aoi_x2, aoi_y1, aoi_y2;
+	private int aoi_nx,aoi_ny,brdy,brdx;
+	private boolean isTartan;
+	
 	private boolean hasGrid;
 	double thickness;
 
@@ -56,6 +61,7 @@ public class MPMGrid
 		hasmax[1] = false;
 		hasmax[2] = false;
 		hasGrid = false;
+		isTartan = false;
 	}
 	
 	//----------------------------------------------------------------------------
@@ -85,7 +91,7 @@ public class MPMGrid
 	    {	Object rarg = doc.readStringOrDoubleArg(args.get(2));
 			if(rarg.getClass().equals(String.class))
 			{	String theText = (String)rarg;
-				
+				isTartan=true;
 				if(!theText.toLowerCase().equals("r-style"))
 			    	throw new Exception("The second parameter is neither a number nor 'R-Style':\n"+args);
 					
@@ -194,6 +200,64 @@ public class MPMGrid
 	    if(thickness<=0.)
 	    	throw new Exception("The grid thickness must be positive:\n"+args);
 	}
+	// Tartan Grid border
+	public void doTartanBorder(ArrayList<String> args) throws Exception
+	{
+	    // MPM Only
+		doc.requiresMPM(args);
+
+	    // needs at least 3 arguments
+	    if(args.size()<3)
+	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+	    
+	    brdx = doc.readIntArg(args.get(1));
+	    brdy = doc.readIntArg(args.get(2));
+
+	    
+	    // z axis
+	    if(doc.isMPM3D()){	
+		    	throw new Exception(" script control for Tartan Grid is not programmed for 3D, use XMLData ");
+		 }
+	  }
+	
+	// GridRect xmin,xmax,ymin,ymax (zmin,zmax if 3D)
+	public void doTartanAOI(ArrayList<String> args) throws Exception
+	{
+	    // FEA Only
+		doc.requiresMPM(args);
+
+	    // needs at least 7 arguments
+	    if(args.size()<7)
+	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+	    
+	    // limits
+	    double temp;
+	    aoi_x1 = doc.readDoubleArg(args.get(1));
+	    aoi_x2 = doc.readDoubleArg(args.get(2));
+	    if(aoi_x2 < aoi_x1)
+	    {	
+	    	temp = aoi_x1;
+	    	aoi_x1 = aoi_x2;
+	    	aoi_x2 = temp;
+	    }
+	    
+	    aoi_y1 = doc.readDoubleArg(args.get(3));
+	    aoi_y2 = doc.readDoubleArg(args.get(4));
+	    if(aoi_y2 < aoi_y1)
+	    {	
+	    	temp = aoi_y1;
+	    	aoi_y1 = aoi_y2;
+	    	aoi_y2 = temp;
+	    }
+	    
+	    aoi_nx = doc.readIntArg(args.get(5));
+	    aoi_ny = doc.readIntArg(args.get(6));
+
+	    // z axis
+	    if(doc.isMPM3D()){	
+		    	throw new Exception(" script control for Tartan Grid is not programmed for 3D, use XMLData ");
+		 }
+	}
 	    
 	//----------------------------------------------------------------------------
 	// Accessors
@@ -234,7 +298,12 @@ public class MPMGrid
 			if(hasmax[2]) xml.append(" symmax='"+doc.formatDble(symmax[2])+"'");
 			xml.append("/>\n");
 		}
-		
+		// Add possible tartan grid
+		if(isTartan) {
+			xml.append("      <Border xmin='"+brdx+"' xmax='"+brdx+"' ymin='"+brdy+"' ymax='"+brdy+"'/>\n");
+			xml.append("      <AreaOfInterest x1='"+aoi_x1+"' x2='"+aoi_x2+"' y1='"+aoi_y1+"' y2='"+aoi_y2+"' nx='"+aoi_nx+"' ny='"+aoi_ny+"'/>\n");
+			
+		}
 		// check added xml
 		String more = doc.getXMLData("grid");
 		if(more != null) xml.append(more);

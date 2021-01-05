@@ -23,7 +23,7 @@ class RunCustomTasksTask : public MPMTask
 		RunCustomTasksTask(const char *);
 	
 		// required methods
-		virtual void Execute(int);
+		virtual bool Execute(int);
 	
 };
 

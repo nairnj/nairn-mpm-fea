@@ -260,13 +260,13 @@ void ArchiveData::CalcArchiveSize(void)
 {
     int i;
     
-    // pad if needed, and truncate if not recognized
+    // pad if needed
     if(strlen(mpmOrder)<2) strcpy(mpmOrder,"mY");
     if(strlen(mpmOrder)<ARCH_MAXMPMITEMS)
     {	for(i=(int)strlen(mpmOrder);i<ARCH_MAXMPMITEMS;i++)
             mpmOrder[i]='N';
     }
-    mpmOrder[ARCH_MAXMPMITEMS]=0;
+    mpmOrder[ARCH_MAXMPMITEMS]=0;			// tunrcate to those known to this code
 	mpmOrder[ARCH_Defaults]='Y';			// now required to be 'Y'
 	mpmOrder[ARCH_OldOrigPosition]='N';		// now requried to be 'N'
 	mpmOrder[ARCH_ver2Empty]='N';			// now required to be 'N'
@@ -279,7 +279,7 @@ void ArchiveData::CalcArchiveSize(void)
     {	for(i=(int)strlen(crackOrder);i<ARCH_MAXCRACKITEMS;i++)
             crackOrder[i]='N';
     }
-    crackOrder[ARCH_MAXCRACKITEMS]=0;
+    crackOrder[ARCH_MAXCRACKITEMS]=0;		// truncated to those known to this code
 	crackOrder[ARCH_Defaults]='Y';			// now required to be 'Y'
     
     /* byte order marker
@@ -384,7 +384,10 @@ void ArchiveData::CalcArchiveSize(void)
 		else
 			mpmRecSize+=sizeof(double);
 	}
-    
+    mpmRecSize += CountHistoryBits(mpmOrder[ARCH_History59])*sizeof(double);
+    mpmRecSize += CountHistoryBits(mpmOrder[ARCH_History1014])*sizeof(double);
+    mpmRecSize += CountHistoryBits(mpmOrder[ARCH_History1519])*sizeof(double);
+
     // check what will be there for crack segments
 	
 	/* ARCH_Defaults are
@@ -397,11 +400,27 @@ void ArchiveData::CalcArchiveSize(void)
         crackRecSize+=2*sizeof(double);
     if(crackOrder[ARCH_StressIntensity]=='Y')
         crackRecSize+=2*sizeof(double);
-    if(crackOrder[ARCH_BalanceResults]=='Y')
+    if(crackOrder[ARCH_CZMDISP]=='Y')
         crackRecSize+=sizeof(int)+2*sizeof(double);
-    
+    crackRecSize += CountHistoryBits(crackOrder[ARCH_Traction15])*sizeof(double);
+    crackRecSize += CountHistoryBits(crackOrder[ARCH_Traction610])*sizeof(double);
+
     // record is max of these two sizes
-    recSize=mpmRecSize>crackRecSize ? mpmRecSize : crackRecSize;
+    recSize = mpmRecSize>crackRecSize ? mpmRecSize : crackRecSize;
+}
+
+// CIf 'Y' return 1, if 'N' return 'Y", otherwise return number in least signficant
+// five bits that are set
+int ArchiveData::CountHistoryBits(char archChar)
+{   if(archChar=='Y') return 1;
+    if(archChar=='N') return 0;
+    int numBits = 0;
+    if(archChar&0x01) numBits++;
+    if(archChar&0x02) numBits++;
+    if(archChar&0x04) numBits++;
+    if(archChar&0x08) numBits++;
+    if(archChar&0x10) numBits++;
+    return numBits;
 }
 
 /**********************************************************
@@ -421,7 +440,7 @@ void ArchiveData::CalcArchiveSize(void)
 				rest: 0
 		ver6: changed default properties to have 3 angles in 3D results
 	
-	Current length 35 (if mpmOrder is 18 and crackOrder is 5)
+	Current length 43 (if mpmOrder is 24 and crackOrder is 7)
 */
 void ArchiveData::SetArchiveHeader(void)
 {
@@ -550,7 +569,7 @@ void ArchiveData::CreateGlobalFile(void)
 		}
 		
 		// write heading
-		strcpy(fline,"t\tmat\tID\tXp\tYp\tZp\tAng1\tAng2\tAng3\tGI\tGII1\tGII2\tGtot\n");
+		strcpy(fline,"t\tmat\tID\tnum\tXp\tYp\tZp\tAng1\tAng2\tAng3\tGI\tGII1\tGII2\tGtot\n");
 		if(fwrite(fline,strlen(fline),1,fp)!=1)
 		{	FileError("Decohesion file failed to add header",globalFile,"ArchiveData::CreateGlobalFile");
 			return;
@@ -967,6 +986,10 @@ void ArchiveData::ArchiveResults(double atime)
 		// for pore pressure it is poroelasticity
         if(mpmOrder[ARCH_Concentration]=='Y')
 		{	double csat=mpm[p]->GetConcSaturation();
+#ifdef POROELASTICITY
+			if(fmobj->HasPoroelasticity())
+				csat = UnitsController::Scaling(1.e-6);
+#endif
 			
 			*(double *)app=mpm[p]->pConcentration*csat;
             app+=sizeof(double);
@@ -1054,8 +1077,7 @@ void ArchiveData::ArchiveResults(double atime)
 		// Particle spin momentum (Legacy Units J-sec)
 		// zero unless tracking particle spin
 		if(mpmOrder[ARCH_SpinMomentum]=='Y')
-		{
-			Vector Lp = MakeVector(0.,0.,0.);
+		{   Vector Lp = MakeVector(0.,0.,0.);
 			double Lscale = 1.;
 			if(threeD)
 			{	*(double *)app=Lscale*Lp.x;
@@ -1093,7 +1115,91 @@ void ArchiveData::ArchiveResults(double atime)
 			}
 		}
 		
-        // padding
+		// History 5 to 9
+		if(mpmOrder[ARCH_History59]=='Y')
+		{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(5,mpm[p]->GetHistoryPtr(0));
+			app+=sizeof(double);
+		}
+		else if(mpmOrder[ARCH_History59]!='N')
+		{	if(mpmOrder[ARCH_History59]&0x01)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(5,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History59]&0x02)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(6,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History59]&0x04)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(7,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History59]&0x08)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(8,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History59]&0x10)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(9,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+		}
+		
+		// History 10 to 14
+		if(mpmOrder[ARCH_History1014]=='Y')
+		{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(10,mpm[p]->GetHistoryPtr(0));
+			app+=sizeof(double);
+		}
+		else if(mpmOrder[ARCH_History1014]!='N')
+		{	if(mpmOrder[ARCH_History1014]&0x01)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(10,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History1014]&0x02)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(11,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History1014]&0x04)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(12,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History1014]&0x08)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(13,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History1014]&0x10)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(14,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+		}
+
+		// History 15 to 19
+		if(mpmOrder[ARCH_History1519]=='Y')
+		{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(15,mpm[p]->GetHistoryPtr(0));
+			app+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History1519]!='N')
+		{	if(mpmOrder[ARCH_History1519]&0x01)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(15,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History1519]&0x02)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(16,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History1519]&0x04)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(17,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History1519]&0x08)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(18,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History1519]&0x10)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(19,mpm[p]->GetHistoryPtr(0));
+				app+=sizeof(double);
+			}
+		}
+		
+		// padding
         if(mpmRecSize<recSize)
             app+=recSize-mpmRecSize;
         
@@ -1241,6 +1347,39 @@ void ArchiveData::ArchiveResults(double atime)
 				}
             }
 			
+			// material history data 5 to 9
+			if(mpmOrder[ARCH_History59]=='Y')
+				app+=Reverse(app,sizeof(double));
+			else if(mpmOrder[ARCH_History59]!='N')
+			{	if(mpmOrder[ARCH_History59]&0x01) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History59]&0x02) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History59]&0x04) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History59]&0x08) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History59]&0x10) app+=Reverse(app,sizeof(double));
+			}
+			
+			// material history data 10 to 14
+			if(mpmOrder[ARCH_History1014]=='Y')
+				app+=Reverse(app,sizeof(double));
+			else if(mpmOrder[ARCH_History1014]!='N')
+			{	if(mpmOrder[ARCH_History1014]&0x01) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History1014]&0x02) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History1014]&0x04) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History1014]&0x08) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History1014]&0x10) app+=Reverse(app,sizeof(double));
+			}
+
+			// material history data 15 to 19
+			if(mpmOrder[ARCH_History1519]=='Y')
+				app+=Reverse(app,sizeof(double));
+			else if(mpmOrder[ARCH_History1519]!='N')
+			{	if(mpmOrder[ARCH_History1519]&0x01) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History1519]&0x02) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History1519]&0x04) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History1519]&0x08) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History1519]&0x10) app+=Reverse(app,sizeof(double));
+			}
+			
 			// padding
             if(mpmRecSize<recSize)
                 app+=recSize-mpmRecSize;
@@ -1374,7 +1513,7 @@ void ArchiveData::Decohesion(double atime,MPMBase *mptr,double alpha,double beta
 	strcat(fline,numStr);
 	
 	// position
-	sprintf(numStr,"\t%g\t%g\t%g",mptr->pos.x,mptr->pos.y,mptr->pos.z);
+	sprintf(numStr,"\t%d\t%g\t%g\t%g",mptr->GetNum(),mptr->pos.x,mptr->pos.y,mptr->pos.z);
 	strcat(fline,numStr);
 
 	// angles
@@ -1797,7 +1936,16 @@ bool ArchiveData::WillArchive(void)
 int ArchiveData::GetRecordSize(void) { return recSize; }
  
 // set archive orders
-void ArchiveData::SetMPMOrder(const char *xData) { strcpy(mpmOrder,xData); }
+void ArchiveData::SetMPMOrder(const char *xData)
+{   strcpy(mpmOrder,xData);
+    
+    // convert 'f' to '&', '|' to '<' and '^' to '>' to avoid XML issues
+    for(int i=0;i<strlen(mpmOrder);i++)
+    {   if(mpmOrder[i]=='f' || mpmOrder[i]=='|' || mpmOrder[i]=='~')
+        {   mpmOrder[i] -= 0x40;
+        }
+    }
+}
 void ArchiveData::SetMPMOrderByte(int byteNum,char setting) { mpmOrder[byteNum] = setting; }
 char ArchiveData::GetMPMOrderByte(int byteNum) { return mpmOrder[byteNum]; }
 void ArchiveData::SetCrackOrder(const char *xData) { strcpy(crackOrder,xData); }

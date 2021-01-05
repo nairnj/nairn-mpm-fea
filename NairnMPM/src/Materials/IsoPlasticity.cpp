@@ -49,6 +49,11 @@ char *IsoPlasticity::InputMaterialProperty(char *xName,int &input,double &gScali
 // verify settings and some initial calculations
 const char *IsoPlasticity::VerifyAndLoadProperties(int np)
 {
+#ifdef POROELASTICITY
+	if(DiffusionTask::HasPoroelasticity())
+		return "IsoPlasticity materials cannot yet be used when poroelasticity is activated";
+#endif
+	
 	// call plastic law that is used
     const char *ptr = plasticLaw->VerifyAndLoadProperties(np);
     if(ptr != NULL) return ptr;
@@ -165,8 +170,9 @@ void IsoPlasticity::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,i
 // To allow some subclasses to support large deformations, the initial calculation for incremental
 // deformation gradient (the dvij), volume change (delV)
 // handled first by the subclass. This method then finishes the constitutive law
-void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,int np,double delV,double eres,
-									   PlasticProperties *p,ResidualStrains *res,Matrix3 *dR,bool is2D) const
+void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,int np,double delV,
+									   double eres,PlasticProperties *p,ResidualStrains *res,
+									   Matrix3 *dR,bool is2D) const
 {
 #pragma mark ... Code to get trial stress and check for yielding
 	// Task 1: Convert input form to effective strains
@@ -187,7 +193,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,i
 	//--------------------------
 	double P0 = mptr->GetPressure();
 	double dTq0 = 0.,dispEnergy = 0.;
-	UpdatePressure(mptr,delV,np,p,res,eres,dTq0,dispEnergy);
+	UpdatePressure(mptr,delV,np,p,res,eres,delTime,dTq0,dispEnergy);
 	double Pfinal = mptr->GetPressure();
 	
 	// Task 3: Rotate state n-1 to configuration n
@@ -428,12 +434,24 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,i
 // 5. Optionally change delV (which is passed by reference)
 // Notes:
 //  delV is incremental volume change on this step.
-void IsoPlasticity::UpdatePressure(MPMBase *mptr,double delV,int np,PlasticProperties *p,ResidualStrains *res,double eres,
-								   double &dTq0,double &dispEnergy) const
+void IsoPlasticity::UpdatePressure(MPMBase *mptr,double delV,int np,PlasticProperties *p,
+								   ResidualStrains *res,double eres,double delTime,
+								   double &dTq0,double &AVEnergy) const
 {   // pressure change
-    double dP = -p->Kred*delV;
-    mptr->IncrementPressure(dP);
-    
+	double dP = -p->Kred*delV;
+
+	// artifical viscosity
+	// delV is total incremental volumetric strain = total Delta(V)/V
+	if(delV<0. && artificialViscosity)
+	{	// Wants K/rho
+		double QAVred = GetArtificialViscosity(delV/delTime,sqrt(p->Kred),mptr);
+		AVEnergy += fabs(QAVred*delV);
+		dP += QAVred;
+	}
+	
+	// increment pressure
+	mptr->IncrementPressure(dP);
+
 	// get total dV
 	double dVoverV;
 	if(np==PLANE_STRESS_MPM)
@@ -533,6 +551,9 @@ void IsoPlasticity::SetStress(Tensor *spnew,MPMBase *mptr) const
 void IsoPlasticity::IncrementThicknessStress(double dszz,MPMBase *mptr) const
 {	IncrementThicknessStressPandDev(dszz,mptr);
 }
+
+// if a subclass material supports artificial viscosity, override this and return TRUE
+bool IsoPlasticity::SupportsArtificialViscosity(void) const { return true; }
 
 // return unique, short name for this material
 const char *IsoPlasticity::MaterialType(void) const { return "Isotropic Elastic-Plastic"; }

@@ -337,7 +337,7 @@ double ClampedNeohookean::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset)
 	if(elasticModel==ELASTIC_DISNEY)
 		Gterm = 2.*G*(2-Jeff1third)/(3.*Jeff1third*Jeff1third);
 	else
-		Gterm = G*(1. - Jeff1third*Jeff1third + 2./(3.*Jeff1third));
+		Gterm = G*(3. - Jeff1third*Jeff1third)/(3.*Jeff);
 	double Kcurrent;
 	switch(UofJOption)
 	{   case J_MINUS_1_SQUARED:

@@ -143,7 +143,7 @@ int MPMWarnings::Issue(int warnKind,int theID,char *comment)
 			{	warn->firstStep=fmobj->mstep;
 				warnResult=GAVE_WARNING;
 				archiver->ForceArchiving();
-				cout << "# " << warn->msg;
+				cout << "# Step " << fmobj->mstep << ": " << warn->msg;
 				if(theID>0) cout << " (ID=" << theID << ")";
 				if(tooManyIDs) cout << " (exceeded maximum allowed IDs)";
 				cout << endl;
@@ -176,10 +176,15 @@ int MPMWarnings::Issue(int warnKind,int theID,char *comment)
 	
 	// deactivate for this step
 	warn->thisStep = false;
-	
-	// abort if reach maximum issues or encoutered too many IDs
-	if((warn->numWarnings>=warn->maxIssues && warn->maxIssues>0) || tooManyIDs)
-		warnResult=REACHED_MAX_WARNINGS;
+    
+    // too many IDs
+    if(tooManyIDs)
+        warnResult=REACHED_MAX_WARNINGS;
+    else if(warn->maxIssues>0)
+    {   // abort if reach maximum issues
+        if(warn->numWarnings>=warn->maxIssues)
+            warnResult=REACHED_MAX_WARNINGS;
+    }
     
     // return result
 	return warnResult;
@@ -210,4 +215,16 @@ void MPMWarnings::Report(void)
         cout << "   Total number of warnings was " << warn->numWarnings << endl;
         cout << endl;
 	}
+}
+
+// get setting for maximum issues of a warning
+// return -1 if limit not set or if invalid ID
+int MPMWarnings::GetMaxIssues(int warnKind)
+{
+	// exit if invalid warning ID
+	if(warnKind<0 || warnKind>=numWarnings) return -1;
+	
+	// check the warning
+	WarningsData *warn=warningSet[warnKind];
+	return warn->maxIssues;
 }

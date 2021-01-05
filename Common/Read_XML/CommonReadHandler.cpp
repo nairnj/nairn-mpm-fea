@@ -225,7 +225,7 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
             delete [] aName;
             delete [] value;
         }
-		if(redClr>0.)
+		if(redClr>=0.)
 		{	if(redClr>1.) redClr=1.;
 			if(greenClr<0.) greenClr=redClr;
 			if(blueClr<0.) blueClr=redClr;

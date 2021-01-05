@@ -14,6 +14,7 @@
 #include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include "Materials/MaterialBase.hpp"
+#include "Materials/RigidMaterial.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "System/UnitsController.hpp"
 #include "Elements/ElementBase.hpp"
@@ -87,6 +88,7 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	// concentration (c units) and gradient (c units/mm)
 	SetConcentration(0.,0.);
 	pDiffusion=NULL;
+	buffer_dpud=0.;
     
 	// temperature (degrees) and gradient (degrees/mm)
 	SetTemperature(0.,0.);
@@ -196,6 +198,44 @@ void MPMBase::StopParticle(void)
 void MPMBase::GetExactTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds) const {}
 
 #pragma mark MPMBase::Accessors
+
+// Delete particle by moving it to store and zeroing out properties
+void MPMBase::DeleteParticle(Vector *store)
+{
+    // move it to store
+    SetOrigin(store);
+    SetPosition(store);
+    
+    // zero the velocity
+    vel.x=0.;
+    vel.y=0.;
+    vel.z=0.;
+
+    // zero the deformation
+    Matrix3 Identity33 = Matrix3::Identity();
+    SetDeformationGradientMatrix(Identity33);
+    
+    // zero the stress
+    Tensor *sp=GetStressTensor();
+    ZeroTensor(sp);
+    
+    // Rigid particles turn of setting functions
+    MaterialBase *matID = theMaterials[MatID()];
+    if(matID->IsRigid())
+    {   ((RigidMaterial *)matID)->ClearFunctions();
+    }
+    
+    // more options - temperature, concentration, particle spin, plastic strain, history?
+}
+
+// check if in deletion store house
+bool MPMBase::IsDeleted(Vector *store) const
+{
+    Vector dist = *store;
+    SubVector(&dist,&origpos);
+    if(DbleEqual(DotVectors(&dist,&dist),0.)) return true;
+    return false;
+}
 
 // scale residual strains for current update method
 // secondPass implies in USAVG_METHOD mode, therefore simply set to dTrans unless using USAVG+/-
@@ -316,32 +356,9 @@ void MPMBase::SetDimensionlessSize(Vector *lp)
 {	mpm_lp = *lp;
 	mpmgrid.TrackMinParticleSize(GetParticleSize());
 }
-void MPMBase::SetDimensionlessByPts(int pointsPerCell)
-{	double lp;
-    
-	// surface length per particle on edge
-	switch(pointsPerCell)
-	{	case 1:
-			lp = 1.0;
-			break;
-        case 9:
-        case 27:
-            // 9 is always 2D and 27 is always 3D
-            lp = 1./3.;
-            break;
-        case 16:
-            lp = 0.25;
-            break;
-        case 25:
-            lp = 0.20;
-            break;
-		case 4:
-		case 8:
-		default:
-			// 4 is always 2D and 8 is always 3D
-			lp = 0.5;
-			break;
-	}
+void MPMBase::SetDimensionlessByPts(int pointsPerSide)
+{	// linear number of points
+	double lp = 1./(double)pointsPerSide;
 	mpm_lp = MakeVector(lp,lp,lp);
 	mpmgrid.TrackMinParticleSize(GetParticleSize());
 }
@@ -505,6 +522,16 @@ double MPMBase::GetClear_dTad(void)
 // a material should never call this directly
 void MPMBase::Add_dTad(double dTInc) { buffer_dTad+=dTInc; }
 
+// buffer poroelasticity "undrained" pressure change
+void MPMBase::Add_dpud(double dpud) { buffer_dpud+=dpud; }
+
+// return buffer_dpud and clear it too
+double MPMBase::GetClear_dpud(void)
+{	double dpud = buffer_dpud;
+	buffer_dpud = 0.;
+	return dpud;
+}
+
 double MPMBase::GetWorkEnergy(void) { return workEnergy; }
 void MPMBase::SetWorkEnergy(double energyTot) { workEnergy=energyTot; }
 void MPMBase::AddWorkEnergy(double energyInc) { workEnergy+=energyInc; }
@@ -597,21 +624,55 @@ double MPMBase::GetDiffusionCT(void)
 {	return theMaterials[matnum-1]->GetDiffusionCT();
 }
 
+// set relativee toughness
+void MPMBase::SetRelativeStrength(double rel)
+{   theMaterials[matnum-1]->SetRelativeStrength(this,rel);
+}
+
+// set relativee toughness
+void MPMBase::SetRelativeToughness(double rel)
+{   theMaterials[matnum-1]->SetRelativeToughness(this,rel);
+}
+
 // Decribe for debugging use or output on some errors
 void MPMBase::Describe(void)
-{	cout << "# pt: pos=(" << pos.x << "," << pos.y << "," << pos.z << ") mass=" << mp << 
+{   cout << "# Step=" << fmobj->mstep;
+    cout << " pt: #=" << num << " pos=(" << pos.x << "," << pos.y << "," << pos.z << ") mass=" << mp <<
                 " matl=" << matnum << " elem=" << inElem << endl;
-    cout << "#     vel=(" << vel.x << "," << vel.y << "," << vel.z << ") " << UnitsController::Label(CUVELOCITY_UNITS) << endl;
+    cout << "#     vel=(" << vel.x << "," << vel.y << "," << vel.z << ") " << UnitsController::Label(CUVELOCITY_UNITS);
+	cout << " origpos=(" << origpos.x << "," << origpos.y << "," << origpos.z << ")" << endl;
     Matrix3 pF = GetDeformationGradientMatrix();
     cout << "#       F=" << pF << ", |F|=" << pF.determinant() << endl;
     double rho0=GetRho();
     double rho = rho0*UnitsController::Scaling(1.e-6)/theMaterials[MatID()]->GetCurrentRelativeVolume(this,0);
-    cout << "#       P= " << pressure*rho << " " << UnitsController::Label(PRESSURE_UNITS) << endl;
+    cout << "#       P(tracked)=" << pressure*rho << " " << UnitsController::Label(PRESSURE_UNITS);
+    cout << " P(calc)=" << (-(sp.xx+sp.yy+sp.zz)*rho/3.) << " " << UnitsController::Label(PRESSURE_UNITS) << endl;
     cout << "# sigmaii=(" << sp.xx*rho << "," << sp.yy*rho << "," << sp.zz*rho << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
     cout << "#   tauij=(" << sp.xy*rho << "," << sp.xz*rho << "," << sp.yz*rho << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
 	cout << "#       T= " << pTemperature << " prev T=" << pPreviousTemperature;
 	cout << " c= " << pConcentration << " prev c=" << pPreviousConcentration << endl;
+    
+    // nonzero history data
+    char *hist = GetHistoryPtr(0);
+    if(hist!=NULL)
+    {   cout << "#    nonzero history: ";
+        int numRow=0;
+        for(int i=1;i<=20;i++)
+        {   double histVal = theMaterials[MatID()]->GetHistory(i,hist);
+            if(histVal!=0.)
+            {   if(numRow==4)
+                {   cout << "\n#                     ";
+                    numRow = 0;
+                }
+                cout << i << "=" << histVal << " ";
+                numRow++;
+            }
+        }
+        cout << endl;
+    }
 }
 
-
+// track index into mpm[] array. Pass zero-based address, but stored as 1-based address
+void MPMBase::SetNum(int zeroBasedNumber) { num = zeroBasedNumber+1; }
+int MPMBase::GetNum(void) const { return num; }
 

@@ -85,7 +85,12 @@ void MatPoint2D::MoveParticle(GridToParticleExtrap *gp)
 {
 	// get vm = S(v-a dt) for FLIP and Sv^+ FMPM (and PIC)
 	Vector vm;
-	if(gp->m>-2)
+	if(gp->m>0)
+	{	// FMPM damps with Sk^+(k)
+		vm.x = gp->Svtilde.x;
+		vm.y = gp->Svtilde.y;
+	}
+	else if(gp->m>-2)
 	{	// FLIP and XPIC(1) damps with Sv (which is initial lumped velocity)
 		vm.x = gp->Svtilde.x - gp->Sacc.x*timestep;
 		vm.y = gp->Svtilde.y - gp->Sacc.y*timestep;
@@ -98,11 +103,41 @@ void MatPoint2D::MoveParticle(GridToParticleExtrap *gp)
 
 	// find Adamp0
 	Vector Adamp0;
-	Adamp0.x = gp->particleAlpha*vel.x;
-	Adamp0.y = gp->particleAlpha*vel.y;
+	Adamp0.x = gp->gridAlpha*vm.x + gp->particleAlpha*vel.x;
+	Adamp0.y = gp->gridAlpha*vm.y + gp->particleAlpha*vel.y;
 	
 	Vector delV;
-	if(gp->m>=0)
+	if(gp->m>0)
+	{	// FMPM update
+		
+		// save initial particle velocity
+		Vector delXRate;
+		delXRate.x = vel.x;
+		delXRate.y = vel.y;
+		
+		// FMPM(m) update
+		vel.x = vm.x - Adamp0.x*timestep;
+		vel.y = vm.y - Adamp0.y*timestep;
+		
+		// find change in velocity
+		delV.x = vel.x - delXRate.x;
+		delV.y = vel.y - delXRate.y;
+		
+		// position update
+		if(gp->m>1 || fmobj->dflag[11]==0)
+		{	// del X = 0.5*(V(n+1)+V(n))
+			delXRate.x += vel.x;
+			delXRate.y += vel.y;
+		}
+		else
+		{	// Use PIC based on FLIP position update
+			delXRate.x = vel.x;
+			delXRate.y = vel.y;
+		}
+		pos.x += 0.5*delXRate.x*timestep;
+		pos.y += 0.5*delXRate.y*timestep;
+	}
+	else if(gp->m==0)
 	{	// FLIP update velcity change
 		delV.x = (gp->Sacc.x - Adamp0.x)*timestep;
 		delV.y = (gp->Sacc.y - Adamp0.y)*timestep;
@@ -257,17 +292,43 @@ void MatPoint2D::SetDeformationGradientMatrix(Matrix3 F)
 	wrot.xy = F(1,0) - F(0,1);
 }
 
-// get displacement gradient from grad u = F - I
+// get displacement gradient in current configuration
+// Uses grad u = RFR^T - I = RV - I
 Matrix3 MatPoint2D::GetDisplacementGradientMatrix(void) const
-{	double F[3][3];
-	GetDeformationGradient(F);
-	Matrix3 Fm(F[0][0],F[0][1],F[1][0],F[1][1],F[2][2]);
+{	Matrix3 F = GetDeformationGradientMatrix();
+	Matrix3 Rn;
+	Matrix3 V = F.LeftDecompose(&Rn,NULL);
+	V = Rn*V;
+	V(0,0) -= 1.;
+	V(1,1) -= 1.;
+	V(2,2) -= 1.;
+	return V;
+}
 
-	Fm(0,0) -= 1.;
-	Fm(1,1) -= 1.;
-	Fm(2,2) -= 1.;
+// get displacement gradient in current conficguration using
+//     grad u = R(V-ec)-I
+// where ec is cracking strain in softening materials
+// this method us current for 2D only
+Matrix3 MatPoint2D::GetDisplacementGradientForJ(const MaterialBase *matref)
+{
+	Matrix3 F = GetDeformationGradientMatrix();
+	Matrix3 Rn;
+	Matrix3 V = F.LeftDecompose(&Rn,NULL);
 	
-	return Fm;
+	// if needed, subtract cracking strain
+	Tensor ecrack;
+	if(matref->GetCrackingStrain(this,&ecrack,true,&Rn))
+	{	V(0,0) -= ecrack.xx;
+		V(0,1) -= 0.5*ecrack.xy;
+		V(1,0) -= 0.5*ecrack.xy;
+		V(1,1) -= ecrack.yy;
+	}
+	
+	// subtract identity
+	V = Rn*V;
+	V(0,0) -= 1.;
+	V(1,1) -= 1.;
+	return V;
 }
 
 // get the symmetric elastic Left-Cauchy tensor in a Matrix3
@@ -305,7 +366,7 @@ Matrix3 MatPoint2D::GetElasticBiotStrain(void)
 // get relative volume from det J for large deformation material laws
 double MatPoint2D::GetRelativeVolume(void)
 {
-    double pF[3][3];
+	double pF[3][3];
     GetDeformationGradient(pF);
     return pF[2][2]*(pF[0][0]*pF[1][1]-pF[1][0]*pF[0][1]);
 }
@@ -348,7 +409,7 @@ void MatPoint2D::GetSemiSideVectors(Vector *r1,Vector *r2,Vector *r3) const
 	r2->z = 0.;
 }
 
-// rescale vectors if needed in CPDI calcualtions
+// rescale vectors if needed in CPDI calculations
 void MatPoint2D::ScaleSemiSideVectorsForCPDI(Vector *r1,Vector *r2,Vector *r3) const
 {	// skip if not activated
 	if(ElementBase::rcrit<0.) return;

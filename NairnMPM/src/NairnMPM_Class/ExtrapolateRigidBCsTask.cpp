@@ -39,7 +39,7 @@ ExtrapolateRigidBCsTask::ExtrapolateRigidBCsTask(const char *name) : MPMTask(nam
 
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
-void ExtrapolateRigidBCsTask::Execute(int taskOption)
+bool ExtrapolateRigidBCsTask::Execute(int taskOption)
 {
 #ifdef CONST_ARRAYS
 	double fn[MAX_SHAPE_NODES];
@@ -151,4 +151,6 @@ void ExtrapolateRigidBCsTask::Execute(int taskOption)
 	ProjectRigidBCsTask::RemoveRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,(BoundaryCondition **)&firstRigidVelocityBC);
 	ProjectRigidBCsTask::RemoveRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,(BoundaryCondition **)&firstRigidTempBC);
 	ProjectRigidBCsTask::RemoveRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,(BoundaryCondition **)&firstRigidConcBC);
+
+    return true;
 }

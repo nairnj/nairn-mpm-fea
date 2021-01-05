@@ -53,6 +53,8 @@ BodyForce::BodyForce()
 	XPICOrder = 0;				// default to FLIP
 	isUsingVstar = 0;			// XPIC being used (always 0 in NairnMPM)
 	xpicVectors = 1;			// to store vk and one is added to store pk
+	usingFMPM = false;
+	gridBCOption = GRIDBC_COMBINED;
 	
 	gridBodyForceFunction[0]=NULL;
 	gridBodyForceFunction[1]=NULL;
@@ -448,3 +450,11 @@ void BodyForce::SetUsingVstar(int setting) { isUsingVstar = setting; }
 // change the number needed if add PeriodicXPIC custom task
 int BodyForce::XPICVectors(void) { return xpicVectors; }
 void BodyForce::SetXPICVectors(int vnum) { xpicVectors = vnum; }
+
+// Is this XPIC or FMPM (note that not changed for intersperse FLIP steps)
+bool BodyForce::UsingFMPM(void) { return usingFMPM; }
+void BodyForce::SetUsingFMPM(bool useit) { usingFMPM = useit; }
+
+// FMPM(k>1) and XPIC(k>1) grid BC option
+int BodyForce::GridBCOption(void) { return gridBCOption; }
+void BodyForce::SetGridBCOption(int newOption) { gridBCOption = newOption; }

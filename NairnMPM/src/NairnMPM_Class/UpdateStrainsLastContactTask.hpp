@@ -23,7 +23,7 @@ class UpdateStrainsLastContactTask : public MassAndMomentumTask
 		UpdateStrainsLastContactTask(const char *);
 	
 		// required methods
-		virtual void Execute(int);
+		virtual bool Execute(int);
 	
 };
 

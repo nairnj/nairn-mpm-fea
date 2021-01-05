@@ -38,7 +38,9 @@ class ConductionTask : public TransportTask
 	
 		// grid force extrapolation
 		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *,short,int);
+#ifndef TRANSPORT_FMPM
 		virtual TransportTask *SetTransportForceAndFluxBCs(double);
+#endif
 	
 		// custom methods
 		void AddCrackTipHeating(void);

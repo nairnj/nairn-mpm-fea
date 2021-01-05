@@ -25,8 +25,12 @@ class UpdateStrainsFirstTask : public MPMTask
 		UpdateStrainsFirstTask(const char *);
 	
 		// required methods
-		virtual void Execute(int);
+		virtual bool Execute(int);
 	
+#ifdef RESTART_OPTION
+        virtual bool BlockRestartOption(void) const;
+#endif
+
         // class methods
         static void FullStrainUpdate(double,int,int,bool);
         static void CreatePropertyBuffers(int);

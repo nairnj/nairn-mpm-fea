@@ -9,11 +9,13 @@
 		TractionLaw.hpp, MaterialBase.hpp
 ********************************************************************************/
 
-#ifndef COHESIVEZONEMATERIAL
+#ifndef TRIANGULARTRACTIONMATERIAL
 
-#define COHESIVEZONEMATERIAL 12
+#define TRIANGULARTRACTIONMATERIAL 12
 
 #include "Materials/TractionLaw.hpp"
+
+enum { CZ_DELN=0,CZ_DELT };
 
 class CohesiveZone : public TractionLaw
 {
@@ -31,19 +33,37 @@ class CohesiveZone : public TractionLaw
 	
 		// const methods
 		virtual void PrintMechanicalProperties(void) const;
-	
+ 
 		// the traction law
 		virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);
-		virtual double CrackTractionEnergy(CrackSegment *,double,double,bool);
-		
+		virtual double CrackWorkEnergy(CrackSegment *,double,double);
+		virtual void CrackDissipatedEnergy(CrackSegment *,double &,double &);
+    
+        // Core functions
+        virtual double Strength(int,double);
+        virtual double WorkEnergy(int,double);
+        virtual double DissipatedEnergy(int,double);
+        virtual double StrengthPrime(int,double);
+        virtual double GetDFromDelta(int,double);
+        virtual double GetDeltaFromD(int,double);
+
+        // Sawtooth methods (don't override)
+        const char *SetSawToothTractionLaw(double &,double &,double &,double &,double &,double &,double &);
+        void PrintSawToothModel(const char *,double,double,double,double,double,double) const;
+        double GetSawToothDeltaPrimeFromD(double,double,double);
+    
+        // for Exponential law (don't override)
+        const char *SetExponentialTractionLaw(double &,double &,double &,double &,double &,double &);
+
 		// accessors
-		virtual const char *SetTractionLaw(double &,double &,double &,double &,double &);
 		virtual const char *MaterialType(void) const;
 		
 	protected:
 		double kI1,kII1;
 		double umidI,umidII;
- };
+        double phiI1,phiII1;
+        double RI1,RII1;
+};
 
 #endif
 

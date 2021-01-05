@@ -43,7 +43,8 @@ class MatPoint3D : public MPMBase
 		virtual Matrix3 GetDeformationGradientMatrix(void) const;
 		virtual void SetDeformationGradientMatrix(Matrix3);
 		virtual Matrix3 GetDisplacementGradientMatrix(void) const;
-        virtual Matrix3 GetElasticLeftCauchyMatrix(void);
+		virtual Matrix3 GetDisplacementGradientForJ(const MaterialBase *);
+       	virtual Matrix3 GetElasticLeftCauchyMatrix(void);
         virtual void GetDeformationGradient(double F[][3]) const;
         virtual double GetRelativeVolume(void);
 		virtual double GetVolume(int);

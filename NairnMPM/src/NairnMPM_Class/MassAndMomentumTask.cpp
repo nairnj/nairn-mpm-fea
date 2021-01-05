@@ -45,7 +45,7 @@ MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
 // throws CommonException()
-void MassAndMomentumTask::Execute(int taskOption)
+bool MassAndMomentumTask::Execute(int taskOption)
 {   
 	CommonException *massErr = NULL;
 #ifdef CONST_ARRAYS
@@ -122,6 +122,8 @@ void MassAndMomentumTask::Execute(int taskOption)
 	{	for(int pn=0;pn<totalPatches;pn++)
 			patches[pn]->MassAndMomentumReduction();
 	}
+    
+    return true;
 }
 
 // Get Particle functions and constants

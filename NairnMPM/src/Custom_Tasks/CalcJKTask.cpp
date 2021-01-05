@@ -137,7 +137,13 @@ CustomTask *CalcJKTask::StepCalculation(void)
         while(mpnt!=NULL)
         {   // material reference
             const MaterialBase *matref = theMaterials[mpnt->MatID()];
-		
+
+			// if this material ignores cracks, then do not include it in J integral
+			if(!matref->AllowsCracks())
+			{	mpnt = (MPMBase *)mpnt->GetNextObject();
+				continue;
+			}
+
             // find shape functions and derviatives
             const ElementBase *elref = theElements[mpnt->ElemID()];
 			int *nds = ndsArray;
@@ -158,7 +164,8 @@ CustomTask *CalcJKTask::StepCalculation(void)
 			
                 // get 2D gradient terms (dimensionless) and track material (if needed)
                 int activeMatField = matref->GetActiveField();
-				Matrix3 gradU = mpnt->GetDisplacementGradientMatrix();
+				//Matrix3 gradU = mpnt->GetDisplacementGradientMatrix();
+				Matrix3 gradU = mpnt->GetDisplacementGradientForJ(matref);
                 ndmi->AddUGradient(vfld,fnmp,gradU(0,0),gradU(0,1),gradU(1,0),gradU(1,1),activeMatField,mpnt->mp);
 
 				// GRID_JTERMS

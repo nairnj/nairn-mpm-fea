@@ -58,7 +58,7 @@ class IsoPlasticity : public IsotropicMat
                                         PlasticProperties *,ResidualStrains *,Matrix3 *,bool) const;
 		
 		// custom methods: Find yield function and solve for lambda
-		virtual void UpdatePressure(MPMBase *,double,int,PlasticProperties *,ResidualStrains *,double,double &,double &) const;
+		virtual void UpdatePressure(MPMBase *,double,int,PlasticProperties *,ResidualStrains *,double,double,double &,double &) const;
 		virtual void GetDfDsigma(double,Tensor *,int,Tensor *) const;
 		virtual double GetPlasticPotential(Tensor *,MPMBase *,int,double,HardeningAlpha *,void *) const;
 		virtual double RRPlasticIncrement(Tensor *,MPMBase *,int,double,double,HardeningAlpha *,PlasticProperties *) const;
@@ -69,7 +69,8 @@ class IsoPlasticity : public IsotropicMat
 		virtual void IncrementThicknessStress(double,MPMBase *) const;
         const char *MaterialType(void) const;
 		virtual int AltStrainContains(void) const;
-		
+		virtual bool SupportsArtificialViscosity(void) const;
+
     protected:
 		PlasticProperties pr;
 		double G0red;

@@ -537,9 +537,9 @@ that transform to needles after much cumulative strain. Limiting the maximum (<i
 more useful plots.</p>
 
 <p>To zoom in or out on the current plot, choose a scale setting from the &quot;Zoom&quot;
-menu; the window will zoom around its current center location. To zoom in on point, click
-on the location with the Windows (or Mac Command) key down. To zoom out at a point, click
-on the location with the Alt and Windows (or Mac Option and Command) keys down.
+menu; the window will zoom around its current center location. To zoom in on point, right click
+on the location (or click with Mac Command key down). To zoom out at a point, right click
+on the location with the Alt key down (or click with Mac Option and Command keys down).
 The zoom level is relative to the current window size and will remain so as the window is resized.
 Choose &quot;100%&quot; to see the entire plot.
 </p>
@@ -755,25 +755,30 @@ component of the stress tensor).</li>
 Use the time slider to selected the desired time results to plot.
 </li>
 
-<li>The plot can be along any path through the mesh. You can specify a path using
-the pop-up menu and select &quot;<code>x=</code>&quot; to give <code>x</code> as a
+<li>The plot will be along a selected path through the mesh as determined by a pop-up menu:
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<i>For FEA and MPM</i>: the first four options can select &quot;<code>x=</code>&quot;
+to give <code>x</code> as a
 function of <code>y</code>, &quot;<code>y=</code>&quot; to give <code>y</code> as
 a function of <code>x</code>, &quot;<code>D=</code>&quot; to give distance from
-the origin <code>D</code> as a function of polar angle <code>T</code>, or
-&quot;<code>T=</code>&quot; to give polar angle <code>T</code> as a function of distance
-from the origin <code>D</code>. Select the contour option from the menu and then enter
-an expression of the complementary variable in the text field. The
-polar angle <code>T</code> is counter-clockwise angle from the positive <code>x</code> axis.
-The resulting plot will be the selected plot quantity as a function of distance along the path.
-The expression can be a constant value. A constant for an <code>x</code> contour will
-be a vertical line. A constant or a <code>y</code> contour will be a horizontal line.
-A constant for a <code>D</code> contour will be a circle with the entered radius.
-A constant for a <code>T</code> contour will be a line from the origin at that polar angle T.
+the origin <code>D</code> as a function of polar angle <code>T</code> (<i>i.e.</i>, counter-clockwise angle from the positive <code>x</code> axis), or &quot;<code>T=</code>&quot; to give <code>T</code> as a function of <code>D</code>. For each option, enter the function as an expression of the allowed variable in the text field. 
+The resulting plot will be for mesh values of the selected plot quantity as a function of
+distance along the path. For MPM, the mesh values are found by extrapolating particle values to the grid (and will be zero in in mesh regions with no particles).
+The expression for the path can be a constant value. A constant <code>x=</code> contour will
+be a vertical line. A constant <code>y=</code> contour will be a horizontal line.
+A constant <code>D=</code> contour will be a circle with the entered radius.
+A constant <code>T=</code> contour will be a line from the origin at that polar angle T.
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<i>For MPM only</i>: the next four options will create plots of particle values
+based on <code>xp=</code> or <code>yp=</code> for current particle <code>x</code> or <code>y</code> position or on particle <code>xp0=</code> or <code>yp0=</code> for original particle <code>x</code> or <code>y</code> position. For each option, enter a numeric value in the text field and not an expression. For <code>xp=</code> and <code>xp0=</code>, the contour will
+be a vertical line at that value. For <code>yp=</code> and <code>yp0=</code>, the contour will
+be a horizontal line at that value. The resulting plot will be particle values of any particle whose corrent or original position is within its radius from the selected contour.
 </li>
 
 <li>The &quot;+/-&quot; field can enter a range for calculating an average plot quantity.
 If it is not zero, the selected quantity will be averaged over that distance on
-both sides of the path and normal to the path.</li>
+both sides of the path and normal to the path. But for MPM particle plots (<code>xp=</code>, <i>etc</i>.), a non-zero will instead extend the plot to include any particle whose position is within its radius or this value (whichever is larger) of the selected contour.</li>
 
 <li>For crack results (<i>e.g.</i>, &quot;Crack Profile&quot;) select the crack number.
 Cracks are numbered starting from 1. For crack plots, the plot will be along the crack
@@ -807,7 +812,7 @@ new options (while the previous plot window is still open) and then clicking the
 <ul>
 <li>Type: Pick color rainbow from low value to high value. The Viridis, Magma, Inferno, and Plasma
 options provide perceptually-uniform spectra that provide the same scientific information
-in color, if printed in black and white, and to viewers who are color blind.</li>
+in color, if printed in black and white, and to viewers who are color blind. The Turbo spectra is described in a <a href="https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html">Google AI Blog</a>; it was developed to improve on the Blue to Red rainbow, which they labeled as the "Jet" spectrum.</li>
 <li>Contours: Pick number of contours to use within the chosen rainbow, which will be total
 number of colors in the plot. If this value is 1, the colors will be continuous
 resulting in smooth transitions in the plot with many colors.</li>

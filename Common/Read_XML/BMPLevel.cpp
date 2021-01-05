@@ -8,6 +8,13 @@
 
 #include "stdafx.h"
 #include "Read_XML/BMPLevel.hpp"
+#ifdef MPM_CODE
+#include "NairnMPM_Class/MeshInfo.hpp"
+#include "Global_Quantities/ThermalRamp.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
+#else
+#include "NairnFEA_Class/NairnFEA.hpp"
+#endif
 
 BMPLevel *firstLevel=NULL;
 BMPLevel *currentLevel=NULL;
@@ -34,10 +41,17 @@ BMPLevel::BMPLevel(int matnum,int setmin,int setmax)
 // set all default values
 void BMPLevel::SetDefaults(void)
 {	angle=0.;
-	thickness=1.;
 	ZeroVector(&vel);
-	temperature=0.;
-	currentDeltaT=0.;
+#ifdef MPM_CODE
+    thickness = mpmgrid.GetDefaultThickness();
+    concentration = diffusion->reference;
+    temperature = thermal.reference;
+#else
+    thickness=1.;
+    concentration = 0.;
+    temperature = fmobj->stressFreeTemperature;
+#endif
+ 	currentDeltaT=0.;
 	concentration=0.;
 	contextInfo = NULL;
 }

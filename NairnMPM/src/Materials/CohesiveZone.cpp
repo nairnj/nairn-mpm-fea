@@ -2,24 +2,27 @@
     CohesiveZone.cpp
     nairn-mpm-fea
  
-	This material is based on mixed mode cohesive law with saw tooth traction
-	laws. For mixed mode behavior, it uses method advocated by Thouless, which
-    is simple method, but appears more effective than methods that try to be more
-    coupled.
+    This material is parent class of any traction law that has an initial
+    linear elastic region. It adds parameters for slope and displacement
+    at end of linear elatic regime. This instands implements a sawtooth
+    (or triangular law).
  
-	Basically, mode I and mode II are decoupled for calculation of GI and GII. If
-    either exceeds its critical COD, that it debonds. If neither does, the criterion
+    This material uses decoupled mode I and mode II (e.g., see work of
+    Thouless and others). If either mode exceeds its critical COD, that it debonds.
+    If neither does, this decoupled approach need a failure criterion. The
+    one used is
  
     (GI/GIc)^n + (GII/GIIc)^n = 1
  
-    is used to decide if it fails.
-    
+    Seom subclasses of this class implemeted coupled methods
+ 
     Created by John Nairn on 3/21/08.
     Copyright (c) 2008 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
 #include "stdafx.h"
 #include "Materials/CohesiveZone.hpp"
+#include "Materials/CoupledSawTooth.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "System/UnitsController.hpp"
 
@@ -73,10 +76,10 @@ char *CohesiveZone::InputTractionLawProperty(char *xName,int &input,double &gSca
 // Do mode I and mode II separately
 const char *CohesiveZone::VerifyAndLoadProperties(int np)
 {
-	const char *msg=SetTractionLaw(stress1,kI1,delIc,JIc,umidI);
+	const char *msg=SetSawToothTractionLaw(stress1,kI1,delIc,JIc,umidI,phiI1,RI1);
 	if(msg!=NULL) return msg;
 	
-	msg=SetTractionLaw(stress2,kII1,delIIc,JIIc,umidII);
+	msg=SetSawToothTractionLaw(stress2,kII1,delIIc,JIIc,umidII,phiII1,RII1);
 	if(msg!=NULL) return msg;
 	
 	// go to parent
@@ -86,42 +89,93 @@ const char *CohesiveZone::VerifyAndLoadProperties(int np)
 // print to output window
 void CohesiveZone::PrintMechanicalProperties(void) const
 {
-	PrintProperty("GIc",JIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
-	PrintProperty("sigI",stress1*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
-	PrintProperty("uIc",delIc,UnitsController::Label(CULENGTH_UNITS));
-	if(kI1>0.)
-		PrintProperty("kI",kI1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
-	PrintProperty("upkI",umidI,UnitsController::Label(CULENGTH_UNITS));
-    cout <<  endl;
-
-	PrintProperty("GIIc",JIIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
-	PrintProperty("sigII",stress2*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
-	PrintProperty("uIIc",delIIc,UnitsController::Label(CULENGTH_UNITS));
-	if(kII1>0.)
-		PrintProperty("kII",kII1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
-	PrintProperty("upkII",umidII,UnitsController::Label(CULENGTH_UNITS));
-    cout <<  endl;
-	
-	PrintProperty("n",nmix,"");
-	cout << endl;
+    PrintSawToothModel("I",JIc,stress1,delIc,kI1,umidI,-1.);
+    PrintSawToothModel("II",JIIc,stress2,delIIc,kII1,umidII,-1.);
+	if(MaterialID()!=COUPLEDSAWTOOTHMATERIAL)
+    {   PrintProperty("n",nmix,"");
+        cout << endl;
+    }
 }
 
 #pragma mark CohesiveZone::History Data Methods
 
 // history variables:
-// h[0] is max mode I opening (starting at first peak location)
-// h[1] is max mode II opening (starting at first peak location)
+// h[0=CZ_DELN] is max mode I opening (starting at first peak location)
+// h[1=CZ_DELT] is max mode II opening (starting at first peak location)
 char *CohesiveZone::InitHistoryData(char *pchr)
 {
+    numTractionHistory = 2;
     double *p = CreateAndZeroDoubles(pchr,2);
-	p[0]=umidI;
-	p[1]=umidII;
+	p[CZ_DELN]=umidI;
+	p[CZ_DELT]=umidII;
     return (char *)p;
+}
+
+#pragma mark CohesiveZone::Basic Functions
+
+// Return the strength for mode and current delta
+// delta must be in valid range
+double CohesiveZone::Strength(int mode,double delta)
+{   if(mode==1)
+        return stress1*(delIc-delta)/(delIc-umidI);
+    return stress2*(delIIc-delta)/(delIIc-umidII);
+}
+
+// Return area under the cohesive law up to u (only used in J integral)
+// Assumes ue <= u <= uc
+double CohesiveZone::WorkEnergy(int mode,double u)
+{   if(mode==1)
+        return 0.5*stress1*(u*(delIc-u) + delIc*(u-umidI))/(delIc-umidI);
+    return 0.5*stress2*(u*(delIIc-u) + delIIc*(u-umidII))/(delIIc-umidII);
+}
+
+// Return dissipated energy up to delta.
+// delta must be in valid range (delta>umid)
+double CohesiveZone::DissipatedEnergy(int mode,double delta)
+{   if(mode==1)
+        return JIc*(delta-umidI)/(delIc-umidI);
+    return JIIc*(delta-umidII)/(delIIc-umidII);
+}
+
+// Return the derivative of strength with repect to delta
+// delta must be in valid range
+double CohesiveZone::StrengthPrime(int mode,double delta)
+{   if(mode==1)
+        return -stress1/(delIc-umidI);
+    return -stress2/(delIIc-umidII);
+}
+
+// Get D from delta (needed for MixedModeTraction)
+// delta must be in valid range
+double CohesiveZone::GetDFromDelta(int mode,double delta)
+{   double delbar,up;
+    if(mode==1)
+    {   delbar = delta/delIc;
+        up = umidI/delIc;
+    }
+    else
+    {   delbar = delta/delIIc;
+        up = umidII/delIIc;
+    }
+    return 1. - (up/(1.-up))*((1-delbar)/delbar);
+}
+
+// Get delta from D (needed for MixedModeTraction)
+double CohesiveZone::GetDeltaFromD(int mode,double D)
+{   double up;
+    if(mode==1)
+    {   up = umidI/delIc;
+        return delIc*up/(1.-D*(1.-up));
+    }
+    up = umidII/delIIc;
+    return delIIc*up/(1.-D*(1.-up));
 }
 
 #pragma mark CohesiveZone::Traction Law
 
-// Traction law - assume trianglar shape with unloading from down slope back to the origin
+// Traction law - This method should be general for any cohesive law that has an
+// initial elastic regime provided delta parameters are initialized to end of the elastic regime
+// This class implements sawtooth law
 void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,Vector *n,Vector *t,double area)
 {
 	double Tn=0.,Tt=0.,GI=0.,GII=0.;
@@ -131,56 +185,31 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,Vec
 	if(nCod>0.)
 	{	// is it failed?
 		if(nCod>delIc)
-		{	cs->SetMatID(0);                        // then debonded
-            GI = JIc;
+		{	upeak[CZ_DELN]=delIc;
+			cs->SetMatID(0);                        // then debonded
 		}
 		else
-		{	if(nCod>upeak[0]) upeak[0]=nCod;                        // new peak reached
-            double keff;
-            if(upeak[0]==umidI)
-                keff = stress1/upeak[0];
-            else
-                keff = stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+		{	if(nCod>upeak[CZ_DELN]) upeak[CZ_DELN]=nCod;                        // new peak reached
+            double keff = Strength(1,upeak[CZ_DELN])/upeak[CZ_DELN];
 			Tn = keff*nCod;
-			
-			// get GI for failure law (F/L)
-			if(nCod<=umidI)
-            {   // note that linear softening never because umidI=0
-				GI = 0.5*kI1*nCod*nCod;
-            }
-			else
-			{	double s2 = (delIc-nCod)*stress1/(delIc-umidI);
-				GI = 0.5*(umidI*stress1 + (nCod-umidI)*(stress1+s2));
-			}
-		}
+        }
 	}
 	
 	// shear force and GII always
     // is it failed?
     double absTCod = fabs(tCod);
     if(absTCod>delIIc)
-    {	cs->SetMatID(0);                                // then debonded
-        GII = JIIc;
+	{	upeak[CZ_DELT] = delIIc;
+		cs->SetMatID(0);                                // then debonded
     }
     else if(absTCod>0.)
-    {	if(absTCod>upeak[1]) upeak[1] = absTCod;          // new peak reached either direction
-        double keff;
-        if(upeak[1]==umidII)
-            keff = stress2/upeak[1];
-        else
-            keff = stress2*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
+    {	if(absTCod>upeak[CZ_DELT]) upeak[CZ_DELT] = absTCod;          // new peak reached either direction
+        double keff = Strength(2,upeak[CZ_DELT])/upeak[CZ_DELT];
         Tt=keff*tCod;
-        
-        // get GII for failure law (F/L)
-        if(absTCod<=umidII)
-        {   // note that linear softening never because umidII=0
-            GII = 0.5*kII1*tCod*tCod;
-        }
-        else
-        {	double s2 = (delIIc-absTCod)*stress2/(delIIc-umidII);
-            GII = 0.5*(umidII*stress2 + (absTCod-umidII)*(stress2+s2));
-        }
     }
+	
+    // get total dissipated energy
+	CrackDissipatedEnergy(cs,GI,GII);
 	
     if(cs->MatID()<0)
     {   // it failed above in pure mode
@@ -206,78 +235,89 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,Vec
 	cs->tract.z = -area*(Tn*n->z + Tt*t->z);
 }
 
-// return total energy (which is needed for path independent J) under traction law curve
-//		when fullEnergy is true
-// return released energy = total energy - recoverable energy (due to elastic unloading)
-//		when fullEnergy is false
-// units of F/L
-double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod,bool fullEnergy)
+// Return current traction law work energy (Int T.du) up to current u=(nCod,tCod)
+// Only called by J unless subclass failure to override DissipatedEnergy()
+// This method should be general for any cohesive law that has an initial elastic regime
+// provided delta parameters are initialized to end of the elastic regime.
+// This class implements sawtooth law
+double CohesiveZone::CrackWorkEnergy(CrackSegment *cs,double nCod,double tCod)
 {
-	double tEnergy=0.;
-	
-	// always get entire area under the curve
+	double workEnergy;
 	
 	// normal energy only if opened
 	if(nCod>0.)
 	{	if(nCod<umidI || delIc==umidI)
-        {   // note that linear softening never because umidI=0
+		{   // elastic regime
 			double Tn = kI1*nCod;
-			tEnergy = 0.5*Tn*nCod;
+			workEnergy = 0.5*Tn*nCod;
 		}
-        else
-		{	double s2 = (delIc-nCod)*stress1/(delIc-umidI);
-			tEnergy = 0.5*(umidI*stress1 + (nCod-umidI)*(stress1+s2));
-		}
-	}
-	
-	// shear energy always
-	if(fabs(tCod)<umidII || delIIc==umidII)
-    {   // note that linear softening never because umidII=0
-		double Tt = kII1*tCod;
-		tEnergy += 0.5*Tt*tCod; 
+		else
+        {   workEnergy = WorkEnergy(1,nCod);
+        }
 	}
 	else
-	{	double s2 = (delIIc-fabs(tCod))*stress2/(delIIc-umidII); 
-		tEnergy += 0.5*(umidII*stress2 + (fabs(tCod)-umidII)*(stress2+s2));
-	}
+		workEnergy = 0.;
 	
-	// subtract recoverable energy when want released energy
-	if(!fullEnergy)
-	{	double *upeak = (double *)cs->GetHistoryData();
-		double keff;
-		if(nCod>0.)
-        {   if(upeak[0]==umidI)
-                keff = stress1/upeak[0];
-            else
-		        keff = stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
-			double Tn = keff*nCod;
-			tEnergy -= 0.5*Tn*nCod;
-		}
-		
-		// shear energy always
-		if(upeak[1]==umidII)
-            keff = stress2/upeak[1];
-        else
-            keff = stress2*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
-		double Tt = keff*tCod;
-		tEnergy -= 0.5*Tt*tCod;
+	// add shear energy always
+	double absTCod = fabs(tCod);
+	if(absTCod<umidII || delIIc==umidII)
+	{   // elastic loading
+		double Tt = kII1*tCod;
+		workEnergy += 0.5*Tt*tCod;
 	}
+	else
+    {   workEnergy += WorkEnergy(2,absTCod);
+    }
 	
-	return tEnergy;
+	return workEnergy;
 }
 
-#pragma mark CohesiveZone::Accessors
+// Get mode I and II energy that has been released by current segment
+// For this decoupled law it is given by Int (1/2)phi(delta)delta
+// It is used when reporting energy released during crack growth or decohesion
+//      and added to Jtip to report total dissipated energy by the crack growth.
+// Also used by this law to detect failure.
+// This should be general for any law that has an initial elastic regime provided
+//      deltas are initialized to end of the elastic regime.
+// This class implements an sawtooth law
+void CohesiveZone::CrackDissipatedEnergy(CrackSegment *cs,double &GI,double &GII)
+{
+	// Get area under curve up to maximum reached
+	double *upeak = (double *)cs->GetHistoryData();
+	
+    // Get normal energy (only if damage)
+    if(upeak[CZ_DELN]>umidI)
+	{	GI = DissipatedEnergy(1,upeak[CZ_DELN]);
+        cs->czmdG.z = 1.;       // flag for disspated energy
+	}
+    else
+        GI = 0.;
+	
+	// Get shear energy (only if damage)
+	if(upeak[CZ_DELT]>umidII)
+	{	GII = DissipatedEnergy(2,upeak[CZ_DELT]);
+        cs->czmdG.z = 1.;       // flag for dissipated energy
+	}
+    else
+        GII = 0.;
+    
+    // add to crack properties
+    cs->czmdG.x = GI;
+    cs->czmdG.y = GII;
+}
 
-// return material type
-const char *CohesiveZone::MaterialType(void) const { return "Triangular Cohesive Zone"; }
+#pragma mark CohesiveZone::SawTooth Specific (no overrides)
 
 //	Calculate properties used in analyses - here triangular law
 //		k1 is slope up (F/L^3)
 //		u2 is final displacement (L)
-//		u1 is displacement at peak stress (as fraction of u2)
-//		s1 is peak stress (F/L^2) = k1 u1
-//		G is toughness (F/L) = (1/2) s1 u2 = (1/2) k1 u1 u2
-const char *CohesiveZone::SetTractionLaw(double &s1,double &k1,double &u2,double &G,double &u1)
+//		u1 is displacement at peak stress (as fraction of u2 on input, but dimensioned on output)
+//		s1 is peak stress (F/L^2) = k1 u1 (output u1)
+//		G is toughness (F/L) = (1/2) s1 u2 = (1/2) k1 u1 u2 (output u1)
+//      phi1 is constant terms for varphi function
+//      R1 is constant terms for R(delta) function
+const char *CohesiveZone::SetSawToothTractionLaw(double &s1,double &k1,double &u2,double &G,
+                                                 double &u1,double &phi1,double &R1)
 {
 	// specify s1 and G, but not u2
 	if(u2<0.)
@@ -309,22 +349,26 @@ const char *CohesiveZone::SetTractionLaw(double &s1,double &k1,double &u2,double
 		k1 = s1/u1;
 	}
 	
-	// if only u1 is provided (and it is assumed to be relative to u1)
+	// if only u1 is provided (and it is assumed to be relative to u2 on input)
 	else if(k1<0.)
 	{	if(u1>0.)
 		{	u1 *= u2;
 			k1 = s1/u1;
 		}
 		else
-		{	// linear softening
+		{	// linear softening (no longer allowed
 			u1 = 0.;
 			k1 = -1.;
+            return "Triangular traction material does not allow infinite initial stiffness";
 		}
 	}
 	
 	// if k1 is provided alone
 	else if(u1<0.)
-	{	u1 = s1/k1;
+    {   if(k1>0.)
+            u1 = s1/k1;
+        else
+            return "Triangular traction material does not allow zero initial stiffness";
 	}
 	
 	// specified both, which is an error
@@ -335,7 +379,124 @@ const char *CohesiveZone::SetTractionLaw(double &s1,double &k1,double &u2,double
 	// verify final u1 is acceptable
 	if(u2<u1)
 		return "The critical displacement is less than peak displacement. Increase JIc, JIIc, delIc, and/or delIIc.";
-		
+    
+    // constant terms
+    phi1 = s1*u2/(u2-u1);
+    R1 = u1/(u2-u1);
+
 	return NULL;
 }
+
+// print to output window
+// alpha only applies to exponential law
+void CohesiveZone::PrintSawToothModel(const char *mode,double Jc,double sigc,
+                                      double uc,double ke,double ue,double alpha) const
+{
+    char label[10];
+    PrintProperty(PackLabel(label,"G",mode,"c"),Jc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
+    PrintProperty(PackLabel(label,"sig",mode,""),sigc*UnitsController::Scaling(1.e-6),
+                  UnitsController::Label(PRESSURE_UNITS));
+    PrintProperty(PackLabel(label,"u",mode,"c"),uc,UnitsController::Label(CULENGTH_UNITS));
+    cout <<  endl;
+    // note that ke<=0 or infinite stiffness is not longer allowed
+    if(ke>0.)
+    {   PrintProperty(PackLabel(label,"k",mode,""),ke*UnitsController::Scaling(1.e-6),
+                      UnitsController::Label(TRACTIONSLOPE_UNITS));
+    }
+    PrintProperty(PackLabel(label,"upk",mode,""),ue,UnitsController::Label(CULENGTH_UNITS));
+    if(alpha>0.)
+        PrintProperty(PackLabel(label,"alpha",mode,""),alpha,"");
+    cout <<  endl;
+}
+
+// Get delta' for SawTooth law at D
+// Only called by subclass MixedMode traction law if using Newton's method
+double CohesiveZone::GetSawToothDeltaPrimeFromD(double D,double uc,double ue)
+{   double up = ue/uc;
+    double denom = 1.-D*(1.-up);
+    return uc*up*(1.-up)/(denom*denom);
+}
+
+#pragma mark CohesiveZone::Exponential Specifics (here so available to Coupled and Mixed Mode)
+
+//    Calculate properties used in analyses - here exponential law
+//        G is toughness
+//        u2 is final displacement (L)
+//              exactly one of above two required
+//        k1 is slope up (F/L^3)
+//        u1 is displacement at peak stress (as fraction of u2 on input, but dimensioned on output)
+//        s1 is peak stress (F/L^2) = k1 u1 (output u1)
+//              exactly two of above three required
+//        fealpha = 2(1/alpha - exp(-alpha)/(1-exp(-alpha)) is exponential factor
+//              required between 0 and 1
+const char *CohesiveZone::SetExponentialTractionLaw(double &s1,double &k1,double &u2,double &G,double &u1,double &fealpha)
+{
+    // Must have G or u2, but not both
+    if((G>0. && u2>0.) || (G<=0. && u2<=0.))
+        return "Exponential cohesive laws must set Jc or delc, and never both";
+    
+    // must have two of s1, k1, u1
+    int style=0;
+    if(s1>0. && k1>0. && u1<=0.)
+        style = 1;      // has s1 and k1
+    else if(s1>0. && k1<=0. && u1>0.)
+        style = 2;      // has s1 and u1
+    else if(s1<=0. && k1>0. && u1>0.)
+        style = 3;      // has k1 and u1
+    if(style==0)
+        return "Exponential cohesive laws must set exactly two of ke, sigma, and delpk";
+
+    // provide uc
+    if(u2>0.)
+    {   switch(style)
+        {   case 1:
+                // provided s1 and k1
+                u1 = s1/(k1*u2);
+                break;
+            case 2:
+                // provided s1 and u1
+                k1 = s1/(u1*u2);
+                break;
+            default:
+                // provided k1 and u1
+                s1 = k1*u1*u2;
+                break;
+        }
+        
+        // need toughness
+        G = 0.5*s1*u2*(u1 + (1.-u1)*fealpha);
+    }
+    
+    // provided Jc
+    else
+    {   switch(style)
+        {   case 1:
+                // provided s1 and k1
+                u2 = (2.*k1*G - (1.-fealpha)*s1*s1)/(k1*s1*fealpha);
+                u1 = s1/(k1*u2);
+                break;
+            case 2:
+                // provided s1 and u1
+                u2 = 2.*G/(s1*(u1 + (1.-u1)*fealpha));
+                k1 = s1/(u1*u2);
+                break;
+            default:
+                // provided k1 and u1
+                u2 = sqrt(2.*G/(k1*u1*(u1 + (1.-u1)*fealpha)));
+                s1 = k1*u1*u2;
+                break;
+        }
+    }
+    
+    // convert u1 to dimesions
+    u1 *= u2;
+
+    return NULL;
+}
+
+
+#pragma mark CohesiveZone::Accessors
+
+// return material type
+const char *CohesiveZone::MaterialType(void) const { return "Triangular Cohesive Zone"; }
 

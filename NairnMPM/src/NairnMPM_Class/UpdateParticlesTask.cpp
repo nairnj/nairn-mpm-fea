@@ -30,6 +30,7 @@
 #include "Exceptions/CommonException.hpp"
 #include "NairnMPM_Class/XPICExtrapolationTask.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
+#include "NairnMPM_Class/XPICExtrapolationTaskTO.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -41,7 +42,7 @@ UpdateParticlesTask::UpdateParticlesTask(const char *name) : MPMTask(name)
 
 // Update particle position, velocity, temp, and conc
 // throws CommonException()
-void UpdateParticlesTask::Execute(int taskOption)
+bool UpdateParticlesTask::Execute(int taskOption)
 {
 	CommonException *upErr = NULL;
 #ifdef CONST_ARRAYS
@@ -66,6 +67,9 @@ void UpdateParticlesTask::Execute(int taskOption)
 	if(m>1)
 	{	// FLIP(k>1) or XPIC(k>1) always has XPICMechanicsTask
 		XPICMechanicsTask->Execute(0);
+		// velocity BCs (in case used)
+		if(bodyFrc.GridBCOption()!=GRIDBC_LUMPED_ONLY)
+			NodalVelBC::GridVelocityConditions(UPDATE_GRID_STRAINS_CALL);
 	}
 	else
 	{	// FLIP and PIC (FMPM(1) or XPIC(1)) use lumped mass matrix here
@@ -74,8 +78,21 @@ void UpdateParticlesTask::Execute(int taskOption)
 			nd[nda[i]]->GridValueCalculation(VELOCITY_FOR_STRAIN_UPDATE);
 	}
 
-	// for compatibility with OSParticulas, change sign of m
-	m = -m;
+	// change sign of m if not FMPM
+	if(!bodyFrc.UsingFMPM()) m = -m;
+	
+#ifdef TRANSPORT_FMPM
+	// get grid transport values
+	if(XPICTransportTask!=NULL)
+	{	if(XPICTransportTask->GetXPICOrder()>1)
+		{
+#pragma omp parallel for
+			for(int i=1;i<=*nda;i++)
+				XPICTransportTask->CopyXStar(nd[nda[i]]);
+			TransportTask::TransportGridBCs(mtime,timestep,UPDATE_GRID_STRAINS_CALL);
+		}
+	}
+#endif
 
 	// Update particle position, velocity, temp, and conc
 #pragma omp parallel for private(ndsArray,fn,gp)
@@ -130,7 +147,12 @@ void UpdateParticlesTask::Execute(int taskOption)
 				task=0;
 				while(nextTransport!=NULL)
 				{	value[task] += nextTransport->IncrementValueExtrap(ndptr,fn[i],vfld,matfld);
+#ifdef TRANSPORT_FMPM
+					if(!nextTransport->IsUsingTransportXPIC())
+						rate[task] += nextTransport->IncrementTransportRate(ndptr,fn[i],vfld,matfld);
+#else
 					rate[task] += nextTransport->IncrementTransportRate(ndptr,fn[i],vfld,matfld);
+#endif
 					nextTransport = nextTransport->GetNextTransportTask();
 					task++;
 				}
@@ -149,7 +171,11 @@ void UpdateParticlesTask::Execute(int taskOption)
 			{	// mechanics would need to add to store returned value on particle (or get delta from rate?)
 				if(nextTransport == conduction)
 				{	res.dT = nextTransport->GetDeltaValue(mpmptr,value[task]);
+#ifdef TRANSPORT_FMPM
+					dTcond = nextTransport->IsUsingTransportXPIC() ? res.dT : rate[task]*timestep;
+#else
 					dTcond = rate[task]*timestep;
+#endif
 				}
 				else
 					res.dC = nextTransport->GetDeltaValue(mpmptr,value[task]);
@@ -176,6 +202,29 @@ void UpdateParticlesTask::Execute(int taskOption)
 				res.dT = mpmptr->pTemperature - mpmptr->pPreviousTemperature;
 				mpmptr->pPreviousTemperature = mpmptr->pTemperature;
 			}
+			
+#ifdef POROELASTICITY
+			// poroelasticity update
+			if(fmobj->HasPoroelasticity())
+			{	double dpud = mpmptr->GetClear_dpud();					// in MPa
+				mpmptr->pConcentration += dpud;							// in MPa
+				
+				// update previous and residual change
+				mpmptr->pPreviousConcentration += dpud;				// in MPa
+				res.dC += dpud;
+				
+				if(mpmptr->pPreviousConcentration<0.)
+				{	// do not let pPreviousConcentration go negative
+					// if C-dC>0 (previous dC), set dC to -previous, othersize zero
+					res.dC = -fmax(mpmptr->pPreviousConcentration-res.dC,0.);
+					mpmptr->pPreviousConcentration = 0.;
+				}
+				else if(mpmptr->pPreviousConcentration-res.dC<0.)
+				{	// adjust dC if was negative, but now position to be new positive value
+					res.dC = mpmptr->pPreviousConcentration;
+				}
+			}
+#endif
 			
 			// for generalized plane stress or strain, increment szz if needed
 			if(fmobj->np==PLANE_STRESS_MPM || fmobj->np==PLANE_STRAIN_MPM)
@@ -224,4 +273,6 @@ void UpdateParticlesTask::Execute(int taskOption)
     for(int p=nmpmsRB;p<nmpms;p++)
     {	mpm[p]->MovePosition(timestep);
     }
+    
+    return true;
 }

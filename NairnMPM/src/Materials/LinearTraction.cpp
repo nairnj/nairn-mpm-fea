@@ -26,7 +26,7 @@ const char *LinearTraction::VerifyAndLoadProperties(int np)
 {
 	// must always non-negative k1
 	if(kI1<0. || kII1<0.)
-		return "Linear traction law requires non-negative kIe and kIIe";
+		return "Linear traction law requires kIe>0 and kIIe>0";
 		
 	return TractionLaw::VerifyAndLoadProperties(np);
 }
@@ -38,6 +38,9 @@ void LinearTraction::PrintMechanicalProperties(void) const
 	PrintProperty("kII",kII1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
     cout << endl;
 }
+
+// Doesn't need parent class history
+char *LinearTraction::InitHistoryData(char *pchr) { return NULL; }
 
 #pragma mark LinearTraction::Traction Law
 
@@ -61,30 +64,18 @@ void LinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,V
 	cs->tract.z = -area*(Tn*n->z + Tt*t->z);
 }
 
-// return total energy (which is needed for path independent J) under traction law curve
-//		when fullEnergy is true
-// return released enegery = total energy - recoverable energy (due to elastic unloading)
-//		when fullEnergy is false
-// units of N/mm
-double LinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod,bool fullEnergy)
+// Return current traction law strain energy (Int T.du)
+//	This energy is needed for J integral (and only used in J Integral)
+// units of F/L
+double LinearTraction::CrackWorkEnergy(CrackSegment *cs,double nCod,double tCod)
 {
-	// all the energy is recoverable since it is elastic
-	if(!fullEnergy) return 0.;
+	// normal only if opend
+	double workEnergy = nCod>0. ? 0.5*kI1*nCod*nCod : 0.;
+
+	// add sheear energy
+	workEnergy += 0.5*kII1*tCod*tCod;
 	
-	double tEnergy = 0.;
-	
-	// get entire area under the curve
-	
-	// normal energy only if opened
-	if(nCod>0.)
-	{	double Tn = kI1*nCod;
-		tEnergy = 0.5*Tn*nCod;
-	}
-	
-	double Tt = kII1*tCod;
-	tEnergy += 0.5*Tt*tCod;
-	
-	return tEnergy;
+	return workEnergy;
 }
 
 #pragma mark LinearTraction::Accessors

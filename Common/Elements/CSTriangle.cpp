@@ -111,7 +111,7 @@ void CSTriangle::ShapeFunction(Vector *xi,int getDeriv,
 		etaDeriv[1]=cj/twicearea;
 		etaDeriv[2]=ck/twicearea;
 		
-		// Ni/r if r≠0
+		// Ni/r if r!=0
 		if(xi->x!=0.)
 		{	asbe[0]=sfxn[0]/xi->x;
 			asbe[1]=sfxn[1]/xi->x;

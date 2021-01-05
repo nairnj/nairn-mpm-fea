@@ -44,6 +44,9 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void AddFtotSpreadTask3(Vector *);
 		virtual void CopyGridForces(NodalPoint *);
 		virtual void AddGravityAndBodyForceTask3(Vector *,double,double);
+#ifdef RESTART_OPTION
+        virtual bool IsTravelTooMuch(double,double) const;
+#endif
 		virtual void RestoreMomenta(void);
 	
 		virtual void UpdateMomentum(double);
@@ -55,7 +58,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void RigidMaterialContactOnCVF(int,bool,MaterialContactNode *mcn,double,int);
 	
 		// contact support methods
-		Vector GetNormalVector(MaterialContactNode *,int,int,double,Vector *,double,double,bool &,double &,double *);
+		Vector GetNormalVector(MaterialContactNode *,int,int,double,Vector *,double,double,bool &,Vector *);
 		bool NonRigidCustomNormal(NodalPoint *,int,int,Vector &);
 		bool RigidCustomNormal(NodalPoint *,int,int,Vector &);
 		virtual Vector GetDisplacementVector(NodalPoint *,Vector *,double,Vector *,double,bool,double,Vector *,Vector *,Vector *,bool &);
@@ -94,11 +97,17 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 	
 		// class methods
 		static double GetTangentCOD(Vector *,Vector *,Vector *);
-		static double GetContactArea(NodalPoint *,double,double,Vector *,double *);
+		static double GetContactArea(NodalPoint *,double,double,Vector *,double *,Vector *);
 	
-		virtual void MirrorFieldsThatIgnoreCracks(MatVelocityField *,int);
-		virtual MatVelocityField *GetRigidMaterialField(int *);
-
+		virtual void MirrorFieldsThatIgnoreCracks(CrackVelocityFieldMulti *);
+		virtual bool HasFieldsThatIgnoreCracks(void) const;
+		virtual bool MVFInMemory(int mi) const;
+    
+        // machine learning
+        virtual Vector LinearRegressionNormal(MaterialContactNode *,int,int,int,bool &,Vector *);
+        virtual Vector LogisticRegressionNormal(MaterialContactNode *,int,int,int,bool &,Vector *);
+        virtual void FindSepFromNormalAndPointCloud(Vector *,MaterialContactNode *,int,int,int,Vector *);
+    
 	private:
 		// variables (changed in MPM time step)
 		int numberMaterials;		// number of materials in this crack velocity field

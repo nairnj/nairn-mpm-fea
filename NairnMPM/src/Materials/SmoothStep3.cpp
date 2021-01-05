@@ -8,7 +8,7 @@
     function has properties f(0)=1, f(deltamax) = 0, f'(0)=0, and
     f'(deltamax) = 0
  
-	s = gscaling = Ac/(Vp rho sigma(sp))
+ 		s = gscaling = Ac/(Vp rho sigma(sp))
  
 	Created by John Nairn, Dec 25, 2016.
 	Copyright (c) 2016 John A. Nairn, All rights reserved.
@@ -19,14 +19,16 @@
 
 #pragma mark SmoothStep3::Methods
 
-// This law is expnential such that f(delta) = exp(-k*delta)
+// This law is cubic, smooth step function 1 - S1(x)
+// gScaling must include relative toughness
 double SmoothStep3::GetFFxn(double delta,double gScaling) const
 {	double deltaMax = 2.*Gc*gScaling;
     double x = delta/deltaMax;
-    return 1.+x*x*(2.*x-3.);
+    return 1. + x*x*(2.*x - 3.);
 }
 
-// This law is exponential such that such that f'(delta) = -k*exp(-k*delta)
+// This law is cubic, smooth step or f'(delta) = S1'(x)/deltaMax
+// gScaling must include relative toughness
 double SmoothStep3::GetFpFxn(double delta,double gScaling) const
 {	double deltaMax = 2.*Gc*gScaling;
     double x = delta/deltaMax;
@@ -34,6 +36,7 @@ double SmoothStep3::GetFpFxn(double delta,double gScaling) const
 }
 
 // Get energy released (per unit volume per unit stress or Gbar/sigma) up to delta.
+// gScaling must include relative toughness
 double SmoothStep3::GetGToDelta(double delta,double gScaling) const
 {	double deltaMax = 2.*Gc*gScaling;
     double x = delta/deltaMax;
@@ -41,10 +44,28 @@ double SmoothStep3::GetGToDelta(double delta,double gScaling) const
 }
 
 // Get G/Gc up to delta or Gbar(delta)/Gbar(infinity)
+// gScaling must include relative toughness
 double SmoothStep3::GetGoverGc(double delta,double gScaling) const
 {	double deltaMax = 2.*Gc*gScaling;
     double x = delta/deltaMax;
     return x*(1. + x*x*(1. - x));
+}
+
+// Find Rd(delta) function = ei(f(delta)-delta*f'(delta))/(delta+ei f(delta)_^2
+// gscaling and e0 must include relative values
+double SmoothStep3::GetRdFxn(double delta,double gScaling,double e0) const
+{	double deltaMax = 2.*Gc*gScaling;
+	double x = delta/deltaMax;
+	double en = delta + e0*(1. + x*x*(2.*x - 3.));
+	return e0*(1. + x*x*(3. - 4.*x))/(en*en);
+}
+
+// Find Phi(delta) function = f(delta)-delta*f'(delta))
+// gscaling must include relative values
+double SmoothStep3::GetPhiFxn(double delta,double gScaling) const
+{	double deltaMax = 2.*Gc*gScaling;
+	double x = delta/deltaMax;
+	return 1. + x*x*(3. - 4.*x);
 }
 
 #ifdef SS3_ANALYTICAL
@@ -54,6 +75,7 @@ double SmoothStep3::GetGoverGc(double delta,double gScaling) const
 
 // Solve for increment in crack opening strain by solving de = ddelta + e0*(f(delta+ddelta)-f(delta))
 // Return ddelta if not failed or -1 if failed
+// gScaling must include relative toughness, e0 must include relative strength
 double SmoothStep3::GetDDelta(double de,double e0,double delta,double gScaling) const
 {	double deltaMax = 2.*Gc*gScaling;
     double x = delta/deltaMax;
@@ -70,6 +92,7 @@ double SmoothStep3::GetDDelta(double de,double e0,double delta,double gScaling) 
 #endif
 
 // Get maximium decreasing slope (max(-f'(delta)) for this softening law
+// gScaling must include relative toughness
 double SmoothStep3::GetMaxSlope(double gScaling) const
 {	double deltaMax = 2.*Gc*gScaling;
     return 1.5/deltaMax;
@@ -78,7 +101,12 @@ double SmoothStep3::GetMaxSlope(double gScaling) const
 #pragma mark SmoothStep3::Accessors
 
 // maximum delta
+// gScaling must include relative toughness
 double SmoothStep3::GetDeltaMax(double gScaling) const { return 2.*Gc*gScaling; }
 
 // initiation law name
 const char *SmoothStep3::GetSofteningLawName(void) const { return "Cubic step function softening"; }
+
+// dimensionless stability factor
+double SmoothStep3::GetEtaStability(void) const { return 4./3.; }
+

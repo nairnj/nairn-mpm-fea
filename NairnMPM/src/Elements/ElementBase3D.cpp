@@ -43,6 +43,25 @@ void ElementBase3D::FindExtent(void)
     if(range<gridTolerance) gridTolerance=range;
 }
 
+// Find center of mass of element (3D), and needed before extent is known
+// If extent known, use GetXYZCentroid() instead
+void ElementBase3D::FindCentroid(Vector *center) const
+{
+    cout << "Getting centroid" << endl;
+    int i,numnds=NumberNodes();
+    double xtot=nd[nodes[0]]->x;
+    double ytot=nd[nodes[0]]->y;
+    double ztot=nd[nodes[0]]->z;
+    for(i=1;i<numnds;i++)
+    {   xtot+=nd[nodes[i]]->x;
+        ytot+=nd[nodes[i]]->y;
+        ztot+=nd[nodes[i]]->z;
+    }
+    center->x=xtot/(double)numnds;
+    center->y=ytot/(double)numnds;
+    center->z=ztot/(double)numnds;
+}
+
 #pragma mark ElementBase3D::Accessors
 
 // face nodes not meaningful

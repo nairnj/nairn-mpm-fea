@@ -85,8 +85,9 @@ public class CrackSelector extends PlotControl
 				case PlotQuantity.MPMKII:
 				case PlotQuantity.MPMLENGTH:
 				case PlotQuantity.MPMDEBONDLENGTH:
-				case PlotQuantity.MPMCRACKRELEASE:
-				case PlotQuantity.MPMCRACKABSORB:
+				case PlotQuantity.MPMMODEIFB:
+				case PlotQuantity.MPMMODEIIFB:
+				case PlotQuantity.MPMCZLENGTH:
 				case PlotQuantity.MPMNORMALCTOD:
 				case PlotQuantity.MPMSHEARCTOD:
 				case PlotQuantity.MPMDEBONDNCTOD:
@@ -109,6 +110,18 @@ public class CrackSelector extends PlotControl
 				case PlotQuantity.MPMCRACKPROFILE:
 				case PlotQuantity.MPMOPENINGFRACTION:
 				case PlotQuantity.MPMSHEARFRACTION:
+				case PlotQuantity.MPMCZMGI:
+				case PlotQuantity.MPMCZMGII:
+				case PlotQuantity.MPMTRACTION1:
+				case PlotQuantity.MPMTRACTION2:
+				case PlotQuantity.MPMTRACTION3:
+				case PlotQuantity.MPMTRACTION4:
+				case PlotQuantity.MPMTRACTION5:
+				case PlotQuantity.MPMTRACTION6:
+				case PlotQuantity.MPMTRACTION7:
+				case PlotQuantity.MPMTRACTION8:
+				case PlotQuantity.MPMTRACTION9:
+				case PlotQuantity.MPMTRACTION10:
 					crackLabel.setEnabled(true);
 					crackNumberText.setEnabled(true);
 					startTip.setEnabled(false);

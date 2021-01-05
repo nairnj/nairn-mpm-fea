@@ -31,7 +31,7 @@ MoveCracksTask::MoveCracksTask(const char *name) : MPMTask(name)
 
 // Run this task to move cracks and update tactions
 // throws CommonException() if crack surface or position has left the grid
-void MoveCracksTask::Execute(int taskOption)
+bool MoveCracksTask::Execute(int taskOption)
 {
 	CommonException *mcErr = NULL;
     
@@ -149,5 +149,6 @@ void MoveCracksTask::Execute(int taskOption)
 	// throw any errors
 	if(mcErr!=NULL) throw *mcErr;
 	
+    return true;
 }
 	

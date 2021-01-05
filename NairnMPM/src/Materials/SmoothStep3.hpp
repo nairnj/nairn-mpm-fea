@@ -31,10 +31,13 @@ class SmoothStep3 : public SofteningLaw
 #ifdef SS3_ANALYTICAL
         virtual double GetDDelta(double,double,double,double) const;
 #endif
-        
+		virtual double GetRdFxn(double,double,double) const;
+		virtual double GetPhiFxn(double,double) const;
+	
         // accessors
         virtual const char *GetSofteningLawName(void) const;
         virtual double GetDeltaMax(double) const;
+		virtual double GetEtaStability(void) const;
 };
 
 #endif

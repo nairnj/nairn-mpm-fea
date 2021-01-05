@@ -25,6 +25,8 @@ class NodalPoint;
 #define VSTAR_WITH_CONTACT 2
 #define FMPM_WITH_CONTACT 2
 
+enum { GRIDBC_COMBINED=0,GRIDBC_VELOCITY_ONLY,GRIDBC_LUMPED_ONLY };
+
 class BodyForce
 {
     public:
@@ -66,6 +68,10 @@ class BodyForce
 		void SetUsingVstar(int);
 		int XPICVectors(void);
 		void SetXPICVectors(int);
+		void SetUsingFMPM(bool);
+		bool UsingFMPM(void);
+		int GridBCOption(void);
+		void SetGridBCOption(int);
 
 	private:
 		double alpha,maxAlpha;
@@ -78,6 +84,8 @@ class BodyForce
 		int XPICOrder;				// XPIC oder (1=normal PIC or 2 or higher for extended PIC, always 1 in NairnMPM)
 		int isUsingVstar;			// if current time step uses vstar (0=0, 1=no contact, 2=when contact)
 		int xpicVectors;			// 3 or 1 as needed
+		bool usingFMPM;				// True if FMPM (otherwise XPIC or FLIP)
+		int gridBCOption;			// velocity BCs on grid for FMPM and XPIC k>1
 
 		Expression *gridBodyForceFunction[3];
 };

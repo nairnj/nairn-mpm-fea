@@ -16,6 +16,7 @@ public class Regions
 	private StringBuffer xmlRegions;
 	private String indent;
 	private String deform;
+	private String ptsPerElement;
 	private ArrayList<RegionPiece> pieces;
 	private RegionPiece currentPiece;
 
@@ -48,7 +49,7 @@ public class Regions
 	// start FEA Region #1,#2,<#3>
 	// #1 is material, #2 is thickness, #3 is material angle function
 	// or MPM Region #1,#2,#3,#4,(#5,#6 pairs)
-	// #1 is material, (#2,#3)=(vx,vy), #5=thickness or vz
+	// #1 is material, (#2,#3)=(vx,vy), #4=thickness or vz
 	public void StartRegion(ArrayList<String> args) throws Exception
 	{
 		// verify not nested
@@ -59,6 +60,7 @@ public class Regions
 		inRegion = REGION_BLOCK;
 		pieces.clear();
 		deform = null;
+		ptsPerElement = null;
 
 		// read material by ID
 		if(args.size() < 2)
@@ -112,13 +114,15 @@ public class Regions
 			else if(args.size() > 4)
 				xmlRegions.append(" thick='" + doc.formatDble(thick) + "'");
 
-			// extra pairs (angle, temp, conc)
+			// extra pairs (angle, temp, conc, res)
 			int nextSize = 5;
 			while (args.size() > nextSize)
 			{ // get property
 				String prop = doc.readStringArg(args.get(nextSize)).toLowerCase();
-				if(!prop.equals("angle") && !prop.equals("temp") && !prop.equals("conc") && !prop.equals("pp"))
-					throw new Exception("Region '" + prop + "' property not recogonized:\n" + args);
+				if(!prop.equals("angle") && !prop.equals("temp") && !prop.equals("conc")
+						&& !prop.equals("pp") && !prop.equals("res"))
+				{	throw new Exception("Region '" + prop + "' property not recogonized:\n" + args);
+				}
 
 				// need next one
 				if(args.size() < nextSize + 2)
@@ -126,7 +130,16 @@ public class Regions
 				double dvalue = doc.readDoubleArg(args.get(nextSize + 1));
 
 				// add it and increment
-				xmlRegions.append(" " + prop + "='" + doc.formatDble(dvalue) + "'");
+				if(prop.equals("res"))
+				{	int totalPoints;
+					if(doc.isMPM3D())
+						totalPoints = (int)(dvalue*dvalue*dvalue+0.1);
+					else
+						totalPoints = (int)(dvalue*dvalue+0.1);	
+					ptsPerElement = "<MatlPtsPerElement>" + totalPoints + "</MatlPtsPerElement>";
+				}
+				else
+					xmlRegions.append(" " + prop + "='" + doc.formatDble(dvalue) + "'");
 				nextSize += 2;
 			}
 
@@ -186,11 +199,17 @@ public class Regions
 
 		// add XML data
 		if(inRegion == BMPREGION_BLOCK)
-		{
+		{	// pts per element
+			if(ptsPerElement!=null)
+				xmlRegions.append(indent + "  " + ptsPerElement + "\n");
+			
 			xmlRegions.append(indent + "</BMP>\n");
 		}
 		else
-		{ // deform option
+		{	// pts per element
+			if(ptsPerElement!=null)
+				xmlRegions.append(indent + "  " + ptsPerElement + "\n");
+			// deform option
 			if(deform != null)
 				xmlRegions.append(indent + "  " + deform + "\n");
 			// go through pieces
@@ -715,7 +734,7 @@ public class Regions
 
 		// only one deform in region
 		if(deform != null)
-			throw new Exception("Only on 'Transform' command within a Region block:\n" + args);
+			throw new Exception("Only one 'Transform' command within a Region block:\n" + args);
 
 		// get properties (note that matrix is R-I)
 		Matrix3 rotate = new Matrix3(1., 0., 0., 1., 1.);
@@ -1047,8 +1066,8 @@ public class Regions
 
 	// start FEA Region #1,#2,<#3>
 	// #1 is material, #2 is thickness, #3 is material angle function
-	// or MPM Region #1,#2,#3,#4,(#5,#6 pairs)
-	// #1 is material, (#2,#3)=(vx,vy), #5=thickness or vz
+	// or MPM BMPRegion #1,#2,#3,<#4>,(#5,#6 pairs)
+	// #1 is file name, (#2,#3)=(width,height), #4=angles file
 	public void StartBMPRegion(ArrayList<String> args) throws Exception
 	{
 		// verify not nested
@@ -1058,12 +1077,13 @@ public class Regions
 		// activate
 		inRegion = BMPREGION_BLOCK;
 		pieces.clear();
+		ptsPerElement = null;
 
 		// read path and width
 		if(args.size() < 2)
 			throw new Exception("'BMP' has too few parameters:\n" + args);
-
 		String filePath = doc.readStringArg(args.get(1));
+		
 		// optional width
 		double width = -1.e9;
 		if(args.size() > 2)
@@ -1080,36 +1100,67 @@ public class Regions
 		anglesPath[1] = null;
 		anglesPath[2] = null;
 		String scheme = "";
-		if(args.size() > 4)
-		{ // get parameter, which will be scheme or a file
-				// path
-			anglesPath[0] = doc.readStringArg(args.get(4));
+		int nextSize=4;
+		if(args.size() > nextSize)
+		{	// get parameter, which will be scheme or a file path (or empty to skip)
+			anglesPath[0] = doc.readStringArg(args.get(nextSize));
+			nextSize++;
 
 			// MPM file can have anglesPath (old method) or
 			// scheme,angle1,angle2,angle3
 			// FEA file can have anglesPath (old method) or "Z",angle1
-			// assume scheme if 3 or less characters; all files have more than 3
-			if(anglesPath[0].length() < 4)
-			{
-				scheme = anglesPath[0].toUpperCase();
+			// assume scheme if 3 or less characters; all files name have more than 3 characters
+			int schemeLength = anglesPath[0].length();
+			if((schemeLength<4) && (schemeLength>0))
+			{	scheme = anglesPath[0].toUpperCase();
 				if(!doc.isMPM3D() && !scheme.equals("Z"))
 					throw new Exception("2D Simulations can only have a 'Z' rotation scheme:\n" + args);
+				
 				// read more files
-				for(int i = 5; i < 5 + scheme.length(); i++)
-				{
-					if(args.size() > i)
-						anglesPath[i - 5] = doc.readStringArg(args.get(i));
+				for(int i = 0; i < scheme.length(); i++)
+				{	if(args.size() > nextSize)
+					{	anglesPath[i] = doc.readStringArg(args.get(nextSize));
+						nextSize++;
+					}
 					else
-						throw new Exception(
+					{	throw new Exception(
 								"'BMPRegion' command missing angle file name needed for rotation scheme:\n" + args);
+					}
 				}
 			}
-			else
-			{ // accept one angle file to rotate about Z
+			else if(schemeLength>0)
+			{	// accept one angle file to rotate about Z
 				scheme = "Z";
 			}
 		}
 
+		// extra pairs (res) (with future room for more)
+		while (args.size() > nextSize)
+		{ // get property
+			String prop = doc.readStringArg(args.get(nextSize)).toLowerCase();
+			if(!prop.equals("res"))
+			{	throw new Exception("BMPRegion '" + prop + "' property not recogonized:\n" + args);
+			}
+
+			// need next one
+			if(args.size() < nextSize + 2)
+				throw new Exception("BMPRegion '" + prop + "' property missing a value:\n" + args);
+			double dvalue = doc.readDoubleArg(args.get(nextSize + 1));
+
+			// add it and increment
+			if(prop.equals("res"))
+			{	int totalPoints;
+				if(doc.isMPM3D())
+					totalPoints = (int)(dvalue*dvalue*dvalue+0.1);
+				else
+					totalPoints = (int)(dvalue*dvalue+0.1);	
+				ptsPerElement = "<MatlPtsPerElement>" + totalPoints + "</MatlPtsPerElement>";
+			}
+			else
+				xmlRegions.append(" " + prop + "='" + doc.formatDble(dvalue) + "'");
+			nextSize += 2;
+		}
+		
 		// set indent
 		if(doc.isMPM())
 			indent = "    ";

@@ -9,6 +9,8 @@
  	CompareGlobal -o filename (filename)
 *********************************************************************/
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "CompareGlobal.hpp"
 
 // Global variable settings

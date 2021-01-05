@@ -16,12 +16,22 @@
 
 #define MAXPRINCIPALSTRESS 1
 
+// Angle to pick tension or shear
+#define TANPIOVER8 0.414213562373095
+
 // TENSILE_FAILURE is max principle stress
 // SHEAR_FAILURE is max shear stress
-// (note these must be 51 to 149
+// combined are those in areas between two failures
+// (note these must be 51 to 149)
 #define NO_FAILURE 0
+#define TENSILE_TENSILE_FAILURE 80
 #define TENSILE_FAILURE 90
+#define TENSILE_SHEAR_FAILURE 100
 #define SHEAR_FAILURE 110
+#define SHEAR_SHEAR_FAILURE 120
+
+// pressure dependent models
+enum { P_INDEPENDENT=0,P_LINEAR,P_STEPLINEAR,P_STEPEXP,P_SIGMOIDALEXP };
 
 class MaterialBase;
 
@@ -38,18 +48,33 @@ class FailureSurface
 		virtual void PrintInitiationProperties(void) const;
 	
 		// methods
-		virtual int ShouldInitiateFailure(Tensor *,Vector *,int,double) const;
-	
+		virtual int ShouldInitiateFailure(Tensor *,Vector *,int,double &) const;
+		virtual bool CloserToShear(Vector *,double,double,double) const;
+
+        // pressure dependent methods
+        virtual void InitPDTerms(void);
+        virtual char *InputPDProperty(char *,int &,double &);
+        virtual const char *VerifyAndLoadPDTerms(double);
+        virtual void PrintPDTerms(void) const;
+        virtual double GetPDStrength(double,double,double) const;
+        virtual double sigmaIStabilityScale(void) const;
+        virtual double sigmaIIStabilityScale(void) const;
+        virtual bool IsPDModelConstant(double,double,double &) const;
+        virtual bool IsPressureDependent(void) const;
+
 		// accessors
 		virtual double sigmaI(void) const;
 		virtual double sigmaII(void) const;
+		virtual double sigmaII(double,double &,Tensor &,double,double,double,double,int) const;
 		virtual const char *GetInitiationLawName(void) const;
+		virtual void SetFailureSurface(int);
 
 	protected:
 		double criticalNormal,sigmacRed;
 		double criticalShear,taucRed;
 		MaterialBase *parent;
-
+		int failureSurface;
+        int pdModel;
 };
 
 #endif

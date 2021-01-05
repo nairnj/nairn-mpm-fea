@@ -2,7 +2,7 @@
 	ContactLaw.cpp
 	nairn-mpm-fea
 
-	Base class for all contact laws and itselt if subcalss of material
+	Base class for all contact laws and itself is subcalss of material
 	By itself handle ignore contact
 
 	Created by John Nairn, Oct 24, 2015.

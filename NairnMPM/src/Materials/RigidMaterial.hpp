@@ -55,6 +55,7 @@ class RigidMaterial : public MaterialBase
 		int SetDirection(void) const;
 		bool GetValueSetting(double *,double,Vector *) const;
 		void SetSettingFunction(char *,int);
+        void ClearFunctions(void);
 		void SetControlVelocity(double,int);
 		void SetControlVelocity(Vector * Velocity);
 	

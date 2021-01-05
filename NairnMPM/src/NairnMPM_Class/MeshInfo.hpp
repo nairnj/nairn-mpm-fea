@@ -64,7 +64,7 @@ class MeshInfo
 		MeshInfo(void);
 		
 		// methods
-		void Output(int,bool);
+		void Output(bool);
         void OutputContactByDisplacements(bool,bool,double);
 		bool EdgeElement2D(int);
 		bool EdgeElement3D(int);
@@ -82,6 +82,7 @@ class MeshInfo
 		bool IsStructuredGrid(void) const;
         bool IsStructuredEqualElementsGrid(void) const;
         bool Is3DGrid(void);
+        int GetCornerNonEdgeElementNumber(void);
 		void GetGridPoints(int *,int *,int *);
 		double GetDefaultThickness();
 		double GetMinCellDimension(void);
@@ -106,6 +107,7 @@ class MeshInfo
 	
 		// multimaterial mode and its contact
 		void MaterialOutput(void);
+		bool UsingRegressionForContact(void);
 		void SetContactNormal(double,double);
 		void MaterialContactPairs(int);
 		ContactLaw *GetMaterialContactLaw(int,int);

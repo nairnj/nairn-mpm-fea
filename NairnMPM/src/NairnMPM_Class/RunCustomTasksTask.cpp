@@ -33,7 +33,7 @@ RunCustomTasksTask::RunCustomTasksTask(const char *name) : MPMTask(name)
 #pragma mark REQUIRED METHODS
 
 // Run all custom tasks
-void RunCustomTasksTask::Execute(int taskOption)
+bool RunCustomTasksTask::Execute(int taskOption)
 {
 #ifdef CONST_ARRAYS
 	int ndsArray[MAX_SHAPE_NODES];
@@ -144,4 +144,5 @@ void RunCustomTasksTask::Execute(int taskOption)
 		thisTask = nextTask;
 	}
 	
+    return true;
 }

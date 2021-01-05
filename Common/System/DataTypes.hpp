@@ -99,6 +99,10 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 		double gTValue;		  // material transport value
 		double gVCT;		  // transport capacity
 		double gQ;			  // transport velocity
+		double gTstar;		  // for XPIC
+		double gTprev;		  // for XPIC
+		double gTnext;		  // for XPIC
+		bool gFirstBC;	  // flag for first BC on a node
 	} TransportField;
 
 	// For residual strains in constitutive laws
@@ -212,6 +216,12 @@ TensorAntisym *ZeroTensorAntisym(TensorAntisym *);
 
 double NormalCDFInverse(double p);
 double RationalApproximation(double t);
+bool RealQuadraticRoots(double,double,double,double &,double &);
+
+#ifdef MPM_CODE
+double gsl_sf_lambert_W0(double x);
+double gsl_sf_lambert_Wm1(double x);
+#endif
 
 #include "System/CommonAnalysis.hpp"
 #include "System/LinkedObject.hpp"

@@ -26,6 +26,9 @@
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Exceptions/CommonException.hpp"
+#ifdef RESTART_OPTION
+#include "NairnMPM_Class/MeshInfo.hpp"
+#endif
 
 #pragma mark CONSTRUCTORS
 
@@ -37,7 +40,7 @@ PostForcesTask::PostForcesTask(const char *name) : MPMTask(name)
 
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
-void PostForcesTask::Execute(int taskOption)
+bool PostForcesTask::Execute(int taskOption)
 {
 	// restore nodal momenta
 #pragma omp parallel for
@@ -89,8 +92,22 @@ void PostForcesTask::Execute(int taskOption)
 	}
 
     // Impose BCs on ftot to get correct grid BCs for velocity
-	NodalVelBC::GridVelocityConditions(GRID_FORCES_CALL);
-	
+	if(bodyFrc.GetXPICOrder()<=1 || bodyFrc.GridBCOption()!=GRIDBC_VELOCITY_ONLY)
+		NodalVelBC::GridVelocityConditions(GRID_FORCES_CALL);
+
 	// Transport force BCs
 	TransportTask::TransportForceBCs(timestep);
+
+#ifdef RESTART_OPTION
+    if(fabs(fmobj->restartScaling)>1.e-6)
+    {   // check if anuy node is moving too fast
+        double maxDist = fmobj->restartCFL*mpmgrid.GetMinCellDimension();
+        for(int i=1;i<=*nda;i++)
+        {   if(nd[nda[i]]->IsTravelTooMuch(timestep,maxDist))
+                return false;
+        }
+    }
+#endif
+    
+    return true;
 }

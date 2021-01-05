@@ -28,7 +28,13 @@ enum { SXX=0,SYY,SZZ,SXY,SXZ,SYZ,STRESS,
 		XPOS,YPOS,ZPOS,
 		PRESSURE,EQUIVSTRESS,
         HIST1,HIST2,HIST3,HIST4,WORKENERGY,HEATENERGY,EQUIVSTRAIN,
-		MATANGLEZ,MATANGLEY,MATANGLEX };
+		MATANGLEZ,MATANGLEY,MATANGLEX,
+		HIST5,HIST6,HIST7,HIST8,HIST9,
+		HIST10,HIST11,HIST12,HIST13,HIST14,
+		HIST15,HIST16,HIST17,HIST18,HIST19,
+        CZMI,CZMII,THIST1,THIST2,THIST3,THIST4,THIST5,
+        THIST6,THIST7,THIST8,THIST9,THIST10
+};
 
 // error codes
 enum { noErr=0, NoInputFileErr, BadOptionErr, FileAccessErr, MemoryErr };
@@ -42,10 +48,11 @@ enum { ARCH_Velocity=2,ARCH_Stress,ARCH_Strain,ARCH_PlasticStrain,
             ARCH_ver2Empty, ARCH_ShearComponents, ARCH_StrainEnergy,
             ARCH_History, ARCH_Concentration,ARCH_HeatEnergy,ARCH_ElementCrossings,
             ARCH_RotStrain, ARCH_DamageNormal,ARCH_SpinMomentum,ARCH_SpinVelocity,
-			ARCH_MAXMPMITEMS };
+			ARCH_History59, ARCH_History1014, ARCH_History1519, ARCH_MAXMPMITEMS };
 
 // Archiving options for crack segments
-enum { ARCH_JIntegral=2,ARCH_StressIntensity,ARCH_BalanceResults,ARCH_MAXCRACKITEMS };
+enum { ARCH_JIntegral=2,ARCH_StressIntensity,ARCH_CZMDISP,
+        ARCH_Traction15,ARCH_Traction610,ARCH_MAXCRACKITEMS };
 
 // prototypes
 char *NextArgument(int,char * const [],int,char);

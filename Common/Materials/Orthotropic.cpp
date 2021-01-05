@@ -22,6 +22,10 @@ Orthotropic::Orthotropic(char *matName,int matID) : TransIsotropic(matName,matID
 #ifdef MPM_CODE
 	Dz=0.;
 	kCondz=0.;
+#ifdef POROELASTICITY
+	Darcyz=0.;
+	alphazPE=0.;
+#endif
 #endif
 	betax=0.;
 	betay=0.;
@@ -235,7 +239,27 @@ char *Orthotropic::InputMaterialProperty(char *xName,int &input,double &gScaling
 		
     else if(strcmp(xName,"Dz")==0 || strcmp(xName,"DT")==0)
         return((char *)&Dz);
-		
+
+#ifdef POROELASTICITY
+	else if(strcmp(xName,"alphaxPE")==0 || strcmp(xName,"alphaRPE")==0)
+		return((char *)&alphaTPE);
+	
+	else if(strcmp(xName,"alphayPE")==0 || strcmp(xName,"alphaZPE")==0)
+		return((char *)&alphaAPE);
+	
+	else if(strcmp(xName,"alphazPE")==0 || strcmp(xName,"alphaTPE")==0)
+		return((char *)&alphazPE);
+	
+	else if(strcmp(xName,"Darcyx")==0 || strcmp(xName,"DarcyR")==0)
+		return((char *)&DarcyT);
+	
+	else if(strcmp(xName,"Darcyy")==0 || strcmp(xName,"DarcyZ")==0)
+		return((char *)&DarcyA);
+	
+	else if(strcmp(xName,"Darcyz")==0 || strcmp(xName,"DarcyT")==0)
+		return((char *)&Darcyz);
+#endif
+	
     else if(strcmp(xName,"kCondx")==0 || strcmp(xName,"kCondR")==0)
 		return UnitsController::ScaledPtr((char *)&kCondT,gScaling,1.e6);
 		
@@ -294,10 +318,55 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
 
 #ifdef MPM_CODE
     // make conductivty specific (N mm^3/(sec-K-g))
+	kCondA /= rho;
+	kCondT /= rho;
     kCondz /= rho;
-#endif
 	
-    // set properties
+#ifdef POROELASTICITY
+	// poroelasticity conversions
+	if(DiffusionTask::HasPoroelasticity())
+	{	// requires large rotation mode because not option to rotate pp expansion
+		if(useLargeRotation==0) useLargeRotation = 1;
+		
+		// TI bulk modulus and Biot coefficient
+		double Kbulk = 1./((1.-nuxy-nuxz)/Ex + (1.-nuyx-nuyz)/Ey + (1.-nuzx-nuzy)/Ez);
+		if(Kbulk > Ku)
+			return "Undrained bulk modulus for poroelasticity must be greater than material's bulk modulus";
+		if(alphaAPE < 0. || alphaTPE < 0.)
+			return "Poroelasticity Biot coefficient must be >= 0";
+		
+		// moisture expansion tensor change
+		betax = (alphaTPE - nuxy*alphaAPE - nuxz*alphazPE)/Ex;
+		betay = (alphaAPE - nuyx*alphaTPE - nuyz*alphazPE)/Ey;
+		betay = (alphazPE - nuzx*alphaTPE - nuzy*alphaAPE)/Ez;
+		concSaturation = 1.;
+		
+		// transport capacity is CT = 1/Q
+		double hii = betax + betay + betaz;
+		double hdotalpha = alphaTPE*betax + alphaAPE*betay + alphazPE*betaz;
+		diffusionCT = (Kbulk*Ku*hii*hii - (Ku-Kbulk)*hdotalpha)/(Ku-Kbulk);
+		
+		// Get Q alpha
+		Qalphax = alphaTPE/diffusionCT;
+		Qalphay = alphaAPE/diffusionCT;
+		Qalphaz = alphazPE/diffusionCT;
+			
+		// diffusion tensor changed using global viscosity
+		diffT = DarcyT/DiffusionTask::viscosity;
+		diffA = DarcyA/DiffusionTask::viscosity;
+		Dz = Darcyz/DiffusionTask::viscosity;
+	}
+	else
+	{	// diffusion CT is 1
+		diffusionCT = 1.;
+	}
+#else
+	// diffusion CT is 1
+	//diffusionCT = 1.;
+#endif
+#endif
+
+	// set properties
     const char *err=SetAnalysisProps(np,Ex,Ey,Ez,nuxy,nuxz,nuyz,
 							Gxy,Gxz,Gyz,1.e-6*ax,1.e-6*ay,1.e-6*az,
 							betax*concSaturation,betay*concSaturation,betaz*concSaturation);

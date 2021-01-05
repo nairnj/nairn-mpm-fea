@@ -148,6 +148,17 @@
 		67D198481B0EE17700FD5726 /* PostForcesTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67D198461B0EE17700FD5726 /* PostForcesTask.hpp */; };
 		67D1984B1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67D198491B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.cpp */; };
 		67D1984C1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67D1984A1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.hpp */; };
+		67DFBF33259D5E7800AA0B16 /* DeleteDamaged.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67DFBF31259D5E7800AA0B16 /* DeleteDamaged.hpp */; };
+		67DFBF34259D5E7800AA0B16 /* DeleteDamaged.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67DFBF32259D5E7800AA0B16 /* DeleteDamaged.cpp */; };
+		67DFBF3B259D9E5200AA0B16 /* ExponentialTraction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67DFBF39259D9E5200AA0B16 /* ExponentialTraction.cpp */; };
+		67DFBF3C259D9E5200AA0B16 /* ExponentialTraction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67DFBF3A259D9E5200AA0B16 /* ExponentialTraction.hpp */; };
+		67DFBF43259DA73F00AA0B16 /* IsoPlasticSoftening.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67DFBF41259DA73F00AA0B16 /* IsoPlasticSoftening.cpp */; };
+		67DFBF44259DA73F00AA0B16 /* IsoPlasticSoftening.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67DFBF42259DA73F00AA0B16 /* IsoPlasticSoftening.hpp */; };
+		67DFBF57259DAE4600AA0B16 /* MixedModeTraction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67DFBF55259DAE4600AA0B16 /* MixedModeTraction.hpp */; };
+		67DFBF58259DAE4600AA0B16 /* MixedModeTraction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67DFBF56259DAE4600AA0B16 /* MixedModeTraction.cpp */; };
+		67DFBF5E259E916000AA0B16 /* MachineLearning.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67DFBF5D259E916000AA0B16 /* MachineLearning.cpp */; };
+		67DFBF69259EA37E00AA0B16 /* XPICExtrapolationTaskTO.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67DFBF67259EA37E00AA0B16 /* XPICExtrapolationTaskTO.hpp */; };
+		67DFBF6A259EA37E00AA0B16 /* XPICExtrapolationTaskTO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67DFBF68259EA37E00AA0B16 /* XPICExtrapolationTaskTO.cpp */; };
 		67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */; };
 		67E191351602CB3F00B34CA9 /* MatPtTractionBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */; };
 		67FB2A0018901EB200417546 /* ShellController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67FB29FE18901EB200417546 /* ShellController.cpp */; };
@@ -611,6 +622,17 @@
 		67D198461B0EE17700FD5726 /* PostForcesTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PostForcesTask.hpp; sourceTree = "<group>"; };
 		67D198491B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UpdateStrainsLastContactTask.cpp; sourceTree = "<group>"; };
 		67D1984A1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = UpdateStrainsLastContactTask.hpp; sourceTree = "<group>"; };
+		67DFBF31259D5E7800AA0B16 /* DeleteDamaged.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DeleteDamaged.hpp; sourceTree = "<group>"; };
+		67DFBF32259D5E7800AA0B16 /* DeleteDamaged.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DeleteDamaged.cpp; sourceTree = "<group>"; };
+		67DFBF39259D9E5200AA0B16 /* ExponentialTraction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExponentialTraction.cpp; sourceTree = "<group>"; };
+		67DFBF3A259D9E5200AA0B16 /* ExponentialTraction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ExponentialTraction.hpp; sourceTree = "<group>"; };
+		67DFBF41259DA73F00AA0B16 /* IsoPlasticSoftening.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IsoPlasticSoftening.cpp; path = Materials/IsoPlasticSoftening.cpp; sourceTree = "<group>"; };
+		67DFBF42259DA73F00AA0B16 /* IsoPlasticSoftening.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = IsoPlasticSoftening.hpp; path = Materials/IsoPlasticSoftening.hpp; sourceTree = "<group>"; };
+		67DFBF55259DAE4600AA0B16 /* MixedModeTraction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MixedModeTraction.hpp; sourceTree = "<group>"; };
+		67DFBF56259DAE4600AA0B16 /* MixedModeTraction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MixedModeTraction.cpp; sourceTree = "<group>"; };
+		67DFBF5D259E916000AA0B16 /* MachineLearning.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MachineLearning.cpp; sourceTree = "<group>"; };
+		67DFBF67259EA37E00AA0B16 /* XPICExtrapolationTaskTO.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = XPICExtrapolationTaskTO.hpp; sourceTree = "<group>"; };
+		67DFBF68259EA37E00AA0B16 /* XPICExtrapolationTaskTO.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = XPICExtrapolationTaskTO.cpp; sourceTree = "<group>"; };
 		67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPtTractionBC.cpp; sourceTree = "<group>"; };
 		67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPtTractionBC.hpp; sourceTree = "<group>"; };
 		67FB29FE18901EB200417546 /* ShellController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShellController.cpp; sourceTree = "<group>"; };
@@ -959,12 +981,6 @@
 				A767E03308B14C39004540AB /* Read_MPM */,
 				A7C77A2909869D7E001BE128 /* NairnMPM_Class */,
 				F5F7068E0326ABD00163AF10 /* Materials */,
-				A778E0D216A9CDF9003D27FE /* Hypoelastic_Plastic */,
-				A778E0D316A9CE76003D27FE /* Hyperelastic_Plastic */,
-				678EFF6E2304636F00E2DE93 /* Softening */,
-				A778E0D116A8D9BB003D27FE /* Hardening_Laws */,
-				67D1F371157F932D0010691C /* Traction_Laws */,
-				67B6B7E41C31BEC800CFA1EA /* Contact_Laws */,
 				F5F7068C0326AB830163AF10 /* Elements */,
 				A7731E4705B44C7F00294E25 /* Nodes */,
 				A7B45CF31715D2FB003FDED6 /* Patches */,
@@ -992,6 +1008,24 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		672DCF3B25951B6500B1CC59 /* Base_Materials */ = {
+			isa = PBXGroup;
+			children = (
+				A70A7B11042A50950063AF10 /* MaterialBaseMPM.cpp */,
+				A7A355CE0B6822E300EF7973 /* ElasticMPM.cpp */,
+				67582CCD1ACCD5880087EA12 /* MoreIsotropicMat.cpp */,
+				A7C954F7044717540063AF10 /* BistableIsotropic.hpp */,
+				A7C954F8044717540063AF10 /* BistableIsotropic.cpp */,
+				A7CA395703F16F3A0063AF10 /* Viscoelastic.hpp */,
+				A7CA395603F16F3A0063AF10 /* Viscoelastic.cpp */,
+				A7D1E5800749581A00BC2956 /* RigidMaterial.hpp */,
+				A7D1E5810749581A00BC2956 /* RigidMaterial.cpp */,
+				A71FC00E0E377F1F001908F8 /* NewMaterial.hpp */,
+				A71FC00D0E377F1F001908F8 /* NewMaterial.cpp */,
+			);
+			name = Base_Materials;
+			sourceTree = "<group>";
+		};
 		674925081DF4011D0004916F /* Headers */ = {
 			isa = PBXGroup;
 			children = (
@@ -1005,6 +1039,8 @@
 			children = (
 				678EFF74230463A600E2DE93 /* IsoSoftening.hpp */,
 				678EFF73230463A600E2DE93 /* IsoSoftening.cpp */,
+				67DFBF42259DA73F00AA0B16 /* IsoPlasticSoftening.hpp */,
+				67DFBF41259DA73F00AA0B16 /* IsoPlasticSoftening.cpp */,
 				678EFF72230463A600E2DE93 /* FailureSurface.hpp */,
 				678EFF71230463A600E2DE93 /* FailureSurface.cpp */,
 				678EFF7A230463A600E2DE93 /* SofteningLaw.hpp */,
@@ -1017,6 +1053,7 @@
 				678EFF78230463A600E2DE93 /* SmoothStep3.hpp */,
 			);
 			name = Softening;
+			path = ..;
 			sourceTree = "<group>";
 		};
 		67B6B7E41C31BEC800CFA1EA /* Contact_Laws */ = {
@@ -1036,7 +1073,6 @@
 				67BF96BA1E95D14A007A9F25 /* NonlinearInterface.hpp */,
 			);
 			name = Contact_Laws;
-			path = Materials;
 			sourceTree = "<group>";
 		};
 		67D1F371157F932D0010691C /* Traction_Laws */ = {
@@ -1046,6 +1082,10 @@
 				A79E8AF50D6F7D8700B8AB58 /* TractionLaw.cpp */,
 				A72F0A3D0D943D02003426B3 /* CohesiveZone.hpp */,
 				A72F0A3E0D943D02003426B3 /* CohesiveZone.cpp */,
+				67DFBF3A259D9E5200AA0B16 /* ExponentialTraction.hpp */,
+				67DFBF39259D9E5200AA0B16 /* ExponentialTraction.cpp */,
+				67DFBF55259DAE4600AA0B16 /* MixedModeTraction.hpp */,
+				67DFBF56259DAE4600AA0B16 /* MixedModeTraction.cpp */,
 				A7834B5215F000C80043ADB9 /* CoupledSawTooth.hpp */,
 				A7834B5015F000A10043ADB9 /* CoupledSawTooth.cpp */,
 				A7FC202F124432B700DEAEF0 /* TrilinearTraction.hpp */,
@@ -1058,7 +1098,6 @@
 				6741B24617EDFF1300CFADC7 /* PressureLaw.cpp */,
 			);
 			name = Traction_Laws;
-			path = Materials;
 			sourceTree = "<group>";
 		};
 		A7198C5409780F5200334C4F /* Common */ = {
@@ -1231,6 +1270,8 @@
 				678B7B2E1D8A76C0001D0AB4 /* CustomThermalRamp.cpp */,
 				673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */,
 				673EC9B416C9EB71007FFEB5 /* CarnotCycle.cpp */,
+				67DFBF31259D5E7800AA0B16 /* DeleteDamaged.hpp */,
+				67DFBF32259D5E7800AA0B16 /* DeleteDamaged.cpp */,
 			);
 			path = Custom_Tasks;
 			sourceTree = "<group>";
@@ -1377,6 +1418,7 @@
 				A7721175103F13EA002F99FC /* CrackVelocityFieldSingle.cpp */,
 				A7721174103F13EA002F99FC /* CrackVelocityFieldMulti.hpp */,
 				A7721173103F13EA002F99FC /* CrackVelocityFieldMulti.cpp */,
+				67DFBF5D259E916000AA0B16 /* MachineLearning.cpp */,
 				67745B80216D43DF003706EC /* MaterialContactNode.cpp */,
 				67745B81216D43DF003706EC /* MaterialContactNode.hpp */,
 			);
@@ -1404,7 +1446,6 @@
 				A78424131888A3FE00AA284A /* DDBHardening.hpp */,
 			);
 			name = Hardening_Laws;
-			path = Materials;
 			sourceTree = "<group>";
 		};
 		A778E0D216A9CDF9003D27FE /* Hypoelastic_Plastic */ = {
@@ -1420,7 +1461,6 @@
 				A7DE477B11B97CD400FDEFE6 /* WoodMaterial.cpp */,
 			);
 			name = Hypoelastic_Plastic;
-			path = Materials;
 			sourceTree = "<group>";
 		};
 		A778E0D316A9CE76003D27FE /* Hyperelastic_Plastic */ = {
@@ -1444,6 +1484,7 @@
 				A75B58FF184FBA030011ADAE /* TaitLiquid.cpp */,
 			);
 			name = Hyperelastic_Plastic;
+			path = ..;
 			sourceTree = "<group>";
 		};
 		A78BCA52061C74C0009232A2 /* Boundary_Conditions */ = {
@@ -1619,6 +1660,8 @@
 				67B2158411F960FB007523EE /* UpdateMomentaTask.cpp */,
 				678DC2D92305B42200682D48 /* XPICExtrapolationTask.hpp */,
 				678DC2D82305B42200682D48 /* XPICExtrapolationTask.cpp */,
+				67DFBF67259EA37E00AA0B16 /* XPICExtrapolationTaskTO.hpp */,
+				67DFBF68259EA37E00AA0B16 /* XPICExtrapolationTaskTO.cpp */,
 				67B214F111F94CC5007523EE /* UpdateParticlesTask.hpp */,
 				67B214F211F94CC5007523EE /* UpdateParticlesTask.cpp */,
 				67B2152611F950C5007523EE /* UpdateStrainsLastTask.hpp */,
@@ -1679,17 +1722,13 @@
 		F5F7068E0326ABD00163AF10 /* Materials */ = {
 			isa = PBXGroup;
 			children = (
-				A70A7B11042A50950063AF10 /* MaterialBaseMPM.cpp */,
-				A7A355CE0B6822E300EF7973 /* ElasticMPM.cpp */,
-				67582CCD1ACCD5880087EA12 /* MoreIsotropicMat.cpp */,
-				A7C954F7044717540063AF10 /* BistableIsotropic.hpp */,
-				A7C954F8044717540063AF10 /* BistableIsotropic.cpp */,
-				A7CA395703F16F3A0063AF10 /* Viscoelastic.hpp */,
-				A7CA395603F16F3A0063AF10 /* Viscoelastic.cpp */,
-				A7D1E5800749581A00BC2956 /* RigidMaterial.hpp */,
-				A7D1E5810749581A00BC2956 /* RigidMaterial.cpp */,
-				A71FC00E0E377F1F001908F8 /* NewMaterial.hpp */,
-				A71FC00D0E377F1F001908F8 /* NewMaterial.cpp */,
+				672DCF3B25951B6500B1CC59 /* Base_Materials */,
+				A778E0D216A9CDF9003D27FE /* Hypoelastic_Plastic */,
+				A778E0D316A9CE76003D27FE /* Hyperelastic_Plastic */,
+				678EFF6E2304636F00E2DE93 /* Softening */,
+				A778E0D116A8D9BB003D27FE /* Hardening_Laws */,
+				67D1F371157F932D0010691C /* Traction_Laws */,
+				67B6B7E41C31BEC800CFA1EA /* Contact_Laws */,
 			);
 			path = Materials;
 			sourceTree = "<group>";
@@ -1738,6 +1777,7 @@
 				A766703305862EB600F56460 /* Viscoelastic.hpp in Headers */,
 				678DC2DB2305B42200682D48 /* XPICExtrapolationTask.hpp in Headers */,
 				A766703405862EB600F56460 /* ContourPoint.hpp in Headers */,
+				67DFBF3C259D9E5200AA0B16 /* ExponentialTraction.hpp in Headers */,
 				A766703505862EB600F56460 /* Mooney.hpp in Headers */,
 				A766703705862EB600F56460 /* BistableIsotropic.hpp in Headers */,
 				A766703805862EB600F56460 /* CalcJKTask.hpp in Headers */,
@@ -1814,6 +1854,7 @@
 				A772117A103F13EA002F99FC /* CrackVelocityFieldSingle.hpp in Headers */,
 				A7DE477C11B97CD400FDEFE6 /* WoodMaterial.hpp in Headers */,
 				67B213B611F90404007523EE /* CommonTask.hpp in Headers */,
+				67DFBF57259DAE4600AA0B16 /* MixedModeTraction.hpp in Headers */,
 				67B213C811F90F84007523EE /* MPMTask.hpp in Headers */,
 				67B213F011F9149C007523EE /* MassAndMomentumTask.hpp in Headers */,
 				67B2148A11F93240007523EE /* GridForcesTask.hpp in Headers */,
@@ -1847,10 +1888,12 @@
 				A778E0D816AA078B003D27FE /* SCGLHardening.hpp in Headers */,
 				6715DFD216C567350042F15C /* Nonlinear2Hardening.hpp in Headers */,
 				673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */,
+				67DFBF44259DA73F00AA0B16 /* IsoPlasticSoftening.hpp in Headers */,
 				67FFAA0C16D31E95003A7C53 /* HEMGEOSMaterial.hpp in Headers */,
 				A7B45CF81715D36E003FDED6 /* GridPatch.hpp in Headers */,
 				67083428171717FB007AD581 /* GhostNode.hpp in Headers */,
 				A79D0A301744268600321C74 /* TorusController.hpp in Headers */,
+				67DFBF69259EA37E00AA0B16 /* XPICExtrapolationTaskTO.hpp in Headers */,
 				A7D62D2A175582E0008FA00A /* MatPtHeatFluxBC.hpp in Headers */,
 				6741B24917EDFF1300CFADC7 /* PressureLaw.hpp in Headers */,
 				A75B5902184FBA030011ADAE /* TaitLiquid.hpp in Headers */,
@@ -1862,6 +1905,7 @@
 				5209AD5F1D4690CE002EDC42 /* SetRigidContactVelTask.hpp in Headers */,
 				676D76AD1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp in Headers */,
 				6736CBF31AB74C5B0009A663 /* UnitsController.hpp in Headers */,
+				67DFBF33259D5E7800AA0B16 /* DeleteDamaged.hpp in Headers */,
 				67D198401B0ED97D00FD5726 /* ProjectRigidBCsTask.hpp in Headers */,
 				678EFF7C230463A600E2DE93 /* ExponentialSoftening.hpp in Headers */,
 				67D198441B0EDA9100FD5726 /* PostExtrapolationTask.hpp in Headers */,
@@ -2144,10 +2188,12 @@
 				A766705A05862EB600F56460 /* NodalPointMPM.cpp in Sources */,
 				A766705B05862EB600F56460 /* BistableIsotropic.cpp in Sources */,
 				A766705D05862EB600F56460 /* CalcJKTask.cpp in Sources */,
+				67DFBF43259DA73F00AA0B16 /* IsoPlasticSoftening.cpp in Sources */,
 				A766705E05862EB600F56460 /* CustomTask.cpp in Sources */,
 				A766705F05862EB600F56460 /* PropagateTask.cpp in Sources */,
 				A766706005862EB600F56460 /* ReverseLoad.cpp in Sources */,
 				67745B6A216A9318003706EC /* Matrix4.cpp in Sources */,
+				67DFBF5E259E916000AA0B16 /* MachineLearning.cpp in Sources */,
 				A7731E3005B44C0100294E25 /* GlobalQuantity.cpp in Sources */,
 				A7731E3D05B44C5800294E25 /* BodyForce.cpp in Sources */,
 				678EFF83230463A600E2DE93 /* SmoothStep3.cpp in Sources */,
@@ -2164,6 +2210,7 @@
 				A79115C60720554600B81ECA /* ConductionTask.cpp in Sources */,
 				A7B5ECAB072437850027119D /* NodalTempBC.cpp in Sources */,
 				678EFF85230463A600E2DE93 /* SofteningLaw.cpp in Sources */,
+				67DFBF3B259D9E5200AA0B16 /* ExponentialTraction.cpp in Sources */,
 				A74E8C290729C8A00065FC30 /* MoreMPMElementBase.cpp in Sources */,
 				A7D1E5830749581A00BC2956 /* RigidMaterial.cpp in Sources */,
 				A71AC1590767529600B944AD /* BitMapFiles.cpp in Sources */,
@@ -2192,6 +2239,7 @@
 				A7F723970A7187F900D23181 /* ElementBase3D.cpp in Sources */,
 				A7A355170B68193500EF7973 /* Elastic.cpp in Sources */,
 				A7A355250B681DC100EF7973 /* HyperElastic.cpp in Sources */,
+				67DFBF34259D5E7800AA0B16 /* DeleteDamaged.cpp in Sources */,
 				A7A355CF0B6822E300EF7973 /* ElasticMPM.cpp in Sources */,
 				A7BC45AD0C6A514C003FF704 /* ShapeController.cpp in Sources */,
 				A7BC46720C6A60F3003FF704 /* PointController.cpp in Sources */,
@@ -2238,6 +2286,7 @@
 				A743491515792C0300EF8DFA /* IdealGas.cpp in Sources */,
 				A7E8CEA115E6E61800910593 /* CrackLeaf.cpp in Sources */,
 				67745B84216D43DF003706EC /* MaterialContactNode.cpp in Sources */,
+				67DFBF58259DAE4600AA0B16 /* MixedModeTraction.cpp in Sources */,
 				A7834B5115F000A10043ADB9 /* CoupledSawTooth.cpp in Sources */,
 				67745B76216A9379003706EC /* CSTriangle.cpp in Sources */,
 				67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */,
@@ -2267,6 +2316,7 @@
 				A7D66176196322E300757628 /* Neohookean.cpp in Sources */,
 				6727B3D019E19853006D93EC /* CrossedCrack.cpp in Sources */,
 				6797CABC1A89ABC5009C96FD /* ClampedNeohookean.cpp in Sources */,
+				67DFBF6A259EA37E00AA0B16 /* XPICExtrapolationTaskTO.cpp in Sources */,
 				67745B72216A9366003706EC /* Expression.cpp in Sources */,
 				676D76AC1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp in Sources */,
 				6736CBF11AB74C5B0009A663 /* UnitsController.cpp in Sources */,
@@ -2468,13 +2518,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
-				CC = "/opt/local/bin/clang-mp-7.0";
+				CC = "/opt/local/bin/clang-mp-9.0";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CODE_SIGN_IDENTITY = "";
 				GCC_VERSION = "";
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				LDPLUSPLUS = "/opt/local/bin/clang++-mp-7.0";
+				LDPLUSPLUS = "/opt/local/bin/clang++-mp-9.0";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_LDFLAGS = "-fopenmp";
 				SDKROOT = macosx;

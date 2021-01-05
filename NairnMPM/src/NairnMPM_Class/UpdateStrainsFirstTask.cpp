@@ -49,10 +49,15 @@ UpdateStrainsFirstTask::UpdateStrainsFirstTask(const char *name) : MPMTask(name)
 #pragma mark REQUIRED METHODS
 
 // Update strains with just-extrapolated momenta
-void UpdateStrainsFirstTask::Execute(int taskOption)
+bool UpdateStrainsFirstTask::Execute(int taskOption)
 {
 	FullStrainUpdate(strainTimestepFirst,false,fmobj->np,false);
+    return true;
 }
+
+#ifdef RESTART_OPTION
+bool UpdateStrainsFirstTask::BlockRestartOption(void) const { return true; }
+#endif
 
 #pragma mark UpdateStrainFirstTask Class Methods
 
@@ -97,10 +102,26 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 {
 	CommonException *usfErr = NULL;
 
-	// Get Grid velocities needed for strain updates
+	// Get velocities on the grid for extrapolating velocity gradient
+	int xpicUsed = bodyFrc.UsingFMPM() ? bodyFrc.GetXPICOrder() : 0;
+	if(xpicUsed>1)
+	{	// FMPM(k>1) only here - do XPIC calculations if needed
+		if(!postUpdate || !fmobj->skipPostExtrapolation)
+		{	// !postUpdate means USF, USAVG-, or USAVG+ - always do calcualtions
+			// postUpdate with !skipPostExtrapolation  means USAVG+ or USL+ - needs new calculations
+			// postUpdate with skipPostExtrapolation  means USAVG- or USL- - use stored results
+			XPICMechanicsTask->Execute(0);
+			// velocity BCs
+			if(bodyFrc.GridBCOption()!=GRIDBC_LUMPED_ONLY)
+				NodalVelBC::GridVelocityConditions(UPDATE_GRID_STRAINS_CALL);
+		}
+	}
+	else
+	{	// FLIP, XPIC(k), and FMPM(1) use lumped mass matrix
 #pragma omp parallel for
-	for(int i=1;i<=*nda;i++)
-		nd[nda[i]]->GridValueCalculation(VELOCITY_FOR_STRAIN_UPDATE);
+		for(int i=1;i<=*nda;i++)
+			nd[nda[i]]->GridValueCalculation(VELOCITY_FOR_STRAIN_UPDATE);
+	}
 
 	// loop over nonrigid particles
 	// This works as parallel when material properties change with particle state because

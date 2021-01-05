@@ -162,6 +162,17 @@ void GridPatch::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,
 	ghosts[i]->XPICSupport(xpicCalculation,xpicOption,real,timestep,m,k,vsign);
 }
 
+// zero gTnext on ghost nodes (only used in TRANSPORT_ONLY mode)
+void GridPatch::InitializeForXPICTransport(TransportTask *nextTransport,int xpicOption)
+{	for(int i=0;i<numGhosts;i++)
+		ghosts[i]->InitializeForXPICTransport(nextTransport,xpicOption);
+}
+
+void GridPatch::XPICReductionTransport(int k,TransportTask *nextTransport)
+{	for(int i=0;i<numGhosts;i++)
+		ghosts[i]->XPICReductionTransport(k,nextTransport);
+}
+
 // initialize ghost nodes for next time step
 void GridPatch::RezeroNodeTask6(double delTime)
 {   for(int i=0;i<numGhosts;i++)

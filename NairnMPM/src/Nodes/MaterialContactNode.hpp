@@ -41,6 +41,7 @@ class MaterialContactNode
 		// class methods
 		static bool ContactOnKnownNodes(double,int);
 		static void ReleaseContactNodes(void);
+		static void GetMaterialContactData(void);
 	
 	protected:
 		NodalPoint *theNode;

@@ -23,7 +23,7 @@ class GridForcesTask : public MPMTask
 		GridForcesTask(const char *);
 	
 		// required methods
-		virtual void Execute(int);
+		virtual bool Execute(int);
 	
 };
 

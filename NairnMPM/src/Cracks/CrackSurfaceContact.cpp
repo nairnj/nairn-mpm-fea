@@ -47,7 +47,7 @@ void CrackSurfaceContact::Output(void)
 	char *p=new char[(numberOfCracks+1)*sizeof(ContactLaw *)];
 	crackContactLaw=(ContactLaw **)p;
 	
-	// Global material contact law (must be set,if not force to frictionless)
+	// Global crack contact law (must be set, if not force to frictionless)
 	crackContactLawID = MaterialBase::GetContactLawNum(crackContactLawID);
 	if(crackContactLawID<0)
 		throw CommonException("Crack settings must select a default contact law","CrackSurfaceContact::Output");
@@ -83,10 +83,10 @@ void CrackSurfaceContact::CustomCrackContactOutput(int &customCrackID,int number
 	// custom law
 	customCrackID = MaterialBase::GetContactLawNum(customCrackID);
 	if(customCrackID<0)
-		throw CommonException("Custom crack contact must select a default contact law","CrackSurfaceContact::Output");
+		throw CommonException("Custom crack contact must select a valid contact law","CrackSurfaceContact::Output");
 	crackContactLaw[number] = (ContactLaw *)theMaterials[customCrackID];
 	cout << "    Custom Contact Law: " << crackContactLaw[number]->name << " (number " << (customCrackID+1) << ")" << endl;
-	if(crackContactLaw[number]->IsImperfectInterface()) mpmgrid.hasImperfectInterface=true;
+	if(crackContactLaw[number]->IsImperfectInterface()) mpmgrid.hasImperfectInterface = true;
 }
 
 #pragma mark CrackSurfaceContact: Contact Calculations
@@ -175,7 +175,7 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		double contactArea = 1.;
 		if(crackContactLaw[number]->ContactLawNeedsContactArea())
 		{	double vola = cva->GetContactVolumeNonrigid(true),volb = cvb->GetContactVolumeNonrigid(true),hperp;
-			contactArea = CrackVelocityFieldMulti::GetContactArea(np,vola,volb,&norm,&hperp);
+			contactArea = CrackVelocityFieldMulti::GetContactArea(np,vola,volb,&norm,&hperp,NULL);
 		}
 		
 		// second order heating needs acceleration term
@@ -189,6 +189,8 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 			CopyScaleVector(&delFi,&Fb,massa*mnode);
 			AddScaledVector(&delFi,&Fa,-massb*mnode);
 			delFiPtr = &delFi;
+			// second order heating needs acceleration too
+			if(ConductionTask::matContactHeating) getHeating = true;
 		}
 		
 		*inContact = IN_CONTACT;
@@ -217,7 +219,7 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		
 		// get contact area - angled path correction (cracks are only 2D)
 		double vola = cva->GetContactVolumeNonrigid(true),volb = cvb->GetContactVolumeNonrigid(true),hperp;
-		double contactArea = CrackVelocityFieldMulti::GetContactArea(np,vola,volb,&norm,&hperp);
+		double contactArea = CrackVelocityFieldMulti::GetContactArea(np,vola,volb,&norm,&hperp,NULL);
 		
 		// Find delFi = (ma Fb - mb Fa)/Mc (when needed)
 		Vector fImp;

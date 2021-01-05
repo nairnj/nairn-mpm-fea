@@ -105,14 +105,17 @@ const char *HEMGEOSMaterial::VerifyAndLoadProperties(int np)
 	// this material not coupled to moisture expansion or poroelasticity
 	betaI = 0.;
 	CME1 = 0.;
-    
+#ifdef POROELASTICITY
+	alphaPE = 0.;
+#endif
+	
     // for Cp-Cv (units nJ/(g-K^2))
     Ka2sp = Ksp*CTE1*CTE1;
 	
 	// warning
 	if(Kmax>1.)
 	{	if(warnExcessiveX<0)
-			warnExcessiveX = warnings.CreateWarning("compressive strain has exceeded MGEOS law range in HEMGEOSMaterial",-1,0);
+			warnExcessiveX = warnings.CreateWarning("Compressive strain has exceeded MGEOS law range in HEMGEOSMaterial",-1,0);
 		Xmax = GetMGEOSXmax(gamma0,S1,S2,S3,Kmax);
 	}
 	else
@@ -139,6 +142,20 @@ void HEMGEOSMaterial::PrintMechanicalProperties(void) const
 	
 	PrintProperty("E",9.*Kbulk*G1/(3.*Kbulk+G1)*UnitsController::Scaling(1.e-6),"");
     PrintProperty("nu",(3.*Kbulk-2.*G1)/(6.*Kbulk+2.*G1),"");
+	switch(UofJOption)
+	{   case J_MINUS_1_SQUARED:
+			PrintProperty("U(J)",UofJOption,"[ = (K/2)(J-1)^2 ]");
+			break;
+			
+		case LN_J_SQUARED:
+			PrintProperty("U(J)",UofJOption,"[ = (K/2)(ln J)^2 ]");
+			break;
+			
+		case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
+		default:
+			PrintProperty("U(J)",UofJOption,"[ = (K/2)((1/2)(J^2-1) - ln J) ]");
+			break;
+	}
 	cout << endl;
     
 	// effective volumetric CTE (in ppm/K) alpha = rho0 gamma0 Cv / K
@@ -266,22 +283,38 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,
 		dTq0 += -J*gamma0*mptr->pPreviousTemperature*delV;
     }
     else
-    {	// get reduced bulk modulus (used in AV and maybe hardening)
-        p->Kred = C0squared*Jeff;
+    {	// In tension hyperelastic law (times J to get Kirchoff pressure)
+		P = -J*GetVolumetricTerms(Jeff,C0squared);
+		//P = -J*C0squared*(Jeff-1.);
 		
-		// In tension hyperelastic law P = - K(J-1)
-		P = -J*C0squared*(Jeff-1.);
-		//P = P0 - J*p->Kred*delV;
+		// elastic particle isentropic temperature increment
+		double Kratio;				// = rho_0 K/(rho K_0)
+		switch(UofJOption)
+		{   case J_MINUS_1_SQUARED:
+				Kratio = Jeff;
+				break;
+				
+			case LN_J_SQUARED:
+				Kratio = (1-log(Jeff))/(Jeff*Jeff);
+				break;
+				
+			case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
+			default:
+				Kratio = 0.5*(Jeff + 1./Jeff);
+				break;
+		}
+		
+		// get reduced bulk modulus (used in AV and maybe hardening)
+		p->Kred = C0squared*Kratio;
 		
 		// particle isentropic temperature increment
-		double Kratio = Jeff;
-		dTq0 += -J*Kratio*gamma0*mptr->pPreviousTemperature*delV;
+		dTq0 = -J*Kratio*gamma0*mptr->pPreviousTemperature*delV;
     }
 	
     // artifical viscosity
 	// delV is total incremental volumetric strain = total Delta(V)/V
     if(delV<0. && artificialViscosity)
-	{	double QAVred = GetArtificalViscosity(delV/delTime,sqrt(p->Kred*J),mptr);
+	{	double QAVred = GetArtificialViscosity(delV/delTime,sqrt(p->Kred*J),mptr);
         AVEnergy += fabs(QAVred*delV);
 		P += QAVred;
     }

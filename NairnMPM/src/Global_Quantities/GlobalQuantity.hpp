@@ -26,7 +26,8 @@ enum { UNKNOWN_QUANTITY,AVG_SXX,AVG_SYY,AVG_SXY,AVG_SZZ,AVG_SXZ,AVG_SYZ,
             ENTROPY_ENERGY,INTERNAL_ENERGY,HELMHOLZ_ENERGY,PARTICLE_ALPHA,
 			AVG_FXX,AVG_FXY,AVG_FXZ,AVG_FYX,AVG_FYY,AVG_FYZ,AVG_FZX,AVG_FZY,AVG_FZZ,
 			TOT_REACTQ,FRICTION_WORK,LINMOMX,LINMOMY,LINMOMZ,ANGMOMX,ANGMOMY,ANGMOMZ,
-			LPMOMX,LPMOMY,LPMOMZ,ANGVELX,ANGVELY,ANGVELZ,DECOHESION};
+			LPMOMX,LPMOMY,LPMOMZ,ANGVELX,ANGVELY,ANGVELZ,DECOHESION,
+            CRACK_LENGTH,DEBONDED_CRACK_LENGTH };
 
 class GlobalQuantity
 {
@@ -53,7 +54,8 @@ class GlobalQuantity
 		GlobalQuantity *SetTracerParticle(void);
 	
 		// class methods
-		static int DecodeGlobalQuantity(const char *,int *);
+		static int DecodeGlobalQuantity(const char *,int *,int *);
+		static const char *PickColor(int);
 	
 	private:
 		int whichMat;

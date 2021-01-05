@@ -27,7 +27,7 @@ class XPICExtrapolationTask : public MPMTask
 		XPICExtrapolationTask(const char *);
 	
 		// required methods
-		virtual void Execute(int);
+		virtual bool Execute(int);
 
 		// custom methods
 		virtual int GetXPICOrder(void);

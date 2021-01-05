@@ -29,7 +29,7 @@ SetRigidContactVelTask::SetRigidContactVelTask(const char *name) : MPMTask(name)
 
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
-void SetRigidContactVelTask::Execute(int taskOption)
+bool SetRigidContactVelTask::Execute(int taskOption)
 {
 	bool hasDir[3];
 
@@ -54,4 +54,6 @@ void SetRigidContactVelTask::Execute(int taskOption)
 	
 	// throw now - only known error is problem with function for velocity setting
 	if(rcErr!=NULL) throw *rcErr;
+    
+    return true;
 }

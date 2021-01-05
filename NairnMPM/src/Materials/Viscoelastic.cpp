@@ -237,7 +237,7 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 		
 		// warning
 		if(warnExcessiveX<0)
-			warnExcessiveX = warnings.CreateWarning("compressive strain has exceeded MGEOS law range in Viscoleastic material",-1,0);
+			warnExcessiveX = warnings.CreateWarning("Compressive strain has exceeded MGEOS law range in Viscoleastic material",-1,0);
 		Xmax = GetMGEOSXmax(gamma0,S1,S2,S3,Kmax);
 	}
 	
@@ -651,7 +651,8 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 // 1. Calculate the new pressure
 // 2. Update particle pressure
 // 3. Increment the particle energy
-void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res,double eres,double detdF,double dJres,
+void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res,
+								  double eres,double detdF,double dJres,
 								  double delTime,double &dTq0,double &AVEnergy) const
 {
 	if(pressureLaw==LINEAR_PRESSURE)
@@ -660,15 +661,15 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		
 		// artifical viscosity
 		// delV is total incremental volumetric strain = total Delta(V)/V
-		double QAVred = 0.;
 		if(delV<0. && artificialViscosity)
 		{	// Wants K/rho
-			QAVred = GetArtificalViscosity(delV/delTime,sqrt(Kered),mptr);
+			double QAVred = GetArtificialViscosity(delV/delTime,sqrt(Kered),mptr);
 			AVEnergy += fabs(QAVred*delV);
+			dP += QAVred;
 		}
 		
 		// increment pressure
-		mptr->IncrementPressure(dP+QAVred);
+		mptr->IncrementPressure(dP);
 		
 		// work energy is dU = -P dV + s.de(total)
 		// Here do hydrostatic term
@@ -744,14 +745,14 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		
 		// artifical viscosity
 		// delVMG is total incremental volumetric strain = total Delta(V)/V
-		double QAVred = 0.;
 		if(delVMG<0. && artificialViscosity)
-		{	QAVred = GetArtificalViscosity(delVMG/delTime,sqrt(Kred*J),mptr);
+		{	double QAVred = GetArtificialViscosity(delVMG/delTime,sqrt(Kred*J),mptr);
 			AVEnergy += fabs(QAVred*delVMG);
+			P += QAVred;
 		}
 		
 		// set final pressure
-		mptr->SetPressure(P+QAVred);
+		mptr->SetPressure(P);
 		
 		// work energy is dU = -P dV + s.de(total)
 		// Here do hydrostatic terms, deviatoric later
@@ -846,6 +847,5 @@ double Viscoelastic::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const
 
 // not supported yet, need to deal with aniostropi properties
 bool Viscoelastic::SupportsDiffusion(void) const
-{
-	return true;
+{   return DiffusionTask::HasPoroelasticity() ? false : true;
 }

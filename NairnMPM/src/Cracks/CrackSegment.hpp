@@ -26,7 +26,7 @@ class CrackSegment
 		Vector cp,surf[2],orig;			// crack plane, surface, and original position
 		Vector cpVel,surfVel[2];		// crack plane and surface velocities
         CrackSegment *nextSeg,*prevSeg;
-        Vector Jint,sif,tract;
+        Vector Jint,sif,tract,czmdG;
         int tipMatnum;					// crack tip material (not a traction law)
         int steadyState;
         double speed,theGrowth;
@@ -53,7 +53,6 @@ class CrackSegment
 		bool MoveSurfacePosition(short,Vector *,Vector *,double,bool);
 		int CheckSurfaces(void);
 		bool MoveToPlane(int,double,double,bool,double);
-		bool CollapseSurfaces(void);
 		void StartCrackTipHeating(double,double);
 		double HeatRate(void);
 		virtual Vector SlightlyMovedIfNotMovedYet(int);
@@ -72,6 +71,7 @@ class CrackSegment
         void CreateSegmentExtents(bool);
 		int planeElemID(void) const;
 		int surfaceElemID(int side) const;
+        void SetCrackHeader(CrackHeader *);
 	
 	protected:
 		Vector cFtract;				// traction law force
@@ -81,7 +81,8 @@ class CrackSegment
 		int matnum;						// 1-based material ID for traction law
         char *historyData;				// history dependent traction law data
 		int planeInElem,surfInElem[2];	// 1-based element numbers
-	
+        CrackHeader *header;
+
 };
 
 #endif

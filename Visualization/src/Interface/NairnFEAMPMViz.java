@@ -26,8 +26,10 @@ public class NairnFEAMPMViz extends JNApplication
 	//----------------------------------------------------------------------------
 	
 	public NairnFEAMPMViz()
-	{	super("NairnFEAMPMViz","Version 7.4",
-				"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
+	{	super("NairnFEAMPMViz-OSP","Version 8.0",
+				"Java application for running and visualizing OSParticulas and NairnFEA calculations.");
+		//super("NairnFEAMPMViz","Version 7.4",
+		//		"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
 		NFMVPrefs.setWorkspace(chooser);
 		
 		// path to folder containing this jar file ending in slash
@@ -116,6 +118,7 @@ public class NairnFEAMPMViz extends JNApplication
 		openUntitledDocument(docCtrl);
 	}
 	
+
 	public void openDocumentType(String docType,String docText,File docFile)
 	{	// open that type
 		JNDocument front=JNApplication.main.frontDocument();

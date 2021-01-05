@@ -36,7 +36,9 @@ class CustomTask
         virtual CustomTask *PrepareForStep(bool &);
         virtual CustomTask *StepCalculation(void);
 		virtual CustomTask *FinishForStep(bool &);
-	
+        virtual bool HasReport(void);
+        virtual CustomTask *Report(void);
+
 		// for particle to node extrapolations
 		virtual CustomTask *BeginExtrapolations(void);
 		virtual CustomTask *NodalExtrapolation(NodalPoint *,MPMBase *,short,int,double,short);

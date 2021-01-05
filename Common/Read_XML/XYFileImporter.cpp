@@ -31,11 +31,11 @@ XYFileImporter::XYFileImporter(char *filePath,bool isReadingXML)
 	strcpy(fullPath,filePath);
 	
 	// open the file
-	if((fp=fopen(fullPath,"r"))==NULL)
+	if((fp=fopen(fullPath,"rb"))==NULL)
 		XYFileImportError("The bit mapped file could not be opened.");
 	
-	// decide what computer I am on
-	// byte order marker
+	// BMP files are claimed to be little endian (least signficant first)
+    // If int test 1, has zero in (char *)&test, computer is big endian and must reverse read data
 	mustReverse=false;
 	int test=1;
 	char *testPtr=(char *)&test;

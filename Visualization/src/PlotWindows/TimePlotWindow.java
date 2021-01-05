@@ -97,8 +97,9 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 				case PlotQuantity.MPMJ2:
 				case PlotQuantity.MPMKI:
 				case PlotQuantity.MPMKII:
-				case PlotQuantity.MPMCRACKRELEASE:
-				case PlotQuantity.MPMCRACKABSORB:
+				case PlotQuantity.MPMMODEIFB:
+				case PlotQuantity.MPMMODEIIFB:
+				case PlotQuantity.MPMCZLENGTH:
 				case PlotQuantity.MPMLENGTH:
 				case PlotQuantity.MPMDEBONDLENGTH:
 				case PlotQuantity.MPMNORMALCTOD:
@@ -324,7 +325,9 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 		Hashtable<String,String> props = new Hashtable<String,String>();
 		props.put("object.color",plot2DView.selectPlotColor());
 		String extra;
-		if(component==PlotQuantity.MPMLENGTH || component==PlotQuantity.MPMDEBONDLENGTH)
+		if(component==PlotQuantity.MPMLENGTH || component==PlotQuantity.MPMDEBONDLENGTH ||
+				component==PlotQuantity.MPMMODEIFB || component==PlotQuantity.MPMMODEIIFB ||
+				component==PlotQuantity.MPMCZLENGTH )
 			extra=" (crack "+crackNum+")";
 		else if(tipNum==CrackSelector.CRACK_START)
 			extra=" (start of crack "+crackNum+")";

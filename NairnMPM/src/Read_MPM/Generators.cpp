@@ -47,6 +47,8 @@
 #include "Read_XML/Expression.hpp"
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "Boundary_Conditions/InitialCondition.hpp"
+#include "Materials/MaterialBase.hpp"
+#include "System/UnitsController.hpp"
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
@@ -66,7 +68,7 @@ char angleAxes[4];
 
 // transformed particles
 char *initTranslate[3];
-Matrix3 initDeformation;
+char *initDeform[3][3];
 bool isDeformed;
 
 // to allow new elements, add attribute or command to change this for grid
@@ -244,8 +246,13 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         MatID=0;
 		char matname[200];
 		matname[0]=0;
-		initTranslate[0] = initTranslate[1] = initTranslate[2] = NULL;
+		for(int row=0;row<3;row++)
+		{	initTranslate[row] = NULL;
+			for(int col=0;col<3;col++)
+				initDeform[row][col] = NULL;
+		}
 		isDeformed = false;
+		fmobj->customPtsPerElement = -1;			// <0 means a hole)
         if(strcmp(xName,"Body")==0)
         {   Thick=mpmgrid.GetDefaultThickness();
             Angle=Vel.x=Vel.y=Vel.z=0.0;
@@ -254,6 +261,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             numAttr=(int)attrs.getLength();
 			rotationAxes[0]=0;			// no rotations yet
             vel0Expr[0] = vel0Expr[1] = vel0Expr[2] = NULL;     // optional velocity functions
+            fmobj->customPtsPerElement = 0;						// 0 means Body can change it
             for(i=0;i<numAttr;i++)
 			{	aName=XMLString::transcode(attrs.getLocalName(i));
                 value=XMLString::transcode(attrs.getValue(i));
@@ -290,6 +298,15 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 							throw SAXException("Material point weight fraction concentration must be >= 0");
 					}
 				}
+#ifdef POROELASTICITY
+				else if(strcmp(aName,"pp")==0)
+				{	// only use if poroelasticity is active
+					if(fmobj->HasPoroelasticity())
+					{	sscanf(value,"%lf",&pConc);
+						pConc *= UnitsController::Scaling(1.e6);
+					}
+				}
+#endif
                 else if(strcmp(aName,"temp")==0)
                     sscanf(value,"%lf",&pTempSet);
                 delete [] aName;
@@ -352,9 +369,9 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
     {   if(block!=BODYPART)
 			ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
 		input=TEXT_BLOCK;
-        inputID=CHAR_ARRAY;
+		inputID=CHAR_ARRAY;
 		inputPtr=NULL;
-    }
+	}
     
     else if(strcmp(xName,"Lp0X")==0 || strcmp(xName,"Lp0Y")==0 || strcmp(xName,"Lp0Z")==0)
     {   throw SAXException("<Lp0(XYZ)> commands require OSParticulas.");
@@ -538,7 +555,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	// Chad
 	//-----------------------------------------------------------
 	else if ((strcmp(xName, "Plane") == 0 && block == CRACKLIST))
-	{	throw SAXException("<Plane> command for cracks requires OSParticulas");
+	{	throw SAXException("<Plane> command for 3D cracks requires OSParticulas");
 	}
 	
 	// add to polygon body object
@@ -578,7 +595,6 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	// Deform shapes in a BODY
     else if(strcmp(xName,"Deform")==0)
     {   ValidateCommand(xName,BODYPART,ANY_DIM);
-		initDeformation = Matrix3::Identity();
 		isDeformed = true;
 		numAttr=(int)attrs.getLength();
 		for(i=0;i<numAttr;i++)
@@ -596,9 +612,9 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				int row = (int)(aName[1]-'0')-1;
 				int col = (int)(aName[2]-'0')-1;
 				if(row>=0 && col>=0 && row<3 && col<3)
-				{	initDeformation(row,col) = defVal;
-					if((row==2 || col==2) && (row!=col))
-						initDeformation.setIs2D(false);
+				{	if(initDeform[row][col]!=NULL) delete [] initDeform[row][col];
+					initDeform[row][col] = new char[strlen(value)+1];
+					strcpy(initDeform[row][col],value);
 				}
 			}
 			delete [] aName;
@@ -609,10 +625,18 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	// Deform shapes in a BODY
     else if(strcmp(xName,"Undeform")==0)
     {   ValidateCommand(xName,BODYPART,ANY_DIM);
-		if(initTranslate[0]!=NULL) delete [] initTranslate[0];
-		if(initTranslate[1]!=NULL) delete [] initTranslate[1];
-		if(initTranslate[2]!=NULL) delete [] initTranslate[2];
-		initTranslate[0] = initTranslate[1] = initTranslate[2] = NULL;
+		for(int row=0;row<3;row++)
+		{	if(initTranslate[row]!=NULL)
+			{	delete [] initTranslate[row];
+				initTranslate[row] = NULL;
+			}
+			for(int col=0;col<3;col++)
+			{	if(initDeform[0]!=NULL)
+				{	delete [] initDeform[row][col];
+					initDeform[row][col] = NULL;
+				}
+			}
+		}
 		isDeformed = false;
 	}
 	
@@ -1088,9 +1112,12 @@ short MPMReadHandler::EndGenerator(char *xName)
         {   if(vel0Expr[i]!=NULL)
                 delete [] vel0Expr[i];
         }
-		if(initTranslate[0]!=NULL) delete [] initTranslate[0];
-		if(initTranslate[1]!=NULL) delete [] initTranslate[1];
-		if(initTranslate[2]!=NULL) delete [] initTranslate[2];
+		for(int row=0;row<3;row++)
+		{	if(initTranslate[row]!=NULL) delete [] initTranslate[row];
+			for(int col=0;col<3;col++)
+			{	if(initDeform[row][col]!=NULL) delete [] initDeform[row][col];
+			}
+		}
     	block=POINTSBLOCK;
 	}
     
@@ -1180,7 +1207,6 @@ short MPMReadHandler::EndGenerator(char *xName)
 //-----------------------------------------------------------
 void MPMReadHandler::MPMPts(void)
 {
-	Vector ppos[MaxElParticles];
     MPMBase *newMpt;
     int i,k,ptFlag=0;
 	int numRotations=(int)strlen(rotationAxes);
@@ -1207,28 +1233,58 @@ void MPMReadHandler::MPMPts(void)
 	}
 	
 	
-	// if deformed, create translation functions
+	// if deformed, create translation  and deformation gradient functions
 	int firstTranslate = fnum;
 	if(isDeformed)
 	{	for(i=0;i<3;i++)
 		{	if(initTranslate[i]!=NULL)
 			{	fnum++;
 				if(!Expression::CreateFunction(initTranslate[i],fnum))
-					throw SAXException("Invalid angle expression was provided in <RotateX(YZ)> command.");
+					throw SAXException("Invalid translate expression was provided in <Deform> command.");
 			}
 		}
 	}
+	if(isDeformed)
+	{	for(i=0;i<3;i++)
+		{	for(int j=0;j<3;j++)
+			{	if(initDeform[i][j]!=NULL)
+				{	fnum++;
+					if(!Expression::CreateFunction(initDeform[i][j],fnum))
+						throw SAXException("Invalid Fij expression was provided in <Deform> command.");
+				}
+			}
+		}
+	}
+	
+	// if custom points, must be valid
+	int usePtsPerElement = fmobj->ptsPerElement;
+	int usePtsPerSide = fmobj->ptsPerSide;
+	if(fmobj->customPtsPerElement>0)
+	{	// switch
+		usePtsPerElement = fmobj->customPtsPerElement;
+		usePtsPerSide = fmobj->customPtsPerSide;
+	}
+
+	// get vector
+	Vector *ppos = new Vector[usePtsPerElement];
 
     try
     {   for(i=1;i<=nelems;i++)
-		{	theElements[i-1]->MPMPoints(fmobj->ptsPerElement,ppos);
-            for(k=0;k<fmobj->ptsPerElement;k++)
+		{	theElements[i-1]->MPMPoints(usePtsPerSide,ppos);
+			
+			// loop over all partiles
+            for(k=0;k<usePtsPerElement;k++)
             {   // if particle size is already used, then go to next location
                 // this check is skipped when creating shifted and/or deformed particles
-                if(!isDeformed)
-                {	ptFlag=1<<k;
-                    if(theElements[i-1]->filled&ptFlag) continue;
-                }
+				if(!isDeformed)
+				{	if(usePtsPerSide==fmobj->ptsPerSide)
+					{	ptFlag=1<<k;
+						if(theElements[i-1]->filled&ptFlag) continue;
+					}
+					else if(theElements[i-1]->filled)
+					{	// ideally look for overlap
+					}
+				}
                 
                 // check if particle is in the shape
                 if(theShape->ShapeContainsPoint(ppos[k]))
@@ -1243,7 +1299,7 @@ void MPMReadHandler::MPMPts(void)
                             newMpt=new MatPoint2D(i,MatID,Angle,Thick);
                         newMpt->SetPosition(&ppos[k]);
                         newMpt->SetOrigin(&ppos[k]);
- 						newMpt->SetDimensionlessByPts(fmobj->ptsPerElement);
+ 						newMpt->SetDimensionlessByPts(usePtsPerSide);
  						
 						// velocity
 						if(hasVelOrLp)
@@ -1283,6 +1339,15 @@ void MPMReadHandler::MPMPts(void)
 							{	fnum++;
 								moved.z=Expression::FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
 							}
+							Matrix3 initDeformation = Matrix3::Identity();
+							for(int row=0;row<3;row++)
+							{	for(int col=0;col<3;col++)
+								{	if(initDeform[row][col]!=NULL)
+									{	fnum++;
+										initDeformation(row,col) = Expression::FunctionValue(fnum,ppos[k].x,ppos[k].y,ppos[k].z,0.,0.,0.);
+									}
+								}
+							}
 							AddVector(&moved,&ppos[k]);
 							newMpt->SetPosition(&moved);
 							newMpt->SetOrigin(&moved);
@@ -1313,6 +1378,9 @@ void MPMReadHandler::MPMPts(void)
 	
 	// remove created functions (angleExpr deleted later)
 	Expression::DeleteFunction(-1);
+	
+	// delete vector
+	delete [] ppos;
 	
 }
 
@@ -1372,9 +1440,7 @@ void MPMReadHandler::MPMCracks(int crackShape,int resolution,double start_angle,
 	}
 }
 
-//------------------------------------------------------------
 // Find last loaded point
-//-------------------------------------------------------------
 char *MPMReadHandler::LastBC(char *firstBC)
 {
 	if(firstBC==NULL) return (char *)NULL;
@@ -2045,7 +2111,7 @@ void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,do
 			if(!DbleEqual(R11,cos(y)*cos(z))) z-=PI_CONSTANT;
 		}
 		else
-		{	// Cos[z]=0, Sin[z]=±1, Cos[y]­0
+		{	// Cos[z]=0, Sin[z]=+/-1, Cos[y]!=0
 			if(DbleEqual(R12,-cos(y)))
 				z=PI_CONSTANT/2.;		// Sin[z]=1
 			else
@@ -2058,7 +2124,7 @@ void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,do
 			if(!DbleEqual(R33,cos(y)*cos(x))) x-=PI_CONSTANT;
 		}
 		else
-		{	// Cos[x]=0, Sin[x]=±1, Cos[y]­0
+		{	// Cos[x]=0, Sin[x]=+/-1, Cos[y]!=0
 			if(DbleEqual(R23,-cos(y)))
 				x=PI_CONSTANT/2.;		// Sin[x]=1
 			else

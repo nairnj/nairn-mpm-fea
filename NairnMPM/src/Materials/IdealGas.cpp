@@ -149,19 +149,6 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
 	double J = detf * Jprev;
 	mptr->SetHistoryDble(J_History,J,historyOffset);
 	
-	// store pressure strain as elastic B (only needed for phase transition materials)
-	Tensor *pB = mptr->GetAltStrainTensor() ;
-	if(np==THREED_MPM || np==AXISYMMETRIC_MPM)
-	{	double J23 = pow(J,2./3.);
-		pB->xx = J23;
-		pB->yy = J23;
-		pB->zz = J23;
-	}
-	else
-	{	pB->xx = J;
-		pB->yy = J;
-	}
-	
     // update stress (which is -P)
 	Tensor *sp=mptr->GetStressTensor();
     double mPnsp = sp->xx;
@@ -185,7 +172,7 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
 	double QAVred = 0.;
 	double AVEnergy = 0.;
 	if(delV<0. && artificialViscosity)
-	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(fabs(gammaAdiabatic*mPnsp)),mptr);
+	{	QAVred = GetArtificialViscosity(delV/delTime,sqrt(fabs(gammaAdiabatic*mPnsp)),mptr);
 		AVEnergy += fabs(QAVred*delV);
 		mPsp -= QAVred;
 	}

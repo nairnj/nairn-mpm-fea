@@ -20,6 +20,20 @@
 // For quicker check, activate COUT_PROGRESS in NairnMPM.cpp
 //#define LOG_PROGRESS
 
+//  compile directives in OSParticulas and in NairnMPM
+
+// New transport analysis methods using FMPM approach
+//        FMPM getting gradients in post M&M extrapolation using lumped values (seems best of FMPM)
+//        Other options to get gradient (in particle update or in M&M will full mass matrix) cause
+//            time step need to be too small
+#define TRANSPORT_FMPM
+
+// Activate option for Poroelasticy calculations
+#define POROELASTICITY
+
+// option to restart time step if acceleration is too high
+#define RESTART_OPTION
+
 // Grid boundary conditions
 // When activated, the copied momenta are adjusted for BCs too (regular ones always are)
 // Set to 0 (do not adjust), 1, to adjust only those on symmetry planes, 2 to adjust all with BCs
@@ -83,9 +97,6 @@ extern int maxShapeNodes;
 
 // Max number of nodes in an element + 1
 #define MaxElNd 10
-
-// Max number of particles in an element
-#define MaxElParticles 27
 
 // bits for J and K or set both bits
 #define NEED_J 1

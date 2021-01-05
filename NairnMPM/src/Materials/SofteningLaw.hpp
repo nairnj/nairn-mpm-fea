@@ -8,7 +8,7 @@
 	Base class for all softening laws
 
 	Dependencies
-	none
+ 		none
 ********************************************************************************/
 
 #ifndef _SofteningLaw_
@@ -31,17 +31,21 @@ class SofteningLaw
 		virtual double GetGToDelta(double,double) const = 0;
 		virtual double GetGoverGc(double,double) const = 0;
 		virtual double GetMaxSlope(double) const = 0;
-	
+		virtual double GetRdFxn(double,double,double) const = 0;
+		virtual double GetPhiFxn(double,double) const = 0;
+
 		// optional override
 		virtual double GetRelFFxn(double,double,double) const;
 		virtual double GetRelFpFxn(double,double,double) const;
 		virtual double GetDDelta(double,double,double,double) const;
+        virtual double GetDDeltaElastic(double,double,double,double,double) const;
 		virtual bool HasFailed(double,double &,double) const;
-		virtual double GetDeltaFromDamage(double,double,double);
+		virtual double GetDeltaFromDamage(double,double,double,double);
 
 		// accessors must be overridden
 		virtual const char *GetSofteningLawName(void) const =0;
 		virtual double GetDeltaMax(double) const = 0;
+		virtual double GetEtaStability(void) const = 0;
 	
 		// accessors optional override
 		virtual double GetGc(void) const;
@@ -49,7 +53,7 @@ class SofteningLaw
 	
 	protected:
 		double Gc;
-		double minFdelta;
+		double minFdelta,unscaledDeltaMax;
 };
 
 #endif

@@ -40,8 +40,9 @@ UpdateStrainsLastTask::UpdateStrainsLastTask(const char *name) : MPMTask(name)
 #pragma mark REQUIRED METHODS
 
 // Get total grid point forces (except external forces)
-void UpdateStrainsLastTask::Execute(int taskOption)
+bool UpdateStrainsLastTask::Execute(int taskOption)
 {
 	// update strains based on current velocities
 	UpdateStrainsFirstTask::FullStrainUpdate(strainTimestepLast,(fmobj->mpmApproach==USAVG_METHOD),fmobj->np,true);
+    return true;
 }

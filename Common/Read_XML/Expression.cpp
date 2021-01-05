@@ -611,6 +611,9 @@ void Expression::DoFunction(Atomic *atom) const
 			fxnValue = fmax(0, fxnValue);
 			break;
 		}
+        case NORMALCDFINVERSE_FXN:
+            fxnValue = NormalCDFInverse(arg1);
+            break;
 		default:
 			// will be zero
 			break;

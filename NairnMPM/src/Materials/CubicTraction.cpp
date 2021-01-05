@@ -35,10 +35,10 @@ CubicTraction::CubicTraction(char *matName,int matID) : TractionLaw(matName,matI
 // Set each mode in the law
 const char *CubicTraction::VerifyAndLoadProperties(int np)
 {
-	const char *msg=SetTractionLaw(stress1,delIc,JIc,kI1);
+	const char *msg=SetCubicTractionLaw(stress1,delIc,JIc,kI1);
 	if(msg!=NULL) return msg;
 	
-	msg=SetTractionLaw(stress2,delIIc,JIIc,kII1);
+	msg=SetCubicTractionLaw(stress2,delIIc,JIIc,kII1);
 	if(msg!=NULL) return msg;
 	
 	return TractionLaw::VerifyAndLoadProperties(np);
@@ -47,18 +47,8 @@ const char *CubicTraction::VerifyAndLoadProperties(int np)
 // print to output window
 void CubicTraction::PrintMechanicalProperties(void) const
 {
-	PrintProperty("GcI",JIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
-	PrintProperty("sigI",stress1*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
-	PrintProperty("uI",delIc,UnitsController::Label(CULENGTH_UNITS));
-	PrintProperty("kI0",kI1*delIc*delIc*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
-    cout <<  endl;
-	
-	PrintProperty("GcII",JIIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
-	PrintProperty("sigII",stress2*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
-	PrintProperty("uII",delIIc,UnitsController::Label(CULENGTH_UNITS));
-	PrintProperty("kII0",kII1*delIIc*delIIc*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
-    cout <<  endl;
-	
+    PrintCubicModel("I",JIc,stress1,delIc,kI1);
+    PrintCubicModel("II",JIIc,stress2,delIIc,kII1);
 	PrintProperty("n",nmix,"");
 	cout << endl;
 }
@@ -68,6 +58,7 @@ void CubicTraction::PrintMechanicalProperties(void) const
 // history variables are the current peak elastic displacement in mode I or mode II
 char *CubicTraction::InitHistoryData(char *pchr)
 {
+    numTractionHistory = 2;
 	double *p = CreateAndZeroDoubles(pchr,2);
     return (char *)p;
 }
@@ -84,17 +75,13 @@ void CubicTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,Ve
 	if(nCod>0.)
 	{	// is it failed?
 		if(nCod>delIc)
-		{	cs->SetMatID(0);			// then debonded
-			GI = JIc;
+		{	upeak[CUBIC_DELN]=delIc;
+			cs->SetMatID(0);			// then debonded
 		}
 		else
-		{	if(nCod>upeak[0]) upeak[0]=nCod;		// new peak reached
-			double keff=kI1*(delIc-upeak[0])*(delIc-upeak[0]);
+		{	if(nCod>upeak[CUBIC_DELN]) upeak[CUBIC_DELN]=nCod;		// new peak reached
+			double keff=kI1*(delIc-upeak[CUBIC_DELN])*(delIc-upeak[CUBIC_DELN]);
 			Tn=keff*nCod;
-			
-			// get GI for failure law
-			double d=nCod/delIc;
-			GI=JIc*d*d*(6.-8.*d+3.*d*d);		// N/m
 		}
 	}
 	
@@ -102,20 +89,19 @@ void CubicTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,Ve
     // is it failed?
     double absTCod=fabs(tCod);
     if(absTCod>delIIc)
-    {	cs->SetMatID(0);			// then debonded
-        GII = JIIc;
+	{	upeak[CUBIC_DELT]=delIIc;
+		cs->SetMatID(0);			// then debonded
     }
     else
-    {	if(absTCod>upeak[1]) upeak[1]=absTCod;		// new peak reached in either direction
-        double keff=kII1*(delIIc-upeak[1])*(delIIc-upeak[1]);
+    {	if(absTCod>upeak[CUBIC_DELT]) upeak[CUBIC_DELT]=absTCod;		// new peak reached in either direction
+        double keff=kII1*(delIIc-upeak[CUBIC_DELT])*(delIIc-upeak[CUBIC_DELT]);
         Tt=keff*tCod;
-        
-        // get GII for failure law
-        double d=tCod/delIIc;
-        GII=JIIc*d*d*(6.-8.*d+3.*d*d);		// N/m
     }
-	
-    // failure criterion
+
+    // get total dissipated energy
+	CrackDissipatedEnergy(cs,GI,GII);
+
+	// failure criterion
     if(cs->MatID()<0)
     {   // it failed above in pure mode
         ReportDebond(mtime, cs, GI/(GI+GII),GI+GII);
@@ -140,46 +126,53 @@ void CubicTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,Ve
 	cs->tract.z = -area*(Tn*n->z + Tt*t->z);
 }
 
-// return total energy (which is needed for path independent J) under traction law curve
-//		when fullEnergy is true
-// return released enegery = total energy - recoverable energy (due to elastic unloading)
-//		when fullEnergy is false
-// units of N/mm
-double CubicTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod,bool fullEnergy)
+// Return current traction law strain energy (Int T.du).
+//	This energy is needed for J integral (and only used in J Integral)
+// units of F/L
+double CubicTraction::CrackWorkEnergy(CrackSegment *cs,double nCod,double tCod)
 {
-	double tEnergy=0.;
-	
-	// always get entire area under the curve
+	double d,workEnergy;
 	
 	// normal energy only if opened
 	if(nCod>0.)
-	{	double d=nCod/delIc;
-		tEnergy=JIc*d*d*(6.-8.*d+3.*d*d);
+	{	d = nCod/delIc;
+		workEnergy = JIc*d*d*(6. - 8.*d + 3.*d*d);
 	}
+	else
+		workEnergy = 0.;
 	
 	// shear energy always
-	double d=tCod/delIIc;
-	tEnergy+=JIIc*d*d*(6.-8.*d+3.*d*d);
+	d = fabs(tCod)/delIIc;
+	workEnergy += JIIc*d*d*(6. - 8.*d + 3.*d*d);
 	
-	// subtract recoverable energy when want released energy
-	if(!fullEnergy)
-	{	double *upeak=(double *)cs->GetHistoryData();
-		double keff;
-		if(nCod>0.)
-		{	double Tn=0.;
-			keff=kI1*(delIc-upeak[0])*(delIc-upeak[0]);
-			Tn=keff*nCod;
-			tEnergy-=0.5*Tn*nCod;
-		}
-		
-		// shear energy always
-		double Tt=0.;
-		keff=kII1*(delIIc-upeak[1])*(delIIc-upeak[1]);
-		Tt=keff*tCod;
-		tEnergy-=0.5*Tt*tCod;
-	}
+	return workEnergy;
+}
 
-	return tEnergy;
+// Get mode I and II energy that has been released by current segment
+// For this decoupled law it is given by
+//     Int (1/2)phi(delta)delta
+// It is used when reporting energy released during crack growth or decohesion
+//   and added to Jtip to report total dissipated energy by the crack growth.
+// Also used by this law to detect failure.
+// units of F/L
+void CubicTraction::CrackDissipatedEnergy(CrackSegment *cs,double &GI,double &GII)
+{
+	// Get area under curve up to maximum reached
+	double *upeak = (double *)cs->GetHistoryData();
+	
+	// Get normal energy
+	double d=upeak[CUBIC_DELN]/delIc;
+	GI = JIc*(4.-3.*d)*d*d*d;
+	
+	// Get normal energy
+	d=upeak[CUBIC_DELT]/delIIc;
+	GII = JIIc*(4.-3.*d)*d*d*d;
+    
+    // set on segment
+    cs->czmdG.x = GI;
+    cs->czmdG.y = GII;
+    if(upeak[CUBIC_DELN]>0 || upeak[CUBIC_DELT]>0)
+        cs->czmdG.z = 1.;
 }
 
 #pragma mark CubicTraction::Accessors
@@ -187,42 +180,6 @@ double CubicTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,double tC
 // return material type
 const char *CubicTraction::MaterialType(void) const { return "Cubic Traction Law"; }
 
-// set traction law on initialization
-//		smax is peak stess (F/L^2)
-//		umax is failure displacement (mm)
-//		k1 is slope (an output, not an input) (F/L^5)
-//		G is toughness (F/L) = (9/16) umax smax
-const char *CubicTraction::SetTractionLaw(double &smax,double &umax,double &G,double &k1)
-{
-	// specify smax and G
-	if(umax<0.)
-	{	if(smax<0. || G<0.)
-			return "Too few cubic traction law properties were supplied.";
-		umax = 16.*G/(9.*smax);
-	}
-	
-	// specify umax and G
-	else if(smax<0.)
-	{	if(G<0.)
-			return "Too few cubic traction law properties were supplied.";
-		smax = 16.*G/(9.*umax);
-	}
-	
-	// specify umax and smax
-	else if(G<0.)
-	{	G = 9.*umax*smax/16.;
-	}
-	
-	// specified them all, which is an error
-	else
-	{	return "Must supply exactly two of delIc, sigmaI, JIc and exactly two of delIIc, sigmaII, JIIc.";
-	}
-	
-	// stress prefactor to get force
-	k1 = 27.*smax/(4.*umax*umax*umax);
-	
-	return NULL;
-}
 
 
 

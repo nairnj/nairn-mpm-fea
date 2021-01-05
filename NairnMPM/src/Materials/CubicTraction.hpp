@@ -15,6 +15,8 @@
 
 #include "Materials/TractionLaw.hpp"
 
+enum { CUBIC_DELN=0,CUBIC_DELT };
+
 class CubicTraction : public TractionLaw
 {
     public:
@@ -26,18 +28,18 @@ class CubicTraction : public TractionLaw
 		virtual const char *VerifyAndLoadProperties(int);
 	
 		// history data
-		char *InitHistoryData(char *);
+        virtual char *InitHistoryData(char *);
 	
 		// const methods
 		virtual void PrintMechanicalProperties(void) const;
 	
 		// the traction law
 		virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);
-		virtual double CrackTractionEnergy(CrackSegment *,double,double,bool);
+		virtual double CrackWorkEnergy(CrackSegment *,double,double);
+		virtual void CrackDissipatedEnergy(CrackSegment *,double &,double &);
 		
 		// accessors
 		virtual const char *MaterialType(void) const;
-		virtual const char *SetTractionLaw(double &,double &,double &,double &);
 		
 	protected:
 		double kI1,kII1;

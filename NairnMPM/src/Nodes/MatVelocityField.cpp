@@ -238,6 +238,19 @@ void MatVelocityField::AddGravityAndBodyForceTask3(Vector *gridBodyForce,double 
 	ftot.z += mass*gridBodyForce->z;
 }
 
+#ifdef RESTART_OPTION
+// chack if velocity and accelerations are too high
+// distant traveled = (p + 0.5*f*dt)*dt/m = v*dt + 0.5*a*dt^2
+bool MatVelocityField::IsTravelTooMuch(double dt,double maxDist) const
+{
+    Vector dx = pk;
+    AddScaledVector(&dx,&ftot,0.5*dt);
+    ScaleVector(&dx,dt/mass);
+    double dist = sqrt(DotVectors(&dx,&dx));
+    return dist>maxDist;
+}
+#endif
+
 // total momentum - add
 void MatVelocityField::AddPk(Vector *f)
 {	pk.x += f->x;
@@ -287,6 +300,13 @@ void MatVelocityField::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint
 			
 			// set vStarPrev to k*v^+ = k*pi^+/mi, which is updated velocity
 			double korder = (double)bodyFrc.GetXPICOrder();
+			if(bodyFrc.UsingFMPM())
+			{	CopyScaleVector(&vk[VSTARPREV_VEC],&pk,korder/mass);
+				
+				// set v* = vStarPrev (build velocity directly in v^*)
+				vk[VSTAR_VEC] = vk[VSTARPREV_VEC];
+			}
+			else
 			{	// For XPIC (only called during particle update), set to k*v = k(pi^+-fi*dt)/mi
 				vk[VSTARPREV_VEC] = pk;
 				AddScaledVector(&vk[VSTARPREV_VEC], &ftot, -timestep);
@@ -619,14 +639,17 @@ bool MatVelocityField::ActiveNonrigidField(MatVelocityField *mvf)
 //    if non-rigid material is ignoring cracks, then only true for field [0]
 // In NairnMPM, all non rigid are source fields
 bool MatVelocityField::ActiveNonrigidSourceField(MatVelocityField *mvf,int fieldNum)
-{	return ActiveNonrigidField(mvf);
+{   if(mvf==NULL) return false;										// no field
+	if(mvf->IsRigidField()) return false;							// it is rigid
+	if(fieldNum>0 && mvf->IgnoresCracks()) return false;			// field is not in memory
+	return mvf->numberPoints>0;										// true if active
 }
 
 // return true if references field that is active, is not rigid, and matches requireCracks
 // (i.e., if requireCracks is true, this field must see cracks, otherwise any field is OK)
 // In NairnMPM, same as having any nonrigid particles
 bool MatVelocityField::ActiveNonrigidSeesCracksField(MatVelocityField *mvf,bool requireCracks)
-{	return ActiveNonrigidField(mvf);
+{   if(mvf==NULL) return false;										// no field
+	if(mvf->numberPoints==0 || mvf->IsRigidField()) return false;	// no points or rigid
+	return requireCracks ? !mvf->IgnoresCracks() : true ;
 }
-
-

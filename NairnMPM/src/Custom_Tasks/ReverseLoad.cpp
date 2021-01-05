@@ -9,10 +9,10 @@
         value of a global quantity
 	
 	Parameters
-		crackNum: 0 (default) for any crack on # for crack number (int)
+		crackNum: 0 (default) for any crack or # for crack number (int)
 		maxLength: length to change (default 10) (double), for global is is value
 		quantity: >=0 to be global quantity instead of crack number
-		subcode: used weh quantity is a history variable
+		subcode: used when quantity is a history variable or crack number
 		whichMat: used when quantity is for one material type
 		maxValue: max value (stored in maxLength)
 		style: What to do when maxLength is reached
@@ -51,6 +51,7 @@ ReverseLoad::ReverseLoad()
 	quantity = -1;
 	whichMat = 0;
     holdTime = -1.;
+    debondLength = 0;   // made true if no propagation tasks
 }
 
 // Return name of this task
@@ -72,13 +73,18 @@ char *ReverseLoad::InputParam(char *pName,int &input,double &gScaling)
         return (char *)&finalLength;
     }
     
-    // style (out or range will default to REVERSE)
+    if(strcmp(pName,"debondedLength")==0)
+    {   input=INT_NUM;
+        return (char *)&debondLength;
+    }
+    
+    // style (out of range will default to REVERSE)
     else if(strcmp(pName,"style")==0)
     {	input=INT_NUM;
         return (char *)&style;
     }
     
-	// which material (if !=0) for global quantity
+	// which material (if !=0), but only for global quantity
     else if(strcmp(pName,"mat")==0)
     {	input=INT_NUM;
         return (char *)&whichMat;
@@ -96,7 +102,7 @@ char *ReverseLoad::InputParam(char *pName,int &input,double &gScaling)
 		quant[6]=0;
 		if(strcmp(quant,"global")==0)
 		{	strcpy(quant,&pName[7]);
-			quantity = GlobalQuantity::DecodeGlobalQuantity(quant,&subcode);
+			quantity = GlobalQuantity::DecodeGlobalQuantity(quant,&subcode,&whichMat);
 			input=INT_NUM;
 			return (char *)&ignoreArgument;
 		}
@@ -165,9 +171,11 @@ CustomTask *ReverseLoad::Initialize(void)
 	
 	else
     {	// skipped if no propagation being done
+        // No runs even if no propgation, but only debond growth makes sense
 		if(propagateTask==NULL)
-		{	reversed=REVERSED_PHASE;
-			return nextTask;
+		{	//reversed=REVERSED_PHASE;
+			//return nextTask;
+            debondLength = 1;
 		}
 		
 		switch(style)
@@ -199,12 +207,14 @@ CustomTask *ReverseLoad::Initialize(void)
 		}
 		
 		if(crackNum==0)
-		{	cout << "any crack length reaches " << finalLength
-				<< " " << UnitsController::Label(CULENGTH_UNITS) << endl;
+        {	cout << "any crack's";
+            if(debondLength!=0) cout << " debonded";
+            cout <<" length reaches " << finalLength << " " << UnitsController::Label(CULENGTH_UNITS) << endl;
 		}
 		else
-		{	cout << "crack " << crackNum << " reaches "
-				<< finalLength << " " << UnitsController::Label(CULENGTH_UNITS) << endl;
+        {	cout << "crack " << crackNum << "'s";
+            if(debondLength!=0) cout << " debonded";
+            cout << " length reaches " << finalLength << " " << UnitsController::Label(CULENGTH_UNITS) << endl;
 		}
 	}
     
@@ -215,7 +225,7 @@ CustomTask *ReverseLoad::Initialize(void)
 // throws CommonException() to end simulation
 CustomTask *ReverseLoad::FinishForStep(bool &removeMe)
 {
-    // change to true trigger or on end of holding phase
+    // change to true if triggered or on end of holding phase
 	bool status = false;
     
     // after checking decide if stop or if final hold phase
@@ -224,7 +234,7 @@ CustomTask *ReverseLoad::FinishForStep(bool &removeMe)
             // once reversed, check if reached final time and then exit
             // othersize just continue
             if(style==REVERSE && mtime>finalTime)
-                throw CommonException("Load or displacement has returned to zero","ReverseLoad::FinishForStep");
+                throw CommonException("Load or displacement has returned to zero","ReverseLoad::FinishForStep",noErr);
             break;
         
         case HOLDING_PHASE:
@@ -241,20 +251,25 @@ CustomTask *ReverseLoad::FinishForStep(bool &removeMe)
             }
             
             // check cracks
-            else if(propagateTask->theResult!=NOGROWTH)
-            {	// check desired crack or all cracks
-                int cnum=0;
-                CrackHeader *nextCrack=firstCrack;
-                while(nextCrack!=NULL)
-                {	cnum++;
-                    if(crackNum==0 || crackNum==cnum)
-                    {   // found crack, check the length
-                        if(nextCrack->Length()>finalLength) status = true;
-                        
-                        // exit if critical or only one crack to check
-                        if(status || crackNum==cnum) break;
+            else
+            {   bool checkThisStep = propagateTask!=NULL ? propagateTask->theResult!=NOGROWTH : true ;
+                if(debondLength!=0) checkThisStep = true;         // always check if might just be debonds
+                if(checkThisStep)
+                {	// check desired crack or all cracks
+                    int cnum=0;
+                    CrackHeader *nextCrack=firstCrack;
+                    while(nextCrack!=NULL)
+                    {	cnum++;
+                        if(crackNum==0 || crackNum==cnum)
+                        {   // found crack, check the length
+                            double crackLength = debondLength!=0 ? nextCrack->DebondedLength() : nextCrack->Length() ;
+                            if(crackLength>finalLength) status = true;
+                            
+                            // exit if critical or only one crack to check
+                            if(status || crackNum==cnum) break;
+                        }
+                        nextCrack=(CrackHeader *)nextCrack->GetNextObject();
                     }
-                    nextCrack=(CrackHeader *)nextCrack->GetNextObject();
                 }
             }
             break;
@@ -267,23 +282,24 @@ CustomTask *ReverseLoad::FinishForStep(bool &removeMe)
     if(reversed == CHECKING_PHASE)
     {   if(quantity>=0)
         {	if(style==ABORT && holdTime<0.)
-                throw CommonException("Global quantity has reached specified value","ReverseLoad::FinishForStep");
+                throw CommonException("Global quantity has reached specified value","ReverseLoad::FinishForStep",noErr);
             
             cout << "# Critical global quantity reached at time t: " << mtime*UnitsController::Scaling(1.e3)
 				<< " " << UnitsController::Label(ALTTIME_UNITS) << endl;
         }
         else
         {	if(style==ABORT && holdTime<0.)
-                throw CommonException("Crack has reached specified length","ReverseLoad::FinishForStep");
+                throw CommonException("Crack has reached specified length","ReverseLoad::FinishForStep",noErr);
             
             // stop propgation
-            propagateTask->ArrestGrowth(true);
-            cout << "# Crack growth arrested at time t: " << mtime*UnitsController::Scaling(1.e3)
-				<< " " << UnitsController::Label(ALTTIME_UNITS) << endl;
+            if(propagateTask!=NULL)
+            {   propagateTask->ArrestGrowth(true);
+                cout << "# Crack growth arrested at time t: " << mtime*UnitsController::Scaling(1.e3)
+                            << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
+            }
         }
         
         // final time if reversing
-        finalTime = 2.*mtime;
         
         // if holding, wait to trigger change until latter
         if(holdTime>0.)
@@ -299,7 +315,7 @@ CustomTask *ReverseLoad::FinishForStep(bool &removeMe)
     else
     {   // if an abort after holding, exit now
        if(style==ABORT)
-            throw CommonException("ReverseLoad task hold time has ended","ReverseLoad::FinishForStep");
+            throw CommonException("ReverseLoad task hold time has ended","ReverseLoad::FinishForStep",noErr);
         
         // message that hold time is over
         cout << "# ReverseLoad task hold time ended at t:" << mtime*UnitsController::Scaling(1.e3)

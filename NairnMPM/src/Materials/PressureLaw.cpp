@@ -20,7 +20,7 @@ extern double mtime;
 PressureLaw::PressureLaw(char *matName,int matID) : TractionLaw(matName,matID)
 {
 	function = NULL;
-	minCOD = -1.;
+	minCOD = 0.;
 }
 
 #pragma mark PressureLaw::Initialization
@@ -49,7 +49,7 @@ char *PressureLaw::InputTractionLawProperty(char *xName,int &input,double &gScal
 // setting function if needed
 // throws std::bad_alloc, SAXException()
 void PressureLaw::SetStressFunction(char *bcFunction)
-{	
+{
 	// NULL or empty is an error
 	if(bcFunction==NULL)
 	{	ThrowSAXException("Stress setting function of time is missing");
@@ -68,6 +68,17 @@ void PressureLaw::SetStressFunction(char *bcFunction)
 	function = Expression::CreateExpression(bcFunction,"Stress setting function is not valid");
 }
 
+// Calculate properties used in analyses - here triangular law
+// Do mode I and mode II separately
+const char *PressureLaw::VerifyAndLoadProperties(int np)
+{
+	// disallow negative COD for pressure range
+	if(minCOD<0.) minCOD = 0.;
+	
+	// go to parent
+	return TractionLaw::VerifyAndLoadProperties(np);
+}
+
 // print to output window
 void PressureLaw::PrintMechanicalProperties(void) const
 {
@@ -78,10 +89,8 @@ void PressureLaw::PrintMechanicalProperties(void) const
 	else
 	{	cout << "Stress = " << function->GetString() << endl;
 	}
-	if(minCOD>=0.)
-	{	PrintProperty("Min COD",minCOD,UnitsController::Label(CULENGTH_UNITS));
-		cout << endl;
-	}
+	PrintProperty("Min COD",minCOD,UnitsController::Label(CULENGTH_UNITS));
+	cout << endl;
 }
 
 // evaluate pressure at current time. If no function use input constant in stress 1
@@ -96,11 +105,12 @@ void PressureLaw::CalculateTimeFunction(void)
 
 #pragma mark PressureLaw::Traction Law
 
-// Traction law - constant pressure on crack surface
+// Traction law - constant pressure on crack surface (note thet stress1<0 for pressure)
+// When using a function, stress1 is calculated in loop before this method is called
 void PressureLaw::CrackTractionLaw(CrackSegment *cs, double nCod, double tCod, Vector *n, Vector *t, double area)
 {
 	// no pressure if less then a specific critical COD
-	if(minCOD >= 0. && nCod <= minCOD)
+	if(nCod <= minCOD)
 	{
 		cs->tract.x = 0.;
 		cs->tract.y = 0.;
@@ -115,22 +125,12 @@ void PressureLaw::CrackTractionLaw(CrackSegment *cs, double nCod, double tCod, V
 	cs->tract.z = -area*stress1*n->z;
 }
 
-// return total energy (which is needed for path independent J) under traction law curve
-//		when fullEnergy is true
-// return released enegery = total energy - recoverable energy (due to elastic unloading)
-//		when fullEnergy is false
-// units of N/mm
-double PressureLaw::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod,bool fullEnergy)
+// Return current traction law strain energy: Int T.du = stress*(u-umin)
+//	This energy is needed for J integral (and only used in J Integral)
+// units of F/L
+double PressureLaw::CrackWorkEnergy(CrackSegment *cs,double nCod,double tCod)
 {
-	// physcial model is not as damage and therefore no unloading energy
-	// also zero energy if closed (nCod<=0)
-	if(!fullEnergy || nCod<=0.) return 0.;
-	
-	// no pressure if less then a specific critical COD
-	if(minCOD>=0. && nCod<=minCOD) return 0.;
-	
-	// constant pressure
-	return stress1*nCod;
+	return nCod<minCOD ? 0. : stress1*(nCod-minCOD);
 }
 
 #pragma mark CubicTraction::Accessors

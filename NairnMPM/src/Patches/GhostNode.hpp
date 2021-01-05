@@ -35,7 +35,9 @@ class GhostNode
         void JKTaskReduction(void);
         void DeleteDisp(void);
 		void XPICSupport(int,int,NodalPoint *,double,int,int,double);
-	
+        void InitializeForXPICTransport(TransportTask *,int);
+        void XPICReductionTransport(int,TransportTask *);
+
 		// accessors
 		NodalPoint *GetNodePointer(void);
 		NodalPoint *GetGhostNodePointer(void);

@@ -151,14 +151,15 @@ public class TimePlotOptions extends PlotControl
 		add(rangeText);
 		
 		// enable at first
-		setEnabled(LoadArchive.NO_PLOT,0);
+		setEnabled(LoadArchive.NO_PLOT,0,false);
 	}
 	
 	// set current state
-	public void setEnabled(int plotType,int plotComponent)
+	public void setEnabled(int plotType,int plotComponent,boolean isMPM)
 	{
 		if(plotType==LoadArchive.TIME_PLOT)
-		{	switch(plotComponent)
+		{	// Always MPM analysis
+			switch(plotComponent)
 			{	case PlotQuantity.MPMSTRENERGY:
 				case PlotQuantity.MPMKINENERGY:
 				case PlotQuantity.MPMENERGY:
@@ -185,13 +186,14 @@ public class TimePlotOptions extends PlotControl
 				case PlotQuantity.MPMKII:
 				case PlotQuantity.MPMLENGTH:
 				case PlotQuantity.MPMDEBONDLENGTH:
-				case PlotQuantity.MPMCRACKRELEASE:
-				case PlotQuantity.MPMCRACKABSORB:
+				case PlotQuantity.MPMCZLENGTH:
+				case PlotQuantity.MPMMODEIFB:
+				case PlotQuantity.MPMMODEIIFB:
 				case PlotQuantity.MPMNORMALCTOD:
 				case PlotQuantity.MPMSHEARCTOD:
 				case PlotQuantity.MPMDEBONDNCTOD:
 				case PlotQuantity.MPMDEBONDSCTOD:
-					setEnabled(LoadArchive.NO_PLOT,0);
+					setEnabled(LoadArchive.NO_PLOT,0,true);
 					break;
 				
 				default:
@@ -223,7 +225,8 @@ public class TimePlotOptions extends PlotControl
 			rangeText.setEnabled(false);
 		}
 		else if(plotType==LoadArchive.MESH2D_PLOT)
-		{	plotPoint.setEnabled(false);
+		{	// FEA or MPM analysis
+			plotPoint.setEnabled(false);
 			plotAll.setEnabled(false);
 			plot1Mat.setEnabled(false);
 			ptNumberText.setEnabled(false);			
@@ -235,18 +238,37 @@ public class TimePlotOptions extends PlotControl
 				case PlotQuantity.MPMCRACKPROFILE:
 				case PlotQuantity.MPMOPENINGFRACTION:
 				case PlotQuantity.MPMSHEARFRACTION:
+				case PlotQuantity.MPMTRACTION1:
+				case PlotQuantity.MPMTRACTION2:
+				case PlotQuantity.MPMTRACTION3:
+				case PlotQuantity.MPMTRACTION4:
+				case PlotQuantity.MPMTRACTION5:
+				case PlotQuantity.MPMTRACTION6:
+				case PlotQuantity.MPMTRACTION7:
+				case PlotQuantity.MPMTRACTION8:
+				case PlotQuantity.MPMTRACTION9:
+				case PlotQuantity.MPMTRACTION10:
+					// MPM analysis to plot crack data
 					popup=false;
 					break;
 				default:
 					break;
 			}
 			xyContour.setEnabled(popup);
+			if(popup)
+			if(xyContour.getItemCount()<=4 && isMPM)
+			{	xyContour.addItem(new PlotMenuItem("xp="));
+				xyContour.addItem(new PlotMenuItem("yp="));
+				xyContour.addItem(new PlotMenuItem("xp0="));
+				xyContour.addItem(new PlotMenuItem("yp0="));
+			}
 			functionText.setEnabled(popup);
 			plusMinus.setEnabled(popup);
 			rangeText.setEnabled(popup);
 		}
 		else
-		{	plotPoint.setEnabled(false);
+		{	// Not a 2D plot
+			plotPoint.setEnabled(false);
 			plotAll.setEnabled(false);
 			plot1Mat.setEnabled(false);
 			ptNumberText.setEnabled(false);			

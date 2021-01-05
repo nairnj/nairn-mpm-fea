@@ -208,6 +208,13 @@ and rubber elastic materials as special cases.</td>
 </tr>
 
 <tr>
+<td><a href="#isoplastsoft"><code>IsoPlasticSoftening</code></a></td>
+<td>53</td>
+<td width="50%">Small-strain isotropic, plastic material with anisotropic damage mechanics using mode I and mode I softening laws.</td>
+<td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
 <td><a href="#transisosoft"><code>TransIsoSoftening 1</code></a></td>
 <td>51</td>
 <td width="50%">Small-strain transversely material with anisotropic damage mechanics using four softening laws. Unrotated axial direction along the z axis.</td>
@@ -216,15 +223,22 @@ and rubber elastic materials as special cases.</td>
 
 <tr>
 <td><a href="#transisosoft"><code>TransIsoSoftening 2</code></a></td>
-<td>51</td>
+<td>52</td>
 <td width="50%">Small-strain transversely material with anisotropic damage mechanics using four softening laws. Unrotated axial direction along the y axis.</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
-<td><a href="#isoplastsoft"><code>IsoPlasticSoftening</code></a></td>
-<td>53</td>
-<td width="50%">Small-strain isotropic, plastic material with anisotropic damage mechanics using mode I and mode I softening laws.</td>
+<td><a href="#orthosoft"><code>OrthoSoftening</code></a></td>
+<td>54</td>
+<td width="50%">Small-strain orthotropic material with anisotropic damage mechanics and softening.</td>
+<td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td><a href="#orthoplastsoft"><code>OrthoPlasticSoftening</code></a></td>
+<td>56</td>
+<td width="50%">Small-strain orthotropic material with anisotropic damage mechanics, plasticity, and softening.</td>
 <td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
@@ -247,7 +261,7 @@ and rubber elastic materials as special cases.</td>
 
 <tr>
 <td><a href="#MGEOS"><code>HEMGEOSMaterial</code></a></td>
-<td>25 or 17</td>
+<td>25</td>
 <td width="50%">Isotropic, hyperelastic-plastic material using the Mie-Gr&#252;neisen equation of state and a hardening law.</td>
 <td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
@@ -304,6 +318,9 @@ and rubber elastic materials as special cases.</td>
 
 <h3><a name="tracionlaws"></a>Traction Law Materials</h3>
 
+<p>Note that mode documentation on traction laws can be found in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Traction_Laws">OSUPDocs wiki</a> including important information on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Traction_Laws#Cohesive_Zone_Debonding">calculating mode I and mode II energy release rates</a> when modeling crack growth using cohesive zones.</p>
+
+
 <table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">
 <tr><th rowspan="2">Name</th><th rowspan="2">Type</th><th rowspan="2">Description</th><th rowspan="2">FEA</th><th colspan="3">2D MPM</th><th rowspan="2">3D MPM</th>
 </tr>
@@ -318,9 +335,9 @@ and rubber elastic materials as special cases.</td>
 </tr>
 
 <tr>
-<td><a href="#lineart"><code>LinearTraction</code></a></td>
-<td>13</td>
-<td width="50%">A linear elastic traction law for use on crack surfaces. This law never fails and therefore only implements crack-surface stiffness.</td>
+<td><a href="#exptraction"><code>ExponentialTraction</code></a></td>
+<td>34</td>
+<td width="50%">A traction law for use on crack surfaces with exponential decay after initiation of failure.</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center"></td>
 </tr>
 
@@ -339,9 +356,16 @@ and rubber elastic materials as special cases.</td>
 </tr>
 
 <tr>
-<td><a href="#coupled"><code>CoupledSawTooth</code></a></td>
+<td><a href="#mmtraction"><code>MixedModeTraction</code></a></td>
 <td>23</td>
-<td width="50%">A triangular traction law for use on crack surfaces based on a coupled displacement method.</td>
+<td width="50%">The preferred law for modeling mixed mode fracture with cohesive zones.</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center"></td>
+</tr>
+
+<tr>
+<td><a href="#coupled"><code>CoupledTraction</code></a></td>
+<td>23</td>
+<td width="50%">A cohesive law for use on crack surfaces based on a effective displacement methods.</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center"></td>
 </tr>
 
@@ -349,6 +373,13 @@ and rubber elastic materials as special cases.</td>
 <td><a href="#plaw"><code>PressureTraction</code></a></td>
 <td>26</td>
 <td width="50%">A constant stress traction law for creating pressure loaded-cracks.</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center"></td>
+</tr>
+
+<tr>
+<td><a href="#lineart"><code>LinearTraction</code></a></td>
+<td>13</td>
+<td width="50%">A linear elastic traction law for use on crack surfaces. This law never fails and therefore only implements crack-surface stiffness.</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center"></td>
 </tr>
 
@@ -578,12 +609,7 @@ and rubber elastic materials as special cases.</td>
 <ul>
 <li>pressureLaw - set to 0 to use small strain method (with provided K) or 1 to use MGEOS (with all its properties)</li>
 <li>K - the time-independent bulk modulus (in <a href="commands.html#units">pressure units</a>) (when pressureLaw=0)</li>
-<li>C0 - the bulk wave speed in MGEOS (in <a href="commands.html#units">alt velocity units</a>) (when pressureLaw=1)</li>
-<li>S1 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
-<li>S2 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
-<li>S3 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
-<li>gamma0 - a parameter in MGEOS (dimensionless) (when pressureLaw=1)</li>
-<li>Kmax - maximum increase allowed in bulk modulus (by ratio and dimensionless) (default -1 or no max).</li>
+<li>MGEOS Properties - for pressureLaw=1, set <code>C0</code>, <code>S1</code>, <code>S2</code>, <code>S3</code>, <code>gamma0</code>, and  <code>Kmax</code> for the <a href="#MGEOS">MGEOS</a> calculations. The <code>UJOption</code> is fixed at 1.</li>
 <li>G0 - the steady-state (or long time) shear modulus (in <a href="commands.html#units">pressure units</a>)</li>
 <li>Gk - the shear modulus for the next relaxation time (in <a href="commands.html#units">pressure units</a>)</li>
 <li>tauk - the next relaxation time (in <a href="commands.html#units">time units</a>)</li>
@@ -759,9 +785,9 @@ You must enter K and G, E and nu, or Lame and G  (moduli in <a href="commands.ht
 <p>This material is a small-strain, elastic-plastic material based on an <a href="#ortho">orthotropic</a> material but has plasticity determined by a built-in, anisotropic criterion for yielding:</p>
 <blockquote>[ F(&sigma;<sub>yy</sub> - &sigma;<sub>zz</sub>)<sup>2</sup> + G(&sigma;<sub>xx</sub> - &sigma;<sub>zz</sub>)<sup>2</sup>
     + H(&sigma;<sub>yy</sub> - &sigma;<sub>xx</sub>)<sup>2</sup> + 2L&tau;<sub>yz</sub><sup>2</sup>
-    + 2M&tau;<sub>xz</sub><sup>2</sup> + 2N&tau;<sub>xy</sub><sup>2</sup> ]<sup>1/2</sup> - (1 + K&epsilon;<sub>p</sub><sup>n</sup>)
+    + 2M&tau;<sub>xz</sub><sup>2</sup> + 2N&tau;<sub>xy</sub><sup>2</sup> ]<sup>1/2</sup> - H(&alpha;)
 </blockquote>
-<p>where K and n are dimensionless hardening law properties and F through N are determined from yield stress in each material direction. The material properties are:
+<p>where H(&alpha;) is hardening law as function of cumulative plastic strain and F through N are determined from yield stress in each material direction. The material properties are:
 </p>
 
 <ul>
@@ -772,15 +798,25 @@ You must enter K and G, E and nu, or Lame and G  (moduli in <a href="commands.ht
 <li>yldxy - yield stress from pure shear test in the material's <code>x-y</code> plane (in <a href="commands.html#units">pressure units</a>)</li>
 <li>yldyz - yield stress from pure shear test in the material's <code>y-z</code> plane (in <a href="commands.html#units">pressure units</a>)</li>
 <li>yldxz - yield stress from pure shear test in the material's <code>x-z</code> plane (in <a href="commands.html#units">pressure units</a>)</li>
-<li>khard - hardening term (see above)</li>
-<li>nhard - exponent on cumulative plastic strain in hardening term (see above)</li>
+<li>khard - hardening term (see below)</li>
+<li>nhard - exponent on cumulative plastic strain in hardening term (see below)</li>
+<li>exphard - coefficient in exponential hardening law (see below).</li>
 <li>(other) - see <a href="#ortho">Linear Elastic, Orthotropic</a> material for all other properties.</li>
 </ul>
+
+<p>The τ<sub>yz</sub> and τ<sub>xz</sub> terms and their yield stresses are not needed for 2D analyses.</p>
+
+<p>If nhard&gt;0, the hardning law is H(&alpha;) = 1 + Khard*&alpha;<sup>nhard</sup>, but if nhard&lt;0, the hardening law is changed to H(&alpha;) = (1 + Khard*&alpha;)<sup>nhard</sup>. If exphard is provided instead, the hardening law is exponential or 
+H(&alpha;) = 1 + (Khard/exphard)*(1-exp(-exphard*&alpha;)). If both nhard and exphard are provided, the last one provided will determine the hardening law.</p>
+
+<p>For more details see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Anisotropic,_Elastic-Plastic_Material">OSUPDocs wiki</a>.
+</p>
+
 <h3>History Data for Hill Plastic, Orthotropic Material</h3>
 
 <ol>
 <li>The cumulative equivalent plastic strain defined as the sum of
-<code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>.</li>
+<code>&alpha;=sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>.</li>
 </ol>
 
 <p>The plastic strain will have the plastic strain. You have to archive both strain and plastic strain for the visualization to be able to plot elastic and plastic strains.</p>
@@ -802,6 +838,7 @@ You must enter K and G, E and nu, or Lame and G  (moduli in <a href="commands.ht
 <li>gamma0 - a parameter in Mie-Gr&#252;neisen equation of state (dimensionless).</li>
 <li>Kmax - maximum increase allowed in bulk modulus (by ratio and dimensionless) (default is -1 or no max).</li>
 <li>G - the shear modulus at zero pressure and the reference temperature (in <a href="commands.html#units">pressure units</a>).</li>
+<li><code>UJOption</code> - Use 0, 1, or 2 to select energy function to use for finding pressure when in tension (see <a href="#mooney">Mooney material</a>) (default 0).</li>
 <li>Hardening - this property selects the <a href="#hardening">hardening law</a>. It should be followed by entering all yielding properties required by the hardening law within the material's definition block.</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a>. This material requires <a href="#common">heat capacity <code>Cv</code></a> and a <a href="commands.html#thermal"><code>StressFreeTemp</code></a> in K.</li>
 </ul>
@@ -917,6 +954,10 @@ where h is height of liquid above the position (x, y, z).</li>
 <li>Initiation - this property selects the <a href="#initiation">damage initiation law</a>. It should be followed by entering all properties required by the damage initiation law within the material's definition block. The default is <a href="#maxPS"><code>MaxPrinciple</code></a>.</li>
 <li>SofteningI - this property selects the mode I <a href="#softening">softening law</a>. It should be followed by entering all properties required by the softening law within the material's definition block. Each property should be prefaced with "I-". For example, to enter mode I law toughness for "Gc", enter it ias "I-Gc". The default is <a href="#linearSoft">linear softening law</a>.</li>
 <li>SofteningII - this property is same as "SofteningI" except it selects the mode II <a href="#softening">softening law</a> and properties for this law should be prefaced with "II-".</li>
+<li>tractionFailureSurface - select traction failure surface assumed that determines coupling between anisotropic damage mechanics parameters. The options are 0 = cuboid, 1 = cylindrical, and 2 = ovoid. For cuboid, the three damage parameters evolve indpendently. For cylindrical, the two shear parameters are coupled but tension and shear are independent. For ovoid, all three damage parameters are coupled. (default is 0).</li>
+<li>coefVariation - assigns a coefficient of variation to failure properties. The property that is affected is determined by the <code>coefVariationMode</code> parameter.</li>
+<li>coefVariationMode - the options are 1 = vary only strength, 2 = vary only toughness, and 3 = vary strength and toughness.</li>
+<li>coeff - coefficient of friction for post-decohesion contact (default is 0 or frictionless) (experimental implementation in development)</li>
 <li>(other) - see <a href="#iso">Isotropic</a> material for all properties of the underlying small-strain, isotropic material, except this softening material requires use of <a href="#cmn1"><code>largeRotation</code> property</a> set to 1.</li>
 </ul>
 
@@ -925,64 +966,19 @@ where h is height of liquid above the position (x, y, z).</li>
 <h3>History Data for Isotropic, Small-Strain Materials with Anisotropic Damage</h3>
 
 <ol>
-<li>0, 0.9, 1.1, 1.9, or 2.1 to indicate undamaged (0), damage propagation (0.9 or 1.1), or post failure (decohesion) state of the particle (1.9 or 2.1). 0.9 and 1.9 indicate the failure initiated by tensile strength while 1.1 and 2.1 indicate failure initiated by shear strength.</li>
+<li>0.1 to indicate undamaged, 0.9 or 1.1 to indicate damage propagation following initiation by tensile failure (if 0.9) or shear failure (if 1.1), and between 2 and 3 after failure by decohesion. After failure, the fraction energy dissipated by mode I damage is G<sub>I</sub>/G<sub>total</sub> = h[1]-2.</li>
 <li>The maximum normal cracking strain.</li>
 <li>The maximum x-y shear cracking strain.</li>
-<li>The maximum x-z cracking strain (zero for 2D).</li>
+<li>The maximum x-z cracking strain (for 3D cuboid only), but changed to mode I dissipated energy for all other cases.</li>
 <li>d<sub>n</sub> or damage variable for normal loading.</li>
 <li>d<sub>xy</sub> or damage variable for x-y shear loading.</li>
-<li>d<sub>xz</sub> or damage variable for x-z shear loading (zero for 2D).</li>
+<li>d<sub>xz</sub> or damage variable for x-z shear loading (for 3D cuboid only), but changed to mode II dissipated energy for all other cases.</li>
 <li>For 2D it is cos(&alpha;), but for 3D it is Euler angle &alpha;.</li>
 <li>For 2D it is sin(&alpha;), but for 3D it is Euler angle  &beta;.</li>
 <li>For 2D it is not used, but for 3D it is Euler angle &gamma;.</li>
 <li>A<sub>c</sub>/V<sub>p</sub> where A<sub>c</sub> is crack area within the particle and V<sub>p</sub> is particle volume.</li>
-<li>Relative strength derived at the start by <code>strengthCoefVariation</code> property.</li>
-</ol>
-
-<p>History variables 8-10 are storing Euler angles &alpha;, &beta;, and &gamma; (in radians) for a Z-Y-Z rotation scheme; only &alpha; is needed for 2D and it is stored as cos(&alpha;) and sin(&alpha;) instead of as angles.</p>
-
-<p>|<a href="#tables">Material Tables</a>|</p>
-
-<!-- Material  Section -->
-
-<h2><a name="transisosoft"></a>Transversely isotropic, Small-Strain Material with Anisotropic Damage 1 and 2 (Types=51 and 52)</h2>
-
-<p>The material is an transversely isotropic, small strain material and currently only in OSParticulas. Once damage initiates (using any appropriate <a href="#initiation">initiation law</a>), the material develops a crack and propagates damage using anisotropic damage mechanics. The damage process is controlled by available <a href="#softening">softening laws</a>. Type 1 has the unique axis in the <code>z</code> direction; this material is isotropic in the <code>x-y</code> plane when running 2D analyses. Type 2 has the unique axis in the <code>y</code> direction. Any other orientation is achieved by rotating from these initial orientations. For more details see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Transversely_Isotropic_Softening_Material">OSUPDocs wiki</a>.The properties are:</p>
-
-<ul>
-<li>Initiation - this property selects a <a href="#initiation">damage initiation law</a> appropriate for transversely isotropic materials. It should be followed by entering all properties required by the damage initiation law within the material's definition block. The default is <a href="#tiFailure"><code>TIFailure</code></a>.</li>
-<li>SofteningEA</li>
-<li>SofteningGA</li>
-<li>SofteningET</li>
-<li>SofteningGT - these four properties select the <a href="#softening">softening law</a> for propagation of damage that changes EA, GA, ET, and GT, respectively. After one is attached (and all four are needed), it should be followed by properties required by the softening law within the material's definition by prefacing the property "EA-", "GA-", "ET-", or "GT-", respectively. The default is <a href="#linearSoft">linear softening law</a>.</li>
-<li>shearFailureSurface - select failure surface assumed when modeling shear damage in 3D calculations. Use 1 for an elliptical failure criterion or 0 for a rectangular failure surface (default is 1).</li>
-<li>strengthCoefVariation - this property assigns a coefficient of variation to all strength properties. Each particle's strength is set at the start of the simulation to have the same Gaussian distribution of values about their means, but will have no spatial correlations.</li>
-<li>(other) - see <a href="#isotropic">Isotropic</a> material for all properties of the underlying small-strain, isotropic material, except this softening material requires use of <a href="#cmn1"><code>largeRotation</code> property</a> set to 1.</li>
-</ul>
-
-<p>The particle plastic strain will archive the total cracking strain in the global axis system. The plastic energy will archive the total amount of energy released by damage to the particle.</p>
-
-<h3>History Data for Isotropic, Small-Strain Materials with Anisotropic Damage</h3>
-
-<ol>
-<li>0, 0.75, 0.8, 0.85, 0.95, 1.05, 1.15, 1.25, or 1 higher than previous 7 to indicate undamaged (0), damage propagation (0.75, 0.8, 0.85, 0.95, 1.05, 1.15, 1.25), or post failure (decohesion) state of the particle.
-<ul>
-<li>0.75, 0.8, or 0.85 indicate failure by transverse tension (0.75), axial shear (0.8), or rolling shear (0.85) and material axial direction along z axis in the crack axis system</li>
-<li>0.95 or 1.05 indicate failure by axial tension (0.95) or transverse shear (1.05) and material axial direction along x axis in the crack axis system</li>
-<li>1.15 or 1.25 indicate failure by axial shear (1.15) or transverse tension (1.25) and material axial direction along y axis in the crack axis system</li>
-</ul>
-</li>
-<li>δ<sub>n</sub> or the maximum normal cracking strain.</li>
-<li>δ<sub>xy</sub> or the maximum x-y shear cracking strain.</li>
-<li>δ<sub>xz</sub> or the maximum x-z cracking strain (zero for 2D).</li>
-<li>d<sub>n</sub> or damage variable for normal loading.</li>
-<li>d<sub>xy</sub> or damage variable for x-y shear loading.</li>
-<li>d<sub>xz</sub> or damage variable for x-z shear loading (zero for 2D).</li>
-<li>For 2D it is cos(&alpha;), but for 3D it is Euler angle &alpha;.</li>
-<li>For 2D it is sin(&alpha;), but for 3D it is Euler angle  &beta;.</li>
-<li>For 2D it is not used, but for 3D it is Euler angle &gamma;.</li>
-<li>A<sub>c</sub>/V<sub>p</sub> where A<sub>c</sub> is crack area within the particle and V<sub>p</sub> is particle volume.</li>
-<li>Relative strength derived at the start by <code>strengthCoefVariation</code> property.</li>
+<li>Relative strength derived at the start by <code>coefVariation</code> and <code>coefVariation</code> propertiesMode.</li>
+<li>Relative toughness derived at the start by <code>coefVariation</code> and <code>coefVariation</code> propertiesMode.</li>
 </ol>
 
 <p>History variables 8-10 are storing Euler angles &alpha;, &beta;, and &gamma; (in radians) for a Z-Y-Z rotation scheme; only &alpha; is needed for 2D and it is stored as cos(&alpha;) and sin(&alpha;) instead of as angles.</p>
@@ -1009,8 +1005,28 @@ where h is height of liquid above the position (x, y, z).</li>
 <ul>
 <li>The first history variables for for the choosen softening law.
 <li>The subsequent history variables are identical to <a href="#isosoft">isotropic softening materials</a>, but renumbered from end of softening law history variables</li>
-<li>Three addition history variable at the end will track components of the normal and shear cracking strains in the crack axis system.</li>
+<li>Three additional history variable at the end will track components of the normal and shear cracking strains in the crack axis system.</li>
 </ul>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- Material  Section -->
+
+<h2><a name="transisosoft"></a>Transversely isotropic, Small-Strain Material with Anisotropic Damage 1 and 2 (Types=51 and 52)</h2>
+
+<p>These materials are transversely-isotropic elastic materials that can also develop aniostropic damage. The detailed documentation is currently only available on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Transversely_Isotropic_Softening_Material">OSUPDocs wiki</a>.</p>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<h2><a name="orthosoft"></a>Orthotropic, Small-Strain Material with Anisotropic Damage (Type=54)</h2>
+
+<p>This material is an orthotropic, elastic material that can also develop aniostropic damage. The detailed documentation is currently only available on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Orthotropic_Softening_Material">OSUPDocs wiki</a>.</p>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<h2><a name="orthoplastsoft"></a>Orthotropic, Small-Strain Material with Anisotropic Damage and Plasticity (Type=56)</h2>
+
+<p>This material is an orthotropic, elastic material that can also develop aniostropic damage. The detailed documentation is currently only available on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Orthotropic_Plastic_Softening_Material">OSUPDocs wiki</a>.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
@@ -1041,25 +1057,40 @@ where h is height of liquid above the position (x, y, z).</li>
 <p>where G<sub>I</sub> and G<sub>II</sub> are areas under mode I and mode II traction laws up to current displacements. If nmix&lt;=0, failure occurs when either mode reaches its critical COD.
 </p>
 
+<p><a name="tracthistory"></a>This material tracks two history variabeles:</p>
+<ol>
+<li>Maximum normal opening displacement (or equal to normal &delta;<sub>e</sub> prior to initiation).</li>
+<li>Maximum shear opening displacement (or equal to tangential &delta;<sub>e</sub> prior to initiation)</li>
+</ol>
+
 <p>|<a href="#tables">Material Tables</a>|</p>
 
 <!-- Material  Section -->
 
-<a name="lineart"></a><h2>Linear Elastic Traction Law Material (Type=13)</h2>
+<h2><a name="exptraction"></a>Exponential Traction Law Material (Type=34)</h2>
 
-<p>This traction law creates a linear elastic traction law that never fails and therefore never releases energy. The only properties are the slopes for normal and shear opening.
-</p>
-<center><img src = "linear.jpg" width = "291" height = "185" alt = "linear elastic traction law">
+<p>This traction law assumes a linear elastic response up to &sigma;<sub>c</sub> followed by a scaled exponential decrease to reach zero at critical crack opening displacement (COD) of &delta;<sub>c</sub>.
+
+<center>
+<img src = "exptraction.png" alt = "" />
 </center>
 
+<p>Notice how the shape changes with &alpha;. In the limit of &alpha;=0, this law is identical to the <a href="#traction">Triangular Traction Law</a> (and that one should be used instead because it is more efficient). Increasing &alpha; causes traction to drop faster, which might simulate increasingly brittle response. There are separate traction laws for opening displacement (mode I) and sliding displacement (mode II). Enter the traction law properties using the following properties:
+</p>
 
 <ul>
 
-<li>kIe and kIIe - the slope of the linear elastic tractional law (k) (in <a href="commands.html#units">pressure units/length units</a>).</li>
+<li>Enter all properties for mode I and mode II as if they were <a href="#traction">triangular traction Laws</a></li>
+
+<li><code>alphaI</code> for &alpha; coefficient in the mode I law.</li>
+
+<li><code>alphaII</code> for &alpha; coefficient in the mode II law.</li>
 
 </ul>
 
-<p>If either slope is left out, it will be set to zero. To create a linear elastic traction law that fails at some critical cod, use a <a href="#traction">triangular traction law material</a> instead.
+<p>For mode I, you have to enter <code>alphaI</code>, <i>exactly</i> two of <code>sigmaI</code>, <code>delpkI</code>, and <code>kIe</code> and <i>either</i> <code>JIc</code> or <code>delIc</code>. For mode II, you must enter the corresponding mode II properties. The &alpha; values must be greater than zero. The failure criterion under possible mixed-mode conditions is identical to the one used in the <a href="#mixedmode">triangular traction law</a>. This material tracks <a href="#tracthistory">two history variables</a>.</p>
+ 
+<p>More details for this law are provided on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Exponential_Traction_Law">OSUPDocs wiki</a>. 
 </p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
@@ -1085,7 +1116,7 @@ where h is height of liquid above the position (x, y, z).</li>
 <li>nmix - the exponent used in the <a href="#mixedmode">mixed-mode failure criterion</a>. Enter nmix&lt;=0 to choose infinity, which is decoupled failure criterion.</li>
 </ul>
 
-<p>You must then enter exactly two of the first three properties for each mode. The failure criterion under possible mixed-mode conditions is identical to the one used in the <a href="#mixedmode">triangular traction law</a>.
+<p>You must then enter exactly two of the first three properties for each mode. The failure criterion under possible mixed-mode conditions is identical to the one used in the <a href="#mixedmode">triangular traction law</a>. This material tracks <a href="#tracthistory">two history variables</a>.
 </p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
@@ -1094,7 +1125,7 @@ where h is height of liquid above the position (x, y, z).</li>
 
 <a name="trilinear"></a><h2>Trilinear Traction Law Material (Type=20)</h2>
 
-<p>This traction law is a piecewise-linear law with two break points.There are separate traction laws for opening displacement (mode I) and sliding displacements (mode II):</p>
+<p>This traction law is a piecewise-linear law with two break points. There are separate traction laws for opening displacement (mode I) and sliding displacements (mode II):</p>
 <center><img src = "trilintraction.jpg" width = "291" height = "185" alt = "triangular traction law">
 </center>
 
@@ -1105,31 +1136,52 @@ where h is height of liquid above the position (x, y, z).</li>
 <li>delpkI2 and delpkII2 - the relative displacement at the location of the second peak in the trilinear law (relative to &delta;<sub>c</sub> and therefore dimensionless from 0 to 1).</li>
 </ul>
 
-<p>Excluding nmix, you must enter exactly 5 of the seven properties for each mode. Furthermore, if one of the 5 is kIe (or kIIe for mode II), then either sigmaI or delpkI (but not both) must be specified as well.</p>
-
-<p>The failure under mixed-mode loading uses the same criterion explained <a href="#mixedmode">above</a>.</p>
+<p>Excluding nmix, you must enter exactly 5 of the seven properties for each mode. Furthermore, if one of the 5 is kIe (or kIIe for mode II), then either sigmaI or delpkI (but not both) must be specified as well. The failure under mixed-mode loading uses the same criterion explained <a href="#mixedmode">above</a>. This material tracks <a href="#tracthistory">two history variables</a>.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
 <!-- Material  Section -->
 
-<a name="coupled"></a><h2>CoupledSawTooth Traction Law Material (Type=23)</h2>
+<a name="mmtraction"></a><h2>Mixed Mode Traction Law Material (Type=34)</h2>
 
-<p>This traction law also has a triangular shape except that cod and traction are now effective terms that are related to normal and tangential components of traction and displacement:</p>
-<blockquote>
-Traction = <code>T<sub>eff</sub></code> where  <code>T<sub>eff</sub><sup>2</sup> = T<sub>n</sub><sup>2</sup> + T<sub>t</sub><sup>2</sup></code><br>
-cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup> = &delta;<sub>n</sub><sup>2</sup> + &delta;<sub>t</sub><sup>2</sup>
-</blockquote>
+<p>This Mixed Mode Traction law model allows completely independent normal and tangential traction laws and all calculations are coupled and remain valid during mixed-mode loading. The normal and tangential laws can be selecting from <a href="#traction">Triangular Traction Law</a>, <a href="#exptraction">Exponential Traction Law</a>, <a href="#cubic">Cubic Traction Law</a> and <a href="#trilinear">Trilinear Traction Law</a>. The properties assigned to the laws are totally independent. It can even use different law types for normal and tangential traction.<p>
 
-<center><img src = "tritraction.jpg" width = "291" height = "185" alt = "triangular traction law">
-</center>
-
-
-<p>The properties are:</p>
+<p>You must enter properties for both normal opening (mode I) and shear (mode II) traction laws using the following parameters:
+</p>
 
 <ul>
-<li>sigmaI, JIc, delIc, kIe, and delpkI - these properties are defined in the <a href="#traction">Triangular Traction Law</a> and they all mean the same thing for this traction law, except they apply now to effective traction and critical effective cod rather than mode I traction and critical cod. Mode II parameters and nmix are ignored.</li>
+
+<li><code>modelI</code> to set which traction law to use for mode I or normal opening. The options are selected by traction law numerical ID and can be 12 (for <a href="#traction">Triangular Traction Law</a>), 14 (for <a href="#cubic">Cubic Traction Law</a>), 20 (for <a href="#trilinear">Trilinear Traction Law</a>), or 34 (for <a href="#exptraction">Exponential Traction Law</a>)</li>
+
+<li>Enter all mode I properties using mode I variables for the select mode I law.</li>
+
+<li><code>modelII</code> is same as <code>modelI</code> but used to select law for mode II or tangential opening.</li>
+
+<li>Enter all mode II properties using mode II variables for the select mode II law.</li>
+
+<li><code>NewtonsMethod</code> - enter 0 (or omit) to used default update methods derived for this coheive law or enter 1 to force use of numerical solution. Numerical methods are generally not needed, but might if the initial elastic  regime is too short (<i>i.e.</i>, very still law).</li>
+
 </ul>
+
+<p>More details on this law are available on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Mixed_Mode_Traction_Law">OSUPDocs wiki</a>.</p> 
+
+<p>This material tracks the following history variabeles:</p>
+<ol>
+<li>The damage variable <i>D</i></li>
+<li>A damage parameter characterizing mode I damage, &delta;<sub>n</sub></li>
+<li>A damage parameter characterizing mode II damage, &delta;<sub>t</sub></li>
+<li>Cumulative work energy</li>
+<li>Normal crack opening displacement (u<sub>n</sub>)</li>
+<li>Tangential crack opening displacement (u<sub>t</sub>)</li>
+</ol>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- Material  Section -->
+
+<a name="coupled"></a><h2>Coupled Traction Law Material (Type=23)</h2>
+
+<p>This traction law implements effective displacement methods for mixed mode failure. It can do either linear ("saw tooth") decay or exponential decay. The detailed documentation is currently only available on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Coupled_Traction_Law">OSUPDocs wiki</a>.
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
@@ -1148,6 +1200,28 @@ The stress can be entered in one of two ways:
 <li>minCOD - specify a minimum, normal, crack opening displacement below which no pressure is applied (in <a href="commands.html#units">length units</a>).
 It is ignored if it is negative (default is -1)</li>
 </ul>
+
+<p>This material tracks no history variabeles.</p>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- Material  Section -->
+
+<a name="lineart"></a><h2>Linear Elastic Traction Law Material (Type=13)</h2>
+
+<p>This traction law creates a linear elastic traction law that never fails and therefore never releases energy. The only properties are the slopes for normal and shear opening.
+</p>
+<center><img src = "linear.jpg" width = "291" height = "185" alt = "linear elastic traction law">
+</center>
+
+<ul>
+
+<li>kIe and kIIe - the slope of the linear elastic tractional law (k) (in <a href="commands.html#units">pressure units/length units</a>).</li>
+
+</ul>
+
+<p>If either slope is left out, it will be set to zero. This traction law never fails, does not disspate any energy, and tracks no history variables.
+</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
@@ -1595,6 +1669,7 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 <li>speed - define the constant crack speed (in <a href="commands.html#units">velocity units</a>).</li>
 <li>maxLength - define the maximum length of the crack (in <a href="commands.html#units">length units</a>). The crack growth will stop when this length is reached.</li>
 <li>nmix - a parameter used in some mixed-mode failure laws.</li>
+<li>allowsCracks is set 1 to allow the material to have cracks or 0 to not allow cracks. The default is 1 for non-rigid materials and 0 for rigid materials. Setting a non-rigid material to 0 lets that material enter a crack in another material such as to simulate cutting, to wedge open a crack, or model hydraulic fracturing. The non-cracking material can open the crack in the other material by contact on its crack surfaces.</li>
 <li>gamma, p, or gain - still in development and not meant for general use.</li>
 </ul>
 

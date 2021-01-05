@@ -78,6 +78,12 @@ MaterialBase::MaterialBase(char *matName,int matID)
 	matPdamping=0;
 	matUsePDamping=false;
     allowsCracks= true;
+
+#ifdef POROELASTICITY
+	Darcy=0.;
+	alphaPE=0.;
+	Ku=UnitsController::Scaling(1.e6);			// Legacy MPa and default 1 MPa
+#endif
 #endif
 }
 

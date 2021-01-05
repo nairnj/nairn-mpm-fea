@@ -62,6 +62,9 @@ void HyperElastic::SetInitialParticleState(MPMBase *mptr,int np,int offset) cons
 // Constant properties used in constitutive law
 const char *HyperElastic::VerifyAndLoadProperties(int np)
 {
+	if(Kbulk<0.)
+	{	return "Bulk modulus cannot be negative";
+	}
 	// Kbulk in Specific units using initial rho (F-L/mass)
 	Ksp = Kbulk/rho;
 	
@@ -240,6 +243,5 @@ int HyperElastic::AltStrainContains(void) const { return LEFT_CAUCHY_TOTAL_B_STR
 // not supported yet, need to deal with aniostropi properties
 // Need to check increments if allow negative PP
 bool HyperElastic::SupportsDiffusion(void) const
-{
-    return true;
+{   return DiffusionTask::HasPoroelasticity() ? false : true;
 }

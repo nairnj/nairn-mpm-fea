@@ -24,7 +24,7 @@ class Orthotropic : public TransIsotropic
         // constructors and destructors
         Orthotropic(char *,int);
         
-        // initilize
+        // initialize
         virtual char *InputMaterialProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
         virtual void PrintMechanicalProperties(void) const;
@@ -46,6 +46,9 @@ class Orthotropic : public TransIsotropic
 	
 #ifdef MPM_CODE
 		double Dz,kCondz;
+#ifdef POROELASTICITY
+		double Darcyz,alphazPE;
+#endif
 #endif
 	
 };

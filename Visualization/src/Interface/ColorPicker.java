@@ -22,6 +22,8 @@ public class ColorPicker
 	public static final int MAGMA=6;
 	public static final int INFERNO=7;
 	public static final int PLASMA=8;
+	public static final int TURBO_MAP=9;
+	public static final int LAST_COLOR_OPTION=9;
 	
 	private static int spectrum=BLUE_TO_RED;
 	public static int numberContours=1;
@@ -1055,6 +1057,11 @@ public class ColorPicker
 			{0.944152, 0.961916, 0.146861},
 			{0.941896, 0.968590, 0.140956},
 			{0.940015, 0.975158, 0.131326}};
+	
+	public static double[] kRed = {0.13572138, 4.61539260, -42.66032258, 132.13108234,-152.94239396, 59.28637943};
+	public static double[] kGreen = {0.09140261, 2.19418839, 4.84296658, -14.18503333,4.27729857, 2.82956604};
+	public static double[] kBlue = {0.10667330, 12.64194608, -60.58204836, 110.36276771,-89.90310912, 27.34824973};
+
 
 	public static Color PickRainbow(double fraction)
 	{	// make sure between 0 and 1
@@ -1141,7 +1148,27 @@ public class ColorPicker
 				}
 				theColor=new Color(red,green,blue);
 				break;
-			default:
+	        case TURBO_MAP:
+	        	// Turbo: https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
+	            double [] v =  new double[6];
+	            v[0] = 1.;
+	            v[1] = fraction;
+	            v[2] = v[1]*fraction;
+	            v[3] = v[2]*fraction;
+	            v[4] = v[3]*fraction;
+	            v[5] = v[4]*fraction;
+	            red = (float)(v[0]*kRed[0] + v[1]*kRed[1] + v[2]*kRed[2] + v[3]*kRed[3]
+	                            + v[4]*kRed[4] + v[5]*kRed[5]);
+	            green = (float)(v[0]*kGreen[0] + v[1]*kGreen[1] + v[2]*kGreen[2] + v[3]*kGreen[3]
+	                            + v[4]*kGreen[4] + v[5]*kGreen[5]);
+	            blue = (float)(v[0]*kBlue[0] + v[1]*kBlue[1] + v[2]*kBlue[2] + v[3]*kBlue[3]
+	                            + v[4]*kBlue[4] + v[5]*kBlue[5]);
+	            red = (float)Math.min(Math.max(0., red),1.);
+	            blue = (float)Math.min(Math.max(0., blue),1.);
+	            green = (float)Math.min(Math.max(0., green),1.);
+	            theColor=new Color(red,green,blue);
+	            break;
+	        default:
 				theColor=new Color((float)fraction,(float)fraction,(float)fraction);
 				break;
 		}
@@ -1152,7 +1179,7 @@ public class ColorPicker
 	public static int getSpectrumType() { return spectrum; }
 	public static void setSpectrumType()
 	{	int newType=NFMVPrefs.prefs.getInt(NFMVPrefs.SpectrumKey,NFMVPrefs.SpectrumDef);
-		if(newType>=BLUE_TO_CYAN && newType<=PLASMA)
+		if(newType>=BLUE_TO_CYAN && newType<=LAST_COLOR_OPTION)
 			spectrum=newType;
 	}
 	

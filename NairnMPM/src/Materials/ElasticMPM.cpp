@@ -14,6 +14,7 @@
 #include "Elements/ElementBase.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
+#include "Exceptions/MPMWarnings.hpp"
 
 // for numerical softening methods
 #include "SofteningLaw.hpp"
@@ -202,6 +203,10 @@ void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3 &er,Mat
     
     // no more heat energy (should get dTq0)
     //IncrementHeatEnergy(mptr,dTq0,0.);
+	
+#ifdef POROELASTICITY
+	UndrainedPressIncrement(mptr,de(0,0),de(1,1),de(2,2));
+#endif
 }
 
 #pragma mark Elastic::Methods (Small Rotation)
@@ -290,6 +295,8 @@ void Elastic::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,int np
 	
 	// no more heat energy (should get dTq0)
 	//IncrementHeatEnergy(mptr,dTq0,0.);
+	
+	// poroelasticity - none because never in SR mode
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -368,6 +375,7 @@ void Elastic::SRConstitutiveLaw3D(MPMBase *mptr,Matrix3 du,double delTime,int np
 	// no more heat energy (should get dTq0)
 	//IncrementHeatEnergy(mptr,dTq0,0.);
 
+	// poroelasticity - none because never in SR mode
 }
 
 #pragma mark Elastic:Methods
@@ -417,7 +425,7 @@ double Elastic::GetAcOverVp(int np,MPMBase *mptr,Vector *norm) const
 	double dy = lp.y*grid.y;
 
 	if(np==THREED_MPM)
-	{
+	{	
 		double dz = lp.z*grid.z;
 		AcOverVp = AreaOverVolume3D(norm,dx,dy,dz);
 	}
@@ -438,51 +446,78 @@ double Elastic::GetAcOverVp(int np,MPMBase *mptr,Vector *norm) const
 }
 
 // Soften in one direction (normal, one shear, or coupled shear)
-//		dStr is strain increment in that direction
+//		den is strain increment in that direction
 //		history - softening variables for this material with elements
-//					maxStr - maximum cracking strain
+//					deltaParam - maximum cracking strain
 //					dParam - damage parameter
 //		sigma - strength this property
-//		scale - FM scaling
+//		scale - FM scaling = rG Ac/(Vp rS sigmai) including relative strength and toughness
 //		softLaw - softening law this direction
-//		stiff - stiffness (e.g., C11,C55, or C66)
-//		T0 - current traction in that direction (adjust for coupled shear, and sign for shear)
-//		str0 - initiation strain this direction (adjust for coupled shear, and sign for shear)
-// Last four to set cracking strain(s), add to dissipated energy, and flag failure
-//		For coupled shear, deAlt!=NULL
-// return false if no damage (dStr<0 or Updated Traction < Current Strength) and caller
-//		must handle elastic update with contact
-bool Elastic::SoftenAxis(double dStr,double *history,int maxStr,int dParam,double sigma,double scale,SofteningLaw *softLaw,double stiff,double T0,double str0,double &deCrack,double *deAlt,double &dispEnergy,bool &criticalStrain) const
+//		Es - stiffness (e.g., C11,C55, or C66)
+//		T0 - current traction in that direction (sign adjusted if was shear)
+//		sigmaAlpha - for other variables on strength
+// 		scaleAlpha - for other variables on strength
+// Return false if no damage
+//		call must find elastic cracking strain increment and watch for contact
+// Return true if damage and also do the following
+//		Set deCrack to the cracking strain increment
+//		Set dispEnergy to increment in energy dissipation
+//		Set criticalStrain to true if decohesion occured
+bool Elastic::SoftenAxis(MPMBase *mptr,double den,double *history,int deltaParam,int dParam,
+                         double sigma,double scale,SofteningLaw *softLaw,
+						 double Es,double T0,double sigmaAlpha,double scaleAlpha,
+						 double &deCrack,double &dispEnergy,bool &criticalStrain) const
 {
-	// no damage if negative here (shear accounts for this by caller)
-	if(dStr<0.) return false;
+	// no damage if negative here (shear accounts for this by caller) and no change in alpha variables
+	if(den<0. && scaleAlpha<0.) return false;
 	
-	// get parameter and elastic increment
-	double delta = history[maxStr];
-	double fval = softLaw->GetFFxn(delta,scale);
-	double dam = history[dParam];			// could also calculate: dam = delta/(delta+str0*fval);
-
-	// Assume damage occurting (dStr>0)
-	
-	// trial stress increment
-	double dTTrial = stiff*(1-dam)*dStr;
-	double currentStrength = sigma*fval;
+	// get damage parameter, trial stress increment and stress
+	double d = history[dParam];
+	double dTTrial = Es*(1-d)*den;
+	double TTrial = T0 + dTTrial;
 	
 	// Elastic or damaging?
-	double TTrial = T0 + dTTrial;
-	if(TTrial <= currentStrength) return false;
+	double delta = history[deltaParam];
+	double fval = softLaw->GetFFxn(delta,scale);
+	double FI = sigma*fval;
 	
-	// damage propagation strain
-	double dam2 = (TTrial - currentStrength)/(stiff*(1.-dam));
+	// look for alpha variables
+ 	if(sigmaAlpha>0.)
+    {   // switch to delta+ddeltaElastic, alpha+dAlpha on damage surface
+        double ddeltaElastic = softLaw->GetDDeltaElastic(delta,sigmaAlpha,scaleAlpha,d,Es*(1-d));
+		
+		// update strength and delta
+		sigma = sigmaAlpha;
+		scale = scaleAlpha;
+		delta += ddeltaElastic;
+		
+		// evaluate softening law at new delta and alpha+dalpha
+		fval = softLaw->GetFFxn(delta,scale);
+		FI = sigma*fval;
+	}
 	
-	// increment in max crack opening strain
-	double ddelta = softLaw->GetDDelta(dam2,str0,delta,scale);
+	// If no damage, update delta (if needed) and return false
+	if(TTrial <= FI)
+	{	history[deltaParam] = delta;			// in case changed
+		return false;
+	}
+	
+	// Find portion  of the step that causes damage
+	// Note that for alpha terms, FI is F(delta+ddeltaElastic,alpha+dAlpha)
+	// The elastic strain part is de(1) = dee-de(2) (with or without alpha dependence)
+	double den2 = (TTrial - FI)/(Es*(1.-d));
+	
+	// increment in delta strain (note: returns < 0 if decohesion)
+	// note that when sigmaAlpha>0, sigma, scale, and delta are
+	//			changed to sigmaAlpha, scaleAlpha, and delta+ddeltaElastic
+	double en0 = sigma/Es;				 // initiation strain
+	double ddelta = softLaw->GetDDelta(den2,en0,delta,scale);
 	
 	// check if failed
+	double deltaPrevious = delta;			// = delta + ddeltaelastic if occurred
 	if(ddelta<0.)
-	{	// Make this step a post failure step by setting ddelta = dStr
-		// cracking strain gets set to same in post failure update
-		//ddelta = deltaMax - delta; - not needed but gives (delta += ddelta) = deltaMax
+	{	// Decohesion: set delta=deltaMax, d=1, and set crackingStrain flag true
+		// call will get cracking strain in post-failure update code
 		delta = softLaw->GetDeltaMax(scale);
 		criticalStrain = true;
 		history[dParam] = 1.;
@@ -491,27 +526,25 @@ bool Elastic::SoftenAxis(double dStr,double *history,int maxStr,int dParam,doubl
 	{	// damage propagation
 		delta += ddelta;
 		fval = softLaw->GetFFxn(delta,scale);
-		history[dParam] = delta/(delta+str0*fval);
+		history[dParam] = delta/(delta+en0*fval);
 		
-		if(deAlt==NULL)
-			deCrack = dam*(dStr-dam2) + ddelta;
-		else
-		{	// get each component from ds*dgxy^(1) + d(ds*gxy^(2)) - see notes for details
-			// load these terms temporarily into cracking strains, caller must decode as shown
-			deCrack = delta/(delta+str0*fval);
-			*deAlt = (deCrack-dam)/(stiff*(1.-dam));
-			//dgcxy = deCrack*dgamxy + str(0,1)*(*deAlt);
-			//dgcxz = deCrack*dgamxz + str(0,2)*(*deAlt);
-		}
+		// total cracking strain increment is some of elastic part and damage part
+		// deCrack = d*(de(1)+de(elastic)) + ddelta
+		deCrack = d*(den-den2) + ddelta;
+		
 	}
 	
-	// dissipated energy increment per unit mass
-	// here delta is new value and history[maxStr] is previous one
-	dispEnergy += sigma*(softLaw->GetGToDelta(delta,scale) - softLaw->GetGToDelta(history[maxStr],scale));
+	// dissipated energy increment per unit mass using dOmega = (1/2) phi (ddelta-ddeltaElastic)
+	// note that deltaPrevious = deltai + ddeltaelastic, so deltaf-deltaPrevious = ddeltaf-ddelti-ddeltaElastic
+	double dissipated = 0.5*sigma*softLaw->GetPhiFxn(deltaPrevious,scale)*(delta-deltaPrevious);
 	
-	// new max strain
-	history[maxStr] = delta;
-
+	// This is prior discrete calculation. It is identical to above for linear softening
+	//double dissipated = sigma*(softLaw->GetGToDelta(delta,scale) - softLaw->GetGToDelta(deltaPrevious,scale));
+	dispEnergy += dissipated;
+	
+	// new delta paramater
+	history[deltaParam] = delta;
+    
 	return true;
 }
 
@@ -520,25 +553,29 @@ bool Elastic::SoftenAxis(double dStr,double *history,int maxStr,int dParam,doubl
 // Rtot rotates to crack axis system, C11 is normal direction stiffness
 // den, dgamxy, and dgamxz are total increments
 void Elastic::PostFailureUpdate(double &decxx,double &dgcxy,double &dgcxz,Tensor *dsig,Tensor *str,Tensor *etr,
-								Matrix3 Rtot,double C11,double den,double dgamxy,double dgamxz,bool is2D) const
+								Matrix3 Rtot,double C11,double den,double Gxy,double dgamxy,double Gxz,double dgamxz,
+								bool is2D,double coef) const
 {
+	bool inContact = false;
+	
 	// normal direction is opening
 	if(den>0.)
 	{	if(etr->xx > 0.)
 		{	// opened crack stays open
-			decxx = den;				// add to cracking strain
-			dsig->xx = -str->xx;		// set stress to zero
+			dsig->xx = -str->xx;			// set stress to zero
+			decxx = den - dsig->xx/C11;		// add to cracking strain
 		}
 		else
-		{	decxx = den+str->xx/C11;	// cracking strain subtracting strain to get zero stress
-			if(decxx>=0.)
+		{	if(decxx>=0.)
 			{	// closed crack opens
-				dsig->xx = -str->xx;	// set stress to zero
+				dsig->xx = -str->xx;			// set stress to zero
+				decxx = den - dsig->xx/C11;		// add to cracking strain
 			}
 			else
 			{	// closed crack stays closed
 				decxx = 0.;				// no cracking strain
 				dsig->xx = C11*den;		// elastic stress change
+				inContact = true;
 			}
 		}
 	}
@@ -546,55 +583,130 @@ void Elastic::PostFailureUpdate(double &decxx,double &dgcxy,double &dgcxz,Tensor
 	// normal direction is closing
 	else
 	{	if(etr->xx > 0.)
-		{	if(etr->xx+den>0.)
+		{	if(etr->xx+den > 0.)
 			{	// opened crack stays open
-				decxx = den;			// add to cracking strain
-				dsig->xx = -str->xx;	// set stress to zero
+				dsig->xx = -str->xx;			// set stress to zero
+				decxx = den - dsig->xx/C11;		// add to cracking strain
 			}
 			else
 			{	// opened crack closes
 				decxx = -etr->xx;				// cracking strain to zero
 				dsig->xx = C11*(den - decxx);	// elastic compression stress
+				inContact = true;
 			}
 		}
 		else
 		{	// closed crack remains closed
 			decxx = 0.;							// stay at zero cracking strain
 			dsig->xx = C11*den;					// add to elastic compression
+			inContact = true;
 		}
 	}
+
+	if(inContact && coef>0.)
+	{	// normal compression
+		double N = -(str->xx + dsig->xx);
+		
+		// to test (phi=1 is stick and phi=-tauxy/(Gxy*dgamxy) is frictionless)
+		double phi=1.,stick=coef*N,txyTest=str->xy+Gxy*dgamxy;
+		
+		if(is2D)
+		{	// slip or stick
+			if(txyTest > stick)
+				phi = (stick - str->xy)/(Gxy*dgamxy);
+			else if(txyTest<-stick)
+				phi = (-stick - str->xy)/(Gxy*dgamxy);
+			
+			// stress update
+			dsig->xy = phi*Gxy*dgamxy;
+			dsig->xz = -str->xz;
+			
+			// cracking strain
+			dgcxy = (1.-phi)*dgamxy;
+			dgcxz = dgamxz;
+					
+			// TO DO: frictional heating = coef*N*|dgcxy|*vol(p)
+		}
+		else
+		{	double txzTest=str->xz+Gxz*dgamxz,stick2=stick*stick;
+			double mag2 = txyTest*txyTest + txzTest*txzTest;
+			if(mag2>stick2)
+			{	double c = str->xy*str->xy + str->xz*str->xz - stick2;
+				double gdxy = Gxy*dgamxy,gdxz = Gxz*dgamxz;
+				double a = gdxy*gdxy + gdxz*gdxz;
+				double b = 2.*(str->xy*gdxy + str->xz*gdxz);
+				double r1, r2;
+				if(RealQuadraticRoots(a,b,c,r1,r2))
+				{	if(c<=0.)
+					{	// c<0 means started inside friction circle and went out, will get 1 positive root at crossing
+						phi = fmax(r1,r2);
+					}
+					else if(r1>=0.)
+					{	// c>0 and two positive roots, take smallest or closest to circle
+						phi = fmin(r1,r2);
+					}
+					else
+					{	// c>0 and two negative roots, take largest or closest to circle
+						phi = fmax(r1,r2);
+					}
+					
+					// stress update
+					dsig->xy = phi*Gxy*dgamxy;
+					dsig->xz = phi*Gxz*dgamxz;
+					
+					// cracking strain
+					dgcxy = (1.-phi)*dgamxy;
+					dgcxz = (1.-phi)*dgamxz;
+				}
+				else
+				{	// two imaginary roots means c>0 (started outside the circle)
+					// and increment line does not intersect the circle
+					// convert to radial return
+					phi = sqrt(stick2/mag2);
+					
+					// stress update
+					dsig->xy = phi*txyTest - str->xy;
+					dsig->xz = phi*txzTest - str->xz;
+					
+					// shear cracking strains
+					dgcxy = dgamxy - dsig->xy/Gxy;
+					dgcxz = dgamxz - dsig->xz/Gxz;
+				}
+
+				// TO DO: frictional heating = coef*N*sqrt(dgcxy^2+dgcxz^2)*vol(p)
+			}
+			else
+			{	// stick or set Phi to 1
+				dsig->xy = Gxy*dgamxy;
+				dsig->xz = Gxz*dgamxz;
+				
+				// cracking strain
+				dgcxy = 0.;
+				dgcxz = 0.;
+			}
+		}
+	}
+	else
+	{	// zero shear stress
+		dsig->xy = -str->xy;
+		dsig->xz = -str->xz;
 	
-	// zero shear stress
-	dsig->xy = -str->xy;
-	dsig->xz = -str->xz;
-	
-	// shear cracking strains
-	dgcxy = dgamxy;
-	dgcxz = dgamxz;
+		// shear cracking strains
+		dgcxy = dgamxy - dsig->xy/Gxy;
+		dgcxz = dgamxz - dsig->xz/Gxz;
+	}
 }
 
-// Update cracking strain and total stress
-// Here str is current particle stress rotated by dR to updated configuration
-// Return cracking strain in updated configuration in ecrack
-void Elastic::UpdateCrackingStrainStress(int np,Tensor *ecrack,Tensor *sp,double decxx,double dgcxy,double dgcxz,
-										 Tensor *dsig,Tensor *str,Matrix3 Rtot) const
+// Update cracking strain by rotation (decxx, dgcxy, dgcxz) to crack axis
+// system and them adding to alt strain tensor
+// Materials that store cracking strain elsewhere must override
+void Elastic::UpdateCrackingStrain(int np,Tensor *ecrack,double decxx,double dgcxy,double dgcxz,Matrix3 Rtot,double *soft) const
 {
 	if(np==THREED_MPM)
 	{	// rotate from crack axis to global axes
 		Tensor dec = MakeTensor(decxx,0.,0.,0.,dgcxz,dgcxy);
 		dec=Rtot.RVoightRT(&dec,false,false);
 		AddTensor(ecrack, &dec);
-		
-		// rotate stress increment from crack axis to global axes
-		*dsig = Rtot.RVoightRT(dsig,true,false);
-		
-		// add up
-		sp->xx = str->xx + dsig->xx ;
-		sp->yy = str->yy + dsig->yy;
-		sp->zz = str->zz + dsig->zz;
-		sp->xy = str->xy + dsig->xy;
-		sp->xz = str->xz + dsig->xz;
-		sp->yz = str->yz + dsig->yz;
 	}
 	else
 	{	// rotate from crack axis to global axes
@@ -603,8 +715,27 @@ void Elastic::UpdateCrackingStrainStress(int np,Tensor *ecrack,Tensor *sp,double
 		ecrack->xx += dec.xx;
 		ecrack->yy += dec.yy;
 		ecrack->xy += dec.xy;
+	}
+}
+
+// Rotate stress increment in crack axis system to global axes
+// and then add to sp
+void Elastic::UpdateCrackingStress(int np,Tensor *sp,Tensor *dsig,Tensor *str,Matrix3 Rtot) const
+{
+	if(np==THREED_MPM)
+	{	// rotate stress increment from crack axis to global axes
+		*dsig = Rtot.RVoightRT(dsig,true,false);
 		
-		// rotate stress increment from crack axis to global axes
+		// add up
+		sp->xx = str->xx + dsig->xx;
+		sp->yy = str->yy + dsig->yy;
+		sp->zz = str->zz + dsig->zz;
+		sp->xy = str->xy + dsig->xy;
+		sp->xz = str->xz + dsig->xz;
+		sp->yz = str->yz + dsig->yz;
+	}
+	else
+	{	// rotate stress increment from crack axis to global axes
 		*dsig = Rtot.RVoightRT(dsig,true,true);
 		
 		// add up

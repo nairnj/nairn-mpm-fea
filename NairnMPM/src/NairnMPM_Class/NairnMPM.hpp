@@ -27,19 +27,27 @@ class NairnMPM : public CommonAnalysis
 {
     public:
 		int mpmApproach;				// mpm method for updating strain
-		int ptsPerElement;				// points per element
+		int ptsPerElement,ptsPerSide;	// points per element and side
+		int customPtsPerElement,customPtsPerSide;		// to overide in current region
 		int propagate[2];				// progation method
 		int propagateDirection[2];		// optional crack direction setting
 		int propagateMat[2];			// optional traction material to create when propagates
 		bool hasTractionCracks;			// TRUE if any crack segment has traction law material
 		int mstep;						// step number
 		double maxtime;					// maximum time for analysis
-		int warnParticleLeftGrid;		// warning ID
+		int warnParticleLeftGrid;		// warning ID for particle leaving the grid
+        bool deleteLeavingParticles;    // to delete (true) or push back (false) leaving particles
+        int warnParticleDeleted;        // warning ID for deleting a nan particle
 		bool multiMaterialMode;			// TRUE to use separate velocity fields for each material
 		bool hasNoncrackingParticles;	// TRUE is some particles are ignoring the cracks
 		bool skipPostExtrapolation;		// Skip post update extrapolation
 		double timeStepMinMechanics;	// time step for  mechanics
 		bool exactTractions;			// implement exact tractions
+#ifdef RESTART_OPTION
+        double restartScaling;          // if >0, restart time step if acceleration too high with scaled time step
+        double restartCFL;              // fraction of cell size travel to trigger a restart
+        int warnRestartTimeStep;        // warn the first time time step is restarted
+#endif
 	
         //  Constructors and Destructor
 		NairnMPM();
@@ -66,6 +74,7 @@ class NairnMPM : public CommonAnalysis
 	
 		// support
 		void ReorderParticles(int,int);
+        void SwapMaterialPoints(int,int) const;
 		void CFLTimeStep(void);
 		void ReorderPtBCs(MatPtLoadBC *,int,int);
 		void SetForceBCs(void);
@@ -81,6 +90,9 @@ class NairnMPM : public CommonAnalysis
 		double GetTransCFLCondition(void);
         double GetPropagationCFLCondition(void);
 		bool HasDiffusion(void);
+#ifdef POROELASTICITY
+		bool HasPoroelasticity(void);
+#endif
 		bool HasFluidTransport(void);
 	
 		// archiver access while reading

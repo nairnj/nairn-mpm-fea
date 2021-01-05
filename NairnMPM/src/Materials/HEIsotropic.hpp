@@ -66,6 +66,7 @@ class HEIsotropic : public HyperElastic
 		virtual void IncrementThicknessStress(double,MPMBase *) const;
 		virtual const char *MaterialType(void) const;
 		virtual double WaveSpeed(bool,MPMBase *) const;
+        virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;
         virtual bool SupportsArtificialViscosity(void) const;
 		virtual int AltStrainContains(void) const;
     

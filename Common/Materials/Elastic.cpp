@@ -187,7 +187,7 @@ void Elastic::FillUnrotatedElasticProperties(ElasticProperties *p,int np)
 			(i,j=3 is shear for planar, but theta stress to axisymmetric)
 		CTEi gives diagonal element of thermal expansion tensor (used to be prop[9] to prop[11])
         prop1 to prop3 used to find s(zz) in plane strain or e(zz) in plane stress in FEA
-		prop1 and prop2 hold Poisson's rations need for plain strain ss(zz) calculation
+		prop1 and prop2 hold Poisson's ratios needed for plain strain ss(zz) calculation
     
     WARNING: No verification that have valid properties such as Poisson ratios
 */
@@ -221,6 +221,7 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
 #endif
 
     // 2D plane stress properties
+    // Stiffness element reduces but CTE and CME are not
     if(np==PLANE_STRESS || np==PLANE_STRESS_MPM)
     {	xx=1.-v12*v21;
         C11=e1/xx;
@@ -257,6 +258,7 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
     }
 	
     // 2D plane strain properties
+    // stiffness elements not reduces, but CTE and CME are
     else if(np==PLANE_STRAIN || np==PLANE_STRAIN_MPM)
     {	xx=1.-v13*v31-v23*v32-v12*v21-2.*v12*v23*v31;
         C11=e1*(1.-v23*v32)/xx;
@@ -293,7 +295,7 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
 #endif
     }
     
-    /* Full 3D stiffness matrix or axisymmetric matrix components
+    /* Full (unreduced) 3D stiffness matrix or axisymmetric matrix components
             For axisymmetric, E1 along r, E2 along z, and E3 along hoop */
     else if(np==AXI_SYM || np==THREED_MPM || np==AXISYMMETRIC_MPM)
     {	xx=1.-v13*v31-v23*v32-v12*v21-2.*v13*v32*v21;

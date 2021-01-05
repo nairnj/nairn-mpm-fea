@@ -14,7 +14,7 @@
 int UnitsController::unitsType = LEGACY_UNITS;
 int UnitsController::lengthExp=0,UnitsController::massExp=0,UnitsController::timeExp=0;
 char UnitsController::length[3],UnitsController::mass[3],UnitsController::timeu[3];
-char UnitsController::velocity[6],UnitsController::force[10],UnitsController::pressure[10];
+char UnitsController::velocity[10],UnitsController::force[10],UnitsController::pressure[10];
 char UnitsController::energy[10],UnitsController::density[10],UnitsController::heatFusion[18];
 char UnitsController::errRate[15],UnitsController::tractionSlope[15],UnitsController::viscosity[15];
 char UnitsController::heatCapacity[18],UnitsController::power[15],UnitsController::conductivity[20],UnitsController::convection[20];
@@ -366,7 +366,7 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 	else
 	{	strcpy(diffusionTens,length);
 		strcat(diffusionTens,"^2/");
-		strcat(velocity,timeu);
+		strcat(diffusionTens,timeu);
 	}
 
 

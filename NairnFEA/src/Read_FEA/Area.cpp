@@ -826,8 +826,8 @@ void Area::LineLocate(double t,double x1arg,double x2arg,double y1arg,double y2a
 	   1. Opposite faces with same number
 			(n1+n4)==(n2+n3) and n1==n3
 	   2. Or sum at opposite corners the same
-			(n1+n4)==(n2+n3) where n1≠n3
-			or (n1+n2)==(n3+n4) where n1≠n3
+			(n1+n4)==(n2+n3) where n1!=n3
+			or (n1+n2)==(n3+n4) where n1!=n3
 		  For latter, reorder edges to make (n1+n4)==(n2+n3) 
 		  Then make n1>n3, reorder if not
 		  Note: when done will always have n2>n4 too

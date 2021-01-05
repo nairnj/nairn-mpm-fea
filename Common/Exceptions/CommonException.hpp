@@ -23,7 +23,8 @@ class CommonException
         // constructors and destructors
         CommonException();
         CommonException(const char *,const char *);
-        
+		CommonException(const char *,const char *inCode,int);
+	
         // methods
         void Display(int,double);
         void Display(void);

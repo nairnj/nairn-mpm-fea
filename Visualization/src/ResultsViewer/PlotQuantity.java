@@ -14,7 +14,10 @@ public class PlotQuantity extends PlotControl
 {
 	static final long serialVersionUID=18L;
 	
+	
+	
 	// MPM plotting options
+	static final int SHIFT4MAGNITUDE=10000;
 	static final int MPMSIGMAX=1;
 	static final int MPMSIGMAY=2;
 	static final int MPMSIGMAXY=3;
@@ -39,8 +42,9 @@ public class PlotQuantity extends PlotControl
 	static final int MPMVELX=19;
 	static final int MPMVELY=20;
 	static final int MPMVELZ=21;
-	
+	static final int MPMVELS=MPMVELX+SHIFT4MAGNITUDE;
 	static final int MPMVELVEC=22;
+	
 	static final int MPMSTRENERGY=23;
 	static final int MPMKINENERGY=24;
 	static final int MPMENERGY=25;
@@ -52,6 +56,7 @@ public class PlotQuantity extends PlotControl
 	static final int MPMDISPX=30;
 	static final int MPMDISPY=31;
 	static final int MPMDISPZ=32;
+	static final int MPMDISPS=MPMDISPX+SHIFT4MAGNITUDE;
 	
 	static final int MPMPOSX=33;
 	static final int MPMPOSY=34;
@@ -79,8 +84,8 @@ public class PlotQuantity extends PlotControl
 	static final int MPMDCDX=55;
 	static final int MPMDCDY=56;
 	static final int MPMDCDZ=57;
-	static final int MPMCRACKRELEASE=58;
-	static final int MPMCRACKABSORB=59;
+	static final int MPMMODEIFB=58;
+	static final int MPMMODEIIFB=59;
 	static final int MPMNORMALCTOD=60;
 	static final int MPMSHEARCTOD=61;
 	static final int MPMHEATENERGY=62;
@@ -108,9 +113,14 @@ public class PlotQuantity extends PlotControl
 	static final int MPMEPSTOTXZ=94;
 	static final int MPMEPSTOTYZ=95;
 	
+	static final int MPMMAXSTRESS=102;
+	static final int MPMMINSTRESS=103;
+	static final int MPMSTRESSDIR=104;
+	
 	static final int MPMEQUIVSTRESS=105;
 	static final int MPMEQUIVSTRAIN=106;
 	static final int MPMPRESSURE=107;
+
 
 	static final int MPMSPINMOMENTUMX=110;
 	static final int MPMSPINMOMENTUMY=111;
@@ -119,6 +129,35 @@ public class PlotQuantity extends PlotControl
 	static final int MPMSPINVELOCITYY=114;
 	static final int MPMSPINVELOCITYZ=115;
 	
+	static final int MPMHISTORY5=116;
+	static final int MPMHISTORY6=117;
+	static final int MPMHISTORY7=118;
+	static final int MPMHISTORY8=119;
+	static final int MPMHISTORY9=120;
+	static final int MPMHISTORY10=121;
+	static final int MPMHISTORY11=122;
+	static final int MPMHISTORY12=123;
+	static final int MPMHISTORY13=124;
+	static final int MPMHISTORY14=125;
+	static final int MPMHISTORY15=126;
+	static final int MPMHISTORY16=127;
+	static final int MPMHISTORY17=128;
+	static final int MPMHISTORY18=129;
+	static final int MPMHISTORY19=130;
+	static final int MPMTRACTION1=131;
+	static final int MPMTRACTION2=132;
+	static final int MPMTRACTION3=133;
+	static final int MPMTRACTION4=134;
+	static final int MPMTRACTION5=135;
+	static final int MPMTRACTION6=136;
+	static final int MPMTRACTION7=137;
+	static final int MPMTRACTION8=138;
+	static final int MPMTRACTION9=139;
+	static final int MPMTRACTION10=140;
+	static final int MPMCZMGI=141;
+	static final int MPMCZMGII=142;
+	static final int MPMCZLENGTH=143;
+
 	static final int MESHONLY=1001;
 	static final int MESHSIGMAX=1002;
 	static final int MESHSIGMAY=1003;
@@ -171,6 +210,7 @@ public class PlotQuantity extends PlotControl
 	private String xchar="x";
 	private String ychar="y";
 	private String zchar="z";
+	private String totalchar="magnitude";
 	
 	// initialize
 	PlotQuantity(DocViewer dc)
@@ -248,6 +288,9 @@ public class PlotQuantity extends PlotControl
 				{	quant.addItem(new PlotMenuItem("Stress",MPMSIGMAX));
 					quant.addItem(new PlotMenuItem("Pressure",MPMPRESSURE));
 					quant.addItem(new PlotMenuItem("Equiv. Stress",MPMEQUIVSTRESS));
+					quant.addItem(new PlotMenuItem("Max Principal Stress",MPMMAXSTRESS));
+					quant.addItem(new PlotMenuItem("Min Principal Stress",MPMMINSTRESS));
+					quant.addItem(new PlotMenuItem("Max Stress Angle",MPMSTRESSDIR));
 				}
 				if(arch[ReadArchive.ARCH_Strain]=='Y')
 				{	if(arch[ReadArchive.ARCH_PlasticStrain]=='Y')
@@ -281,8 +324,10 @@ public class PlotQuantity extends PlotControl
 				if(arch[ReadArchive.ARCH_HeatEnergy]=='Y')
 					quant.addItem(new PlotMenuItem("Heat Energy",MPMHEATENERGY));
 					
-				if(arch[ReadArchive.ARCH_Velocity]=='Y')
+				if(arch[ReadArchive.ARCH_Velocity]=='Y') {
 					quant.addItem(new PlotMenuItem("Velocity",MPMVELX));
+				}
+					
 				if(arch[ReadArchive.ARCH_SpinVelocity]=='Y')
 					quant.addItem(new PlotMenuItem("Angular Velocity",MPMSPINVELOCITYX));
 				if(arch[ReadArchive.ARCH_SpinMomentum]=='Y')
@@ -320,6 +365,54 @@ public class PlotQuantity extends PlotControl
 						quant.addItem(new PlotMenuItem("History 4",MPMHISTORY4));
 				}
 				
+				if(arch[ReadArchive.ARCH_History59]=='Y')
+					quant.addItem(new PlotMenuItem("History 5",MPMHISTORY5));
+				else if(arch[ReadArchive.ARCH_History59]!='N')
+				{	int history=(int)arch[ReadArchive.ARCH_History59];
+					if((history & 0x01) !=0)
+						quant.addItem(new PlotMenuItem("History 5",MPMHISTORY5));
+					if((history & 0x02) !=0)
+						quant.addItem(new PlotMenuItem("History 6",MPMHISTORY6));
+					if((history & 0x04) !=0)
+						quant.addItem(new PlotMenuItem("History 7",MPMHISTORY7));
+					if((history & 0x08) !=0)
+						quant.addItem(new PlotMenuItem("History 8",MPMHISTORY8));
+					if((history & 0x10) !=0)
+						quant.addItem(new PlotMenuItem("History 9",MPMHISTORY9));
+				}
+				
+				if(arch[ReadArchive.ARCH_History1014]=='Y')
+					quant.addItem(new PlotMenuItem("History 10",MPMHISTORY10));
+				else if(arch[ReadArchive.ARCH_History1014]!='N')
+				{	int history=(int)arch[ReadArchive.ARCH_History1014];
+					if((history & 0x01) !=0)
+						quant.addItem(new PlotMenuItem("History 10",MPMHISTORY10));
+					if((history & 0x02) !=0)
+						quant.addItem(new PlotMenuItem("History 11",MPMHISTORY11));
+					if((history & 0x04) !=0)
+						quant.addItem(new PlotMenuItem("History 12",MPMHISTORY12));
+					if((history & 0x08) !=0)
+						quant.addItem(new PlotMenuItem("History 13",MPMHISTORY13));
+					if((history & 0x10) !=0)
+						quant.addItem(new PlotMenuItem("History 14",MPMHISTORY14));
+				}
+				
+				if(arch[ReadArchive.ARCH_History1519]=='Y')
+					quant.addItem(new PlotMenuItem("History 15",MPMHISTORY15));
+				else if(arch[ReadArchive.ARCH_History1519]!='N')
+				{	int history=(int)arch[ReadArchive.ARCH_History1519];
+					if((history & 0x01) !=0)
+						quant.addItem(new PlotMenuItem("History 15",MPMHISTORY15));
+					if((history & 0x02) !=0)
+						quant.addItem(new PlotMenuItem("History 16",MPMHISTORY16));
+					if((history & 0x04) !=0)
+						quant.addItem(new PlotMenuItem("History 17",MPMHISTORY17));
+					if((history & 0x08) !=0)
+						quant.addItem(new PlotMenuItem("History 18",MPMHISTORY18));
+					if((history & 0x10) !=0)
+						quant.addItem(new PlotMenuItem("History 19",MPMHISTORY19));
+				}
+
 				if(arch[ReadArchive.ARCH_ElementCrossings]=='Y')
 					quant.addItem(new PlotMenuItem("Element Crossings",MPMELEMENTCROSSINGS));
 				
@@ -342,17 +435,21 @@ public class PlotQuantity extends PlotControl
 							quant.addItem(new PlotMenuItem("KII",MPMKII));
 						}
 					
-						if(carch[ReadArchive.ARCH_BalanceResults]=='Y')
-						{	quant.addItem(new PlotMenuItem("Global Released",MPMCRACKRELEASE));
-							quant.addItem(new PlotMenuItem("Global Dissipated",MPMCRACKABSORB));
-						}
-					
 						quant.addItem(new PlotMenuItem("Crack Length",MPMLENGTH));
 						quant.addItem(new PlotMenuItem("Debonded Crack Length",MPMDEBONDLENGTH));
+						if(carch[ReadArchive.ARCH_CZMDeltaG]=='Y')
+						{	quant.addItem(new PlotMenuItem("Cohesive Damage Length",MPMCZLENGTH));
+						}
+						
 						quant.addItem(new PlotMenuItem("Normal CTOD",MPMNORMALCTOD));
 						quant.addItem(new PlotMenuItem("Shear CTOD",MPMSHEARCTOD));
 						quant.addItem(new PlotMenuItem("Debond Tip Normal COD",MPMDEBONDNCTOD));
 						quant.addItem(new PlotMenuItem("Debond Tip Shear COD",MPMDEBONDSCTOD));
+						
+						if(carch[ReadArchive.ARCH_CZMDeltaG]=='Y')
+						{	quant.addItem(new PlotMenuItem("CZM Mode I Force",MPMMODEIFB));
+							quant.addItem(new PlotMenuItem("CZM Mode II Force",MPMMODEIIFB));
+						}
 					}
 					
 					preselect = mpmTimeQuant;
@@ -361,12 +458,51 @@ public class PlotQuantity extends PlotControl
 				
 				// additional time plot options
 				else if(selected==LoadArchive.MESH2D_PLOT)
-				{	// x-y crack results
+				{	byte [] carch=docCtrl.resDoc.crackFormat.getBytes();
+				
+					// x-y crack results
 					quant.addItem(new PlotMenuItem("Crack Profile",MPMCRACKPROFILE));
 					quant.addItem(new PlotMenuItem("Crack Normal CTOD",MPMNORMALCTOD));
 					quant.addItem(new PlotMenuItem("Crack Tangential CTOD",MPMSHEARCTOD));
 					quant.addItem(new PlotMenuItem("Crack Opening Fraction",MPMOPENINGFRACTION));
 					quant.addItem(new PlotMenuItem("Crack Sliding Fraction",MPMSHEARFRACTION));
+					if(carch[ReadArchive.ARCH_CZMDeltaG]=='Y')
+					{	quant.addItem(new PlotMenuItem("CZM GI",MPMCZMGI));
+						quant.addItem(new PlotMenuItem("CZM GII",MPMCZMGII));
+					}
+					
+					char histChar = (char)carch[ReadArchive.ARCH_Traction15];
+					if(histChar=='Y')
+						quant.addItem(new PlotMenuItem("Traction 1",MPMTRACTION1));
+					else if(histChar!='N')
+					{	int history=(int)histChar;
+						if((history & 0x01) !=0)
+							quant.addItem(new PlotMenuItem("Traction 1",MPMTRACTION1));
+						if((history & 0x02) !=0)
+							quant.addItem(new PlotMenuItem("Traction 2",MPMTRACTION2));
+						if((history & 0x04) !=0)
+							quant.addItem(new PlotMenuItem("Traction 3",MPMTRACTION3));
+						if((history & 0x08) !=0)
+							quant.addItem(new PlotMenuItem("Traction 4",MPMTRACTION4));
+						if((history & 0x10) !=0)
+							quant.addItem(new PlotMenuItem("Traction 5",MPMTRACTION5));
+					}
+					histChar = (char)carch[ReadArchive.ARCH_Traction610];
+					if(histChar=='Y')
+						quant.addItem(new PlotMenuItem("Traction 6",MPMTRACTION6));
+					else if(histChar!='N')
+					{	int history=(int)histChar;
+						if((history & 0x01) !=0)
+							quant.addItem(new PlotMenuItem("Traction 6",MPMTRACTION6));
+						if((history & 0x02) !=0)
+							quant.addItem(new PlotMenuItem("Traction 7",MPMTRACTION7));
+						if((history & 0x04) !=0)
+							quant.addItem(new PlotMenuItem("Traction 8",MPMTRACTION8));
+						if((history & 0x08) !=0)
+							quant.addItem(new PlotMenuItem("Traction 9",MPMTRACTION9));
+						if((history & 0x10) !=0)
+							quant.addItem(new PlotMenuItem("Traction 10",MPMTRACTION10));
+					}
 					
 					preselect = mpmMesh2DQuant;
 					preComp = mpmMesh2DComp;
@@ -486,18 +622,20 @@ public class PlotQuantity extends PlotControl
 			case MPMVELX:
 			case MPMDISPX:
 				if(docCtrl.resDoc.is3D())
-				{	if(numItems!=3 || !cmpnt.getItemAt(0).equals(xchar))
+				{	if(numItems!=4 || !cmpnt.getItemAt(0).equals(xchar))
 					{	cmpnt.removeAllItems();
 						cmpnt.addItem(xchar);
 						cmpnt.addItem(ychar);
 						cmpnt.addItem(zchar);
+						cmpnt.addItem(totalchar);
 					}
 				}
 				else
-				{	if(numItems!=2 || !cmpnt.getItemAt(0).equals(xchar))
+				{	if(numItems!=3 || !cmpnt.getItemAt(0).equals(xchar))
 					{	cmpnt.removeAllItems();
 						cmpnt.addItem(xchar);
 						cmpnt.addItem(ychar);
+						cmpnt.addItem(totalchar);
 					}
 				}
 				cmpnt.setEnabled(true);
@@ -604,13 +742,26 @@ public class PlotQuantity extends PlotControl
 		// adjust component menus - add component selected in component menu
 		int extra = 0;
 		switch(plotComponent)
-		{   case MPMSIGMAX:
+		{   
+			case MPMVELX:
+			{
+				extra=cmpnt.getSelectedIndex();
+				int nextVal = docCtrl.resDoc.is3D()?3:2;
+				if(extra == nextVal) extra=SHIFT4MAGNITUDE;
+				break;
+			}
+			case MPMDISPX:
+			{
+				extra=cmpnt.getSelectedIndex();
+				int nextVal = docCtrl.resDoc.is3D()?3:2;
+				if(extra == nextVal) extra=SHIFT4MAGNITUDE;
+				break;
+			}
+			case MPMSIGMAX:
 			case MPMEPSX:
 			case MPMPLEPSX:
 			case MPMEPSTOTX:
-			case MPMVELX:
 			case MPMDCDX:
-			case MPMDISPX:
 			case MESHSIGMAX:
 			case MESHDISPX:
 			case MESHSTRAINX:
@@ -620,6 +771,7 @@ public class PlotQuantity extends PlotControl
 			case INTERFACETRACTION_N:
 				extra=cmpnt.getSelectedIndex();
 				break;
+	
 			case PlotQuantity.MPMSPINVELOCITYX:
 			case PlotQuantity.MPMSPINMOMENTUMX:
 				if(docCtrl.resDoc.is3D())
@@ -679,6 +831,8 @@ public class PlotQuantity extends PlotControl
 			case MPMPRESSURE:
 			case MPMEQUIVSTRESS:
 			case MESHPRESSURE:
+			case MPMMAXSTRESS:
+			case MPMMINSTRESS:
 				return "Stress ("+units.stressUnits()+")";
 		
 			// Strains
@@ -734,6 +888,7 @@ public class PlotQuantity extends PlotControl
 			case MPMVELX:
 			case MPMVELY:
 			case MPMVELZ:
+			case MPMVELS:
 				return "Velocity ("+units.velocityUnits()+")";
 				
 			// Spin velocity
@@ -752,6 +907,7 @@ public class PlotQuantity extends PlotControl
 			case MPMDISPX:
 			case MPMDISPY:
 			case MPMDISPZ:
+			case MPMDISPS:
 			case MPMNORMALCTOD:
 			case MPMSHEARCTOD:
 			case MPMDEBONDNCTOD:
@@ -811,15 +967,20 @@ public class PlotQuantity extends PlotControl
 			
 			case MPMKI:
 			case MPMKII:
-				return "Stress Intensity (MPa m^0.5)";
+				return "Stress Intensity (MPa m^{0.5})";
 			
 			case MPMLENGTH:
 			case MPMDEBONDLENGTH:
+			case MPMCZLENGTH:
 				return "Length ("+units.lengthUnits()+")";
 			
-			case MPMCRACKRELEASE:
-			case MPMCRACKABSORB:
-				return "Energy Rate (J/m^2)";
+	        case MPMCZMGI:
+	        case MPMCZMGII:
+				return "Energy Release Rate ("+units.forceUnits()+"/"+units.lengthUnits()+")";
+	            
+			case MPMMODEIFB:
+			case MPMMODEIIFB:
+				return "Energy Release Force ("+units.forceUnits()+")";
 			
 			case MESHFORCEX:
 			case MESHFORCEY:
@@ -855,6 +1016,18 @@ public class PlotQuantity extends PlotControl
 			case MPMTOTELEMENTCROSSINGS:
 				return "Element Crossings";
 			
+			case PlotQuantity.MPMTRACTION1:
+			case PlotQuantity.MPMTRACTION2:
+			case PlotQuantity.MPMTRACTION3:
+			case PlotQuantity.MPMTRACTION4:
+			case PlotQuantity.MPMTRACTION5:
+			case PlotQuantity.MPMTRACTION6:
+			case PlotQuantity.MPMTRACTION7:
+			case PlotQuantity.MPMTRACTION8:
+			case PlotQuantity.MPMTRACTION9:
+			case PlotQuantity.MPMTRACTION10:
+				return "Traction History";
+						
 			// Unknown
 			default:
 				break;
@@ -885,8 +1058,10 @@ public class PlotQuantity extends PlotControl
 			case MESHELEMSIGMAZ:
 			case INTERFACETRACTION_N:
 			case INTERFACETRACTION_T:
+			case MPMMAXSTRESS:
+			case MPMMINSTRESS:
 				return units.stressUnits();
-		
+				
 			// Strains
 			case MPMEPSX:
 			case MPMEPSY:
@@ -941,6 +1116,7 @@ public class PlotQuantity extends PlotControl
 			case MPMVELX:
 			case MPMVELY:
 			case MPMVELZ:
+			case MPMVELS:
 				return units.velocityUnits();
 			
 			// Spin velocity
@@ -959,6 +1135,7 @@ public class PlotQuantity extends PlotControl
 			case MPMDISPX:
 			case MPMDISPY:
 			case MPMDISPZ:
+			case MPMDISPS:
 			case MPMNORMALCTOD:
 			case MPMSHEARCTOD:
 			case MPMDEBONDNCTOD:
@@ -975,10 +1152,17 @@ public class PlotQuantity extends PlotControl
 			
 			case MPMJ1:
 			case MPMJ2:
-			case MPMCRACKRELEASE:
-			case MPMCRACKABSORB:
 				return "J/m^2";
+				
+			case MPMMODEIFB:
+			case MPMMODEIIFB:
+			case MPMCZLENGTH:
+				return units.forceUnits();
 			
+	        case MPMCZMGI:
+	        case MPMCZMGII:
+				return units.forceUnits()+"/"+units.lengthUnits();
+				
 			case MPMKI:
 			case MPMKII:
 				return "MPa m^0.5";
@@ -1066,6 +1250,15 @@ public class PlotQuantity extends PlotControl
 			case MPMEQUIVSTRESS:
 				return "Equiv Stress";
 				
+			case MPMMAXSTRESS:
+				return "Max Principal Stress";
+				
+			case MPMMINSTRESS:
+				return "Min Principal Stress";
+				
+			case MPMSTRESSDIR:
+				return "Stress Direction";
+						
 			case MPMEPSX:
 			case MPMEPSTOTX:
 			case MESHSTRAINX:
@@ -1166,6 +1359,9 @@ public class PlotQuantity extends PlotControl
 			case MPMVELZ:
 				return "Velocity "+zc;
 			
+			case MPMVELS:
+				return "||Velocity|| ";
+			
 			case MPMSPINVELOCITYX:
 				return "Ang. Velocity "+xc;
 			
@@ -1197,6 +1393,9 @@ public class PlotQuantity extends PlotControl
 			
 			case MPMDISPZ:
 				return "Displacment "+zc;
+				
+			case MPMDISPS:
+				return "||Displacment||";
 			
 			case MPMPOS:
 				return "Position";
@@ -1220,7 +1419,24 @@ public class PlotQuantity extends PlotControl
 			case MPMHISTORY2:
 			case MPMHISTORY3:
 			case MPMHISTORY4:
-				return "Material History";
+				return "Material History "+(component-MPMHISTORY1+1);
+			
+			case MPMHISTORY5:
+			case MPMHISTORY6:
+			case MPMHISTORY7:
+			case MPMHISTORY8:
+			case MPMHISTORY9:
+			case MPMHISTORY10:
+			case MPMHISTORY11:
+			case MPMHISTORY12:
+			case MPMHISTORY13:
+			case MPMHISTORY14:
+			case MPMHISTORY15:
+			case MPMHISTORY16:
+			case MPMHISTORY17:
+			case MPMHISTORY18:
+			case MPMHISTORY19:
+				return "Material History "+(component-MPMHISTORY5+5);
 			
 			case MPMDCDY:
 				if(resDoc.hasPorePressure)
@@ -1280,12 +1496,21 @@ public class PlotQuantity extends PlotControl
 			case MPMDEBONDSCTOD:
 				return "Debond Tip Shear COD";
 			
-			case MPMCRACKRELEASE:
-				return "Energy Release Rate";
+			case MPMMODEIFB:
+				return "Mode I Force";
 			
-			case MPMCRACKABSORB:
-				return "Energy Dissipation Rate";
+			case MPMMODEIIFB:
+				return "Mode II Force";
 			
+			case MPMCZLENGTH:
+				return "Cohesive Damage Length";
+			
+	        case MPMCZMGI:
+	            return "Mode I Energy Released";
+	        
+	        case MPMCZMGII:
+	            return "Mode II Energy Released";
+	            
 			case MESHMATERIAL:
 				return "Material";
 			
@@ -1327,6 +1552,18 @@ public class PlotQuantity extends PlotControl
 				
 			case MPMTOTELEMENTCROSSINGS:
 				return "Total Element Crossings";
+				
+			case MPMTRACTION1:
+			case MPMTRACTION2:
+			case MPMTRACTION3:
+			case MPMTRACTION4:
+			case MPMTRACTION5:
+			case MPMTRACTION6:
+			case MPMTRACTION7:
+			case MPMTRACTION8:
+			case MPMTRACTION9:
+			case MPMTRACTION10:
+				return "Traction history "+(component-MPMTRACTION1+1);
 				
 			default:
 				break;

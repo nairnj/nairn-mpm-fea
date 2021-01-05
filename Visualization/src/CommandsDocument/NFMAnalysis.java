@@ -10,6 +10,7 @@ import geditcom.JNFramework.*;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JOptionPane;
 
@@ -29,6 +30,8 @@ public class NFMAnalysis  implements Runnable
 	private boolean wasSubmitted=false;
 	
 	private File tmpFile = null;
+	
+	private Process process = null;
 	
 	String remoteFolder = null;
 	String shellRemote = null;
@@ -582,8 +585,36 @@ public class NFMAnalysis  implements Runnable
 	{	
 		if(builder!=null)
 		{	// LOCAL_EXECUTION ---------------
+			// Start process first
 			try
-			{	Process process = builder.start();
+			{	process = builder.start();
+			}
+			catch(Exception tpe)
+			{	List<String> pbcmds = builder.command();
+				String myCmd = pbcmds.get(0);
+				System.out.println(myCmd);
+				if(myCmd.indexOf("%20")>0)
+				{	// try again with no %20
+					myCmd = myCmd.replaceAll("%20"," ");
+					pbcmds.set(0, myCmd);
+					System.out.println("Revised path:"+myCmd);
+					
+					// if in bundle correct that path too
+					if(NairnFEAMPMViz.jarFolder.indexOf("%20")>0)
+						NairnFEAMPMViz.jarFolder = NairnFEAMPMViz.jarFolder.replaceAll("%20", " ");
+				}
+				else
+				{	JNApplication.appBeep();
+					JOptionPane.showMessageDialog(doc,tpe.getLocalizedMessage());
+					running = false;
+					return;
+				}
+			}
+			
+			try
+			{	// if retry, start now
+				if(process==null) process = builder.start();
+				
 				InputStream is = process.getInputStream();
 				InputStreamReader isr = new InputStreamReader(is);
 				BufferedReader br = new BufferedReader(isr);
@@ -638,7 +669,7 @@ public class NFMAnalysis  implements Runnable
 						}
 					}
 					else
-					{	if(errMsg=="") errMsg = "Unknown error (perhaps Windows exe failed to launch)";
+					{	if(errMsg=="") errMsg = "Unknown error (perhaps Windows exe not found - check path in preferences)";
 						JNApplication.appBeep();
 						JOptionPane.showMessageDialog(doc,"Error: "+errMsg);
 					}
@@ -647,16 +678,23 @@ public class NFMAnalysis  implements Runnable
 				// close all
 				is.close();
 				es.close();
-				process.destroy();
 			}
 			catch(Exception tpe)
 			{	JNApplication.appBeep();
 				JOptionPane.showMessageDialog(doc,tpe.getLocalizedMessage());
 			}
+			
+			// destroy process if needed
+			if(process!=null)
+			{	process.destroy();
+				process = null;
+			}
+			
+			System.out.println("Analysis thread done");
 		}
 		
 		else
-		{	// REMOVE_ACCESS ----------------------
+		{	// REMOTE_ACCESS ----------------------
 			
 			// connect to server
 			RemoteConnection remoteConn = null;
@@ -871,15 +909,24 @@ public class NFMAnalysis  implements Runnable
 	
 	public void stopRunning()
 	{	if(runThread.isAlive())
-		{	running=false;
+		{	System.out.println("Analysis thread stop requested");
+			running=false;
+			if(process!=null)
+			{	// must set null before destroying process
+				Process holdProcess = process;
+				process = null;
+				holdProcess.destroy();
+			}
 			try
-			{	// this waits until the thres is done
+			{	// this waits until the thread is done
 				runThread.join();
 			}
 			catch(InterruptedException ie)
 			{	System.out.println("Failed to stop thread");
 			}
 		}
+		else
+			System.out.println("Analysis thread stop requested, but no thread alive");
 	}
 
 	// look for required MPMHeader element

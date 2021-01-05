@@ -18,15 +18,17 @@
 class HillPlastic : public AnisoPlasticity
 {
     public:
-        // Harding constantsL Y = Y0(1 + Khard alpha)^nhard
-		double Khard,nhard;
+        // Harding constantsL Y/Yref = (1 + Khard alpha^nhard)
+		double Khard,nhard,exphard,Kexp;
+        int hardStyle;
         
         // constructors and destructors
 		HillPlastic(char *,int);
 		
         // methods
 		virtual char *InputMaterialProperty(char *,int &,double &);
-	
+        virtual const char *VerifyAndLoadProperties(int);
+
 		// history data
 		virtual char *InitHistoryData(char *,MPMBase *);
    		virtual int NumberOfHistoryDoubles(void) const;

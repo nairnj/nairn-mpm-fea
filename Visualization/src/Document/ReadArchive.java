@@ -35,13 +35,18 @@ public class ReadArchive
 	static final int ARCH_DamageNormal=18;
 	static final int ARCH_SpinMomentum=19;
 	static final int ARCH_SpinVelocity=20;
-	static final int ARCH_MAXMPMITEMS=21;
+	static final int ARCH_History59=21;
+	static final int ARCH_History1014=22;
+	static final int ARCH_History1519=23;
+	static final int ARCH_MAXMPMITEMS=24;
 
 	// Archiving options for crack segments
 	static final int ARCH_JIntegral=2;
 	static final int ARCH_StressIntensity=3;
-	static final int ARCH_BalanceResults=4;
-	static final int ARCH_MAXCRACKITEMS=5;
+	static final int ARCH_CZMDeltaG=4;
+	static final int ARCH_Traction15=5;
+	static final int ARCH_Traction610=6;
+	static final int ARCH_MAXCRACKITEMS=7;
 	
 	// FEA archiving options
 	static final int ARCH_FEADisplacements=0;
@@ -266,6 +271,9 @@ public class ReadArchive
 		{	mpmRecSize+=sizeofDouble;
 			if(doc.is3D()) mpmRecSize+=2.*sizeofDouble;
 		}
+		mpmRecSize+=CountHistoryBits(mpmOrder[ARCH_History59])*sizeofDouble;
+		mpmRecSize+=CountHistoryBits(mpmOrder[ARCH_History1014])*sizeofDouble;
+		mpmRecSize+=CountHistoryBits(mpmOrder[ARCH_History1519])*sizeofDouble;
 			   
 		// check what will be there for crack segments
 		crackRecSize+=sizeofInt+sizeofDouble+sizeofShort+2;
@@ -277,11 +285,28 @@ public class ReadArchive
 			crackRecSize+=2*sizeofDouble;
 		if(crackOrder[ARCH_StressIntensity]=='Y')
 			crackRecSize+=2*sizeofDouble;
-		if(crackOrder[ARCH_BalanceResults]=='Y')
+		if(crackOrder[ARCH_CZMDeltaG]=='Y')
 			crackRecSize+=sizeofInt+2*sizeofDouble;
+		crackRecSize+=CountHistoryBits(crackOrder[ARCH_Traction15])*sizeofDouble;
+		crackRecSize+=CountHistoryBits(crackOrder[ARCH_Traction610])*sizeofDouble;
 		
 		// record is max of these two sizes
 		int recSize=mpmRecSize>crackRecSize ? mpmRecSize : crackRecSize;
 		return recSize;
+	}
+	
+	// If 'Y' return 1, if 'N' return 0, otherwise counts number of least significant
+	// five bits that are set
+	private static int CountHistoryBits(char historyChar)
+	{
+		if(historyChar=='Y') return 1;
+		if(historyChar=='N') return 0;
+		int numBits=0;
+		if((historyChar&0x01)!=0) numBits++;
+		if((historyChar&0x02)!=0) numBits++;
+		if((historyChar&0x04)!=0) numBits++;
+		if((historyChar&0x08)!=0) numBits++;
+		if((historyChar&0x10)!=0) numBits++;
+		return numBits;
 	}
 }

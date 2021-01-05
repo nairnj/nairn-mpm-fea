@@ -23,7 +23,7 @@ class InitVelocityFieldsTask : public MPMTask
 		InitVelocityFieldsTask(const char *);
 	
 		// required methods
-		virtual void Execute(int);
+		virtual bool Execute(int);
 	
 	protected:
 };

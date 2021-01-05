@@ -71,6 +71,9 @@ class MatVelocityField
 		void AddContactForce(Vector *);
 		void GridValueCalculation(int);
 		void AddGravityAndBodyForceTask3(Vector *,double,double);
+#ifdef RESTART_OPTION
+        bool IsTravelTooMuch(double,double) const;
+#endif
 		void AddPk(Vector *);
 		void AddPkScaled(Vector *,double);
         void AddFtot(Vector *);

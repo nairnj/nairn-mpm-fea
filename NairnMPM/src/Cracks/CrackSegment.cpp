@@ -45,6 +45,8 @@ CrackSegment::CrackSegment(Vector *xp,int tip,int matid)
 	ZeroVector(&Jint);
 	ZeroVector(&sif);
 	ZeroVector(&tract);
+    ZeroVector(&czmdG);
+    czmdG.z=-1.;
     tipMatnum=tip;
 	propagationJ=0.;
     steadyState=STATIONARY;
@@ -363,7 +365,7 @@ double CrackSegment::GetNormalAndTangent(CrackHeader *theCrack,Vector *norm,Vect
 
 // update tractions
 void CrackSegment::UpdateTractions(CrackHeader *theCrack)
-{	
+{
 	// exit if no traction law (matnum=0 or less return <0)
 	if(MatID()<0) return;
 	
@@ -381,7 +383,7 @@ void CrackSegment::UpdateTractions(CrackHeader *theCrack)
 
 // Calculate energy in the traction law for this segment if in traction
 // fullEnergy true gets total energy at location of this segment or nearest traction law tip
-// full Energy false gets recoverable energy at the traction law tip
+// fullEnergy false gets recoverable energy at the traction law tip
 // Only used in J integral calculations for released and bridged energy, so return energy in N/mm
 // If tipSegment is not NULL and this segment is not in the cohesive zone, it is set
 //    to the crack segment and the beginning of the cohesive zone (or to NULL if no cohesive zone),
@@ -451,18 +453,26 @@ double CrackSegment::TractionEnergy(Vector *crossPt,int crkTipIdx,bool fullEnerg
 	return energy;
 }
 
-// Calculate energy in the traction law for this segment, assumed to be a traction material
+// Calculate potentialEnergy (is true) or dissipated energy (if false) for segment
+// If not at crack tip, scan to one at the crack tip
 // Used in J integral calculations so return energy in N/mm
-double CrackSegment::SegmentTractionEnergy(bool fullEnergy)
-{	
-	// get normal and tangential unit vector and length
-	Vector n,t;
-	double nCod,tCod;
-	GetNormalAndTangent(NULL,&n,&t,nCod,tCod);
-	
+double CrackSegment::SegmentTractionEnergy(bool getPotentialEnergy)
+{
 	// call on traction law material for this segment
 	TractionLaw *theLaw=(TractionLaw *)theMaterials[MatID()];
-	return theLaw->CrackTractionEnergy(this,nCod,tCod,fullEnergy);
+
+	if(getPotentialEnergy)
+	{	// get normal and tangential unit vector and length
+		Vector n,t;
+		double nCod,tCod;
+		GetNormalAndTangent(NULL,&n,&t,nCod,tCod);
+		return theLaw->CrackWorkEnergy(this,nCod,tCod);
+	}
+	else
+	{	double GI,GII;
+		theLaw->CrackDissipatedEnergy(this,GI,GII);
+		return GI+GII;
+	}
 }
 
 // fill archive with this object values
@@ -547,16 +557,86 @@ void CrackSegment::FillArchive(char *app,int segNum)
         app+=sizeof(double);
     }
 	
-	// Energy Balance Results (no longer used)
-	if(archiver->CrackArchive(ARCH_BalanceResults))
-	{   *(int *)app=0;
-		app+=sizeof(double);
-        *(double *)app=0.;
-        app+=sizeof(double);
-        *(double *)app=0.;
-        app+=sizeof(double);
+	// Cummulative energy dissipated per unit length by this cohesize zone
+	if(archiver->CrackArchive(ARCH_CZMDISP))
+    {   if(czmdG.z>0.)
+        {   *(int *)app=1;
+            app+=sizeof(int);
+            // Energy releaase rate in N/mm
+            *(double *)app=czmdG.x*UnitsController::Scaling(1.e-6);
+            app+=sizeof(double);
+            *(double *)app=czmdG.y*UnitsController::Scaling(1.e-6);
+            app+=sizeof(double);
+        }
+        else
+        {   *(int *)app=0;
+            app+=sizeof(int);
+            *(double *)app=0.;
+            app+=sizeof(double);
+            *(double *)app=0.;
+            app+=sizeof(double);
+        }
 	}
     
+    // Traction 1 to 5
+    int tractMat = MatID();
+    char tractionChar = archiver->GetCrackOrderByte(ARCH_Traction15);
+    if(tractionChar=='Y')
+    {   *(double *)app = tractMat>=0? theMaterials[tractMat]->GetHistory(1,historyData) : 0. ;
+        app+=sizeof(double);
+    }
+    else if(tractionChar!='N')
+    {   if(tractionChar&0x01)
+        {   *(double *)app = tractMat>=0? theMaterials[tractMat]->GetHistory(1,historyData) : 0. ;
+            app+=sizeof(double);
+        }
+        if(tractionChar&0x02)
+        {   *(double *)app = tractMat>=0? theMaterials[tractMat]->GetHistory(2,historyData) : 0. ;
+            app+=sizeof(double);
+        }
+        if(tractionChar&0x04)
+        {   *(double *)app = tractMat>=0? theMaterials[tractMat]->GetHistory(3,historyData) : 0. ;
+            app+=sizeof(double);
+        }
+        if(tractionChar&0x08)
+        {   *(double *)app = tractMat>=0? theMaterials[tractMat]->GetHistory(4,historyData) : 0. ;
+            app+=sizeof(double);
+        }
+        if(tractionChar&0x10)
+        {   *(double *)app = tractMat>=0? theMaterials[tractMat]->GetHistory(5,historyData) : 0. ;
+            app+=sizeof(double);
+        }
+    }
+
+    // Traction 6 to 10
+    tractionChar = archiver->GetCrackOrderByte(ARCH_Traction610);
+    if(tractionChar=='Y')
+    {   *(double *)app = tractMat>=0? theMaterials[tractMat]->GetHistory(6,historyData) : 0. ;
+        app+=sizeof(double);
+    }
+    else if(tractionChar!='N')
+    {   if(tractionChar&0x01)
+        {   *(double *)app = tractMat>=0? theMaterials[tractMat]->GetHistory(6,historyData) : 0. ;
+            app+=sizeof(double);
+        }
+        if(tractionChar&0x02)
+        {   *(double *)app = tractMat>=0? theMaterials[tractMat]->GetHistory(7,historyData) : 0. ;
+            app+=sizeof(double);
+        }
+        if(tractionChar&0x04)
+        {   *(double *)app = tractMat>=0? theMaterials[tractMat]->GetHistory(8,historyData) : 0. ;
+            app+=sizeof(double);
+        }
+        if(tractionChar&0x08)
+        {   *(double *)app = tractMat>=0? theMaterials[tractMat]->GetHistory(9,historyData) : 0. ;
+            app+=sizeof(double);
+        }
+        if(tractionChar&0x10)
+        {   *(double *)app = tractMat>=0? theMaterials[tractMat]->GetHistory(10,historyData) : 0. ;
+            app+=sizeof(double);
+        }
+    }
+
     // reverse bytes if needed
     if(fmobj->GetReverseBytes())
     {	app=appInit;
@@ -585,10 +665,32 @@ void CrackSegment::FillArchive(char *app,int segNum)
         {   app+=Reverse(app,sizeof(double));
             app+=Reverse(app,sizeof(double));
         }
-		if(archiver->CrackArchive(ARCH_BalanceResults))
+		if(archiver->CrackArchive(ARCH_CZMDISP))
 		{   app+=Reverse(app,sizeof(int));
             app+=Reverse(app,sizeof(double));
             app+=Reverse(app,sizeof(double));
+        }
+        // traction history data 1 to 5
+        tractionChar = archiver->GetCrackOrderByte(ARCH_Traction15);
+        if(tractionChar=='Y')
+            app+=Reverse(app,sizeof(double));
+        else if(tractionChar!='N')
+        {   if(tractionChar&0x01) app+=Reverse(app,sizeof(double));
+            if(tractionChar&0x02) app+=Reverse(app,sizeof(double));
+            if(tractionChar&0x04) app+=Reverse(app,sizeof(double));
+            if(tractionChar&0x08) app+=Reverse(app,sizeof(double));
+            if(tractionChar&0x10) app+=Reverse(app,sizeof(double));
+        }
+        // traction history data 6 to 10
+        tractionChar = archiver->GetCrackOrderByte(ARCH_Traction610);
+        if(tractionChar=='Y')
+            app+=Reverse(app,sizeof(double));
+        else if(tractionChar!='N')
+        {   if(tractionChar&0x01) app+=Reverse(app,sizeof(double));
+            if(tractionChar&0x02) app+=Reverse(app,sizeof(double));
+            if(tractionChar&0x04) app+=Reverse(app,sizeof(double));
+            if(tractionChar&0x08) app+=Reverse(app,sizeof(double));
+            if(tractionChar&0x10) app+=Reverse(app,sizeof(double));
         }
     }
 }
@@ -816,42 +918,6 @@ bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool thereIsAnothe
 	return true;
 }
 
-// For cutting, collapse the crack if opened enough
-// cods are hard coded and should be greater than traction law max cod
-// Also won't collapse if this segment or a neighbor has traction law
-// return tru unless collapsed position is out of the grid
-bool CrackSegment::CollapseSurfaces(void)
-{
-    // Current disabled (and always returns true. To bring back uncomment following code
-    
-    /*****
-	// make sure no traction on this segment or its neighbors
-	if(MatID()>=0) return true;
-	if(nextSeg!=NULL)
-	{	if(nextSeg->MatID()>=0) return true;
-	}
-	if(prevSeg!=NULL)
-	{	if(prevSeg->MatID()>=0) return true;
-	}
-	
-	// check x and y opening
-	double codx=fabs(surf[0].x-surf[1].x);
-	double cody=fabs(surf[0].y-surf[1].y);
-	if(codx>1.02 || cody>1.02)
-	{	// OK to collapse
-		cp.x=(surf[0].x+surf[1].x)/2.;
-		cp.y=(surf[0].y+surf[1].y)/2.;
-		if(!FindElement()) return false;
-		surf[0].x=surf[1].x=cp.x;
-		surf[0].y=surf[1].y=cp.y;
-		surfInElem[0]=surfInElem[1]=planeInElem;
-		SetMatID(-1);								// marks as collapsed
-	}
-    *****/
-    
-	return true;
-}
-
 #pragma mark HIERACHICAL CRACKS
 
 // Create extents when segment is created or changed
@@ -973,4 +1039,9 @@ char *CrackSegment::GetHistoryData(void) { return historyData; }
 // side = ABOVE_CRACK (1) or BELOW)_CRACK (2)
 int CrackSegment::planeElemID(void) const { return planeInElem-1; }
 int CrackSegment::surfaceElemID(int side) const { return surfInElem[side-1]-1; }
+
+// store crack header (2D segment does not)
+void CrackSegment::SetCrackHeader(CrackHeader *theHeader) { header = theHeader; }
+
+
 

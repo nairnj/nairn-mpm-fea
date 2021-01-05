@@ -115,6 +115,10 @@ bool MaterialContactNode::ContactOnKnownNodes(double dtime,int passType)
 	long numContactNodes = materialContactNodes.size();
 	if(numContactNodes==0) return false;
 
+	// get list linking material points to contact nodes (if needed for regression methods)
+	if(passType==MASS_MOMENTUM_CALL && mpmgrid.UsingRegressionForContact())
+		GetMaterialContactData();
+
 	// prepare for parallel
 	CommonException *mcErr = NULL;
 	int numNodesPerProc = (int)((double)numContactNodes/(double)(fmobj->GetNumberOfProcessors()));
@@ -141,6 +145,123 @@ bool MaterialContactNode::ContactOnKnownNodes(double dtime,int passType)
 	if(mcErr!=NULL) throw *mcErr;
 	
 	return true;
+}
+
+// This is called post extrapolations (MASS_MOMENTUM_CALL)
+// Tasks are to find data to use in future contact calculations
+// 1. When using LR, map particle to contact nodes (on in MASS_MOMENTUM_CALL)
+// 2. Find normals (future option), but maybe that done in contact tasks only
+void MaterialContactNode::GetMaterialContactData(void)
+{
+	// skip if no contact nodes
+	long numContactNodes = materialContactNodes.size();
+	if(numContactNodes==0) return;
+	
+#ifdef CONST_ARRAYS
+	int ndsArray[MAX_SHAPE_NODES];
+	double fn[MAX_SHAPE_NODES];
+#else
+	int ndsArray[maxShapeNodes];
+	double fn[maxShapeNodes];
+#endif
+		
+#ifdef PARALLEL_LINKING
+	CommonException *normErr = NULL;
+	
+	// initialize lists on nodes
+#pragma omp parallel private(ndsArray,fn)
+	{
+#pragma omp for
+		for(long i=0;i<numContactNodes;i++)
+		{	try
+			{	materialContactNodes[i]->PrepareForLists();
+			}
+			catch(std::bad_alloc&)
+			{	if(normErr==NULL)
+				{
+#pragma omp critical (error)
+					normErr = new CommonException("Memory error","MaterialContactNode::GetMaterialContactData");
+				}
+			}
+			catch(...)
+			{	if(normErr==NULL)
+				{
+#pragma omp critical (error)
+					normErr = new CommonException("Unexpected error","MaterialContactNode::GetMaterialContactData");
+				}
+			}
+		}
+		
+#pragma omp barrier
+	
+		// do non-rigid, rigid block, and rigid contact particles in patch pn
+#pragma omp for
+		for(int p=0;p<nmpmsRC;p++)
+		{
+			try
+			{	// get material point
+				MPMBase *mpmptr = mpm[p];
+				
+				// don't actually need shape functions, only thing used from return are numnds and nds
+				int *nds = ndsArray;
+				theElements[mpmptr->ElemID()]->GetShapeFunctions(fn,&nds,mpmptr);
+				int numnds = nds[0];
+
+				// Check each node
+				for(int i=1;i<=numnds;i++)
+				{	// If a contact node, add mpmnum to the material contact node
+					MaterialContactNode *mcn = nd[nds[i]]->contactData;
+					if(mcn!=NULL)
+						mcn->AddMaterialContactPoint(p,mpmptr->vfld[i]);
+				}
+			}
+			catch(std::bad_alloc&)
+			{   if(normErr==NULL)
+				{
+#pragma omp critical (error)
+					normErr = new CommonException("Memory error","MaterialContactNode::GetMaterialContactData");
+				}
+			}
+			catch(...)
+			{	if(normErr==NULL)
+				{
+#pragma omp critical (error)
+					normErr = new CommonException("Unexpected error","MaterialContactNode::GetMaterialContactData");
+				}
+			}
+		}
+	}
+	
+	// was there an error?
+	if(normErr!=NULL) throw *normErr;
+#else
+	long numContactNodes = materialContactNodes.size();
+	if(numContactNodes==0) return;
+	
+	// initialize lists on nodes
+	for(long i=0;i<numContactNodes;i++)
+	{	materialContactNodes[i]->PrepareForLists();
+	}
+	
+	// do non-rigid, rigid block, and rigid contact particles in patch pn
+	for(int p=0;p<nmpmsRC;p++)
+	{	// get material point
+		MPMBase *mpmptr = mpm[p];
+		
+		// don't actually need shape functions, only thing used from return are numnds and nds
+		int *nds = ndsArray;
+		theElements[mpmptr->ElemID()]->GetShapeFunctions(fn,&nds,mpmptr);
+		int numnds = nds[0];
+		
+		// Check each node
+		for(int i=1;i<=numnds;i++)
+		{	// If a contact node, add mpmnum to the material contact node
+			MaterialContactNode *mcn = nd[nds[i]]->contactData;
+			if(mcn!=NULL)
+				mcn->AddMaterialContactPoint(p,mpmptr->vfld[i]);
+		}
+	}
+#endif
 }
 
 // delete the contact node (which delink to node), clear vector of pointers

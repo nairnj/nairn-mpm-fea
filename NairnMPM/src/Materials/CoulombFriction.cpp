@@ -22,7 +22,7 @@ CoulombFriction::CoulombFriction(char *matName,int matID) : ContactLaw(matName,m
 {
 	frictionCoeff = 0.0;			// <0 is stick
 	frictionCoeffStatic = -1.;		// ignored if negative or if frictionCoeff < 0
-	displacementOnly = 0.;			// >0 means displacementOnly, <=0 means tensile stress < abs(displacementOnly)
+	displacementOnly = 0.;			// >0 means displacementOnly, <=0 means tensile stress < fabs(displacementOnly)
 	Dc = -1.;
 }
 

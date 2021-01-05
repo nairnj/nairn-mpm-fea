@@ -106,6 +106,12 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 		{	// provided value in M/(L^2-T), scale by current density to get L/T
 			fluxMag.x = BCValue(bctime)*mpmptr->GetVolume(DEFORMED_VOLUME)/mpmptr->mp;
 		}
+#ifdef POROELASTICITY
+		else
+		{	// provided value in (dV/V)/(L^2-T), scale by V to get L/T
+			fluxMag.x = BCValue(bctime)*mpmptr->GetVolume(DEFORMED_VOLUME);
+		}
+#endif
 	}
 	else
     {
@@ -115,6 +121,13 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 			// time variable (t) is replaced by c-cres, where c is the particle value and cres is reservoir
 			cmcres = mpmptr->pPreviousConcentration-GetBCFirstTime();
 		}
+#ifdef POROELASTICITY
+		else
+		{	// poroelasticity f(p-pres) (units P) and function should give flux in (dV/V)/(L^2-T)
+			// Poroelasticity uses particle value to support changed flux when void space
+			cmcres = mpmptr->pConcentration-GetBCFirstTime();
+		}
+#endif
 #ifdef USE_ASCII_MAP
 		double vars[7];
 		vars[0] = 6.5;
@@ -135,6 +148,12 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 		{	// provided value in M/(L^2-T), scale by current density to get L/T
 			fluxMag.x = currentValue*mpmptr->GetVolume(DEFORMED_VOLUME)/mpmptr->mp;
 		}
+#ifdef POROELASTICITY
+		else
+		{	// provided value in (dV/V)/(L^2-T), scale by V to get L/T
+			fluxMag.x = currentValue*mpmptr->GetVolume(DEFORMED_VOLUME);
+		}
+#endif
 	}
 	
 	// get corners and radii from deformed material point (2 in 2D and 4 in 3D)

@@ -2,7 +2,7 @@
     ThermalRamp.cpp
     nairn-mpm-fea
  
-	Used to have thermal ramp, which is no done by CustomThermalRamp
+	Used to have thermal ramp, which is now done by CustomThermalRamp
 	This class only stores reference temperature in a global variable
     
     Created by John Nairn on Thu Jan 08 2004.

@@ -576,13 +576,13 @@ void GetFileExtension(const char *fileName,char *ext,int maxLength)
 
 // The cummulative dist function is p(x,mean,s) = 0.5(1+erf((x-mean)/(s*sqrt(2))))
 // Given p(d,0,1), return d and set (x-mean)/s = d or x = mean + s*d
-// Or relative to mean value/mean = 1 + s*d/mean = 1 + d*(CV)
-// where (CV) is coefficient of variation.
-// A property
-// found at http://www.johndcook.com/blog/normal_cdf_inverse/
+// Or relative to mean: value/mean = 1 + s*d/mean = 1 + d*(CV)
+//      where (CV) is coefficient of variation.
+// More info found at http://www.johndcook.com/blog/normal_cdf_inverse/
 double NormalCDFInverse(double p)
 {	if(p <= 0.0 || p >= 1.0)
-	{	return 0.;
+	{   // invalid numbers return zero or get mean value
+        return 0.;
 	}
 	else if(p < 0.5)
 	{	// F^-1(p) = - G^-1(p)
@@ -598,7 +598,7 @@ double NormalCDFInverse(double p)
 
 // Abramowitz and Stegun formula 26.2.23.
 // The absolute value of the error should be less than 4.5 e-4.
-// found at http://www.johndcook.com/blog/normal_cdf_inverse/
+// More info found at http://www.johndcook.com/blog/normal_cdf_inverse/
 double RationalApproximation(double t)
 {	double c[] = {2.515517, 0.802853, 0.010328};
 	double d[] = {1.432788, 0.189269, 0.001308};
@@ -606,12 +606,46 @@ double RationalApproximation(double t)
 	(((d[2]*t + d[1])*t + d[0])*t + 1.0);
 }
 
+// stable calculation of real roots to quadratic equation a*x^2 + b*x + c = 0
+// Roots returned in r1 and r2
+// a cannot be zero, but it is not checked for here
+// return true on real roots or false if no real roots
+bool RealQuadraticRoots(double a,double b,double c,double &r1,double &r2)
+{
+	// find terms that must be positive for real roots
+	double arg = b*b - 4.*a*c;
+	if(arg<0.)
+	{	if(fabs(arg)<1.e-6*b*b)
+		{	// if b^2 is close for 4.*a*c (difference very small relative to b^2)
+			// accept as equal to zero and get two identical real roots
+			r1 = -0.5*b/a;
+			r2 = r1;
+			return true;
+		}
+		else
+		{	// no real roots
+			return false;
+		}
+	}
+	
+	// find q = -0.5*(b + sgn(b) sqrt(b*b-4*a*c)
+	double q = b>0. ? -0.5*(b+sqrt(arg)) : -0.5*(b-sqrt(arg));
+	
+	// roots are q/a and c/q
+	r1 = q/a;
+	r2 = c/q;
+	
+	// found real roots
+	return true;
+}
+
+
 #ifdef MPM_CODE
 /****************************************************************
  *  Functions for an intersect of plane and  unit cube
  ****************************************************************/
 
-double ci[5]={-1.,1.,1.,-1.,-1.};
+static double ci[5]={-1.,1.,1.,-1.,-1.};
 
 // Find intersected edges
 // Prechecked to have intersection and intersection is not a corner
@@ -806,5 +840,151 @@ double AreaOverVolume3D(Vector *norm,double dx,double dy,double dz)
 		v2 = IntersectEdges(2,3,&sz,norm);
 	}
 	return PGramArea(&v1,&v2,norm)/(dx*dy*dz);
+}
+#endif
+
+#ifdef MPM_CODE
+/****************************************************************
+ *  LambertFunctions or ProductLog branches -1 and 0
+ ****************************************************************/
+
+/* specfunc/lambert.c
+ *
+ * Copyright (C) 2007 Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001 Gerard Jungman
+ * Author:  G. Jungman
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or (at
+ * your option) any later version.
+ */
+
+#define MAX_ITERS 10
+#define DBL_EPSILON 2.2204460492503131e-16
+
+static const double c[12] =
+{   -1.0,
+     2.331643981597124203363536062168,
+    -1.812187885639363490240191647568,
+     1.936631114492359755363277457668,
+    -2.353551201881614516821543561516,
+     3.066858901050631912893148922704,
+    -4.175335600258177138854984177460,
+     5.858023729874774148815053846119,
+    -8.401032217523977370984161688514,
+     12.250753501314460424,
+    -18.100697012472442755,
+     27.029044799010561650
+};
+
+//  Halley iteration https://en.wikipedia.org/wiki/Halley%27s_method
+static double halley_iteration(double x,double w_initial,unsigned int max_iters)
+{
+    double w = w_initial;
+    unsigned int i;
+
+    for(i=0; i<max_iters; i++)
+    {   double tol;
+        const double e = exp(w);
+        const double p = w + 1.0;
+        double t = w*e - x;
+
+        if (w > 0)
+            t = (t/p)/e;                    // Newton iteration
+        else
+            t /= e*p - 0.5*(p + 1.0)*t/p;   // Halley iteration
+
+        w -= t;
+
+        tol = 10 * DBL_EPSILON * fmax(fabs(w), 1.0/(fabs(p)*e));
+
+        if(fabs(t) < tol) return w;
+    }
+
+    // if too many iterations
+    return 0;
+}
+
+// series which appears for q near zero;
+//  only the argument is different for the different branches
+static double series_eval(double r)
+{
+    const double t_8 = c[8] + r*(c[9] + r*(c[10] + r*c[11]));
+    const double t_5 = c[5] + r*(c[6] + r*(c[7]  + r*t_8));
+    const double t_1 = c[1] + r*(c[2] + r*(c[3]  + r*(c[4] + r*t_5)));
+    return c[0] + r*t_1;
+}
+
+// Branh zero of Lambert functino for real x (ProductLog(0,x) in Mathematica)
+double gsl_sf_lambert_W0(double x)
+{
+    const double q = x + exp(-1);
+
+    if(x == 0.0)
+    {   return 0.0;
+    }
+    else if(q <= 0.0)
+    {   // Strictly speaking, <0 this is an error. Allowed here in case roundoff
+        return -1.0;
+    }
+    else if(q < 1.0e-03)
+    {   // series near -1/e in sqrt(q)
+        const double r = sqrt(q);
+        return series_eval(r);
+    }
+
+    // all other values
+    double w;
+
+    if (x < 1.0)
+    {   // obtain initial approximation from series near x=0;
+        const double p = sqrt(2.0 * exp(1) * q);
+        w = -1.0 + p*(1.0 + p*(-1.0/3.0 + p*11.0/72.0));
+    }
+    else
+    {   // obtain initial approximation from rough asymptotic
+        w = log(x);
+        if(x > 3.0) w -= log(w);
+    }
+    
+    return halley_iteration(x, w, MAX_ITERS);
+}
+
+// Branh -1 of Lambert function for real x (ProductLog(-1,x) in Mathematica)
+// only defined for -1/e < x < 0
+double gsl_sf_lambert_Wm1(double x)
+{
+    if(x > 0.0)
+        return gsl_sf_lambert_W0(x);
+     else if(x == 0.0)
+        return 0.0;
+    
+    const double q = x + exp(-1);
+    double w;
+
+    if (q < 0.0)
+    {   // As in the W0 branch above, return some reasonable answer anyway.
+        return -1.0;
+    }
+
+    if(x < -1.0e-6)
+    {   // Obtain initial approximation from series about q = 0,
+        // as long as we're not very close to x = 0.
+        const double r = -sqrt(q);
+        w = series_eval(r);
+        if(q < 3.0e-3)
+        {   // this approximation is good enough
+            return w;
+        }
+    }
+    else
+    {   // Obtain initial approximation from asymptotic near zero.
+        const double L_1 = log(-x);
+        const double L_2 = log(-L_1);
+        w = L_1 - L_2 + L_2/L_1;
+    }
+
+    return halley_iteration(x, w, MAX_ITERS);
 }
 #endif

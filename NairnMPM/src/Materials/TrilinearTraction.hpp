@@ -13,9 +13,9 @@
 
 #define TRILINEARTRACTIONMATERIAL 20
 
-#include "Materials/CohesiveZone.hpp"
+#include "Materials/ExponentialTraction.hpp"
 
-class TrilinearTraction : public CohesiveZone
+class TrilinearTraction : public ExponentialTraction
 {
     public:
 		
@@ -26,20 +26,31 @@ class TrilinearTraction : public CohesiveZone
 		virtual char *InputTractionLawProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintMechanicalProperties(void) const;
-		
-		// the traction law
-		virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);
-		virtual double CrackTractionEnergy(CrackSegment *,double,double,bool);
-		
-		// accessors
-		virtual const char *SetTLTractionLaw(double &,double &,double &,double &,double &,double &,double &);
+
+        // Core functions
+        virtual double Strength(int,double);
+        virtual double WorkEnergy(int,double);
+        virtual double DissipatedEnergy(int,double);
+        virtual double GetDFromDelta(int,double);
+        virtual double GetDeltaFromD(int,double);
+
+		// Trilinear methods (don't override)
+        void PrintTriLinearModel(const char *,double,double,double,double,double,double,double) const;
+        double GetTLDeltaPrimeFromD(double,double,double,double,double,double,double,bool);
+        const char *SetTLTractionLaw(double &,double &,double &,double &,double &,double &,double &,
+                                     bool &,double &,double &);
+    
+        // accessors (override)
 		virtual const char *MaterialType(void) const;
 		
 	protected:
 		double sI2,uI2;
 		double sII2,uII2;
 		bool break1is2I,break1is2II;
-	
+		double JI_1c,JI_2c,JII_1c,JII_2c;
+        double DIbreak,DIIbreak;
+        double phiII2,phiI2;
+        double RI2,RII2;
 };
 
 #endif

@@ -87,4 +87,28 @@ public class CrackHeader
 		}
 	}
 	
+	// get traction history for each segement
+	public void getCrackTraction(int num,ArrayList<Double>hpts)
+	{	int i;
+		CrackSegment seg;
+		for(i=0;i<segments.size();i++)
+		{	seg=segments.get(i);
+			hpts.add(seg.getTractionHistory(num));
+		}
+	}
+	// get all traction ERR
+	public void getCrackZoneERR(int comp,ArrayList<Double>hpts)
+	{	int i;
+	    CrackSegment seg;
+	    double err;
+	    for(i=0;i<segments.size();i++)
+		{	seg=segments.get(i);
+	        if(seg.czmHasDisp>0)
+	            err = comp==PlotQuantity.MPMCZMGI ? seg.czmGI : seg.czmGII ;
+	        else
+	            err = 0.;
+	        hpts.add(err);
+	    }
+	}
+
 }

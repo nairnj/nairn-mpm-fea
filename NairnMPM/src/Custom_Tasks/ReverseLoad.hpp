@@ -26,6 +26,7 @@ class ReverseLoad : public CustomTask
         int reversed;
 		int quantity,subcode,whichMat;
 		char quant[64];
+        int debondLength;
         
         // constructors and destructors
         ReverseLoad();

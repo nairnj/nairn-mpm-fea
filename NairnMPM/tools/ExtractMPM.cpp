@@ -47,11 +47,16 @@ int recSize;
 int vectorSize,tensorSize;
 bool reverseFromInput;
 int angleOffset=-1,angleYOffset,angleXOffset,posOffset=-1,stressOffset=-1,strainOffset=-1;
-int crackPosOffset=-1,jIntOffset=-1,kSifOffset=-1;
+int crackPosOffset=-1,jIntOffset=-1,kSifOffset=-1,czmDispOffset=-1;
 int velocityOffset=-1,origPosOffset=-1,plStrainOffset=-1;
 int tempOffset=-1,concOffset=-1,strainEnergyOffset=-1,plasticEnergyOffset=-1;
 int history1Offset=-1,history2Offset=-1,history3Offset=-1,history4Offset=-1;
+int history5Offset=-1,history6Offset=-1,history7Offset=-1,history8Offset=-1,history9Offset=-1;
+int history10Offset=-1,history11Offset=-1,history12Offset=-1,history13Offset=-1,history14Offset=-1;
+int history15Offset=-1,history16Offset=-1,history17Offset=-1,history18Offset=-1,history19Offset=-1;
 int workEnergyOffset=-1,heatEnergyOffset=-1,rotStrainOffset=-1;
+int traction1Offset=-1,traction2Offset=-1,traction3Offset=-1,traction4Offset=-1,traction5Offset=-1;
+int traction6Offset=-1,traction7Offset=-1,traction8Offset=-1,traction9Offset=-1,traction10Offset=-1;
 
 // global file variables
 unsigned char *buffer;
@@ -192,6 +197,36 @@ int main(int argc, char * const argv[])
 					q=HIST3;
 				else if(strcmp(parm,"hist4")==0)
 					q=HIST4;
+				else if(strcmp(parm,"hist5")==0)
+					q=HIST5;
+				else if(strcmp(parm,"hist6")==0)
+					q=HIST6;
+				else if(strcmp(parm,"hist7")==0)
+					q=HIST7;
+				else if(strcmp(parm,"hist8")==0)
+					q=HIST8;
+				else if(strcmp(parm,"hist9")==0)
+					q=HIST9;
+				else if(strcmp(parm,"hist10")==0)
+					q=HIST10;
+				else if(strcmp(parm,"hist11")==0)
+					q=HIST11;
+				else if(strcmp(parm,"hist12")==0)
+					q=HIST12;
+				else if(strcmp(parm,"hist13")==0)
+					q=HIST13;
+				else if(strcmp(parm,"hist14")==0)
+					q=HIST14;
+				else if(strcmp(parm,"hist15")==0)
+					q=HIST15;
+				else if(strcmp(parm,"hist16")==0)
+					q=HIST16;
+				else if(strcmp(parm,"hist17")==0)
+					q=HIST17;
+				else if(strcmp(parm,"hist18")==0)
+					q=HIST18;
+				else if(strcmp(parm,"hist19")==0)
+					q=HIST19;
 				else if(strcmp(parm,"work")==0)
 					q=WORKENERGY;
 				else if(strcmp(parm,"heat")==0)
@@ -202,6 +237,30 @@ int main(int argc, char * const argv[])
 					q=MATANGLEY;
 				else if(strcmp(parm,"angx")==0)
 					q=MATANGLEX;
+                else if(strcmp(parm,"czm1")==0)
+                    q=CZMI;
+                else if(strcmp(parm,"czm2")==0)
+                    q=CZMII;
+                else if(strcmp(parm,"tract1")==0)
+                    q=THIST1;
+                else if(strcmp(parm,"tract2")==0)
+                    q=THIST2;
+                else if(strcmp(parm,"tract3")==0)
+                    q=THIST3;
+                else if(strcmp(parm,"tract4")==0)
+                    q=THIST4;
+                else if(strcmp(parm,"tract5")==0)
+                    q=THIST5;
+                else if(strcmp(parm,"tract6")==0)
+                    q=THIST6;
+                else if(strcmp(parm,"tract7")==0)
+                    q=THIST7;
+                else if(strcmp(parm,"tract8")==0)
+                    q=THIST8;
+                else if(strcmp(parm,"tract9")==0)
+                    q=THIST9;
+                else if(strcmp(parm,"tract10")==0)
+                    q=THIST10;
 				else
 				{   cerr << "ExtractMPM option 'q' argument of '" << parm << "' is not recognized" << endl;
 					return BadOptionErr;
@@ -458,7 +517,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	}
 	
 	// open the file
-	if((fp=fopen(mpmFile,"r"))==NULL)
+	if((fp=fopen(mpmFile,"rb"))==NULL)
 	{	cerr << "Input file '" << mpmFile << "' could not be opened" << endl;
 		return FileAccessErr;
 	}
@@ -852,7 +911,85 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 							else
 								OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
 							break;
-						
+                        
+                        case CZMI:
+                        case CZMII:
+                            if(czmDispOffset>0)
+                                OutputDouble((double *)(ap+czmDispOffset),quantity[i]-CZMI,'\t',reverseFromInput,os,quantity[i]);
+                            else
+                                OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
+                            break;
+
+                        case THIST1:
+                            if(traction1Offset>0)
+                                OutputDouble((double *)(ap+traction1Offset),0,'\t',reverseFromInput,os,quantity[i]);
+                            else
+                                OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
+                            break;
+                        
+                        case THIST2:
+                            if(traction2Offset>0)
+                                OutputDouble((double *)(ap+traction2Offset),0,'\t',reverseFromInput,os,quantity[i]);
+                            else
+                                OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
+                            break;
+                        
+                        case THIST3:
+                            if(traction3Offset>0)
+                                OutputDouble((double *)(ap+traction3Offset),0,'\t',reverseFromInput,os,quantity[i]);
+                            else
+                                OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
+                            break;
+                        
+                        case THIST4:
+                            if(traction4Offset>0)
+                                OutputDouble((double *)(ap+traction4Offset),0,'\t',reverseFromInput,os,quantity[i]);
+                            else
+                                OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
+                            break;
+                        
+                        case THIST5:
+                            if(traction5Offset>0)
+                                OutputDouble((double *)(ap+traction5Offset),0,'\t',reverseFromInput,os,quantity[i]);
+                            else
+                                OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
+                            break;
+                        
+                        case THIST6:
+                            if(traction6Offset>0)
+                                OutputDouble((double *)(ap+traction6Offset),0,'\t',reverseFromInput,os,quantity[i]);
+                            else
+                                OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
+                            break;
+                        
+                        case THIST7:
+                            if(traction7Offset>0)
+                                OutputDouble((double *)(ap+traction7Offset),0,'\t',reverseFromInput,os,quantity[i]);
+                            else
+                                OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
+                            break;
+                        
+                        case THIST8:
+                            if(traction8Offset>0)
+                                OutputDouble((double *)(ap+traction8Offset),0,'\t',reverseFromInput,os,quantity[i]);
+                            else
+                                OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
+                            break;
+                        
+                        case THIST9:
+                            if(traction9Offset>0)
+                                OutputDouble((double *)(ap+traction9Offset),0,'\t',reverseFromInput,os,quantity[i]);
+                            else
+                                OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
+                            break;
+                        
+                        case THIST10:
+                            if(traction10Offset>0)
+                                OutputDouble((double *)(ap+traction10Offset),0,'\t',reverseFromInput,os,quantity[i]);
+                            else
+                                OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
+                            break;
+                        
 						default:
 							OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
 							break;
@@ -1625,7 +1762,112 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
 			break;
         
-        case WORKENERGY:
+		case HIST5:
+			if(history5Offset>0)
+				OutputDouble((double *)(ap+history5Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST6:
+			if(history6Offset>0)
+				OutputDouble((double *)(ap+history6Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST7:
+			if(history7Offset>0)
+				OutputDouble((double *)(ap+history7Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST8:
+			if(history8Offset>0)
+				OutputDouble((double *)(ap+history8Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST9:
+			if(history9Offset>0)
+				OutputDouble((double *)(ap+history9Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST10:
+			if(history10Offset>0)
+				OutputDouble((double *)(ap+history10Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST11:
+			if(history11Offset>0)
+				OutputDouble((double *)(ap+history11Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST12:
+			if(history12Offset>0)
+				OutputDouble((double *)(ap+history12Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST13:
+			if(history13Offset>0)
+				OutputDouble((double *)(ap+history13Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST14:
+			if(history14Offset>0)
+				OutputDouble((double *)(ap+history14Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST15:
+			if(history15Offset>0)
+				OutputDouble((double *)(ap+history15Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST16:
+			if(history16Offset>0)
+				OutputDouble((double *)(ap+history16Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST17:
+			if(history17Offset>0)
+				OutputDouble((double *)(ap+history17Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST18:
+			if(history18Offset>0)
+				OutputDouble((double *)(ap+history18Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+		case HIST19:
+			if(history19Offset>0)
+				OutputDouble((double *)(ap+history19Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+       case WORKENERGY:
             if(workEnergyOffset>0)
                 OutputDouble((double *)(ap+workEnergyOffset),0,delim,reverseFromInput,os,quantity[i]);
 			else
@@ -2007,7 +2249,85 @@ int CalcArchiveSize(int vernum)
 		else
 			mpmRecSize+=sizeof(double);
 	}
-		
+	if(mpmOrder[ARCH_History59]=='Y')
+	{   history5Offset=mpmRecSize;
+		mpmRecSize+=sizeof(double);
+	}
+	else if(mpmOrder[ARCH_History59]!='N')
+	{	if(mpmOrder[ARCH_History59]&0x01)
+		{   history5Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History59]&0x02)
+		{   history6Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History59]&0x04)
+		{   history7Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History59]&0x08)
+		{   history8Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History59]&0x10)
+		{   history9Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+	}
+	if(mpmOrder[ARCH_History1014]=='Y')
+	{   history10Offset=mpmRecSize;
+		mpmRecSize+=sizeof(double);
+	}
+	else if(mpmOrder[ARCH_History1014]!='N')
+	{	if(mpmOrder[ARCH_History1014]&0x01)
+		{   history10Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History1014]&0x02)
+		{   history11Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History1014]&0x04)
+		{   history12Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History1014]&0x08)
+		{   history13Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History1014]&0x10)
+		{   history14Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+	}
+	if(mpmOrder[ARCH_History1519]=='Y')
+	{   history15Offset=mpmRecSize;
+		mpmRecSize+=sizeof(double);
+	}
+	else if(mpmOrder[ARCH_History1519]!='N')
+	{	if(mpmOrder[ARCH_History1519]&0x01)
+		{   history15Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History1519]&0x02)
+		{   history16Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History1519]&0x04)
+		{   history17Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History1519]&0x08)
+		{   history18Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+		if(mpmOrder[ARCH_History1519]&0x10)
+		{   history19Offset=mpmRecSize;
+			mpmRecSize+=sizeof(double);
+		}
+	}
+
     // check what will be there for crack segments
  	crackPosOffset=sizeof(int)+sizeof(double)+sizeof(short)+2;
 	
@@ -2026,9 +2346,64 @@ int CalcArchiveSize(int vernum)
 	{	kSifOffset=crackRecSize;
         crackRecSize+=2*sizeof(double);
 	}
-    if(crackOrder[ARCH_BalanceResults]=='Y')
-        crackRecSize+=sizeof(int)+2*sizeof(double);
-    
+    if(crackOrder[ARCH_CZMDISP]=='Y')
+    {   crackRecSize+=sizeof(int);
+        czmDispOffset=crackRecSize;
+        crackRecSize+=2*sizeof(double);
+    }
+    if(crackOrder[ARCH_Traction15]=='Y')
+    {   traction1Offset=crackRecSize;
+        crackRecSize+=sizeof(double);
+    }
+    else if(crackOrder[ARCH_Traction15]!='N')
+    {   if(crackOrder[ARCH_Traction15]&0x01)
+        {   traction1Offset=crackRecSize;
+            crackRecSize+=sizeof(double);
+        }
+        if(crackOrder[ARCH_Traction15]&0x02)
+        {   traction2Offset=crackRecSize;
+            crackRecSize+=sizeof(double);
+        }
+        if(crackOrder[ARCH_Traction15]&0x04)
+        {   traction3Offset=crackRecSize;
+            crackRecSize+=sizeof(double);
+        }
+        if(crackOrder[ARCH_Traction15]&0x08)
+        {   traction4Offset=crackRecSize;
+            crackRecSize+=sizeof(double);
+        }
+        if(crackOrder[ARCH_Traction15]&0x10)
+        {   traction5Offset=crackRecSize;
+            crackRecSize+=sizeof(double);
+        }
+    }
+    if(crackOrder[ARCH_Traction610]=='Y')
+    {   traction6Offset=crackRecSize;
+        crackRecSize+=sizeof(double);
+    }
+    else if(crackOrder[ARCH_Traction610]!='N')
+    {   if(crackOrder[ARCH_Traction610]&0x01)
+        {   traction6Offset=crackRecSize;
+            crackRecSize+=sizeof(double);
+        }
+        if(crackOrder[ARCH_Traction610]&0x02)
+        {   traction7Offset=crackRecSize;
+            crackRecSize+=sizeof(double);
+        }
+        if(crackOrder[ARCH_Traction610]&0x04)
+        {   traction8Offset=crackRecSize;
+            crackRecSize+=sizeof(double);
+        }
+        if(crackOrder[ARCH_Traction610]&0x08)
+        {   traction9Offset=crackRecSize;
+            crackRecSize+=sizeof(double);
+        }
+        if(crackOrder[ARCH_Traction610]&0x10)
+        {   traction10Offset=crackRecSize;
+            crackRecSize+=sizeof(double);
+        }
+    }
+
     // record is max of these two sizes
     recSize=mpmRecSize>crackRecSize ? mpmRecSize : crackRecSize;
 	

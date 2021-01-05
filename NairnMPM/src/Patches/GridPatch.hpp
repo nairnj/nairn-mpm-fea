@@ -51,7 +51,9 @@ class GridPatch
 		void AddParticle(MPMBase *);
 		void RemoveParticleAfter(MPMBase *,MPMBase *);
 		void XPICSupport(int,int,NodalPoint *,double,int,int,double);
-	
+        void InitializeForXPICTransport(TransportTask *,int);
+        void XPICReductionTransport(int,TransportTask *);
+
 		// accessors
 		MPMBase *GetFirstBlockPointer(int);
 		NodalPoint *GetNodePointer(int);

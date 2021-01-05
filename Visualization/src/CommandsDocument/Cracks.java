@@ -18,6 +18,7 @@ public class Cracks
 	private StringBuffer currentCrack = null;
 	private boolean crackFixed;
 	private String crackFriction;
+	private String crackTractProp;
 	private String crackThickness;
 	private String movePlane;
 	private double cx,cy;
@@ -108,6 +109,7 @@ public class Cracks
 		crackFixed = false;
 		crackFriction = null;
 		crackThickness = null;
+		crackTractProp = null;
 		
 		// read analysis type
 		if(args.size()<3)
@@ -330,6 +332,26 @@ public class Cracks
 		crackThickness = "    <Thickness>"+doc.formatDble(ct)+"</Thickness>\n";
 	}
 	
+	// CrackThickness #1
+	public void doCrackTractionProp(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		doc.requiresMPM(args);
+		
+		// must be in a crack
+		if(currentCrack==null)
+			throw new Exception("'"+args.get(0)+"' command must be in an active crack:\n"+args);
+		
+		if(args.size()<2)
+			throw new Exception("'"+args.get(0)+"' command with too few arguments:\n"+args);
+		
+		// get law ID
+		int lawnum = doc.mats.getMatID(doc.readStringArg(args.get(1)));
+		if(lawnum <= 0)
+			throw new Exception("'" + args.get(0) + "' traction law has unknown material ID:\n" + args);
+
+		crackTractProp = " Tprop='"+lawnum+"'";
+	}
+	
 	// Propagaate (crit),<(dir)>,<(traction)>
 	// AltProagate (crit),<(dir)>,<(traction)>
 	public void doPropagate(ArrayList<String> args,boolean isAlt) throws Exception
@@ -414,6 +436,7 @@ public class Cracks
 		crackList.append("  <CrackList");
 		if(crackFixed) crackList.append(" type='fixed'");
 		if(crackFriction!=null) crackList.append(crackFriction);
+		if(crackTractProp!=null) crackList.append(crackTractProp);
 		
 		// finish up
 		crackList.append(">\n"+currentCrack.toString());

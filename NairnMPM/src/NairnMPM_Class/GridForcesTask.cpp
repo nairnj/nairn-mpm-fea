@@ -35,7 +35,7 @@ GridForcesTask::GridForcesTask(const char *name) : MPMTask(name)
 
 // Get total grid point forces (except external forces)
 // throws CommonException()
-void GridForcesTask::Execute(int taskOption)
+bool GridForcesTask::Execute(int taskOption)
 {
 	CommonException *forceErr = NULL;
 	
@@ -134,4 +134,6 @@ void GridForcesTask::Execute(int taskOption)
 	{	for(int pn=0;pn<totalPatches;pn++)
 			patches[pn]->GridForcesReduction();
 	}
+    
+    return true;
 }

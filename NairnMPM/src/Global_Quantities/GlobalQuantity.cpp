@@ -46,7 +46,7 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 	char nameStr[200];
 	whichMat=whichOne;
 	
-	quantity = DecodeGlobalQuantity(quant,&subcode);
+	quantity = DecodeGlobalQuantity(quant,&subcode,&whichMat);
 	
 	// set name
 	if(whichMat!=0)
@@ -61,7 +61,7 @@ GlobalQuantity::GlobalQuantity(char *quant,Vector *ptLoc)
 {
 	char nameStr[200];
 	
-	quantity = DecodeGlobalQuantity(quant,&subcode);
+	quantity = DecodeGlobalQuantity(quant,&subcode,&whichMat);
 	
 	// save room for particle number
     sprintf(nameStr,"%s pt ",quant);
@@ -122,7 +122,8 @@ void GlobalQuantity::FinishNewQuantity(char *nameStr)
 }
 
 // decode quant it to quantity ID and subcode (used for history variables)
-int GlobalQuantity::DecodeGlobalQuantity(const char *quant,int *hcode)
+// mcode can change whichMat if needed
+int GlobalQuantity::DecodeGlobalQuantity(const char *quant,int *hcode,int *mcode)
 {
 	int theQuant;
 	
@@ -298,6 +299,30 @@ int GlobalQuantity::DecodeGlobalQuantity(const char *quant,int *hcode)
 				theQuant=HISTORY_VARIABLE;
 			}
 		}
+        
+        // possibly a crack length which must be "crack length n"
+        if(theQuant==UNKNOWN_QUANTITY && strlen(quant)>12)
+        {   char nameStr[200];
+            strcpy(nameStr,quant);
+            nameStr[12] = 0;
+            if(strcmp(nameStr,"crack length")==0)
+            {   sscanf(quant,"%*s %*s %d",hcode);
+                theQuant = CRACK_LENGTH;
+                *mcode = 0;         // no material allowed
+            }
+        }
+        
+        // possibly a crack length which must be "debonded crack length n"
+        if(theQuant==UNKNOWN_QUANTITY && strlen(quant)>21)
+        {   char nameStr[200];
+            strcpy(nameStr,quant);
+            nameStr[21] = 0;
+            if(strcmp(nameStr,"debonded crack length")==0)
+            {   sscanf(quant,"%*s %*s %*s %d",hcode);
+                theQuant = DEBONDED_CRACK_LENGTH;
+                *mcode = 0;         // no material allowed
+            }
+        }
 	}
 	
 	return theQuant;
@@ -711,6 +736,24 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 					}
 					if(totalWeight>0.) value /= totalWeight;
 			}
+#ifdef POROELASTICITY
+			else if(fmobj->HasPoroelasticity())
+			{	// Volume weighted average is Sum (Vp pp) / Sum Vp
+				// where Vp = J mp/rho0
+				for(p=p0;p<pend;p++)
+				{	matid=mpm[p]->MatID();
+					if(IncludeThisMaterial(matid))
+					{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
+						Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
+						Vp = Jp*mpm[p]->mp/rho0;
+						value += Vp*mpm[p]->pPreviousConcentration;
+						Vtot += Vp;
+					}
+				}
+				if(Vtot>0.) value /= Vtot;
+				value *= UnitsController::Scaling(1.e-6);
+			}
+#endif
 			break;
 		}
 		
@@ -749,6 +792,25 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			}
 			if(Vtot>0.) value /= Vtot;
 			break;
+        
+        case CRACK_LENGTH:
+        case DEBONDED_CRACK_LENGTH:
+        {   // get desired crack (or 0 if  no such crack)
+            int cnum = 0;
+            value = 0.;
+            CrackHeader *nextCrack=firstCrack;
+            while(nextCrack!=NULL)
+            {   cnum++;
+                if(subcode==cnum)
+                {   // found crack, check the length
+                    value = quantity==CRACK_LENGTH ? nextCrack->Length() :
+                                                    nextCrack->DebondedLength() ;
+                    break;
+                }
+                nextCrack = (CrackHeader *)nextCrack->GetNextObject();
+            }
+            break;
+        }
 		
 		case TOT_FCONX:
 		case TOT_FCONY:
@@ -923,44 +985,41 @@ GlobalQuantity *GlobalQuantity::AppendColor(char *fline)
 		return nextGlobal;
 	
 	strcat(fline,"\t");
-	switch(colorID)
-	{   case 0:
-			strcat(fline,"black");
-			break;
-		case 1:
-			strcat(fline,"blue");
-			break;
-		case 2:
-			strcat(fline,"red");
-			break;
-		case 3:
-			strcat(fline,"green");
-			break;
-		case 4:
-			strcat(fline,"brown");
-			break;
-		case 5:
-			strcat(fline,"cyan");
-			break;
-		case 6:
-			strcat(fline,"magenta");
-			break;
-		case 7:
-			strcat(fline,"orange");
-			break;
-		case 8:
-			strcat(fline,"purple");
-			break;
-		case 9:
-			strcat(fline,"yellow");
-			break;
-		default:
-			strcat(fline,"black");
-			break;
-	}
+	strcat(fline,PickColor(colorID));
 	
 	// return next one
 	return nextGlobal;
+}
+
+// Class method to pick 10 colors using buNum mod 10
+const char *GlobalQuantity::PickColor(int byNum)
+{
+	int numID = byNum % 10;
+	switch(numID)
+	{   case 0:
+			return "black";
+		case 1:
+			return "blue";
+		case 2:
+			return "red";
+		case 3:
+			return "green";
+		case 4:
+			return "brown";
+		case 5:
+			return "cyan";
+		case 6:
+			return "magenta";
+		case 7:
+			return "orange";
+		case 8:
+			return "purple";
+		case 9:
+			return "yellow";
+		default:
+			return "black";
+	}
+	return "black";
 }
 
 #pragma mark GlobalQuantity::ACCESSORS

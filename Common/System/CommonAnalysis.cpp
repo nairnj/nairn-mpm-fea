@@ -143,7 +143,7 @@ void CommonAnalysis::StartResultsOutput(void)
     if(theMaterials==NULL)
         throw CommonException("No materials were defined.","CommonAnalysis::StartResultsOutput");
     for(i=0;i<nmat;i++)
-	{	err=theMaterials[i]->VerifyAndLoadProperties(np);
+	{	err = theMaterials[i]->VerifyAndLoadProperties(np);
     	theMaterials[i]->PrintMaterial(i+1);
 		cout << endl;
         if(err!=NULL)

@@ -43,12 +43,12 @@ PostExtrapolationTask::PostExtrapolationTask(const char *name) : MPMTask(name)
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
 // throws CommonException()
-void PostExtrapolationTask::Execute(int taskOption)
+bool PostExtrapolationTask::Execute(int taskOption)
 {
 	CommonException *massErr = NULL;
-	
-	// Only rigid materials ignore cracks in NairnMPM. Use OSParticulas to ignore cracks in non-rigid materials
-	bool mirrorIgnored = firstCrack!=NULL && fmobj->multiMaterialMode && fmobj->hasNoncrackingParticles;
+
+    // flag if combining particles are present (i.e., has cracks, multimaterial mode, and has rigid contact particles)
+	bool mirrorIgnored = firstCrack!=NULL && fmobj->hasNoncrackingParticles;
 	
 	// First node pass does some calculations and gets transport values
 	// If needed, find material contact nodes (if numberMaterials>1)
@@ -157,4 +157,6 @@ void PostExtrapolationTask::Execute(int taskOption)
 
 	// Impose transport BCs and extrapolate gradients to the particles
 	TransportTask::TransportBCsAndGradients(mtime);
+    
+    return true;
 }

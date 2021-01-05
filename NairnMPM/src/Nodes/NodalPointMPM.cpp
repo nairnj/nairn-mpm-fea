@@ -564,9 +564,8 @@ int NodalPoint::ReadAndZeroRigidBCInfo(Vector *rvel,double *tempValue,double *co
 void NodalPoint::MirrorIgnoredCrackFields(void)
 {
 	// check field [0] for any that need copying (in NairnMPM, check for rigid field)
-	int rigidFieldNum;
-	MatVelocityField *theRigidField = ((CrackVelocityFieldMulti *)cvf[0])->GetRigidMaterialField(&rigidFieldNum);
-	if(theRigidField==NULL) return;
+	CrackVelocityFieldMulti *cvfSource = (CrackVelocityFieldMulti *)cvf[0];
+	if(!cvfSource->HasFieldsThatIgnoreCracks()) return;
 	
 	// When extrapolating, materials that ignore cracks always go to field [0]
 	// Here we mirror those fields in all other crack fields
@@ -575,7 +574,7 @@ void NodalPoint::MirrorIgnoredCrackFields(void)
 	for(int i=1;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
 		{	// transfer pointers from field [0] to field [i] (or copy in NairnMPM)
-			((CrackVelocityFieldMulti *)cvf[i])->MirrorFieldsThatIgnoreCracks(theRigidField,rigidFieldNum);
+			((CrackVelocityFieldMulti *)cvf[i])->MirrorFieldsThatIgnoreCracks(cvfSource);
 		}
 	}
 }
@@ -619,6 +618,20 @@ void NodalPoint::AddGravityAndBodyForceTask3(Vector *gridBodyForce,double gridAl
 			cvf[i]->AddGravityAndBodyForceTask3(gridBodyForce,gridAlpha,gridForceAlpha);
 	}
 }
+
+#ifdef RESTART_OPTION
+// Check to see if veloities and accelerations are too high
+bool NodalPoint::IsTravelTooMuch(double dt,double maxDist) const
+{   int i;
+    for(i=0;i<maxCrackFields;i++)
+    {   if(CrackVelocityField::ActiveField(cvf[i]))
+        {   if(cvf[i]->IsTravelTooMuch(dt,maxDist))
+                return true;
+        }
+    }
+    return false;
+}
+#endif
 
 #pragma mark TASK 4 METHODS
 
@@ -1541,7 +1554,7 @@ bool NodalPoint::NodeHasNonrigidParticles(void) const
 }
 
 // Look for presence of any points on this node (only valid after
-// calling CalcTotalMassAndCount() in PostExtrapolationTask
+// 		calling CalcTotalMassAndCount() in PostExtrapolationTask)
 bool NodalPoint::NodeHasParticles(void) const { return hasParticles; }
 
 // return true if vfld is active and has more than one material

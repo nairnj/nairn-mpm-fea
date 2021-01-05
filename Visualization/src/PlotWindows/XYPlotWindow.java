@@ -22,6 +22,10 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 	static final int YorZContour=1;
 	static final int DContour=2;
 	static final int TContour=3;
+	static final int XorRParticleContour=4;
+	static final int YorZParticleContour=5;
+	static final int X0orR0ParticleContour=6;
+	static final int Y0orZ0ParticleContour=7;
 	static final int CRACK_CONTOUR=10;
 	static final int contourPoints=200;
 	static final int AVGQUAD=10;
@@ -40,6 +44,7 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 	private double contourRange;
 	private int pmpts;
 	private int functionType;
+	private double constantContour;
 	
 	// for plot thread calculations
 	private int component;
@@ -85,6 +90,18 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 				case PlotQuantity.MPMCRACKPROFILE:
 				case PlotQuantity.MPMOPENINGFRACTION:
 				case PlotQuantity.MPMSHEARFRACTION:
+				case PlotQuantity.MPMCZMGI:
+				case PlotQuantity.MPMCZMGII:
+				case PlotQuantity.MPMTRACTION1:
+				case PlotQuantity.MPMTRACTION2:
+				case PlotQuantity.MPMTRACTION3:
+				case PlotQuantity.MPMTRACTION4:
+				case PlotQuantity.MPMTRACTION5:
+				case PlotQuantity.MPMTRACTION6:
+				case PlotQuantity.MPMTRACTION7:
+				case PlotQuantity.MPMTRACTION8:
+				case PlotQuantity.MPMTRACTION9:
+				case PlotQuantity.MPMTRACTION10:
 					functionType=CRACK_CONTOUR;
 					break;
 				
@@ -95,41 +112,59 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 					if(contourFxn.length()==0)
 						throw new Exception("The contour function cannot be empty");
 					
-					switch(functionType)
-					{	case XorRContour:
-							var1="y";
-							var2="z";
-							break;
-						case YorZContour:
-							var1="x";
-							var2="r";
-							break;
-						case DContour:
-							var1="T";
-							break;
-						case TContour:
-							var1="D";
-							break;
-						default:
-							break;
+					if(functionType>=XorRParticleContour && functionType<=Y0orZ0ParticleContour)
+					{	// contourFxn must be a number only
+						contourExpr = new JNExpression(contourFxn,null);
+						variables = new HashMap<String,String>(2);
+						try
+						{	contourExpr.evaluateWith(variables);
+							constantContour = contourExpr.getNumericValue();
+						}
+						catch(Exception e)
+						{	throw new Exception("Particle plots must specify only a number value for the contour function");
+						}
+						
+						// get extra range
+						contourRange=controls.getPlusMinus();
 					}
 					
-					// test it
-					contourExpr = new JNExpression(contourFxn,null);
-					variables = new HashMap<String,String>(2);
-					try
-					{	evaluate(2.d);
-					}
-					catch(Exception e)
-					{	throw new Exception("The contour function does not evaluate to a number");
-					}
-						
-					// get range
-					contourRange=controls.getPlusMinus();
-					if(ElementBase.DbleEqual(contourRange,0.))
-						pmpts=1;
 					else
-						pmpts=AVGQUAD;
+					{	switch(functionType)
+						{	case XorRContour:
+								var1="y";
+								var2="z";
+								break;
+							case YorZContour:
+								var1="x";
+								var2="r";
+								break;
+							case DContour:
+								var1="T";
+								break;
+							case TContour:
+								var1="D";
+								break;
+							default:
+								break;
+						}
+						
+						// test it
+						contourExpr = new JNExpression(contourFxn,null);
+						variables = new HashMap<String,String>(2);
+						try
+						{	evaluate(2.d);
+						}
+						catch(Exception e)
+						{	throw new Exception("The contour function does not evaluate to a number");
+						}
+							
+						// get range
+						contourRange=controls.getPlusMinus();
+						if(ElementBase.DbleEqual(contourRange,0.))
+							pmpts=1;
+						else
+							pmpts=AVGQUAD;
+					}
 					break;
 			}
 			
@@ -140,7 +175,9 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 			}
 			
 			// load element plot values
-			if(functionType!=CRACK_CONTOUR)
+			if(functionType>=XorRParticleContour && functionType<=Y0orZ0ParticleContour)
+				plotParticleResults();
+			else if(functionType!=CRACK_CONTOUR)
 			{	ElementBase.load2DPlotData(component,resDoc);
 				plotXYResults();
 			}
@@ -326,6 +363,91 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 		}
 	}
 	
+	// entry point to plot particle values near a line
+	public void plotParticleResults() throws Exception
+	{
+		ResultsDocument resDoc=((DocViewer)document).resDoc;
+
+		// go through points
+		// get the plot
+		ArrayList<PointData> pdata=new ArrayList<PointData>(100);
+	    MaterialPoint mpm;
+		for(int i=0;i<resDoc.mpmPoints.size();i++)
+		{	mpm=resDoc.mpmPoints.get(i);
+
+			// partile plots should not include rigid particles
+			MaterialBase matl=resDoc.materials.get(mpm.materialIndex());
+			if(matl.isRigid()) continue;
+			
+			// check point
+	        Point2D.Double pt;
+	        if(functionType==XorRParticleContour || functionType==YorZParticleContour)
+	            pt = mpm.getPosition();
+	        else
+	            pt = mpm.getOrigPosition();
+			Vector3 radius = mpm.getParticleRadius(resDoc);
+
+			if(functionType==XorRParticleContour || functionType==X0orR0ParticleContour)
+			{	if((constantContour <= pt.x+Math.max(radius.x,contourRange)) &&
+						(constantContour > pt.x-Math.max(radius.x,contourRange)))
+				{	// add this point
+					double plotValue = mpm.getForPlot(component,0.,resDoc);
+					pdata.add(new PointData(pt.y,plotValue));
+				}
+			}
+			else
+			{	if((constantContour <= pt.y+Math.max(radius.y,contourRange)) &&
+						(constantContour > pt.y-Math.max(radius.y,contourRange)))
+				{	// add this point
+					double plotValue = mpm.getForPlot(component,0.,resDoc);
+					pdata.add(new PointData(pt.x,plotValue));
+				}
+			}
+		}
+		
+		if(pdata.size()==0)
+		{	throw new Exception("The selected particle plot contour did not pass near any material points.");
+		}
+		
+		// sort by location
+		Collections.sort(pdata);
+
+		//---------------------------------------------------------
+		// Finish plot
+		// array for results
+		ArrayList<Double> x=new ArrayList<Double>(contourPoints);
+		ArrayList<Double> y=new ArrayList<Double>(contourPoints);
+		for(int i=0;i<pdata.size();i++)
+		{	PointData mpt = pdata.get(i);
+			x.add(mpt.x);
+			y.add(mpt.y);
+		}
+		
+		Hashtable<String,String> props = new Hashtable<String,String>();
+		props.put("object.color",plot2DView.selectPlotColor());
+		String ptitle = PlotQuantity.plotName(component,resDoc) + " (";
+		if(functionType==XorRParticleContour)
+			ptitle = ptitle + "xp=" + constantContour;
+		else if(functionType==YorZParticleContour)
+			ptitle = ptitle + "yp=" + constantContour;
+		else if(functionType==X0orR0ParticleContour)
+			ptitle = ptitle + "xp0=" + constantContour;
+		else
+			ptitle = ptitle + "yp0=" + constantContour;
+		if(contourRange>0.)
+			ptitle = ptitle + ", +/- " + contourRange + ")";
+		else
+			ptitle = ptitle + ")";
+		props.put("array.name",ptitle);
+		plot2DView.plotData(x,y,props);
+				
+		// axis labels
+		if(plot2DView.getNumberOfPlots()<2)
+		{	plot2DView.setXTitle("Position ("+resDoc.units.lengthUnits()+")");
+			plot2DView.setYTitle(PlotQuantity.plotLabel(component,resDoc));
+		}
+	}
+	
 	// entry point to get non-crack, x-y plot points
 	public void plotCrackResults() throws Exception
 	{
@@ -345,6 +467,17 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 		ArrayList<Double> xb=new ArrayList<Double>(numseg);
 		ArrayList<Double> yb=new ArrayList<Double>(numseg);
 		header.getSurface(CrackSegment.BELOW_POS,xb,yb);
+		
+		// traction history
+		ArrayList<Double> hpts = null;
+		if(component>=PlotQuantity.MPMTRACTION1 && component<=PlotQuantity.MPMTRACTION10)
+		{	hpts=new ArrayList<Double>(numseg);
+			header.getCrackTraction(component-PlotQuantity.MPMTRACTION1+1,hpts);
+		}
+	    else if(component==PlotQuantity.MPMCZMGI || component==PlotQuantity.MPMCZMGII)
+		{	hpts=new ArrayList<Double>(numseg);
+			header.getCrackZoneERR(component,hpts);
+		}
 		
 		controls.setProgress((int)contourPoints/2);
 		
@@ -367,7 +500,7 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 			}
 		}
 		
-		// normal and shear COD or opening and sliding fraction
+		// normal and shear COD or opening and sliding fraction or traction history
 		else
 		{	double distance=0.;
 			double mag;
@@ -444,8 +577,23 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 						else
 							y.add(modes.y);
 						break;
-					
+						
+					case PlotQuantity.MPMCZMGI:
+					case PlotQuantity.MPMCZMGII:
+						// traction history
+						x.add(distance);
+						y.add(hpts.get(i));
+						distance+=PtSeparation2D(planePt1,planePt0);
+						break;
+							
 					default:
+						// traction history
+						x.add(distance);
+						if(hpts!=null)
+							y.add(hpts.get(i));
+						else
+							y.add(0.);
+						distance+=PtSeparation2D(planePt1,planePt0);
 						break;
 				}
 				
@@ -457,13 +605,17 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 			// the plot
 			Hashtable<String,String> props = new Hashtable<String,String>();
 			props.put("object.color",plot2DView.selectPlotColor());
-			props.put("array.name",PlotQuantity.plotName(component,resDoc)+" "+crackNum);
+			props.put("array.name",PlotQuantity.plotName(component,resDoc)+" crack "+crackNum);
 			plot2DView.plotData(x,y,props);
 			
 			if(plot2DView.getNumberOfPlots()<2)
 			{	plot2DView.setXTitle("Distance ("+resDoc.units.lengthUnits()+")");
 				if(component==PlotQuantity.MPMNORMALCTOD || component==PlotQuantity.MPMSHEARCTOD)
 					plot2DView.setYTitle("Crack Opening ("+resDoc.units.lengthUnits()+")");
+				else if(component>=PlotQuantity.MPMTRACTION1 && component<=PlotQuantity.MPMTRACTION10)
+					plot2DView.setYTitle("Traction History");
+				else if(component==PlotQuantity.MPMCZMGI || component==PlotQuantity.MPMCZMGI)
+					plot2DView.setYTitle("Energy Released");
 				else
 					plot2DView.setYTitle("Mode Fraction");
 			}
@@ -478,5 +630,39 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 		double dy=pt2.y-pt1.y;
 		return Math.sqrt(dx*dx+dy*dy);
 	}
+	
+	// plot table of data
+	public void plotPPTable(String plotTable) throws Exception
+	{
+		try
+		{	plot2DView.readTable(plotTable);
+			setVisible(true);
+			toFront();
+		}
+		catch (Exception e)
+		{	throw new Exception("Could not plot table of data:\n   " + e.getMessage());
+		}
+	}
 }
 
+// Store point location and value
+// Used to sort by location only
+class PointData implements Comparable<PointData>
+{
+	public double x;
+	public double y;
+	
+	PointData(double h,double v)
+	{	x = h;
+		y = v;
+	}
+	
+	public int compareTo(PointData pt)
+	{
+		if(x > pt.x)
+			return 1;
+		else if(x<pt.x)
+			return -1;
+		return 0;
+	}
+}

@@ -89,6 +89,9 @@
 #include "Boundary_Conditions/NodalValueBC.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 
+bool TransportTask::hasXPICOption = false;
+int TransportTask::XPICOrder = 0;
+
 // Task list
 TransportTask *transportTasks=NULL;
 
@@ -101,6 +104,7 @@ bool TransportTask::hasContactEnabled = false;
 TransportTask::TransportTask()
 {	nextTask=NULL;
 	transportTimeStep = 1.e30;
+	usingXPIC = false;
 }
 
 // Destructor (and it is virtual)
@@ -184,6 +188,24 @@ void TransportTask::ImposeValueBCs(double stepTime,bool copyFirst)
         nextBC = (NodalValueBC *)nextBC->GetNextObject();
     }
 }
+
+#ifdef TRANSPORT_FMPM
+// Paste back value that were recently copied
+TransportTask *TransportTask::RestoreValueBCs(void)
+{
+	int i;
+	
+	// Paste back noBC transport value
+	NodalValueBC *nextBC = GetFirstBCPtr();
+	while(nextBC!=NULL)
+	{	i = nextBC->GetNodeNum(mtime);
+		if(i!=0) nextBC->PasteNodalValue(nd[i]);
+		nextBC = (NodalValueBC *)nextBC->GetNextObject();
+	}
+	
+	return nextTask;
+}
+#endif
 
 // Task 1b - get gradients in transport value on particles
 // throws CommonException()
@@ -272,6 +294,77 @@ void TransportTask::AddFluxCondition(NodalPoint *ndptr,double extraFlux,bool pos
     }
 }
 
+#ifdef TRANSPORT_FMPM
+// Impose grid-based transport value BCs after updating values on the grid in UpdateMomentumTask.
+TransportTask *TransportTask::ImposeValueGridBCs(double bctime,double deltime,int style)
+{
+	// --------- set value and consistent rates for grid transport BCs ------------
+	int i;
+	TransportField *gTrans;
+	
+	// initialize for transport BC
+	NodalValueBC *nextBC = GetFirstBCPtr();
+	
+	// The rest is update momentum call - set BC in lumped capacity value on the grid
+	// Set rates too
+	while(nextBC!=NULL)
+	{	i = nextBC->GetNodeNum(mtime);
+		if(i!=0)
+		{	gTrans = GetTransportFieldPtr(nd[i]);
+			gTrans->gFirstBC = true;
+			nextBC->InitQReaction();
+		}
+		nextBC = (NodalValueBC *)nextBC->GetNextObject();
+	}
+	
+	// Set Value to Sum(bc) Value(BC)
+	// Add (Sum(bc) Value(BC) - Value(0))/dt to gQ
+	// Add gVCT*(Sum(bc) Value(BC) - Value(0))/dt to sum of BC reactions
+	double dv;
+	nextBC = GetFirstBCPtr();
+	while(nextBC!=NULL)
+	{	i = nextBC->GetNodeNum(mtime);
+		if(i!=0)
+		{	gTrans = GetTransportFieldPtr(nd[i]);
+			
+			// first one on this node
+			if(gTrans->gFirstBC)
+			{	// temperature rate -T(0)/dt first one only
+				dv = -gTrans->gTValue/deltime;
+				gTrans->gQ += dv;
+				nextBC->SuperposeQReaction(gTrans->gVCT*dv);
+				
+				// clear value for first one
+				gTrans->gTValue = 0.;
+				
+				// only do this once
+				gTrans->gFirstBC = false;
+			}
+			
+			// add to temperature and rate
+			double bcT = nextBC->BCValue(bctime);
+			gTrans->gTValue += bcT;
+			dv = bcT/deltime;
+			gTrans->gQ += dv;
+			nextBC->SuperposeQReaction(gTrans->gVCT*dv);
+		}
+		nextBC = (NodalValueBC *)nextBC->GetNextObject();
+	}
+	
+	return nextTask;
+}
+
+// Add Flux BCs
+TransportTask *TransportTask::SetTransportFluxBCs(void)
+{
+	MatPtLoadBC *nextFlux = GetFirstFluxBCPtr();
+	while(nextFlux!=NULL)
+		nextFlux = nextFlux->AddMPFluxBC(mtime);
+	
+	// next task
+	return nextTask;
+}
+#else
 // adjust forces at grid points with concentration BCs to have rates be correct
 // to carry extrapolated concentrations (before impose BCs) to the correct
 // one selected by grid based BC
@@ -319,6 +412,7 @@ TransportTask *TransportTask::SetTransportForceAndFluxBCs(double deltime)
 	
 	return nextTask;
 }
+#endif
 
 #pragma mark UPDATE MOMENTA TASK AND CONTACT FLOW
 
@@ -338,6 +432,20 @@ void TransportTask::TransportContactRates(NodalPoint *ndptr,double deltime) {}
 
 #pragma mark UPDATE PARTICLES TASK
 
+// increment temperature rate on the particle (only used in transport XPIC)
+// only implemented for global temperature - need update to handle contact heat flow
+TransportTask *TransportTask::InitializeForXPIC(NodalPoint *ndptr,double timestep,int xpicOption) const
+{	TransportField *gTrans = GetTransportFieldPtr(ndptr);
+	gTrans->gTnext = 0.;
+	// skip if ghost node (ghost only needs gTnext=0)
+	if(timestep>0.)
+	{	double m = TransportTask::XPICOrder;
+		gTrans->gTprev = m*gTrans->gTValue;
+		gTrans->gTstar = gTrans->gTprev;
+	}
+	return nextTask;
+}
+
 // increment temperature rate on the particle
 double TransportTask::IncrementTransportRate(NodalPoint *ndptr,double shape,short vfld,int matfld) const
 {	TransportField *gTrans = GetTransportFieldPtr(ndptr);
@@ -347,7 +455,18 @@ double TransportTask::IncrementTransportRate(NodalPoint *ndptr,double shape,shor
 // increment particle concentration (time is always timestep)
 TransportTask *TransportTask::MoveTransportValue(MPMBase *mptr,double deltime,double rate,double value) const
 {   double *pValue = GetParticleValuePtr(mptr);
+#ifdef TRANSPORT_FMPM
+	if(usingXPIC)
+	{	// FMPM update just replace the value
+		*pValue = value;
+	}
+	else
+	{	// FLIP update
+		*pValue += deltime*rate;
+	}
+#else
 	*pValue += deltime*rate;
+#endif
     return nextTask;
 }
 
@@ -375,6 +494,10 @@ const char *TransportTask::TaskName(void) { return "transport calculations"; }
 // get the next task
 TransportTask *TransportTask::GetNextTransportTask(void) const { return nextTask; }
 
+// to activate XPIC
+void TransportTask::SetUsingTransportXPIC(bool setting) { usingXPIC = setting; }
+bool TransportTask::IsUsingTransportXPIC(void) const { return usingXPIC; }
+
 #pragma mark CLASS METHODS
 
 // get transport values on nodes in post mass and momentum extrapolation tasks
@@ -395,14 +518,27 @@ void TransportTask::TransportBCsAndGradients(double bctime)
 	{   nextTransport->ImposeValueBCs(bctime,true);
 		nextTransport = nextTransport->GetGradients(bctime);
 	}
+
+#ifdef TRANSPORT_FMPM
+	// restore the values on BC nodes that were changed above
+	nextTransport=transportTasks;
+	while(nextTransport!=NULL)
+		nextTransport = nextTransport->RestoreValueBCs();
+#endif
 }
 
 // Set transport BCs (not parallel because small and possible use of function/global variables)
 void TransportTask::TransportForceBCs(double dtime)
 {
-    TransportTask *nextTransport=transportTasks;
-    while(nextTransport!=NULL)
-        nextTransport=nextTransport->SetTransportForceAndFluxBCs(dtime);
+#ifdef TRANSPORT_FMPM
+	TransportTask *nextTransport=transportTasks;
+	while(nextTransport!=NULL)
+		nextTransport=nextTransport->SetTransportFluxBCs();
+#else
+	TransportTask *nextTransport=transportTasks;
+	while(nextTransport!=NULL)
+		nextTransport=nextTransport->SetTransportForceAndFluxBCs(dtime);
+#endif
 }
 
 // Called suring the momentum update
@@ -415,4 +551,19 @@ void TransportTask::UpdateTransportOnGrid(NodalPoint *ndptr)
 		nextTransport = nextTransport->UpdateTransport(ndptr,timestep);
 }
 
-
+#ifdef TRANSPORT_FMPM
+// Impose transport BCs on the grid
+void TransportTask::TransportGridBCs(double bctime,double deltime,int style)
+{
+	TransportTask *nextTransport;
+	
+	if(style==UPDATE_MOMENTUM_CALL)
+	{	nextTransport=transportTasks;
+		while(nextTransport!=NULL)
+		{	// Always imposes BCs
+			nextTransport->ImposeValueGridBCs(bctime,deltime,style);
+			nextTransport = nextTransport->GetNextTransportTask();
+		}
+	}
+}
+#endif

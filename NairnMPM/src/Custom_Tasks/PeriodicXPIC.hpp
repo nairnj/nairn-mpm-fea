@@ -26,7 +26,7 @@ class PeriodicXPIC : public CustomTask
 		virtual void Finalize(void);
 		virtual const char *TaskName(void);
 		virtual char *InputParam(char *,int &,double &);
-
+		virtual void SetTextParameter(char *,char *);
 		virtual CustomTask *Initialize(void);
 	
 		virtual CustomTask *PrepareForStep(bool &);
@@ -43,6 +43,14 @@ class PeriodicXPIC : public CustomTask
 		double nextPeriodicTime;
 		int nextPeriodicStep;
 		bool doXPIC;
+		bool usingFMPM;
+		int gridBCOption,periodicFMPMorder;
+		double periodicTimeConduction,periodicTimeDiffusion;
+		double periodicCFLConduction,periodicCFLDiffusion;
+		int periodicStepsConduction,periodicStepsDiffusion;
+		double nextPeriodicTimeConduction,nextPeriodicTimeDiffusion;
+		int nextPeriodicStepConduction,nextPeriodicStepDiffusion;
+		bool doXPICConduction,doXPICDiffusion;
 };
 
 #endif

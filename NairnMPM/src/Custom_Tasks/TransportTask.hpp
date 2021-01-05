@@ -28,6 +28,9 @@ class TransportTask
 		static bool hasContactEnabled;
         TransportTask *nextTask;
 		double transportTimeStep;
+		static int XPICOrder;
+		static bool hasXPICOption;
+		bool usingXPIC;
        
         // constructors and destructors
         TransportTask();
@@ -47,7 +50,13 @@ class TransportTask
 		virtual TransportTask *GetTransportNodalValue(NodalPoint *);
 		virtual void GetContactNodalValue(NodalPoint *);
 		virtual void ImposeValueBCs(double,bool);
+#ifdef TRANSPORT_FMPM
+		virtual TransportTask *RestoreValueBCs(void);
+		virtual TransportTask *ImposeValueGridBCs(double,double,int);
+		virtual TransportTask *SetTransportFluxBCs(void);
+#else
 		virtual TransportTask *SetTransportForceAndFluxBCs(double);
+#endif
 		virtual TransportTask *GetGradients(double);
 		virtual void ZeroTransportGradients(MPMBase *) = 0;
 		virtual void AddTransportGradients(MPMBase *,Vector *,NodalPoint *,short) = 0;
@@ -66,6 +75,7 @@ class TransportTask
 		virtual void TransportContactRates(NodalPoint *,double);
 		
 		// update particles task
+		virtual TransportTask *InitializeForXPIC(NodalPoint *,double,int) const;
 		virtual double IncrementTransportRate(NodalPoint *,double,short,int) const;
 		virtual TransportTask *MoveTransportValue(MPMBase *,double,double,double) const;
 	
@@ -95,8 +105,15 @@ class TransportTask
         virtual double *GetParticleValuePtr(MPMBase *mptr) const = 0;
         virtual double *GetPrevParticleValuePtr(MPMBase *mptr) const = 0;
 	
+		// if using XPIC
+		void SetUsingTransportXPIC(bool);
+		virtual bool IsUsingTransportXPIC(void) const;
+	
 		// static methods
 		static void GetTransportValues(NodalPoint *);
+#ifdef TRANSPORT_FMPM
+		static void TransportGridBCs(double,double,int);
+#endif
 		static void TransportBCsAndGradients(double);
 		static void UpdateTransportOnGrid(NodalPoint *);
 		static void TransportForceBCs(double);

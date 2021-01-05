@@ -64,6 +64,10 @@ void MPMTask::WriteProfileResults(int nsteps,double timePerStep,double eTimePerS
 	cout << endl;
 }
 
+#ifdef RESTART_OPTION
+bool MPMTask::BlockRestartOption(void) const { return false; }
+#endif
+
 #pragma mark MPMTASK::Static Parallel Methods
 
 // get patch number of the current thread (or 0 if not parallel

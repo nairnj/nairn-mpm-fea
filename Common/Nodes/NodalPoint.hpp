@@ -78,7 +78,6 @@ class NodalPoint : public LinkedObject
 		void AddMomentumTask1(short,int,double,Vector *,int);
 		void AddMass(short,int,double);
 		void AddMassTask1(short,int,double,int);
-		void CopyVolumeGradient(short,int,Vector *);
 		void CopyMassAndMomentum(NodalPoint *);
         void CopyMassAndMomentumLast(NodalPoint *);
         void RezeroNodeTask6(double);
@@ -88,6 +87,9 @@ class NodalPoint : public LinkedObject
 		void AddFtotSpreadTask3(short,Vector);
 		bool AddTractionTask3(MPMBase *,short,int,Vector *);
 		void AddGravityAndBodyForceTask3(Vector *,double,double);
+#ifdef RESTART_OPTION
+        bool IsTravelTooMuch(double,double) const;
+#endif
 		void CopyGridForces(NodalPoint *);
 		void UpdateMomentum(double);
 		void IncrementDelvaTask5(short,int,double,GridToParticleExtrap *) const;

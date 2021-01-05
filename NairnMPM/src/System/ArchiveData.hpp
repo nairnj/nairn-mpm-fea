@@ -28,10 +28,11 @@ enum { ARCH_Velocity=2,ARCH_Stress,ARCH_Strain,ARCH_PlasticStrain,
             ARCH_ver2Empty, ARCH_ShearComponents, ARCH_StrainEnergy,
             ARCH_History, ARCH_Concentration,ARCH_HeatEnergy,ARCH_ElementCrossings,
             ARCH_RotStrain, ARCH_DamageNormal,ARCH_SpinMomentum,ARCH_SpinVelocity,
-			ARCH_MAXMPMITEMS };
+			ARCH_History59, ARCH_History1014, ARCH_History1519, ARCH_MAXMPMITEMS};
 
 // Archiving options for crack segments
-enum { ARCH_JIntegral=2,ARCH_StressIntensity,ARCH_BalanceResults,ARCH_MAXCRACKITEMS };
+enum { ARCH_JIntegral=2,ARCH_StressIntensity,ARCH_CZMDISP,
+            ARCH_Traction15,ARCH_Traction610,ARCH_MAXCRACKITEMS };
 
 // VTK archiving options
 enum { VTK_MASS=0, VTK_VELOCITY, VTK_STRESS, VTK_STRAIN, VTK_DISPLACEMENT, VTK_PLASTICSTRAIN,
@@ -123,6 +124,8 @@ class ArchiveData : public CommonArchiveData
 		void SetArchiveHeader(void);
 		void GlobalArchive(double);
 		void CreateGlobalFile(void);
+        int CountHistoryBits(char);
+
 };
 
 extern ArchiveData *archiver;

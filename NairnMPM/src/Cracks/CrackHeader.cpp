@@ -58,14 +58,15 @@ CrackHeader **crackList;
 // Constructors
 CrackHeader::CrackHeader()
 {	
-    firstSeg=NULL;
-    lastSeg=NULL;
-    numberSegments=0;
-	fixedCrack=FALSE;
-	customContactLawID=-1;
-	hasTractionLaws=FALSE;
-	thickness=1.0;				// for crack tip heating and tractions in mm, will default to grid thickness if set
-	allowAlternate[0]=allowAlternate[1]=TRUE;
+    firstSeg = NULL;
+    lastSeg = NULL;
+    numberSegments = 0;
+	fixedCrack = false;
+	customContactLawID = -1;
+	customTractionPropID = -1;
+	hasTractionLaws = false;
+	thickness = 1.0;				// for crack tip heating and tractions in mm, will default to grid thickness if set
+	allowAlternate[0] = allowAlternate[1] = true;
 	crossedCracks = NULL;
 	numberFacets = 0;				// only for 3D and if 0 it is 2D crack
 }
@@ -195,7 +196,7 @@ bool CrackHeader::addSegment(CrackSegment *cs,bool ignoreDuplicate)
 					lastSeg->tipMatnum=cs->tipMatnum;
 				if(cs->MatID()>=0)
 				{   lastSeg->SetMatID(cs->MatID()+1);
-					hasTractionLaws=true;
+					hasTractionLaws = true;
 				}
 				return true;
 			}
@@ -211,7 +212,10 @@ bool CrackHeader::addSegment(CrackSegment *cs,bool ignoreDuplicate)
 	if(cs->planeElemID()<0) return false;
 	
 	// has it put traction laws on this crack
-	if(cs->MatID()>=0) hasTractionLaws=true;
+	if(cs->MatID()>=0) hasTractionLaws = true;
+    
+    // give segment chance to store its hader
+    cs->SetCrackHeader(this);
 	
    return true;
 }
@@ -306,8 +310,9 @@ void CrackHeader::Output(void)
 	if(fixedCrack) cout << " (fixed)";
 	if(hasTractionLaws)
 	{	cout << " (has traction laws)";
-		// if has traction laws, must use custom frictionless
-		// 1-based ID for last defined material
+		// if has traction laws, must use frictionless contact
+        // When materials array created, last one (1 based) set to needed frictionless law if any traction laws
+
 		customContactLawID = nmat;
 	}
 	cout << endl;
@@ -344,6 +349,17 @@ void CrackHeader::Output(void)
 	
 	// custom contact law
 	contact.CustomCrackContactOutput(customContactLawID,number);
+	
+	// custom traction propagation material
+	if(customTractionPropID>0)
+	{	// check OK
+		if(customTractionPropID>nmat)
+			throw CommonException("Propagation traction law for a crack is not defined","CrackHeader::Output");
+		if(theMaterials[customTractionPropID-1]->MaterialStyle()!=TRACTION_MAT)
+			throw CommonException("Propagation traction law for a crack is not a traction law material","CrackHeader::Output");
+		cout << "    Custom propagation traction: " << theMaterials[customTractionPropID-1]->name
+				<< " (number " << customTractionPropID << ")" << endl;
+	}
 }
 
 #pragma mark CrackHeader: Methods
@@ -522,7 +538,7 @@ short CrackHeader::MoveCrack(short side)
 			}
 			
 			// svelnp1 is Sum(fi wi vi), surfAcc is Sum(fi wi ai), and fnorm = Sum(fi wi)
-			//    where wi = mass (if MASS_WEIGHTED) or 1 otherwise
+			//    where wi = mass or 1 otherwise
 			if(nodeCounter>0)
 			{	ScaleVector(&svelnp1,1./fnorm);
 				ScaleVector(&surfAcc,1./fnorm);
@@ -884,11 +900,12 @@ void CrackHeader::JIntegral(void)
     int crkTipIdx;
     CrackSegment *tipCrk;
     double Jx,Jy,Jx1,Jy1,Jx2,Jy2,JxAS2;
-	Vector crackDir,crossPt;
+	Vector crackDir;
 	bool secondTry;
 	
-    /* Calculate J-integrals for the ith crack tip
-    */
+	//---------------------------------------------------------
+    // Calculate J-integrals for each crack tip (if activated)
+	//---------------------------------------------------------
 	
 	// Clear previously cross cracks list
 	// TNote: this linked list is for cracks crossed by the contours. It has cracks
@@ -910,31 +927,37 @@ void CrackHeader::JIntegral(void)
 	
 	// it may try two contours at each crack tip. First try is at NearestNode().
 	// if that path crosses the crack twice, it tries a contour from the next nearest node.
-	secondTry=FALSE;
+	secondTry = false;
 	
-	// each crack tip
+	// Look at each crack tip
 	crkTipIdx=START_OF_CRACK;
 	while(crkTipIdx<=END_OF_CRACK)
     {
-		/* Task 1: find crack tip and the crack direction
-        */
+#pragma mark J_Task_1:Find crack tip
+		//---------------------------------------------------------
+		// TASK 1: find crack tip and the crack direction
+		//---------------------------------------------------------
 		CrackTipAndDirection(crkTipIdx,&tipCrk,crackDir);
         
-        // done if not a crack tip
+        // done if not a crack tip, go to next tip
         if(tipCrk->tipMatnum<0)
 		{	ZeroVector(&tipCrk->Jint);
 			crkTipIdx++;
             continue;
         }
-		double crackr = tipCrk->cp.x;
+		double crackr = tipCrk->cp.x;			// for axisymmetric cracks
 		
 		// block to catch problems
 		crackPt=NULL;					// first crack pt in the contour
 		try
 		{
-			/* Task 2: find ccw nodal points JGridSize from crack tip nodal point
-				Find orientation of each line segment
-			*/
+#pragma mark J_Task_2:Find ccw nodal points
+			//-------------------------------------------------------------------
+			// Task 2: find ccw nodal points JGridSize from crack tip nearest
+			//           nodal point. Find orientation of each line segment
+			//-------------------------------------------------------------------
+			
+			// get two nearest nodes to crack tip point
 			gridElem=tipCrk->planeElemID();
 			gridNode=theElements[gridElem]->NearestNode(tipCrk->cp.x,tipCrk->cp.y,&nextNearest);
 			if(secondTry) gridNode=nextNearest;
@@ -943,7 +966,7 @@ void CrackHeader::JIntegral(void)
 			int oldnum = tipCrk->tipMatnum;
 			tipCrk->FindCrackTipMaterial(oldnum);
 			if(tipCrk->tipMatnum != oldnum)
-			{	cout << "# crack tip left material " << oldnum
+			{	cout << "# crack " << GetNumber() << "'s tip left material " << oldnum
 						<< " and entered material " << tipCrk->tipMatnum << endl;
 			}
 			
@@ -956,7 +979,7 @@ void CrackHeader::JIntegral(void)
 				gridNode=theElements[gridElem]->NextNode(gridNode);
 			}
 			
-			// walk around the countour (0 and 4 are half edges)
+			// Walk around the countour (0 and 4 are half edges)
             //        2
             //    ---------
             //   |         |
@@ -964,20 +987,34 @@ void CrackHeader::JIntegral(void)
             //   |         |
             //    ----|----
             //    4     0
-			prevPt=crackPt=new ContourPoint(nd[gridNode]);
+			// Note that | is starting point, not the crack crossing
+			
+			// set point at | to contour point
+			prevPt = crackPt = new ContourPoint(nd[gridNode]);
+			
 			int numPts=JGridSize;
 			double cxmin=9e99,cxmax=-9e99,cymin=9e99,cymax=-9e99;
 			for(j=0;j<5;j++)
-			{   gridNode=theElements[gridElem]->NextNode(gridNode);
+			{	// set next node to a countour point
+			    gridNode=theElements[gridElem]->NextNode(gridNode);
 				nextPt=new ContourPoint(nd[gridNode]);
+				
+				// link to previous point
 				prevPt->SetNextPoint(nextPt);
 				prevPt=nextPt;
+				
+				// find numPts-1 more contour points
 				for(i=1;i<numPts;i++)
-				{   gridElem=theElements[gridElem]->Neighbor(gridNode);
+				{	// get next element that shares face with face starting on grieNode
+					gridElem=theElements[gridElem]->Neighbor(gridNode);
 					if(gridElem<0)
 						throw "J integral contour at a crack tip does not fit in the grid";
+					
+					// set next contour point
 					gridNode=theElements[gridElem]->NextNode(gridNode);
 					nextPt=new ContourPoint(nd[gridNode]);
+					
+					// link to previous point
 					prevPt->SetNextPoint(nextPt);
 					prevPt=nextPt;
 				}
@@ -991,40 +1028,166 @@ void CrackHeader::JIntegral(void)
                 // adjust to half edge when about to do j=4 edge
 				numPts = (j==3) ? JGridSize-1 : 2*JGridSize;
 			}
+			
 			// connect end to start
 			prevPt->SetNextPoint(crackPt);
-			
-			// Task 3 was to find crossing point, now done below
 
- 			/* Task 4: Loop over all segments and evaluate J integral (from the primary term)
-				Transform to crack plane and save results
-			*/
-			DispField *sfld1,*sfld2;
-			// save point, crack segement, and contour segment where the crack crosses the target crack
+#define PREPROCESS_CROSSINGS
+#ifdef PREPROCESS_CROSSINGS
+#pragma mark J_Task_3:Find cracks crossing the contour
+			//-------------------------------------------------------------------
+			// Task 3: find crack crossing point and interactive crack crossings
+			//-------------------------------------------------------------------
+			
+			// Contour cross this crack at crossPt through firstSeg. crossContourPt is
+			// inserted into the contour and labeled as a phantomNode
+			Vector crossPt;
 			CrackSegment *startSeg = NULL;
 			ContourPoint *crossContourPt = NULL;
 			bool crossesOtherCracks = false;
+			int crossCount = 0;
+			
+			// loop over nodes in the contour
+			nextPt = crackPt;				// start tracing the contour
+			while(true)
+			{   // J integral along the countour line from node1 to node2
+				NodalPoint *node1 = nextPt->node;
+				NodalPoint *node2 = nextPt->nextPoint->node;
+				
+				// Check if line from node1 to node2 crosses this crack?
+				Vector crossPt1;
+				int crackNum = 0;
+				double fract;
+				CrackSegment *foundSeg = ContourCrossCrack(nextPt,&crossPt1);
+				if(foundSeg != NULL)
+				{	// it has crossed this crack
+					crossCount++;
+					if(crossCount==2)
+					{   // error unless crossPt1=crossPt (previous one), which implies endpoints for two adjacent
+						// contour intervals, but otherwise an error
+						if(!(DbleEqual(crossPt.x,crossPt1.x) && DbleEqual(crossPt.y,crossPt1.y)))
+						{	if(secondTry)
+							{   throw "Two different crossings between J-path and a crack";
+							}
+							else
+							{	// try againg from a different node
+								throw "";
+							}
+						}
+					}
+					else if(crossCount>2)
+					{   // only gets here if found endpoints before and now cannot be another matching endpoint
+						throw "Two different crossings between J-path and a crack";
+					}
+					else
+					{   // save crossing point on target crack and segment
+						crossContourPt = nextPt;
+						crossPt.x = crossPt1.x;
+						crossPt.y = crossPt1.y;
+						// find crack particle closer to the crack tipstart
+						startSeg = crkTipIdx==END_OF_CRACK ? foundSeg->nextSeg : foundSeg ;
+						crackNum = GetNumber();
+						fract = nextPt->Fraction(crossPt);
+					}
+				}
+				
+				else
+				{	// if does not cross the target crack, look for an interacting crack
+					// This stops at first intersecting crack and thus would miss more than
+					//   one other crack intersecting the same segment.
+					CrackHeader *nextCrack = firstCrack;
+					while(nextCrack!=NULL)
+					{	// skip this crack
+						if(nextCrack != this)
+						{	foundSeg = nextCrack->ContourCrossCrack(nextPt,&crossPt1);
+							if(foundSeg != NULL)
+							{	// found crack crossing
+								crackNum = nextCrack->GetNumber();
+								crossesOtherCracks = true;
+								fract=nextPt->Fraction(crossPt1);
+								
+								// keep list of crossed cracks
+								CrossedCrack *nextCross = NULL;
+								if(crossedCracks==NULL)
+									crossedCracks = new ParseController();
+								else
+								{	// check if this crack is already in the list
+									nextCross = (CrossedCrack *)crossedCracks->firstObject;
+									while(nextCross!=NULL)
+									{	if(nextCross->crack==nextCrack) break;
+										nextCross = (CrossedCrack *)nextCross->GetNextObject();
+									}
+								}
+								if(nextCross==NULL)
+								{	crossedCracks->AddObject(new CrossedCrack(nextCrack));
+								}
+							}
+						}
+						nextCrack = (CrackHeader *)nextCrack->GetNextObject();
+					}
+				}
+					
+				// If this contour segment crosses a crack then must break into two contour segments
+				// othersize use field [0] on both nodes
+				if(crackNum!=0)
+				{	// Create a phantom node at the crossing point
+					NodalPoint *phantom = NodalPoint::Create2DNode(crackNum,crossPt1.x,crossPt1.y);
+					phantom->PrepareForFields();
+					
+					// J integral will use phatom[0] up to a phantom contour point and phantom[1] starting from it by:
+					//    Interpolate [0] from node1 and [1] or [2] that crosses crackNum from node2 to phantom [0]
+					//    Interpolate [0] from node2 and [1] or [2] that crosses crackNum from node1 to phantom [1]
+					phantom->Interpolate(node1,node2,fract,crackNum);
+					
+					// insert new ContourPoint with the phantom node between nextPt and nextPt->nextPoint
+					ContourPoint *insertPt=new ContourPoint(phantom);
+					insertPt->SetPhantomNode(true);
+					insertPt->SetNextPoint(nextPt->nextPoint);
+					nextPt->SetNextPoint(insertPt);
+					nextPt = insertPt;
+				}
+				
+				// on to next segment
+				nextPt=nextPt->nextPoint;
+				if(nextPt==crackPt) break;
+			}
+#endif
+			
+#pragma mark J_Task_4:Integrate along contour
+			//-------------------------------------------------------------------
+ 			// Task 4: Loop over all segments and evaluate J integral (from the primary term)
+			// Transform to crack plane and save results
+			//-------------------------------------------------------------------
+			DispField *sfld1,*sfld2;
+#ifndef PREPROCESS_CROSSINGS
+			// save point, crack segement, and contour segment where the crack crosses the target crack
+			Vector crossPt;
+			CrackSegment *startSeg = NULL;
+			ContourPoint *crossContourPt = NULL;
+			bool crossesOtherCracks = false;
+			int crossCount = 0;
+#endif
 
 			// Initialize contour integration terms
-			Jx1=Jy1=0.0;				// J-integral components from the first term
-			double tractionEnergy=0.,bridgingReleased=0.;		// for traction laws
-			nextPt=crackPt;				// start tracing the contour
-			int count=0;				// particles in the nodal fields
-			double r1 = 1.,r2 = 1.;		// for axisymmetric J's
-			
+			Jx1 = Jy1 = 0.0;				// J-integral components from the first term
+			double tractionEnergy = 0.,bridgingReleased = 0.;		// for traction laws
+			nextPt = crackPt;				// start tracing the contour
+			int count = 0;					// particles in the nodal fields
+			double r1 = 1.,r2 = 1.;			// for axisymmetric J's
+
 			// loop over nodes in the contour
 			while(true)
 			{   // J integral along the countour line from node1 to node2
-				NodalPoint *node1=nextPt->node;
-				NodalPoint *node2=nextPt->nextPoint->node;
+				NodalPoint *node1 = nextPt->node;
+				NodalPoint *node2 = nextPt->nextPoint->node;
 
+#ifndef PREPROCESS_CROSSINGS
 				// does line from node1 to node2 cross this crack&
 				Vector crossPt1;
-				int crossCount = 0;
 				int crackNum = 0;
 				double fract;
 				
-				// check for crack crossing, but if last segment crosses, the next pass
+				// check for crack crossing, but if last segment crossed, the next pass
 				// through the loop will start with a phantomNode and therefore do not
 				// do the check. Note that do not need to check second node as phantom node
 				// because that never occurs at this stage.
@@ -1056,7 +1219,7 @@ void CrackHeader::JIntegral(void)
 							// find crack particle closer to the crack tipstart
 							startSeg = crkTipIdx==END_OF_CRACK ? foundSeg->nextSeg : foundSeg ;
 							crackNum = GetNumber();
-							fract=nextPt->Fraction(crossPt);
+							fract = nextPt->Fraction(crossPt);
 						}
 					}
 					
@@ -1095,7 +1258,7 @@ void CrackHeader::JIntegral(void)
 						}
 					}
 					
-					// If this contour segment crosses a crack then must break into two contour segmnets
+					// If this contour segment crosses a crack then must break into two contour segments
 					// othersize use field [0] on both nodes
 					if(crackNum!=0)
 					{	// Create a phantom node at the crossing point
@@ -1108,13 +1271,14 @@ void CrackHeader::JIntegral(void)
 						phantom->Interpolate(node1,node2,fract,crackNum);
 						node2 = phantom;
 						
-						// insert new ContourPoint with the phantom node
+						// insert new ContourPoint with the phantom node between nextPt and nextPt->nextPoint
 						ContourPoint *insertPt=new ContourPoint(phantom);
 						insertPt->SetPhantomNode(true);
 						insertPt->SetNextPoint(nextPt->nextPoint);
 						nextPt->SetNextPoint(insertPt);
 					}
 				}
+#endif
 				
 				// Get fields
 				count += node1->GetFieldForCrack(nextPt->phantomNode,true,&sfld1,0);
@@ -1223,7 +1387,7 @@ void CrackHeader::JIntegral(void)
 				}
 #endif
 
-				// on to next segment (switch field at mid point)
+				// on to next segment
 				nextPt=nextPt->nextPoint;
 				if(nextPt==crackPt) break;
 			}
@@ -1271,6 +1435,9 @@ void CrackHeader::JIntegral(void)
 					if(xp>=cxmin && xp<cxmax && yp>=cymin && yp<cymax)
 					{	// material reference
 						const MaterialBase *matref = theMaterials[mptr->MatID()];
+                        
+						// if this material ignores cracks, then do not include it in J integral
+						if(!matref->AllowsCracks()) continue;
 						
 						// get volume data and add to volume
 						rho0 = matref->GetRho(mptr);
@@ -1284,7 +1451,8 @@ void CrackHeader::JIntegral(void)
 						ay=acc->y;
 						
 						// Displacement gradients (dimensionless)
-						Matrix3 gradU = mptr->GetDisplacementGradientMatrix();
+						//Matrix3 gradU = mptr->GetDisplacementGradientMatrix();
+						Matrix3 gradU = mptr->GetDisplacementGradientForJ(matref);
 						duxdx = gradU(0,0);
 						duydy = gradU(1,1);
 						duxdy = gradU(0,1);
@@ -1363,10 +1531,14 @@ void CrackHeader::JIntegral(void)
 			*/
 			if(hasTractionLaws)
 			{	CrackSegment *tipSegment = startSeg;
-				tractionEnergy=startSeg->TractionEnergy(&crossPt,crkTipIdx,true,&tipSegment);
-				bridgingReleased=startSeg->TractionEnergy(&crossPt,crkTipIdx,false,NULL);
 				
-				// extra traction correction if Bergkvist and Huong axisymmetric J integral
+				// Int(T.du) at current deformation
+				tractionEnergy = startSeg->TractionEnergy(&crossPt,crkTipIdx,true,&tipSegment);
+				
+				// amount released so far in cohesive zone
+				bridgingReleased = startSeg->TractionEnergy(&crossPt,crkTipIdx,false,NULL);
+				
+				// extra traction correction if Bergkvist and Huong axisymmetric J integral only
 				if(JContourType != AXISYM_BROBERG_J)
 				{	tractionEnergy *= crossPt.x/crackr;		// scale contour point energy
 					
@@ -1438,7 +1610,7 @@ void CrackHeader::JIntegral(void)
 #endif
 			
 			// end of try block on J calculation
-			secondTry=FALSE;
+			secondTry = false;
 		}
 		catch(const char *msg)
 		{	// throwing "" signals to try again with the next nearest node
@@ -1517,8 +1689,8 @@ CrackSegment *CrackHeader::Propagate(Vector &grow,int whichTip,int tractionMat)
 		return NULL;
 	}
 	if(tractionMat>0)
-	{	hasTractionLaws=TRUE;
-		fmobj->SetHasTractionCracks(TRUE);
+	{	hasTractionLaws = true;
+		fmobj->SetHasTractionCracks(true);
 	}
 	
 	// return the segment
@@ -1800,6 +1972,9 @@ bool CrackHeader::CreateHierarchy(void)
     CrackLeaf *firstLeaf=NULL,*lastLeaf=NULL,*leaf;
     int numLeaves=0;
     
+    // This code converts ordered list of crack segments into a B-true
+    
+    // Create terminal leafs each by pairwise groupin on crack particles or
     // consider line segments in pairs (or could be only 1 if scrk2->nextSeg==NULL)
     //  scrk1 to scrk2 and scrk2 to scrk2->nextSeg
     while(scrk2!=NULL)
@@ -1822,13 +1997,19 @@ bool CrackHeader::CreateHierarchy(void)
         lastLeaf = leaf;
     }
 	
-    // trace up the tree as long as more than 1 leaf is present
+    // Recursively create parent leaves by pairwise grouping leafs
+    // at current level until the parent leval has only a single leaf
     while(numLeaves>1)
-    {   CrackLeaf *leaf1 = firstLeaf;
+    {   // Pairwise grouping of current level that starts with firstLeaf
+        // Note that numLeaves is number of leave in prior level and if that is
+        //      1, we are done (ir it is the root level
+        CrackLeaf *leaf1 = firstLeaf;
         CrackLeaf *leaf2 = leaf1->nextLeaf;
         firstLeaf = NULL;
         numLeaves = 0;
         
+        // This creates the new level and counts number of leaves in that level
+        // If only 1 leaf, it it root level
         while(leaf1!=NULL)
         {   // make parent leaf
             leaf = new CrackLeaf(leaf1,leaf2);
@@ -2143,6 +2324,37 @@ double CrackHeader::Length(void) const
     return length;
 }
 
+// Find length of all segments that do not have a traction law
+double CrackHeader::DebondedLength(void) const
+{
+    CrackSegment *scrk=firstSeg;
+    double length=0.,lastx,lasty,dist2,x,y;
+    
+    // first point
+    if(scrk==NULL) return length;
+    lastx=(scrk->surf[0].x+scrk->surf[1].x)/2.;
+    lasty=(scrk->surf[0].y+scrk->surf[1].y)/2.;
+    scrk=scrk->nextSeg;
+    
+    // loop over crack points
+    while(scrk!=NULL)
+    {    // add segment length
+        x=(scrk->surf[0].x+scrk->surf[1].x)/2.;
+        y=(scrk->surf[0].y+scrk->surf[1].y)/2.;
+        if(scrk->MatID()<0)
+        {   dist2=(x-lastx)*(x-lastx) + (y-lasty)*(y-lasty);
+            length+=sqrt(dist2);
+        }
+        lastx=x;
+        lasty=y;
+        
+        // next segment
+        scrk=scrk->nextSeg;
+    }
+    return length;
+}
+
+
 // Count Segments
 int CrackHeader::NumberOfSegments(void) const { return numberSegments; }
 
@@ -2156,8 +2368,12 @@ int CrackHeader::GetNumber(void) const { return number; }
 // make it a fixed crack
 void CrackHeader::SetFixedCrack(int fixSetting) { fixedCrack=fixSetting; }
 
-// set default values
+// set custom contact law ID
 void CrackHeader::SetContactLawID(int newID) { customContactLawID = newID; }
+
+// set/get custom traction propagate low ID (1 based)
+void CrackHeader::SetTractionPropID(int newID) { customTractionPropID = newID; }
+int CrackHeader::GetTractionPropID(void) { return customTractionPropID; }
 
 // given whichTip find crack tip segment
 CrackSegment *CrackHeader::GetCrackTip(int whichTip) const

@@ -18,6 +18,7 @@
 #include "Custom_Tasks/CarnotCycle.hpp"
 #include "Custom_Tasks/CustomThermalRamp.hpp"
 #include "Custom_Tasks/PeriodicXPIC.hpp"
+#include "Custom_Tasks/DeleteDamaged.hpp"
 
 // Create custom task
 void MPMReadHandler::ScheduleCustomTask(const Attributes& attrs)
@@ -58,7 +59,7 @@ void MPMReadHandler::ScheduleCustomTask(const Attributes& attrs)
 				if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
 			}
 			
-			else if(strcmp(value,"ThermalRamp")==0)
+			else if(strcmp(value,"PropertyRamp")==0 || strcmp(value,"ThermalRamp")==0)
 			{   nextTask=(CustomTask *)(new CustomThermalRamp());
 				if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
 				ConductionTask::activeRamp = true;
@@ -69,6 +70,10 @@ void MPMReadHandler::ScheduleCustomTask(const Attributes& attrs)
 				if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
 			}
 			
+            else if (strcmp(value, "DeleteDamaged") == 0)
+            {    nextTask = (CustomTask *)(new DeleteDamaged());
+                if (nextTask == NULL) throw SAXException("Out of memory creating a custom task.");
+            }
 			else
 				throw SAXException("Unknown custom task requested for scheduling.");
 			

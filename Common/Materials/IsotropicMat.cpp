@@ -119,9 +119,37 @@ const char *IsotropicMat::VerifyAndLoadProperties(int np)
 	double alphaV = 3.e-6*aI;
 	double Kbulk = E/(3.*(1-2*nu));
 	gamma0 = Kbulk*alphaV/(rho*heatCapacity);
-	
+
+#ifdef POROELASTICITY
+	// poroelasticity conversions
+	if(DiffusionTask::HasPoroelasticity())
+	{	// isotropic bulk modulus
+		if(Kbulk > Ku)
+			return "Undrained bulk modulus for poroelasticity must be greater than material's bulk modulus";
+		if(alphaPE < 0.)
+			return "Poroelasticity Biot coefficient must be >= 0";
+		
+		// moisture expansion tensor change
+		betaI = alphaPE/(3.*Kbulk);
+		concSaturation = 1.;
+
+		// coupling tensor - scale alpha by Q
+		Qalpha = (Ku-Kbulk)/alphaPE;
+
+		// transport capacity is 1/Q = alpha/(Qalpha)
+		diffusionCT = alphaPE/Qalpha;
+		
+		// diffusion tensor changed using global viscosity
+		diffusionCon = Darcy/DiffusionTask::viscosity;
+	}
+	else
+	{	// diffusion CT is 1
+		diffusionCT = 1.;
+	}
+#else
 	// diffusion CT is 1
 	diffusionCT = 1.;
+#endif
 #endif
 	
     // analysis properties

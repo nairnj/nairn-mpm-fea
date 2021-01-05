@@ -48,6 +48,9 @@ class TransIsotropic : public Elastic
 		void FillElasticProperties3D(MPMBase *,ElasticProperties *,int) const;
 		virtual void *GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *,void *,int) const;
 		virtual void GetTransportProps(MPMBase *,int,TransportProperties *) const;
+#ifdef POROELASTICITY
+		virtual void UndrainedPressIncrement(MPMBase *,double,double,double) const;
+#endif
 #else
 		virtual void LoadMechanicalPropertiesFEA(int,double,int);
 #endif
@@ -61,14 +64,17 @@ class TransIsotropic : public Elastic
         virtual double MaximumDiffusivity(void) const;
 		virtual double GetDiffZ(void) const;
 		virtual double GetKcondZ(void) const;
-		virtual bool SupportsDiffusion(void) const;
 #endif
 		
 	protected:
 		double EA,ET,nuA,nuAp,nuT,GA,aA,aT,GT,KT,betaA,betaT;
-		char read[ORTHO_PROPS];
+		int read[ORTHO_PROPS];
 #ifdef MPM_CODE
 		double diffA,diffT,kCondA,kCondT;
+#ifdef POROELASTICITY
+		double alphaAPE,alphaTPE,Qalphax,Qalphay,Qalphaz;
+		double DarcyA,DarcyT;
+#endif
 #endif
 #ifdef FEA_CODE
 		double lastMatAngle;

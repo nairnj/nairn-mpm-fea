@@ -83,7 +83,7 @@ void ElementBase::FindExtent(void)
 }
 
 //	Find center of mass of element (2D), and needed before extent is known
-void ElementBase::FindCentroid(Vector *center)
+void ElementBase::FindCentroid(Vector *center) const
 {
     int i,numnds=NumberNodes();
 	double xtot=nd[nodes[0]]->x;

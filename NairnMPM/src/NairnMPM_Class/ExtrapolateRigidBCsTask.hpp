@@ -25,7 +25,7 @@ class ExtrapolateRigidBCsTask : public MPMTask
 		ExtrapolateRigidBCsTask(const char *);
 	
 		// required methods
-		virtual void Execute(int);
+		virtual bool Execute(int);
 	
 	protected:
 };

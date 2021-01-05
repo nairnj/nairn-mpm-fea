@@ -167,6 +167,10 @@ void IsotropicMat::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     
     // track heat energy
     IncrementHeatEnergy(mptr,dTq0,0.);
+
+#ifdef POROELASTICITY
+	UndrainedPressIncrement(mptr,dVoverV);
+#endif
 }
 
 #pragma mark IsotropicMat::Methods (Small Rotation)
@@ -268,6 +272,10 @@ void IsotropicMat::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,i
     
     // track heat energy
     IncrementHeatEnergy(mptr,dTq0,0.);
+
+#ifdef POROELASTICITY
+	UndrainedPressIncrement(mptr,dVoverV);
+#endif
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -333,6 +341,10 @@ void IsotropicMat::SRConstitutiveLaw3D(MPMBase *mptr,Matrix3 du,double delTime,i
     
     // track heat energy
     IncrementHeatEnergy(mptr,dTq0,0.);
+
+#ifdef POROELASTICITY
+	UndrainedPressIncrement(mptr,dVoverV);
+#endif
 }
 
 #pragma mark IsotropicMat::Accessors
@@ -375,7 +387,11 @@ double IsotropicMat::GetMagnitudeSFromTotal(Tensor *st,int np) const
 // Identity also: K + 4G/3 = Lambda + 2G = 2G(1-nu)/(1-2 nu)
 double IsotropicMat::WaveSpeed(bool threeD,MPMBase *mptr) const
 {
-    return sqrt(2.*G*(1.-nu)/(rho*(1.-2.*nu)));
+#ifdef POROELASTICITY
+	if(DiffusionTask::HasPoroelasticity())
+		return sqrt((Ku + 4.*G/3.)/rho);
+#endif
+	return sqrt(2.*G*(1.-nu)/(rho*(1.-2.*nu)));
 }
 
 // Calculate shear wave speed in L/sec

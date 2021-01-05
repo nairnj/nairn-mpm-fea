@@ -26,14 +26,14 @@ void CrackController::AddCrack(CrackHeader *newCrack)
 
 // Add new segment
 int CrackController::AddSegment(CrackSegment *newSegment,bool ignoreDuplicate)
-{	
+{
 	return ((CrackHeader *)lastObject)->addSegment(newSegment,ignoreDuplicate);
 }
 
 // When done with crack, finish any other needed initializations
 bool CrackController::FinishCrack(void)
 {
-	return ((CrackHeader *)lastObject)->CreateHierarchy();
+ 	return ((CrackHeader *)lastObject)->CreateHierarchy();
 }
 
 // assemble into array used in the code

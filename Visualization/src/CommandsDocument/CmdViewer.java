@@ -79,6 +79,7 @@ public class CmdViewer extends JNCmdTextDocument
 	private String fbDamping;
 	private String pfbDamping;
 	private String leaveLimit;
+	private String deleteLimit;
 	private String extrapolateRigid;
 	private String ptsPerElement;
 	private String diffusion;
@@ -391,6 +392,7 @@ public class CmdViewer extends JNCmdTextDocument
 		fbDamping = null;
 		pfbDamping = null;
 		leaveLimit = null;
+		deleteLimit = null;
 		extrapolateRigid = null;
 		ptsPerElement = null;
 		diffusion = null;
@@ -787,6 +789,12 @@ public class CmdViewer extends JNCmdTextDocument
 
 		else if(theCmd.equals("gridthickness"))
 			gridinfo.doGridThickness(args);
+		
+		else if(theCmd.equals("gridtartanborder"))
+			gridinfo.doTartanBorder(args);
+		
+		else if(theCmd.equals("gridtartanareaofinterest"))
+			gridinfo.doTartanAOI(args); 
 
 		else if(theCmd.equals("stressfreetemp"))
 			doStressFreeTemp(args);
@@ -805,6 +813,9 @@ public class CmdViewer extends JNCmdTextDocument
 
 		else if(theCmd.equals("leavelimit"))
 			doLeaveLimit(args);
+
+		else if(theCmd.equals("deletelimit"))
+			doDeleteLimit(args);
 
 		else if(theCmd.equals("extrapolaterigid"))
 			doExtrapolateRigid(args);
@@ -883,6 +894,9 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("crackthickness"))
 			cracks.doCrackThickness(args);
 
+		else if(theCmd.equals("cracktractionprop"))
+			cracks.doCrackTractionProp(args);
+
 		else if(theCmd.equals("propagate"))
 			cracks.doPropagate(args, false);
 
@@ -917,8 +931,7 @@ public class CmdViewer extends JNCmdTextDocument
 	public void doScriptCommand(String theCmd,ArrayList<String> args) throws Exception
 	{
 		if(theCmd.equals("open"))
-		{ // Open objName,path (omit path for dialog,
-				// can be relative path)
+		{	// Open objName,path (omit path for dialog, can be relative path)
 			if(args.size() < 2)
 				throw new Exception(
 						"The first argument in an 'Open' command must provide an object variable.\n" + args);
@@ -926,28 +939,66 @@ public class CmdViewer extends JNCmdTextDocument
 			if(!validObjectName(objectVar))
 				throw new Exception("The first argument in an 'Open' command must be valid object name.\n" + args);
 
-			// file by path or null
-			File oneDoc = null;
+			// file by path or null or _results_ or _commands_
+			JNDocument currentDoc = NairnFEAMPMViz.main.frontDocument();
+			JNDocument openedDoc = null;
+			File docToOpen = null;
+			
 			if(args.size() > 2)
-			{	oneDoc = scriptPath(readStringArg(args.get(2)), args, false);
-				oneDoc = new File(oneDoc.getCanonicalPath());
-
-				// see if already open
-				JNDocument currentDoc = NairnFEAMPMViz.main.findDocument(oneDoc);
-				if(currentDoc != null)
-				{	currentDoc.setVisible(true);
-					currentDoc.toFront();
-					objs.put(objectVar, currentDoc);
-					return;
+			{	String openArg = readStringArg(args.get(2));
+				if(openArg.toLowerCase().equals("_results_"))
+				{	// set openedDoc to first DocViewer, exit if none
+					ArrayList<JNDocument> docs = NairnFEAMPMViz.main.getDocuments();
+					for(int i=0;i<docs.size();i++)
+					{	JNDocument adoc = docs.get(i);
+						if(adoc.getClass().equals(DocViewer.class))
+						{	openedDoc = adoc;
+							break;
+						}
+					}
+					if(openedDoc==null)
+						throw new Exception("An 'Open' command found no such document.\n" + args);
+					
+				}
+				else if(openArg.toLowerCase().equals("_commands_"))
+				{	// set openedDoc to first CmdViewer, exit if none
+					ArrayList<JNDocument> docs = NairnFEAMPMViz.main.getDocuments();
+					for(int i=0;i<docs.size();i++)
+					{	JNDocument adoc = docs.get(i);
+						if(adoc.getClass().equals(CmdViewer.class) && (adoc!=this))
+						{	openedDoc = adoc;
+							break;
+						}
+					}
+					if(openedDoc==null)
+						throw new Exception("An 'Open' command found no such document.\n" + args);
+					
+				}
+				else
+				{	// get path and set openedDoc if opened
+					docToOpen = scriptPath(readStringArg(openArg), args, false);
+					docToOpen = new File(docToOpen.getCanonicalPath());
+					openedDoc = NairnFEAMPMViz.main.findDocument(docToOpen);
+				}
+				
+				if(openedDoc!=null)
+				{	openedDoc.setVisible(true);
+					openedDoc.toFront();
 				}
 			}
 
-			// open now (exit if cancelled or error)
-			JNDocument currentDoc = NairnFEAMPMViz.main.frontDocument();
-			NairnFEAMPMViz.main.openDocument(oneDoc);
-			if(currentDoc == NairnFEAMPMViz.main.frontDocument())
-			{	// open failed or was canceled
-				running = false;
+			// if no existing document, try to open file (with path or null)
+			if(openedDoc==null)
+				NairnFEAMPMViz.main.openDocument(docToOpen);
+			
+			// Hack - wait for it to be front window, give up after some tries
+			int maxLoops = 10;
+			while(currentDoc == NairnFEAMPMViz.main.frontDocument() && maxLoops>0)
+			{	Thread.sleep(20);
+				maxLoops--;
+			}
+			if(maxLoops==0)
+			{	running = false;
 				return;
 			}
 			objs.put(objectVar, NairnFEAMPMViz.main.frontDocument());
@@ -1009,9 +1060,9 @@ public class CmdViewer extends JNCmdTextDocument
 			}
 			variablesStrs.put(varName, fldrPath);
 		}
-
+		
 		else
-		{ // look for object command
+		{	// look for object command
 			String objCmd = args.get(0);
 			int dot = objCmd.indexOf(".");
 			if(dot > 0)
@@ -1179,7 +1230,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 
 		else if(theCmd.equals("export"))
-		{	// run obj,outpath
+		{	// run obj,export path
 			if(!obj.getClass().equals(CmdViewer.class))
 				throw new Exception("The 'export' command can only by used on commands documents.\n" + args);
 
@@ -1197,6 +1248,20 @@ public class CmdViewer extends JNCmdTextDocument
 
 			if(!((CmdViewer) obj).exportOutput(oneDoc, null))
 				throw new Exception("The 'export' command failed.\n" + args);
+		}
+
+		else if(theCmd.equals("plottable"))
+		{	// run obj,plottable data
+			if(!obj.getClass().equals(DocViewer.class))
+				throw new Exception("The 'plottable' command can only by used on results documents.\n" + args);
+			
+			if(args.size() > 1)
+			{	String tableData = readStringArg(args.get(1));
+				XYPlotWindow plotWindow = new XYPlotWindow((DocViewer)obj);
+				plotWindow.plotPPTable(tableData);
+			}
+			else
+				throw new Exception("The 'plottable' command had no data.\n" + args);
 		}
 
 		else
@@ -1650,7 +1715,7 @@ public class CmdViewer extends JNCmdTextDocument
 				crackOrder.append('N');
 		}
 
-		// initial history (integer starting at 0x30 to 0x3F)
+		// initial history options
 		char historyChar = mpmOrder.charAt(ReadArchive.ARCH_History);
 		int history;
 		if(historyChar == 'N')
@@ -1661,6 +1726,56 @@ public class CmdViewer extends JNCmdTextDocument
 			history = (int) historyChar;
 		int origHistory = history;
 
+		historyChar = mpmOrder.charAt(ReadArchive.ARCH_History59);
+		int history59;
+		if(historyChar == 'N')
+			history59 = 0x20;
+		else if(historyChar == 'Y')
+			history59 = 0x21;
+		else
+			history59 = (int) historyChar;
+		int origHistory59 = history59;
+
+		historyChar = mpmOrder.charAt(ReadArchive.ARCH_History1014);
+		int history1014;
+		if(historyChar == 'N')
+			history1014 = 0x20;
+		else if(historyChar == 'Y')
+			history1014 = 0x21;
+		else
+			history1014 = (int) historyChar;
+		int origHistory1014 = history1014;
+
+		historyChar = mpmOrder.charAt(ReadArchive.ARCH_History1519);
+		int history1519;
+		if(historyChar == 'N')
+			history1519 = 0x20;
+		else if(historyChar == 'Y')
+			history1519 = 0x21;
+		else
+			history1519 = (int) historyChar;
+		int origHistory1519 = history1519;
+
+		historyChar = crackOrder.charAt(ReadArchive.ARCH_Traction15);
+		int traction15;
+		if(historyChar == 'N')
+			traction15 = 0x20;
+		else if(historyChar == 'Y')
+			traction15 = 0x21;
+		else
+			traction15 = (int) historyChar;
+		int origTraction15 = traction15;
+
+		historyChar = crackOrder.charAt(ReadArchive.ARCH_Traction610);
+		int traction610;
+		if(historyChar == 'N')
+			traction610 = 0x20;
+		else if(historyChar == 'Y')
+			traction610 = 0x21;
+		else
+			traction610 = (int) historyChar;
+		int origTraction610 = traction610;
+		
 		// set all options in this command
 		for(i = 1; i < args.size(); i++)
 		{	String archive = readStringArg(args.get(i)).toLowerCase();
@@ -1689,31 +1804,127 @@ public class CmdViewer extends JNCmdTextDocument
 			else if(archive.equals("stressintensity"))
 				cloc = ReadArchive.ARCH_StressIntensity;
 			else if(archive.equals("history1"))
-			{
-				history = history | 1;
+			{	history = history | 1;
 				loc = 0;
 			}
 			else if(archive.equals("history2"))
-			{
-				history = history | 2;
+			{	history = history | 2;
 				loc = 0;
 			}
 			else if(archive.equals("history3"))
-			{
-				history = history | 4;
+			{	history = history | 4;
 				loc = 0;
 			}
 			else if(archive.equals("history4"))
-			{
-				history = history | 8;
+			{	history = history | 8;
+				loc = 0;
+			}
+			else if(archive.equals("history5"))
+			{	history59 = history59 | 1;
+				loc = 0;
+			}
+			else if(archive.equals("history6"))
+			{	history59 = history59 | 2;
+				loc = 0;
+			}
+			else if(archive.equals("history7"))
+			{	history59 = history59 | 4;
+				loc = 0;
+			}
+			else if(archive.equals("history8"))
+			{	history59 = history59 | 8;
+				loc = 0;
+			}
+			else if(archive.equals("history9"))
+			{	history59 = history59 | 16;
+				loc = 0;
+			}
+			else if(archive.equals("history10"))
+			{	history1014 = history1014 | 1;
+				loc = 0;
+			}
+			else if(archive.equals("history11"))
+			{	history1014 = history1014 | 2;
+				loc = 0;
+			}
+			else if(archive.equals("history12"))
+			{	history1014 = history1014 | 4;
+				loc = 0;
+			}
+			else if(archive.equals("history13"))
+			{	history1014 = history1014 | 8;
+				loc = 0;
+			}
+			else if(archive.equals("history14"))
+			{	history1014 = history1014 | 16;
+				loc = 0;
+			}
+			else if(archive.equals("history15"))
+			{	history1519 = history1519 | 1;
+				loc = 0;
+			}
+			else if(archive.equals("history16"))
+			{	history1519 = history1519 | 2;
+				loc = 0;
+			}
+			else if(archive.equals("history17"))
+			{	history1519 = history1519 | 4;
+				loc = 0;
+			}
+			else if(archive.equals("history18"))
+			{	history1519 = history1519 | 8;
+				loc = 0;
+			}
+			else if(archive.equals("history19"))
+			{	history1519 = history1519 | 16;
+				loc = 0;
+			}
+			else if(archive.equals("traction1"))
+			{	traction15 = traction15 | 1;
+				loc = 0;
+			}
+			else if(archive.equals("traction2"))
+			{	traction15 = traction15 | 2;
+				loc = 0;
+			}
+			else if(archive.equals("traction3"))
+			{	traction15 = traction15 | 4;
+				loc = 0;
+			}
+			else if(archive.equals("traction4"))
+			{	traction15 = traction15 | 8;
+				loc = 0;
+			}
+			else if(archive.equals("traction5"))
+			{	traction15 = traction15 | 16;
+				loc = 0;
+			}
+			else if(archive.equals("traction6"))
+			{	traction610 = traction610 | 1;
+				loc = 0;
+			}
+			else if(archive.equals("traction7"))
+			{	traction610 = traction610 | 2;
+				loc = 0;
+			}
+			else if(archive.equals("traction8"))
+			{	traction610 = traction610 | 4;
+				loc = 0;
+			}
+			else if(archive.equals("traction9"))
+			{	traction610 = traction610 | 8;
+				loc = 0;
+			}
+			else if(archive.equals("traction10"))
+			{	traction610 = traction610 | 16;
 				loc = 0;
 			}
 			else if(archive.equals("heatenergy"))
 				loc = ReadArchive.ARCH_HeatEnergy;
 			else if(archive.equals("concentration") || archive.equals("porepressure"))
 				loc = ReadArchive.ARCH_Concentration;
-			else if(archive.equals("energybalance"))
-				cloc = ReadArchive.ARCH_BalanceResults;
+			else if(archive.equals("czmdisp"))
+				cloc = ReadArchive.ARCH_CZMDeltaG;
 			else if(archive.equals("elementcrossings"))
 				loc = ReadArchive.ARCH_ElementCrossings;
 			else if(archive.equals("rotstrain"))
@@ -1738,6 +1949,26 @@ public class CmdViewer extends JNCmdTextDocument
 		if(history != origHistory)
 		{	char hchr = history == 0x31 ? 'Y' : (char) history;
 			mpmOrder.setCharAt(ReadArchive.ARCH_History, hchr);
+		}
+		if(history59 != origHistory59)
+		{	char hchr = history59 == 0x21 ? 'Y' : (char) history59;
+			mpmOrder.setCharAt(ReadArchive.ARCH_History59, hchr);
+		}
+		if(history1014 != origHistory1014)
+		{	char hchr = history1014 == 0x21 ? 'Y' : (char) history1014;
+			mpmOrder.setCharAt(ReadArchive.ARCH_History1014, hchr);
+		}
+		if(history1519 != origHistory1519)
+		{	char hchr = history1519 == 0x21 ? 'Y' : (char) history1519;
+			mpmOrder.setCharAt(ReadArchive.ARCH_History1519, hchr);
+		}
+		if(traction15 != origTraction15)
+		{	char hchr = traction15 == 0x21 ? 'Y' : (char) traction15;
+			crackOrder.setCharAt(ReadArchive.ARCH_Traction15, hchr);
+		}
+		if(traction610 != origTraction610)
+		{	char hchr = traction610 == 0x21 ? 'Y' : (char) traction610;
+			crackOrder.setCharAt(ReadArchive.ARCH_Traction610, hchr);
 		}
 	}
 
@@ -2241,7 +2472,7 @@ public class CmdViewer extends JNCmdTextDocument
 			pfbDamping = fb;
 	}
 
-	// LeaveLimit #1 (integer)
+	// ExtrapolateRigid
 	public void doExtrapolateRigid(ArrayList<String> args) throws Exception
 	{	// MPM Only
 		requiresMPM(args);
@@ -2284,9 +2515,23 @@ public class CmdViewer extends JNCmdTextDocument
 		if(args.size() < 2)
 			throw new Exception("'" + args.get(0) + "' has too few parameters:\n" + args);
 
-		// leav limit (required)
+		// leave limit (required)
 		int leave = readIntArg(args.get(1));
 		leaveLimit = "    <LeaveLimit>" + leave + "</LeaveLimit>\n";
+	}
+
+	// DeleteLimit #1 (integer)
+	public void doDeleteLimit(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+
+		// read analysis type
+		if(args.size() < 2)
+			throw new Exception("'" + args.get(0) + "' has too few parameters:\n" + args);
+
+		// delete limit (required)
+		int del = readIntArg(args.get(1));
+		deleteLimit = "    <DeleteLimit>" + del + "</DeleteLimit>\n";
 	}
 
 	// Diffusion #1,<#2> or Poroelasticity #1,<#2>,<#3>
@@ -2808,6 +3053,8 @@ public class CmdViewer extends JNCmdTextDocument
 				xml.append(extrapolateRigid);
 			if(leaveLimit != null)
 				xml.append(leaveLimit);
+			if(deleteLimit != null)
+				xml.append(deleteLimit);
 			if(diffusion != null)
 				xml.append(diffusion);
 

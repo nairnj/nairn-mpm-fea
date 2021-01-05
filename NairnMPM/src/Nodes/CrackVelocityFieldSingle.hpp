@@ -29,6 +29,9 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 	
 		virtual void AddFtotSpreadTask3(Vector *);
 		virtual void AddGravityAndBodyForceTask3(Vector *,double,double);
+#ifdef RESTART_OPTION
+        virtual bool IsTravelTooMuch(double,double) const;
+#endif
 		virtual void RestoreMomenta(void);
 	
 		virtual void UpdateMomentum(double);

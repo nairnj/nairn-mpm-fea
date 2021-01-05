@@ -57,7 +57,7 @@ UpdateStrainsLastContactTask::UpdateStrainsLastContactTask(const char *name) : M
 
 // Get total grid point forces (except external forces)
 // throws CommonException()
-void UpdateStrainsLastContactTask::Execute(int taskOption)
+bool UpdateStrainsLastContactTask::Execute(int taskOption)
 {
 	CommonException *uslErr = NULL;
 #ifdef CONST_ARRAYS
@@ -147,4 +147,6 @@ void UpdateStrainsLastContactTask::Execute(int taskOption)
 
 	// update strains based on current velocities
 	UpdateStrainsFirstTask::FullStrainUpdate(strainTimestepLast,(fmobj->mpmApproach==USAVG_METHOD),fmobj->np,true);
+    
+    return true;
 }

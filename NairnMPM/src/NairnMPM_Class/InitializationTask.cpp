@@ -40,7 +40,7 @@ InitializationTask::InitializationTask(const char *name) : MPMTask(name)
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
 // throws CommonException()
-void InitializationTask::Execute(int taskOption)
+bool InitializationTask::Execute(int taskOption)
 {
 	CommonException *initErr = NULL;
 	
@@ -98,4 +98,5 @@ void InitializationTask::Execute(int taskOption)
 	// total interface energy
 	NodalPoint::interfaceEnergy=0.;
 
+    return true;
 }

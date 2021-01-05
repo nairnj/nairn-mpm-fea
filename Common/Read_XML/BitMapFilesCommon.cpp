@@ -52,6 +52,7 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 		angleAxes[0]=0;					// no angle files yet
 		rotationAxes[0]=0;				// no rotations yet
         int maxRotations = is3D ? 3 : 1 ;
+        bmpCustomPtsPerElement = 0;     // BMP commands can change it from using default
 #endif
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
@@ -179,6 +180,7 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 		else
 		{	if(numAngles==2)
 				throw SAXException(XYFileError("Too many <Intensity> commands to set angle mappings.",bmpFileName));
+            minAngle[numAngles]=thisMinAngle;
 			angleScale[numAngles]=(maxAngle-thisMinAngle)/((double)imax-(double)imin);
 			minIntensity[numAngles]=(double)imin;
 			numAngles++;
@@ -382,7 +384,7 @@ const char *CommonReadHandler::DecodeBMPWidthAndHeight(XYInfoHeader info,double 
 	if(height<0) height = width*(double)info.height/(double)info.width;
 	if(width<0) width = height*(double)info.width/(double)info.height;
 	
-	// final mm per pixel (if needed)
+	// final length per pixel (if needed)
 	if(pw.x<0.) pw.x = width/(double)info.width;
 	if(pw.y<0.) pw.y = height/(double)info.height;
 	

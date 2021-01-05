@@ -41,6 +41,7 @@ typedef struct
 	double zlevel;					// z value (if in the file, ignored if XML gives it)
 	int rowBytes;					// bytes in row (i.e., width * bytes per pixel)
 	int version;					// file version
+    int topDown;                    // 1 if file stored top down
 } XYInfoHeader;
 
 typedef struct
@@ -148,6 +149,8 @@ class CommonReadHandler : public DefaultHandler
 		double minAngle[3],minIntensity[3],angleScale[3];
 		int numAngles;
 		char bmpFileName[300],bmpAngleFileName[3][300];
+        int bmpCustomPtsPerElement,bmpCustomPtsPerSide;
+
 };
 
 #endif

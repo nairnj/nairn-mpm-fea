@@ -37,7 +37,7 @@ MeshInfo::MeshInfo(void)
 	minParticleSize = MakeVector(1.e50,1.e50,1.e50);
 	
 	// for contact
-	materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;		// method to find normals in multimaterial contact
+	materialNormalMethod=LOGISTIC_REGRESSION;       		// method to find normals in multimaterial contact
 	hasImperfectInterface = false;							// flag for any imperfect interfaces
 	materialContactLawID = -1;
 	rigidGradientBias=1.;						// Use rigid gradient unless material volume gradient is this much higher (only normal method 2)
@@ -51,7 +51,7 @@ MeshInfo::MeshInfo(void)
 #pragma mark MeshInfo:Methods
 
 // output grid info
-void MeshInfo::Output(int pointsPerCell,bool isAxisym)
+void MeshInfo::Output(bool isAxisym)
 {
     char fline[200];
 
@@ -89,7 +89,7 @@ void MeshInfo::Output(int pointsPerCell,bool isAxisym)
             cout << endl;
         }
 		
-		if(DbleEqual(grid.z,0.) && !isAxisym)
+		if(!fmobj->IsThreeD() && !isAxisym)
 		{	sprintf(fline,"Thickness: %g",zmin);
 			cout << fline << endl;
 		}
@@ -114,6 +114,14 @@ void MeshInfo::Output(int pointsPerCell,bool isAxisym)
 // output contact method by displacements or position with a cutoff
 void MeshInfo::OutputContactByDisplacements(bool regressionMethod,bool byDisplacements,double cutoff)
 {
+
+	// special case for material contact when using a regression method
+	if(regressionMethod)
+	{	cout << "   (normal cod found in regression methods)" << endl;
+		contactByDisplacements = true;		// no needed for normal, set to true for interface displacements
+		return;
+	}
+	
 	// other material contact and crack contact methods
     if(byDisplacements)
 		cout << "   (normal cod from displacements)" << endl;
@@ -892,6 +900,27 @@ void MeshInfo::MaterialOutput(void)
 			cout << "Use the specified normal of ";
 			PrintVector("",&contactNormal);
 			break;
+		case LINEAR_REGRESSION:
+			cout <<                     "Use linear regression";
+			if(rigidGradientBias>=10. && (nmpmsRC>nmpmsNR))
+				cout << " but switch to rigid material gradient for contact with rigid materials";
+			else
+			{	rigidGradientBias = 1.;
+				volumeGradientIndex = -1;
+			}
+			cout << ".";
+			break;
+		case LOGISTIC_REGRESSION:
+			cout <<                     "Use logistic regression";
+			if(rigidGradientBias>=10. && (nmpmsRC>nmpmsNR))
+				cout << " but switch to rigid material gradient for contact with rigid materials";
+			else
+			{	rigidGradientBias = 1.;
+				volumeGradientIndex = -1;
+			}
+			cout << ".";
+			warnLRConvergence = warnings.CreateWarning("Logistic regression did not converge and found negative separation",-1,0);
+			break;
 		default:
 			break;
 	}
@@ -909,6 +938,16 @@ void MeshInfo::MaterialOutput(void)
 			break;
 	}
 	cout << endl;
+}
+
+// return true if normals methods using regression methods and needs
+// This alerts code to build list of material points seeing contact node
+bool MeshInfo::UsingRegressionForContact(void)
+{	if((materialNormalMethod == LINEAR_REGRESSION) ||
+	   (materialNormalMethod == LOGISTIC_REGRESSION))
+	{	return true;
+	}
+	return false;
 }
 
 // set contact normal when normal is specified
@@ -1194,6 +1233,12 @@ int MeshInfo::GetCartesian(void) { return cartesian; }
 
 // see if 3D grid
 bool MeshInfo::Is3DGrid(void) { return cartesian > BEGIN_3D_GRIDS; }
+
+// find element number in l ower left hand corner of a structure
+// grid, but not one on the edge
+int MeshInfo::GetCornerNonEdgeElementNumber(void)
+{   return Is3DGrid() ? 2+horiz+horiz*vert : 2+horiz ;
+}
 
 // check if mesh allowed for axisymmetric GIMP shape functions
 // Need equal element sizes and if min<2*cell, need 0,cell,... on grid lines

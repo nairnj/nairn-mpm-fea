@@ -76,6 +76,9 @@ class CrackVelocityField
 		virtual void CopyGridForces(NodalPoint *);
 		virtual void AddFtotSpreadTask3(Vector *) = 0;
 		virtual void AddGravityAndBodyForceTask3(Vector *,double,double) = 0;
+#ifdef RESTART_OPTION
+        virtual bool IsTravelTooMuch(double,double) const = 0;
+#endif
 		virtual void RestoreMomenta(void) = 0;
 	
 		virtual void UpdateMomentum(double) = 0;

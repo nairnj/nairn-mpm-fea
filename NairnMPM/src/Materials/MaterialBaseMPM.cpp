@@ -40,7 +40,7 @@ bool MaterialBase::isolatedSystemAndParticles = FALSE;
 // class statics for MPM - zero based material IDs when in multimaterial mode
 vector<int> MaterialBase::fieldMatIDs;					// material ID in velocity field [i]
 vector<int> MaterialBase::activeMatIDs;					// list of active material velocity fields
-int MaterialBase::incrementalDefGradTerms = 2;			// terms in exponential of deformation gradient
+int MaterialBase::incrementalDefGradTerms = -2;			// terms in exponential of deformation gradient
 int MaterialBase::maxPropertyBufferSize = 0;            // maximum buffer size needed among active materials to get copy of mechanical properties
 int MaterialBase::maxAltBufferSize = 0;                 // maximum optional buffer size needed for more properties (e.g., hardenling law)
 bool MaterialBase::extrapolateRigidBCs = false;			// rigid BCs extrapolated (new) or projected (old)
@@ -162,6 +162,28 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
     {	input=DOUBLE_NUM;
         return((char *)&betaI);
     }
+
+#ifdef POROELASTICITY
+	else if(strcmp(xName,"Darcy")==0)
+	{	input=DOUBLE_NUM;
+		return((char *)&Darcy);
+	}
+	
+	else if(strcmp(xName,"alphaPE")==0)
+	{	input=DOUBLE_NUM;
+		return((char *)&alphaPE);
+	}
+	
+	else if(strcmp(xName,"Ku")==0)
+	{	input=DOUBLE_NUM;
+		return UnitsController::ScaledPtr((char *)&Ku,gScaling,1.e6);
+	}
+#endif
+	
+	else if(strcmp(xName,"allowsCracks")==0)
+	{	input=INT_NUM;
+		return((char *)&allowsCracks);
+	}
 	
 	else if(strcmp(xName,"kCond")==0)
     {	input=DOUBLE_NUM;
@@ -220,8 +242,8 @@ const char *MaterialBase::VerifyAndLoadProperties(int np)
 
 #pragma mark MaterialBase::Initialization (optional)
 
-/* This is called after PreliminaryParticleCalcs() and just before first MPM time step and it
- is only called if the material is actually in use by one or more particles
+/* This is called just before first MPM time step and it
+	is only called if the material is actually in use by one or more particles
 	If material cannot be used in current analysis type throw an exception
 	Subclass that overrides must pass on to super class
 	throws CommonException()
@@ -263,6 +285,15 @@ void MaterialBase::ValidateForUse(int np) const
 								  "MaterialBase::ValidateForUse");
 		}
 	}
+	
+#ifdef POROELASTICITY
+	else if(fmobj->HasPoroelasticity())
+	{	if(!SupportsDiffusion())
+		{	throw CommonException("Poroelasticity activated for a material that does not support it.",
+								  "MaterialBase::ValidateForUse");
+		}
+	}
+#endif
 }
 
 // Called before analysis, material can fill in things that never change during the analysis
@@ -331,7 +362,7 @@ void MaterialBase::PrintCommonProperties(void) const
 		if(criterion[0]!=NO_PROPAGATION && tractionMat[0]>0)
 			cout << "   New crack surface has traction material " << tractionMat[0] << endl;
 		
-		if(criterion[0]!=NO_PROPAGATION && criterion[1]!=NO_PROPAGATION)
+		if(criterion[1]!=NO_PROPAGATION && criterion[1]!=NO_PROPAGATION)
 		{	cout << "Alternate Crack Growth Criterion: ";
 			PrintCriterion(criterion[1],matPropagateDirection[1]);
 			
@@ -398,7 +429,7 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 			}
 			cout << endl;
 			if(maxLength>0.)
-			{	PrintProperty("max length",maxLength,"mm");
+			{	PrintProperty("max length",maxLength,UnitsController::Label(CULENGTH_UNITS));
 				cout << endl;
 			}
 			if(constantDirection && thisDirection==DEFAULT_DIRECTION)
@@ -424,8 +455,9 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 			
 		case MAXCTODCRITERION:
 			cout << "Maximum CTOD" << PreferredDirection(thisDirection) << endl;
-			sprintf(mline,"delIc=%12.6f mm  delIIc=%12.6f mm",delIc,delIIc);
-			cout << mline << endl;
+            PrintProperty("delIc",delIc,UnitsController::Label(CULENGTH_UNITS));
+            PrintProperty("delIIc",delIc,UnitsController::Label(CULENGTH_UNITS));
+			cout << endl;
 			break;
 			
 		default:
@@ -467,6 +499,21 @@ void MaterialBase::PrintTransportProperties(void) const
 		PrintProperty("b",betaI,"1/wt fr");
 		cout << endl;
 	}
+	
+#ifdef POROELASTICITY
+	else if(fmobj->HasPoroelasticity())
+	{	// Print Darcy, viscosityPE, alphaPE, and Ku
+		PrintProperty("Ku",Ku*UnitsController::Scaling(1.e-6),"");
+		PrintProperty("alpha",alphaPE,"");
+		cout << endl;
+		char dunits[20];
+		strcpy(dunits,UnitsController::Label(CULENGTH_UNITS));
+		strcat(dunits,"^2");
+		PrintProperty("kd",Darcy,dunits);
+		PrintProperty("Q",(Qalpha/alphaPE)*UnitsController::Scaling(1.e-6),"");
+		cout << endl;
+	}
+#endif
 	
 	// Conductivity constants
 	if(ConductionTask::active)
@@ -718,7 +765,7 @@ int MaterialBase::GetContactLawNum(int readID)
 	// check if already a real ID
 	if(readID<1000) return readID-1;
 	
-	// look for other ID in defined amterials
+	// look for other ID in defined materials
 	int clmat=nmat-1;
 	while(clmat>=0)
 	{	ContactLaw *matLaw = (ContactLaw *)theMaterials[clmat];
@@ -971,6 +1018,27 @@ Vector MaterialBase::GetDamageNormal(MPMBase *mptr,bool threeD) const
 	ZeroVector(&dnorm);
 	return dnorm;
 }
+
+#ifdef POROELASTICITY
+// To support poroelasticity, a material does the following:
+// 1. Convert poroelasticity properties into diffusion propertie in VerifyAndLoadProperties
+// 2. Find and store Qalpha (a tensor in general, but scalar for isotropic)
+// 3. Call one of theses method in constitutive law
+// These assume isotropic materials; anisotropic materials must override
+void MaterialBase::UndrainedPressIncrement(MPMBase *mptr,double dVoverV) const
+{	// exit if not active
+	if(!DiffusionTask::HasPoroelasticity()) return;
+	double dpud = -Qalpha*dVoverV;
+	mptr->Add_dpud(dpud);
+}
+
+void MaterialBase::UndrainedPressIncrement(MPMBase *mptr,double dexx,double deyy,double dezz) const
+{	// exit if not active
+	if(!DiffusionTask::HasPoroelasticity()) return;
+	double dpud = -Qalpha*(dexx+deyy+dezz);
+	mptr->Add_dpud(dpud);
+}
+#endif
 
 #pragma mark MaterialBase::Fracture Calculations
 
@@ -1583,12 +1651,27 @@ bool MaterialBase::SupportsDiffusion(void) const { return true; }
 // only be a symmetrix tensor
 int MaterialBase::AltStrainContains(void) const { return NOTHING; }
 
+// return cracking strain and true, or return false if material has no cracking strain
+// Only used for J integral
+bool MaterialBase::GetCrackingStrain(MPMBase *mpnt,Tensor *ecrack,bool is2D,Matrix3 *Rtot) const { return false; }
+
+// return cracking COD in the crack axis system
+// Only used by DeleteDamaged custom task
+Vector MaterialBase::GetCrackingCOD(MPMBase *mptr,bool is2D) const
+{	Vector cod = MakeVector(0.,0.,0.);
+	return cod;
+}
+
 // concentration saturation (mptr cannot be NULL)
 double MaterialBase::GetMaterialConcentrationSaturation(MPMBase *mptr) const { return concSaturation; }
 
 // density (NULL is allowed as long as material not using child materials)
 // in MPM use a MPMBase *, in FEA always use NULL
 double MaterialBase::GetRho(MPMBase *mptr) const { return rho; }
+
+// damage mechanics can set relative strength and toughness if override
+void MaterialBase::SetRelativeStrength(MPMBase *,double) {}
+void MaterialBase::SetRelativeToughness(MPMBase *,double) {}
 
 #pragma mark Material Base:Other Accessors
 
@@ -1638,7 +1721,7 @@ int MaterialBase::GetActiveMatID(int matfld) { return activeMatIDs[matfld]; }
 // Calculate artficial damping where Dkk is the relative volume change rate = (V(k+1)-V(k))/(V(k+1)dt)
 // and c is the current wave speed in current units
 // WARNING - only call this method after verifyting Dkk<0 && artificialViscosity
-double MaterialBase::GetArtificalViscosity(double Dkk,double c,MPMBase *mptr) const
+double MaterialBase::GetArtificialViscosity(double Dkk,double c,MPMBase *mptr) const
 {
     double divuij = fabs(Dkk);                                  // T^-1
 	double dcell = mpmgrid.GetAverageCellSize(mptr);            // L
@@ -1727,18 +1810,10 @@ void MaterialBase::SetInitiationLaw(char *lawName)
 	int lawID = 0;
 	
 	// check initiation loaw options
-	if(strcmp(lawName,"MaxPrinciple")==0 || strcmp(lawName,"1")==0)
+	if(strcmp(lawName,"MaxPrincipal")==0 || strcmp(lawName,"1")==0 || strcmp(lawName,"IsoFailure")==0 || strcmp(lawName,"MaxPrinciple")==0)
 	{   iLaw = new FailureSurface(this);
 		lawID = MAXPRINCIPALSTRESS;
 	}
-	
-#ifdef OSPARTICULAS
-	// check options
-	else if(strcmp(lawName,"TIFailure")==0 || strcmp(lawName,"2")==0)
-	{   iLaw = (FailureSurface *)new TIFailureSurface(this);
-		lawID = TIFAILURESURFACE;
-	}
-#endif
 	
 	// was it found
 	if(iLaw==NULL)
@@ -1804,3 +1879,7 @@ bool MaterialBase::AcceptSofteningLaw(SofteningLaw *sLaw,int lawID,int mode) { r
 // zero-offset to damage mechanics history data - all damage mechanics materials must override
 // if material returns NULL, it is not a damage mechanics material
 double *MaterialBase::GetSoftHistoryPtr(MPMBase *mptr) const { return NULL; }
+
+// get traction failure surface (or <0 if not a softening material)
+int MaterialBase::GetTractionFailureSurface(void) const { return -1; }
+

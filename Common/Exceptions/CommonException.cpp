@@ -20,7 +20,6 @@ CommonException::CommonException()
 // new CommonException(CommonException err) is implied by compiler
 
 // Constructors - inCode without the  "()" because it is added in Display
-// throws std::bad_alloc
 CommonException::CommonException(const char *errMsg,const char *inCode)
 {
     msg=new char[strlen(errMsg)+1];
@@ -32,6 +31,18 @@ CommonException::CommonException(const char *errMsg,const char *inCode)
     errID=MPMErr;
 }
 
+// Constructors - inCode without the  "()" because it is added in Display and give error ID
+CommonException::CommonException(const char *errMsg,const char *inCode,int errCode)
+{
+	msg=new char[strlen(errMsg)+1];
+	strcpy(msg,errMsg);
+	
+	code=new char[strlen(inCode)+1];
+	strcpy(code,inCode);
+	
+	errID=errCode;
+}
+
 #pragma mark CommonException: Methods
 
 // display message and step info
@@ -40,17 +51,20 @@ void CommonException::Display(int mstep,double mtime)
 	cout << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
     if(mstep>0)
         cout << "Step Number: " << mstep << " Current Time: " << mtime << endl;
-    
-	cerr << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
-    if(mstep>0)
-        cerr << "Step Number: " << mstep << " Current Time: " << mtime << endl;
+	
+	if(errID!=noErr)
+	{	cerr << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
+		if(mstep>0)
+			cerr << "Step Number: " << mstep << " Current Time: " << mtime << endl;
+	}
 }
 
 // display message only
 void CommonException::Display(void)
 {	// in both results window and in error pipe
     cout << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
-    cerr << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
+	if(errID!=noErr)
+    	cerr << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
 }
 
 // get the error code

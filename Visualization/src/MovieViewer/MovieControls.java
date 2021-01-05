@@ -45,6 +45,7 @@ public class MovieControls extends JPanel
 	private String xchar="x";
 	private String ychar="y";
 	private String zchar="z";
+	private String totalchar="magnitude";
 	
 	// hold variable
 	private ResultsDocument resDoc;
@@ -269,8 +270,18 @@ public class MovieControls extends JPanel
 				pcmpnt.setEnabled(true);
 				break;
 			
+			
 			case PlotQuantity.MPMVELX:
 			case PlotQuantity.MPMDISPX:
+				if(numItems!=3 || !pcmpnt.getItemAt(0).equals(xchar))
+				{	pcmpnt.removeAllItems();
+					pcmpnt.addItem(xchar);
+					pcmpnt.addItem(ychar);
+					pcmpnt.addItem(totalchar);
+				}
+				pcmpnt.setEnabled(true);
+				break;
+				
 			case PlotQuantity.MESHDISPX:
 			case PlotQuantity.MESHFORCEX:
 				if(numItems!=2 || !pcmpnt.getItemAt(0).equals(xchar))
@@ -339,13 +350,27 @@ public class MovieControls extends JPanel
 		// adjust component menus - add component selected in component menu
 		int extra;
 		switch(plotComponent)
-		{   case PlotQuantity.MPMSIGMAX:
+		{   
+			case PlotQuantity.MPMVELX:
+			{
+				extra=pcmpnt.getSelectedIndex();
+				int nextVal = resDoc.is3D()?3:2;
+				if(extra == nextVal) extra=PlotQuantity.SHIFT4MAGNITUDE;
+				break;
+			}
+			case PlotQuantity.MPMDISPX:
+			{
+				extra=pcmpnt.getSelectedIndex();
+				int nextVal = resDoc.is3D()?3:2;
+				if(extra == nextVal) extra=PlotQuantity.SHIFT4MAGNITUDE;
+				break;
+			}
+				
+			case PlotQuantity.MPMSIGMAX:
 			case PlotQuantity.MPMEPSX:
 			case PlotQuantity.MPMPLEPSX:
 			case PlotQuantity.MPMEPSTOTX:
-			case PlotQuantity.MPMVELX:
 			case PlotQuantity.MPMDCDX:
-			case PlotQuantity.MPMDISPX:
 			case PlotQuantity.MESHSIGMAX:
 			case PlotQuantity.MESHDISPX:
 			case PlotQuantity.MESHSTRAINX:

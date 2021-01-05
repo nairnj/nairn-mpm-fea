@@ -92,7 +92,7 @@ table { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-R
 <ul>
 <li><a href="#header">Main Analysis Header</a> commands</li>
 <li><a href="#mpmheader">MPM Analysis Header</a> commands</li>
-<li><a href="#archive">Archiving Option</a> commands</li>
+<li><a href="#archive">Archiving Options</a> commands</li>
 <li><a href="#grid">Defining the MPM Grid and Material Points</a> commands</li>
 <li><a href="#materials">Defining Materials</a> commands</li>
 <li><a href="#cracks">Explicit Crack</a> commands</li>
@@ -193,7 +193,8 @@ functions:</p>
  <li><code>sinbox(A,x)</code> - 0 if x&lt; 0, A sin(&pi;x) if 0&lt;x&lt;1, 0 if x&gt;1</li>
  <li><code>tri(x)</code> - 1-|x| for -1 &lt; x &lt; 1, 0 otherwise</li>
  <li><code>rand(x)</code> - a random number between 0 and x.</li>
- </ul>
+ <li><code>cdfinv(x)</code> - find inverse of the cumulative distribution function. For a random variable <i>Z</i> with mean <i>m</i> and standard deviation &sigma;, the value of <i>x</i> such that the probability that <i>Z</i>&lt;<i>x</i> is <i>p</i> is equal to <i>x</i>=<i>m</i>+&sigma;*<code>cdfinv(p)</code>.</li>
+</ul>
 
 <h4>String Expressions</h4>
 
@@ -391,7 +392,7 @@ Define type of analysis to be done; <code>(type)</code> can be following strings
 <li>&quot;Axisymmetric MPM+PS&quot;</li>
 <li>&quot;3D MPM+PS&quot;</li>
 </ul>
-The "+PS" options implement MPM with tracking of particle spin and they require use of <a href="http://osupdocs.forestry.oregonstate.edu/index.php/OSParticulas">OSParticulas</a>.</li>
+The "+PS" options implement MPM with tracking of particle spin and they require use of <a href="http://osupdocs.forestry.oregonstate.edu/index.php/OSParticulas">OSParticulas</a>. A feature in development can extend 2D MPM to <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Generalized_Plane_Stress_and_Strain">generalized plane stress or strain</a> for selected materials.</li>
 
 <li><code><a name="trackspin"></a>ConsistentUnits &lt;(length)&gt;,&lt;(mass)&gt;,&lt;(time)&gt;</code><br>
 Determines the units used for all input commands for length, mass and time. Only metric options are allowed as follows:
@@ -472,7 +473,7 @@ they should be less then 1 and may need to be less than 0.5.</li>
 Set time the MPM calculations will stop in <a href="#units">alt time units</a>.</li>
 
 <li><code>PtsPerElement (axis)</code>
-Select number of material points along each axis in the grid (in <code>(axis)</code>). The supported options are 1 to 5 for 2D and 1 to 3 of 3D. The total number of points in the element will be square of the entered value in 2D and the cube in 3D.</li>
+Select number of material points along each axis in the grid (in <code>(axis)</code>). The supported options are 1 to 5 for 2D and 1 to 3 of 3D. The total number of points in the element will be square of the entered value in 2D and the cube in 3D. If desired, you can use a different number of points per element in selected <a href="#regionmpm">regions</a> or when <a href="#bmpregionmpm">assigning particles using an image</a> (but if you change it for selected regions, you are responsible for making sure particles do not overlap).</li>
 
 <li><code>CPDIrcrit (rcrit)</code>
 One problem with lCPDI, qCPDI, or B2CPDI shape functions is that if a particle deforms too much, its' corners may extend beyond ghost rows into other patches used in parallel coding. If that becomes a problem, this parameter will restrict corner deformation to keep them within a single patch. Enter maximum allowed particle radius in <code>(rcrit)</code> in units of cell size. 
@@ -500,10 +501,23 @@ Select options for alternative damping of MPM particle velocities. The two comma
 
 <ul>
 <li><code>ExtrapolateRigid &lt;(option)&gt;</code><br>
-When this option is activated (with <code>(option)</code>="yes" or omitted), all <a href="materials.html#rigid">rigid material</a> particles that set boundary conditions for velocity, temperature, concentration, or pore pressure will extrapolate to the grid first and then set boundary conditions on those extrapolated values. It is normally used when the rigid particle values vary with position, such as loading in shear.</li>
+When this option is activated (with <code>(option)</code>="yes" or omitted),
+all <a href="materials.html#rigid">rigid material</a> particles that set boundary
+conditions for velocity, temperature, concentration, or pore pressure will extrapolate
+to the grid first and then set boundary conditions on those extrapolated values.
+It is normally used when the rigid particle values vary with position,
+such as loading in shear.</li>
 <li><code>LeaveLimit (allow)</code><br>
-Set number of particles allowed to leave the grid (in <code>(allow)</code>) before an analysis is stopped.
-If command is omitted, the limit is 1% of the particles. Set to 1 to stop when the first particle leaves the grid.</li>
+Set to number of particles allowed to leave the grid (in <code>(allow)</code>) before an
+analysis is stopped. If <code>(allow)</code> is positive, particles that leave the grid are moved back into the grid. If it is negative, they are deleted. If command is omitted, the limit is postive and set to 1% of the particles. Set to 1 to stop when the first particle leaves the grid.</li>
+<li><code>DeleteLimit (allow)</code><br>
+Set number of particles that get corrupted (with position becoming nan) that will be deleted
+before an analysis is stopped. If command is omitted, the analysis stops on the
+first particle with position getting a nan value.</li>
+<li><code>&lt;DefGradTerms&gt;</code><br>
+Increasing number of terms used to calculate the incremental deformation gradient can sometimes improve highly-dynamic simulations. The details are on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Methods_and_Simulation_Timing#Incremental_Deformation_Gradient">OSUPDocs</a>.</li>
+<li><code>&lt;RestartScaling&gt;</code><br>
+Dynamically restart times steps can sometimes improve highly-dynamic simulations. The details are on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Methods_and_Simulation_Timing#Restarting_Time_Steps">OSUPDocs</a>.</li>
 </ul>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
@@ -548,12 +562,17 @@ whenever strain is archived (which means full deformation gradient is archived)<
 <li><code>wp</code> - angular velocity due to particle spin (zero unless <a href="#trackspin">particle spin</a> is activated).</li>
 <li>temperature</li>
 <li>concentration or porepressure - concentration and gradients when doing diffusion calculations or pore pressure and gradients when doing poroelasticity calculations </li>
-<li>jintegral - at crack tips</li>
-<li>stressintensity - at crack tips</li>
-<li>history1, history2, history3, history4 - up to four material-dependent history variables can be archived.</li>
+<li><code>history#</code> - where '#' is 1 to 19 to archive that history variable for a material. These history variables depend on material types being used.</li>
 <li>damagenormal - vector normal to damage plane in softening materials.</li>
-<li>energybalance - research topic, not meant for general use</li>
 <li>elementcrossings - number of times the particle as crossed element boundaries</li>
+</ul>
+The following options for for crack particles:
+<ul>
+<li>jintegral - at crack tips</li>
+<li>stressintensity - at crack tips (isotropic materials only)</li>
+<li>czmdisp - mode I and II energy released in cohesive zones. Needed to be able to plot cohesive zone
+damage length or energy dissipations terms.</li>
+<li><code>traction#</code> - where '#' is 1 to 10 to archive that cohesive zone history variable along cracks. These traction history variables depend on traction law being used.</li>
 </ul>
 Note that the NairnFEAMPMViz handles units when visualizing the above archived results and lets you pick alterniate length and time units.
 </li>
@@ -657,6 +676,8 @@ Specify time interval for archiving global results, <code>(time)</code> is the g
 
 <li>Other Properties
 <ul>
+  <li><tt>crack length #</tt> - the length of crack number <tt>#</tt> specified in the quantity name. </li>
+  <li><tt>debonded crack length #</tt> - the debonded length of crack number <tt>#</tt> specified in the quantity name.</li>
 	<li><code>concentration</code> or <code>porepressure</code> - weight fraction concentration when doing diffusion calculations or pore pressure in <a href="#units">pressure units</a> when doing poroelasticity calculations.</li>	
 	<li><code>Step number</code> - the current MPM step number</li>
 	<li><code>Elapsed time</code> - elapsed clock time for the current calculation (in secs)</li>
@@ -730,10 +751,11 @@ Define a region for creating material points within the union of the subordinate
 <code>(mat)</code> is material ID. (<code>velx,velz</code>) are velocities in x and y
 direction  (in <a href="#units">velocity units</a>). For 2D, <code>(velzOrThick)</code> is thickness in
 <a href="#units">length units</a>, but for 3D it is velocity in z direction (in <a href="#units">velocity units</a>).
-The velocities can be numerical values or <a href="#function">user-defined functions</a> of particle position.
-The optional <code>(prop,value)</code> pairs to set some initial property of the materials.
+The velocities can be numerical values or <a href="#function">user-defined functions</a> of particle position.<br>
+The optional <code>(prop,value)</code> pairs are to set some initial property of the materials.
 The <code>(prop)</code> options are "angle" (for material rotation about z axis in degrees),
-"temp" (for temperature in K), "conc" (for particle concentration potential), and "pp" (for particle concentration potential).</li>
+"temp" (for temperature in K), "conc" (for particle concentration potential), "pp" (for particle concentration potential), and "res" (to optionally set the number of material points along each axis in each element of the background grid for this region to differ from the <a href="#mpmheader">default setting</a>). </li>
+</li>
 
 <li><a name="holempm"></a><code>Hole<br>
 &nbsp;&nbsp;(series of <a href="#shape2D">2D</a> or <a href="#shape3D">3D</a> shape commands)<br>
@@ -775,11 +797,13 @@ where dx and dy are cell dimensions for the grid cell containing the particle. F
 <p>These commands are used to define material points using an image (in 2D) or a stack of images (in 3D).</p>
 
 <ul>
-<li><a name="bmpregionmpm"></a><code>BMPRegion (path),(width),&lt;(height)&gt;,&lt;(scheme)&gt;,&lt;(anglesPath)&gt;,...<br>
+<li><a name="bmpregionmpm"></a><code>BMPRegion (path),(width),&lt;(height)&gt;,&lt;(scheme)&gt;,&lt;(anglesPath)&gt;,&lt;(prop,value)&gt;<br>
 &nbsp;&nbsp;(One <a href="#origbmpmpm">Origin</a> command and <a href="#intensitympm">Intensity</a> commands)<br>
 EndRegion</code><br>
 Create material from an image in a BMP file with <code>(path)</code> having the path for image file name. <code>(width)</code> and <code>(height)</code> give width and height of the image (in <a href="#units">length units</a>). Either can be negative to enter <a href="#units">length unit</a> per pixel instead of absolute picture size. If either one is omitted, the other one is calculated by the aspect ratio of the image in the file (to omit <code>(width)</code> or <code>(height)</code> when needed for parameter alignment, the number should be more negative than -1e8).<br>
-The optional <code>(scheme)</code> and 1 to 3 <code>(anglesPath)</code>s gives paths to 1 to 3 additional BMP files (of the same size) whose gray scale values determine one Euler angle for particles covered by the image. For 2D  simulations the <code>(scheme)</code> must be "Z" and the one BMP files gives rotation angle about the z axis (in fact, for 2D, the <code>(scheme)</code> argument can be omitted). For 3D, the scheme can be any 1 axis, 2 axes, or 3 axes beginning in "Z" (<i>e.g.</i>, "ZYZ") to specify Euler angle method and gray scales in the file determine the angles. For details on rotation angles see <a href="">OSUPDocs details</a>. Mapping of gray scale to angle is done with 1 to 3 <code>Intensity</code> commands.</li>
+The optional <code>(scheme)</code> and 1 to 3 <code>(anglesPath)</code>s gives paths to 1 to 3 additional BMP files (of the same size) whose gray scale values determine one Euler angle for particles covered by the image. For 2D  simulations the <code>(scheme)</code> must be "Z" and the one BMP files gives rotation angle about the z axis (in fact, for 2D, the <code>(scheme)</code> argument can be omitted). For 3D, the scheme can be any 1 axis, 2 axes, or 3 axes beginning in "Z" (<i>e.g.</i>, "ZYZ") to specify Euler angle method and gray scales in the file determine the angles. For details on rotation angles see <a href="">OSUPDocs details</a>. Mapping of gray scale to angle is done with 1 to 3 <code>Intensity</code> commands.<br>
+The optional <code>(prop,value)</code> pairs tare o set some initial property of the materials.
+The only <code>(prop)</code> options is "res" (to optionally set the number of material points along each axis in each element of the background grid for this region to differ from the <a href="#mpmheader">default setting</a>). (Note: to enter "res"" without prior optional parameters, enter a value for <tt>(height)</tt>, set <tt>(scheme)=""</tt>, and skip <tt>(anglesPath)</tt>)</li>
 
 <li><a name="intensitympm"></a><code>Intensity (mat),(imin),(imax),&lt;(prop,value)&gt;,...</code><br>
 Map pixel gray scale values in <a href="#bmpregionmpm">BMPRegion</a> in the range <code>(imin)</code> to <code>(imax)</code>
@@ -1002,6 +1026,7 @@ Extend current crack to <code>(x,y)</code> using 1 crack segment. <code>(mat)</c
 <li><code>CrackThickness (thick)</code><br>
 Sets crack thickness to <code>(thick)</code>; only used or needed when crack has traction laws or crack tips release their energy into heat.</li>
 
+<li><code>CrackTractionProp (propID)</code>: Sets a custom <a href="materials.html#tractionlaws">traction law</a> to be inserted when this crack propagates. It is only needed to override inserted law defined by the <a href="#propagate">Propagate command</a> or a <a href="materials.html#cmn3">custom material traction property</a>.</li>
 </ul>
 
 <h3><a name="csettings"></a>Crack Settings</h3>
@@ -1033,7 +1058,7 @@ The <code>(direction)</code> select the crack growth direction (by name or numbe
 <li>"cod hoop" (or 3)</li>
 <li>"initial" (or 4)</li>
 </ul>
-The optional <code>(tract)</code> (for a material ID) is to leave traction law in wake of propagation.</li>
+The optional <code>(tract)</code> (for a material ID) is to leave traction law in wake of propagation. This traction law can be overridden by a <a href="materials.html#cmn3">material-specific traction property</a> or by a crack's <a href="#cracks">CrackTractionProp command</a>.</li>
 
 <li><code>AltPropagate (criterion),&lt;(direction)&gt;,&lt;(tract)&gt;</code><br>
 Set a second rule for crack propagation with competing fracture modes. The parameters are the
@@ -1052,17 +1077,17 @@ and then calculating energies (if <code>(usegrid)</code>="yes"; "no" is recommen
 Used to set how crack plane particles move where <code>(how)</code> is "avg" or "cm" to move to average of crack surfaces or to move in the center of mass velocity field, and <code>(prevent)</code> is "yes" or "no" to prevent crack surfaces from crossing the main crack plane.</li>
 
 <li><a name="CPCommand"></a><code>ContactPositionCracks (con)</code><br>
-Determines the method used for detecting crack surface contact. The command use and its <code>(con)</code> argument have three options:
+Determines the method used for detecting crack surface contact. The command usage and its <code>(con)</code> argument have three options:
 <ol>
 <li><code>(con)</code> &gt; 0 means that distance (entered relative to grid element dimensions) is subtracted from extrapolated particle positions to calculate crack surface separation. Calculations and simulations show the 0.8 is a good value for GIMP or CPDI shape functions with two particle per cell axis (other settings might need a different value).</li>
-<li><code>(con)</code> &lt; 0 means to use an advanced calculation to adjust extrapolated positions to detect separation (unpublished results). The absolute value of the argument is used as power for one term in the adjustment expression. Calculations and simulations show the -0.58 a good value for GIMP or CPDI shape functions with two particle per cell axis (other settings might need a different value or might new recoding for form of the power-law expressions).</li>
+<li><code>(con)</code> &lt; 0 means to use an advanced calculation to adjust extrapolated positions to detect separation (unpublished results). The absolute value of the argument is used as power for one term in the adjustment expression. Calculations and simulations show the -0.58 a good value for GIMP or CPDI shape functions with two particle per cell axis (this option should not be used for any other conditions).</li>
 <li>No <code>ContactPositionCracks</code> command: If a simulation has no <code>ContactPositionCracks</code> command, the crack surface separation is determined by extrapolating particle displacements rather than position. The displacements are used uncorrected in contact calculations.</li>
 </ol>
 The default condition is no <code>ContactPositionCracks</code> command and it is the preferred method when all cracks start out in contact. A separate <a href="#CPMatCommand">ContactPosition</a> commands determines method used for detecting <a href="#mmmode">material contact</a>.</li>
 
 </ul>
 
-<p>When modeling cracks, you can use the <a href="#toarchive">ToArchive command</a> to select various crack parameters for output in the archive files. The archiving options for crack parameters are jintegral, stress, and energybalance.</p>
+<p>When modeling cracks, you can use the <a href="#toarchive">ToArchive command</a> to select various crack parameters for output in the archive files. The archiving options for crack parameters are jintegral, stress, and czmdisp.</p>
 
 <p>A few <a href="#deprecate">deprecated commmands</a> can set crack options, but should be replaced now by the above commands.</p>
 
@@ -1092,7 +1117,7 @@ If two arguments are given, the node closet to <code>(xtip,ytip)</code> (in <a h
 
 <p>NairnMPM can use multimaterial mode where each material has its own velocity field
 and intersections between materials on nodes are resolved using various contact
-mechanics models. The key commands to use this mode are:</p>
+mechanics models. Many details are on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Multimaterial_MPM">OSUPDocs</a>. The key commands to use this mode are:</p>
 
 <ul>
 <li><code>MultimaterialMode 0.0,1,&lt;(norm)&gt;,&lt;(rigidBiasOrAzimuth)&gt;,&lt;(polar)&gt;</code><br>
@@ -1100,18 +1125,18 @@ Sets to use multimaterial modes and sets some options.
 The first two parameters are no longer used, but should specify previous default values (0.0 and 1) for parameter alignment. <code>(norm)</code> determines the method used to find surface normals during
 contact calculations, with options:
 <ul>
+<li>&quot;logreg&quot; (or 6) - the preferred and default option</li>
+<li>&quot;linreg&quot; (or 5)</li>
+<li>&quot;avggrad&quot; (or 2)</li>
+<li>&quot;specify&quot; (or 4)</li>
 <li>&quot;maxgrad&quot; (or 0)</li>
 <li>&quot;maxvol&quot; (or 1)</li>
-<li>&quot;avggrad&quot; (or 2) (default)</li>
 <li>&quot;owngrad&quot; (or 3)</li>
-<li>&quot;specify&quot; (or 4)</li>
-<li>&quot;linreg&quot; (or 5)</li>
-<li>&quot;logreg&quot; (or 4)</li>
 </ul>
 When <code>(norm)</code> is "maxgrad," "avggrad," "linreg," or "logreg," the <code>(rigidBiasOrAzimuth)</code> parameter sets a bias factor to use rigid normal over nonrigid material normal (default 1). When <code>(norm)</code> is "specify", the <code>(rigidBiasOrAzimuth)</code> and <code>(polar)</code> parameters set the azimuth (&phi;) and polar (&theta;) angles for the normal vector, which is given by (cos &phi; sin &theta;, sin &phi; sin &theta;, cos &theta;). For 2D calculations, the <code>(polar)</code> setting is ignored (and automatically set to 90 degrees). The normal should point from the lower-numbered material to the higher-numbered material. For contact with rigid materials, the normal should point from the non-rigid material to the rigid material.</li>
 
 <li><a name="CPMatCommand"></a><code>ContactPosition (con)</code><br>
-Determines method used to evaluate material separation. See <a href="#CPCommand"><code>ContactPositionCracks</code></a> command for the options, but this command applies those options to material contact instead of crack contact. Unless materials start out in contact, the preferred option for material contact is to use a <code>ContactPosition</code> command. A simulation can use one of both of these commands to allow crack contact and material contact to use different methods for finding separation. A common situtation in multimaterial mode with cracks is to use <code>ContactPosition</code> command but omit the <code>ContactPositionCracks</code> command. For compatibility with old code that had only one <code>ContactPosition</code> option, simulations in single material mode that use a <code>ContactPosition</code> will apply that command to crack contact.  </li>
+Determines method used to evaluate material separation. See <a href="#CPCommand"><code>ContactPositionCracks</code></a> command for the options, but this command applies those options to material contact instead of crack contact (but this command has no effect when using &quot;logreg&quot; or &quot;linreg&quot; options for normals). Unless materials start out in contact, the preferred option for material contact is to use a <code>ContactPosition</code> command. A simulation can use both of <code>ContactPosition</code> and <code>ContactPositionCracks</code> commands to allow crack contact and material contact to use different methods for finding separation. A common situtation in multimaterial mode with cracks is to use <code>ContactPosition</code> command but omit the <code>ContactPositionCracks</code> command. For compatibility with old code that had only one <code>ContactPosition</code> option, simulations in single material mode that use a <code>ContactPosition</code> will apply that command to crack contact.  </li>
 
 <li><a name="contactmm"></a><code>ContactMM (frict)</code><br>
 Set default multimaterial mode <a href="materials.html#contactlaws">contact law</a> by material ID in <code>(lawID)</code>.</li>
@@ -1147,10 +1172,11 @@ Turn on thermal conductivity calculations and define heat source options with (c
 <li>"Friction" - work of material friction converted to heat</li>
 <li>"Crack Friction" - work of crack friction converted to heat</li>
 </ul>
+Conduction calculations often benefit by using <a href="#XPICFMPM">periodic FMPM</a>.
 </li>
 
-<li><code>ThermalRamp</code><br>
-A <a href="#CustomThermalRamp">ThermalRamp custom task</a> can be used to ramp temperature difference applied to particles.</li>
+<li><code>PropertyRamp</code><br>
+A <a href="#CustomThermalRamp">PropertyRamp custom task</a> can be used to ramp temperature difference applied to particles.</li>
 
 <li><code>StressFreeTemp (temp)</code><br>
 Set the stress free temperature to (temp) (in K).</li>
@@ -1181,7 +1207,7 @@ needed for thermal calculations (coefficient of thermal expansion).</p>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
-<h2><a name="conc"></a>Diffusion Calculations</h2>
+<h2><a name="diff"></a><a name="conc"></a>Diffusion Calculations</h2>
 
 <p>The command to activate diffusion calculations is (MPM only):</p>
 
@@ -1192,7 +1218,8 @@ To turn on diffusion calculations. <code>(diff)</code> is "yes" or "no" to activ
 
 </ul>
 
-<p>When doing concentration calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for diffusions calculations (coefficient of moisture expansion, diffusion constant, saturation concentration). You can apply <a href="#bconds">concentration and concentration flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregionmpm">BMPRegion</a> commands to set initial particle concentration. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to add concentration concentration gradients to archive files.</p>
+<p>When doing concentration calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for diffusions calculations (coefficient of moisture expansion, diffusion constant, saturation concentration). You can apply <a href="#bconds">concentration and concentration flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregionmpm">BMPRegion</a> commands to set initial particle concentration. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to add concentration concentration gradients to archive files. Diffusion calculations often benefit by using <a href="#XPICFMPM">periodic FMPM</a>.
+</p>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
@@ -1207,7 +1234,9 @@ To turn on poroelasticity calculations. <code>(poro)</code> is "yes" or "no" to 
 
 </ul>
 
-<p>When doing poroelasticity calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for poroelasticity calculations (undrained bulk modulus, Biot coefficient, and Darcy's law permittivity). You can apply <a href="#bconds">pore pressure and pore pressure flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregionmpm">BMPRegion</a> commands to set initial particle pore pressure. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to add pore pressure and pore pressure gradient to archive files.</p>
+<p>When doing poroelasticity calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for poroelasticity calculations (undrained bulk modulus, Biot coefficient, and Darcy's law permittivity). You can apply <a href="#bconds">pore pressure and pore pressure flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregionmpm">BMPRegion</a> commands to set initial particle pore pressure. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to add pore pressure and pore pressure gradient to archive files. Poroelasticity calculations often benefit by using <a href="#XPICFMPM">periodic FMPM</a> (or may require it).</p>
+
+<p>Poroelasticity is only activated for <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Poroelasticity_Calculations">some materials</a>.</p>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
@@ -1415,7 +1444,8 @@ custom task parameters do not take a value.
 <li><a href="#HistoryArchive">HistoryArchive</a>: archive material history data to a tab-delimited file.</li>
 <li><a href="#ReverseLoad">ReverseLoad</a>: monitor crack length and perform actions when a specified crack length is reached.</li>
 <li><a href="#AdjustTimeStep">AdjustTimeStep</a>: adjust time step, if needed, during the calculation</li>
-<li><a href="#CustomThermalRamp">ThermalRamp</a>: apply property to all particles over a ramp</li>
+<li><a href="#CustomThermalRamp">PropertyRamp</a>: to gradually change a particle property</li>
+<li><a href="#deletedamaged">DeleteDamaged</a>: delete particles after decohesion or after a specified time</li>
 <li><a href="#unknown">Undocumented Custom Tasks</a>: you can attach custom tasks that are in <code>NairnMPM</code> but not known here to <b>NairnFEAMPM</b>, such as user-written custom tasks.</li>
 </ul>
 
@@ -1423,13 +1453,13 @@ custom task parameters do not take a value.
 
 <h3><a name="XPICFMPM">PeriodicXPIC</a></h3>
 
-<p>The XPIC(k) and FMPM(k) methods are advanced methods that filter out unwanted noise (in the null space) without damping out useful information. Many simulations can benefit by running them using XPIC(k) or FMPM(k). This custom tasks lets you add XPIC(k) or FMPM(k) to any simulation and select the frequency of those calculations. The parameters are:</p>
+<p>The XPIC(k) and FMPM(k) methods are advanced methods that filter out unwanted noise (in the null space) without damping out useful information. Many simulations can benefit by running them using XPIC(k) or FMPM(k). This custom tasks lets you add XPIC(k) or FMPM(k) to any simulation and select the frequency of those calculations (some more details are on  <a href="http://osupdocs.forestry.oregonstate.edu/index.php/PeriodicXPIC_Custom_Task">OSUPDocs</a>). The parameters for mechanics modeling are:</p>
 
 <ul>
 <li>FMPMOrder,(order) - Select the order <code>k</code> and use FMPM(k) in the simulations.</li>
 <li>XPICOrder,(order) - Select the order <code>k</code> and use XPIC(k) in the simulations.</li>
 <li>periodicSteps,(steps) -Select the number of steps between time steps using XPIC(k) or FMPM(k).</li>
-<li>periodicTime,(time) - Select the time interval between time steps using XPIC(k) or FMPM(k) (in <a href="consistentunits.html#units">alt time units</a>).</li>
+<li>periodicTime,(time) - Select the time interval between time steps using XPIC(k) or FMPM(k) (in <a href="#units">alt time units</a>).</li>
 <li>periodicCFL,(CFL) - Select the time interval based on a CFL factor between time steps using XPIC(k) or FMPM(k).</li>
 <li>verbose,(option) - If a non-zero integer, a comment line is printed in the output file every time FMPM(k) or XPIC(k) time steps are done. The default is 0.</li>
 <li>GridBCOption,(style) - Use "lumped" to use lumped mass matrix methods for boundary conditions, "velocity" to only impose grid velocity conditions in the velocity field, or "combined" to do both. The default is "combined" for FMPM(k) and "lumped" for XPIC(k). Note that XPIC(k) cannot use "velocity" option. This option only affects calculations when order <code>k</code> is greater than 1.</li>
@@ -1437,8 +1467,18 @@ custom task parameters do not take a value.
 
 <p>If periodicSteps is set, it is used and the other two are ignored. If periodicSteps is not used, the time step is found from the periodicCFL value (if provided) or from periodicCFL value. One of these three parameters is required to enable periodic FMPM(k) or XPIC(k) calculations.</p>
 
-<p>Additional PeriodicXPIC parameters set add FMPM(k) options to conduction and diffusion calculations. Those types of calculations are still in developed. To use the commands see help on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/PeriodicXPIC_Custom_Task">OSUPDocs</a>.
-</p>
+<p>Additional PeriodicXPIC parameters can set add FMPM(k) options for <a href="#thermal">conduction</a>, <a href="#diff">diffusion</a>, or <a href="#poro">poroelasticity</a> calculations. The calculations will use the order specified in above <b>FMPMOrder</b> command. The other setting area;</p>
+
+<ul>
+<li>periodicStepsConduction,(steps) - Select the number of steps between time steps using FMPM(k) for conduction.</li>
+<li>periodicTimeConduction,(time) - Select the time interval between time steps using FMPM(k) for conduction (in <a href="#units">alt time units</a>).</li>
+<li>periodicCFLConduction,(CFL) - Select the time interval based on a transport CFL factor between time steps using FMPM(k) for conduction.</li>
+<li>periodicStepsDiffusion,(steps) - Select the number of steps between time steps using FMPM(k) for diffusion or poroelasticity.</li>
+<li>periodicTimeDiffusion,(time) - Select the time interval between time steps using FMPM(k) for diffusion or poroelasticity (in <a href="consistentunits.html#units">alt time units</a>).</li>
+<li>periodicCFLDiffusion (CFL) - Select the time interval based on a transport CFL factor between time steps using FMPM(k) for diffusion or poroelasticity.</li>
+</ul>
+
+<p>The three parameters for each choose periodicity by same methods explain above for mechanics. From transpor properties, the best choice is ofter the CFL option and set it 0.5 or higher. Doing FMPM(k) more often might result in numerical diffusion.</p>
 
 <h3><a name="VTKArchive"></a>VTKArchive</h3>
 
@@ -1499,6 +1539,8 @@ For small strain problems it is equivalent to the small strain tensor.
 <ul>
 <li>maxLength,(length) - this parameter specifies the maximum crack length (in <a href="#units">length units</a>). Once this length is reached, the specified task action is triggered.</li>
 
+<li>debondedLength (1or0) - if 0 (which is the default), this task is triggered by total crack length. If 1, this task is triggered by debonded crack length, which is total length minus that part of the crack with remaining cohesive zones (<i>i.e.</i>, non-debonded traction laws).</li>
+
 <li>crackNumber,(num) - this parameter gives the crack number to watch. When that crack reaches the specified maximum length, the task action will be triggered. Alternatively, <code>crackNumber</code> can be zero which causes the task action to trigger when any crack reaches the specified maximum length. The default value is 0 (or any crack).</li>
 </ul>
 
@@ -1530,33 +1572,99 @@ For small strain problems it is equivalent to the small strain tensor.
 
 <h3><a name="AdjustTimeStep"></a>AdjustTimeStep</h3>
 
-<p>This tasks allows the time step to change if the wave speed in any material changes (and the material class supports calculation of wave speed as a function of particle state). Its parameters are:</p>
+<p>This tasks allows the time step to change if the wave speed in any material changes (and the material class supports calculation of wave speed as a function of particle state) or is particles start moving too fast. Its parameters are:</p>
 
 <ul>
 <li>adjustTime,(time) - enter the time interval for checking the time step and adjusting it if needed (in <a href="#units">alt time units</a>). This parameter is optional; if it is omitted, the time step adjustment is done each time particle data are archived.</li>
 <li>verbose,(value) - if its integer value is not zero, it will print the new time step whenever it changes by more than 1%. If it is zero, the new time step is silently changed. The default it 0.</li>
+<li>velocityCFL,(CFL) - pick an optional, different CFL factor to use for particle velocities. The default is to use the same as the <a href="#mpmheader">input CFL factor</a>.</dd>
+<li>maxIncrease,(maxInc) - this option limits any increases in time step to be <code>(1+(maxInc))*</code>&Delta;<i>t</i> where </code>&Delta;<i>t</i> is the current time step.
+</dd>
+
 </ul>
 
-<h3><a name="CustomThermalRamp"></a>ThermalRamp</h3>
+<h3><a name="CustomThermalRamp"></a>PropertyRamp</h3>
 
-<p>This tasks ramps a temperature, concentration, or pore pressure applied to all particles. A simulation can combine multiple thermal ramps for various styles of applying the selected property. Its parameters are:</p>
+<p>This task ramps a particle property gradually to a desired value. Firat, you create the task, decide which property to ramp, and define the ramp settings (more details on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/PropertyRamp_Custom_Task">OSUPDocs wiki</a>). The initial parameters are</p>
 
 <ul>
-<li>property,(prop) - 0 to ramp particle temperature. 1 is reserved for future use. 2 to ramp particle concentration. For <a href="#conc">diffusion calculations</a>, this option will ramp particle concentration potential (between 0 and 1). For <a href="#poro">poroelasticity calculations</a>, this option will ramp particle pore pressure (in <a href="#units">pressure units</a>).</li>
+<li>property,(prop) - the options, entered by number, are:
+<ol start="0">
+<li>Temperature</li>
+<li>Out-of-plane stress or strain for <a href="#header">generalized plane stress or strain</a></li>
+<li>Concentration or pore pressure. For <a href="#conc">diffusion calculations</a>, this option will ramp particle concentration potential (between 0 and 1). For <a href="#poro">poroelasticity calculations</a>, this option will ramp particle pore pressure.</li>
+<li>Relative initiation stress</li>
+<li>Relative toughness</li>
+</ol>
+Options 3 and 4 apply only to <a href="materials.html#SSSM">damage mechanics materials</a> and the properties are set (not ramped) in the first time step (other ramp settings are ignored).
+</li>
+
 <li>time,(time) - enter the time of the ramp (in <a href="#units">alt time units</a>). This parameter is optional; if omitted, the ramp occurs in a single time step.</li>
-<li>start,(start) - enter the time to start the ramp (in <a href="#units">alt time units</a>). This parameter is optional; if omitted, the ramp starts at time zero. It ends at time (start)+(time)</li>
+
+<li>start,(start) - Enter the time to start the ramp (in <a href="#units">alt time units</a>). This parameter is optional; if omitted, the ramp starts at time zero. It ends at time (start)+(time)</li>
+
 <li>sigmoidal,(style) - enter 0 or 1 for a linear or sigmoidal ramp. This parameter is optional; if omitted, the ramp is linear.</li>
 </ul>
 
-<p>The above parameters create a ramp. The next commands determine the magnitude of the particle property applied during the ramp:</p>
+<p>The above parameters create a ramp. The next sections explain different ways to calculate the change in particle property applied during the ramp.</p>
+
+<h4>Specified Property Change</h4>
 
 <ul>
-<li>DeltaT,(deltaT) - enter final temperature difference (in K), concentration potential, or pore pressure (in <a href="#units">pressure units</a>).</li>
-<li><code>scale,(function)</code> - if this optional command is used, the applied <code>DeltaT</code> is scaled by any <a href="#function">user-defined function</a> of time and particle position. The <code>(function)</code> must be embedded in the parameter name (<i>e.g.</i>, <code>"scale x/40"</code>).</li>
+<li>Delta,(delta) - enter final property change (in <a href="#units">units</a> for that property).</li>
+
+<li>scale,(function) - if this optional command is used, the applied <code>(delta)</code> is scaled by any <a href="#function">user-defined function</a> of time and particle position.</li>
+
 </ul>
 
-<p>Besides the above thermal ramp, this task can ramp thermal fields provided in bit mapped files and ramp other quantities (such as out-of-plane stress and strain, particle concentration, or particle pore pressure). These options are documented only in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/ThermalRamp_Custom_Task">OSUPDocs wiki</a>. 
-</p>
+<h4>Property Change from Image Data</h4>
+
+<p>An alternative method for ramping up property change is to ramp to any distribution of particle values as represented within a bit mapped file. The parameters for using an image are:</p>
+
+<ul>
+<li>file,(bmpFileName) - full or relative path name to a BMP file. Most BMP formats are accepted and data are converted to 256 levels of gray (or intensity for RGB files).</li>
+<li>width,(width) and  height,(height) - Specify the width and height for the image (see <a href="#bmpregionmpm">BMPRegion command</a> for width and height setting options).</li>
+<li>xorigin,(xO) and  yorigin,(yO) and zlevel,(zO) - (x,y,z) coordinate for the origin of the image when mapped to the grid in <a href="#units">length units</a>.</li>
+<li>flipped,(flipped) - default is 0. If 1, the image is flipped in the vertical direction.</li>
+<li>DeltaMin,(deltaMin) and 
+DeltaMax,(deltaMax) - gray values 0 to 255 are linearly interpreted between these limits.</li>
+</ul>
+
+<h4>Property Change from Image Blocks</h4>
+
+<p>Alternatively, the particle property can be determined from ranges of intensity by the same method that bit mapped files can be used to <a href="#bmpregionmpm">assign particle material type</a>. This method is done by replacing <code>(deltaMin)</code> and <code>(deltaMax)</code> with one or more <code>map</code> commands:
+
+<ul>
+<li>"map #1 #2",(delta) - <code>#1</code> and <copde>#2</code> are a range of gray scale values (from 0 to 255 with #2 &ge; #1). These values must be embedded in the text of the parameter name, which must begin in "map" (<i>e.g</i>., "map 20 75"). The <code>(delta)</code> is property change to apply to all particles under regions within the gray scale range specified by <code>#1</code> and <code>#2</code>.
+</li>
+</ul>
+
+<h3><a name="deletedamaged"></a>DeleteDamage</h3>
+
+<p>The task deletes particles from a simulation after they undergo decohesion. This function is only useful for <a href="materials.html#SSSM">softening materials</a>. A second use of this task is to delete particles after a certain time. This function works for any material type. Its parameters are:</p>
+
+<ul>
+<li>material,(num) or matname,(name) - use one or the other to specify a material type by number in the file (ordered from 1) or by name assigned to the material in the <a href="materials.html">material command</a>.</li>
+
+<li>store_x,(xloc) and store_y,(yloc) and store_z,(zloc) -
+deleted particles are moved to <code>(xloc, yloc, zloc)</code> on the background grid. This location must be in the grid and empty such that particles will not interact with active particles. Enter in <a href="#units">length units</a>.</li>
+
+<li>minCOD,(cod) - normally particles are deleted right after they fail. Alternatively, you can require the implied crack in the particle to open further before deletion by entering a minimum crack opening displacement (COD) (in <a href="#units">length units</a>)</li>
+
+<li>direction,(dir) - by default, the <code>(cod)</code> refers to magnitude of the COD. Alternatively, the minimum can apply to one component of the COD selected by entered integer:
+<ol>
+<li> = use magnitude of the COD (the default and option used if you enter an invalid <code>(dir)</code>)</li>
+<li> = use component of COD normal to the crack plane</li>
+<li> = use component of COD tangential to the crack plane</li>
+<li> = use xy shear slippage (same as 3 in 2D simulations)</li>
+<li> = use xz shear slippage (only nonzero in 3D simulations)</li>
+</ol>
+</li>
+
+<li>deleteTime (time) - if this parameter is set, particles of the specified material type will all be deleted when time reaches the entered <code>(time)</code> in <a href="#units">alt time units</a>.
+</li>
+
+</ul>
 
 <h3><a name="unknown"></a>Undocumented Custom Tasks</h3>
 

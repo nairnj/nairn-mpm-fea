@@ -20,19 +20,9 @@
 #include "Materials/HardeningLawBase.hpp"
 #include "Materials/ClampedNeohookean.hpp"
 
-// This model tracks only volume change. It does prevent particles degenerating into
-// needles, but it is probably not correct thing to do for correct shape functions.
-// The better approach might be just to not plot the transformed particles
-// Note that CPDI will soon fail if particle become needles, but uGIMP can procees
-//#define NO_SHEAR_MODEL
-
 // Find pressure by incremental equation in constitutive law
-// Leaving it out seems best. It may not get artificial viscosity correct if on
+// Code was removed after revsion 2715
 //#define INCREMENTAL_PRESSURE
-
-// This tracks full deformation, but B matrix is set to volume change only so B
-// is Diagonal with Bii = J^(2/3) axisymmetric and 3D or Bxx=Byy=J for plane strain
-#define ELASTIC_B_MODEL
 
 #pragma mark TaitLiquid::Constructors and Destructors
 
@@ -201,65 +191,14 @@ int TaitLiquid::NumberOfHistoryDoubles(void) const { return 3; }
 void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,
 									ResidualStrains *res,int historyOffset) const
 {
-#ifdef NO_SHEAR_MODEL
-    // get incremental deformation gradient
-	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
-    
-    // decompose dF into dR and dU
-    Matrix3 dR;
-    Matrix3 dU = dF.RightDecompose(&dR,NULL);
-	
-	// current deformation gradient
-    double detdF = dF.determinant();
-	Matrix3 pF = mptr->GetDeformationGradientMatrix();
-    Matrix3 F = dR*pF;
-    if(np==THREED_MPM)
-        F.Scale(pow(detdF,1./3.));
-    else
-        F.Scale2D(sqrt(detdF));
-	
-	// new deformation matrix with volume change onle
-    mptr->SetDeformationGradientMatrix(F);
-
-#else
-#ifdef ELASTIC_B_MODEL
-    // get incremental deformation gradient
-	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
-	double detdF = dF.determinant();
-	
-	// current deformation gradient
-	Matrix3 pF = mptr->GetDeformationGradientMatrix();
-	
-	// new deformation matrix
-	const Matrix3 F = dF*pF;
-    mptr->SetDeformationGradientMatrix(F);
-#else
-
 	// Update total deformation gradient, and calculate trial B
 	double detdF = IncrementDeformation(mptr,du,NULL,np);
-#endif
-#endif
-    
-    // Get new J and save result on the particle
+	
+	// Get new J and save result on the particle
 	double Jprev = mptr->GetHistoryDble(J_History,historyOffset);
 	double J = detdF * Jprev;
-    mptr->SetHistoryDble(J_History,J,historyOffset);
-
-#ifdef ELASTIC_B_MODEL
-	// store pressure strain as elastic B
-    Tensor *pB = mptr->GetAltStrainTensor() ;
-    if(np==THREED_MPM || np==AXISYMMETRIC_MPM)
-	{	double J23 = pow(J,2./3.);
-		pB->xx = J23;
-		pB->yy = J23;
-		pB->zz = J23;
-	}
-	else
-	{	pB->xx = J;
-		pB->yy = J;
-	}
-#endif
-    
+	mptr->SetHistoryDble(J_History,J,historyOffset);
+	
     // account for residual stresses
 	double dJres = GetIncrementalResJ(mptr,res);
 	double Jresprev = mptr->GetHistoryDble(J_History+1,historyOffset);
@@ -269,16 +208,8 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 
     // new Kirchhoff pressure (over rho0) from Tait equation
 	double p0=mptr->GetPressure();
-#ifdef INCREMENTAL_PRESSURE
-	double Jeffprev = Jprev/Jresprev;
-	double DeltaJeff = (detdF-dJres)*Jeffprev/dJres;
-	double dP = -Ksp*exp((1.-Jeffprev)/TAIT_C)*(DeltaJeff - 0.5*(DeltaJeff*DeltaJeff/TAIT_C)*(1 - DeltaJeff/(3.*TAIT_C)));
-	double pressure = p0 + dP;
-	mptr->IncrementPressure(dP);
-#else
     double pressure = J*TAIT_C*Ksp*(exp((1.-Jeff)/TAIT_C)-1.);
 	mptr->SetPressure(pressure);
-#endif
 	
 	// volume change
 	double delV = 1. - 1./detdF;
@@ -288,7 +219,7 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	double AVEnergy = 0.;
 	if(delV<0. && artificialViscosity)
 	{	double Kratio = Jeff*(1.+pressure/(TAIT_C*Ksp));
-		QAVred = GetArtificalViscosity(delV/delTime,sqrt((Kbulk*Kratio)/rho),mptr);
+		QAVred = GetArtificialViscosity(delV/delTime,sqrt((Kbulk*Kratio)/rho),mptr);
 		AVEnergy += fabs(QAVred*delV);
 		pressure += QAVred;
 		mptr->IncrementPressure(QAVred);

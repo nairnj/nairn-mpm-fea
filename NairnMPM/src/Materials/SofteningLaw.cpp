@@ -2,17 +2,7 @@
 	SofteningLaw.cpp
 	nairn-mpm-fea
 
-	Softening law is linear f(delta) = 1 - delta/deltaMax
- 
-	but deltaMax depends on particle size and crack area by
- 
-		deltaMax = (2Ac/(Vp rho sigma(sp)) * Gc
-		umax = Vp deltaMax/Ac = 2 Gc/(rho sigma(sp))
- 
-	This scaling factor is input to function that need deltaMax
-
-		gscaling = Ac/(Vp rho sigma(sp))
-		deltaMax = 2*Gc*gscaling
+	Abstract base class for softening laws
  
 	Created by John Nairn, June 26, 2015.
 	Copyright (c) 2008 John A. Nairn, All rights reserved.
@@ -71,6 +61,7 @@ void SofteningLaw::PrintSofteningProperties(double sigmac)
 	MaterialBase::PrintProperty("Gc",Gc*UnitsController::Scaling(1.e-3),UnitsController::Label(ERR_UNITS));
 
 	// ucrit = d(max)/(s sigmac) and we assume d(max) is proportional to s
+    unscaledDeltaMax = -log(minFdelta)*Gc;
 	double ucrit = GetDeltaMax(1.)/sigmac;
 	MaterialBase::PrintProperty("ucrit",ucrit,UnitsController::Label(CULENGTH_UNITS));
 	
@@ -84,17 +75,20 @@ void SofteningLaw::PrintSofteningProperties(double sigmac)
 
 // Find f(delta+x)/f(delta)
 // Only needed in Newton's law in GetDDelta() and law can override if has more efficient answer
+// gScaling must include relative toughness, e0 must include relative strength
 double SofteningLaw::GetRelFFxn(double delta,double x,double gScaling) const
 {	return GetFFxn(delta+x,gScaling)/GetFFxn(delta,gScaling);
 }
 
 // Find f'(delta+x)/f(delta)
 // Only needed in Newton's law in GetDDelta() and law can override if has more efficient answer
+// gScaling must include relative toughness
 double SofteningLaw::GetRelFpFxn(double delta,double x,double gScaling) const
 {	return GetFpFxn(delta+x,gScaling)/GetFFxn(delta,gScaling);
 }
 
 // Check if new delta is too high (adjust ddel if it is)
+// gScaling must include relative toughness
 bool SofteningLaw::HasFailed(double delta,double &ddel,double gScaling) const
 {	double deltaMax = GetDeltaMax(gScaling);
 	if(delta+ddel>deltaMax)
@@ -124,11 +118,11 @@ double SofteningLaw::GetDDelta(double de,double e0,double delta,double gScaling)
 	// initial guess in the middle
 	int step = 1;
 	double xk = xl + 0.05*b;
-	double gx, gpx, dx, range, fx = GetRelFFxn(delta,xk,gScaling);
+	double gpx,dx,range,fx = GetRelFFxn(delta,xk,gScaling);
+	double gx = bdenom*(xk - de) + fx - 1.;
 	
 	while(true)
 	{	// update iterative variables (lambda, alpha)
-		gx = bdenom*(xk - de) + fx - 1.;
 		gpx = bdenom + GetRelFpFxn(delta,xk,gScaling);
 		
 		// We assume softening law is well behaved and therefore
@@ -169,10 +163,11 @@ double SofteningLaw::GetDDelta(double de,double e0,double delta,double gScaling)
 		}
 		
 		// is it converged
+		fx = GetRelFFxn(delta,xk,gScaling);		// final f(delta+xk)/f(delta)
+		gx = bdenom*(xk - de) + fx - 1.;
 #ifdef TRACK_NEWTON
 		cout << gx ;
 #endif
-		fx = GetRelFFxn(delta,xk,gScaling);		// final f(delta+xk)/f(delta)
 		if(fabs(gx)<NORM_GX_CONVERGE || step>15) break;
 		
 		// next step: new limits and increment step
@@ -195,26 +190,128 @@ double SofteningLaw::GetDDelta(double de,double e0,double delta,double gScaling)
 	return xk;
 }
 
-// calculate maximum cracking strain from damage
-// numerically solves g(delta) = 0 = d*e0*f(delta) - delta*(1-d)
-// For Newton's method g'(delta) = d*e0*f'(delta) - 1 + d or increment ddelta = -g(delta)/(d*e0*f'(delta) - 1 + d)
+//#define TRACK_NEWTON
+
+// Solve for increment in delta during elastic deformation based on starting d
+// Only needed when softening law depends on extra variables
+// Solve numerically by Newton's method with bracketing; subclass can override if better solution
+double SofteningLaw::GetDDeltaElastic(double delta,double sigmaAlpha,double scaleAlpha,double d,double E1md) const
+{
+    // negative stress means the softening surface does not depend on other variables
+    // delta=0 has trivial solution of zero
+    if(sigmaAlpha<0. || delta==0.) return 0.;
+    
+    // solving g(x) = E1md*(x+delta) - d*sigmaAlpha*GetFFxn(delta+x,scaleAlpha) = 0
+    //    with
+    // g'(x) = E1md - d*sigmaAlpha*GetFpFxn(delta+x,scaleAlpha)
+    
+    // Solution bracketed by xl <= x <= xh with g(xl)<0 and g(xh)>0
+    double xl,xh;
+    double diff = E1md*delta - d*sigmaAlpha*GetFFxn(delta,scaleAlpha);
+    double deltaMax = GetDeltaMax(scaleAlpha);
+    if(diff==0.)
+    {   // for dAlpha=0 or for law independent of alpha
+        return 0.;
+    }
+    else if(diff<0.)
+    {   xl = 0.;
+        xh = deltaMax - delta;
+    }
+    else
+    {   xl = -delta;
+        xh = 0.;
+    }
+    double deltaConverge = 1.e-9*deltaMax;
+    
+    // initial guess in the middle
+    int step = 1;
+    double xk = 0.,gpx,dx,dxold=fabs(xh-xl);
+    double gx = E1md*(xk+delta) - d*sigmaAlpha*GetFFxn(delta+xk,scaleAlpha);
+
+#ifdef TRACK_NEWTON
+    cout << "#... " << xl << " to " << xh << " with " << gx << " at " << xk << endl;
+#endif
+
+    while(true)
+    {   // update derivative
+        gpx = E1md - d*sigmaAlpha*GetFpFxn(delta+xk,scaleAlpha);
+        
+#ifdef TRACK_NEWTON
+        cout << "#   " << step << ": gx = " << gx << " : ";
+#endif
+        //if( (((xk-xl)*gpx-gx)*((xk-xh)*gpx-gx) >= 0.) || (fabs(2.*gx)>fabs(dxold*gpx)) )
+        if( (((xk-xl)*gpx-gx)*((xk-xh)*gpx-gx) >= 0.) )
+        {   // means this jump is not between xl and xh
+            
+            // seen to occur when get close enough to solution, so accept it
+            if(DbleEqual(gx,0.)) break;
+            
+            // take midpoint instead
+            dxold = dx;
+            dx = 0.5*(xh-xl);
+            xk = xl+dx;
+#ifdef TRACK_NEWTON
+            cout << "B (" << xl << "," << xk << "," << xh << ") (" <<
+                ((xk-xl)*gpx-gx)*((xk-xh)*gpx-gx) << " or " << (fabs(2.*gx)>fabs(dxold*gpx)) << ") ";
+#endif
+            if(xl == xk) break;    // change in root is negligible
+        }
+        else
+        {   dxold = dx;
+            double xkprev = xk;
+            dx = gx/gpx;
+            xk -= dx;
+#ifdef TRACK_NEWTON
+            cout << "N (" << xl << "," << xk << "," << xh << ") ";
+#endif
+            if(xk == xkprev) break;  // change in root is negligible
+        }
+        
+        // is it converged
+        if(fabs(dx)<deltaConverge || step>15) break;
+        
+        // next step: new limits and increment step
+        gx = E1md*(xk+delta) - d*sigmaAlpha*GetFFxn(delta+xk,scaleAlpha);
+        if(gx < 0.)
+            xl = xk;
+        else
+            xh = xk;
+        step++;
+#ifdef TRACK_NEWTON
+        cout << endl;
+#endif
+    }
+    
+#ifdef TRACK_NEWTON
+    cout << " done: xk=" << xk << ", gx=" << (E1md*(xk+delta) - d*sigmaAlpha*GetFFxn(delta+xk,scaleAlpha)) << endl;
+#endif
+    
+    return xk;
+}
+
+// calculate maximum cracking strain from damage  (only when subcritical, initial damage state)
+// numerically solves g(delta) = 0 =  delta*(1-d) - d*e0*f(delta)
+// For Newton's method g'(delta) = 1-d - d*e0*f'(delta)
 // g(delta+ddelta) = 0 = g(delta) + g'(delta)*ddelta or ddelta = -g(delta)/g'(delta)
-double SofteningLaw::GetDeltaFromDamage(double d,double gScaling,double e0)
-{	double dmin = 0.;
+// gScaling and e0 must include relative values
+double SofteningLaw::GetDeltaFromDamage(double d,double gScaling,double e0,double deltaGuess)
+{	// if outside brackets, return and end point
+	double dmin = 0.;
 	if(d<=0.) return dmin;
 	double dmax = GetDeltaMax(gScaling);
 	if(d>=1.) return dmax;
 	
-	// solution for delta bracketed between 0 (g(0) = d*e0 >0) and
-	//			deltaMax (g(deltaMax) = -delta*(1-d) < 0)
+	// solution for delta bracketed between 0 (g(0) = -d*e0 < 0) and
+	//			deltaMax (g(deltaMax) = delta*(1-d) > 0)
 	
+	/*
 	// Simple binary search, Newton's method might be better, but this only
 	// called during initiatialization phaase
-	
+	double dmid;
 	int i=0,nsteps = 10;
 	while(i<nsteps)
 	{	// value at midpoint
-		double dmid = 0.5*(dmin+dmax);
+		dmid = 0.5*(dmin+dmax);
 		double gmid = d*e0*GetFFxn(dmid,gScaling) - dmid*(1.-d);
 		
 		// see if done or move one bracket
@@ -226,14 +323,39 @@ double SofteningLaw::GetDeltaFromDamage(double d,double gScaling,double e0)
 			dmax = dmid;
 		
 		// next step
-		nsteps++;
+		i++;
 	}
 	
 	// last step - interpolate g = gmin + (delta-dmin)*(gmax-gmin)/(dmax-dmin) = gmin + fract*(delta-dmin)
 	// Sovling for zero: delta = dmin - gmin/fract = (dmin*gmax-gmin*dmax)/(gmax-gmin)
 	double gmin = d*e0*GetFFxn(dmin,gScaling) - dmin*(1.-d);
 	double gmax = d*e0*GetFFxn(dmax,gScaling) - dmax*(1.-d);
-	return (dmin*gmax-gmin*dmax)/(gmax-gmin);
+	dmid = (dmin*gmax-gmin*dmax)/(gmax-gmin);
+	return dmid;
+	*/
+	
+	// This is unbracketed Newton with no checks for non-convergence. It is likely
+	// safe for typical softening laws. It is not used for linear (or any other model
+	// with an analytical solution for delta as functino of d)
+	double delk = deltaGuess>-0. ? deltaGuess : 0.5*dmax;
+	double dx;
+	int step = 1;
+	while(true)
+	{	// update iterative variables (lambda, alpha)
+		double gdel = delk*(1.-d) - d*e0*GetFFxn(delk,gScaling);
+		double slope = 1. - d - d*e0*GetFpFxn(delk,gScaling);
+		
+		dx = gdel/slope;
+		double temp = delk;
+		delk -= dx;
+		if(temp == delk) break;  // change in root is negligible
+		
+		// check for convergence
+		step++;
+		if(step>15 || fabs(dx/dmax)<1.e-8) break;
+	}
+
+	return delk;
 }
 
 #pragma mark SofteningLaw::Accessors

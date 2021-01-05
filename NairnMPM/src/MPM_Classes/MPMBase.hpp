@@ -77,6 +77,7 @@ class MPMBase : public LinkedObject
 		virtual Matrix3 GetElasticBiotStrain(void) = 0;
 		virtual void SetDeformationGradientMatrix(Matrix3) = 0;
 		virtual Matrix3 GetDisplacementGradientMatrix(void) const = 0;
+		virtual Matrix3 GetDisplacementGradientForJ(const MaterialBase *) = 0;
         virtual Matrix3 GetElasticLeftCauchyMatrix(void) = 0;
         virtual void GetDeformationGradient(double F[][3]) const = 0;
         virtual double GetRelativeVolume(void) = 0;
@@ -96,10 +97,12 @@ class MPMBase : public LinkedObject
 		virtual double GetParticleYSize(void) const;
 		virtual double GetParticleZSize(void) const;
 		virtual double GetMinParticleLength(void) const;
-
+ 
         // defined virtual methods
 		virtual double GetUnscaledVolume(void);
 		virtual void IncrementDeformationGradientZZ(double dezz);
+        virtual void DeleteParticle(Vector *);
+        virtual bool IsDeleted(Vector *) const;
 
 		// base only methods (make virtual if need to override)
 		int MatID(void) const;
@@ -191,7 +194,13 @@ class MPMBase : public LinkedObject
 		double GetRho(void);
 		double GetConcSaturation(void);
 		double GetDiffusionCT(void);
+        void Add_dpud(double);
+        double GetClear_dpud(void);
+        void SetRelativeStrength(double);
+        void SetRelativeToughness(double);
 		virtual void GetExactTractionInfo(int,int,int *,Vector *,Vector *,int *) const;
+        void SetNum(int zeroBasedNumber);
+        int GetNum(void) const;
 	
 	protected:
 		// variables (changed in MPM time step)
@@ -216,6 +225,7 @@ class MPMBase : public LinkedObject
 		double resEnergy;			// total residual energy sigma.dres
 		char *matData;				// material history if needed (init NULL)
 		Matrix3 *Rtot;				// only track for large rotation hypo and 3D aniso small rotation
+		double buffer_dpud;			// instantaneous pressure rise due to volume change in poroelasticity
 	
 		// constants (not changed in MPM time step)
  		double anglez0;				// initial cw x rotation angle (2D or 3D) (stored in radians)
@@ -225,10 +235,11 @@ class MPMBase : public LinkedObject
     private:
 		// variables (changed in MPM time step)
 		int inElem;
-		int elementCrossings;		// abs() is # element crossinsgs, when <0 particle has left the grid
+		int elementCrossings;		// fabs() is # element crossinsgs, when <0 particle has left the grid
 	
 		// constants (not changed in MPM time step)
         int matnum;
+        int num;            // address in mpm[] array is num-1
 };
 
 // Lists of material points from mpm[0] to mpm[nmpms-1]

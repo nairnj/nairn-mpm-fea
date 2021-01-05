@@ -29,7 +29,7 @@ extern char angleAxes[4];
 short MPMReadHandler::BMPFileInput(char *xName,const Attributes& attrs)
 {
 	// check for common commands
-	if(BMPFileCommonInput(xName,attrs,POINTSBLOCK,fmobj->IsThreeD())) return TRUE;
+	if(BMPFileCommonInput(xName,attrs,POINTSBLOCK,fmobj->IsThreeD())) return true;
 	
 	//-----------------------------------------------------------
     // Intensity properties for MPM only
@@ -125,19 +125,27 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	const char *msg = CommonReadHandler::DecodeBMPWidthAndHeight(info,bwidth,bheight,orig.z,pw,fmobj->IsThreeD());
 	if(msg != NULL)
 		throw SAXException(XYFileError("<BMP> command must specify width and/or height as size or pixels per mm.",bmpFileName));
-	pw.z = yflipped ? -1. : 1. ;
-	
-	// Length/semiscale is half particle with
-	//	(semiscale=4 for 2D w 4 pts per element or 3D with 8 pts per element,
-	//		or 2 (2D and 3D) if 1 particle in the element)
-	double semiscale;
-	if(fmobj->IsThreeD())
-		semiscale=2.*pow((double)fmobj->ptsPerElement,1./3.);
-	else
-		semiscale=2.*sqrt((double)fmobj->ptsPerElement);
+    if(yflipped)
+        pw.z = info.topDown==0 ? -1. : 1. ;
+    else
+        pw.z = info.topDown==0 ? 1. : -1. ;
+
+    // if custom points, must be valid
+    int usePtsPerElement = fmobj->ptsPerElement;
+    int usePtsPerSide = fmobj->ptsPerSide;
+    if(bmpCustomPtsPerElement>0)
+    {   // switch
+        usePtsPerElement = bmpCustomPtsPerElement;
+        usePtsPerSide = bmpCustomPtsPerSide;
+    }
+    
+    // Length/semiscale is half particle with
+    //    (semiscale=4 for 2D w 4 pts per element or 3D with 8 pts per element,
+    //        or 2 (2D and 3D) if 1 particle in the element)
+    double semiscale = 2*(double)usePtsPerSide;
     
 	// variables
-	Vector mpos[MaxElParticles];
+	Vector *mpos = new Vector[usePtsPerElement];
 	DomainMap map;
 	
     /* Parallelizing the following loop will speed up check meshes on Mac
@@ -148,6 +156,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
     */
 	
 	// scan mesh and assign material points or angles
+    int ptFlag=0;
     try
     {   for(int ii=1;ii<=nelems;ii++)
         {	// skip if image not in extent of element box
@@ -156,9 +165,9 @@ void MPMReadHandler::TranslateBMPFiles(void)
                 continue;
             
             // load point coordinates
-            elem->MPMPoints(fmobj->ptsPerElement,mpos);
+            elem->MPMPoints(usePtsPerSide,mpos);
         
-            // particle size within volume of the element
+            // particle radius (dimensioned) within volume of the element
 			Vector del;
             del.x=(elem->GetDeltaX())/semiscale;
             del.y=(elem->GetDeltaY())/semiscale;
@@ -166,12 +175,14 @@ void MPMReadHandler::TranslateBMPFiles(void)
                 del.z=elem->GetDeltaZ()/semiscale;
             else
                 del.z=-1.;
-			
-            for(int k=0;k<fmobj->ptsPerElement;k++)
-            {	int ptFlag=1<<k;
-            
-                // skip if already filled
-                if(elem->filled&ptFlag) continue;
+ 			
+			// fill all points
+            for(int k=0;k<usePtsPerElement;k++)
+            {   // default locations (skip if already filled)
+                if(usePtsPerElement==fmobj->ptsPerElement)
+                {   ptFlag=1<<k;
+                    if(elem->filled&ptFlag) continue;
+                }
 
                 // if point in the view area, then check it
 				if(MapDomainToImage(info,mpos[k],orig,del,pw,bwidth,bheight,map))
@@ -197,7 +208,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
                         newMpt->SetPosition(&mpos[k]);
                         newMpt->SetOrigin(&mpos[k]);
                         newMpt->SetVelocity(&nextLevel->vel);
-						newMpt->SetDimensionlessByPts(fmobj->ptsPerElement);
+						newMpt->SetDimensionlessByPts(usePtsPerSide);
                         mpCtrl->AddMaterialPoint(newMpt,nextLevel->concentration,nextLevel->temperature);
                         
 						// is there an angle image too?
@@ -205,7 +216,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 						{	double matAngle[3];
 							double totalIntensity = FindAverageValue(map,angleRows);
 							matAngle[0] = minAngle[0]+(totalIntensity-minIntensity[0])*angleScale[0];
-							if(fileRotations>1)
+ 							if(fileRotations>1)
 							{	totalIntensity = FindAverageValue(map,angle2Rows);
 								matAngle[1] = minAngle[1]+(totalIntensity-minIntensity[1])*angleScale[1];
 							}
@@ -252,6 +263,9 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	{	delete [] angleExpr[ii];
 	}
 	Expression::DeleteFunction(-1);
+	
+	// vector array
+	delete [] mpos;
 		
 }
 

@@ -241,7 +241,7 @@ public class ControlPanel extends JPanel
 		
 		int plotComponent=getPlotComponent(selected);
 		thelimits.setEnabled(selected,plotComponent);
-		timeoptions.setEnabled(selected,plotComponent);
+		timeoptions.setEnabled(selected,plotComponent,docCtrl.resDoc.isMPMAnalysis());
 		thecrack.setEnabled(selected,plotComponent);
 		
 		plotOpened();
@@ -255,7 +255,7 @@ public class ControlPanel extends JPanel
 	public void changeComponent()
 	{	int selected=load.getSelected();
 		int plotComponent=getPlotComponent(selected);
-		timeoptions.setEnabled(selected,plotComponent);
+		timeoptions.setEnabled(selected,plotComponent,docCtrl.resDoc.isMPMAnalysis());
 		thecrack.setEnabled(selected,plotComponent);
 		/*
 		// include this to replot on each menu change in control panel, but user might

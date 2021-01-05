@@ -103,6 +103,10 @@ void NairnMPM::PrintAnalysisMethod(void)
 	cout << endl;
 
 	// incremental F terms
+	if(MaterialBase::incrementalDefGradTerms<0)
+	{	MaterialBase::incrementalDefGradTerms = - MaterialBase::incrementalDefGradTerms;
+		if(IsThreeD())  MaterialBase::incrementalDefGradTerms = 1;
+	}
 	cout << "Incremental F Terms: " << MaterialBase::incrementalDefGradTerms << endl;
 	
 	// time step and max time
@@ -201,7 +205,6 @@ void NairnMPM::CMStartResultsOutput(void)
 		int i;
 		for(i=0;i<nmat;i++)
 			theMaterials[i]->ContactOutput(i+1);
-		cout << endl;
 	}
 	
     //---------------------------------------------------
@@ -340,7 +343,7 @@ void NairnMPM::OutputBCMassAndGrid(void)
 	cout << fline << endl;
 	
 	// background grid info
-	mpmgrid.Output(ptsPerElement,IsAxisymmetric());
+	mpmgrid.Output(IsAxisymmetric());
 	
 	sprintf(fline,"Adjusted time step (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),timestep*UnitsController::Scaling(1.e3));
 	cout << fline << endl;

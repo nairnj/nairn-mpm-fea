@@ -7,6 +7,7 @@
 *******************************************************************/
 
 import java.nio.*;
+import java.util.*;
 import java.awt.*;
 import java.awt.geom.*;
 
@@ -29,7 +30,8 @@ public class MaterialPoint
 	public int material;
 	public double x,y,z,origx,origy,origz,velx,vely,velz;
 	public double deltaTemp,plastEnergy,strainEnergy;
-	public double history1,history2,history3,history4,concentration,dcdx,dcdy,dcdz;
+	public double concentration,dcdx,dcdy,dcdz;
+	public ArrayList<Double> history;
 	public double workEnergy,heatEnergy;
 	public int elementCrossings;
 	public double[] sigma;
@@ -57,6 +59,7 @@ public class MaterialPoint
 		dnorm=new double[3];
 		Lp=new double[3];
 		wp=new double[3];
+		history = new ArrayList<Double>(19);
 	}
 	
 	//---------------------------------------------------------------------
@@ -296,18 +299,15 @@ public class MaterialPoint
 			strainEnergy=0.;
 			
 		// particle history (variable units) (not converted for units)
-		history1=0.;
-		history2=0.;
-		history3=0.;
-		history4=0.;
+		history.clear();
 		if(mpmOrder[ReadArchive.ARCH_History]=='Y')
-			history1=bb.getDouble();
+			setHistory(1,bb.getDouble());
 		else if(mpmOrder[ReadArchive.ARCH_History]!='N')
 		{	int history=(int)mpmOrder[ReadArchive.ARCH_History];
-			if((history & 0x01) !=0) history1=bb.getDouble();
-			if((history & 0x02) !=0) history2=bb.getDouble();
-			if((history & 0x04) !=0) history3=bb.getDouble();
-			if((history & 0x08) !=0) history4=bb.getDouble();
+			if((history & 0x01) !=0) setHistory(1,bb.getDouble());
+			if((history & 0x02) !=0) setHistory(2,bb.getDouble());
+			if((history & 0x04) !=0) setHistory(3,bb.getDouble());
+			if((history & 0x08) !=0) setHistory(4,bb.getDouble());
 		}
 			
 		// concentration and gradients
@@ -407,6 +407,57 @@ public class MaterialPoint
 			wp[1]=0.;
 			wp[2]=0.;
 		}
+		
+		if(mpmOrder[ReadArchive.ARCH_History59]=='Y')
+			setHistory(5,bb.getDouble());
+		else if(mpmOrder[ReadArchive.ARCH_History59]!='N')
+		{	int history=(int)mpmOrder[ReadArchive.ARCH_History59];
+			if((history & 0x01) !=0) setHistory(5,bb.getDouble());
+			if((history & 0x02) !=0) setHistory(6,bb.getDouble());
+			if((history & 0x04) !=0) setHistory(7,bb.getDouble());
+			if((history & 0x08) !=0) setHistory(8,bb.getDouble());
+			if((history & 0x10) !=0) setHistory(9,bb.getDouble());
+		}
+		
+		if(mpmOrder[ReadArchive.ARCH_History1014]=='Y')
+			setHistory(10,bb.getDouble());
+		else if(mpmOrder[ReadArchive.ARCH_History1014]!='N')
+		{	int history=(int)mpmOrder[ReadArchive.ARCH_History1014];
+			if((history & 0x01) !=0) setHistory(10,bb.getDouble());
+			if((history & 0x02) !=0) setHistory(11,bb.getDouble());
+			if((history & 0x04) !=0) setHistory(12,bb.getDouble());
+			if((history & 0x08) !=0) setHistory(13,bb.getDouble());
+			if((history & 0x10) !=0) setHistory(14,bb.getDouble());
+		}
+		
+		if(mpmOrder[ReadArchive.ARCH_History1519]=='Y')
+			setHistory(15,bb.getDouble());
+		else if(mpmOrder[ReadArchive.ARCH_History1519]!='N')
+		{	int history=(int)mpmOrder[ReadArchive.ARCH_History1519];
+			if((history & 0x01) !=0) setHistory(15,bb.getDouble());
+			if((history & 0x02) !=0) setHistory(16,bb.getDouble());
+			if((history & 0x04) !=0) setHistory(17,bb.getDouble());
+			if((history & 0x08) !=0) setHistory(18,bb.getDouble());
+			if((history & 0x10) !=0) setHistory(19,bb.getDouble());
+		}
+	}
+	
+	// set element of the history array
+	public void setHistory(int histNum,double histValue)
+	{	// fill in and set, or just set
+		if(history.size()<histNum)
+		{	histNum--;
+			while(history.size()<histNum) history.add(new Double(0.));
+			history.add(new Double(histValue));
+		}
+		else
+			history.set(histNum-1, new Double(histValue));
+	}
+	
+	// get history (but number is zero based now or index into array)
+	public double getHistory(int histIndex)
+	{	if(histIndex>history.size()-1) return 0.;
+		return history.get(histIndex).doubleValue();
 	}
 	
 	//---------------------------------------------------------------------
@@ -500,6 +551,29 @@ public class MaterialPoint
 	            break;
 	        }
 	        
+	        case PlotQuantity.MPMMAXSTRESS:
+	        {	double sxx = sigma[XXID];
+            	double syy = sigma[YYID];
+            	double sxy = sigma[XYID];
+            	theValue = 0.5*(sxx+syy)+Math.sqrt(0.25*(sxx-syy)*(sxx-syy)+sxy*sxy);
+	        	break;
+	        }
+	        
+	        case PlotQuantity.MPMMINSTRESS:
+	        {	double sxx = sigma[XXID];
+            	double syy = sigma[YYID];
+            	double sxy = sigma[XYID];
+            	theValue = 0.5*(sxx+syy)-Math.sqrt(0.25*(sxx-syy)*(sxx-syy)+sxy*sxy);
+	        	break;
+	        }
+	        case PlotQuantity.MPMSTRESSDIR:
+	        {	double sxx = sigma[XXID];
+            	double syy = sigma[YYID];
+            	double sxy = sigma[XYID];
+            	theValue =0.5*Math.atan2(2*sxy, sxx-syy); 
+            	break;
+            	
+	        }
 			// Strains
 			case PlotQuantity.MPMEPSX:
 			case PlotQuantity.MPMEPSY:
@@ -778,7 +852,9 @@ public class MaterialPoint
 			case PlotQuantity.MPMVELZ:
 				theValue=velz;
 				break;
-			
+			case PlotQuantity.MPMVELS:
+				theValue=Math.sqrt(velx*velx+vely*vely+velz*velz);
+				break;			
 			// Displacements
 			case PlotQuantity.MPMDISPX:
 				theValue=x-origx;
@@ -787,9 +863,17 @@ public class MaterialPoint
 				theValue=y-origy;
 				break;
 			case PlotQuantity.MPMDISPZ:
-				theValue=y-origz;
+				theValue=z-origz;
 				break;
-			
+			case PlotQuantity.MPMDISPS:
+			{
+				double dx = x-origx;
+				double dy = y-origy;
+				double dz = z-origz;
+				theValue=Math.sqrt(dx*dx+dy*dy+dz*dz);
+				break;	
+			}
+				
 			// Position and angle
 			case PlotQuantity.MPMPOS:
 				theValue=(double)material;
@@ -831,20 +915,33 @@ public class MaterialPoint
 				theValue=dcdz;
 				break;
 			
-			// histrory variables
+			// history variables (assume constants in order
 			case PlotQuantity.MPMHISTORY1:
-				theValue=history1;
-				break;
 			case PlotQuantity.MPMHISTORY2:
-				theValue=history2;
-				break;
 			case PlotQuantity.MPMHISTORY3:
-				theValue=history3;
-				break;
 			case PlotQuantity.MPMHISTORY4:
-				theValue=history4;
+				theValue=getHistory(component-PlotQuantity.MPMHISTORY1);
 				break;
 			
+				// history variables (assume constants in order
+			case PlotQuantity.MPMHISTORY5:
+			case PlotQuantity.MPMHISTORY6:
+			case PlotQuantity.MPMHISTORY7:
+			case PlotQuantity.MPMHISTORY8:
+			case PlotQuantity.MPMHISTORY9:
+			case PlotQuantity.MPMHISTORY10:
+			case PlotQuantity.MPMHISTORY11:
+			case PlotQuantity.MPMHISTORY12:
+			case PlotQuantity.MPMHISTORY13:
+			case PlotQuantity.MPMHISTORY14:
+			case PlotQuantity.MPMHISTORY15:
+			case PlotQuantity.MPMHISTORY16:
+			case PlotQuantity.MPMHISTORY17:
+			case PlotQuantity.MPMHISTORY18:
+			case PlotQuantity.MPMHISTORY19:
+				theValue=getHistory(component-PlotQuantity.MPMHISTORY5+4);
+				break;
+				
 			case PlotQuantity.MPMMASS:
 			{	MaterialBase matl=doc.materials.get(materialIndex());
 				if(matl.isRigid())
@@ -968,6 +1065,7 @@ public class MaterialPoint
 	
 	// get position as a point
 	public Point2D.Double getPosition() { return new Point2D.Double(x,y); }
+	public Point2D.Double getOrigPosition() { return new Point2D.Double(origx,origy); }
 	
 	// index to material type (zero based)
 	public int materialIndex() { return material-1; }

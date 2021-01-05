@@ -56,7 +56,10 @@ void FEAReadHandler::TranslateBMPFiles(void)
 	Vector pw;
 	const char *msg = CommonReadHandler::DecodeBMPWidthAndHeight(info,bwidth,bheight,orig.z,pw,false);
 	if(msg != NULL) throw SAXException(XYFileError(msg,bmpFileName));
-	pw.z = yflipped ? -1. : 1. ;
+    if(yflipped)
+        pw.z = info.topDown==0 ? -1. : 1. ;
+    else
+        pw.z = info.topDown==0 ? 1. : -1. ;
 	
 	// scan all elements - fill those that are in the area and have no material yet
 	DomainMap map;

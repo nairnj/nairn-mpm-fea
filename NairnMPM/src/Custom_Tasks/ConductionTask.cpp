@@ -145,6 +145,7 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double 
 	return nextTask;
 }
 
+#ifndef TRANSPORT_FMPM
 // adjust forces at grid points with temperature BCs to have rates be correct
 // to carry extrapolated temperatures (before impose BCs) to the correct
 // one selected by grid based BC
@@ -205,6 +206,7 @@ TransportTask *ConductionTask::SetTransportForceAndFluxBCs(double deltime)
 	// next task
 	return nextTask;
 }
+#endif
 
 #pragma mark CUSTOM METHODS
 

@@ -29,6 +29,12 @@ class SofteningLaw;
 class InitialCondition;
 enum { VARY_STRENGTH=1,VARY_TOUGHNESS,VARY_STRENGTH_AND_TOUGHNESS };
 
+// softening history variables
+enum { SOFT_DAMAGE_STATE=0,DELTANORMAL,DELTASHEAR,DELTASHEAR2,DAMAGENORMAL,DAMAGESHEAR,DAMAGESHEAR2,
+	NORMALDIR1,NORMALDIR2,NORMALDIR3,GCSCALING,RELATIVE_STRENGTH,RELATIVE_TOUGHNESS,
+	SOFT_NUMBER_HISTORY };
+enum { CUBOID_SURFACE=0,CYLINDER_SURFACE,OVOID_SURFACE};
+
 #else
 
 // C is stiffness matrix and some other things
@@ -180,14 +186,18 @@ class MaterialBase : public LinkedObject
 		virtual void SetFriction(int,int);
 		virtual int GetContactToMaterial(int);
 		virtual void ContactOutput(int);
-        virtual double GetArtificalViscosity(double,double,MPMBase *) const;
+        virtual double GetArtificialViscosity(double,double,MPMBase *) const;
 		virtual bool SupportsArtificialViscosity(void) const;
 		virtual bool SupportsDiffusion(void) const;
 		virtual int GetShareMatField(void) const;
 		virtual int AltStrainContains(void) const;
+		virtual bool GetCrackingStrain(MPMBase *,Tensor *,bool,Matrix3 *) const;
+		virtual Vector GetCrackingCOD(MPMBase *,bool) const;
 		virtual double GetMaterialConcentrationSaturation(MPMBase *) const;
 		virtual double GetMGEOSXmax(double,double,double,double,double &);
 		virtual double GetMGEOSKRatio(double,double,double,double,double) const;
+        virtual void SetRelativeStrength(MPMBase *,double);
+        virtual void SetRelativeToughness(MPMBase *,double);
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif
@@ -222,6 +232,12 @@ class MaterialBase : public LinkedObject
 		virtual void SetSofteningLaw(char *,int);
 		virtual bool AcceptSofteningLaw(SofteningLaw *,int,int);
 		virtual double *GetSoftHistoryPtr(MPMBase *) const;
+		virtual int GetTractionFailureSurface(void) const;
+	
+#ifdef POROELASTICITY
+		virtual void UndrainedPressIncrement(MPMBase *,double) const;
+		virtual void UndrainedPressIncrement(MPMBase *,double,double,double) const;
+#endif
 	
 #endif	// MPM_CODE
 	
@@ -251,6 +267,12 @@ class MaterialBase : public LinkedObject
 		double matPdamping;				// particle damping
 		bool matUsePDamping;            // true it particle damping or PIC damping changed in this material
         int allowsCracks;				// false to ignore cracks (option ignored in multimaterial mode)
+#ifdef POROELASTICITY
+		double Darcy;					// isotropic coefficient or permeability
+		double alphaPE,Qalpha;			// Poroelasticity Biot coefficent
+		double Ku;						// Poroelasticity undrained bulk modulus
+#endif
+
 #endif	// MPM_CODE
 	
 		// constants (changed in MPM time step)

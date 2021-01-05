@@ -573,6 +573,5 @@ const char *BistableIsotropic::MaterialType(void) const { return "Bistable Isotr
 // not supported, would be PE properties in two states
 // also if allow negative PP, fixed calculated dC increments
 bool BistableIsotropic::SupportsDiffusion(void) const
-{
-    return true;
+{   return DiffusionTask::HasPoroelasticity() ? false : true;
 }

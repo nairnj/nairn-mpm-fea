@@ -32,7 +32,11 @@ class MPMTask : public CommonTask
 	
 		void WriteProfileResults(int,double,double);
 		void TrackTimes(double,double);
-	
+
+#ifdef RESTART_OPTION
+        virtual bool BlockRestartOption(void) const;
+#endif
+    
         // class methods
         static int GetPatchNumber(void);
         static NodalPoint *GetNodePointer(int,int);

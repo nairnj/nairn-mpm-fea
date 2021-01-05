@@ -62,6 +62,12 @@ CustomTask *CustomTask::StepCalculation(void) { return nextTask; }
 // Called when custom tasks are all done on a step
 CustomTask *CustomTask::FinishForStep(bool &removeMe) { return nextTask; }
 
+// called after the analysis is done. A task can output a report to the main.mpm
+// file. It should end with an empty line. Task with a report must override
+// both methods and return true is HasReport()
+bool CustomTask::HasReport(void) { return false; }
+CustomTask *CustomTask::Report(void) { return nextTask; }
+
 #pragma mark TASK EXTRAPOLATION METHODS
 
 // initialize prior to node and particle extrapolations

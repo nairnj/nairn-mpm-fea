@@ -128,14 +128,27 @@ TransportTask *DiffusionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double s
 // increment particle concentration with check in valid range
 TransportTask *DiffusionTask::MoveTransportValue(MPMBase *mptr,double deltime,double rate,double value) const
 {
+#ifdef TRANSPORT_FMPM
+	if(usingXPIC)
+	{	// FMPM update just replace the value
+		mptr->pConcentration = value;
+	}
+	else
+	{	// FLIP update
+		mptr->pConcentration += deltime*rate;
+	}
+#else
 	mptr->pConcentration += deltime*rate;
+#endif
 	
-	// limit concentration to 0 to 1
-	if(mptr->pConcentration<0.)
-		mptr->pConcentration = 0.;
-	else if(mptr->pConcentration>1.)
-		mptr->pConcentration = 1.;
-	
+	// limit concentration to 0 to 1, pore pressure can be anything
+	if(active==MOISTURE_DIFFUSION)
+	{	if(mptr->pConcentration<0.)
+			mptr->pConcentration = 0.;
+		else if(mptr->pConcentration>1.)
+			mptr->pConcentration = 1.;
+	}
+
 	return nextTask;
 }
 

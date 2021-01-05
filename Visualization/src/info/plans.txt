@@ -17,7 +17,8 @@ Interface Options
 -------------------------------------------------------------------
 * Can Windows exe run in background mode?
 
-* Plot angle - add slider in the movie window before PS slider (do quantities work?)
+* Plot angle - add slider in the movie window before PS slider
+** Tensor values need to look for angle and rotate
 
 * Control click plot for pop-up menu of plot options
 ** Including export graphics (is preference needed for export format?)
