@@ -575,6 +575,24 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTask.hpp">
       <Filter>NairnMPM_src\NairnMPM_Class</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticSoftening.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\ExponentialTraction.hpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\MixedModeTraction.hpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\DeleteDamaged.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTaskTO.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\Matrix4.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -1089,6 +1107,27 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTask.cpp">
       <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticSoftening.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ExponentialTraction.cpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\MixedModeTraction.cpp">
+      <Filter>NairnMPM_src\Traction_Laws</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\MachineLearning.cpp">
+      <Filter>NairnMPM_src\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\DeleteDamaged.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\XPICExtrapolationTaskTO.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\Matrix4.cpp">
+      <Filter>Common\System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
