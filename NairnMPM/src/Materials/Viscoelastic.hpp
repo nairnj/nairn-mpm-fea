@@ -17,7 +17,7 @@
 
 enum {XX_HISTORY=0,YY_HISTORY,XY_HISTORY,ZZ_HISTORY,XZ_HISTORY,YZ_HISTORY};
 enum {MGJ_HISTORY=0,MGJRES_HISTORY};
-enum {LINEAR_PRESSURE=0,MGEOS_PRESSURE};
+enum {LINEAR_PRESSURE=0,MGEOS_PRESSURE,TIME_DEPENDENT_PRESSURE};
 
 class Viscoelastic : public MaterialBase
 {
@@ -33,7 +33,7 @@ class Viscoelastic : public MaterialBase
 	
 		// history data
 		virtual char *InitHistoryData(char *,MPMBase *);
-		virtual double GetHistory(int,char *) const;
+        virtual int NumberOfHistoryDoubles(void) const;
 	
 		// const methods
 		virtual void PrintMechanicalProperties(void) const;
@@ -41,6 +41,8 @@ class Viscoelastic : public MaterialBase
     
 		// methods
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
+        void GetAlphaArgs(double,double,double &,double &) const;
+        double GetPSArg(double,double) const;
         virtual double GetCpMinusCv(MPMBase *) const;
 		virtual void UpdatePressure(MPMBase *,double,ResidualStrains *,double,double,double,double,double &,double &) const;
 	
@@ -55,6 +57,10 @@ class Viscoelastic : public MaterialBase
 		virtual double CurrentWaveSpeed(bool,MPMBase *,int) const;
 		virtual double GetCurrentRelativeVolume(MPMBase *,int) const;
 		virtual bool SupportsDiffusion(void) const;
+    
+        // class methods
+        static double GetEffectiveIncrement(MPMBase *,ResidualStrains *,double,double,double,double,
+                                            double,double,double,double,double,double);
 	
     private:
 		int pressureLaw;
@@ -62,6 +68,9 @@ class Viscoelastic : public MaterialBase
 		// double betaI;        // defined in superclass
 		int ntaus;
 		double *Gk,*tauk;
+        int ntausK;
+        double *Kk,*tauKk,*Kkred;
+        int currentKk,currentTauKk;
 	
         int currentGk,currentTauk;
 		double CTE,CME,Ka2sp;
@@ -71,7 +80,18 @@ class Viscoelastic : public MaterialBase
 		double gamma0,C0,S1,S2,S3;
 		double C0squared;
 		double Kmax,Xmax;
-		int mptrHistory;
+    
+        // WLF parameters
+        double Tref,C1,C1base10,C2;
+        double mref,Cm1,Cm2,Cm1base10,Cm2base10;
+
+#ifdef OSPARTICULAS
+        // Mechno-sorption properties
+        double kMS,Cms1,Cms2,Cms1base10,Cms2base10;
+#endif
+    
+        // history variables
+        int numJHistory,numHistory;
 };
 
 #endif

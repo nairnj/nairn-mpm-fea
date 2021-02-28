@@ -202,9 +202,9 @@ void NairnMPM::CMStartResultsOutput(void)
 	if(multiMaterialMode)
     {   PrintSection("MULTIMATERIAL CONTACT");
 		mpmgrid.MaterialOutput();
-		int i;
-		for(i=0;i<nmat;i++)
+		for(int i=0;i<nmat;i++)
 			theMaterials[i]->ContactOutput(i+1);
+        cout << endl;
 	}
 	
     //---------------------------------------------------

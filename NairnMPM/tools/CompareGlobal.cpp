@@ -39,7 +39,7 @@ int main(int argc, char * const argv[])
 		unsigned long optNum = strlen(argv[parmInd]);
 		for(opt=1;opt<optNum;opt++)
 		{	// Help request
-			if(argv[parmInd][opt]=='H' || argv[parmInd][opt]=='?')
+			if(argv[parmInd][opt]=='H' || argv[parmInd][opt]=='h')
 			{	Usage(NULL);
 				return noErr;
 			}

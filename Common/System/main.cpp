@@ -55,7 +55,7 @@ int main(int argc,const char *argv[])
 			{	fmobj->Usage();
 				return(noErr);
 			}
-			else if(argv[parmInd][optInd]=='?')
+			else if(argv[parmInd][optInd]=='h')
 			{	fmobj->Usage();
 				return(noErr);
 			}

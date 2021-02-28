@@ -930,11 +930,10 @@ void MeshInfo::MaterialOutput(void)
 	// lumping method
 	cout << "3+ Material Contact Nodes: ";
 	switch(lumpingMethod)
-	{
-		case LUMP_OTHER_MATERIALS:
+	{   case LUMP_OTHER_MATERIALS:
 		default:
 			lumpingMethod = LUMP_OTHER_MATERIALS;
-			cout << "Lump other materials into a virtual material" << endl;
+			cout << "Lump other materials into a virtual material";
 			break;
 	}
 	cout << endl;

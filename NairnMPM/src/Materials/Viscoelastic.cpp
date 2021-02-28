@@ -32,16 +32,31 @@ Viscoelastic::Viscoelastic(char *matName,int matID) : MaterialBase(matName,matID
     currentGk=0;
     currentTauk=0;
 	aI=40.;
+    
+    ntausK=0;
+    Kk=NULL;
+    tauKk=NULL;
+    currentKk=0;
+    currentTauKk=0;
 	
 	// MGEOS variables
 	pressureLaw = LINEAR_PRESSURE;
-	mptrHistory=-1;		// Store J and J res if using MGEOS
 	gamma0=1.64;		// dimensionless
 	C0=4004000.;		// m/sec
 	S1=1.35;			// dimsionless
 	S2=0.;				// dimsionless
 	S3=0.;				// dimsionless
 	Kmax=-1.;			// maxium relative increase allows in K (default no limit)
+    
+    // WLF parameters
+    Tref = -1.;
+    C1base10 = 17.44;
+    C2 = 51.6;
+    
+    // Moisture parameters
+    mref = -1.;
+    Cm1base10 = 10.;
+    Cm2base10 = 0.025/0.4;
 }
 
 #pragma mark Viscoelastic::Initialization
@@ -55,6 +70,20 @@ void Viscoelastic::PrintMechanicalProperties(void) const
 		PrintProperty("a",aI,"");
 		cout << endl;
 	}
+    else if(pressureLaw==TIME_DEPENDENT_PRESSURE)
+    {   cout << "Pressure law: time-dependent bulk modulus" << endl;
+        PrintProperty("K(0)",rho*Kered*UnitsController::Scaling(1.e-6),"");
+        PrintProperty("K0",K*UnitsController::Scaling(1.e-6),"");
+        PrintProperty("ntausK",(double)ntausK,"");
+        cout <<  endl;
+        
+        for(int i=0;i<ntaus;i++)
+        {   PrintProperty("  i",(double)(i+1),"");
+            PrintProperty("Kk",Kk[i]*UnitsController::Scaling(1.e-6),"");
+            PrintProperty("tauKk",tauKk[i],UnitsController::Label(TIME_UNITS));
+            cout << endl;
+        }
+    }
 	else
 	{	// core properties
 		cout << "Pressure law: MG-EOS" << endl;
@@ -82,13 +111,15 @@ void Viscoelastic::PrintMechanicalProperties(void) const
 			cout << "Kmax= no limit";
 		cout <<  endl;
 	}
+    
+    PrintProperty("G(0)",rho*Gered*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("G0",G0*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("ntaus",(double)ntaus,"");
     cout <<  endl;
 	
 	int i;
     for(i=0;i<ntaus;i++)
-	{	PrintProperty("i",(double)(i+1),"");
+	{	PrintProperty("  i",(double)(i+1),"");
 		PrintProperty("Gk",Gk[i]*UnitsController::Scaling(1.e-6),"");
 		PrintProperty("tauk",tauk[i],UnitsController::Label(TIME_UNITS));
         cout << endl;
@@ -98,6 +129,28 @@ void Viscoelastic::PrintMechanicalProperties(void) const
 	PrintProperty("E(0)",9.*Kered*Gered*rho/(3.*Kered+Gered)*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("nu(0)",(3.*Kered-2.*Gered)/(6.*Kered+2.*Gered),"");
 	cout << endl;
+    
+    // WLF properties
+    if(Tref>=0.)
+    {   PrintProperty("Tref",Tref,"K");
+        PrintProperty("C1",C1base10,"");
+        PrintProperty("C2",C2,"");
+        cout << endl;
+    }
+    else if(mref<0.)
+        cout << "Isothermal and isosolvent viscoelasticity" << endl;
+    else
+        cout << "Isothermal viscoelasticity" << endl;
+
+    // WLF moisture properties
+    if(mref>=0.)
+    {   PrintProperty("mref",mref*concSaturation,"");
+        PrintProperty("Cm1",Cm1base10,"");
+        PrintProperty("Cm2",Cm2base10,"");
+        cout << endl;
+    }
+    else if(Tref>=0.)
+        cout << "Isosolvent viscoelasticity" << endl;
 }
     
 // Read material properties
@@ -123,7 +176,7 @@ char *Viscoelastic::InputMaterialProperty(char *xName,int &input,double &gScalin
     else if(strcmp(xName,"Gk")==0)
     {	if(Gk==NULL)
         {   if(ntaus<=0)
-				ThrowSAXException("Gk found before number of taus specified.");
+				ThrowSAXException("Gk found before number of G taus specified.");
             Gk=new double[ntaus];
         }
         currentGk++;
@@ -135,13 +188,42 @@ char *Viscoelastic::InputMaterialProperty(char *xName,int &input,double &gScalin
     else if(strcmp(xName,"tauk")==0)
     {	if(tauk==NULL)
         {   if(ntaus<=0)
-				ThrowSAXException("tauk found before number of taus specified.");
+				ThrowSAXException("tauk found before number of G taus specified.");
             tauk=new double[ntaus];
         }
         currentTauk++;
         if(currentTauk>ntaus)
-			ThrowSAXException("Too many tauk's given.");
+			ThrowSAXException("Too many G taus given.");
         return((char *)&tauk[currentTauk-1]);
+    }
+
+    else if(strcmp(xName,"ntausK")==0)
+    {   input=INT_NUM;
+        return((char *)&ntausK);
+    }
+    
+    else if(strcmp(xName,"Kk")==0)
+    {   if(Kk==NULL)
+        {   if(ntaus<=0)
+                ThrowSAXException("Kk found before number of K taus specified.");
+            Kk=new double[ntausK];
+        }
+        currentKk++;
+        if(currentKk>ntausK)
+            ThrowSAXException("Too many Kk's given.");
+        return UnitsController::ScaledPtr((char *)&Kk[currentKk-1],gScaling,1.e6);
+    }
+    
+    else if(strcmp(xName,"tauKk")==0)
+    {   if(tauKk==NULL)
+        {   if(ntausK<=0)
+                ThrowSAXException("tauKk found before number of K taus specified.");
+            tauKk=new double[ntausK];
+        }
+        currentTauKk++;
+        if(currentTauKk>ntausK)
+            ThrowSAXException("Too many K taus given.");
+        return((char *)&tauKk[currentTauKk-1]);
     }
 	
 	// The follow allow use of MG-EOS law for pressure dependence
@@ -181,6 +263,36 @@ char *Viscoelastic::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&Kmax);
     }
 	    
+    else if(strcmp(xName,"Tref")==0)
+    {   input=DOUBLE_NUM;
+        return((char *)&Tref);
+    }
+        
+    else if(strcmp(xName,"C1")==0)
+    {   input=DOUBLE_NUM;
+        return((char *)&C1base10);
+    }
+        
+    else if(strcmp(xName,"C2")==0)
+    {   input=DOUBLE_NUM;
+        return((char *)&C2);
+    }
+    
+    else if(strcmp(xName,"mref")==0)
+    {   input=DOUBLE_NUM;
+        return((char *)&mref);
+    }
+        
+    else if(strcmp(xName,"Cm1")==0)
+    {   input=DOUBLE_NUM;
+        return((char *)&Cm1base10);
+    }
+        
+    else if(strcmp(xName,"Cm2")==0)
+    {   input=DOUBLE_NUM;
+        return((char *)&Cm2base10);
+    }
+
     return(MaterialBase::InputMaterialProperty(xName,input,gScaling));
 }
 
@@ -188,15 +300,31 @@ char *Viscoelastic::InputMaterialProperty(char *xName,int &input,double &gScalin
 // throws std::bad_alloc
 const char *Viscoelastic::VerifyAndLoadProperties(int np)
 {
-	// check properties
+    if(pressureLaw!=LINEAR_PRESSURE && pressureLaw!=MGEOS_PRESSURE)
+        return "Invalid pressure law was selected";
+    
+	// Shear modulus - must specify ntaus even if it is zero
     if(currentGk<ntaus || currentTauk<ntaus)
-		return "Insufficient Gk or tauk for expected number of taus.";
-    
+		return "Insufficient Gk or tauk for expected number of G taus.";
     if(ntaus<0)
-		return "Number of taus was never entered.";
+        return "Number of G taus was never entered.";
     
+    // bulk modulus. Not entering ntauKs implies time independent bulk modulus
+    if(currentKk<ntausK || currentTauKk<ntausK)
+        return "Insufficient Kk or tauKk for expected number of K taus.";
+    if(ntausK>0)
+    {   if(pressureLaw!=LINEAR_PRESSURE)
+            return "Time-dependent bulk modulus requires linear pressure law";
+        pressureLaw = TIME_DEPENDENT_PRESSURE;
+    }
+    else
+        ntausK = 0;
+    
+    cout << "Pressure Law: " << pressureLaw << endl;
+    
+    // Needs non-zero bulk modulus
     if(K<0)
-		return "Required bulk modulus not given.";
+		return "Required bulk modulus must be positive.";
     
     // zero time shear modulus
     Gered = G0;
@@ -208,16 +336,25 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 	
 	// Convert to specific moduli
 	Gered /= rho;
-	
-	// to absolute CTE and CME
-	CTE = 1.e-6*aI;
-	CME = betaI*concSaturation;
-	
-	// bulk modulus
-	if(pressureLaw==LINEAR_PRESSURE)
-	{	Kered = K/rho;
-	}
-	
+
+    // bulk modulus
+    if(pressureLaw==LINEAR_PRESSURE)
+    {    Kered = K/rho;
+    }
+    
+    else if(pressureLaw==TIME_DEPENDENT_PRESSURE)
+    {   // zero time shear modulus
+        Kered = K;
+        Kkred = new double[ntausK];
+        for(int k=0;k<ntausK;k++)
+        {   Kered += Kk[k];
+            Kkred[k] = Kk[k]/rho;
+        }
+        
+        // Convert to specific moduli
+        Kered /= rho;
+    }
+    
 	else if(pressureLaw==MGEOS_PRESSURE)
 	{	// Use in place of C0^2. Units are L^2/sec^2 = F/L^2 L^3/mass
 		// Equal to reduced bulk modulus
@@ -244,9 +381,23 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 	else
 		return "Invalid option for the pressure law";
 	
+    // to absolute CTE and CME
+    CTE = 1.e-6*aI;
+    CME = betaI*concSaturation;
+    
     // for Cp-Cv (units nJ/(g-K^2))
     Ka2sp = 9.*Kered*CTE*CTE;
-	
+    
+    // WLF coefficients convert to ln aT
+    C1 = log(10.)*C1base10;
+    
+    // Moisture terms - convert to use ln am = - Cm1*(c-cref)/(Cm2+c) where c = m/mref
+    Cm1 = log(10.)*Cm1base10;
+    Cm2 = Cm2base10/concSaturation;
+    mref /= concSaturation;
+    if(mref>=0. && Cm2<=0.)
+        return "Cm2 must be greater than zero";
+    
 	// call super class
 	return MaterialBase::VerifyAndLoadProperties(np);
 }
@@ -255,7 +406,7 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 // throws CommonException()
 void Viscoelastic::ValidateForUse(int np) const
 {	if(np==PLANE_STRESS_MPM)
-	{	if(pressureLaw!=LINEAR_PRESSURE)
+	{	if(pressureLaw==MGEOS_PRESSURE)
 		{	throw CommonException("Viscoelastic materials in plane stress require linear pressure model",
 							  		"Viscoelastic::ValidateForUse");
 		}
@@ -264,7 +415,7 @@ void Viscoelastic::ValidateForUse(int np) const
 								  "Viscoelastic::ValidateForUse");
 		}
 	}
-	
+
 	//call super class (why can't call super class?)
 	MaterialBase::ValidateForUse(np);
 }
@@ -276,93 +427,32 @@ void Viscoelastic::ValidateForUse(int np) const
 // throws std::bad_alloc
 char *Viscoelastic::InitHistoryData(char *pchr,MPMBase *mptr)
 {
-	// if none, only need particle history
-    if(ntaus==0)
-	{	if(pressureLaw!=LINEAR_PRESSURE)
-		{	char *p;
-			if(pchr==NULL)
-				p = new char[sizeof(double *)];
-			else
-				p = pchr;
-			double **h = (double **)p;
-			mptrHistory=0;
-			h[mptrHistory] = new double[2];
-			h[mptrHistory][MGJ_HISTORY] = 1.;					// J
-			h[mptrHistory][MGJRES_HISTORY] = 1.;				// Jres
-			return p;
-		}
-		else
-			return NULL;
-	}
-	
-    // allocate array of double pointers (3)
-	int blocks;
-	if(fmobj->IsThreeD())
-		blocks = 6;
-	else
-		blocks = 4;
-	
-	// one extra for any additional history variables
-	if(pressureLaw!=LINEAR_PRESSURE)
-	{	mptrHistory=blocks;
-		blocks++;
-	}
-	
-	// history variables are pointers to arrays of doubles
-    char *p = new char[sizeof(double *)*blocks];
-	
-    double **h = (double **)p;
+    // count the variables
+    numJHistory = pressureLaw==MGEOS_PRESSURE ? 2 : 0;
+
+    if(fmobj->IsThreeD())
+        numHistory = numJHistory + 6*ntaus + ntausK;
+    else
+        numHistory = numJHistory + 4*ntaus + ntausK;
     
-    // for each allocate ntaus doubles
-    //	h[ij_HISTORY][0] to h[ij_HISTORY][ntaus-1] can be read
-    //	in MPMConstitutiveLaw() by casting mptr->GetHistoryPtr(0) pointer as
-    //		double **h=(double **)(mptr->GetHistoryPtr(0))
-    h[XX_HISTORY] = new double[ntaus];
-    h[YY_HISTORY] = new double[ntaus];
-    h[XY_HISTORY] = new double[ntaus];
-	h[ZZ_HISTORY] = new double[ntaus];
-	if(fmobj->IsThreeD())
-	{	h[XZ_HISTORY] = new double[ntaus];
-		h[YZ_HISTORY] = new double[ntaus];
-	}		
+    // exit if none
+    if(numHistory==0) return NULL;
     
-    // initialize to zero
-    int k;
-    for(k=0;k<ntaus;k++)
-    {	h[XX_HISTORY][k] = 0.;
-        h[YY_HISTORY][k] = 0.;
-        h[XY_HISTORY][k] = 0.;
-		h[ZZ_HISTORY][k] = 0.;
-		if(fmobj->IsThreeD())
-		{	h[XZ_HISTORY][k] = 0.;
-			h[YZ_HISTORY][k] = 0.;
-		}
+    // all zeros
+    double *p = CreateAndZeroDoubles(pchr,numHistory);
+    
+    // J history starts at 1
+    if(numJHistory>0)
+    {   p[MGJ_HISTORY] = 1.;
+        p[MGJRES_HISTORY] = 1.;
     }
     
-	// extra particle history variables
-	if(mptrHistory>=0)
-	{	h[mptrHistory] = new double[2];
-		h[mptrHistory][MGJ_HISTORY] = 1.;					// J
-		h[mptrHistory][MGJRES_HISTORY] = 1.;				// Jres
-	}
-	
-    return p;
+    // return pointer
+    return (char *)p;
 }
 
-// Get J and Jres only and only in nonlinear pressure law
-double Viscoelastic::GetHistory(int num,char *historyPtr) const
-{
-    double history=0.;
-	if(num>0 && num<=MGJRES_HISTORY+1)
-	{	if(mptrHistory>=0)
-		{	double **h =(double **)historyPtr;
-			history = h[mptrHistory][num-1];
-		}
-		else
-			history = 1.;
-	}
-    return history;
-}
+// Number of history variables - only the plastic law
+int Viscoelastic::NumberOfHistoryDoubles(void) const { return numHistory; }
 
 #pragma mark Viscoelastic::Methods
 
@@ -391,7 +481,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	Matrix3 Vrot = pF.LeftDecompose(&Rn,NULL);
 	Matrix3 dR = Rn*Rnm1.Transpose();
 	
-	// get strain increments in current configuration (dF-dR)F(n-1) Rn^T
+	// get strain increments in current configuration (dF-dR)F(n-1)Rn^T
 	Matrix3 dFmdR = dF - dR;
 	Matrix3 detot = dFmdR*(pFnm1*Rn.Transpose());
 	
@@ -401,24 +491,25 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		eres+=CME*res->dC;
 	
 	// update pressure
-	double dTq0 = 0.,dispEnergy = 0.,detdF = 1.,J = 1.,dJres = 1.;
+	double dispEnergy = 0.,detdF = 1.,J = 1.,dJres = 1.;
 	double traceDe = detot.trace();
 	double delV = traceDe - 3.*eres;
 	
 	// history data
-	double **ak =(double **)(mptr->GetHistoryPtr(0));
+	double *ak =(double *)(mptr->GetHistoryPtr(0));
+    int ai = numJHistory;
 
 	// find dJ and J if needed (plane stress not allowed)
-	if(mptrHistory>=0)
+	if(numJHistory>0)
 	{	// large strain volume change
 		detdF = dF.determinant();
-		J = detdF*ak[mptrHistory][MGJ_HISTORY];
-		ak[mptrHistory][MGJ_HISTORY] = J;
+		J = detdF*ak[MGJ_HISTORY];
+		ak[MGJ_HISTORY] = J;
 		
 		// account for residual strains if needed
 		double dJres = exp(3.*eres);
-		double Jres = dJres*ak[mptrHistory][MGJRES_HISTORY];
-		ak[mptrHistory][MGJRES_HISTORY] = Jres;
+		double Jres = dJres*ak[MGJRES_HISTORY];
+		ak[MGJRES_HISTORY] = Jres;
 	}
 	
 	// deviatoric strains increment in de
@@ -445,8 +536,9 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	{	ed.xz = 2.*Vrot(0,2);
 		ed.yz = 2.*Vrot(1,2);
 	}
-	
-	// increment particle deviatoric stresses - elastic part
+    SubTensor(&ed,&de);
+
+	// increment particle deviatoric stresses - elastic part (factor of 2 in de)
 	double dsig[6];
 	dsig[XX] = Gered*de.xx;
 	dsig[YY] = Gered*de.yy;
@@ -456,19 +548,25 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	{	dsig[XZ] = Gered*de.xz;
 		dsig[YZ] = Gered*de.yz;
 	}
-	
-	// get internal variable increments, update them, add to incremental stress, and get dissipated energy6
+    
+    // get effective time increment
+#ifdef OSPARTICULAS
+    double delEffTime = GetEffectiveIncrement(mptr,res,delTime,Tref,C1,C2,mref,Cm1,Cm2,kMS,Cms1,Cms2);
+#else
+    double delEffTime = GetEffectiveIncrement(mptr,res,delTime,Tref,C1,C2,mref,Cm1,Cm2,0.,0.,0.);
+#endif
+    
+	// get internal variable increments, update them, add to incremental stress, and get dissipated energy
+    // For plane stress, this gets initial deviatoric stress update only
 	Tensor dak;
 	int k;
+    double omtmp,omtmp2;
     for(k=0;k<ntaus;k++)
-    {   double tmp = exp(-delTime/tauk[k]);
-		double tmpm1 = tmp-1.;
-		double tmpp1 = tmp+1.;
-		double arg = 0.25*delTime/tauk[k];					// 0.25 because e's have factor of 2
-		dak.xx = tmpm1*ak[XX_HISTORY][k] + arg*(tmpp1*ed.xx + de.xx);
-		dak.yy = tmpm1*ak[YY_HISTORY][k] + arg*(tmpp1*ed.yy + de.yy);
-		dak.xy = tmpm1*ak[XY_HISTORY][k] + arg*(tmpp1*ed.xy + de.xy);
-		dak.zz = tmpm1*ak[ZZ_HISTORY][k] + arg*(tmpp1*ed.zz + de.zz);
+    {   GetAlphaArgs(delEffTime,tauk[k],omtmp,omtmp2);
+        dak.xx = omtmp*(0.5*ed.xx-ak[ai+XX_HISTORY]) + omtmp2*de.xx;
+        dak.yy = omtmp*(0.5*ed.yy-ak[ai+YY_HISTORY]) + omtmp2*de.yy;
+        dak.xy = omtmp*(0.5*ed.xy-ak[ai+XY_HISTORY]) + omtmp2*de.xy;
+        dak.zz = omtmp*(0.5*ed.zz-ak[ai+ZZ_HISTORY]) + omtmp2*de.zz;
 		
 		// add to stress increments
 		dsig[XX] -= TwoGkred[k]*dak.xx;
@@ -479,54 +577,103 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		// extra terms for 3D
 		if(np==THREED_MPM)
 		{	// internal variables
-			dak.xz = tmpm1*ak[XZ_HISTORY][k] + arg*(tmpp1*ed.xz + de.xz);
-			dak.yz = tmpm1*ak[YZ_HISTORY][k] + arg*(tmpp1*ed.yz + de.yz);
+			dak.xz = omtmp*(0.5*ed.xz-ak[ai+XZ_HISTORY]) + omtmp2*de.xz;
+			dak.yz = omtmp*(0.5*ed.yz-ak[ai+YZ_HISTORY]) + omtmp2*de.yz;
 			
 			// add to stress increments
 			dsig[XZ] -= TwoGkred[k]*dak.xz;
 			dsig[YZ] -= TwoGkred[k]*dak.yz;
 			
 			// update history on particle
-			ak[XX_HISTORY][k] += dak.xx;
-			ak[YY_HISTORY][k] += dak.yy;
-			ak[ZZ_HISTORY][k] += dak.zz;
-			ak[XY_HISTORY][k] += dak.xy;
-			ak[XZ_HISTORY][k] += dak.xz;
-			ak[YZ_HISTORY][k] += dak.yz;
+			ak[ai+XX_HISTORY] += dak.xx;
+			ak[ai+YY_HISTORY] += dak.yy;
+            ak[ai+XY_HISTORY] += dak.xy;
+			ak[ai+ZZ_HISTORY] += dak.zz;
+			ak[ai+XZ_HISTORY] += dak.xz;
+			ak[ai+YZ_HISTORY] += dak.yz;
 			
-			// dissipation
-			dispEnergy += TwoGkred[k]*(dak.xx*(ed.xx-ak[XX_HISTORY][k])
-									   + dak.yy*(ed.yy-ak[YY_HISTORY][k])
-									   + dak.zz*(ed.zz-ak[ZZ_HISTORY][k])
-									   + dak.xy*(ed.xy-ak[XY_HISTORY][k])
-									   + dak.xz*(ed.xz+-ak[XZ_HISTORY][k])
-									   + dak.yz*(ed.yz-ak[YZ_HISTORY][k]));
+			// dissipation (updated deviatoric strain minus updated alpha, remove factor of 2 from strain)
+			dispEnergy += TwoGkred[k]*(dak.xx*(0.5*(ed.xx+de.xx)-ak[ai+XX_HISTORY])
+									   + dak.yy*(0.5*(ed.yy+de.yy)-ak[ai+YY_HISTORY])
+									   + dak.zz*(0.5*(ed.zz+de.zz)-ak[ai+ZZ_HISTORY])
+									   + dak.xy*(0.5*(ed.xy+de.xy)-ak[ai+XY_HISTORY])
+									   + dak.xz*(0.5*(ed.xz+de.xz)-ak[ai+XZ_HISTORY])
+									   + dak.yz*(0.5*(ed.yz+de.yz)-ak[ai+YZ_HISTORY]));
+            
+            // next history
+            ai += 6;
 		}
-		else if(np!=PLANE_STRESS_MPM)
+        else if(np==PLANE_STRESS_MPM)
+        {   ai += 4;
+        }
+		else
 		{	// update history on particle
-			ak[XX_HISTORY][k] += dak.xx;
-			ak[YY_HISTORY][k] += dak.yy;
-			ak[ZZ_HISTORY][k] += dak.zz;
-			ak[XY_HISTORY][k] += dak.xy;
+			ak[ai+XX_HISTORY] += dak.xx;
+			ak[ai+YY_HISTORY] += dak.yy;
+            ak[ai+XY_HISTORY] += dak.xy;
+			ak[ai+ZZ_HISTORY] += dak.zz;
 
-			// dissipation
-			dispEnergy += TwoGkred[k]*(dak.xx*(ed.xx-ak[XX_HISTORY][k])
-									   + dak.yy*(ed.yy-ak[YY_HISTORY][k])
-									   + dak.zz*(ed.zz-ak[ZZ_HISTORY][k])
-									   + dak.xy*(ed.xy-ak[XY_HISTORY][k]));
+			// dissipation  (updated deviatoric strain minus updated alpha, remove factor of 2 from strain)
+			dispEnergy += TwoGkred[k]*(dak.xx*(0.5*(ed.xx+de.xx)-ak[ai+XX_HISTORY])
+									   + dak.yy*(0.5*(ed.yy+de.yy)-ak[ai+YY_HISTORY])
+									   + dak.zz*(0.5*(ed.zz+de.zz)-ak[ai+ZZ_HISTORY])
+									   + dak.xy*(0.5*(ed.xy+de.xy)-ak[ai+XY_HISTORY]));
+            
+            // next history
+            ai += 4;
 		}
 	}
-	
+    
+    double dP=0.,Vstar=0.;
+    if(pressureLaw==TIME_DEPENDENT_PRESSURE)
+    {   double dTemp=mptr->pPreviousTemperature-thermal.reference;
+        double eresStretch=CTE*dTemp;
+        if(DiffusionTask::HasFluidTransport())
+        {   double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
+            eresStretch = CME*dConc;
+        }
+    
+        // find initial V* (diagonal has 1+eii)
+        Vstar = Vrot(0,0)+Vrot(1,1)+Vrot(2,2)-3.-3.*eresStretch;
+        
+        // elastic pressure increment
+        dP = -Kered*delV;
+        
+        // viscoelastic history
+        for(k=0;k<ntaus;k++)
+        {   GetAlphaArgs(delEffTime,tauKk[k],omtmp,omtmp2);
+            double dalphaV = omtmp*(Vstar-ak[ai]) + 2.*omtmp2*delV;
+            
+            // add to pressure increments
+            dP += Kkred[k]*dalphaV;
+            
+            if(np!=PLANE_STRESS_MPM)
+            {   // update history on particle
+                ak[ai] += dalphaV;
+
+                // dissipation (updated deviatoric strain minus updated alpha)
+                dispEnergy += Kkred[k]*dalphaV*(Vstar+delV-ak[ai]);
+            }
+                
+            // next history
+            ai++;
+        }
+    }
+
 	// For plane stress, find dezz and adjust all terms
 	if(np==PLANE_STRESS_MPM)
-	{	double phik,phi = Gered;
-		for(k=0;k<ntaus;k++)
-		{   phik = 0.25*delTime*(exp(-delTime/tauk[k])+2.)/tauk[k];			// extra 1/2 because stored 2Gk
-			phi -= TwoGkred[k]*phik;
-		}
-		
-		// dezz
-		double dezz = -(Kered*delV + dsig[ZZ])/(Kered + 4.*phi/3.);
+	{	double phi = Gered;
+        for(k=0;k<ntaus;k++) phi -= TwoGkred[k]*GetPSArg(delEffTime,tauk[k]);
+
+        double phiK = Kered;
+        if(pressureLaw==TIME_DEPENDENT_PRESSURE)
+        {   for(k=0;k<ntausK;k++) phiK -= Kkred[k]*2.*GetPSArg(delEffTime,tauKk[k]);
+        }
+        else
+            dP = -Kered*delV;
+        
+        // dezz
+        double dezz = (dP - dsig[ZZ])/(phiK + 4.*phi/3.);
 		double thirddezz = dezz/3.;
 		
 		// adjust deviatoric stress update
@@ -544,38 +691,55 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		// adjust particle deformation gradient (stored below)
 		pF(2,2) *= (1.+dezz);
 		
-		// adjust ed and de for history update and disspated energy
-		// Note that ed and de have factor of 2 embedded
-		ed.xx -= 2.*thirddezz;
-		ed.yy -= 2.*thirddezz;
-		ed.zz += 4.*thirddezz;
+		// adjust de for history update and disspated energy (factor of 2 is added)
 		de.xx -= 2.*thirddezz;
 		de.yy -= 2.*thirddezz;
 		de.zz += 4.*thirddezz;
 		
 		// update history and get dissipation
+        ai = numJHistory;
 		for(k=0;k<ntaus;k++)
-		{   double tmp = exp(-delTime/tauk[k]);
-			double tmpm1 = tmp-1.;
-			double tmpp1 = tmp+1.;
-			double arg = 0.25*delTime/tauk[k];					// 0.25 because e's have factor of 2
-			dak.xx = tmpm1*ak[XX_HISTORY][k] + arg*(tmpp1*ed.xx + de.xx);
-			dak.yy = tmpm1*ak[YY_HISTORY][k] + arg*(tmpp1*ed.yy + de.yy);
-			dak.xy = tmpm1*ak[XY_HISTORY][k] + arg*(tmpp1*ed.xy + de.xy);
-			dak.zz = tmpm1*ak[ZZ_HISTORY][k] + arg*(tmpp1*ed.zz + de.zz);
-			
+        {   GetAlphaArgs(delEffTime,tauk[k],omtmp,omtmp2);
+            dak.xx = omtmp*(0.5*ed.xx-ak[ai+XX_HISTORY]) + omtmp2*de.xx;
+            dak.yy = omtmp*(0.5*ed.yy-ak[ai+YY_HISTORY]) + omtmp2*de.yy;
+            dak.xy = omtmp*(0.5*ed.xy-ak[ai+XY_HISTORY]) + omtmp2*de.xy;
+            dak.zz = omtmp*(0.5*ed.zz-ak[ai+ZZ_HISTORY]) + omtmp2*de.zz;
+
 			// update history on particle
-			ak[XX_HISTORY][k] += dak.xx;
-			ak[YY_HISTORY][k] += dak.yy;
-			ak[ZZ_HISTORY][k] += dak.zz;
-			ak[XY_HISTORY][k] += dak.xy;
+			ak[ai+XX_HISTORY] += dak.xx;
+			ak[ai+YY_HISTORY] += dak.yy;
+            ak[ai+XY_HISTORY] += dak.xy;
+			ak[ai+ZZ_HISTORY] += dak.zz;
 			
 			// dissipation
-			dispEnergy += TwoGkred[k]*(dak.xx*(ed.xx-ak[XX_HISTORY][k])
-									   + dak.yy*(ed.yy-ak[YY_HISTORY][k])
-									   + dak.zz*(ed.zz-ak[ZZ_HISTORY][k])
-									   + dak.xy*(ed.xy-ak[XY_HISTORY][k]));
+			dispEnergy += TwoGkred[k]*(dak.xx*(0.5*(ed.xx+de.xx)-ak[ai+XX_HISTORY])
+									   + dak.yy*(0.5*(ed.yy+de.yy)-ak[ai+YY_HISTORY])
+									   + dak.zz*(0.5*(ed.zz+de.zz)-ak[ai+ZZ_HISTORY])
+									   + dak.xy*(0.5*(ed.xy+de.xy)-ak[ai+XY_HISTORY]));
+            
+            // next history
+            ai += 4;
 		}
+        
+        if(pressureLaw==TIME_DEPENDENT_PRESSURE)
+        {   // change elastic part
+            dP -= phiK*dezz;
+            
+            // update history and get dissipation
+            for(k=0;k<ntaus;k++)
+            {   GetAlphaArgs(delEffTime,tauKk[k],omtmp,omtmp2);
+                double dalphaV = omtmp*(Vstar-ak[ai]) + 2.*omtmp2*delV;
+                
+                // add to pressure increments
+                ak[ai] += dalphaV;
+                
+                // dissipation (updated volumetric strain minus updated alpha)
+                dispEnergy += Kkred[k]*dalphaV*(Vstar+delV-ak[ai]);
+                    
+                // next history
+                ai++;
+            }
+        }
 	}
 	
 	// Update particle deviatoric stresses
@@ -587,7 +751,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		Matrix3 stn(sp->xx,sp->xy,sp->xz,sp->xy,sp->yy,sp->yz,sp->xz,sp->yz,sp->zz);
 		Matrix3 str = stn.RMRT(dR);
 
-		if(mptrHistory>=0)
+		if(numJHistory>0)
 		{	// convert sigma(n)/rho(n) to sigma(n)/rho(n+1) and add dsigma/rho(n+1)
 			sp->xx = detdF*str(0,0)+J*dsig[XX];
 			sp->yy = detdF*str(1,1)+J*dsig[YY];
@@ -611,7 +775,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		Matrix3 stn(sp->xx,sp->xy,sp->xy,sp->yy,sp->zz);
 		Matrix3 str = stn.RMRT(dR);
 		
-		if(mptrHistory>=0)
+		if(numJHistory>0)
 		{	// convert sigma(n)/rho(n) to sigma(n)/rho(n+1) and add dsigma/rho(n+1)
 			sp->xx = detdF*str(0,0)+J*dsig[XX];
 			sp->yy = detdF*str(1,1)+J*dsig[YY];
@@ -638,13 +802,43 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	mptr->SetDeformationGradientMatrix(pF);
 	
 	// Now update pressure
+    double dTq0 = dP;               // passed pressure increment found above, it returns as dTq0
 	UpdatePressure(mptr,delV,res,eres,detdF,dJres,delTime,dTq0,dispEnergy);
-	
+    
     // dissipated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
     mptr->AddPlastEnergy(dispEnergy);
     
     // heat energy
     IncrementHeatEnergy(mptr,dTq0,dispEnergy);
+}
+
+// Get parameters to update alpha variables
+void Viscoelastic::GetAlphaArgs(double delTime,double tau,double &omtmp,double &omtmp2) const
+{   double x = delTime/tau;
+    if(x>0.003)
+    {   double tmp = exp(-0.5*x);
+        omtmp = 1. - tmp*tmp;               // 1-exp(-dt/tau)
+        omtmp2 = 0.5*(1. - tmp);            // 0.5*(1-exp(-dt/(2*tau))) because de has factor of 2
+    }
+    else
+    {   // double precision accurate and maybe more precision than 1-exp(-x)
+        omtmp = x*(1.-0.5*x*(1-(x/3.)*(1-0.25*x)));         // 1-exp(-dt/tau)
+        
+        // 0.5*(1-exp(-dt/(2*tau))) because de has factor of 2
+        x *= 0.5;
+        omtmp2 = 0.5*x*(1.-0.5*x*(1-(x/3.)*(1-0.25*x)));
+   }
+}
+
+// Get parameter for plane stress calculations
+// Get 0.5*(1-exp(-dt/(2*tau))) (0.5 because of 2Gk has factor of 2)
+double Viscoelastic::GetPSArg(double delTime,double tau) const
+{   double x = 0.5*delTime/tau;
+    if(x>0.003)
+        return 0.5*(1. - exp(-x));
+    
+    // double precision accurate and maybe more precision than 1-exp(-x)
+    return 0.5*x*(1.-0.5*x*(1.-(x/3.)*(1.-0.25*x)));
 }
 
 // This method handles the pressure equation of state. Its tasks are
@@ -655,12 +849,14 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 								  double eres,double detdF,double dJres,
 								  double delTime,double &dTq0,double &AVEnergy) const
 {
-	if(pressureLaw==LINEAR_PRESSURE)
+	if(pressureLaw!=MGEOS_PRESSURE)
 	{	// pressure change
-		double dP = -Kered*delV;
+        double dP = pressureLaw==LINEAR_PRESSURE ? -Kered*delV : dTq0 ;
 		
 		// artifical viscosity
 		// delV is total incremental volumetric strain = total Delta(V)/V
+        // not allowed in plane stress because added pressure would change szz
+        // may not be valid for time dependent bulk modulus, but is allowed
 		if(delV<0. && artificialViscosity)
 		{	// Wants K/rho
 			double QAVred = GetArtificialViscosity(delV/delTime,sqrt(Kered),mptr);
@@ -677,8 +873,8 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		double avgP = mptr->GetPressure()-0.5*dP;
 		mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-3.*avgP*eres);
 		
-		// Isoentropic temperature rise = -(K 3 alpha T)/(rho Cv) (dV/V)
-		dTq0 += -3.*Kered*CTE*mptr->pPreviousTemperature*(delV+3*eres)/GetHeatCapacity(mptr);
+		// Isoentropic temperature rise = -(K 3 alpha T)/(rho Cv) (dV/V) (only spot for this material)
+		dTq0 = -3.*Kered*CTE*mptr->pPreviousTemperature*(delV+3*eres)/GetHeatCapacity(mptr);
 	}
 	else
 	{	// J is total volume change - may need to reference to free-swelling volume if that works
@@ -686,9 +882,9 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res
 		//		to stress-free state
 		
 		// history pointer
-		double **h =(double **)(mptr->GetHistoryPtr(0));
-		double J = h[mptrHistory][MGJ_HISTORY];
-		double Jres = h[mptrHistory][MGJRES_HISTORY];
+		double *h =(double *)(mptr->GetHistoryPtr(0));
+		double J = h[MGJ_HISTORY];
+		double Jres = h[MGJRES_HISTORY];
 		
 		// previous pressure
 		double P,P0 = mptr->GetPressure();
@@ -775,6 +971,93 @@ double Viscoelastic::GetCpMinusCv(MPMBase *mptr) const
 {   return mptr!=NULL ? Ka2sp*mptr->pPreviousTemperature : Ka2sp*thermal.reference;
 }
 
+// Get effective time increment for viscoelatic materials
+double Viscoelastic::GetEffectiveIncrement(MPMBase *mptr,ResidualStrains *res,double dRealTime,
+                                           double T0,double cT1,double cT2,double m0,double cC1,
+                                           double cC2,double kmsEffect,double cMu1,double cMu2)
+{
+    // if reference properties not set, using actual time
+    if(T0<0. && m0<0.) return dRealTime;
+    
+    // we want to find R = aT(T)am(T)/(aT(T+dT)am(c+dc))
+    // we start ln R = (ln aT(Told)-ln aT(Tnew)) + (ln am(cold)-ln am(cnew)) = lnR
+    double lnR = 0.;
+
+    // First check temperature
+    bool shifted = false;       // means lnR != 0
+    double mlogaold=0.;
+    if(T0>=0.)
+    {   // previous temperature
+        double Tnew = mptr->pPreviousTemperature;
+        double Told = Tnew-res->dT;
+        
+        // freeze viscoleaticity below WLF limit at cT2 degrees below reference temperature
+        // May be problem when MS is active
+        if(Tnew<=T0-cT2 || Told<=T0-cT2) return 0.;
+        
+        // only deviates from ln 1=0 only when dT changes
+        if(!DbleEqual(res->dT,0.))
+        {   lnR = cT1*cT2*res->dT/((cT2+Tnew-T0)*(cT2+Told-T0));
+            shifted = true;
+        }
+        
+        // will need this even if does not change (previous -ln aT)
+        mlogaold = cT1*(Told-T0)/(cT2+Told-T0);
+    }
+    
+    // Up to here
+    // lnR = ln aT(T)/(aT(T+dT)) and mlogaold = - ln aT(T) and shifted=true if lnR!=0
+
+    // now check if moisture effect too
+    if(m0>=0.)
+    {   // concentrations from the grid
+        double cnew = mptr->pPreviousConcentration;
+        double cold = cnew - res->dC;
+        
+        // only deviates from ln 1=0 and only change ln R when dC changes)
+        if(!DbleEqual(res->dC,0.))
+        {   // add to temperature changes using (ln am(cold)-ln am(cnew))
+            // when done, lnR = ln aT(T)am(c)/(aT(T+dT)am(c+dc))
+            double del = cC1*(cC2+m0)*res->dC/((cC2+cnew)*(cC2+cold));
+            lnR += del;
+            
+            // thermal and moisture term
+            double scale = 1.;
+            double R = exp(lnR);
+            if(fabs(R-1.)<0.05)
+                scale = (9.+R*(19.-R*(5.-R)))/24.;
+            else
+                scale = (R-1.)/lnR;
+            
+            // moisture shift (previous -ln am)
+            double mlogamold = cC1*(cold-m0)/(cC2+cold);
+            
+            // time increment dteff = dt*scale/(aT am)
+            double dteff = dRealTime*scale*exp(mlogaold+mlogamold);
+        }
+        else
+        {   // will need this even when dC=0 (previous -ln am); it adds to thermal shift
+            mlogaold += cC1*(cold-m0)/(cC2+cold);
+        }
+    }
+    
+    // If get here
+    // lnR = ln aT(T)am(c)/(aT(T+dT)am(c+dc)) and mlogaold = -ln aT(T)am(c) and shifted=true if lnR!=0
+    
+    // get increment in effective time (temperature, or temperature and moisture bytut dC=0)
+    double scale = 1.;
+    if(shifted)
+    {   double R = exp(lnR);
+        if(fabs(R-1.)<0.05)
+            scale = (9.+R*(19.-R*(5.-R)))/24.;
+        else
+            scale = (R-1.)/lnR;
+    }
+
+    // return the increment = dt*scale/(aT am)
+    return dRealTime*scale*exp(mlogaold);
+}
+
 #pragma mark Viscoelastic::Accessors
 
 // return material type
@@ -840,9 +1123,9 @@ double Viscoelastic::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) cons
 
 // Get current relative volume change = J (which this material tracks)
 double Viscoelastic::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const
-{	if(mptrHistory<0) return 1.;
-	double **h =(double **)mptr->GetHistoryPtr(offset);
-	return h[mptrHistory][MGJ_HISTORY];
+{	if(numJHistory==0) return 1.;
+	double *h =(double *)mptr->GetHistoryPtr(offset);
+	return h[MGJ_HISTORY];
 }
 
 // not supported yet, need to deal with aniostropi properties

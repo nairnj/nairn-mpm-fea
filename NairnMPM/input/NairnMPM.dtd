@@ -191,7 +191,7 @@
 				| nuxy | nuyx | nuRZ | nuZR | nuxz | nuzx | nuRT | nuTR | nuyz | nuzy | nuZT | nuTZ
 				| alphax | alphay | alphaz | alphaR | alphaZ | largeRotation | Dn | Dnt | Dnc | Dt | coeff | coeffStatic
 				| betax | betay | betaz | betaR | betaZ | CritComp | CritTens | xihard | Elastic | displacementOnly | Dc
-				| K | G0 | ntaus | Gk | tauk | xGrow | yGrow | Lame | shareMatField | alpha | model
+				| K | G0 | ntaus | Gk | tauk | Kk | tauKk | ntausK | xGrow | yGrow | Lame | shareMatField | alpha | model | Tref
 				| G1 | G2 | speed | maxLength | Propagate | AltPropagate | initTime | alphaI | alphaII
 				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset | stress | function | minCOD
 				| reversible | irreversible | beta0 | betad | sigmaI | sigmaII | kIe | kIIe | nmix | NewtonsMethod
@@ -219,7 +219,7 @@
 				| alphaPE | alphaAPE | alphaTPE | alphaxPE | alphayPE | alphazPE | alphaRPE | alphaZPE | Darcy | DarcyA | DarcyT | Darcyx
 				| Darcyy | Darcyz | DarcyR | DarcyZ | Ku | viscosityPE | Eactivation | maxTemp | PeakShape | PeakArg
 				| time0 | nm | Ajwl | Bjwl | Cjwl | R1 | R2 | Omega | Dv | StartX | StartY | StartZ | NormX | NormY | NormZ
-				| Dw | DeleteDist )* >
+				| Dw | DeleteDist | GT0 | GA0 | KT0 | en0 | ell0 | Pk | mref | Cm1 | Cm2 | kMS | Cms1 | Cms2 )* >
 <!ATTLIST	Material
 			Type CDATA #REQUIRED
 			Name CDATA #REQUIRED>
@@ -604,6 +604,24 @@
 <!ELEMENT	ntaus (#PCDATA)>
 <!ELEMENT	Gk (#PCDATA)>
 <!ELEMENT	tauk (#PCDATA)>
+<!ELEMENT   ntausK (#PCDATA)>
+<!ELEMENT   Kk (#PCDATA)>
+<!ELEMENT   tauKk (#PCDATA)>
+<!ELEMENT   C1 (#PCDATA)>
+<!ELEMENT   C2 (#PCDATA)>
+<!ELEMENT   Tref (#PCDATA)>
+<!ELEMENT   Cm1 (#PCDATA)>
+<!ELEMENT   Cm2 (#PCDATA)>
+<!ELEMENT   mref (#PCDATA)>
+<!ELEMENT   kMS (#PCDATA)>
+<!ELEMENT   Cms1 (#PCDATA)>
+<!ELEMENT   Cms2 (#PCDATA)>
+<!ELEMENT   GT0 (#PCDATA)>
+<!ELEMENT   GA0 (#PCDATA)>
+<!ELEMENT   KT0 (#PCDATA)>
+<!ELEMENT   en0 (#PCDATA)>
+<!ELEMENT   ell0 (#PCDATA)>
+<!ELEMENT   Pk (#PCDATA)>
 <!ELEMENT	G1 (#PCDATA)>
 <!ELEMENT	G2 (#PCDATA)>
 <!ELEMENT	IdealRubber EMPTY>
@@ -645,8 +663,6 @@
 <!ELEMENT	GTpG0 (#PCDATA)>
 <!ELEMENT	yieldMax (#PCDATA)>
 <!ELEMENT	gamma0 (#PCDATA)>
-<!ELEMENT	C1 (#PCDATA)>
-<!ELEMENT	C2 (#PCDATA)>
 <!ELEMENT	C1SL (#PCDATA)>
 <!ELEMENT	C2SL (#PCDATA)>
 <!ELEMENT	tempC1 (#PCDATA)>

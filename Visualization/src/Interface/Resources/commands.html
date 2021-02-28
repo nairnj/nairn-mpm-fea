@@ -1604,6 +1604,11 @@ Options 3 and 4 apply only to <a href="materials.html#SSSM">damage mechanics mat
 <li>start,(start) - Enter the time to start the ramp (in <a href="#units">alt time units</a>). This parameter is optional; if omitted, the ramp starts at time zero. It ends at time (start)+(time)</li>
 
 <li>sigmoidal,(style) - enter 0 or 1 for a linear or sigmoidal ramp. This parameter is optional; if omitted, the ramp is linear.</li>
+
+<li>exponential,(lifetimes) - use an asymptotic exponential ramp 1-exp(-t/tau) where tau = ramp time/(lifetimes)). If this parameter is used, the (style) setting is ignored.</li>
+
+<li>stretch,(stretch) - if using and exponential ramp, this parameter changes to a stretched exponential or 1-exp((-t/tau)^(stretch)). If omitted, the stretch is 1.</li>
+
 </ul>
 
 <p>The above parameters create a ramp. The next sections explain different ways to calculate the change in particle property applied during the ramp.</p>

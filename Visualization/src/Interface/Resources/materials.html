@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
 	<meta http-equiv="content-type" content="text/html;charset=utf-8">
@@ -288,6 +288,20 @@ and rubber elastic materials as special cases.</td>
 <td>6</td>
 <td width="50%">Linear viscoelastic material with sum of relaxation times</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td><a href="#tivisc"><code>TIViscoelastic 1</code></a></td>
+<td>5</td>
+<td>Viscoelastic, transversely isotropic with unrotated axial direction in the <code>z</code> (or <code>θ</code> if axisymmetric) direction or <code>x-y</code> (or <code>r-z</code> if axisymmetric) plane of 2D analyses is the material's isotropic plane.</td>
+<td></td><td align="center">X X X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td><a href="#tivisc"><code>TIViscoelastic 2</code></a></td>
+<td>6</td>
+<td width="50%">Viscoelastic, transversely isotropic with unrotated axial direction in the <code>y</code> (or <code>z</code> if axisymmetric) direction or <code>x-z</code> (or <code>r-θ</code> if axisymmetric) plane of 2D analyses is the material's isotropic plane.</td>
+<td></td><td align="center">X X X</td><td></td>
 </tr>
 
 </table>
@@ -604,28 +618,71 @@ and rubber elastic materials as special cases.</td>
 
 <h2><a name="visc"></a>Linear Viscoelastic, Isotropic (Type=6)</h2>
 
-<p>This material is a small-strain, linear viscoelastic material with time-dependent shear modulus given by a sum or relaxation times and a time-independent pressure-volume response. The pressure law can use small strain methods (with bulk modulus) or large-deformation <a href="#MGEOS">Mie-Gr&#252;neisen equation of state</a> (MGEOS). The input properties are:</p>
+<p>This material is a small-strain, linear viscoelastic material with time-dependent bulk and shear moduli given by sums relaxation times. The pressure law can use small strain methods (with time-dependent bulk modulus) or large-deformation <a href="#MGEOS">Mie-Gr&#252;neisen equation of state</a> (MGEOS) (with time-independent, non-linear elastic bulk modulus). The input properties are:</p>
 
 <ul>
-<li>pressureLaw - set to 0 to use small strain method (with provided K) or 1 to use MGEOS (with all its properties)</li>
-<li>K - the time-independent bulk modulus (in <a href="commands.html#units">pressure units</a>) (when pressureLaw=0)</li>
-<li>MGEOS Properties - for pressureLaw=1, set <code>C0</code>, <code>S1</code>, <code>S2</code>, <code>S3</code>, <code>gamma0</code>, and  <code>Kmax</code> for the <a href="#MGEOS">MGEOS</a> calculations. The <code>UJOption</code> is fixed at 1.</li>
 <li>G0 - the steady-state (or long time) shear modulus (in <a href="commands.html#units">pressure units</a>)</li>
 <li>Gk - the shear modulus for the next relaxation time (in <a href="commands.html#units">pressure units</a>)</li>
-<li>tauk - the next relaxation time (in <a href="commands.html#units">time units</a>)</li>
+<li>tauk - the next shear modulus relaxation time (in <a href="commands.html#units">time units</a>)</li>
+<li>pressureLaw - set to 0 to use small strain method (with provided K terms) or 1 to use MGEOS (with all its properties)</li>
+<li>K - the steady-state (or long time) bulk modulus (in <a href="commands.html#units">pressure units</a>) (when pressureLaw=0)</li>
+<li>Kk - the bulk modulus for the next relaxation time (in <a href="commands.html#units">pressure units</a>) (when pressureLaw=0)</li>
+<li>tauKk - the next bulk modulus relaxation time (in <a href="commands.html#units">time units</a>) (when pressureLaw=0)</li>
+<li>MGEOS Properties - for pressureLaw=1, set <code>C0</code>, <code>S1</code>, <code>S2</code>, <code>S3</code>, <code>gamma0</code>, and  <code>Kmax</code> for the <a href="#MGEOS">MGEOS</a> calculations. The <code>UJOption</code> is fixed at 1.</li>
 <li>alpha - the thermal expansion coefficient (in ppm/K) (ignored for MGEOS when pressureLaw=1)</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
 
 <p>The relaxation shear modulus is given by G(t) = G<sub>0</sub> + G<sub>1</sub>exp(-t/tau<sub>1</sub>) + G<sub>2</sub>exp(-t/tau<sub>2</sub>) + ... +
-G<sub>ntaus</sub>exp(-t/tau<sub>n</sub>), where n is the number of relation times entered (and that number must exactly match the number of Gk shear moduli entered).</p>
+G<sub>ntaus</sub>exp(-t/tau<sub>n</sub>), where ntaus is the number of shear modulus relation times entered (and that number must exactly match the number of Gk shear moduli entered).</p>
+
+<p>The relaxation bulk modulus is given by K(t) = K + K<sub>1</sub>exp(-t/tau<sub>1</sub>) + K<sub>2</sub>exp(-t/tau<sub>2</sub>) + ... +
+K<sub>ntausK</sub>exp(-t/tau<sub>n</sub>), where ntausK is the number of bulk modulus relation times entered (and that number must exactly match the number of Kk shear moduli entered). To use time-independent bulk modulus, enter only K.</p>
 
 <p>This material can be used in plane stress analysis, but only if <code>pressureLaw=0</code> and <a href="#cmn5">artificial visocity</a> is not used.</p>
 
 <h3>History Data for Linear Viscoelastic, Isotropic Materials</h3>
 
-<p>This material tracks history for internal variables needed for implementation of linear viscoelastic properties, but currently those history variables are available for archiving. You can archive total volume change (J) and residual free expansion volume (Jres) in history variables 1 and 2 (Jres, however, is only tracked when using MGEOS).</p>
+<p>You can archive total volume change (J) and residual free expansion volume (J<sub>res</sub>) in history variables 1 and 2 (J<sub>res</sub>, but only when using MGEOS traction law). This material also tracks internal viscoelastic variables. These can be archived, but may not provide much useful information. They start in number 3 when using MGEOS traction law or 1 if when using small-strain pressure law.</p>
     
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- New Material Section -->
+
+<h2><a name="tivisc"></a>Transversely Isotropic Viscoelastic Material 1 and 2</h2>
+
+<p>This material is a small-strain, linear viscoelastic material with five time-dependent moduli each given by a sum of relaxation times. Option #1 starts with the axial direction in the <i>z</i> direction while option #2 starts with axial direction in the <i>y</i> direction. Option #2 is only allowed in 2D modeling. The input properties are:</p>
+
+<ul>
+
+<li><code>GT0</code> for the steady-state (or long time) transverse shear modulus (in <a href="commands.html#units">pressure units</a>),</li>
+
+<li><code>GA0</code> for the steady-state (or long time) axial shear modulus (in <a href="commands.html#units">pressure units</a>),</li>
+
+<li><code>KT0</code> for the steady-state (or long time) plane-strain bulk modulus (in <a href="commands.html#units">pressure units</a>),</li>
+
+<li><code>en0</code> for the steady-state (or long time) C<sub>33</sub> element of the stiffness tensor where 3 is the axial direction (in <a href="commands.html#units">pressure units</a>),</li>
+
+<li><code>ell0</code> for the steady-state (or long time) C<sub>13</sub> = C<sub>23</sub> element of the stiffness tensor where 3 is the axial direction (in <a href="commands.html#units">pressure units</a>),</li>
+
+<li><code>Pk</code> for the next modulus (in <a href="commands.html#units">pressure units</a>) in series for the current property.</li>
+
+<li><code>tauk</code> for the next relaxation time (in <a href="commands.html#units">time units</a>) in series for the current property.</li>
+
+<li><a href="#trans1">TI Properties</a>: enter other transversely properties for thermal expansion and moisture expansion properties.</li>
+
+<li><a href="#common">Properties common to all materials</a></li>
+
+</ul>
+
+<p>Each relaxation modulus is given by P(t) = P<sub>0</sub> + P<sub>1</sub>exp(-t/tau<sub>1</sub>) + P<sub>2</sub>exp(-t/tau<sub>2</sub>) + ... +
+P<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>) when the P<sub>k</sub> and tau<sub>k</sub> are matched in the order they are supplied. For each of five properties, enter the steady value (which becomes P<sub>0</sub>) and follow that by series of P<sub>k</sub> and tau<sub>k</sub> values
+For more details see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Transversely_Isotropic_Viscoelastic_Material">OSUPDocs wiki</a>.</p>
+
+<h3>History Data for Transversely Isotropic Viscoelastic Materials</h3>
+
+<p>This material tracks numerous internal viscoelastic variables. They can be archived, but may not provide much useful information.</p>
+
 <p>|<a href="#tables">Material Tables</a>|</p>
 
 <!-- Material  Section -->

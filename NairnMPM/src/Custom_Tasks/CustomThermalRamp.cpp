@@ -31,6 +31,8 @@ CustomThermalRamp::CustomThermalRamp()
 	rampStart = 0.;
 	isoDeltaT = 0.;
 	sigmoidal = 0;
+    lifetimes = -1.;
+    stretch = -1.;
 	scaleFxn = NULL;
 	
 	// for imaged ramp
@@ -104,6 +106,16 @@ char *CustomThermalRamp::InputParam(char *pName,int &input,double &gScaling)
 		return (char *)&sigmoidal;
 	}
 	
+    else if(strcmp(pName,"exponential")==0)
+    {   input=DOUBLE_NUM;
+        return (char *)&lifetimes;
+    }
+    
+    else if(strcmp(pName,"stretch")==0)
+    {   input=DOUBLE_NUM;
+        return (char *)&stretch;
+    }
+    
 	else if(strcmp(pName,"scale")==0)
 	{	input=TEXT_PARAMETER;
 		return (char *)&scaleFxn;
@@ -347,8 +359,21 @@ CustomTask *CustomThermalRamp::Initialize(void)
 					(rampStart+isoRampTime)*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
 		cout << hline << endl;
 		cout << "      (which covers " << nsteps << " time steps)" << endl;
-		if(sigmoidal && nsteps>1)
-			cout << "      (use sigmoidal ramp)" << endl;
+        if(nsteps>1)
+        {   if(lifetimes>0.)
+            {   if(stretch>0.)
+                    cout << "      (use 1-exp(-("<<lifetimes<<"*t/tramp)^"<<stretch<<") ramp)" << endl;
+                else
+                    cout << "      (use 1-exp(-"<<lifetimes<<"*t/tramp) ramp)" << endl;
+            }
+            else if(sigmoidal)
+                cout << "      (use sigmoidal ramp)" << endl;
+        }
+        else
+        {   // not used when nsteps=1
+            lifetimes = -1.;
+            sigmoidal = 0;
+        }
 		if(scaleFxn!=NULL)
 			cout << "   Scaling function =  " << scaleFxn->GetString() << endl;
 	}
@@ -455,11 +480,17 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 	// exit when not needed
 	if(!doRamp) return nextTask;
 	
-	// get new temperature
+	// get new effective time = (t-tstart)/tramp
+    // if not linear, convert to ne fracture (if both set, exponential takes presidence)
 	double rampFraction = (mtime+timestep-rampStart)/isoRampTime;
 	if(rampFraction>1.)
 	{	rampFraction = 1.;
+        if(lifetimes>0.)
+            rampFraction = stretch>0. ? 1.-exp(-pow(lifetimes,stretch)) : 1.-exp(-lifetimes) ;
 	}
+    else if(lifetimes>0.)
+    {   rampFraction = stretch>0. ? 1.-exp(-pow(lifetimes*rampFraction,stretch)) : 1.-exp(-lifetimes*rampFraction) ;
+    }
 	else if(sigmoidal)
 	{	rampFraction = 1./(1+exp(-12.*(rampFraction-0.5)));
 	}

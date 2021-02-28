@@ -45,7 +45,9 @@ class CustomThermalRamp : public CustomTask
 		double endTime;			// all done by this time
 		double currentDeltaT;	// track Delta T to allow variable time steps
 		bool doRamp;			// flag to adjust temperature this time step
-		int sigmoidal;			// Use sigmoidal shape
+		int sigmoidal;			// Use sigmoidal shape if not 0
+        double lifetimes;       // use (1-exp(-t*lifetimes/ramptime))
+        double stretch;         // if entered and exponential use (1-exp(-(t*lifetimes/ramptime)^stretch))
 		int property;			// RAMP_TEMP,RAMP_CONC, or RAMP_PP
 		Expression *scaleFxn;
 	

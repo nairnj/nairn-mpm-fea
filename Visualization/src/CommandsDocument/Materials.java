@@ -14,14 +14,28 @@ public class Materials
 	private int numMats;
 	private StringBuffer xmldata;
 	private StringBuffer taukGk;
+	private StringBuffer taukKk;
 	private boolean inMaterial;
 	private int matType;
 	private int ntaus,nGs;
+	private int ntausK,nKs;
 	private CmdViewer doc;
 	private int criterion,direction,traction;
 	private int altCriterion,altDirection,altTraction;
 	private double matDamping,matPIC;
-	
+	private double GT0,GA0,KT0,en0,ell0;
+	private StringBuffer taukGT;
+	private StringBuffer taukGA;
+	private StringBuffer taukKT;
+	private StringBuffer taukn;
+	private StringBuffer taukell;
+	private int ntauGT,nGTs;
+	private int ntauGA,nGAs;
+	private int ntauKT,nKTs;
+	private int ntaun,nns;
+	private int ntauell,nells;
+	private int whichOne;
+
 	//----------------------------------------------------------------------------
 	// Initialize
 	//----------------------------------------------------------------------------
@@ -77,71 +91,94 @@ public class Materials
 		options.put("transverse 1", new Integer(2));
 		options.put("transverse 2", new Integer(3));
 		options.put("orthotropic", new Integer(4));
-		options.put("interface", new Integer(5));
-		options.put("viscoelastic", new Integer(7));
-		options.put("mooney", new Integer(8));
-		options.put("vonmises", new Integer(9));
-		options.put("isoplasticity", new Integer(9));
-		options.put("bistable", new Integer(10));
-		options.put("rigid", new Integer(11));
-		options.put("rigidbc", new Integer(11));
-		options.put("triangulartraction", new Integer(12));
-		options.put("lineartraction", new Integer(13));
-		options.put("cubictraction", new Integer(14));
-		options.put("hillplastic", new Integer(15));
-		options.put("johnsoncook", new Integer(16));			// historical only
-		options.put("mgscglmaterial", new Integer(17));			// historical only
-		options.put("mgeosmaterial", new Integer(17));			// historical only
-		options.put("trilineartraction", new Integer(20));
-		options.put("heanisotropic", new Integer(21));
-		options.put("idealgas", new Integer(22));
-		options.put("coupledsawtooth", new Integer(23));
-		options.put("coupledtraction", new Integer(23));
-		options.put("heisotropic", new Integer(24));
-		options.put("hemgeosmaterial", new Integer(25));
-		options.put("pressuretraction", new Integer(26));
-		options.put("taitliquid", new Integer(27));
-		options.put("neohookean", new Integer(28));
-		options.put("clampedneohookean", new Integer(29));
-		options.put("phasetransition", new Integer(30));
-		options.put("reactionphase", new Integer(31));
-		options.put("jwlplusplus", new Integer(32));
-		options.put("mixedmodetraction", new Integer(33));
-		options.put("exponentialtraction", new Integer(34));
-		options.put("rigidcontact", new Integer(35));
-		options.put("rigidblock", new Integer(36));
-		options.put("mooneymembrane", new Integer(40));
-		options.put("isosoftening", new Integer(50));
-		options.put("transisosoftening 1", new Integer(51));
-		options.put("transisosoftening 2", new Integer(52));
-		options.put("isoplasticsoftening", new Integer(53));
-		options.put("orthosoftening", new Integer(54));
-		options.put("isoplasticinterface", new Integer(55));
-		options.put("orthoplasticsoftening", new Integer(56));
-		options.put("phasetransition", new Integer(30));
-		options.put("ignorecontact", new Integer(60));
-		options.put("coulombfriction", new Integer(61));
-		options.put("adhesivefriction", new Integer(63));
-		options.put("linearinterface", new Integer(62));
-		options.put("liquidcontact", new Integer(64));
-		options.put("nonlinearinterface", new Integer(65));
-		options.put("debondinginterface", new Integer(66));
+		if(doc.isFEA())
+		{	options.put("interface", new Integer(5));
+		}
+		else
+		{	options.put("tiviscoelastic 1", new Integer(5));
+			options.put("tiviscoelastic 2", new Integer(6));
+			options.put("viscoelastic", new Integer(7));
+			options.put("mooney", new Integer(8));
+			options.put("vonmises", new Integer(9));
+			options.put("isoplasticity", new Integer(9));
+			options.put("bistable", new Integer(10));
+			options.put("rigid", new Integer(11));
+			options.put("rigidbc", new Integer(11));
+			options.put("triangulartraction", new Integer(12));
+			options.put("lineartraction", new Integer(13));
+			options.put("cubictraction", new Integer(14));
+			options.put("hillplastic", new Integer(15));
+			options.put("johnsoncook", new Integer(16));			// historical only
+			options.put("mgscglmaterial", new Integer(17));			// historical only
+			options.put("mgeosmaterial", new Integer(17));			// historical only
+			options.put("trilineartraction", new Integer(20));
+			options.put("heanisotropic", new Integer(21));
+			options.put("idealgas", new Integer(22));
+			options.put("coupledsawtooth", new Integer(23));
+			options.put("coupledtraction", new Integer(23));
+			options.put("heisotropic", new Integer(24));
+			options.put("hemgeosmaterial", new Integer(25));
+			options.put("pressuretraction", new Integer(26));
+			options.put("taitliquid", new Integer(27));
+			options.put("neohookean", new Integer(28));
+			options.put("clampedneohookean", new Integer(29));
+			options.put("phasetransition", new Integer(30));
+			options.put("reactionphase", new Integer(31));
+			options.put("jwlplusplus", new Integer(32));
+			options.put("mixedmodetraction", new Integer(33));
+			options.put("exponentialtraction", new Integer(34));
+			options.put("rigidcontact", new Integer(35));
+			options.put("rigidblock", new Integer(36));
+			options.put("mooneymembrane", new Integer(40));
+			options.put("isosoftening", new Integer(50));
+			options.put("transisosoftening 1", new Integer(51));
+			options.put("transisosoftening 2", new Integer(52));
+			options.put("isoplasticsoftening", new Integer(53));
+			options.put("orthosoftening", new Integer(54));
+			options.put("isoplasticinterface", new Integer(55));
+			options.put("orthoplasticsoftening", new Integer(56));
+			options.put("phasetransition", new Integer(30));
+			options.put("ignorecontact", new Integer(60));
+			options.put("coulombfriction", new Integer(61));
+			options.put("adhesivefriction", new Integer(63));
+			options.put("linearinterface", new Integer(62));
+			options.put("liquidcontact", new Integer(64));
+			options.put("nonlinearinterface", new Integer(65));
+			options.put("debondinginterface", new Integer(66));
+		}
 		matType = doc.readIntOption(args.get(3),options,null);
 		if(matType<0)
-			throw new Exception("'Material' type not yet supported in scripting commands.\nUse XML method instead: "+args);
+		{	if(doc.isFEA())
+				throw new Exception("'Material' type not supported in FEA commands.\nUse XML method if possible: "+args);
+			throw new Exception("'Material' type not supported in MPM commands.\nUse XML method if possible: "+args);
+		}
 		
 		// start the command
 		xmldata.append("  <Material Type='"+matType+"' Name='"+matName+"'>\n");
 		inMaterial = true;
 		
 		// start viscoelastic
+		taukGT = null;
+		taukGA = null;
+		taukKT = null;
+		taukn = null;
+		taukell = null;
+		taukGk = null;
+		taukKk = null;
 		if(matType==7)
 		{	taukGk = new StringBuffer("");
 			ntaus = 0;
 			nGs = 0;
+			whichOne = -1;
+			taukKk = new StringBuffer("");
+			ntausK = 0;
+			nKs = 0;
 		}
-		else
-			taukGk = null;
+		else if(matType==5 || matType==6)
+		{	whichOne = 0;
+		}
+		else whichOne = -2;
+			
 	}
 	
 	// material defined using XML commands
@@ -196,6 +233,48 @@ public class Materials
 				xmldata.append("    <ntaus>"+ntaus+"</ntaus>\n");
 				xmldata.append(taukGk);
 			}
+			if(taukGT!=null)
+			{	if(ntauGT!=nGTs)
+					throw new Exception("A viscoelastic GT property does not have same number of tauks and Pks");
+				xmldata.append("    <GT0>"+doc.formatDble(GT0)+"</GT0>\n");
+				xmldata.append("    <ntaus>"+ntauGT+"</ntaus>\n");
+				xmldata.append(taukGT);
+			}
+			if(taukGA!=null)
+			{	if(ntauGA!=nGAs)
+					throw new Exception("A viscoelastic GA property does not have same number of tauks and Pks");
+				xmldata.append("    <GA0>"+doc.formatDble(GA0)+"</GA0>\n");
+				xmldata.append("    <ntaus>"+ntauGA+"</ntaus>\n");
+				xmldata.append(taukGA);
+			}
+			if(taukKT!=null)
+			{	if(ntauKT!=nKTs)
+					throw new Exception("A viscoelastic KT property does not have same number of tauks and Pks");
+				xmldata.append("    <KT0>"+doc.formatDble(KT0)+"</KT0>\n");
+				xmldata.append("    <ntaus>"+ntauKT+"</ntaus>\n");
+				xmldata.append(taukKT);
+			}
+			if(taukn!=null)
+			{	if(ntaun!=nns)
+					throw new Exception("A viscoelastic en property does not have same number of tauks and Pks");
+				xmldata.append("    <en0>"+doc.formatDble(en0)+"</en0>\n");
+				xmldata.append("    <ntaus>"+ntaun+"</ntaus>\n");
+				xmldata.append(taukn);
+			}
+			if(taukell!=null)
+			{	if(ntauell!=nells)
+					throw new Exception("A viscoelastic ell property does not have same number of tauks and Pks");
+				xmldata.append("    <ell0>"+doc.formatDble(ell0)+"</ell0>\n");
+				xmldata.append("    <ntaus>"+ntauell+"</ntaus>\n");
+				xmldata.append(taukell);
+			}
+			if(taukKk!= null && ntausK>0)
+			{	if(ntausK!=nKs)
+					throw new Exception("A viscoelastic material property does not have same number of tauKks and Kks");
+				xmldata.append("    <ntausK>"+ntausK+"</ntausK>\n");
+				xmldata.append(taukKk);
+			}
+				
 			xmldata.append("  </Material>\n\n");
 			inMaterial = false;
 			return;
@@ -535,14 +614,146 @@ public class Materials
 		}
 		else if(prop.toLowerCase().equals("tauk"))
 		{	double tk = doc.readDoubleArg(args.get(1));
-			taukGk.append("    <tauk>"+doc.formatDble(tk)+"</tauk>\n");
-			ntaus++;
+			String taustr = "    <tauk>"+doc.formatDble(tk)+"</tauk>\n";
+			switch(whichOne)
+			{	case -1:
+					taukGk.append(taustr);
+					ntaus++;
+					break;
+				case 1:
+					taukGT.append(taustr);
+					ntauGT++;
+					break;
+				case 2:
+					taukGA.append(taustr);
+					ntauGA++;
+					break;
+				case 3:
+					taukKT.append(taustr);
+					ntauKT++;
+					break;
+				case 4:
+					taukn.append(taustr);
+					ntaun++;
+					break;
+				case 5:
+					taukell.append(taustr);
+					ntauell++;
+					break;
+				default:
+					throw new Exception("tauk found at invalid location");
+			}
+			return;
+		}
+		else if(prop.toLowerCase().equals("taukk"))
+		{	double tk = doc.readDoubleArg(args.get(1));
+			taukKk.append("    <tauKk>"+doc.formatDble(tk)+"</tauKk>\n");
+			ntausK++;
 			return;
 		}
 		else if(prop.toLowerCase().equals("gk"))
-		{	double gk = doc.readDoubleArg(args.get(1));
+		{	if(taukGk==null)
+				throw new Exception("Gk found at invalid location");
+			double gk = doc.readDoubleArg(args.get(1));
 			taukGk.append("    <Gk>"+doc.formatDble(gk)+"</Gk>\n");
 			nGs++;
+			return;
+		}
+		else if(prop.toLowerCase().equals("kk"))
+		{	if(taukKk==null)
+				throw new Exception("Kk found at invalid location");
+			double kk = doc.readDoubleArg(args.get(1));
+			taukKk.append("    <Kk>"+doc.formatDble(kk)+"</Kk>\n");
+			nKs++;
+			return;
+		}
+		else if(prop.toLowerCase().equals("pk"))
+		{	double pk = doc.readDoubleArg(args.get(1));
+			String pkstr = "    <Pk>"+doc.formatDble(pk)+"</Pk>\n";
+			switch(whichOne)
+			{	case 1:
+					taukGT.append(pkstr);
+					nGTs++;
+					break;
+				case 2:
+					taukGA.append(pkstr);
+					nGAs++;
+					break;
+				case 3:
+					taukKT.append(pkstr);
+					nKTs++;
+					break;
+				case 4:
+					taukn.append(pkstr);
+					nns++;
+					break;
+				case 5:
+					taukell.append(pkstr);
+					nells++;
+					break;
+				default:
+					throw new Exception("Pk found at invalid location");
+			}
+			return;
+		}
+		else if(prop.toLowerCase().equals("gt0"))
+		{	if(taukGT!=null)
+				throw new Exception("Found two entries for GT0");
+			if(whichOne<0 || whichOne>5)
+				throw new Exception("Found invalid GT0 property");
+			GT0 = doc.readDoubleArg(args.get(1));
+			taukGT = new StringBuffer("");
+			ntauGT = 0;
+			nGTs = 0;
+			whichOne = 1;
+			return;
+		}
+		else if(prop.toLowerCase().equals("ga0"))
+		{	if(taukGA!=null)
+				throw new Exception("Found two entries for GA0");
+			if(whichOne<0 || whichOne>5)
+				throw new Exception("Found invalid GA0 property");
+			GA0 = doc.readDoubleArg(args.get(1));
+			taukGA = new StringBuffer("");
+			ntauGA = 0;
+			nGAs = 0;
+			whichOne = 2;
+			return;
+		}
+		else if(prop.toLowerCase().equals("kt0"))
+		{	if(taukKT!=null)
+				throw new Exception("Found two entries for KT0");
+			if(whichOne<0 || whichOne>5)
+				throw new Exception("Found invalid KT0 property");
+			KT0 = doc.readDoubleArg(args.get(1));
+			taukKT = new StringBuffer("");
+			ntauKT = 0;
+			nKTs = 0;
+			whichOne = 3;
+			return;
+		}
+		else if(prop.toLowerCase().equals("en0"))
+		{	if(taukn!=null)
+				throw new Exception("Found two entries for en0");
+			if(whichOne<0 || whichOne>5)
+				throw new Exception("Found invalid en0 property");
+			en0 = doc.readDoubleArg(args.get(1));
+			taukn = new StringBuffer("");
+			ntaun = 0;
+			nns = 0;
+			whichOne = 4;
+			return;
+		}
+		else if(prop.toLowerCase().equals("ell0"))
+		{	if(taukell!=null)
+				throw new Exception("Found two entries for ell0");
+			if(whichOne<0 || whichOne>5)
+				throw new Exception("Found invalid ell0 property");
+			ell0 = doc.readDoubleArg(args.get(1));
+			taukell = new StringBuffer("");
+			ntauell = 0;
+			nells = 0;
+			whichOne = 5;
 			return;
 		}
 		else if(prop.toLowerCase().equals("matdamping"))
