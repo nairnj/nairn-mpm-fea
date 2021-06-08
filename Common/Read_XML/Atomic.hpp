@@ -9,9 +9,9 @@
  		none
 ********************************************************************************/
 
-#ifndef _ATOMIC_
+#ifndef _JAN_ATOMIC_
 
-#define _ATOMIC_
+#define _JAN_ATOMIC_
 
 // Anything >= OP_PLUS cannot end an expression
 enum { ATOM_NUMBER,ATOM_VARIABLE,FUNCTION_NAME,
