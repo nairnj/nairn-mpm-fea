@@ -93,7 +93,7 @@ int maxElementIntersections=15;		// Maximum elements that particle can intersect
 // throws std::bad_alloc
 NairnMPM::NairnMPM()
 {
-    version=15;                      // main version
+    version=16;                      // main version
     subversion=0;                    // subversion (must be < 10)
     buildnumber=0;                   // build number
 
