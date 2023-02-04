@@ -93,12 +93,13 @@ void AdhesionFriction::PrintContactLaw(void) const
 	CoulombFriction::PrintContactLaw();
 	
 	char hline[200];
+	size_t hsize=200;
 	const char *label = UnitsController::Label(PRESSURE_UNITS);
 	PrintProperty("Sa",Sa*UnitsController::Scaling(1.e-6),label);
 	PrintProperty("Na",Na*UnitsController::Scaling(1.e-6),label);
 	cout << endl;
 	
-	sprintf(hline,"1/(%s)",UnitsController::Label(CUVELOCITY_UNITS));
+	snprintf(hline,hsize,"1/(%s)",UnitsController::Label(CUVELOCITY_UNITS));
 	PrintProperty("kmu",kmu,hline);
 	PrintProperty("vhalf",vhalf,UnitsController::Label(CUVELOCITY_UNITS));
 	cout << endl;
@@ -204,6 +205,97 @@ double AdhesionFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double mre
 	// return result
 	return Sslide;
 }
+
+#ifdef THREE_MAT_CONTACT
+
+// Cannot handle velocity dependent coefficient until 3+ material code extended to non-linear laws
+// Technically cannot handle smooth static to dynamic, but does handle as if not smooth for 3+ pairs
+bool AdhesionFriction::CanHandleTwoPairContact(void) const
+{	if(kmu!=0.) return false;
+	return true;
+};
+
+// On call Smin=0 and Smax=Sstick, change if needed for this law
+// Should extend to velocity dependent shear
+void AdhesionFriction::BracketSSlide(double &Smin,double &Smax,double contactArea,double deltime)
+{
+	// Change min to adhesion term
+	if(Sa>0.) Smin = Sa*contactArea*deltime;
+	
+	if(frictionCoeff<=0.)
+	{	// frictionless (not often called here)
+		Smax = 0.;
+	}
+	else if(frictionCoeffStatic>frictionCoeff)
+	{	// adjust max is has static coefficient of friction
+		Smax *= frictionCoeffStatic/frictionCoeff;
+	}
+	
+}
+
+// Return d(Sslide Ac dt)/d(N Ac dt)
+// Assuming node is sliding and is in contact
+// Should extend to velocity dependent options
+double AdhesionFriction::GetDSslideAcDt(double NAcDt) const
+{
+	return frictionCoeff;
+}
+
+// Decide is this contact law might be in contact
+// Only used in three+ material contact code
+bool AdhesionFriction::ProvisionalInContact(Vector *delPi,Vector *norm,double dotn,double deltaDotn,
+												 double contactArea,double deltime) const
+{
+	// stick is always in contact
+	if(frictionStyle==STICK) return true;
+	
+	// frictionlaw but no adhesion - Check contact at start only
+	if(deltaDotn<0.)
+	{	// Get stress cutoff
+		double fnaDtMax = 0.;
+		if(displacementOnly>0.1)
+			fnaDtMax = dotn+1.;
+		else if(displacementOnly<0.)
+			fnaDtMax = -displacementOnly*contactArea*deltime;
+		if(dotn<fnaDtMax)
+			return true;
+	}
+	
+	// check adhesion, estimated from normal force
+	if(Sa>0. && Na>0.)
+	{	// Get force to stick  in tangential motion
+		double dott = 0.;
+	
+		// Tangengial stick from tangential direction unit vector
+		// tang||tang|| = delPi - dotn norm
+		Vector tang;
+		CopyVector(&tang,delPi);
+		AddScaledVector(&tang,norm,-dotn);
+		double tangMag = sqrt(DotVectors(&tang,&tang));
+		if(tangMag>0.)
+		{	ScaleVector(&tang,1./tangMag);
+			dott = DotVectors(delPi,&tang);
+			if(dott < 0.)
+			{	// make it positive for comparison to the positive frictional force Sslide
+				ScaleVector(&tang,-1.);
+				dott = -dott;
+			}
+		}
+		
+		// check adhesion
+		double shear = dott/(Sa*contactArea*deltime);
+		double normal = -dotn/(Na*contactArea*deltime);
+		double surface = shear*shear + normal*normal;
+		
+		// adhesion not exceeded, so call it in contact
+		if(surface<1.) return true;
+	}
+	
+	// separated and adhesion broken so no contact
+	return false;
+}
+
+#endif // end THREE_MAT_CONTACT
 
 #pragma mark AdhesionFriction::Accessors
 

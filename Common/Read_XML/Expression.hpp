@@ -9,9 +9,9 @@
  		none
 ********************************************************************************/
 
-#ifndef _EXPRESSION_
+#ifndef _JAN_EXPRESSION_
 
-#define _EXPRESSION_
+#define _JAN_EXPRESSION_
 
 #define MAX_EXPRESSIONS 12
 

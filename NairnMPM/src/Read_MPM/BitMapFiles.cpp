@@ -62,7 +62,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	
 	// read image file
 	char *bmpFullPath=archiver->ExpandOutputPath(bmpFileName);
-	rows = (unsigned char **)ReadXYFile(bmpFullPath,info,BYTE_DATA,true);
+	rows = (unsigned char **)ReadXYFile(bmpFullPath,info,true,true);
 	delete [] bmpFullPath;
 	
 	// angle file name (overrides other angle settings)
@@ -75,7 +75,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		// first file always there
 		XYInfoHeader angleInfo;
 		char *bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[0]);
-		angleRows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA,true);
+		angleRows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,true,true);
 		if(info.height!=angleInfo.height || info.width!=angleInfo.width)
 			throw SAXException(XYFileError("The image file and first angle file sizes do not match.",bmpFileName));
 		delete [] bmpFullAnglePath;
@@ -86,7 +86,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		
 		if(fileRotations>1)
 		{	bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[1]);
-			angle2Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA,true);
+			angle2Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,true,true);
 			if(info.height!=angleInfo.height || info.width!=angleInfo.width)
 				throw SAXException(XYFileError("The image file and second angle file sizes do not match.",bmpFileName));
 			delete [] bmpFullAnglePath;
@@ -100,7 +100,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		
 		if(fileRotations>2)
 		{	bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[2]);
-			angle3Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,BYTE_DATA,true);
+			angle3Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,true,true);
 			if(info.height!=angleInfo.height || info.width!=angleInfo.width)
 				throw SAXException(XYFileError("The image file and second angle file sizes do not match.",bmpFileName));
 			delete [] bmpFullAnglePath;
@@ -138,6 +138,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
         usePtsPerElement = bmpCustomPtsPerElement;
         usePtsPerSide = bmpCustomPtsPerSide;
     }
+    int numFound;
     
     // Length/semiscale is half particle with
     //    (semiscale=4 for 2D w 4 pts per element or 3D with 8 pts per element,
@@ -165,7 +166,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
                 continue;
             
             // load point coordinates
-            elem->MPMPoints(usePtsPerSide,mpos);
+            elem->MPMPoints(usePtsPerSide,mpos,numFound,NULL,NULL);
         
             // particle radius (dimensioned) within volume of the element
 			Vector del;
@@ -177,7 +178,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
                 del.z=-1.;
  			
 			// fill all points
-            for(int k=0;k<usePtsPerElement;k++)
+            for(int k=0;k<numFound;k++)
             {   // default locations (skip if already filled)
                 if(usePtsPerElement==fmobj->ptsPerElement)
                 {   ptFlag=1<<k;
@@ -214,14 +215,15 @@ void MPMReadHandler::TranslateBMPFiles(void)
 						// is there an angle image too?
 						if(setAngles)
 						{	double matAngle[3];
-							double totalIntensity = FindAverageValue(map,angleRows);
+							bool hasWeight = false;
+							double totalIntensity = FindAverageValue(map,angleRows,BYTE_DATA,hasWeight);
 							matAngle[0] = minAngle[0]+(totalIntensity-minIntensity[0])*angleScale[0];
  							if(fileRotations>1)
-							{	totalIntensity = FindAverageValue(map,angle2Rows);
+							{	totalIntensity = FindAverageValue(map,angle2Rows,BYTE_DATA,hasWeight);
 								matAngle[1] = minAngle[1]+(totalIntensity-minIntensity[1])*angleScale[1];
 							}
 							if(fileRotations>2)
-							{	totalIntensity = FindAverageValue(map,angle3Rows);
+							{	totalIntensity = FindAverageValue(map,angle3Rows,BYTE_DATA,hasWeight);
 								matAngle[2] = minAngle[2]+(totalIntensity-minIntensity[2])*angleScale[2];
 							}
 							SetMptAnglesFromFunctions(angleAxes,matAngle,&mpos[k],newMpt);

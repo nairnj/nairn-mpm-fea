@@ -30,7 +30,6 @@ ElementBase::ElementBase(int eNum,int *eNode)
     for(i=0;i<MaxElNd;i++) nodes[i]=eNode[i];
 	neighbors=NULL;
     filled=0;
-	// PHCNew
 }
 
 ElementBase::~ElementBase()
@@ -47,23 +46,12 @@ ElementBase::~ElementBase()
 */
 void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
 {
-    switch(useGimp)
-	{	case UNIFORM_GIMP:
-        case UNIFORM_GIMP_AS:
-		case BSPLINE_GIMP:
-		case BSPLINE_GIMP_AS:
-		case BSPLINE:
-		case POINT_GIMP:
-			GetXiPos(&mpmptr->pos,mpmptr->GetNcpos());
-			break;
-			
-        case LINEAR_CPDI:
-		case LINEAR_CPDI_AS:
-        case QUADRATIC_CPDI:
-		case BSPLINE_CPDI:
-			mpmptr->GetCPDINodesAndWeights(useGimp);
-            break;
-    }
+    if(ElementBase::UsingCPDIMethod())
+        mpmptr->GetCPDINodesAndWeights(useGimp);
+    else if(ElementBase::useGimp==FINITE_GIMP)
+        mpmptr->GetFiniteGIMP_Integrals();
+    // all get initial particle position (could put behind else if not used in some method)
+    GetXiPos(&mpmptr->pos,mpmptr->GetNcpos());
 }
 
 /* Find shape functions for crack particle using point GIMP method
@@ -162,7 +150,7 @@ void ElementBase::GetShapeFunctions(double *fn,int **ndsHandle,MPMBase *mpmptr) 
 		{	// B2GIMP analysis
 			Vector *xipos = mpmptr->GetNcpos();
 			mpmptr->GetDimensionlessSize(lp);
-			BGimpShapeFunction(xipos,nds,FALSE,&fn[1],NULL,NULL,NULL,lp);
+			BGimpShapeFunction(xipos,nds,false,&fn[1],NULL,NULL,NULL,lp);
 			break;
 		}
 
@@ -170,7 +158,7 @@ void ElementBase::GetShapeFunctions(double *fn,int **ndsHandle,MPMBase *mpmptr) 
 		{	// B2GIMP analysis
 			Vector *xipos = mpmptr->GetNcpos();
 			mpmptr->GetDimensionlessSize(lp);
-			BGimpShapeFunctionAS(xipos,nds,FALSE,&fn[1],NULL,NULL,NULL,lp);
+			BGimpShapeFunctionAS(xipos,nds,false,&fn[1],NULL,NULL,NULL,lp);
 			break;
 		}
 			
@@ -180,6 +168,20 @@ void ElementBase::GetShapeFunctions(double *fn,int **ndsHandle,MPMBase *mpmptr) 
         case QUADRATIC_CPDI:
             nds[0] = GetCPDIFunctions(nds,fn,NULL,NULL,NULL,mpmptr);
             break;
+
+		case FINITE_GIMP:
+		{	// Finite GIMP analysis
+			FiniteGimpShapeFunction(nds,fn,NULL,NULL,NULL,mpmptr);
+			break;
+		}
+            
+        case UNIFORM_GIMP_TARTAN:
+        {    // GIMP analysis
+            Vector *xipos = mpmptr->GetNcpos();
+            mpmptr->GetDimensionlessSize(lp);
+            TartanGimpShapeFunction(xipos,nds,false,&fn[1],NULL,NULL,NULL,lp);
+            break;
+        }
     }
 }
 
@@ -255,13 +257,27 @@ void ElementBase::GetShapeGradients(double *fn,int **ndsHandle,
 			break;
 		}
 		
-		case BSPLINE_CPDI:
+		case FINITE_GIMP:
+		{	// Finite GIMP analysis
+			FiniteGimpShapeFunction(nds,fn,xDeriv,yDeriv,zDeriv,mpmptr);
+			break;
+		}
+
+        case BSPLINE_CPDI:
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
 		case QUADRATIC_CPDI:
             nds[0] = GetCPDIFunctions(nds,fn,xDeriv,yDeriv,zDeriv,mpmptr);
             break;
-    }
+            
+        case UNIFORM_GIMP_TARTAN:
+        {    // uGIMP analysis
+            Vector *xipos = mpmptr->GetNcpos();
+            mpmptr->GetDimensionlessSize(lp);
+            TartanGimpShapeFunction(xipos,nds,true,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
+            break;
+        }
+   }
 }
 
 // Get shape functions for exact traction calculations in 2D MPM
@@ -325,19 +341,70 @@ void ElementBase::GetXiPos(const Vector *pos,Vector *xipos) const
 // return dimensionless location for material points in this element
 // mpos vector is assumed long enough (length >= numPerElement)
 // numPerElement is total number and assumed to be cubed number in 3D and squared in 2D
-void ElementBase::MPMPoints(int numPerSide,Vector *mpos) const
+// If not NULL psize, return dimensionless particle size
+void ElementBase::MPMPoints(int numPerSide,Vector *mpos,int &numFound,Vector **pposPtr,Vector *psize) const
 {
-    int i,j,k=0;
-    double fxn[MaxElNd],yval,zval,gap=1./((double)numPerSide);
+    int i,j,k=0,nx,ny,nz;
+    double fxn[MaxElNd],yval,zval;
+    
+    // If negative value, pick based on shortest size
+    // Only support in body part for now and on call, numFound is current size
+    //    and mposPtr is pointer to ppos created in caller
+    // It is error (but not checked) to have numPerSize<0 and pposPtr==NULL
+    if(numPerSide<0)
+    {   numPerSide = -numPerSide;
+        Vector dbox = GetDeltaBox();
+        if(fmobj->IsThreeD())
+        {   double dmin = fmin(fmin(dbox.x,dbox.y),dbox.z);
+            nx = int(dbox.x/dmin+0.5)*numPerSide;
+            ny = int(dbox.y/dmin+0.5)*numPerSide;
+            nz = int(dbox.z/dmin+0.5)*numPerSide;
+        }
+        else
+        {   double dmin = fmin(dbox.x,dbox.y);
+            nx = int(dbox.x/dmin+0.5)*numPerSide;
+            ny = int(dbox.y/dmin+0.5)*numPerSide;
+            nz = 1;
+        }
+        
+        // enlarge if needed (error if mposPtr is NULL)
+        int tempSize = nx*ny*nz;
+        if(tempSize > numFound)
+        {   delete [] *pposPtr;
+            *pposPtr = new Vector[tempSize];
+            mpos = *pposPtr;
+        }
+        numFound = tempSize;
+    }
+    else
+    {   // equal numbers in all direction
+        nx = numPerSide;
+        ny = numPerSide;
+        nz = fmobj->IsThreeD() ? numPerSide : 1 ;
+        numFound = nx*ny*nz;
+    }
 	
+    double xgap = 1./((double)nx);
+    double ygap = 1./((double)ny);
+    double zgap = 1./((double)nz);
+    
+    // return dimensionless size when needed
+    if(psize!=NULL)
+    {   psize->x = xgap;
+        psize->y = ygap;
+        psize->z = zgap;
+    }
+    
+    // find dimensionless coordaites running from -1 to 1 along each axis
+    // -1+1/n, -1+3/n, ... -1+(2n-1)/n=1-1/n
 	if(fmobj->IsThreeD())
-	{	// must be a cube
-		for(i=0;i<numPerSide;i++)
-		{	zval = -1.+(2.*i+1.)*gap;
-			for(int ii=0;ii<numPerSide;ii++)
-			{	yval =-1.+(2.*ii+1.)*gap;
-				for(j=0;j<numPerSide;j++)
-				{	mpos[k].x = -1.+(2.*j+1.)*gap;
+    {   // must be a cube
+		for(i=0;i<nz;i++)
+		{	zval = -1.+(2.*i+1.)*zgap;
+			for(int ii=0;ii<ny;ii++)
+			{	yval =-1.+(2.*ii+1.)*ygap;
+				for(j=0;j<nx;j++)
+				{	mpos[k].x = -1.+(2.*j+1.)*xgap;
 					mpos[k].y = yval;
 					mpos[k].z = zval;
 					k++;
@@ -347,10 +414,10 @@ void ElementBase::MPMPoints(int numPerSide,Vector *mpos) const
 	}
 	else
 	{	// must be a square
-		for(i=0;i<numPerSide;i++)
-		{	yval = -1.+(2.*i+1.)*gap;
-			for(j=0;j<numPerSide;j++)
-			{	mpos[k].x = -1.+(2.*j+1.)*gap;
+		for(i=0;i<ny;i++)
+		{	yval = -1.+(2.*i+1.)*ygap;
+			for(j=0;j<nx;j++)
+			{	mpos[k].x = -1.+(2.*j+1.)*xgap;
 				mpos[k].y = yval;
 				mpos[k].z = 0.;
 				k++;
@@ -358,10 +425,8 @@ void ElementBase::MPMPoints(int numPerSide,Vector *mpos) const
 		}
 	}
     
-    // covert to x-y-z locations
-	double numPerElement = numPerSide*numPerSide;
-	if(fmobj->IsThreeD()) numPerElement*=numPerSide;
-    for(k=0;k<numPerElement;k++)
+    // covert to x-y-z locations using grid shape functions
+    for(k=0;k<numFound;k++)
     {	ShapeFunction(&mpos[k],FALSE,fxn,NULL,NULL,NULL);
 		ZeroVector(&mpos[k]);
         for(j=0;j<NumberNodes();j++)
@@ -380,6 +445,85 @@ void ElementBase::MPMPoints(int numPerSide,Vector *mpos) const
 void ElementBase::GimpShapeFunction(Vector *xi,int *nds,int getDeriv,double *sfxn,
 									double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
+}
+
+// get GIMP shape functions for tartan and optionally derivatives wrt x and y
+// assumed to be properly numbered regular array
+// input *xi position in element coordinate
+// Output number of nodes in nds[0] and nodes in nds[1] to nds[nds[0]]
+// Elements that support GIMP for tartan grids must override
+void ElementBase::TartanGimpShapeFunction(Vector *xi,int *nds,int getDeriv,double *sfxn,
+                                    double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
+{
+}
+
+// Get GIMP functions in one direction for Tartan Grid (return false if zero)
+// nxi is a node (-3, -1, 1, 3), xi is particle dimensionless (-1 to 1) in the element,
+//  lp is particle radius (in xi units), d0 and d2 are element sizes to left and
+//  right (in xi units)
+// Return Svp and dSvp is not NULL (dSvp needs division by element size that direction)
+bool ElementBase::Tartan1D(double nxi,double xi,double lp,double d0,double d2,double *Svp,double *dSvp) const
+{
+    if(nxi<-2.)
+    {   // an i-2 node
+        double arg = lp-xi-1.;
+        if(arg<=0.) return false;
+        double invLength = 1./(d0*lp);
+        *Svp = 0.25*arg*arg*invLength;
+        if(dSvp!=NULL) *dSvp = -arg*invLength;
+    }
+    else if(nxi>2.)
+    {   // an i+1 node
+        double arg = lp+xi-1.;
+        if(arg<=0.) return false;
+        double invLength = 1./(d2*lp);
+        *Svp = 0.25*arg*arg*invLength;
+        if(dSvp!=NULL) *dSvp = arg*invLength;
+    }
+    else if(nxi<0.)
+    {   // an i-1 mode
+        double xp = xi + 1.;
+        if(xp<lp)
+        {   double arg = lp-xp;
+            double argp = lp+xp;
+            double invLength = 1./(2.*d0*lp);
+            *Svp = 0.25*(d0*(8.*lp-argp*argp)-2.*arg*arg)*invLength;
+            if(dSvp!=NULL) *dSvp = (2.*arg-d0*argp)*invLength;
+       }
+        else if(xp<2.-lp)
+        {   *Svp = 1. - 0.5*xp;
+            if(dSvp!=NULL) *dSvp = -1.;
+        }
+        else
+        {   double arg = 2.+lp-xp;
+            double invLength = 1./(2.*lp);
+            *Svp = 0.25*arg*arg*invLength;
+            if(dSvp!=NULL) *dSvp = -arg*invLength;
+        }
+    }
+    else
+    {   // an i node
+        double xp = xi - 1.;
+        if(xp<-2.+lp)
+        {   double arg = 2.+lp+xp;
+            double invLength = 1./(2.*lp);
+            *Svp = 0.25*arg*arg*invLength;
+            if(dSvp!=NULL) *dSvp = arg*invLength;
+        }
+        else if(xp<-lp)
+        {   *Svp = 1. + 0.5*xp;
+            if(dSvp!=NULL) *dSvp = 1.;
+        }
+        else
+        {   double arg = lp-xp;
+            double argp = lp+xp;
+            double invLength = 1./(2.*d2*lp);
+            *Svp = 0.25*(d2*(8.*lp-arg*arg)-2.*argp*argp)*invLength;
+            if(dSvp!=NULL) *dSvp = (d2*arg-2.*argp)*invLength;
+        }
+    }
+    
+    return true;
 }
 
 // get GIMP shape functions and optionally derivatives wrt x and y
@@ -410,10 +554,17 @@ void ElementBase::BGimpShapeFunctionAS(Vector *xi,int *nds,int getDeriv,double *
 {
 }
 
+// get finite GIMP shape functions and optionally derivatives wrt x and y
+// Elements that support GIMP must override
+void ElementBase::FiniteGimpShapeFunction(int *nds,double *fn,double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr)  const
+{
+}
+
 // check if this GIMP element is on the edge of the grid
 // assumes a generated 2D structured grid
 bool ElementBase::OnTheEdge(void)
-{	if(useGimp == POINT_GIMP) return FALSE;
+{	// now adds extra element for POINT_GIMP too and treats edge as left the grid
+	//if(useGimp == POINT_GIMP) return FALSE;
 	return mpmgrid.EdgeElement2D(num);
 }
 
@@ -428,7 +579,79 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 {
 	int i,j,numnds;
 	CPDIDomain **cpdi = mpmptr->GetCPDIInfo();
+
+//#define FAST_CPDI
+#ifdef FAST_CPDI
+	// For grid shape functions having non values
+	// Array may need gridNiNodes*numCPDINodes elements
+	// Worst case (3D/splines on grid) is 8*27 = 216
+#ifdef CONST_ARRAYS
+	int storenodes[217];
+	double cfn[27];
+	int cnds[27];
+#else
+	int storenodes[numCPDINodes*gridNiNodes+1];
+	double cfn[gridNiNodes + 1];
+	int cnds[gridNiNodes + 1];
+#endif
     
+	// loop over all possible nodes
+    int ind = 0;
+    storenodes[0] = 0; // just in case
+	for(i = 0; i<numCPDINodes; i++)
+    {	// get nodes
+		ElementBase *elem = theElements[cpdi[i]->inElem];
+		elem->GetShapeFunctionsForTractions(cfn, cnds, &cpdi[i]->ncpos);
+		numnds = cnds[0];
+		for(j = 1; j <= numnds; j++)
+        {   if (cfn[j] < 1e-15) continue; // don't count this node if too small
+            
+			// loop backwards to see if this node was visited before
+            int thisnode = cnds[j];
+			bool add_new = true;
+			for(int look = ind; look > 0; look--)
+            {   // found it, increment, and then move on
+				if(thisnode == storenodes[look])
+                {   fn[look] += cpdi[i]->ws*cfn[j];
+					if(xDeriv != NULL)
+                    {   xDeriv[look] += cpdi[i]->wg.x*cfn[j];
+						yDeriv[look] += cpdi[i]->wg.y*cfn[j];
+						zDeriv[look] += cpdi[i]->wg.z*cfn[j];
+					}
+					add_new = false; 
+					break;
+				}
+			}
+            
+			// if didn't find it, add to the list, and initialize
+			if(add_new)
+            {   ind++;
+				storenodes[ind] = thisnode;
+				fn[ind] = cpdi[i]->ws*cfn[j];
+				nds[ind] = thisnode;
+				if(xDeriv != NULL)
+                {   xDeriv[ind] = cpdi[i]->wg.x*cfn[j];
+					yDeriv[ind] = cpdi[i]->wg.y*cfn[j];
+					zDeriv[ind] = cpdi[i]->wg.z*cfn[j];
+				}
+			}
+		}
+	}
+    
+	// max sure we don't have too many nodes
+	if(ind >= maxShapeNodes)
+    {
+#pragma omp critical (output)
+		{   cout << "# Found " << ind - 1 << " nodes; only room for "
+                        << maxShapeNodes << " nodes." << endl;
+            throw CommonException("Too many CPDI nodes found; increase maxShapeNodes in source code by at least number of remaining nodes", "ElementBase::GetCPDIFunctions");
+		}
+	}
+    
+    // return count of found nodes
+	return ind;
+	
+#else
 	// For grid shape functions having non values
 	// Array may need gridNiNodes*numCPDINodes elements
 	// Worst case (3D/splines on grid) is 8*27 = 216
@@ -525,8 +748,28 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 	
 	// remove last one if it was too small
 	if(fn[count]<=1.e-10) count--;
+
+	/*
+#pragma omp critical (output)
+	{	double fsum = 0.,xdsum=0.,ydsum=0.,zdsum=0.;
+		cout << "CPDI Shape functions:" << endl;
+		for(i=1;i<=count;i++)
+		{	cout << "# node = " << nds[i] << ",fn = " << fn[i];
+			fsum += fn[i];
+			if(xDeriv!=NULL)
+			{	cout << ", xDeriv = " << xDeriv[i] << ", yDeriv = " << xDeriv[i] << ", zDeriz = " << zDeriv[i];
+				xdsum += xDeriv[i];
+				ydsum += yDeriv[i];
+				zdsum += zDeriv[i];
+			}
+			cout << endl;
+		}
+		cout << "   partitions: " << fsum << "," << xdsum << "," << ydsum << "," << zdsum << endl;
+	}
+	*/
 	
 	return count;
+#endif
 }
 
 #pragma mark ElementBase: MPM Only Methods
@@ -633,7 +876,7 @@ int ElementBase::NextNode(int gridNode)
 }
 
 // for structured grid, return 0-terminated list of neighbors
-void ElementBase::GetListOfNeighbors(int *theList) { mpmgrid.ListOfNeighbors2D(num,theList); }
+void ElementBase::GetListOfNeighbors(int *theList) const { mpmgrid.ListOfNeighbors2D(num,theList); }
 
 // If needed, create the neighbors array (only done for 2D with cracks)
 // throws std::bad_alloc
@@ -745,7 +988,7 @@ void ElementBase::InitializeCPDI(bool isThreeD)
     if(isThreeD)
 	{	numCPDINodes = 8;
         if(useGimp == QUADRATIC_CPDI)
-        {	throw CommonException("qCPDI is not yet implemented for 3D (use lCPDI or B2CPDI instead).","ElementBase::InitializeCPDI");
+        {	throw CommonException("qCPDI is not yet implemented for 3D; use lCPDI or B2CPDI instead.","ElementBase::InitializeCPDI");
         }
     }
     else
@@ -770,6 +1013,9 @@ int ElementBase::GetShapeFunctionOrder(void)
 	// rest are lineat
 	return 1;
 }
+
+// return true if CPDI method, false is POINT_GIMP or any GIMP
+bool ElementBase::UsingCPDIMethod(void) { return useGimp>=LINEAR_CPDI; }
 
 
 

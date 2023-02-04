@@ -97,6 +97,9 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 	// variables for multimaterial conduction calculations
 	typedef struct {
 		double gTValue;		  // material transport value
+							  // remove next line if #ifdef USE_GTVALUEREL is removed
+		double gTValueRel;	  // to handle diffusion with variable csat (c/csat actual)
+		double gTRelValue;	  // to handle diffusion with variable csat (csat relative)
 		double gVCT;		  // transport capacity
 		double gQ;			  // transport velocity
 		double gTstar;		  // for XPIC
@@ -104,6 +107,14 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 		double gTnext;		  // for XPIC
 		bool gFirstBC;	  // flag for first BC on a node
 	} TransportField;
+
+	// For diffusion calculations
+	typedef struct {
+		double conc;
+		double prevConc;
+		Vector grad;
+		double bufferSource;
+	} DiffusionInfo;
 
 	// For residual strains in constitutive laws
 	typedef struct {
@@ -127,6 +138,16 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 		double particleAlpha;
 		int m;					// m>1 FMPM,m=0 FLIP,m<0 XPIC
 	} GridToParticleExtrap;
+
+	// For Finite Gimp,each particle saves a list of elements
+	// also the moments of the intersection
+	typedef struct {
+		int *InTheseElements;
+		double *moment_0;
+		double *moment_x;
+		double *moment_y;
+		double *moment_xy;
+	} FiniteGIMPInfo;
 
 #else
 	// tensor (2D and axisymmetric and plane strain)
@@ -210,18 +231,31 @@ int CIstrcmp(const char *, const char *);
 void GetFileExtension(const char *,char *,int);
 char *MakeDOSPath(char *);
 
+void dout(const char* fmt...);
+void doutCritical(const char* fmt...);
+void doutMM(const char* fmt...);
+void doutMMCritical(const char* fmt...);
+
 #ifdef MPM_CODE
 TensorAntisym *ZeroTensorAntisym(TensorAntisym *);
 #endif
 
+void InitRandom(unsigned int);
+long RandomLong(long,long);
+double RandomRange(double,double);
+double Random(void);
 double NormalCDFInverse(double p);
 double RationalApproximation(double t);
 bool RealQuadraticRoots(double,double,double,double &,double &);
+double SmoothStepRange(double,double,double,int,int);
+double SmoothStep(double,int,int);
 
 #ifdef MPM_CODE
 double gsl_sf_lambert_W0(double x);
 double gsl_sf_lambert_Wm1(double x);
 #endif
+
+double gamma_fxn(double z);
 
 #include "System/CommonAnalysis.hpp"
 #include "System/LinkedObject.hpp"

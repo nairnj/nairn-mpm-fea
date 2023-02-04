@@ -129,6 +129,7 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener, J
 				double approach;
 				for(i=1;i<resDoc.mpmPoints.size();i++)
 				{	mpt=resDoc.mpmPoints.get(i);
+					if(mpt.inReservoir()) continue;
 					approach=pt.distanceSq(mpt.x,mpt.y);
 					if(approach<distance)
 					{   distance=approach;
@@ -165,7 +166,7 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener, J
 	}
 	
 	public void setZunits()
-	{	String newUnits = PlotQuantity.plotUnits(resDoc.docCtrl.controls.getPlotComponent(-1),resDoc);
+	{	String newUnits = PlotQuantity.plotUnits(resDoc.docCtrl.controls.getPlotComponent(-1,false,null),resDoc);
 		if(newUnits.length()>0)
 			zunits = new String(" "+newUnits);
 		else

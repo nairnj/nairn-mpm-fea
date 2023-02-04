@@ -75,7 +75,7 @@ class CrackVelocityField
 		virtual void AddFtotTask3(int,Vector *);
 		virtual void CopyGridForces(NodalPoint *);
 		virtual void AddFtotSpreadTask3(Vector *) = 0;
-		virtual void AddGravityAndBodyForceTask3(Vector *,double,double) = 0;
+		virtual void AddGravityAndBodyForceTask3(Vector *) = 0;
 #ifdef RESTART_OPTION
         virtual bool IsTravelTooMuch(double,double) const = 0;
 #endif
@@ -152,8 +152,8 @@ class CrackVelocityField
 		static bool ActiveNonrigidField(CrackVelocityField *);
 		static bool ActiveNonrigidField(CrackVelocityField *,int);
 		static CrackVelocityField *CreateCrackVelocityField(int,short,int);
-	
-	protected:
+
+    protected:
 		// variables (changed in MPM time step)
 		int fieldNum;				// field number [0] to [3]
 		int numberPoints;			// total number of materials points in this field/field [0] changed to sum of all in task 8

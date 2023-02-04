@@ -22,6 +22,7 @@ public class CrackSegment
 	public short tractionMaterial;
 	public double[] xpos;
 	public double[] ypos;
+	public double[] zpos;
 	public double J1,J2;
 	public double KI,KII;
 	public int czmHasDisp;
@@ -33,6 +34,7 @@ public class CrackSegment
 	{	inElem=new int[4];
 		xpos=new double[4];
 		ypos=new double[4];
+		zpos=new double[4];
 		tractionData = null;
 	}
 	
@@ -40,7 +42,7 @@ public class CrackSegment
 	// read record from and archive file into this material point
 	//---------------------------------------------------------------------
 	
-	public void readRecord(ByteBuffer bb,char[] crackOrder,JNUnits units)
+	public void readRecord(ByteBuffer bb,char[] crackOrder,JNUnits units,boolean has3D)
 	{	// required elements
 		inElem[PLANE_POS]=bb.getInt()-1;			// in element number (zero based)
 		bb.position(bb.position()+8);				// skip empty double
@@ -50,20 +52,24 @@ public class CrackSegment
 		// position in length units
 		xpos[PLANE_POS]=bb.getDouble()*units.lengthScale();
 		ypos[PLANE_POS]=bb.getDouble()*units.lengthScale();
+		if(has3D) zpos[PLANE_POS]=bb.getDouble()*units.lengthScale();
 		
 		// original position
 		xpos[ORIG_POS]=bb.getDouble()*units.lengthScale();
 		ypos[ORIG_POS]=bb.getDouble()*units.lengthScale();
+		if(has3D) zpos[ORIG_POS]=bb.getDouble()*units.lengthScale();
 		
 		// above the crack
 		inElem[ABOVE_POS]=bb.getInt();
 		xpos[ABOVE_POS]=bb.getDouble()*units.lengthScale();
 		ypos[ABOVE_POS]=bb.getDouble()*units.lengthScale();
+		if(has3D) zpos[ABOVE_POS]=bb.getDouble()*units.lengthScale();
 		
 		// above the crack
 		inElem[BELOW_POS]=bb.getInt();
 		xpos[BELOW_POS]=bb.getDouble()*units.lengthScale();
 		ypos[BELOW_POS]=bb.getDouble()*units.lengthScale();
+		if(has3D) zpos[BELOW_POS]=bb.getDouble()*units.lengthScale();
 		
 		// J1 and J2 in J/m^2
 		if(crackOrder[ReadArchive.ARCH_JIntegral]=='Y')

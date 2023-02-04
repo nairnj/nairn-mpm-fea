@@ -17,6 +17,7 @@
 #include "Patches/GhostNode.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "NairnMPM_Class/Reservoir.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Exceptions/CommonException.hpp"
@@ -162,7 +163,7 @@ void GridPatch::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,
 	ghosts[i]->XPICSupport(xpicCalculation,xpicOption,real,timestep,m,k,vsign);
 }
 
-// zero gTnext on ghost nodes (only used in TRANSPORT_ONLY mode)
+// zero gTnext on ghost nodes
 void GridPatch::InitializeForXPICTransport(TransportTask *nextTransport,int xpicOption)
 {	for(int i=0;i<numGhosts;i++)
 		ghosts[i]->InitializeForXPICTransport(nextTransport,xpicOption);
@@ -229,10 +230,16 @@ bool GridPatch::AddMovingParticle(MPMBase *mptr,GridPatch *newPatch,MPMBase *pre
 void GridPatch::MoveParticlesToNewPatches(void)
 {	// move if any need to be moved
 	while(lastToMove!=NULL)
-	{	// move it now
-		RemoveParticleAfter(lastToMove->movingMptr,lastToMove->previousMptr);
+	{	// move to new one or delete if new one is NULL
 		GridPatch *patch = (GridPatch *)lastToMove->newPatch;
-		patch->AddParticle(lastToMove->movingMptr);
+		if(patch!=NULL)
+		{	// remove from previous patch
+			RemoveParticleAfter(lastToMove->movingMptr,lastToMove->previousMptr);
+			// add to new one
+			patch->AddParticle(lastToMove->movingMptr);
+		}
+		else
+			mpmReservoir->DeleteParticle(lastToMove->movingMptr);
 		
 		// find next one and delete old one
 		MovingData *nextToMove = (MovingData *)lastToMove->previousMoveData;
@@ -243,13 +250,15 @@ void GridPatch::MoveParticlesToNewPatches(void)
 	}
 }
 
-// add particle to this patch - it is put at the beginning
+// add particle to this patch by
+//    1. Set is next particle the previous first of that type
+//    2. Set first of this type to the added particle
 void GridPatch::AddParticle(MPMBase *mptr)
 {
 	const MaterialBase *matref = theMaterials[mptr->MatID()];		// material object for this particle
 	
 	if(matref->IsRigid())
-	{	// if it BC, contact, or block
+	{	// sf it BC, contact, or block
 		if(matref->IsRigidBC())
 		{	mptr->SetNextObject(firstRBC);
 			firstRBC = mptr;
@@ -269,16 +278,36 @@ void GridPatch::AddParticle(MPMBase *mptr)
 	}
 }
 
-// add particle to this patch - it is put at the beginning
-// in block 0 to 2 (NR, RC, RBC)
+// Remove the particle mptr by finding prevPtr and then use standard remove code
+// If you know the previous particle, calling RemoveParticleAfter() is more efficient
+void GridPatch::RemoveParticle(MPMBase *mpmptr)
+{
+	for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_BC;block++)
+	{	// get first material point in this block
+		MPMBase *mptr = GetFirstBlockPointer(block);
+		MPMBase *prevMptr = NULL;
+		while(mptr!=NULL)
+		{	if(mptr==mpmptr)
+			{	RemoveParticleAfter(mpmptr,prevMptr);
+				return;
+			}
+			prevMptr = mptr;
+			mptr = (MPMBase *)prevMptr->GetNextObject();
+		}
+	}
+}
+
+// Remove the particle mptr from this patch that is after prevMptr
 void GridPatch::RemoveParticleAfter(MPMBase *mptr,MPMBase *prevMptr)
 {
 	// material point after the one being removed (might be NULL)
 	MPMBase *nextMptr = (MPMBase *)mptr->GetNextObject();
 	
-	// removing the first particle, but have to verify it is still first
+	// If prevPtr is NULL, then the one being removed is the first of
+	// a certain type. Need to reset the first pointer
 	if(prevMptr==NULL)
-	{	const MaterialBase *matref = theMaterials[mptr->MatID()];		// material object for this particle
+	{	// Check material type of particle being removed
+		const MaterialBase *matref = theMaterials[mptr->MatID()];		// material object for this particle
 		if(matref->IsRigid())
 		{	if(matref->IsRigidBC())
 			{	if(mptr == firstRBC)
@@ -314,7 +343,9 @@ void GridPatch::RemoveParticleAfter(MPMBase *mptr,MPMBase *prevMptr)
 			prevMptr = firstNR;
 		}
 		
-		// step to previous first particle to finds it new previous point
+		// I think above code always exits, if not, this finds pointer in appropriate list
+		// prevPtr is now first of one class
+		// step to previous first particle to find its new previous point
 		MPMBase *currentMptr = (MPMBase *)prevMptr->GetNextObject();
 		while(currentMptr != mptr)
 		{	prevMptr = currentMptr;

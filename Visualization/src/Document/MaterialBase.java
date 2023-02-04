@@ -6,6 +6,7 @@
 	Copyright 2007 RSAC Software. All rights reserved.
 *******************************************************************/
 
+import java.awt.Color;
 import java.util.*;
 
 public class MaterialBase
@@ -63,25 +64,49 @@ public class MaterialBase
 	protected int type;
 	protected String name;
 	protected double rho;
+	protected Color matClr;
 	
 	// initialize
 	MaterialBase(String matName,int matType)
 	{	name=matName;
 		type=matType;
+		matClr = null;
 	}
 	
 	// decode data
 	public void decodeData(Scanner s)
 	{	// scan to end
 		while(s.hasNext())
-		{	Scanner sline=new Scanner(s.next());
+		{	String matLine = s.next();
+			Scanner sline=new Scanner(matLine);
 			sline.useLocale(Locale.US);
 			if(!sline.hasNext())
 			{	sline.close();
 				break;
 			}
-			if(sline.next().equals("rho="))
+			String prop = sline.next();
+			if(prop.equals("rho="))
 				rho=sline.nextDouble();
+			else if(prop.equals("rho"))
+			{	if(sline.hasNext())
+				{	prop = sline.next();
+					if(sline.hasNext())
+						rho=sline.nextDouble();
+				}
+			}
+			else if(prop.equals("color="))
+			{	String [] cstr = matLine.substring(7).split(", ");
+				float red=0.f,green=0.f,blue=0.f,alpha=1.f;
+				if(cstr.length>0)
+					red = Float.parseFloat(cstr[0]);
+				if(cstr.length>1)
+					green = Float.parseFloat(cstr[1]);
+				if(cstr.length>2)
+					blue = Float.parseFloat(cstr[2]);
+				if(cstr.length>3)
+					alpha = Float.parseFloat(cstr[3]);
+				matClr = new Color(red,green,blue,alpha);
+			}
 			sline.close();
 		}
 	}

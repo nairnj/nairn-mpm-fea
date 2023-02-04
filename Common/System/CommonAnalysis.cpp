@@ -16,16 +16,16 @@
 #include "System/UnitsController.hpp"
 
 // reeading globals
-static bool doSchema=TRUE;
-static bool schemaFullChecking=FALSE;
+static bool doSchema=true;
+static bool schemaFullChecking=false;
 extern const char *svninfo;
 
 #pragma mark CommonAnalysis: Constructors and Destructor
 
 CommonAnalysis::CommonAnalysis()
 {
-	validate=FALSE;				// validate with DTD file
-	reverseBytes=FALSE;			// reverse bytes in archived files
+	validate=false;				// validate with DTD file
+	reverseBytes=false;			// reverse bytes in archived files
 	description=NULL;
 	SetDescription("\nNo Description");
 	
@@ -44,7 +44,7 @@ CommonAnalysis::~CommonAnalysis()
 
 #pragma mark CommonAnalysis: Running Analysis
 
-// Start comuptational mechanics calculations
+// Start computational mechanics calculations
 void CommonAnalysis::StartAnalysis(bool abort)
 {
 	// start output file
@@ -58,7 +58,6 @@ void CommonAnalysis::StartAnalysis(bool abort)
 	
 	// run the computational mechancis
 	CMAnalysis(abort);
-	
 }
 
 // start results file before proceeding to analysis
@@ -84,8 +83,8 @@ void CommonAnalysis::StartResultsOutput(void)
     PrintSection("ANALYSIS DESCRIPTION");
     cout << GetDescription() << endl;
 
-	/*	NairnMPM: Current Flags in Use
-	 *   dflag[3]==xxyyzz - custom patch method for parallel (ignored if xx*yy*zz != numProcs)
+	/*	NairnMPM/NairnFEA: Current Flags in Use
+	 *	 none
 	 *
 	 */
 	int i;
@@ -109,18 +108,19 @@ void CommonAnalysis::StartResultsOutput(void)
     //---------------------------------------------------
     // Nodes
 	char hline[200];
+	size_t hsize=200;
     if(nnodes==0 || nelems<0)
         throw CommonException("No nodes or elements were defined in the input file.","CommonAnalysis::StartResultsOutput");
-    sprintf(hline,"Nodes: %d       Elements: %d\n",nnodes,nelems);
+    snprintf(hline,hsize,"Nodes: %d       Elements: %d\n",nnodes,nelems);
     cout << hline;
-    sprintf(hline,"DOF per node: %d     ",nfree);
+    snprintf(hline,hsize,"DOF per node: %d     ",nfree);
     cout << hline;
 	GetAnalysisType(np,hline);
 	cout << hline << endl << endl;
 	
     //---------------------------------------------------
     // Nodes
-	sprintf(hline,"NODAL POINT COORDINATES (in %s)",UnitsController::Label(CULENGTH_UNITS));
+	snprintf(hline,hsize,"NODAL POINT COORDINATES (in %s)",UnitsController::Label(CULENGTH_UNITS));
     PrintSection(hline);
 	ArchiveNodalPoints(np);
 
@@ -133,10 +133,10 @@ void CommonAnalysis::StartResultsOutput(void)
     // Defined Materials
 	const char *err;
 #ifdef MPM_CODE
-	sprintf(hline,"DEFINED MATERIALS\n       (Note: moduli and stresses in %s, thermal exp. coeffs in ppm/K)\n       (      density in %s)",
+	snprintf(hline,hsize,"DEFINED MATERIALS\n       (Note: moduli and stresses in %s, thermal exp. coeffs in ppm/K)\n       (      density in %s)",
 			UnitsController::Label(PRESSURE_UNITS),UnitsController::Label(DENSITY_UNITS));
 #else
-	sprintf(hline,"DEFINED MATERIALS\n       (Note: moduli in %s, thermal exp. coeffs in ppm/K)",
+	snprintf(hline,hsize,"DEFINED MATERIALS\n       (Note: moduli in %s, thermal exp. coeffs in ppm/K)",
 			UnitsController::Label(PRESSURE_UNITS));
 #endif
     PrintSection(hline);
@@ -186,16 +186,20 @@ int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
 		// Create a SAX parser object.
 		parser=XMLReaderFactory::createXMLReader();
 		
-		// Validation (first means yes or no, second means to skip if no DTD, even if yes)
+		// Validation (first means yes or no, second means to skip if no DTD path provided, even if yes)
+        //              (note that providing a bad path causes an error)
 		parser->setFeature(XMLString::transcode("http://xml.org/sax/features/validation"),GetValidate());
 		parser->setFeature(XMLString::transcode("http://apache.org/xml/features/validation/dynamic"),true);
 		if(!GetValidate())
-		{	parser->setFeature(XMLString::transcode("http://apache.org/xml/features/nonvalidating/load-external-dtd"),
-									GetValidate());
+		{   // if not validating, turn this on. If is always on when validating)
+            parser->setFeature(XMLString::transcode("http://apache.org/xml/features/nonvalidating/load-external-dtd"),
+									false);
 		}
 
-		// default settings
+		// XML schema validation
 		parser->setFeature(XMLString::transcode("http://apache.org/xml/features/validation/schema"),doSchema);
+        
+        // Full schema grammar constraint checking
 		parser->setFeature(XMLString::transcode("http://apache.org/xml/features/validation/schema-full-checking"),schemaFullChecking);
     }
 
@@ -260,7 +264,7 @@ int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
     return noErr;
 }
 
-// print conde version to standard output
+// print code version to standard output
 void CommonAnalysis::CoutCodeVersion(void)
 {
 	cout << CodeName() << " " << version << "." << subversion << " build " << buildnumber << endl;
@@ -287,7 +291,7 @@ double CommonAnalysis::CPUTime(void)
 #pragma mark CommonAnalysis: accessors
 
 // validation option
-void CommonAnalysis::SetValidate(bool setting) { validate=setting; }
+void CommonAnalysis::SetValidate(bool setting) { validate = setting; }
 bool CommonAnalysis::GetValidate(void) { return validate; }
 
 // reverse bytes (MPM only)
@@ -329,7 +333,7 @@ void ThrowSAXException(const char *msg)
 // throws SAXException()
 void ThrowSAXException(const char *frmt,const char *msg)
 {	char eline[500];
-	sprintf(eline,frmt,msg);
+	snprintf(eline,200,frmt,msg);
 	throw SAXException(eline);
 }
 

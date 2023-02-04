@@ -34,7 +34,7 @@ class HardeningLawBase
 		virtual int HistoryDoublesNeeded(void) const;
         virtual void InitPlasticHistoryData(double *) const;
 		virtual double GetHistory(int,char *) const;
-    
+
         // load properties
         virtual int SizeOfHardeningProps(void) const;
 		virtual void *GetCopyOfHardeningProps(MPMBase *,int,void *,int);

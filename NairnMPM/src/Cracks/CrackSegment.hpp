@@ -44,7 +44,7 @@ class CrackSegment
 		void FindInitialElement(void);
 	
         // methods
-        void FillArchive(char *,int);
+        void FillArchive(char *,int,bool);
         int FindElement(void);
         int FindElement(short);
         virtual void MovePosition(void);

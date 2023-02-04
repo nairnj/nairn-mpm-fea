@@ -39,7 +39,8 @@ class ClampedNeohookean : public Neohookean
 		// history data
 		virtual int SizeOfHistoryData(void) const;
 		virtual char *InitHistoryData(char *,MPMBase *);
-   		virtual int NumberOfHistoryDoubles(void) const;
+		virtual void ResetHistoryData(char *,MPMBase *);
+		virtual int NumberOfHistoryDoubles(void) const;
 
 		// methods
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;

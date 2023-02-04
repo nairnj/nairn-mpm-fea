@@ -42,6 +42,7 @@ typedef struct
 	int rowBytes;					// bytes in row (i.e., width * bytes per pixel)
 	int version;					// file version
     int topDown;                    // 1 if file stored top down
+	int dataType;					// type bytes (0 to 255) or floats (any range)
 } XYInfoHeader;
 
 typedef struct
@@ -62,7 +63,7 @@ enum { NO_BLOCK=0,HEADER,MPMHEADER,NODELIST,MESHBLOCK,POINTSBLOCK,
 		GRIDBCHEADER,PARTICLEBCHEADER,BMPBLOCK,INTENSITYBLOCK,
 		LOADEDNODES,LOADEDFACES,KEYPOINTBLOCK,PATHBLOCK,AREABLOCK,MATREGIONBLOCK,
 		CRACKMESHBLOCK,CRACKNODELIST,CRACKELEMENTLIST,
-		GRIDBLOCK=1000,BODYPART,BCSHAPE,BODY_SHAPE,MEMBRANEPART,
+		GRIDBLOCK=1000,BODYPART,BCSHAPE,BODY_SHAPE,MEMBRANEPART,PATCHGRID,
         MUST_BE_NO_BLOCK=2000 };
 
 // input IDs
@@ -79,7 +80,8 @@ enum { ANY_DIM=0,MUST_BE_2D,MUST_BE_3D };
 
 // data type for input files
 // For image or other file input
-enum { BYTE_DATA=0,SHORT_DATA,INT_DATA,FLOAT_DATA,DOUBLE_DATA };
+// First are binary, TEXT is delimited by tab, comma or space (one type throughout file)
+enum { BYTE_DATA=0,SHORT_DATA,INT_DATA,FLOAT_DATA,DOUBLE_DATA,TEXT_DELIMITED };
 
 class CommonReadHandler : public DefaultHandler
 {
@@ -128,13 +130,13 @@ class CommonReadHandler : public DefaultHandler
 	
 		// class methods
 		static bool GetFreeFormatNumbers(char *,vector<double> &,double);
-		static void *ReadXYFile(char *,XYInfoHeader &,int,bool);
+		static void *ReadXYFile(char *,XYInfoHeader &,bool,bool);
 		static char *XYFileError(const char *,const char *);
 		static const char *DecodeBMPWidthAndHeight(XYInfoHeader,double &,double &,double &,Vector &,bool);
 		static bool MapDomainToImage(XYInfoHeader,Vector,Vector,Vector,Vector,double,double,DomainMap &);
 		static int BMPIndex(double,int);
 		static BMPLevel *FindBMPLevel(BMPLevel *,DomainMap,unsigned char **);
-		static double FindAverageValue(DomainMap,unsigned char **);
+		static double FindAverageValue(DomainMap,unsigned char **,int,bool &);
 	
     protected:
         int block,meshType;

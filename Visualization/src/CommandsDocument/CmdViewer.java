@@ -83,6 +83,7 @@ public class CmdViewer extends JNCmdTextDocument
 	private String extrapolateRigid;
 	private String ptsPerElement;
 	private String diffusion;
+	private StringBuffer otherDiffusion;
 	private String conduction;
 	private String gravity;
 	private StringBuffer mpmOrder;
@@ -260,7 +261,7 @@ public class CmdViewer extends JNCmdTextDocument
 		// only allowed if the commands have been saved
 		if(getFile() == null)
 		{	JNApplication.appBeep();
-			JOptionPane.showMessageDialog(this,
+			JNUtilities.showMessage(this,
 					"The input commands have to be saved to a file before running an analysis.");
 			return;
 		}
@@ -296,7 +297,7 @@ public class CmdViewer extends JNCmdTextDocument
 		soutConsole.clear();
 		int offset = cmdField.getCommands().indexOf("<?xml ");
 		if(offset < 0 || offset > 10)
-		{ // interpret commands
+		{	// interpret commands
 			useBackground = doBackground;
 			openMesh = runType;
 			// call in super class initiates command interpretation
@@ -308,7 +309,7 @@ public class CmdViewer extends JNCmdTextDocument
 			return;
 		}
 		else
-		{ // look for processors command in XML commands
+		{	// look for processors command in XML commands
 			processors = 1;
 			offset = cmdField.getCommands().indexOf("<!--processors ");
 			if(offset > 0)
@@ -396,6 +397,7 @@ public class CmdViewer extends JNCmdTextDocument
 		extrapolateRigid = null;
 		ptsPerElement = null;
 		diffusion = null;
+		otherDiffusion = new StringBuffer();
 		conduction = null;
 		gravity = null;
 		MMLump = -1;
@@ -409,7 +411,9 @@ public class CmdViewer extends JNCmdTextDocument
 		customTasks = new StringBuffer("");
 
 		runningScript = false;
+		// dictionary of script object variables
 		objs = new HashMap<String, Object>(10);
+		objs.put("nfmapp",JNApplication.main);
 		scriptParams = null;
 
 		// is it called from a script?
@@ -442,13 +446,16 @@ public class CmdViewer extends JNCmdTextDocument
 
 			// but first see if language control command
 			// (which means cannot match any material property)
-			try
-			{
-				super.doCommand(theCmd, args);
+			if(theCmd.toLowerCase().equals("color"))
+			{	mats.doMaterialProperty(theCmd, args, this);
 			}
-			catch (Exception e)
-			{
-				mats.doMaterialProperty(theCmd, args, this);
+			else
+			{	try
+				{	super.doCommand(theCmd, args);
+				}
+				catch (Exception e)
+				{	mats.doMaterialProperty(theCmd, args, this);
+				}
 			}
 		}
 
@@ -725,6 +732,9 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("region"))
 			regions.StartRegion(args);
 
+		else if(theCmd.equals("fill"))
+			regions.FillReservoir(args);
+
 		else if(theCmd.equals("bmpregion"))
 			regions.StartBMPRegion(args);
 
@@ -790,10 +800,10 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("gridthickness"))
 			gridinfo.doGridThickness(args);
 		
-		else if(theCmd.equals("gridtartanborder"))
+		else if(theCmd.equals("tartanborder"))
 			gridinfo.doTartanBorder(args);
 		
-		else if(theCmd.equals("gridtartanareaofinterest"))
+		else if(theCmd.equals("tartanaoi"))
 			gridinfo.doTartanAOI(args); 
 
 		else if(theCmd.equals("stressfreetemp"))
@@ -882,6 +892,15 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("newcrack"))
 			cracks.StartCrack(args);
 
+		else if(theCmd.equals("crackkeypoint"))
+			cracks.AddCrackKeypoint(args);
+
+		else if(theCmd.equals("crackfacet"))
+			cracks.AddCrackFacet(args,false);
+
+		else if(theCmd.equals("crackplane"))
+			cracks.AddCrackFacet(args,true);
+
 		else if(theCmd.equals("growcrack"))
 			cracks.GrowCrack(args, 0);
 
@@ -922,22 +941,93 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 
 		else
-		{ //System.out.println(args);
+		{	//System.out.println(args);
 			super.doCommand(theCmd, args);
 		}
 	}
 
-	// handle commands
+	// Handle all script commands
+	//  1. heck direct commands (in alphabetical order) as "commmand arg1,arg2,..."
+	//  2. If not found look for object command "obj[.#]].command arg1,arg2,..."
+	//		and if found pass to doObjectCommand()
+	//  3. If not handle pass to super.doDommand()
 	public void doScriptCommand(String theCmd,ArrayList<String> args) throws Exception
 	{
-		if(theCmd.equals("open"))
-		{	// Open objName,path (omit path for dialog, can be relative path)
-			if(args.size() < 2)
-				throw new Exception(
-						"The first argument in an 'Open' command must provide an object variable.\n" + args);
-			String objectVar = args.get(1);
-			if(!validObjectName(objectVar))
-				throw new Exception("The first argument in an 'Open' command must be valid object name.\n" + args);
+		// ----------- CreateDictionary objVar
+		if(theCmd.equals("createdictionary"))
+		{	// first parameter must be an object name
+			String objectVar = getObjVarName(1,args,"CreateDictionary",true);
+			
+			// create list and add to object variables
+			ISDictType dict = new ISDictType();
+			objs.put(objectVar,dict);
+		}
+
+		// ----------- CreateList objVar,item1,item2,...
+		else if(theCmd.equals("createlist"))
+		{	// first parameter must be an object name
+			String objectVar = getObjVarName(1,args,"CreateList",true);
+			
+			// create list and add to object variables
+			ISListType list = new ISListType(null);
+			
+			// any more added as strings or objects
+			for(int i=2;i<args.size();i++)
+			{	String expr = readStringArg(args.get(i));
+				Object obj = scriptObjectForKey(expr);
+				if(obj!=null)
+				{	// add an object
+					list.gcis_addObject(obj);
+				}
+				else
+				{	// if not an object, just add the text
+					list.gcis_addObject(expr);
+				}
+			}
+			
+			// add list to object varibles
+			objs.put(objectVar,list);
+		}
+
+		// ---------- export path
+		// export script console to file by path or null
+		else if(theCmd.equals("export"))
+		{	File oneDoc = null;
+			if(args.size() > 1)
+			{	oneDoc = scriptPath(readStringArg(args.get(1)), args, false);
+			}
+			if(!exportOutput(oneDoc, null))
+				throw new Exception("The 'export' command failed.\n" + args);
+		}
+		
+		// ----------- GetObject (objName),(obj).[#i]
+		// set objName to and existing object
+		else if(theCmd.equals("getobject"))
+		{	// object name to return
+			String objectVar = getObjVarName(1,args,"GetObject",true);
+			
+			// second is dereferenced object variable name
+			if(args.size()<3)
+				throw new Exception("The GetObject needs two parameters.\n" + args);
+			String objVar = readStringArg(args.get(2));
+			Object objValue = findExistingObject(objVar);
+			
+			// set to found object or to none type
+			if(objValue!=null)
+			{	// set new variable to the object
+				objs.put(objectVar,objValue);
+			}
+			else
+			{	// set new variable to None object
+				objs.put(objectVar,new ISNoneType());
+			}
+		}
+		
+		// ---------- openfolder objName,path (omit path for dialog, can be relative path)
+		// path can be "_results_" or "_commands_" for front document of that type
+		else if(theCmd.equals("open"))
+		{	// object name to return
+			String objectVar = getObjVarName(1,args,"open",true);
 
 			// file by path or null or _results_ or _commands_
 			JNDocument currentDoc = NairnFEAMPMViz.main.frontDocument();
@@ -957,7 +1047,7 @@ public class CmdViewer extends JNCmdTextDocument
 						}
 					}
 					if(openedDoc==null)
-						throw new Exception("An 'Open' command found no such document.\n" + args);
+						throw new Exception("An 'Open' command found no such results document.\n" + args);
 					
 				}
 				else if(openArg.toLowerCase().equals("_commands_"))
@@ -971,7 +1061,7 @@ public class CmdViewer extends JNCmdTextDocument
 						}
 					}
 					if(openedDoc==null)
-						throw new Exception("An 'Open' command found no such document.\n" + args);
+						throw new Exception("An 'Open' command found no such commands document.\n" + args);
 					
 				}
 				else
@@ -1004,19 +1094,10 @@ public class CmdViewer extends JNCmdTextDocument
 			objs.put(objectVar, NairnFEAMPMViz.main.frontDocument());
 		}
 
+		// ---------- openfolder varName,title
 		else if(theCmd.equals("openfolder"))
-		{	// openFolder - string var name,title
-			if(args.size() < 2)
-			{	throw new Exception(
-						"The first argument in an 'OpenFolder' command must be a variable name.\n" + args);
-			}
-
-			String varName = args.get(1);
-			if(!JNExpression.validVariableName(varName))
-			{	throw new Exception(
-						"The first argument in an 'OpenFolder' command must be  a valid variable name.\n"
-								+ args);
-			}
+		{	// variable to return the path
+			String varName = getObjVarName(1,args,"openFolder",false);
 
 			// optional dialog title
 			String fldrTitle = "Select a folder";
@@ -1061,32 +1142,243 @@ public class CmdViewer extends JNCmdTextDocument
 			variablesStrs.put(varName, fldrPath);
 		}
 		
+		// ---------- userInput "#var",(title),(msg),(initial)
+		else if(theCmd.contentEquals("userinput"))
+		{	// variable to return the path
+			String varName = getObjVarName(1,args,"userinput",false);
+
+			// dialog box options
+			String dtitle = "";
+			if(args.size() > 2)
+			{	dtitle = readStringArg(args.get(2));
+			}
+			String prompt = "Enter some text";
+			if(args.size() > 3)
+			{	prompt = readStringArg(args.get(3));
+			}
+			String initText = "";
+			if(args.size() > 4)
+			{	initText = readStringArg(args.get(4));
+			}
+			String newExpr = (String)JOptionPane.showInputDialog(null,prompt,dtitle,
+					JOptionPane.PLAIN_MESSAGE,null,null,initText);
+			
+			if(newExpr!=null)
+			{	variablesStrs.put(varName+"[1]", "OK");
+				variablesStrs.put(varName+"[2]",newExpr);
+			}
+			else
+			{	variablesStrs.put(varName+"[1]", "Cancel");
+				variablesStrs.put(varName+"[2]","");
+			}
+			variablesStrs.put(varName+"[0]", "2");
+		}
+		
+		// ---------- object commands
+		// if no direct command found look for obj.[#i.]command format object command
 		else
 		{	// look for object command
 			String objCmd = args.get(0);
 			int dot = objCmd.indexOf(".");
 			if(dot > 0)
 			{	String objName = objCmd.substring(0, dot);
-				Object obj = objs.get(objName);
+				Object obj = scriptObjectForKey(objName);
 				if(obj != null)
-				{
-					doObjectCommand(obj, objCmd.substring(dot + 1).toLowerCase(), args);
+				{	doObjectCommand(obj, objCmd.substring(dot+1), args);
 					return;
 				}
 			}
 
+			// if not an object command, pass to super to handle it
 			// System.out.println(args);
 			super.doCommand(theCmd, args);
 		}
 	}
 
-	// handle commands to an object
+	// handle commands to object in obj
+	// theCmd is period delimit list of atoms
+	// args are the parameters to the command
 	public void doObjectCommand(Object obj,String theCmd,ArrayList<String> args) throws Exception
 	{
-		if(theCmd.equals("interpret"))
-		{	// interpret the commands (no arguments)
-			if(!obj.getClass().equals(CmdViewer.class))
-				throw new Exception("The 'interpret' command can only by used on commands documents.\n" + args);
+		// obj is object
+		// if obj is a list, the command may be #i.theCmd or just theCmd
+		
+		// will have 1 or 2
+		String [] atoms = theCmd.trim().split("[.]");
+		
+		// is there a list selector?
+		int i=0;
+		if(obj.getClass().equals(ISListType.class))
+		{	String nextAtom = grabAtom(atoms,i);
+			int index = decodeIndex(nextAtom);
+			if(index>=0)
+			{	if(index>=((ISListType)obj).count())
+					throw new Exception("Command targeting a list item has index that is out of bounds.");
+				// get list element, get rest as new command
+				obj = ((ISListType)obj).objectAtIndex(index);
+				i++;
+				theCmd = grabAtom(atoms,i);
+			}
+			else if(!ISListType.supportsCommand(nextAtom))
+			{	// [#i] was not a number AND obj.cmd is not a command for a list
+				throw new Exception("Command targeting a list must be followed by valid locator or list command");
+			}
+		}
+		
+		// Object command for obj is theCmd
+		// Possible commands follow in alphabetical order
+		theCmd = theCmd.toLowerCase();
+		
+		// ----------- addList item1,item2,...
+		if(theCmd.equals("addobject"))
+		{	if(!obj.getClass().equals(ISListType.class))
+				throw new Exception("The addObject command can only by used on lists.\n" + args);
+
+			ISListType list = (ISListType)obj;
+			
+			// any more added as strings or objects
+			for(i=1;i<args.size();i++)
+			{	String objVar = readStringArg(args.get(i));
+				Object objValue = findExistingObject(objVar);
+				if(objValue!=null)
+					list.gcis_addObject(objValue);
+			}
+		}
+
+		// ----------- addList item1,item2,...
+		else if(theCmd.equals("addstring"))
+		{	if(!obj.getClass().equals(ISListType.class))
+				throw new Exception("The addString command can only by used on lists.\n" + args);
+
+			ISListType list = (ISListType)obj;
+			
+			// any more added as strings or objects
+			for(i=1;i<args.size();i++)
+			{	String expr = readStringArg(args.get(i));
+				list.gcis_addObject(expr);
+			}
+		}
+		
+		// ---------- export path
+		// export to a file
+		else if(theCmd.equals("export"))
+		{	if(!obj.getClass().equals(CmdViewer.class))
+				throw new Exception("The export command can only by used on commands documents.\n" + args);
+
+			// file by path or null
+			File oneDoc = null;
+			if(args.size() > 1)
+			{	String fPath = readStringArg(args.get(1));
+				if(fPath.length() < 2)
+					throw new Exception("The export command has empty path name.\n" + args);
+				if(fPath.charAt(0) != '/' && fPath.charAt(1) != ':')
+					oneDoc = new File(getFile().getParent(), fPath);
+				else
+					oneDoc = new File(fPath);
+			}
+
+			if(!((CmdViewer) obj).exportOutput(oneDoc, null))
+				throw new Exception("The export command failed.\n" + args);
+		}
+		
+		// ---------- obj[#i].get ("#var" or objName)
+		else if(theCmd.equals("get"))
+		{   // get the object or variable name
+			if(args.size()<2)
+				throw new Exception("get command missing its variable or object name.\n"+args);
+			String objVar = readStringArg(args.get(1));
+
+			// if target object is a string or number extracted from list then done
+			if(obj.getClass().equals(String.class))
+			{	if(!JNExpression.validVariableName(objVar))
+				{	throw new Exception(
+						"First parameter in get command for a string must be a valid variable name.\n"+args);
+				}
+				variablesStrs.put(objVar,(String)obj);
+				return;
+			}
+			else if(obj.getClass().equals(Double.class))
+			{	if(!JNExpression.validVariableName(objVar))
+				{	throw new Exception(
+						"First parameter in get command for a number must be a valid variable name.\n"+args);
+				}
+				variablesStrs.put(objVar,JNUtilities.formatDouble(((Double)obj).doubleValue()));
+				return;
+			}
+
+			// rest are objects
+			if(!validObjectName(objVar))
+			{	throw new Exception(
+					"First parameter in get command for an object must be a valid object variable name.\n"+args);
+			}
+
+			// If not any more arguments, set that object variable to obj
+			if(args.size()==2)
+			{	// if no more arguments, set to "self"
+				objs.put(objVar,obj);
+				return;
+			}
+			
+			// look for object attribute of current object
+			// Only allow object attributes (to-many or to-one) and not properties
+			String attr = readStringArg(args.get(2));
+			Object objValue = null;
+			
+			// handle each object type here
+			if(obj.getClass().equals(DocViewer.class))
+				objValue = ((DocViewer)obj).gcis_getObjectAttribute(attr,this);
+			
+			else if(obj.getClass().equals(ISDictType.class))
+				objValue = ((ISDictType)obj).gcis_getObjectAttribute(attr,this);
+			
+			else if(obj.getClass().equals(NairnFEAMPMViz.class))
+				objValue = ((NairnFEAMPMViz)obj).gcis_getObjectAttribute(attr,this);
+
+			// set variable or error
+			if(objValue != null)
+				objs.put(objVar,objValue);
+			else
+			{	throw new Exception(
+					"Class "+obj.getClass().toString()+" does not have that object attributes.\n"+args);
+			}
+		}
+
+		// ----------- insertObject obj,index,...
+		else if(theCmd.equals("insertobject"))
+		{	if(!obj.getClass().equals(ISListType.class))
+				throw new Exception("The insertObject command can only by used on lists.\n" + args);
+			if(args.size()<3)
+				throw new Exception("The insertObject command needs object and insert location.\n" + args);
+
+			String objVar = readStringArg(args.get(1));
+			Object objValue = findExistingObject(objVar);
+			if(objValue==null)
+				throw new Exception("The insertObject command needs an existing.\n" + args);
+			int index = readIntArg(args.get(2));
+			if(!((ISListType)obj).gcis_insertObject(objValue,index))
+			{	throw new Exception("Insert index for a list is out of bounds.\n" + args);
+			}
+		}
+
+		// ----------- insertString expr,index,...
+		else if(theCmd.equals("insertstring"))
+		{	if(!obj.getClass().equals(ISListType.class))
+				throw new Exception("The insertString command can only by used on lists.\n" + args);
+			if(args.size()<3)
+				throw new Exception("The insertString command needs string and insert location.\n" + args);
+
+			String expr = readStringArg(args.get(1));
+			int index = readIntArg(args.get(2));
+			if(!((ISListType)obj).gcis_insertObject(expr,index))
+			{	throw new Exception("Insert index for a list is out of bounds.\n" + args);
+			}
+		}
+		
+		// ---------- interpret
+		// interpret commands, no arguments
+		else if(theCmd.equals("interpret"))
+		{	if(!obj.getClass().equals(CmdViewer.class))
+				throw new Exception("The interpret command can only by used on commands documents.\n" + args);
 
 			scriptParams = null;
 			((CmdViewer) obj).runNFMAnalysis(false, NFMAnalysis.INTERPRET_ONLY, this);
@@ -1103,18 +1395,60 @@ public class CmdViewer extends JNCmdTextDocument
 			}
 		}
 
+		// ---------- plottable (table)
+		// plot table of data in a new plot window
+		else if(theCmd.equals("plottable"))
+		{	// run obj,plottable data
+			if(!obj.getClass().equals(DocViewer.class))
+				throw new Exception("The plottable command can only by used on results documents.\n" + args);
+			
+			if(args.size() > 1)
+			{	String tableData = readStringArg(args.get(1));
+				XYPlotWindow plotWindow = new XYPlotWindow((DocViewer)obj);
+				plotWindow.plotPPTable(tableData);
+			}
+			else
+				throw new Exception("The plottable command had no data.\n" + args);
+		}
+
+		// -----------  remove index
+		else if(theCmd.equals("remove"))
+		{	if(!obj.getClass().equals(ISListType.class))
+				throw new Exception("The remove command can only by used on lists.\n" + args);
+			if(args.size()<2)
+				throw new Exception("The remove command needs an index to remove.\n" + args);
+
+			int index = readIntArg(args.get(1));
+			if(!((ISListType)obj).gcis_removeObjectAtIndex(index))
+			{	throw new Exception("Remove index for a list is out of bounds.\n" + args);
+			}
+		}
+
+		// ---------- removeValueForKey key
+		else if(theCmd.equals("removevalueforkey"))
+		{	if(!obj.getClass().equals(ISDictType.class))
+				throw new Exception("The removeValueForKey command can only by for dictionaries.\n" + args);
+			if(args.size()<2)
+				throw new Exception("The removeValueForKey command needs key.\n" + args);
+			
+			// first parameter must a string expression for the key
+			String key = readStringArg(args.get(1));
+			((ISDictType)obj).gcis_removeValueForKey(key);
+		}
+			
+		// ---------- run (resDoc),(path)
+		// run analysis and set resDoc to results document
 		else if(theCmd.equals("run"))
 		{	// run obj,outpath
 			if(!obj.getClass().equals(CmdViewer.class))
-				throw new Exception("The 'run' command can only by used on command documents.\n" + args);
+				throw new Exception("The run command can only by used on commands documents.\n" + args);
 
 			// need to provide path to save the file
 			if(args.size() < 3)
-				throw new Exception("'Run' command needs object name and output file path.\n" + args);
+				throw new Exception("Run command needs object name and output file path.\n" + args);
 
-			String objectVar = args.get(1);
-			if(!validObjectName(objectVar))
-				throw new Exception("The first argument in an 'Run' command must be valid object name.\n" + args);
+			// return object name
+			String objectVar = getObjVarName(1,args,"run",true);
 
 			// get path
 			File outDoc = scriptPath(readStringArg(args.get(2)), args, false);
@@ -1127,46 +1461,54 @@ public class CmdViewer extends JNCmdTextDocument
 
 			// start analysis
 			NFMVPrefs.setRemoteMode(false);
+			((CmdViewer) obj).setVisible(true);
+			((CmdViewer) obj).toFront();
 			((CmdViewer) obj).runNFMAnalysis(false, NFMAnalysis.FULL_ANALYSIS, this);
 
 			// wait for run to be done
-			while (runningScript)
+			while(runningScript)
 			{	Thread.sleep(1000);
 				if(!((CmdViewer) obj).isRunning())
 					break;
 			}
 			if(((CmdViewer) obj).isRunning())
 			{	((CmdViewer) obj).stopRunning();
-				throw new Exception("The script was stopped.\n" + args);
+				throw new Exception("A script process was stopped.\n" + args);
 			}
 			NFMVPrefs.restoreRemoteMode();
 
 			// set obj to output document
-			objs.put(objectVar, ((DocViewer) NairnFEAMPMViz.main.frontDocument()).resDoc);
+			objs.put(objectVar, ((CmdViewer) obj).getLinkedResults());
+			
+			// exit if was aborted with partial results
+			// but this only works to abort the first calculations
+			if(((CmdViewer) obj).wasAborted())
+			{	throw new Exception("Script calculations were stopped.\n" + args);
+			}
 		}
 
+		// ---------- runremote obj,outpath,outoption,localpath,localoption
+		// run remotely
 		else if(theCmd.equals("runremote"))
-		{	// runRemote obj,outpath,outoption,localpath,localoption
-			if(!obj.getClass().equals(CmdViewer.class))
-				throw new Exception("The 'run' command can only by used on command documents.\n" + args);
+		{	if(!obj.getClass().equals(CmdViewer.class))
+				throw new Exception("The runRemote command can only by used on commands documents.\n" + args);
 
 			// need to provide remote path on the server
 			// folder/.../name - requires slashes and at least one parent folder
 			if(args.size() < 3)
-				throw new Exception("'RunRemote' command needs object name and remote file path.\n" + args);
+				throw new Exception("RunRemote command needs object name and remote file path.\n" + args);
 
 			// get object variable
-			String objectVar = args.get(1);
-			if(!validObjectName(objectVar))
-				throw new Exception("The first argument in an 'RunRemote' command must be valid object name.\n" + args);
+			String objectVar = getObjVarName(1,args,"runRemote",true);
 
 			// get remote path (require internal /, but check for .mpm or .fea
 			// when run)
 			String remotePath = readStringArg(args.get(2));
 			int offset = remotePath.lastIndexOf("/");
 			if(offset < 1 || offset >= remotePath.length() - 1)
-				throw new Exception(
-						"The remote folder must have at least a folder and a name (e.g., 'folder/name').\n" + args);
+			{	throw new Exception(
+					"The remote folder must have at least a folder and a name (e.g., 'folder/name').\n" + args);
+			}
 
 			// get output option (default is overwrite or unique or clear)
 			String remoteOption = "overwrite";
@@ -1228,44 +1570,310 @@ public class CmdViewer extends JNCmdTextDocument
 			if(!localOption.equals("nodownload"))
 				objs.put(objectVar, ((DocViewer) NairnFEAMPMViz.main.frontDocument()).resDoc);
 		}
+		
+		// ---------- setNumberForKey number,key
+		// set object in a dictionary
+		else if(theCmd.equals("setnumberforkey"))
+		{	if(!obj.getClass().equals(ISDictType.class))
+				throw new Exception("The setNumberForKey command can only by for dictionaries.\n" + args);
+			if(args.size()<3)
+				throw new Exception("The setNumberForKey needs two arguments.\n" + args);
 
-		else if(theCmd.equals("export"))
-		{	// run obj,export path
-			if(!obj.getClass().equals(CmdViewer.class))
-				throw new Exception("The 'export' command can only by used on commands documents.\n" + args);
+			// first parameter must a numeric expression
+			double adble = readDoubleArg(args.get(1));
+		
+			// second is key
+			String key = readStringArg(args.get(2));
+			((ISDictType)obj).gcis_setObjectforKey(new Double(adble),key);
+		}
+		
+		// ---------- setObjectForKey object,key
+		// set object in a dictionary
+		else if(theCmd.equals("setobjectforkey"))
+		{	if(!obj.getClass().equals(ISDictType.class))
+				throw new Exception("The setObjectForKey command can only by for dictionaries.\n" + args);
+			if(args.size()<3)
+				throw new Exception("The setObjectForKey needs two arguments.\n" + args);
 
-			// file by path or null
-			File oneDoc = null;
-			if(args.size() > 1)
-			{	String fPath = readStringArg(args.get(1));
-				if(fPath.length() < 2)
-					throw new Exception("'export' command has empty path name.\n" + args);
-				if(fPath.charAt(0) != '/' && fPath.charAt(1) != ':')
-					oneDoc = new File(getFile().getParent(), fPath);
-				else
-					oneDoc = new File(fPath);
-			}
-
-			if(!((CmdViewer) obj).exportOutput(oneDoc, null))
-				throw new Exception("The 'export' command failed.\n" + args);
+			// first parameter must be an existing object name
+			String objVar = readStringArg(args.get(1));
+			Object objValue = findExistingObject(objVar);
+			if(objValue==null)
+				throw new Exception("First parameter to setObjectForKey command must be a valid object.\n" + args);
+				
+			// second is key
+			String key = readStringArg(args.get(2));
+			((ISDictType)obj).gcis_setObjectforKey(objValue,key);
 		}
 
-		else if(theCmd.equals("plottable"))
-		{	// run obj,plottable data
-			if(!obj.getClass().equals(DocViewer.class))
-				throw new Exception("The 'plottable' command can only by used on results documents.\n" + args);
+		// ---------- setStringForKey string,key
+		// set object in a dictionary
+		else if(theCmd.equals("setstringforkey"))
+		{	if(!obj.getClass().equals(ISDictType.class))
+				throw new Exception("The setStringForKey command can only by for dictionaries.\n" + args);
+			if(args.size()<3)
+				throw new Exception("The setStringForKey needs two arguments.\n" + args);
+
+			// first parameter must a string expression
+			String objValue = readStringArg(args.get(1));
+		
+			// second is key
+			String key = readStringArg(args.get(2));
+			((ISDictType)obj).gcis_setObjectforKey(objValue,key);
+		}
+		
+		// ---------- timeplot objName,settings
+		// plot time data and return list of two lists for x and y data
+		else if(theCmd.equals("timeplot"))
+		{	if(!obj.getClass().equals(DocViewer.class))
+				throw new Exception("The timeplot command can only be used for results documents.\n" + args);
+		
+			// first parameter must object name
+			String objname = getObjVarName(1,args,"timeplot",true);
+	
+			// second parameter must be an existing dictionary with settings
+			if(args.size()<3)
+				throw new Exception("The timeplot command missing plot settings.\n" + args);
+			String objVar = readStringArg(args.get(2));
+			Object objValue = findExistingObject(objVar);
+			if(objValue==null)
+				throw new Exception("The timeplot command missing plot settings.\n" + args);
 			
-			if(args.size() > 1)
-			{	String tableData = readStringArg(args.get(1));
-				XYPlotWindow plotWindow = new XYPlotWindow((DocViewer)obj);
-				plotWindow.plotPPTable(tableData);
+			// generate the plot
+			ISListType plotResults = ((DocViewer)obj).scriptTimeplot((ISDictType)objValue);
+			objs.put(objname, plotResults);
+		}
+		
+		// ---------- valueForKey (#var or objName),key
+		else if(theCmd.equals("valueforkey"))
+		{	if(!obj.getClass().equals(ISDictType.class))
+				throw new Exception("The valueForKey command can only by for dictionaries.\n" + args);
+			if(args.size()<3)
+				throw new Exception("The valueForKey command needs variable and key.\n" + args);
+			
+			// get object or variable name
+			String objVar = readStringArg(args.get(1));
+			
+			// second parameter must a string expression for the key
+			String key = readStringArg(args.get(2));
+			
+			Object getObj = ((ISDictType)obj).gcis_objectForKey(key);
+			
+			// set object from the dictionary
+			if(getObj!=null)
+			{	// if fetched is a string, then set a string variable
+				if(getObj.getClass().equals(String.class))
+				{	if(!JNExpression.validVariableName(objVar))
+					{	throw new Exception(
+							"First parameter in valueForKey command for a string must be a valid variable name.\n"+args);
+					}
+					variablesStrs.put(objVar,(String)getObj);
+					return;
+				}
+				else if(getObj.getClass().equals(Double.class))
+				{	if(!JNExpression.validVariableName(objVar))
+					{	throw new Exception(
+							"First parameter in valueForKey command for a number must be a valid variable name.\n"+args);
+					}
+					variablesStrs.put(objVar,JNUtilities.formatDouble(((Double)getObj).doubleValue()));
+					return;
+				}
+
+				// rest are objects
+				if(!validObjectName(objVar))
+				{	throw new Exception(
+						"First parameter in valueForKey command for an object must be a valid object name.\n"+args);
+				}
+				objs.put(objVar,getObj);
 			}
 			else
-				throw new Exception("The 'plottable' command had no data.\n" + args);
+			{	// is it a variable beginning in '#'
+				if(JNExpression.validVariableName(objVar))
+				{	// undefine the object
+					if(variablesStrs.get(objVar)!=null)
+						variablesStrs.remove(objVar);
+					return;
+				}
+				else if(validObjectName(objVar))
+				{	// set to NoneType
+					objs.put(objVar,new ISNoneType());
+					return;
+				}
+				
+				throw new Exception(
+					"First parameter in valueForKey command must be valid variable or object name.\n"+args);
+			}
 		}
 
+		// ---------- xypplot objName,settings
+		// plot mesh 2D data and return list of two lists for x and y data
+		else if(theCmd.equals("xyplot"))
+		{	if(!obj.getClass().equals(DocViewer.class))
+				throw new Exception("The xyplot command can only be used for results documents.\n" + args);
+		
+			// first parameter must object name
+			String objname = getObjVarName(1,args,"xyplot",true);
+	
+			// second parameter must be an existing dictionary with settings
+			if(args.size()<3)
+				throw new Exception("The xyplot command missing plot settings.\n" + args);
+			String objVar = readStringArg(args.get(2));
+			Object objValue = findExistingObject(objVar);
+			if(objValue==null)
+				throw new Exception("The xyplot command missing plot settings.\n" + args);
+			
+			// generate the plot
+			ISListType plotResults = ((DocViewer)obj).scriptXYplot((ISDictType)objValue);
+			objs.put(objname, plotResults);
+		}
+		// ---------- invalid object command is an error
 		else
 			throw new Exception("An unrecognized object command.\n" + args);
+	}
+
+	// Look for existing object with optional deference to a list
+	// 1. If just object name, return its obj
+	// 2. If not look for obj.(locator)
+	//		a. if obj not a valid list, return nil
+	//		b. if valid object return it (but if gets string return nil)
+	//		c. If not found (by number, id or name) return nil
+	public Object findExistingObject(String objName)
+	{
+		// check name first
+		Object obj = scriptObjectForKey(objName);
+		if(obj!=null) return obj;
+		
+		// break up by periods
+		String [] atoms = objName.trim().split("[.]");
+
+		// can only be 2 for list.index
+		if(atoms.length!=2) return null;
+		
+		// first must be object variable (and cannot be an expression, but can be a variable)
+		String objectVar = grabAtom(atoms,0);
+		char firstChar = objectVar.charAt(0);
+		if(firstChar=='#')
+		{	String deref = variablesStrs.get(objectVar);
+			if(deref!=null) objectVar = deref;
+		}
+		else if(firstChar=='^' && objectVar.length()>1)
+		{	objectVar = objectVar.substring(1);
+			String deref = variablesStrs.get(objectVar);
+			if(deref!=null) objectVar = deref;
+		}
+
+		// see if ended up with object variable for a list
+		obj = objs.get(objectVar);
+		if(obj==null) return null;
+		if(!obj.getClass().equals(ISListType.class)) return null;
+
+		// look for index into the array
+		String nextAtom = grabAtom(atoms,1);
+		int index = decodeIndex(nextAtom);
+		if(index>=0)
+		{	if(index>=((ISListType)obj).count()) return null;
+				
+			// switch obj to be an object in the list
+			obj = ((ISListType)obj).objectAtIndex(index);
+				
+			// if list element is a string or number, then not a valid object
+			if(obj.getClass().equals(String.class) || obj.getClass().equals(Double.class))
+				return null;
+			
+			// return this object
+			return obj;
+		}
+		
+		// not found in the list
+		return null;
+	}
+
+	// get argument that should be object variable name
+	public String getObjVarName(int argNum,ArrayList<String> args,String acmd,boolean forObj) throws Exception
+	{	if(args.size() < argNum+1)
+			throw new Exception("The "+acmd+" command must provide an object or variable name.\n"+args);
+		String objectVar = readStringArg(args.get(argNum));
+		if(forObj)
+		{	if(!validObjectName(objectVar))
+				throw new Exception("The "+acmd+" command must provide a valid object name.\n"+args);
+		}
+		else
+		{	if(!JNExpression.validVariableName(objectVar))
+				throw new Exception("The "+acmd+" command must provide a valid variable name.\n"+args);
+		}
+		return objectVar;
+	}
+
+	// check next item in list of atoms
+	// if begins in # see if matches a variable (can be #x[3], but not #x[#i])
+	// note that variables without # are not interpreted here
+	public String grabAtom(String [] atoms,int i)
+	{
+		if(i >= atoms.length) return "";
+		
+		// grab and exit if zero or 1 characters
+		String atom = atoms[i];
+		if(atom.length()<2) return atom;
+		
+		char firstChar = atom.charAt(0);
+		if(firstChar=='#')
+		{	String deref = variablesStrs.get(atom);
+			if(deref!=null) atom = deref;
+		}
+		
+		return atom;
+	}
+	
+	// Decode atom in @ expression or in object command. The next
+	// atom might be a number to pick an element from the list in obj
+	// Requirements: a number (all digitis)
+	public int decodeIndex(String atom)
+	{
+		// empty or null not a number
+		if(atom==null) return -1;
+		if(atom.length()==0) return -1;
+		
+		// all can accept a number
+		boolean allDigits = true;
+		for(int i=0;i<atom.length();i++)
+		{	char c = atom.charAt(i);
+			if(c<'0' || c>'9')
+			{	allDigits = false;
+				break;
+			};
+		}
+		if(allDigits) return Integer.parseInt(atom);
+		return -1;
+	}
+	
+	// check for object variable when in a script
+	public boolean isAltVariable(String testVar)
+	{	if(!runningScript) return false;
+		Object obj = scriptObjectForKey(testVar);
+		if(obj==null) return false;
+		if(obj.getClass().equals(ISNoneType.class)) return false;
+		return true;
+	}
+
+	
+	// get script object with name in objectVar
+	// If objectVar begins in '^', check rest for valid variable
+	// return nil if all fails
+	public Object scriptObjectForKey(String objectVar)
+	{
+		Object obj = objs.get(objectVar);
+		
+		// if not found, check for &var where var is variable containing an object name
+		if(obj==null && objectVar.length()>1)
+		{	if(objectVar.charAt(0)=='^')
+			{	String var = objectVar.substring(1);
+				objectVar = variablesStrs.get(var);
+				if(objectVar!=null)
+					obj = objs.get(objectVar);
+			}
+		}
+		
+		return obj;
 	}
 
 	// object names begin in letter (not '#')
@@ -1275,7 +1883,7 @@ public class CmdViewer extends JNCmdTextDocument
 		if(v.length() < 1)
 			return false;
 		// other letters letter or number
-		for(int i = 0; i < v.length() - 1; i++)
+		for(int i = 0; i < v.length(); i++)
 		{	char c = v.charAt(i);
 			if((c > 'z' || c < 'a') && (c > 'Z' || c < 'A'))
 			{	// first must be letter
@@ -1330,6 +1938,162 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// return it
 		return oneDoc;
+	}
+	
+	// convert @ expression to String
+	public String getScriptAtString(String s)
+	{	
+		String badResult = "ERROR: expression error";
+		
+	    // break up by periods
+		String [] atoms = s.trim().split("[.]");
+	    if(atoms.length<2)
+	    {   return "ERROR: bar @ expression: "+s;
+	    }
+	    
+		// first must be object variable (and cannot be an expression, but can be a variable)
+	    String objectVar = atoms[0];
+		// remove the "@"
+	    if(objectVar.length()>1) objectVar = objectVar.substring(1);
+		// check for variable
+		char firstChar = objectVar.charAt(0);
+		if(firstChar=='#')
+		{	String deref = variablesStrs.get(objectVar);
+			if(deref!=null) objectVar = deref;
+		}
+		else if(firstChar=='^' && objectVar.length()>1)
+		{	objectVar = objectVar.substring(1);
+			String deref = variablesStrs.get(objectVar);
+			if(deref!=null) objectVar = deref;
+		}
+		
+		// see if ended up with object variable
+	    Object obj = objs.get(objectVar);
+	    if(obj==null)
+	    {   return "ERROR: @ expression with invalid object: "+s;
+	    }
+	    
+		// if obj is an array, get index into the array
+		String nextAtom;
+	    int i=1;
+	    if(obj.getClass().equals(ISListType.class))
+		{	// get number (or other)
+			nextAtom = grabAtom(atoms,i);
+			
+			// attributes of lists itself
+			if(nextAtom.equals("count") || nextAtom.equals("length"))
+				return Integer.toString(((ISListType)obj).count());
+			else if(nextAtom.equals("class"))
+			{	return "list";
+			}
+			
+			// is it an integer?
+			int index = decodeIndex(nextAtom);
+			if(index>=0)
+			{	if(index>=((ISListType)obj).count())
+					return "ERROR: list index in @ expression out of bounds: "+s;
+				
+				// switch obj to be an object in the list
+				obj = ((ISListType)obj).objectAtIndex(index);
+				i++;
+				
+				// if list element is a string or number, just return that string
+				// subsequent atoms ignored, except for class
+				if(obj.getClass().equals(String.class))
+				{	nextAtom = grabAtom(atoms,i);
+					if(nextAtom.equals("class"))
+						return "string-number";
+					return (String)obj;
+				}
+				else if(obj.getClass().equals(Double.class))
+				{	nextAtom = grabAtom(atoms,i);
+					if(nextAtom.equals("class"))
+						return "string-number";
+					return ((Double)obj).toString();
+				}
+			}
+			else
+			{	return "ERROR: list in @ must be followed by a valid index: "+s;
+			}
+		}
+
+		// In string expression, we are at an object and need atom to get an attribute
+		if(i>=atoms.length)
+		{	return "ERROR: @ expression is lacking a property: "+s;
+		}
+
+		// case sensitive
+		nextAtom = grabAtom(atoms,i);
+		String expr = null;
+		
+		// handle each object type here
+		if(obj.getClass().equals(DocViewer.class))
+			expr = ((DocViewer)obj).gcis_getAttribute(atoms,i,this);
+		
+		else if(obj.getClass().equals(CmdViewer.class))
+			expr = ((CmdViewer)obj).gcis_getAttribute(atoms,i,this);
+		
+		else if(obj.getClass().equals(ISDictType.class))
+			expr = ((ISDictType)obj).gcis_getAttribute(atoms,i,this);
+		
+		else if(obj.getClass().equals(ISListType.class))
+			expr = ((ISListType)obj).gcis_getAttribute(atoms,i,this);
+			
+		else if(obj.getClass().equals(ISNoneType.class))
+			expr = ((ISNoneType)obj).gcis_getAttribute(atoms,i,this);
+			
+		else if(obj.getClass().equals(NairnFEAMPMViz.class))
+			expr = ((NairnFEAMPMViz)obj).gcis_getAttribute(atoms,i,this);
+			
+		else if(obj.getClass().equals(MPMArchive.class))
+			expr = ((MPMArchive)obj).gcis_getAttribute(atoms,i,this);
+			
+		if(expr==null)
+		{	return "ERROR: class "+obj.getClass().toString()+" does not have any properties: "+s;
+		}
+		
+		// return the result
+		return expr;
+	}
+
+	// Scripting attributes for internal scripts for commands document
+	public String gcis_getAttribute(String [] atoms,int i,CmdViewer server)
+	{
+	    String attr = server.grabAtom(atoms,i);
+	    
+		if(attr.equals("get"))
+		{	i++;
+			if(i >= atoms.length)
+				return "ERROR: The variable name is missing";
+			attr = server.grabAtom(atoms,i);
+			return variablesStrs.get(attr);
+		}
+
+		else if(attr.equals("name"))
+		{	File theFile = getFile();
+			if(theFile!=null)
+				return theFile.getName();
+			return "Untitled";
+		}
+
+		else if(attr.equals("path"))
+		{	File theFile = getFile();
+			if(theFile!=null)
+				return theFile.getPath();
+			return "Untitled";
+		}
+
+		else if(attr.equals("folder"))
+		{	File theFile = getFile();
+			if(theFile!=null)
+				return theFile.getParent();
+			return "";
+		}
+	    
+		else if(attr.equals("class"))
+			return "CommandDocument";
+
+		return null;
 	}
 
 	// Analysis (type),(element)
@@ -1662,7 +2426,7 @@ public class CmdViewer extends JNCmdTextDocument
 		if(args.size() > 2)
 		{
 			aCFL = readDoubleArg(args.get(2));
-			cflFactor = "    <TransTimeFactor>" + formatDble(aCFL) + "</TransTimeFactor>\n";
+			transCflFactor = "    <TransTimeFactor>" + formatDble(aCFL) + "</TransTimeFactor>\n";
 		}
 	}
 	
@@ -1935,6 +2699,8 @@ public class CmdViewer extends JNCmdTextDocument
 				loc = ReadArchive.ARCH_SpinMomentum;
 			else if(archive.equals("wp"))
 				loc = ReadArchive.ARCH_SpinVelocity;
+			else if(archive.equals("size"))
+				loc = ReadArchive.ARCH_Size;
 
 			if(loc < 0 && cloc < 0)
 				throw new Exception("'" + archive + "' is not a valid archiving option:\n" + args);
@@ -2534,7 +3300,8 @@ public class CmdViewer extends JNCmdTextDocument
 		deleteLimit = "    <DeleteLimit>" + del + "</DeleteLimit>\n";
 	}
 
-	// Diffusion #1,<#2> or Poroelasticity #1,<#2>,<#3>
+	// Diffusion #1,<#2> or Poroelasticity #1,<#2>,<#3> or Diffsion,extra
+	//		where extra = fracture (or 3), battery (or 4), or conduction (or 5)
 	public void doDiffusion(ArrayList<String> args,boolean isMoisture) throws Exception
 	{ // MPM Only
 		requiresMPM(args);
@@ -2545,16 +3312,37 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// diffusion or poroelasticity on or off (required)
 		String option = readStringArg(args.get(1));
-		if(option.toLowerCase().equals("no"))
-		{
-			diffusion = null;
+		int diffMode=-1;
+		if(!isMoisture)
+		{	if(option.toLowerCase().equals("yes") || option.equals("2"))
+				diffMode = 2;
+		}
+		else if(option.toLowerCase().equals("yes") || option.toLowerCase().equals("solvent")
+				|| option.toLowerCase().equals("moisture") || option.equals("1"))
+		{	diffMode = 1;
+		}
+		else if(option.toLowerCase().equals("fracture") || option.equals("3"))
+		{	diffMode = 3;
+		}
+		else if(option.toLowerCase().equals("battery") || option.equals("4"))
+		{	diffMode = 4;
+		}
+		else if(option.toLowerCase().equals("conduction") || option.equals("4"))
+		{	diffMode = 4;
+		}
+		else if(option.toLowerCase().equals("no"))
+		{	diffusion = null;
 			return;
 		}
-		else if(!option.toLowerCase().equals("yes"))
-			throw new Exception("'" + args.get(0) + "' first parameter must be yes or no:\n" + args);
+		else
+			throw new Exception("'" + args.get(0) + "' first parameter no valid:\n" + args);
+		
+		if(diffusion!=null && diffMode<=2)
+			throw new Exception("Cannot have diffusion and poroelastity or two of either:\n" + args);
 
+		// Moisture and Poroelasticy has a references (optionally)
 		double ref = 0.;
-		if(args.size() > 2)
+		if(diffMode<=2 && args.size() > 2)
 		{
 			ref = readDoubleArg(args.get(2));
 			if(ref < 0.)
@@ -2565,7 +3353,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// viscosity for poroelasticity
 		double visc = 1.;
-		if(!isMoisture)
+		if(diffMode==2)
 		{
 			if(args.size() > 3)
 			{
@@ -2576,13 +3364,15 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 
 		// the command
-		if(isMoisture)
+		if(diffMode==1)
 			diffusion = "    <Diffusion reference='" + formatDble(ref) + "'/>\n";
-		else
+		else if(diffMode==2)
 		{
 			diffusion = "    <Poroelasticity reference='" + formatDble(ref) + "' viscosity='" + formatDble(visc)
 					+ "'/>\n";
 		}
+		else
+			otherDiffusion.append("    <Diffusion style='" + diffMode + "'/>\n");
 	}
 
 	// Conduction (yes or no),<adibatic (or mechanical energy) or isothermal or
@@ -2829,7 +3619,13 @@ public class CmdViewer extends JNCmdTextDocument
 
 	// convert @ expression to String
 	public String getAtString(String s)
-	{ // split at periods
+	{	
+		// scripts have their own att string method
+		if(runningScript) return getScriptAtString(s);
+		
+		// rest when not running scripts
+		
+		// split at periods
 		String[] atoms = s.substring(1).split("[.]");
 
 		// process them
@@ -2852,51 +3648,6 @@ public class CmdViewer extends JNCmdTextDocument
 					i += 2;
 					return areas.getPathProperty(readStringArg(atoms[i - 1]), readStringArg(atoms[i]));
 				}
-
-				else if(runningScript)
-				{ // look for obj.property
-					passException = true;
-					Object obj = objs.get(nextAtom);
-					if(obj == null || i + 1 >= atoms.length)
-						throw new Exception("Object property is incomplete");
-					i++;
-					nextAtom = atoms[i];
-
-					// object properties
-					if(nextAtom.equals("energy"))
-					{
-						if(!obj.getClass().equals(DocViewer.class))
-							throw new Exception("energy property can only used for results documents");
-						return ((DocViewer) obj).resDoc.getEnergy();
-					}
-
-					else if(nextAtom.equals("get"))
-					{	i++;
-						if(i >= atoms.length)
-							throw new Exception("get property missing variable name");
-						if(!obj.getClass().equals(CmdViewer.class))
-							throw new Exception("get property can only used for commands documents");
-						return ((CmdViewer) obj).getVariable(atoms[i]);
-					}
-
-					else if(nextAtom.equals("section"))
-					{	i++;
-						if(i >= atoms.length)
-							throw new Exception("The section name is missing");
-						atoms[i] = atomString(atoms[i], variablesStrs);
-						if(!obj.getClass().equals(DocViewer.class))
-							throw new Exception("section property can only used for results documents");
-						return ((DocViewer) obj).resDoc.section(atoms[i]);
-					}
-
-					else if(nextAtom.equals("timeplot"))
-					{
-						if(!obj.getClass().equals(DocViewer.class))
-							throw new Exception("timeplot property can only be used for results documents");
-						return ((DocViewer) obj).resDoc.collectTimePlotData(atoms, variablesStrs);
-					}
-
-				}
 			}
 		}
 		catch (Exception e)
@@ -2907,40 +3658,6 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// if here, than bad expression
 		return null;
-	}
-
-	// check atom in a property and return string which can be
-	// quoted text (then unquoted the text) or string variable (value of the variable)
-	// or the text
-	public static String atomString(String atom,HashMap<String, String> variablesStrsLoc)
-	{ // check for quoted text
-		int clen = atom.length();
-		if(clen > 1)
-		{	if(atom.charAt(0) == '"' && atom.charAt(clen - 1) == '"')
-				return atom.substring(1, clen - 1);
-		}
-
-		// a string variable is allowed
-		String strAtom = variablesStrsLoc.get(atom);
-		if(strAtom != null)
-			return strAtom;
-
-		// return the initial text
-		return atom;
-	}
-
-	// check atom in a property and return an expected integer
-	public static int atomInt(String atom,HashMap<String, String> variablesLoc) throws Exception
-	{
-		String atomDble = variablesLoc.get(atom);
-		if(atomDble == null) atomDble = atom;
-		try
-		{	return Integer.parseInt(atomDble);
-		}
-		catch (Exception e)
-		{	new Exception("Invalid object property should be an integer (" + atom + ")");
-		}
-		return 0;
 	}
 
 	// when analysis is done create XML commands
@@ -3057,6 +3774,8 @@ public class CmdViewer extends JNCmdTextDocument
 				xml.append(deleteLimit);
 			if(diffusion != null)
 				xml.append(diffusion);
+			if(otherDiffusion.length()>0)
+				xml.append(otherDiffusion);
 
 			// cracks
 			if(MMNormals<0)
@@ -3275,6 +3994,7 @@ public class CmdViewer extends JNCmdTextDocument
 	{
 		linkedResults = someResults;
 	}
+	public DocViewer getLinkedResults() { return linkedResults; }
 
 	// tell linked results your are closing
 	public void windowClosed(WindowEvent e)
@@ -3286,11 +4006,21 @@ public class CmdViewer extends JNCmdTextDocument
 
 	// called when analysis is done and should link to new results in console
 	public DocViewer linkToResults()
-	{
-		if(linkedResults != null)
-		{
+	{	if(linkedResults!=null)
+		{	// reuse window if same file,but new results
+			if(linkedResults.getFile().getPath().equals(soutConsole.getFile().getPath()))
+			{	// new results for the same file
+				linkedResults.loadNewTextFromFile();
+				linkedResults.setVisible(true);
+				linkedResults.toFront();
+				return linkedResults;
+			}
+			// close previous linked results
 			linkedResults.windowClosing(null);
+			linkedResults = null;
 		}
+	
+		// get new reuslts window
 		NairnFEAMPMViz.main.openDocument(soutConsole.getFile());
 		linkedResults = (DocViewer) NairnFEAMPMViz.main.findDocument(soutConsole.getFile());
 		linkedResults.setCommandsWindow(this);
@@ -3423,6 +4153,12 @@ public class CmdViewer extends JNCmdTextDocument
 			return true;
 		return false;
 	}
+	
+	// check if recent run was aborted
+	public boolean wasAborted()
+	{	if(nfmAnalysis == null) return false;
+		return nfmAnalysis.wasAborted();
+	}
 
 	// stop analysis and command interpretation
 	public void stopRunning()
@@ -3490,7 +4226,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		catch (Exception fe)
 		{	Toolkit.getDefaultToolkit().beep();
-			JOptionPane.showMessageDialog(this, "Error exporting output results: " + fe);
+			JNUtilities.showMessage(this, "Error exporting output results: " + fe);
 			return false;
 		}
 

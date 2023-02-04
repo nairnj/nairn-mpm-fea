@@ -34,7 +34,8 @@ class Mooney : public HyperElastic
 		// history data
 		virtual int SizeOfHistoryData(void) const;
 		virtual char *InitHistoryData(char *,MPMBase *);
-   		virtual int NumberOfHistoryDoubles(void) const;
+		virtual void ResetHistoryData(char *,MPMBase *);
+		virtual int NumberOfHistoryDoubles(void) const;
  	
 		// const methods
 		virtual void PrintMechanicalProperties(void) const;

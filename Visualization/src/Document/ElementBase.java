@@ -343,7 +343,8 @@ public class ElementBase
 	public void getPlotValues(int comp,double stressAngle,ResultsDocument doc) throws Exception
 	{	int i;
 		for(i=0;i<getNumberNodes();i++)
-			plotValues[i]=getNodeValue(i,comp,stressAngle,doc);
+		{	plotValues[i]=getNodeValue(i,comp,stressAngle,doc);
+		}
 	}
 
 	// get plot values from element data at one node. The first properties are calculated
@@ -537,6 +538,9 @@ public class ElementBase
 						return Math.PI-Math.asin(ypt/distance);
 				}
 			
+			case PlotQuantity.PLOTEXPRESSION:
+				return doc.docCtrl.controls.evaluateExpressionNode(this,ndi,stressAngle,doc);
+
 			default:
 				break;
 		}
@@ -870,7 +874,7 @@ public class ElementBase
 				dmax+=0.5;
 			}
 		}
-			
+		
 		// allocate subelements in elements for plotting
 		for(i=0;i<doc.elements.size();i++)
 			(doc.elements.get(i)).allocateSubElements(doc.nodes,density,inDisplaced);
@@ -894,7 +898,7 @@ public class ElementBase
 		movieFrame.plotView.dataLimitsSet=true;
 	}
 	
-	// get mesh data in preparatoin for 2D mesh plots
+	// get mesh data in preparation for 2D mesh plots
 	public static void load2DPlotData(int component,ResultsDocument doc) throws Exception
 	{
 		int i;
@@ -935,6 +939,7 @@ public class ElementBase
 		double[] fn=new double[9];
 		for(i=0;i<resDoc.mpmPoints.size();i++)
 		{	mptr=resDoc.mpmPoints.get(i);
+			if(mptr.inReservoir()) continue;
 		
 			// mesh extrapolation should not include rigid particles
 			MaterialBase matl=resDoc.materials.get(mptr.materialIndex());
@@ -942,16 +947,19 @@ public class ElementBase
 			
 			// get value to extrapolate
 			plotValue=mptr.getForPlot(component,angle,resDoc);
-			if(component!=PlotQuantity.MPMMASS) wt=mptr.mass;
+			//if(component!=PlotQuantity.MPMDENSITY) wt=mptr.mass;
+			wt=mptr.getDeformedVolume(resDoc);
 			
 			// Load element object
 			eptr=resDoc.elements.get(mptr.inElem);
 			
 			// find dimensionsless location and shape functions
 			eptr.getNodalPoints(ndpt,resDoc.nodes);
-			Point2D.Double xiEta=eptr.getCentroid();
-			eptr.getXiEta(xiEta,mptr.getPosition(),ndpt);
-			eptr.getShapeFunction(fn,xiEta,ndpt);
+			if(mptr.xiEta==null)
+			{	mptr.xiEta=eptr.getCentroid();
+				eptr.getXiEta(mptr.xiEta,mptr.getPosition2D(),ndpt);
+			}
+			eptr.getShapeFunction(fn,mptr.xiEta,ndpt);
 			
 			// Add particle property to each node in the element
 			for(j=0;j<eptr.getNumberNodes();j++)
@@ -959,7 +967,7 @@ public class ElementBase
 		}
 		
 		// normalize nodal properties
-		if(component!=PlotQuantity.MPMMASS)
+		if(component!=PlotQuantity.MPMDENSITY)
 		{	for(i=0;i<resDoc.nodes.size();i++)
 				(resDoc.nodes.get(i)).normPlotValue();
 		}

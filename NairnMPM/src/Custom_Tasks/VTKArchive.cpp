@@ -509,10 +509,14 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
                 
             case VTK_CONCENTRATION:
 				if(fmobj->HasDiffusion())
-                	theWt=wt*mpnt->GetConcSaturation();
+					theWt=wt*mpnt->GetConcSaturation()*mpnt->pDiff[0]->conc;
+#ifdef POROELASTICITY
+				else if(fmobj->HasPoroelasticity())
+					theWt=wt*UnitsController::Scaling(1.e-6)*mpnt->pDiff[0]->conc;
+#endif
 				else
-					theWt=wt*UnitsController::Scaling(1.e-6);
-                *vtkquant+=theWt*mpnt->pConcentration;
+					theWt=0.;
+                *vtkquant+=theWt;
                 vtkquant++;
                 break;
                 

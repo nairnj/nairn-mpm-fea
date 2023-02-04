@@ -37,7 +37,6 @@ class DeleteDamaged : public CustomTask
 		char *matName;
 		int material;
 		int damage_direction;
-		Vector Store;
 		double minRelativeCod;
         int numDeleted;
         double deleteTime;

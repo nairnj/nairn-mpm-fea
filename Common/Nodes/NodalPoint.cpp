@@ -22,13 +22,13 @@ int *nda;				// list of active nodes (number in nda[0] = *nda
 #pragma mark NodalPoint: Constructors and Destructor
 
 // 2D nodal point
-NodalPoint::NodalPoint(int nodeNum,double xPt,double yPt)
+NodalPoint::NodalPoint(int nodeNum,double xPt,double yPt) : LinkedObject()
 {
 	CreateNodalPoint(nodeNum,xPt,yPt,0.);
 }
 
 // 3D nodal point
-NodalPoint::NodalPoint(int nodeNum,double xPt,double yPt,double zPt)
+NodalPoint::NodalPoint(int nodeNum,double xPt,double yPt,double zPt) : LinkedObject()
 {
 	CreateNodalPoint(nodeNum,xPt,yPt,zPt);
 }
@@ -44,6 +44,7 @@ void NodalPoint::CreateNodalPoint(int nodeNum,double xPt,double yPt,double zPt)
 	fixedDirection=0;
 	cvf=NULL;
 	contactData=NULL;
+	gDiff=NULL;
 #endif
 }
 
@@ -53,15 +54,22 @@ void NodalPoint::CreateNodalPoint(int nodeNum,double xPt,double yPt,double zPt)
 // throws std::bad_alloc
 NodalPoint::NodalPoint(NodalPoint *real)
 {
+    x = real->x;
+    y = real->y;
+    z = real->z;
+    
 	num = real->num;
-	x = real->x;
-	y = real->y;
-	z = real->z;
 	fixedDirection=0;
 	cvf=NULL;
-	
+    contactData=NULL;
+    gDiff=NULL;
+
 	// this called later for real nodes
 	PrepareForFields();
+	
+	// needed for diffusion tasks
+	CreateDiffusionVariables();
+
 }
 
 #else
@@ -77,10 +85,11 @@ NodalPoint::~NodalPoint()
 void NodalPoint::PrintNodalPoint(ostream &os)
 {
 	char nline[200];
+    size_t nlsize=200;
 	if(fmobj->IsThreeD())
-		sprintf(nline,"%5d %15.7e %15.7e %15.7e",num,x,y,z);
+		snprintf(nline,nlsize,"%5d %15.7e %15.7e %15.7e",num,x,y,z);
 	else
-		sprintf(nline,"%5d %15.7e %15.7e",num,x,y);
+        snprintf(nline,nlsize,"%5d %15.7e %15.7e",num,x,y);
 	os << nline << endl;
 }
 

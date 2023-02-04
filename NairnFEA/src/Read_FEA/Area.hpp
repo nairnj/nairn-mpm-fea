@@ -9,9 +9,9 @@
 		none
 ********************************************************************************/
 
-#ifndef _AREA_
+#ifndef _JAN_AREA_
 
-#define _AREA_
+#define _JAN_AREA_
 
 class Path;
 class EightNodeIsoparam;

@@ -25,12 +25,14 @@ CalcJKTask *theJKTask=NULL;
 #pragma mark INITIALIZE
 
 // Constructors
-CalcJKTask::CalcJKTask()
+CalcJKTask::CalcJKTask() : CustomTask()
 {	
 	// allocate J integral data on each particle
     int p;
 	for(p=0;p<nmpmsNR;p++)
+	{	if(mpm[p]->InReservoir()) continue;
 		mpm[p]->AllocateJStructures();
+	}
 }
 
 // Return name of this task

@@ -7,11 +7,17 @@
 ********************************************************************************/
 
 #include "stdafx.h"
+#include <stdarg.h>
 
 #define T_SQRT3    1.73205080756887729352744634151   // sqrt(3)
 
 // local globals
 static int section=1;
+
+// local globals for random numbers
+static unsigned long randomMax;
+static double randomScale;
+static double halfRandomBoxSize;
 
 #pragma mark Miscellaneous Functions
 
@@ -22,8 +28,8 @@ static int section=1;
 void PrintSection(const char *text)
 {
     char sline[200];
-    
-    sprintf(sline,"*****%3d. %s\n\n",section,text);
+	size_t ssize=200;
+	snprintf(sline,ssize,"*****%3d. %s\n\n",section,text);
     cout << sline;
 	section++;
 }
@@ -213,7 +219,7 @@ Vector *CrossProduct(Vector *cp,const Vector *a,const Vector *b)
 	return cp;
 }
 
-// Z component of vector cross product of two vectors ion x-y plane
+// Z component of vector cross product of two vectors in x-y plane
 double CrossProduct2D(const Vector *a,const Vector *b)
 {	return a->x*b->y - b->x*a->y ;
 }
@@ -572,7 +578,337 @@ void GetFileExtension(const char *fileName,char *ext,int maxLength)
 	}
 }
 
-#pragma mark Other Function
+#pragma mark Debugging Functions
+
+// output doubles preceded by labels
+// fmt contains N labels delimited by spaces or commas (multiple delim = one)
+// variable number arguments must be exactly N but label starting in % is
+// output text alone without referencing a variable
+void dout(const char* fmt...)
+{
+	va_list args;
+	va_start(args, fmt);
+	char label[100];
+ 
+	cout << "# ";
+	int length=0;
+	bool hadLabel=false;
+	while(true)
+	{	if(*fmt==' ' || *fmt==',' || *fmt == '\0')
+		{	// requires a label
+			if(length>0)
+			{	if(label[0]!='%')
+				{	double d = va_arg(args, double);
+					if(hadLabel) cout << ",";
+					label[length]=0;
+					cout << label << "=" << d;
+				}
+				else
+				{	if(hadLabel) cout << " ";
+					label[length]=0;
+					cout << (label+1);
+				}
+				length = 0;
+				hadLabel = true;
+			}
+			if(*fmt == '\0') break;
+		}
+		else
+			label[length++] = *fmt;
+		++fmt;
+	}
+	cout << endl;
+ 
+	va_end(args);
+}
+
+// Same as dout, but in a critical (output) block
+void doutCritical(const char* fmt...)
+{
+	va_list args;
+	va_start(args, fmt);
+	char label[100];
+
+#pragma omp critical (output)
+	{	cout << "# ";
+		int length=0;
+		bool hadLabel=false;
+		while(true)
+		{	if(*fmt==' ' || *fmt==',' || *fmt == '\0')
+			{	// requires a label
+				if(length>0)
+				{	if(label[0]!='%')
+					{	double d = va_arg(args, double);
+						if(hadLabel) cout << ",";
+						label[length]=0;
+						cout << label << "=" << d;
+					}
+					else
+					{	if(hadLabel) cout << " ";
+						label[length]=0;
+						cout << (label+1);
+					}
+					length = 0;
+					hadLabel = true;
+				}
+				if(*fmt == '\0') break;
+			}
+			else
+				label[length++] = *fmt;
+			++fmt;
+		}
+		cout << endl;
+	}
+ 
+	va_end(args);
+}
+
+// Same as dout(), but formatted for Mathmatica assignments
+// Cannot use %label option
+void doutMM(const char* fmt...)
+{
+	va_list args;
+	va_start(args, fmt);
+	char label[100];
+ 
+	cout << "# {";
+	int length=0;
+	bool hadLabel=false;
+	while(true)
+	{	if(*fmt==' ' || *fmt==',' || *fmt == '\0')
+		{	// requires a label
+			if(length>0)
+			{	double d = va_arg(args, double);
+				if(hadLabel) cout << ",";
+				label[length]=0;
+				cout << label << "->" << d;
+				length = 0;
+				hadLabel = true;
+			}
+			if(*fmt == '\0') break;
+		}
+		else
+			label[length++] = *fmt;
+		++fmt;
+	}
+	cout << "}" << endl;
+ 
+	va_end(args);
+}
+
+// Same as doutMM(), but in critical block
+// Cannot use %label option
+void doutMMCritical(const char* fmt...)
+{
+	va_list args;
+	va_start(args, fmt);
+	char label[100];
+
+#pragma omp critical (output)
+	{	cout << "# {";
+		int length=0;
+		bool hadLabel=false;
+		while(true)
+		{	if(*fmt==' ' || *fmt==',' || *fmt == '\0')
+			{	// requires a label
+				if(length>0)
+				{	double d = va_arg(args, double);
+					if(hadLabel) cout << ",";
+					label[length]=0;
+					cout << label << "->" << d;
+					length = 0;
+					hadLabel = true;
+				}
+				if(*fmt == '\0') break;
+			}
+			else
+				label[length++] = *fmt;
+			++fmt;
+		}
+		cout << "}" << endl;
+	}
+ 
+	va_end(args);
+}
+
+
+#pragma mark Other Functions
+
+// This method is called at start up to initialize parameters for generation
+// of random numbers
+// Mac rand() o return [1,RAND_MAX-1] with RAND_MAX=2,147,483,647
+// Windows rand() returns [0,RAND_MAX] with RAND)MAX=32,767
+// Linux(carbon) rand() returns [0,RAND_MAX] with RAND)MAX=2,147,483,647
+void InitRandom(unsigned int seed)
+{
+	// seed random number generator
+	if(seed>0)
+		srand((unsigned int)seed);
+	else
+		srand((unsigned int)time(NULL));
+	
+	if(RAND_MAX<64000)
+	{	// This catches Windows currently with RAND_MAX=32767
+		// code here extends to larger numbers
+		randomMax = 1073741825;
+	}
+	else
+	{	// Other OS's seem to have RAND_MAX=2,147,483,647
+		randomMax = RAND_MAX;
+	}
+	
+	// OS-independnent method will get random number from
+	// 1 to randomMax-1
+	// return value will scale by 1/(randomMax-1) and then subtract 0.5/(randomMax-1)
+	randomScale = 1./(double)(randomMax-1);
+	halfRandomBoxSize = 0.5*randomScale;
+
+//#define TEST_RANDOM_RANGE
+#ifdef TEST_RANDOM
+	// divided into nbox
+	long nbox=20;
+	long nb[20];
+	long numr=1000000000;
+	for(int i=0;i<nbox;i++) nb[i]=0;
+	
+	cout << endl;
+	cout << "Testing system that has randomMax=" << randomMax << endl;
+	cout << "Generating " << numr << " random numbers using Random()" << endl;
+	
+	for(long nr=0;nr<numr;nr++)
+	{	int boxnum = (int)((double)nbox*Random());
+		if(boxnum<0 || boxnum>=nbox)
+		{	cout << "Random box out of range" << endl;
+			break;
+		}
+		
+		// increment count
+		nb[boxnum]++;
+	}
+	
+	// Summary
+	double bsize = 1./(double)nbox;
+	cout << "Expected rate = " << bsize << endl;
+	double bmin = 0.;
+	for(int i=0;i<nbox;i++)
+	{	cout <<"Rate between " << bmin << " and " << bmin+bsize
+					<< " = " << (double)nb[i]/(double)numr << endl;
+		bmin += bsize;
+	}
+	cout << endl;
+
+#endif
+#ifdef TEST_RANDOM_LONG
+	// divided into nbox
+	long nb[100];
+	long numr=1000000000;
+	long rmin=7,rmax=28,nbox=rmax-rmin+1;
+	for(int i=0;i<nbox;i++) nb[i]=0;
+	
+	cout << endl;
+	cout << "Testing system that has randomMax=" << randomMax << endl;
+	cout << "Generating " << numr << " random numbers using RandomLong()" << endl;
+	
+	for(long nr=0;nr<numr;nr++)
+	{	long boxnum = RandomLong(rmin,rmax)-rmin;
+		if(boxnum<0 || boxnum>=nbox)
+		{	cout << "Random box out of range" << endl;
+			break;
+		}
+		
+		// increment count
+		nb[boxnum]++;
+	}
+	
+	// Summary
+	double bsize = 1./(double)nbox;
+	cout << "Expected rate = " << bsize << endl;
+	long bmin = rmin;
+	for(int i=0;i<nbox;i++)
+	{	cout <<"Rate for " << bmin << " = " << (double)nb[i]/(double)numr << endl;
+		bmin++;
+	}
+	cout << endl;
+#endif
+#ifdef TEST_RANDOM_RANGE
+	// divided into nbox
+	long nbox=20;
+	long nb[100];
+	long numr=1000000000;
+	double rmin=-.3;
+	double rmax=.7;
+	double bsize=(rmax-rmin)/(double)nbox;
+	for(int i=0;i<nbox+1;i++) nb[i]=0;
+	
+	cout << endl;
+	cout << "Testing system that has randomMax=" << randomMax << endl;
+	cout << "Generating " << numr << " random numbers using RandomRange()" << endl;
+	
+	for(long nr=0;nr<numr;nr++)
+	{	double r = RandomRange(rmin,rmax);
+		int boxnum = (int)((r-rmin)/bsize);
+		if(boxnum<0 || boxnum>nbox)
+		{	cout << "Random box " << boxnum << " for r = " << r << " is out of range " << endl;
+			break;
+		}
+		
+		// increment count
+		nb[boxnum]++;
+	}
+	
+	// Summary
+	cout << "Expected rate = " << bsize << endl;
+	double bmin = rmin;
+	for(int i=0;i<nbox;i++)
+	{	cout <<"Rate between " << bmin << " and " << bmin+bsize
+					<< " = " << (double)nb[i]/(double)numr << endl;
+		bmin += bsize;
+	}
+	cout <<"Rate equal to " << rmax << " = " << (double)nb[nbox]/(double)numr << endl;
+	cout << endl;
+#endif
+}
+
+// This method return random long on the interval [rmin,rmax] with
+// endpoint included (rmax must be greater than rmin)
+long RandomLong(long rmin,long rmax)
+{	// get long from 0 to span-1
+	long span = rmax-rmin+1;
+	long zerom1 = (long)((double)span*Random());
+	
+	// adjust to rmin
+	return rmin+zerom1;
+}
+
+// This method return random double on the interval [rmin,rmax] with
+// endpoints included (rmax must be greater than rmin)
+double RandomRange(double rmin,double rmax)
+{	double range = rmax-rmin;
+	double returnRange = 1.-2.*halfRandomBoxSize;
+	return rmin + Random()*range/returnRange;
+}
+
+// This method return random double 0 < r < 1 independent of the OS
+// and it is probablity that randum number is r +/- halfRandomBoxSize
+// The minimum value is halfRandomBoxSize and maximum value is 1.-halfRandomBoxSize
+double Random(void)
+{
+	// For OS with low RAND_MAX, combine two random numbers to get more precision
+	if(RAND_MAX<64000)
+	{	// Two 15 bit numbers 0 to 32767, second one shift 15 bits left
+		unsigned long r1 = (unsigned long)rand()%(unsigned long)32768;
+		unsigned long r2 = ((unsigned long)rand()%(unsigned long)32768) << 15;
+		// long number from 1 to randomMax-1
+		unsigned long rn = r1+r2+1;
+		return randomScale*rn - halfRandomBoxSize;
+	}
+
+	// For other OS's, use RAND_MAX (it is usually 2147483647)
+	// get long from 1 to RAND_MAX-1 by ignoring 0 and RAND_MAX if they occur
+	unsigned long rn = 0;
+	while(rn==0 || rn==randomMax) rn = (unsigned long)rand();
+	return randomScale*rn - halfRandomBoxSize;
+}
 
 // The cummulative dist function is p(x,mean,s) = 0.5(1+erf((x-mean)/(s*sqrt(2))))
 // Given p(d,0,1), return d and set (x-mean)/s = d or x = mean + s*d
@@ -604,6 +940,47 @@ double RationalApproximation(double t)
 	double d[] = {1.432788, 0.189269, 0.001308};
 	return t - ((c[2]*t + c[1])*t + c[0]) /
 	(((d[2]*t + d[1])*t + d[0])*t + 1.0);
+}
+
+// Return smooth step function that goes from 0 (when x=xmin) to 1 (when x=xmax)
+//   as well is 0 for x<xmin and 1 for x>xmax
+// order can be 5 or 3 and anything else is 1
+// deriv is 1 for derivative, anything else for function
+double SmoothStepRange(double x,double xmin,double xmax,int order,int deriv)
+{
+	double range = xmax-xmin;
+	double xi = (x-xmin)/range;
+	double stepVal = SmoothStep(xi,order,deriv);
+	if(deriv==1) stepVal /= range;
+	return stepVal;
+}
+
+// Return smooth step function that goes from 0 (when x=0) to 1 (when x=1).
+//   as well is 0 for x<0 and 1 for x>1
+// order can be 5 or 3 and anything else is order 1 (i.e. h(x)=x)
+// deriv is 1 for derivative, anything else for function
+double SmoothStep(double x,int order,int deriv)
+{
+	// check for out of range
+	if(x<0.)
+		return 0.;
+	else if(x>1.)
+		return deriv==1 ? 0. : 1. ;
+	
+	// order 5, 3, anything else is linear
+	if(order==5)
+	{
+		return deriv==1 ? 30.*x*x*(1.-x)*(1.-x) :
+			x*x*x*(x*(6.*x-15.)+10.) ;
+	}
+	else if(order==3)
+	{
+		return deriv==1 ? 6*x*(1-x) :
+				x*x*(3.-2.*x);
+	}
+	
+	// default to first order
+	return deriv==1 ? 1 : x ;
 }
 
 // stable calculation of real roots to quadratic equation a*x^2 + b*x + c = 0
@@ -916,7 +1293,7 @@ static double series_eval(double r)
     return c[0] + r*t_1;
 }
 
-// Branh zero of Lambert functino for real x (ProductLog(0,x) in Mathematica)
+// Branch zero of Lambert function for real x (ProductLog(0,x) in Mathematica)
 double gsl_sf_lambert_W0(double x)
 {
     const double q = x + exp(-1);
@@ -988,3 +1365,37 @@ double gsl_sf_lambert_Wm1(double x)
     return halley_iteration(x, w, MAX_ITERS);
 }
 #endif
+
+/*
+	Lanczos approximation to Gamma[x] (for x real here)
+	https://en.wikipedia.org/wiki/Lanczos_approximation
+ 
+	The code uses reflection (thus the if-else structure) is necessary, even though
+	it may look strange, as it allows to extend the approximation to values of z where
+	z < 0.5, where the Lanczos method is not valid.
+*/
+
+static const double pval[8] =
+{	676.5203681218851
+	,-1259.1392167224028
+	,771.32342877765313
+	,-176.61502916214059
+	,12.507343278686905
+	,-0.13857109526572012
+	,9.9843695780195716e-6
+	,1.5056327351493116e-7
+};
+
+double gamma_fxn(double z)
+{	if(z<0.5)
+	{	// # Reflection formula
+		return PI_CONSTANT/(sin(PI_CONSTANT*z)*gamma_fxn(1.-z));
+	}
+	z -= 1.;
+	double x = 0.99999999999980993;
+	for(int i=0;i<8;i++)
+		x += pval[i]/(z+i+1.);
+	double t = z+7.5;		// z+len(pval)-0.5
+	double y = sqrt(2.*PI_CONSTANT)*pow(t,z+0.5)*exp(-t)*x;
+	return y;
+}

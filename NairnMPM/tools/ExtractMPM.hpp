@@ -33,8 +33,11 @@ enum { SXX=0,SYY,SZZ,SXY,SXZ,SYZ,STRESS,
 		HIST10,HIST11,HIST12,HIST13,HIST14,
 		HIST15,HIST16,HIST17,HIST18,HIST19,
         CZMI,CZMII,THIST1,THIST2,THIST3,THIST4,THIST5,
-        THIST6,THIST7,THIST8,THIST9,THIST10
+        THIST6,THIST7,THIST8,THIST9,THIST10,PSIZE,
+		XMATUNIT,YMATUNIT,ZMATUNIT
 };
+
+#define PI_CONSTANT 3.141592653589793
 
 // error codes
 enum { noErr=0, NoInputFileErr, BadOptionErr, FileAccessErr, MemoryErr };
@@ -48,7 +51,8 @@ enum { ARCH_Velocity=2,ARCH_Stress,ARCH_Strain,ARCH_PlasticStrain,
             ARCH_ver2Empty, ARCH_ShearComponents, ARCH_StrainEnergy,
             ARCH_History, ARCH_Concentration,ARCH_HeatEnergy,ARCH_ElementCrossings,
             ARCH_RotStrain, ARCH_DamageNormal,ARCH_SpinMomentum,ARCH_SpinVelocity,
-			ARCH_History59, ARCH_History1014, ARCH_History1519, ARCH_MAXMPMITEMS };
+			ARCH_History59, ARCH_History1014, ARCH_History1519,
+			ARCH_Size, ARCH_MAXMPMITEMS };
 
 // Archiving options for crack segments
 enum { ARCH_JIntegral=2,ARCH_StressIntensity,ARCH_CZMDISP,
@@ -59,12 +63,15 @@ char *NextArgument(int,char * const [],int,char);
 void Usage(const char *);
 int ExtractMPMData(const char *,int,int);
 int VTKLegacy(ostream &,const char *);
+int VTKLegacyCracks(ostream &,const char *);
 int XYZExport(ostream &,const char *);
 bool GetNextFileBlock(const char *);
+bool GetSurfaceLine(char *);
 bool RestartFileBlocks(long,const char *);
 void OutputQuantity(int,unsigned char *,ostream &,short,char);
 short pointMatnum(unsigned char *);
-bool skipThisPoint(short);
+int pointInElem(unsigned char *);
+bool skipThisPoint(short,unsigned char *);
 void OutputDouble(double *,int,char,bool,ostream &,int);
 void OutputRecordEnd(ostream &,bool);
 void BeginCrack(ostream &);
@@ -73,4 +80,5 @@ void BeginMP(ostream &);
 void EndMP(ostream &);
 int CalcArchiveSize(int);
 int Reverse(char *,int);
+void GetDeformationGradient(double *F);
 

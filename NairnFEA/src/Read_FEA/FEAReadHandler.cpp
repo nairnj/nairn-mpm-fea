@@ -193,7 +193,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			else if(strcmp(aName,"thick")==0)
 				sscanf(value,"%lf",&thick);
             else if(strcmp(aName,"type")==0)
-			{	if(!theElems->SetElemIDStr(value,block))
+			{	if(!theElems->SetElemIDStr(value))
 					throw SAXException("Invalid or incompatible element type.");
 			}
 			else if(strcmp(aName,"flip")==0)
@@ -296,7 +296,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"type")==0)
-			{	if(!theElems->SetElemIDStr(value,block))
+			{	if(!theElems->SetElemIDStr(value))
 					throw SAXException("Invalid or incompatible element type.");
 				elemTypeSet=TRUE;
 			}
@@ -937,144 +937,10 @@ int FEAReadHandler::GetDOFAttribute(char *value)
 // throws std::bad_alloc, SAXException()
 void FEAReadHandler::ResequenceNodes(void)
 {
-	int i,j,k,l,numnds;
-	
-	// set up data structures
-	ConnectRec *nList=new ConnectRec[nnodes];	// Nodal connectivities
-	int *theLevel=new int[nnodes];				// list of nodes in a level
-	int *lastLevel=new int[nnodes];				// list of nodes in previous level
-	bool *levelFlags=new bool[nnodes];			// flags to remember nodes in level
-	bool *mapFlags=new bool[nnodes];			// bits to remember nodes that have already been mapped
-	int *nodeMap=new int[nnodes];				// map of resequenced nodes
-	
-	for(i=0;i<nnodes;i++)
-	{	nList[i].degree=0;			// zero the degrees
-		mapFlags[i]=FALSE;			// clear all flags
-	}
-
-	/* Invert element list to nodal connectivity list (note list has node #'s-1)
-		nList[0 to nnode-1] says that node is connected to .degree nodes
-												 listed in .cons[0] to .degree-1
-	*/
-	int node1,node2,degree;
-	bool addNode;
-	for(i=0;i<nelems;i++)
-	{	numnds=theElements[i]->NumberNodes();
-		for(j=1;j<=numnds;j++)
-		{	node1=theElements[i]->NodeIndex(j);
-			degree=nList[node1].degree;
-			for(k=1;k<=numnds;k++)
-			{	if(k==j) continue;
-				node2=theElements[i]->NodeIndex(k);
-				addNode=TRUE;
-				for(l=0;l<degree;l++)
-				{	if(node2==nList[node1].cons[l])
-					{	addNode=FALSE;
-						break;
-					}
-				}
-				if(!addNode) continue;
-				if(degree>=MAX_CONNECTIVITY)
-				{	char msg[100];
-					sprintf(msg,"Mesh too highly connected for resequencing at node %d.",node1+1);
-					throw SAXException(msg);
-				}
-				nList[node1].cons[degree++]=node2;
-			}
-			nList[node1].degree=degree;
-		}
-	}
-	
-	// variables
-	int mapped,inLastLevel,inLevel,lognb2;
-	
-	// Start node map using requested resequence node (-1 from 1 based to zero based here)
-	nodeMap[0]=resequence-1;
-	mapped=1;
-	mapFlags[nodeMap[0]]=TRUE;
-	
-	// Initialize level structure
-	inLastLevel=1;
-	lastLevel[0]=nodeMap[0];
-	
-	// Loop through levels until map is done
-	while(TRUE)
-	{	// Calculate new level from last level
-		for(i=0;i<nnodes;i++) levelFlags[i]=FALSE;
-		inLevel=0;
-		for(i=0;i<inLastLevel;i++)
-		{	node1=lastLevel[i];
-			for(j=0;j<nList[node1].degree;j++)
-			{	node2=nList[node1].cons[j];
-				if(!mapFlags[node2] && !levelFlags[node2])
-				{	theLevel[inLevel++]=node2;
-					levelFlags[node2]=TRUE;
-				}
-			}
-		}
-		
-		// If inLevel is zero then all done
-		if(inLevel==0) break;
-		
-		// Sort by degree - shell sort - Numerical Recipes in C, pg 244
-		lognb2=(int)(log((double)inLevel)*1.442695022+1.0e-5);	// log base 2
-		k=inLevel;
-		for(l=1;l<=lognb2;l++)
-		{	k>>=1;		// divide by 2
-			for(j=k;j<inLevel;j++)
-			{	i=j-k;
-				degree=nList[theLevel[j]].degree;
-				node1=theLevel[j];
-				
-				// Back up until find insertion point
-				while(i>=0 && nList[theLevel[i]].degree>degree)
-				{	theLevel[i+k]=theLevel[i];
-					i-=k;
-				}
-				
-				// Insert point
-				theLevel[i+k]=node1;
-			}
-		}
-		
-		// Assign maps to nodes
-		for(i=0;i<inLevel;i++)
-		{	nodeMap[mapped++]=theLevel[i];
-			mapFlags[theLevel[i]]=TRUE;
-		}
-		
-		// Copy level to last level
-		inLastLevel=inLevel;
-		for(i=0;i<inLevel;i++)
-			lastLevel[i]=theLevel[i];
-	}
-	
-	// delete data structures (except nodeMap)
-	delete [] nList;
-	delete [] theLevel;
-	delete [] lastLevel;
-	delete [] mapFlags;
-	delete [] levelFlags;
-	
-	// verify found all nodes
-	if(mapped!=nnodes)
-		throw SAXException("Resequencing failed because of disconnected nodes. Turn resequencing off and plot the mesh to find them,\n  watching out for areas that touch but do not share nodes.");
-	
-	// reverse the node map
-	inLevel=(nnodes-2)/2;
-	for(i=0;i<=inLevel;i++)
-	{	k=nodeMap[i];
-		j=nnodes-1-i;
-		nodeMap[i]=nodeMap[j];
-		nodeMap[j]=k;
-	}
-	
-	// move original nodes to resequenced nodes
-	// Node: revMap 1 based and node numbers in the map are 1 based too
-	int *revMap=new int[nnodes+1];
-	for(i=1;i<=nnodes;i++)
-		revMap[nodeMap[i-1]+1]=i;
-	delete [] nodeMap;
+	int *revMap;
+	char *errMsg = ElementBase::ReverseMapNodes(resequence, NULL, &revMap);
+	if(errMsg!=NULL)
+		throw SAXException(errMsg);
 	
 	// remap nodes
 	delete [] nd;
@@ -1082,6 +948,7 @@ void FEAReadHandler::ResequenceNodes(void)
 
 	// map nodes in all data structures
 	//  ... Elements, Nodal Displacements, Nodal Loads, selected nodes, periodic nodes
+	int i;
 	for(i=0;i<nelems;i++) theElements[i]->MapNodes(revMap);
 	
 	NodalDispBC *nextBC=firstDispBC;

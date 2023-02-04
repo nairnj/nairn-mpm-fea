@@ -23,7 +23,18 @@
 #include "Materials/MaterialBase.hpp"
 #include "System/UnitsController.hpp"
 
-#pragma mark LinearSoftening::Methods
+#pragma mark LinearSoftening::Constructors and Destructors
+
+// none needed
+
+#pragma mark LinearSoftening::Initialize
+
+// none needed
+
+#pragma mark LinearSoftening::Required Methods
+
+// initiation law name
+const char *LinearSoftening::GetSofteningLawName(void) const { return "Linear softening"; }
 
 // Linear law is f(delta) = 1 - delta/deltaMax
 // gScaling must include relative toughness
@@ -32,38 +43,15 @@ double LinearSoftening::GetFFxn(double delta,double gScaling) const
 	return fmax(1.-delta/deltaMax,0.);
 }
 
+// maximum delta
+// gScaling must include relative toughness
+double LinearSoftening::GetDeltaMax(double gScaling) const { return 2.*Gc*gScaling; }
+
 // Linear derivative is constant f'(delta) = -1/deltaMax
 // gScaling must include relative toughness
 double LinearSoftening::GetFpFxn(double delta,double gScaling) const
 {	double deltaMax = 2.*Gc*gScaling;
 	return delta<=deltaMax ? -1./deltaMax : 0. ;
-}
-
-// Solve for increment in crack opening strain by solving de = ddelta + e0*(f(delta+ddelta)-f(delta))
-// Return ddelta if not failed or -1 if failed
-// gScaling must include relative toughness, e0 must include relative strength
-double LinearSoftening::GetDDelta(double de,double e0,double delta,double gScaling) const
-{	double deltaMax = 2.*Gc*gScaling;
-	double ddelta = de/(1.-e0/deltaMax);
-	
-	// has it failed
-	if(delta+ddelta>deltaMax) ddelta = -1.;
-	return ddelta;
-}
-
-// Solve for increment in delta during elastic deformation based on starting d
-// Only needed when softening law depends on extra variables
-// Solve numerically by Newton's method with bracketing; subclass can override if better solution
-double LinearSoftening::GetDDeltaElastic(double delta,double sigmaAlpha,double scaleAlpha,double d,double E1md) const
-{
-    // negative stress means the softening surface does not depend on other variables
-    // delta=0 has trivial solution of zero
-    if(sigmaAlpha<0. || delta==0.) return 0.;
-    double deltaMax = 2.*Gc*scaleAlpha;
-    double dsigma = d*sigmaAlpha;
-    //cout << "# Eq=" << (dsigma*deltaMax/(E1md*deltaMax+dsigma) - delta) << " vs "
-    //            << SofteningLaw::GetDDeltaElastic(delta,sigmaAlpha,scaleAlpha,d,E1md) << endl;
-    return dsigma*deltaMax/(E1md*deltaMax+dsigma) - delta;
 }
 
 // Get energy released (per unit volume per unit stress or Gbar/sigma) up to delta.
@@ -82,24 +70,13 @@ double LinearSoftening::GetGoverGc(double delta,double gScaling) const
 	return delta/deltaMax;
 }
 
-// Get maximium decreasing slope (max(-f'(delta)) for this softening law
-// Linear is 1/deltamax
-// gScaling must include relative toughness
-double LinearSoftening::GetMaxSlope(double gScaling) const
-{	double deltaMax = 2.*Gc*gScaling;
-	return 1./deltaMax;
-}
+// dimensionless stability factor = maxSlope * sGc
+double LinearSoftening::GetEtaStability(void) const { return 2.; }
 
-// calculate maximum cracking strain from damage (only when subcritical, initial damage state)
-// gScaling and e0 must include relative values
-double LinearSoftening::GetDeltaFromDamage(double d,double gScaling,double e0,double deltaGuess)
-{	double deltaMax = 2.*Gc*gScaling;
-	
-	// to test numerical code
-	//cout << "# delta eq=" << (deltaMax*d*e0/(deltaMax*(1-d) + e0*d)) << ", num="
-	//		<< SofteningLaw::GetDeltaFromDamage(d,gScaling,e0,deltaGuess) << endl;
-	
-	return deltaMax*d*e0/(deltaMax*(1-d) + e0*d);
+// Find Phi(delta) function = f(delta)-delta*f'(delta))
+// gscaling must include relative values
+double LinearSoftening::GetPhiFxn(double delta,double gScaling) const
+{	return 1.;
 }
 
 // Find Rd(delta) function = ei(f(delta)-delta*f'(delta))/(delta+ei f(delta)_^2
@@ -110,25 +87,50 @@ double LinearSoftening::GetRdFxn(double delta,double gScaling,double e0) const
 	return e0/(en*en);
 }
 
-// Find Phi(delta) function = f(delta)-delta*f'(delta))
-// gscaling must include relative values
-double LinearSoftening::GetPhiFxn(double delta,double gScaling) const
-{	return 1.;
+#pragma mark LinearSoftening::Optional Methods
+
+// calculate maximum cracking strain from damage (only when subcritical, initial damage state)
+// gScaling and e0 must include relative values
+double LinearSoftening::GetDeltaFromDamage(double d,double gScaling,double e0,double deltaGuess)
+{	double deltaMax = 2.*Gc*gScaling;
+	// to test vs numerical code
+	//#pragma omp critical (output)
+	//{	cout << "# delta eq=" << (deltaMax*d*e0/(deltaMax*(1-d) + e0*d)) << ", num="
+	//		<< SofteningLaw::GetDeltaFromDamage(d,gScaling,e0,deltaGuess) << endl; }
+	return deltaMax*d*e0/(deltaMax*(1-d) + e0*d);
 }
 
-#pragma mark LinearSoftening::Accessors
+// Solve for increment in crack opening strain by solving de = ddelta + e0*(f(delta+ddelta)-f(delta))
+// Return ddelta if not failed or -1 if failed
+// gScaling must include relative toughness, e0 must include relative strength
+double LinearSoftening::GetDDelta(double de,double e0,double delta,double d,double gScaling) const
+{	double deltaMax = 2.*Gc*gScaling;
+	double ddelta = de/(1.-e0/deltaMax);
+	
+	// has it failed
+	if(delta+ddelta>deltaMax) ddelta = -1.;
+	return ddelta;
+}
 
-// maximum delta
-// gScaling must include relative toughness
-double LinearSoftening::GetDeltaMax(double gScaling) const { return 2.*Gc*gScaling; }
+// Solve for increment in delta during elastic deformation based on starting d
+// Only needed when softening law depends on extra variables
+double LinearSoftening::GetDDeltaElastic(double delta,double sigmaAlpha,double scaleAlpha,double d,double E1md) const
+{
+    // negative stress means the softening surface does not depend on other variables
+    // delta=0 has trivial solution of zero
+    if(sigmaAlpha<0. || delta==0.) return 0.;
+    double deltaMax = 2.*Gc*scaleAlpha;
+    double dsigma = d*sigmaAlpha;
+	// to test vs. numerical code
+	// #pragma omp critical (output)
+    //{	cout << "# Eq=" << (dsigma*deltaMax/(E1md*deltaMax+dsigma) - delta) << " vs "
+    //            << SofteningLaw::GetDDeltaElastic(delta,sigmaAlpha,scaleAlpha,d,E1md) << endl; }
+    return dsigma*deltaMax/(E1md*deltaMax+dsigma) - delta;
+}
 
-// initiation law name
-const char *LinearSoftening::GetSofteningLawName(void) const { return "Linear softening"; }
+#pragma mark LinearSoftening::Optional Accessors
 
 // if it linear softening (constant derivative)
 bool LinearSoftening::IsLinear(void) const { return true; }
-
-// dimensionless stability factor
-double LinearSoftening::GetEtaStability(void) const { return 2.; }
 
 

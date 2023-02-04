@@ -47,11 +47,12 @@ void NodalDispBC::DefaultSetup(int num,int dof,double displacement)
 NodalDispBC *NodalDispBC::PrintBC(ostream &os)
 {
     char nline[200];
+    size_t nlsize=200;
     
     if(direction>0)
-        sprintf(nline,"%5d  %2d  %15.7e",nodeNum,direction,bcValue);
+        snprintf(nline,nlsize,"%5d  %2d  %15.7e",nodeNum,direction,bcValue);
     else
-        sprintf(nline,"%5d                          %2d  %15.7e",
+        snprintf(nline,nlsize,"%5d                          %2d  %15.7e",
                         nodeNum,axis,angle);
     os << nline << endl;
 	
@@ -172,11 +173,12 @@ NodalDispBC *NodalDispBC::Unrotate(double *rm,int nfree)
 void NodalDispBC::PrintReaction(void)
 {
     char fline[200];
+    size_t fsize=200;
     
     // skip if rotation
     if(direction<=0) return;
     
-    sprintf(fline,"%5d     %15.7e     %15.7e",nodeNum,
+    snprintf(fline,fsize,"%5d     %15.7e     %15.7e",nodeNum,
             nd[nodeNum]->fs->force.x,nd[nodeNum]->fs->force.y);
     cout << fline << endl;
 }

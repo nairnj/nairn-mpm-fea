@@ -34,7 +34,12 @@ class BoxController : public ShapeController
     
 		// methods
 		virtual bool ContainsPoint(Vector &);
-    
+
+#ifdef SUPPORT_MEMBRANES
+        virtual bool StartMembraneLoop(void);
+        virtual bool NextMembraneLocation(Vector *);
+        virtual void SetMembraneProperties(MPMBase *);
+#endif
         // accessors
         virtual bool Is2DShape(void);
         virtual const char *GetShapeName();
@@ -42,6 +47,12 @@ class BoxController : public ShapeController
     protected:
         double xmid,ymid,zmid;
         double a2,b2,c2;
+#ifdef SUPPORT_MEMBRANES
+		int memaxis;
+        double length,mxLength,myLength,mthick;
+        int numXParticles,numYParticles;
+		double alpha,beta,gamma;
+#endif
 		
 };
 

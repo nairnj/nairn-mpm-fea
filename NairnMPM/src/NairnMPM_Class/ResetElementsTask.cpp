@@ -30,9 +30,6 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/CommonException.hpp"
 
-// class statics
-Vector ResetElementsTask::storeDeleted;
-
 #pragma mark CONSTRUCTORS
 
 ResetElementsTask::ResetElementsTask(const char *name) : MPMTask(name)
@@ -68,7 +65,8 @@ bool ResetElementsTask::Execute(int taskOption)
 				MPMBase *mptr = patches[pn]->GetFirstBlockPointer(block);
 				MPMBase *prevMptr = NULL;		// previous one of this type in current patch
 				while(mptr!=NULL)
-				{	int status = ResetElement(mptr);
+				{	int prevElem = mptr->ElemID();
+					int status = ResetElement(mptr);
 					
 					if(status==LEFT_GRID)
 					{	// particle has left the grid
@@ -86,7 +84,8 @@ bool ResetElementsTask::Execute(int taskOption)
 								// abort if needed
 								if(result==REACHED_MAX_WARNINGS)
 								{	char errMsg[100];
-									sprintf(errMsg,"Too many particles have left the grid\n  (plot x displacement to see last one).");
+                                    size_t errSize=100;
+									snprintf(errMsg,errSize,"Too many particles have left the grid\n  (plot x displacement to see last one).");
 									mptr->origpos.x=-1.e6;
 									throw CommonException(errMsg,"ResetElementsTask::Execute");
 								}
@@ -96,18 +95,13 @@ bool ResetElementsTask::Execute(int taskOption)
 							mptr->SetHasLeftTheGridBefore(true);
 						}
 						
+						// delete it or return to its previous element
                         if(fmobj->deleteLeavingParticles)
-                        {   // delete and reset element
-                            mptr->DeleteParticle(&storeDeleted);
-                            ResetElement(mptr);
-                            
-                            // did it also move to a new patch?
-                            int newpn = mpmgrid.GetPatchForElement(mptr->ElemID());
-                            if(pn != newpn)
-                            {    if(!patches[pn]->AddMovingParticle(mptr,patches[newpn],prevMptr))
-                                {    throw CommonException("Out of memory storing data for particle changing patches","ResetElementsTask::Execute");
-                                }
-                            }
+                        {   // schedule for deletion during reduction
+							if(!patches[pn]->AddMovingParticle(mptr,NULL,prevMptr))
+							{	throw CommonException("Out of memory storing data for particle changing patches",
+																"ResetElementsTask::Execute");
+							}
                         }
                         else
                         {   // bring back to the previous element
@@ -120,7 +114,8 @@ bool ResetElementsTask::Execute(int taskOption)
 						int newpn = mpmgrid.GetPatchForElement(mptr->ElemID());
 						if(pn != newpn)
 						{	if(!patches[pn]->AddMovingParticle(mptr,patches[newpn],prevMptr))
-							{	throw CommonException("Out of memory storing data for particle changing patches","ResetElementsTask::Execute");
+							{	throw CommonException("Out of memory storing data for particle changing patches",
+															"ResetElementsTask::Execute");
 							}
 						}
 					}
@@ -136,19 +131,23 @@ bool ResetElementsTask::Execute(int taskOption)
                             // abort if needed
                             if(result==REACHED_MAX_WARNINGS)
                             {   char errMsg[100];
-                                sprintf(errMsg,"Particle deletion has reached the input limit.");
+                                size_t errSize=100;
+                                snprintf(errMsg,errSize,"Particle deletion has reached the input limit.");
                                 throw CommonException(errMsg,"ResetElementsTask::Execute");
                             }
 							else if(warnings.GetMaxIssues(fmobj->warnParticleDeleted)<2)
 							{   char errMsg[100];
-								sprintf(errMsg,"Particle left grid with position nan.");
+                                size_t errSize=100;
+								snprintf(errMsg,errSize,"Particle left grid with position nan.");
 								throw CommonException(errMsg,"ResetElementsTask::Execute");
 							}
                         }
 						
-                        // delete and reset element
-                        mptr->DeleteParticle(&storeDeleted);
-                        ResetElement(mptr);
+                        // schedule for deletion during reduction
+						if(!patches[pn]->AddMovingParticle(mptr,NULL,prevMptr))
+						{	throw CommonException("Out of memory storing data for particle changing patches",
+															"ResetElementsTask::Execute");
+						}
 					}
 					
 					// next material point and update previous particle
@@ -162,13 +161,6 @@ bool ResetElementsTask::Execute(int taskOption)
 			{
 #pragma omp critical (error)
 				resetErr = new CommonException(err);
-			}
-		}
-		catch(CommonException* err)
-		{	if(resetErr==NULL)
-			{
-#pragma omp critical (error)
-				resetErr = new CommonException(*err);
 			}
 		}
 		catch(std::bad_alloc&)
@@ -190,7 +182,7 @@ bool ResetElementsTask::Execute(int taskOption)
 	// throw now if was an error
 	if(resetErr!=NULL) throw *resetErr;
     
-	// reduction phase moves the particles
+	// reduction phase moves particles between patches or deletes particles
 	for(int pn=0;pn<totalPatches;pn++)
 		patches[pn]->MoveParticlesToNewPatches();
 	
@@ -216,9 +208,16 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
     
 	// calculate from coordinates
 	try
-	{   int j = mpmgrid.FindElementFromPoint(&mpt->pos,mpt)-1;		// elem ID (0 based)
+	{   // get element (note this method throw exception if has left the grid)
+        int j = mpmgrid.FindElementFromPoint(&mpt->pos,mpt)-1;		// elem ID (0 based)
+        
+        // Inin an edge element, GIMP has effective left the grid
 		if(theElements[j]->OnTheEdge()) return LEFT_GRID;
+        
+        // IF axsymmetric, cannot got to element with r<0 (even if not on the edge)
 		if(fmobj->IsAxisymmetric() && mpt->pos.x<=0.) return LEFT_GRID;
+        
+        // change particle to new element
 		mpt->ChangeElemID(j,!mpmgrid.IsStructuredEqualElementsGrid());
 		return NEW_ELEMENT;
 	}

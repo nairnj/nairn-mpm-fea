@@ -58,10 +58,16 @@ const char *FailureSurface::VerifyAndLoadProperties(int np)
 	double rho = parent->GetRho(NULL);
     sigmacRed = criticalNormal/rho;
     taucRed = criticalShear/rho;
-	
+
+    // Legacy examples - entering tauh but not PressureModel assumed to be P_LINEAR
+    if(tauh>0. && pdModel==P_INDEPENDENT) pdModel = P_LINEAR;
+
     // pressure dependent terms
     return VerifyAndLoadPDTerms(rho);
 }
+
+// Remap properties of anisotropic failure surfaces
+void FailureSurface::RemapProperties(int swap) { }
 
 // print just initiation properties to output window
 void FailureSurface::PrintInitiationProperties(void) const
@@ -85,9 +91,6 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 	// initialize
 	int failureMode = NO_FAILURE;
 
-// To eliminiate some 3D transition zones, uncomment
-//#define NO3DTRANSITIONS
-	
 	// get principal stress
 	if(np==THREED_MPM)
 	{
@@ -121,9 +124,7 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 		double P = -(s.x+s.y+s.z)/3.;
 		double sigi = relStrength*sigmacRed;
 		double taui = relStrength*taucRed;
-#ifndef NO3DTRANSITIONS
 		double nx = 1.,ny = 0.,nz = 0.;
-#endif
 		double dt=0.,ds=0.;
 
         // pressure dependence
@@ -182,9 +183,33 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 					failureMode = TENSILE_SHEAR_FAILURE;
 				}
 			}
-			
 		}
-        
+
+        else if(pdModel>P_LINEAR)
+        {   // for nonlinear strength models need to use Mohr's circle
+            // pick tensile and shear failure and normal
+            // for sigi<taui, only shear failure possible
+                
+            // Mohr's circle radius and center
+            double r = 0.5*(s.x-s.z);
+            double p = 0.5*(s.x+s.z);
+
+            // look for exceed limit, if both take one that exceeds the most
+            double shearExceed = r-taui;
+            double tensionExceed = p+r-sigi;
+            if(fmax(shearExceed,tensionExceed)>0.)
+            {   if(shearExceed>tensionExceed)
+                {   // shear failure
+                    nz = -1.;
+                    failureMode = SHEAR_FAILURE;
+                }
+                else
+                {   // tensile failure
+                    failureMode = TENSILE_FAILURE;
+                }
+            }
+        }
+		
 		else
 		{	// Analyze projection on the plane normal to hydrostatic line
 			// For details see JANOSU-019-14
@@ -194,14 +219,9 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 			if(s.x+P==0.)
 			{	// if s.x==P, then all must equal P
 				if(s.x>sigi)
-				{
-#ifndef NO3DTRANSITIONS
-					failureMode = TENSILE_TENSILE_FAILURE;
+				{   failureMode = TENSILE_TENSILE_FAILURE;
 					ny = 1.;
 					nz = 1.;
-#else
-					failureMode = TENSILE_FAILURE;
-#endif
 				}
 			}
 			else
@@ -239,7 +259,6 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 				}
 			}
 			
-#ifndef NO3DTRANSITIONS
 			else if(region==3)
 			{	if(dt<1)
 				{	// failure, check for mode
@@ -330,39 +349,6 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 					}
 				}
 			}
-#else
-			else if(region==3)
-			{	if(dt<1)
-				{	// failure, check for mode
-					double dt2 = (sigi+P)/(s.y+P);
-					if(fabs(dt2)>=1.)
-					{	// Region III tensile failure
-						failureMode = TENSILE_FAILURE;
-					}
-					else if((s.z<sigi-2.*taus) && CloserToShear(&s,sigi,P,taus))
-					{	// in gap between tension and shear - but closer to shear
-						region = 1;
-					}
-					else
-					{	// Region III tensile failure
-						failureMode = TENSILE_FAILURE;
-					}
-				}
-			}
-			
-			else if(region==4)
-			{	// region IV is always failed in tension
-				failureMode = TENSILE_FAILURE;
-			}
-			
-			// final region (or above converted to it)
-			if(region==1)
-			{	if(ds<1.)
-				{	// Region I shear failure
-					failureMode = SHEAR_FAILURE;
-				}
-			}
-#endif
 		}
 		
 		// If failed, get rotation terms
@@ -408,9 +394,7 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 			// to the calculated normal vector
 			// For details see https://en.wikipedia.org/wiki/Rotation_matrix
 			if(failureMode!=TENSILE_FAILURE)
-			{
-#ifndef NO3DTRANSITIONS
-				// add rotation of normal to x axis
+			{   // add rotation of normal to x axis
 				if(ny==0.)
 				{	// rotate ccw by acos(nx/|n|) about principle y axis
 					// This rotates princple x axis to the normal
@@ -465,19 +449,6 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 											 uz*ux*(1.-ctheta)-uy*stheta,uz*uy*(1.-ctheta)+ux*stheta,ctheta+uz*uz*(1.-ctheta));
 					R = Rtheta*R;
 				}
-#else
-				// rotate ccw by 45 degrees about principle y axis
-				// This rotates princple x axis to the normal
-				double c45 = 0.5*sqrt(2.);				// cos(45deg)
-				double s45 = c45;						// sin(45deg)
-				double ux = R(0,1);
-				double uy = R(1,1);
-				double uz = R(2,1);
-				Matrix3 R45 = Matrix3(c45+ux*ux*(1.-c45),ux*uy*(1.-c45)-uz*s45,ux*uz*(1.-c45)+uy*s45,
-									  uy*ux*(1.-c45)+uz*s45,c45+uy*uy*(1.-c45),uy*uz*(1.-c45)-ux*s45,
-									  uz*ux*(1.-c45)-uy*s45,uz*uy*(1.-c45)+ux*s45,c45+uz*uz*(1.-c45));
-				R = R45*R;
-#endif
 			}
 			
 			// decode to Euler angles
@@ -509,6 +480,7 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 				}
 			}
 #endif
+            
 			return failureMode;
 		}
 	}
@@ -534,7 +506,22 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 		double nx=1.,ny=0.;
 		double sigi = relStrength*sigmacRed;
 		double taui = relStrength*taucRed;
- 		
+ 
+		if(pdModel!=P_INDEPENDENT)
+		{   // get new shear strength
+            double P = -(s.x+s.y+str->zz)/3.;
+            taui = GetPDStrength(taui,P,relStrength);
+            
+            // check in linear model
+            if(pdModel==P_LINEAR)
+            {   double sigmas = 0.5*(3.*relStrength*tauhRed-str->zz);
+                if(sigmas<sigi)
+                {	throw CommonException("Shear failure in hydrostatic tension - increase tauh or decrease sigmac to fix",
+                                    "FailureSurface::ShouldInitiateFailure()");
+                }
+            }
+ 		}
+		
 		if(failureSurface==OVOID_SURFACE && sigi>taui)
 		{	// Handle this surface using Mohr's stress plot
 			// always possible when sigi>taui
@@ -550,7 +537,8 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 				// catch tensile-tensile failure too
 				double siPlusP2 = sigi+P2;
 				if(siPlusP2<0. && s.y>sigi)
-				{	// tension-tension failure
+				{	// tension-tension failure (both stress exceed sigi)
+					// not siPlusP2<0 is sigi+P2<r=s.x+P2 or s.x>sigi
 					nx = s.x-sigi;
 					ny = s.y-sigi;
 					failureMode = TENSILE_TENSILE_FAILURE;
@@ -579,7 +567,30 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 				}
 			}
 		}
-		
+
+        else if(pdModel>P_LINEAR)
+        {   // for nonlinear strength models need to use Mohr's circle
+            // decide if tensile or shear and set ny=1 if shear
+            
+            // Mohr's circle radius and center (note that r = s.x+P2)
+            double r = 0.5*(s.x-s.y);
+            
+            // look for exceed limit, if both take one that exceeds the most
+            double shearExceed = r-taui;
+            double tensionExceed = -P2+r-sigi;
+            if(fmax(shearExceed,tensionExceed)>0.)
+            {   if(shearExceed>tensionExceed)
+                {   // shear failure
+                    ny = -1.;
+                    failureMode = SHEAR_FAILURE;
+                }
+                else
+                {   // tensile failure
+                    failureMode = TENSILE_FAILURE;
+                }
+            }
+        }
+        
         else
 		{	// using s.x and taumax alone
             // This code only works for P_INDEPENDENT or P_LINEAR
@@ -596,13 +607,22 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 				else
 					failureMode = TENSILE_FAILURE;
 			}
+
+			else if(shearShift>=1.)
+			{	// case 2 where only fails in tension
+				double dt = siPlusP2/(s.x+P2);
+				if(dt<1.)
+					failureMode = TENSILE_FAILURE;
+			}
 			
 			else if(siPlusP2<taui)
 			{	// tension or shear failure
 				double dt = siPlusP2/(s.x+P2);
 				if(dt<1.)
 				{	failureMode = TENSILE_FAILURE;
-					double sigmaStar = sigmacRed-2.*taui ;
+					double sigmaStar = pdModel==P_LINEAR ?
+                                            (sigmacRed-2.*taui+shearShift*siPlusP2)/(1.-shearShift) :
+                                            sigmacRed-2.*taui ;
 					if(s.y<sigmaStar)
 					{	// check if closer to shear faaiure
 						double vx = s.x-sigi;
@@ -635,6 +655,7 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,doub
 			normal->x = cos(theta);
 			normal->y = sin(theta);
 			normal->z = 0.;
+            
 			return failureMode;
 		}
 	}
@@ -660,23 +681,295 @@ bool FailureSurface::CloserToShear(Vector *s,double sigi,double P,double taus) c
 
 #pragma mark FailureSurface::Handle Pressure Dependent Failure
 
-// Methods to implement pressure dependent properties
+/* These methods handle pressure dependent shear strength by following models
+
+    1. P_LINEAR
+        tau = tauc(1+P/tauh)
+        code: tauRed = taucRed*(1 + Pred/tauhRed)
+    2. P_STEPLINEAR
+        tau = tauc for P < P1
+        tau = tauc + (taumax-taux)(fmin(P,P2)-P1)/(P2-P1) for P > P1
+        code: tauhRed = (taumax-tauc)/(P2-P1) then
+                tauRed = taucRed + tauhRed*(fmin(PRed,P2Red)-P1Red) for PRed>P1Red
+    3. P_STEPEXP
+        tau = tauc for P < P1
+        tau = tauc + (taumax-tauc)*(1-exp(-ln(2)*(P-P1)/P2))
+        code: P2Red = ln(2)/P2Red and tauhRed = (taumax-tauc)/rho
+                tauRed = taucRed + tauhRed*(1-exp(-P2Red*(Pred-P1Red)) for PRed>P1Red
+    4. P_SIGMOIDALEXP
+        tau = tauc + (taumax-tauc)/(1+exp(-ln(2)*(P-P1)/P2))
+        code: P2Red = ln(2)/P2Red and tauhRed = (taumax-tauc)/rho
+                tauRed = taucRed + tauhRed/(1+exp(-P2Red*(Pred-P1Red))
+*/
+
+// called when object created to initials default values
 void FailureSurface::InitPDTerms(void)
-{   pdModel = P_INDEPENDENT;
+{
+    // pressure dependence
+    pdModel = P_INDEPENDENT;
+    tauh = -1.;
+    parg1 = 0.;
+    parg2 = 1.;
+    maxPressure = 0.;
 }
-char *FailureSurface::InputPDProperty(char *xName,int &input,double &gScaling) { return NULL; }
-const char *FailureSurface::VerifyAndLoadPDTerms(double rho) { return NULL; }
-void FailureSurface::PrintPDTerms(void) const { cout << endl; }
-double FailureSurface::GetPDStrength(double taui,double P,double relStrength) const { return taui; }
+
+// properties related to pressure dependent strength
+char *FailureSurface::InputPDProperty(char *xName,int &input,double &gScaling)
+{
+    // pressure dependent model
+    if(strcmp(xName,"PressureModel")==0)
+    {   input = INT_NUM;
+        return (char *)&pdModel;
+    }
+    
+    // pressure dependent failure loads
+    else if(strcmp(xName,"tauh")==0)
+    {   input = DOUBLE_NUM;
+        return UnitsController::ScaledPtr((char *)&tauh,gScaling,1.e6);
+    }
+    
+    // pressure point in non-linear models
+    else if(strcmp(xName,"P1")==0)
+    {   input = DOUBLE_NUM;
+        return UnitsController::ScaledPtr((char *)&parg1,gScaling,1.e6);
+    }
+    
+    // pressure point in non-linear models
+    else if(strcmp(xName,"P2")==0)
+    {   input = DOUBLE_NUM;
+        return UnitsController::ScaledPtr((char *)&parg2,gScaling,1.e6);
+    }
+    
+    else if(strcmp(xName,"maxPressure")==0)
+    {   input = DOUBLE_NUM;
+        return UnitsController::ScaledPtr((char *)&maxPressure,gScaling,1.e6);
+    }
+    
+    // is not a pressure dependent property
+    return NULL;
+}
+
+// check input properties and set values for future calculations
+const char *FailureSurface::VerifyAndLoadPDTerms(double rho)
+{
+    shearShift = 0.;
+    switch(pdModel)
+    {   case P_LINEAR:
+            // reduced strength term
+            tauhRed = tauh/rho;
+            
+            // note: relStrength applied to both so normal remains constant
+            // only used for P_LINEAR
+            shearShift = 2.*taucRed/(3.*tauhRed);
+            
+            // force hydrostatic shear strength to be greater than tensile strength
+            if(tauhRed<sigmacRed)
+                return "Hydrostatic shear strength must be greater than tensile strength";
+            break;
+            
+        case P_STEPLINEAR:
+            // strength change
+            tauhRed = (tauh-criticalShear)/rho;
+            if(tauhRed<=0.)
+                return "High-pressure shear strength must be greater than low-pressure shear strength";
+            
+            // start to increase
+            P1Red = parg1/rho;
+            
+            // width of the step
+            P2Red = parg2/rho;
+            if(P2Red<=P1Red)
+                return "P2 must be higher than P1";
+            
+            // slope such that tau = taucRed + tauhRed*(PRed-P1Red) where PRed = fmin(P2Red,PRed)
+            tauhRed /= (P2Red-P1Red);
+            break;
+            
+        case P_STEPEXP:
+        case P_SIGMOIDALEXP:
+            // strength change
+            tauhRed = (tauh-criticalShear)/rho;
+            if(tauhRed<=0.)
+                return "High-pressure shear strength must be greater than low-pressure shear strength";
+            
+            // start to increase
+            P1Red = parg1/rho;
+            
+            // exponental half life (in P2Red)
+            if(parg2<=0.)
+                return "Phalf must be positive";
+            P2Red = log(2.)*rho/parg2;
+            
+        default:
+            break;
+    }
+    
+    return NULL;
+}
+
+// Print pressure dependence terms
+// starting in third column of properties
+void FailureSurface::PrintPDTerms(void) const
+{
+    switch(pdModel)
+    {   case P_LINEAR:
+            cout << "\nPressure Dep. Shear: Linear with P" << endl;
+            MaterialBase::PrintProperty("tauh",tauh*UnitsController::Scaling(1.e-6),"");
+            break;
+            
+        case P_STEPLINEAR:
+            cout << "\nPressure Dep. Shear: Step linear from P1 to P2" << endl;
+            MaterialBase::PrintProperty("P1",parg1*UnitsController::Scaling(1.e-6),"");
+            MaterialBase::PrintProperty("P2",parg2*UnitsController::Scaling(1.e-6),"");
+            MaterialBase::PrintProperty("taumax",tauh*UnitsController::Scaling(1.e-6),"");
+            break;
+            
+        case P_STEPEXP:
+            cout << "\nPressure Dep. Shear: Step exponential from P1" << endl;
+            MaterialBase::PrintProperty("P1",parg1*UnitsController::Scaling(1.e-6),"");
+            MaterialBase::PrintProperty("dP1/2",parg2*UnitsController::Scaling(1.e-6),"");
+            MaterialBase::PrintProperty("taumax",tauh*UnitsController::Scaling(1.e-6),"");
+            break;
+            
+        case P_SIGMOIDALEXP:
+            cout << "\nPressure Dep. Shear: Sigmoidal exponential centered on Pmid" << endl;
+            MaterialBase::PrintProperty("Pmid",parg1*UnitsController::Scaling(1.e-6),"");
+            MaterialBase::PrintProperty("dP1/3",parg2*UnitsController::Scaling(1.e-6),"");
+            MaterialBase::PrintProperty("taumax",tauh*UnitsController::Scaling(1.e-6),"");
+            break;
+            
+        default:
+            // pressure independent
+            cout << " (pressure independent)";
+            break;
+    }
+    cout << endl;
+}
+
+// get strength at pressure P
+double FailureSurface::GetPDStrength(double taui,double P,double relStrength) const
+{
+    switch(pdModel)
+    {   case P_LINEAR:
+            taui *= (1.+P/(relStrength*tauhRed));
+            break;
+            
+        case P_STEPLINEAR:
+            if(P>P1Red)
+                taui += relStrength*tauhRed*(fmin(P,P2Red)-P1Red);
+            break;
+            
+        case P_STEPEXP:
+            if(P>P1Red)
+                taui += relStrength*tauhRed*(1.-exp(-P2Red*(P-P1Red)));
+            break;
+        
+        case P_SIGMOIDALEXP:
+            taui += relStrength*tauhRed/(1.+exp(-P2Red*(P-P1Red)));
+            break;
+            
+        default:
+            break;
+    }
+    return taui;
+}
+
+// potential increase in strength during simulation
 double FailureSurface::sigmaIStabilityScale(void) const { return 1.; }
-double FailureSurface::sigmaIIStabilityScale(void) const { return 1.; }
-bool FailureSurface::IsPDModelConstant(double pressure,double dP,double &constantStrength) const { return true; }
+
+// potential increase in strength during simulation
+double FailureSurface::sigmaIIStabilityScale(void) const
+{
+    switch(pdModel)
+    {   case P_LINEAR:
+            return 1. + maxPressure/tauh;
+            
+        case P_STEPLINEAR:
+            if(maxPressure>parg1)
+                return 1. + (tauh/criticalShear-1.)*(fmin(maxPressure,parg2)-parg1)/(parg2-parg1);
+            break;
+            
+        case P_STEPEXP:
+            if(maxPressure>parg1)
+                return 1. + (tauh/criticalShear-1.)*(1.-exp(-log(2.)*(maxPressure-parg1)/parg2));
+            break;
+        
+        case P_SIGMOIDALEXP:
+            return 1. + (tauh/criticalShear-1.)/(1.+exp(-log(2.)*(maxPressure-parg1)/parg2));
+            break;
+            
+        default:
+            break;
+    }
+    return 1.;
+}
+
+// check if pressure change is within a constant region
+// if it is, return the constant strength in that region (not needs relStrength factor)
+bool FailureSurface::IsPDModelConstant(double pressure,double dP,double &constantStrength) const
+{
+    switch(pdModel)
+    {   case P_LINEAR:
+        case P_SIGMOIDALEXP:
+            return false;
+            
+        case P_STEPLINEAR:
+            // only pressures between P1Red and P2Red
+            if(fmax(pressure,pressure+dP)>P1Red && fmin(pressure,pressure+dP)<P2Red) return false;
+            if(pressure<P1Red)
+                constantStrength = taucRed;
+            else
+                constantStrength = taucRed + tauhRed*(P2Red-P1Red);
+            break;
+            
+        case P_STEPEXP:
+            // only pressures above P1Red
+            if(fmax(pressure,pressure+dP)>P1Red) return false;
+            constantStrength = taucRed;
+            break;
+            
+        default:
+            constantStrength = taucRed;
+            break;
+    }
+    return true;
+
+}
 
 // scaled mode II strength; failure surfaces that depended on other properties should change relStrength
 double FailureSurface::sigmaII(double relStrength,double &sigmaIIAlpha,
                                      Tensor &str,double dPe,double C11,double nuterm,double decxx,int np) const
-{   sigmaIIAlpha = -1.;
-    return relStrength*taucRed;
+{
+    // exit if no pressure dependecne
+    if(pdModel==P_INDEPENDENT)
+    {	sigmaIIAlpha = -1.;
+        return relStrength*taucRed;
+    }
+    
+    // current pressure
+    double pressure = -(str.xx+str.yy+str.zz)/3.;
+    
+    // pressure increment for provided cracking strain
+    // dP = -K(de-decxx) = dPe + K decxx
+    double dP;
+    if(np==PLANE_STRESS_MPM)
+        dP = dPe + C11*(1.+nuterm)*decxx/3.;
+    else
+        dP = dPe + C11*(1.+2.*nuterm)*decxx/3.;
+    
+    // exit if strenth constant in this pressuure increment
+    double constantStrength;
+    if(IsPDModelConstant(pressure,dP,constantStrength))
+    {   sigmaIIAlpha = -1.;
+        return relStrength*constantStrength;
+    }
+    
+    // set full strength at updated pressure
+    double taucRel = relStrength*taucRed;
+    sigmaIIAlpha = GetPDStrength(taucRel,pressure+dP,relStrength);
+    
+    // return full strength at this pressure
+    return GetPDStrength(taucRel,pressure,relStrength);
 }
 
 // does this law have pressure dependence

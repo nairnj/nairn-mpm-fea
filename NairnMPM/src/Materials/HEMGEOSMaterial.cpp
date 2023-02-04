@@ -327,7 +327,7 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,
     double avgP = 0.5*(P0+P);
 	double delVres = 1. - 1./detdFres;
     mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-avgP*delVres);
-    
+
 	// SCGL and SL shear modulus and save Gratio = Jeff G/G0 for later calculations
     // Note: Jeff in Gred and Gratio is so that where they are used, they give
     //          specific Cauchy stress

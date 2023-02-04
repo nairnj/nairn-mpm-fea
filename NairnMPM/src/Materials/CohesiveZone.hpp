@@ -29,7 +29,7 @@ class CohesiveZone : public TractionLaw
 		virtual const char *VerifyAndLoadProperties(int);
 	
 		// history data
-		virtual char *InitHistoryData(char *);
+		virtual char *InitHistoryData(char *,MPMBase *);
 	
 		// const methods
 		virtual void PrintMechanicalProperties(void) const;

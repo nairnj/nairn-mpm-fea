@@ -43,6 +43,7 @@ class MPMReadHandler : public CommonReadHandler
 		void MPMCracks(int,int,double,double,int,int);			// Generate cracks segments, Liping Xue
         void DisplacementBCs(void);				// Generate Displacement BCs
         void LoadBCs(void);						// Set load BCs
+	
 		char *LastBC(char *);
 		void CreateSymmetryBCs();
 		void CreateSymmetryBCPlane(int,double,int,int);
@@ -60,6 +61,7 @@ class MPMReadHandler : public CommonReadHandler
         char *currentTask;
         
 		void grid(void);
+		void gridAxis(int,int,double *,double *,double,double *,int,double *,double *);
 };
 
 void SetMptAnglesFromFunctions(char *,double *,Vector *,MPMBase *);		// 3D transformation angles

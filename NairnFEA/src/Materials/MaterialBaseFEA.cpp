@@ -20,6 +20,11 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&rho);
     }
 
+    else if(strcmp(xName,"swapz")==0)
+    {   input=INT_NUM;
+        return((char *)&swapz);
+    }
+    
     return((char *)NULL);
 }
 

@@ -17,34 +17,35 @@ NodalConcBC *firstConcBC=NULL;
 NodalConcBC *lastConcBC=NULL;
 NodalConcBC *firstRigidConcBC=NULL;
 NodalConcBC *reuseRigidConcBC=NULL;
+NodalConcBC *firstDiffBC[NUM_DUFFUSION_OPTIONS];
 
 #pragma mark NodalConcBC: Constructors and Destructors
 
-NodalConcBC::NodalConcBC(int num,int setStyle,double concentration,double argTime)
+NodalConcBC::NodalConcBC(int num,int setStyle,double concentration,double argTime,int phase)
                     : NodalValueBC(num,setStyle,concentration,argTime)
 {
+	phaseStyle = phase;
+    if(phaseStyle<FRACTURE_PHASE_FIELD)
+    {   phaseStyle = MOISTURE_DIFFUSION;
+#ifdef POROELASTICITY
+        if(DiffusionTask::HasPoroelasticity())
+            phaseStyle = POROELASTICITY_DIFFUSION;
+#endif
+    }
 }
 
 // print it (if can be used)
 BoundaryCondition *NodalConcBC::PrintBC(ostream &os)
 {
-	// moisture uses parent calss
-	if(DiffusionTask::HasDiffusion())
-		return NodalValueBC::PrintBC(os);
-
+    double scale = 1.;
 #ifdef POROELASTICITY
-	// poroelasticity uses special case
-	char nline[200];
-	sprintf(nline,"%7d %2d %15.7e %15.7e",nodeNum,style,
-			UnitsController::Scaling(1.e-6)*GetBCValueOut(),GetBCFirstTimeOut());
-	os << nline;
-	PrintFunction(os);
-	
-	// for function input scale for Legacy units
-	if(style==FUNCTION_VALUE)
-		scale = UnitsController::Scaling(1.e3);
+    if(phaseStyle==POROELASTICITY_DIFFUSION) scale = UnitsController::Scaling(1.e-6);
 #endif
-	
+    char nline[200];
+	size_t nlsize=200;
+    snprintf(nline,nlsize,"%7d %2d %15.7e %15.7e %3d",nodeNum,style,scale*GetBCValueOut(),GetBCFirstTimeOut(),phaseStyle);
+    os << nline;
+    PrintFunction(os);
 	return (BoundaryCondition *)GetNextObject();
 }
 
@@ -52,12 +53,24 @@ BoundaryCondition *NodalConcBC::PrintBC(ostream &os)
 
 // set value (and scale legacy MPa to Pa)
 void NodalConcBC::SetBCValue(double bcvalue)
-{	double rescale = DiffusionTask::RescalePotential();
+{	double rescale = DiffusionTask::RescalePotential(phaseStyle);
 	BoundaryCondition::SetBCValue(rescale*bcvalue);
 }
 
 // get set direction
-int NodalConcBC::GetSetDirection(void) const { return CONC_DIRECTION; }
-
-// return point on node to transport field
-TransportField *NodalConcBC::GetTransportFieldPtr(NodalPoint *ndpt) const { return &(ndpt->gDiff); }
+int NodalConcBC::GetSetDirection(void) const
+{   // depends on style
+    switch(phaseStyle)
+    {   case MOISTURE_DIFFUSION:
+        case POROELASTICITY_DIFFUSION:
+            return CONC_DIRECTION;
+        case FRACTURE_PHASE_FIELD:
+            return FRACTURE_PHASE_DIRECTION;
+        case BATTERY_PHASE_FIELD:
+            return BATTERY_PHASE_DIRECTION;
+        case CONDUCTION_PHASE_FIELD:
+            return POISSON_DIFF_DIRECTION;
+        default:
+            return CONC_DIRECTION;
+    }
+}

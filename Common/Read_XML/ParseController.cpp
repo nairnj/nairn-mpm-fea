@@ -35,5 +35,17 @@ bool ParseController::AddObject(LinkedObject *obj)
 // last object is also th e current object when reading XMP file
 LinkedObject *ParseController::currentObject(void) { return lastObject; }
 
+// delete all linked objects
+void ParseController::ClearObjects(void)
+{
+	while(firstObject!=NULL)
+	{	LinkedObject *prevObject = firstObject;
+		firstObject = prevObject->GetNextObject();
+		delete prevObject;
+	}
+	firstObject=NULL;
+	lastObject=NULL;
+	numObjects=0;
+}
 
 

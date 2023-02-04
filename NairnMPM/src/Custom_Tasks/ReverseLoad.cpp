@@ -38,11 +38,12 @@
 #include "Global_Quantities/GlobalQuantity.hpp"
 #include "System/ArchiveData.hpp"
 #include "System/UnitsController.hpp"
+#include "Boundary_Conditions/NodalVelBC.hpp"
 
 #pragma mark INITIALIZE
 
 // Constructors
-ReverseLoad::ReverseLoad()
+ReverseLoad::ReverseLoad() : CustomTask()
 {
     crackNum=0;			// means any crack
     finalLength=10.;	// final length in mm
@@ -52,6 +53,9 @@ ReverseLoad::ReverseLoad()
 	whichMat = 0;
     holdTime = -1.;
     debondLength = 0;   // made true if no propagation tasks
+    waitForDrop = false;
+    maxValue = 0.;
+    passedMinValue = false;
 }
 
 // Return name of this task
@@ -73,7 +77,14 @@ char *ReverseLoad::InputParam(char *pName,int &input,double &gScaling)
         return (char *)&finalLength;
     }
     
-    if(strcmp(pName,"debondedLength")==0)
+    // minimum value for peak monitoring
+    else if(strcmp(pName,"minValue")==0)
+    {   input=DOUBLE_NUM;
+        waitForDrop = true;
+        return (char *)&minValue;
+    }
+    
+   if(strcmp(pName,"debondedLength")==0)
     {   input=INT_NUM;
         return (char *)&debondLength;
     }
@@ -121,7 +132,7 @@ CustomTask *ReverseLoad::Initialize(void)
 	if(quantity>=0)
 	{	// finish name
 		if(whichMat!=0)
-			sprintf(quant,"%s mat %d",quant,whichMat);
+			snprintf(quant,quantSize,"%s mat %d",quant,whichMat);
 		
 		// find the global quantity
 		switch(style)
@@ -150,7 +161,15 @@ CustomTask *ReverseLoad::Initialize(void)
                     cout << "Loading reversed to zero if ";
 				break;
 		}
-		cout << quant << " passes " << finalLength << endl;
+        if(!waitForDrop)
+            cout << quant << " passes " << finalLength << endl;
+        else
+        {   cout << quant << " passes " << minValue << endl;
+            cout << "   and then drops to " << finalLength << " of peak value" << endl;
+            if(finalLength<=0. || finalLength>=1.)
+            {   throw CommonException("For peak tracking, the maxValue must be between 0 and 1","ReverseLoad::Initialize");
+            }
+       }
 		
 		// convert to index
 		int qIndex=0;
@@ -247,9 +266,45 @@ CustomTask *ReverseLoad::FinishForStep(bool &removeMe)
             // check global quantity
             if(quantity>=0)
             {	// see if has passed desider value
-                status = archiver->PassedLastArchived(quantity,finalLength);
+                double currentValue = archiver->GetLastArchived(quantity);
+                
+                if(!waitForDrop)
+                {   // just check if passed specified value
+                    if(finalLength>=0.)
+                        status = (currentValue >= finalLength);
+                    else
+                        status = (currentValue <= finalLength);
+                }
+                else if(minValue>=0.)
+                {   // looking for drop to finalLength*maxValue after passing minValue
+                    if(currentValue>maxValue) maxValue = currentValue;
+                    if(!passedMinValue && maxValue>=minValue) passedMinValue = true;
+                    status = false;
+                    if(passedMinValue)
+                    {   if(currentValue<0.)
+                        {   // went nagative
+                            status = true;
+                        }
+                        else if(currentValue/maxValue < finalLength)
+                            status = true;
+                    }
+                 }
+                else
+                {   // looking for negative results (pass -minValue then drop to fraction of maxValue)
+                    if(currentValue<maxValue) maxValue = currentValue;
+                    if(!passedMinValue && maxValue<=minValue) passedMinValue = true;
+                    status = false;
+                    if(passedMinValue)
+                    {   if(currentValue>0.)
+                        {   // went positive
+                            status = true;
+                        }
+                        else if(currentValue/maxValue < finalLength)
+                            status = true;
+                    }
+                 }
             }
-            
+
             // check cracks
             else
             {   bool checkThisStep = propagateTask!=NULL ? propagateTask->theResult!=NOGROWTH : true ;
@@ -279,22 +334,42 @@ CustomTask *ReverseLoad::FinishForStep(bool &removeMe)
     if(!status) return nextTask;
 	
     // Print message that task has been triggered
+	// throw is aborting, or message line if continuing
     if(reversed == CHECKING_PHASE)
     {   if(quantity>=0)
         {	if(style==ABORT && holdTime<0.)
-                throw CommonException("Global quantity has reached specified value","ReverseLoad::FinishForStep",noErr);
-            
-            cout << "# Critical global quantity reached at time t: " << mtime*UnitsController::Scaling(1.e3)
+			{	char rev[200];
+                size_t revSize=200;
+				if(waitForDrop)
+					snprintf(rev,revSize,"Value %s reached %.6g and then dropped to %.6g",quant,maxValue,finalLength*maxValue);
+				else
+                    snprintf(rev,revSize,"Value %s reached %.6g",quant,finalLength);
+				throw CommonException(rev,"ReverseLoad::FinishForStep",noErr);
+			}
+			
+			if(waitForDrop)
+			{	cout << "# " << quant << " reached " << maxValue
+						<< " and then dropped to " << (finalLength*maxValue);
+			}
+			else
+			{	cout << "# " << quant << " reached " << finalLength;
+			}
+			cout << " at time t: " << mtime*UnitsController::Scaling(1.e3)
 				<< " " << UnitsController::Label(ALTTIME_UNITS) << endl;
         }
         else
         {	if(style==ABORT && holdTime<0.)
-                throw CommonException("Crack has reached specified length","ReverseLoad::FinishForStep",noErr);
+			{	char rev[200];
+                size_t revSize=200;
+				snprintf(rev,revSize,"Crack has reached length = %.6g",finalLength);
+                throw CommonException(rev,"ReverseLoad::FinishForStep",noErr);
+			}
             
             // stop propgation
             if(propagateTask!=NULL)
             {   propagateTask->ArrestGrowth(true);
-                cout << "# Crack growth arrested at time t: " << mtime*UnitsController::Scaling(1.e3)
+                cout << "# Crack length = " << finalLength << " and growth arrested at time t: "
+							<< mtime*UnitsController::Scaling(1.e3)
                             << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
             }
         }
@@ -349,7 +424,8 @@ CustomTask *ReverseLoad::FinishForStep(bool &removeMe)
         // reverse rigid contact and BC particles
         int p;
         for(p=nmpmsRB;p<nmpms;p++)
-        {	RigidMaterial *mat = (RigidMaterial *)theMaterials[mpm[p]->MatID()];
+		{	if(mpm[p]->InReservoir()) continue;
+			RigidMaterial *mat = (RigidMaterial *)theMaterials[mpm[p]->MatID()];
             if(mat->IsConstantVelocity())
             {	if(style==REVERSE)
                     mpm[p]->ReverseParticle(reversed==HOLDING_PHASE,holdTime>0.);
@@ -357,6 +433,9 @@ CustomTask *ReverseLoad::FinishForStep(bool &removeMe)
                     mpm[p]->StopParticle();
             }
         }
+		
+		// velocity BCs set to zero, will not reverse
+		NodalVelBC::holdAllVelocityBCs = true;
     }
 	
 	return nextTask;

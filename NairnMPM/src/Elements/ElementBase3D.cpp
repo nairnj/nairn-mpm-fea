@@ -100,11 +100,12 @@ void ElementBase3D::GetRange(int ax,double &amin,double &amax) const
 // check if this GIMP element is on the edge of the grid
 // assumes a generated 3D structured grid
 bool ElementBase3D::OnTheEdge(void)
-{	if(useGimp == POINT_GIMP) return FALSE;
+{	// now adds extra element for POINT_GIMP too and treats edge as left the grid
+	//if(useGimp == POINT_GIMP) return FALSE;
 	return mpmgrid.EdgeElement3D(num);
 }
 
 // for structured grid, return 0-terminated list of neighbors
-void ElementBase3D::GetListOfNeighbors(int *theList) { mpmgrid.ListOfNeighbors3D(num,theList); }
+void ElementBase3D::GetListOfNeighbors(int *theList) const { mpmgrid.ListOfNeighbors3D(num,theList); }
 
 

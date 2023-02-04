@@ -197,7 +197,7 @@ void MaterialContactNode::GetMaterialContactData(void)
 		// do non-rigid, rigid block, and rigid contact particles in patch pn
 #pragma omp for
 		for(int p=0;p<nmpmsRC;p++)
-		{
+		{	if(mpm[p]->InReservoir()) continue;
 			try
 			{	// get material point
 				MPMBase *mpmptr = mpm[p];
@@ -247,6 +247,7 @@ void MaterialContactNode::GetMaterialContactData(void)
 	for(int p=0;p<nmpmsRC;p++)
 	{	// get material point
 		MPMBase *mpmptr = mpm[p];
+		if(mpmptr->InReservoir()) continue;
 		
 		// don't actually need shape functions, only thing used from return are numnds and nds
 		int *nds = ndsArray;

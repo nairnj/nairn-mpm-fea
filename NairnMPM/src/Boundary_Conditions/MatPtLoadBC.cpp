@@ -48,8 +48,9 @@ MatPtLoadBC *MatPtLoadBC::ReorderPtNum(int p1, int p2)
 BoundaryCondition *MatPtLoadBC::PrintBC(ostream &os)
 {
     char nline[200];
+	size_t nlsize=200;
     
-    sprintf(nline,"%7d %2d %2d %15.7e %15.7e",ptNum,direction,style,
+    snprintf(nline,nlsize,"%7d %2d %2d %15.7e %15.7e",ptNum,direction,style,
 			UnitsController::Scaling(1.e-6)*GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
 	PrintFunction(os);
@@ -156,7 +157,6 @@ MatPtLoadBC *MatPtLoadBC::ReverseLinearLoad(double bctime,double *finalTime,bool
                     // new BC is offset+value*(mstime-ftime), which is zero when mstime = ftime-offset/value
                     *finalTime = GetBCFirstTime() - GetBCOffset()/GetBCValue();
                 }
-                
             }
             break;
         default:
@@ -189,26 +189,15 @@ MatPtLoadBC *MatPtLoadBC::AddMPFluxBC(double bctime)
 {	return (MatPtLoadBC *)GetNextObject();
 }
 
-
 #pragma mark MatPtLoadBC:Accessors
 
-#ifdef USE_ASCII_MAP
-// put x,y,z,q into fixed places in array
+// put x,y,z,q into fixed places in array (see Expression vmap)
 void MatPtLoadBC::GetPositionVars(double *vars)
 {	vars[2] = mpm[ptNum-1]->pos.x;		//x
 	vars[3] = mpm[ptNum-1]->pos.y;		//y
 	vars[4] = mpm[ptNum-1]->pos.z;		//z
 	vars[6] = mpm[ptNum-1]->GetParticleRotationZ();		//q
 }
-#else
-// put x,y,z,q into unordered map
-void MatPtLoadBC::GetPositionVars(unordered_map<string,double> vars)
-{	vars["x"] = mpm[ptNum-1]->pos.x;
-	vars["y"] = mpm[ptNum-1]->pos.y;
-	vars["z"] = mpm[ptNum-1]->pos.z;
-	vars["q"] = mpm[ptNum-1]->GetParticleRotationZ();
-}
-#endif
 
 // set value (and scale legacy N to uN, and MPa to Pa)
 void MatPtLoadBC::SetBCValue(double bcvalue)
@@ -231,3 +220,29 @@ void MatPtLoadBC::SetParticleFext(double stepTime)
     	nextLoad=nextLoad->AddMPLoad(stepTime);
 }
 
+// Delete all particle BC on mpmptr (called when particle is deleted in Reservoir)
+void MatPtLoadBC::DeleteParticleBCs(MPMBase *mpmptr,MatPtLoadBC **firstBC)
+{
+	MatPtLoadBC *nextLoad = *firstBC;
+	MatPtLoadBC *prevLoad = NULL;
+	while(nextLoad!=NULL)
+	{	if(mpm[nextLoad->ptNum-1]==mpmptr)
+		{	// delete this BC, but save its next BC first
+			MatPtLoadBC *nextNextLoad = (MatPtLoadBC *)nextLoad->GetNextObject();
+			delete nextLoad;
+			
+			// Reset first or set previous
+			if(prevLoad==NULL)
+				*firstBC = nextNextLoad;
+			else
+				prevLoad->SetNextObject(nextNextLoad);
+			
+			// on to next, but prevLoad unchanged
+			nextLoad = nextNextLoad;
+		}
+		else
+		{	prevLoad = nextLoad;
+			nextLoad = (MatPtLoadBC *)prevLoad->GetNextObject();
+		}
+	}
+}

@@ -14,6 +14,7 @@
 #include "stdafx.h"
 #include "Global_Quantities/GlobalQuantity.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
+#include "NairnMPM_Class/Reservoir.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Global_Quantities/BodyForce.hpp"
@@ -24,6 +25,7 @@
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "System/UnitsController.hpp"
 #include "Elements/ElementBase.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
 
 // Single global contact law object
 GlobalQuantity *firstGlobal=NULL;
@@ -44,13 +46,14 @@ GlobalQuantity::GlobalQuantity()
 GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 {
 	char nameStr[200];
+	size_t nameSize=200;
 	whichMat=whichOne;
 	
 	quantity = DecodeGlobalQuantity(quant,&subcode,&whichMat);
 	
 	// set name
 	if(whichMat!=0)
-		sprintf(nameStr,"%s mat %d",quant,whichMat);
+		snprintf(nameStr,nameSize,"%s mat %d",quant,whichMat);
 	else
 		strcpy(nameStr,quant);
 	FinishNewQuantity(nameStr);
@@ -60,11 +63,12 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 GlobalQuantity::GlobalQuantity(char *quant,Vector *ptLoc)
 {
 	char nameStr[200];
+	size_t nameSize=200;
 	
 	quantity = DecodeGlobalQuantity(quant,&subcode,&whichMat);
 	
 	// save room for particle number
-    sprintf(nameStr,"%s pt ",quant);
+    snprintf(nameStr,nameSize,"%s pt ",quant);
 	FinishNewQuantity(nameStr);
 	
 	// store point and any material allowed
@@ -279,12 +283,29 @@ int GlobalQuantity::DecodeGlobalQuantity(const char *quant,int *hcode,int *mcode
 		theQuant=ANGMOMY;
 	else if(strcmp(quant,"Lz")==0)
 		theQuant=ANGMOMZ;
+
+	// only nonzero if add particle spin
+	else if(strcmp(quant,"Lpx")==0)
+		theQuant=LPMOMX;
+	else if(strcmp(quant,"Lpy")==0)
+		theQuant=LPMOMY;
+	else if(strcmp(quant,"Lpz")==0)
+		theQuant=LPMOMZ;
+	else if(strcmp(quant,"wpx")==0)
+		theQuant=ANGVELX;
+	else if(strcmp(quant,"wpy")==0)
+		theQuant=ANGVELY;
+	else if(strcmp(quant,"wpz")==0)
+		theQuant=ANGVELZ;
 	
 	else if(strcmp(quant,"heatWatts")==0)
 		theQuant=TOT_REACTQ;
 	
 	else if(strcmp(quant,"Decohesion")==0)
 		theQuant=DECOHESION;
+	
+	else if(strcmp(quant,"ReservoirSize")==0)
+		theQuant=RESERVOIR_SIZE;
 	
 	else
 	{	theQuant=UNKNOWN_QUANTITY;
@@ -334,11 +355,12 @@ int GlobalQuantity::DecodeGlobalQuantity(const char *quant,int *hcode,int *mcode
 GlobalQuantity *GlobalQuantity::AppendName(char *fline)
 {
 	char nameStr[100];
+	size_t nameSize=100;
 	
 	if(quantity==UNKNOWN_QUANTITY || quantity==DECOHESION)
 		return nextGlobal;
 	
-	sprintf(nameStr,"\t%c%s%c",quote,name,quote);
+	snprintf(nameStr,nameSize,"\t%c%s%c",quote,name,quote);
 	strcat(fline,nameStr);
 	return nextGlobal;
 }
@@ -349,9 +371,11 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 	int p;
 	double value=0.,rho0,Vtot=0.,mp,Jp,Vp;
 	int matid,qid=0,p0=0,pend=nmpms;
+	bool singleParticle = false;
 	if(ptNum>=0)
 	{	p0 = ptNum;
 		pend = ptNum+1;
+		singleParticle = true;
 	}
 	
 	switch(quantity)
@@ -372,8 +396,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			// Volume weighted average is Sum (Vp rhop stressp) / Sum Vp = Sum (mp stressp) / Sum Vp
 			// where Vp = J mp/rho0
 			for(p=p0;p<pend;p++)
-			{	matid=mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid=mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					mp = mpm[p]->mp;
@@ -406,8 +431,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			// Volume weighted average is Sum (Vp strainp) / Sum Vp 
 			// where Vp = J mp/rho0
 			for(p=p0;p<pend;p++)
-			{	matid=mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid=mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					Vp = Jp*mpm[p]->mp/rho0;
@@ -454,8 +480,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			// Volume weighted average is Sum (Vp strainp) / Sum Vp
 			// where Vp = J mp/rho0
 			for(p=p0;p<pend;p++)
-			{	matid=mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid=mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					Vp = Jp*mpm[p]->mp/rho0;
@@ -497,8 +524,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			// Volume weighted average is Sum (Vp strainp) / Sum Vp
 			// where Vp = J mp/rho0
 			for(p=p0;p<pend;p++)
-			{	matid=mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid=mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					Vp = Jp*mpm[p]->mp/rho0;
@@ -534,8 +562,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			// Volume weighted average is Sum (Vp strainp) / Sum Vp
 			// where Vp = J mp/rho0
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					Vp = Jp*mpm[p]->mp/rho0;
@@ -558,8 +587,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
         case HELMHOLZ_ENERGY:
 		{	bool threeD = fmobj->IsThreeD();
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	switch(quantity)
                     {   case KINE_ENERGY:
 						{	value += 0.5*mpm[p]->mp*(mpm[p]->vel.x*mpm[p]->vel.x
@@ -609,8 +639,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		// energies (Volume*energy) (J in Legacy)
 		case PLAS_ENERGY:
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
                 {   value+=mpm[p]->mp*mpm[p]->GetPlastEnergy();
                 }
 			}
@@ -620,8 +651,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		// velocity x
 		case AVG_VELX:
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					Vp = Jp*mpm[p]->mp/rho0;
@@ -635,8 +667,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		// velocity y
 		case AVG_VELY:
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					Vp = Jp*mpm[p]->mp/rho0;
@@ -650,8 +683,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		// velocity z
 		case AVG_VELZ:
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					Vp = Jp*mpm[p]->mp/rho0;
@@ -665,8 +699,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		// x displacement
 		case AVG_DISPX:
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not verage those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					Vp = Jp*mpm[p]->mp/rho0;
@@ -680,8 +715,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		// y displacement
 		case AVG_DISPY:
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					Vp = Jp*mpm[p]->mp/rho0;
@@ -695,8 +731,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		// z displacement
 		case AVG_DISPZ:
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					Vp = Jp*mpm[p]->mp/rho0;
@@ -710,8 +747,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		// temperature
 		case AVG_TEMP:
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					Vp = Jp*mpm[p]->mp/rho0;
@@ -727,10 +765,11 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			{	// get total solvent content divided by total mass for total weight fraction
 					double totalWeight=0.;
 					for(p=p0;p<pend;p++)
-					{	matid = mpm[p]->MatID();
-						if(IncludeThisMaterial(matid))
+					{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+						matid = mpm[p]->MatID();
+						if(IncludeThisMaterial(matid,singleParticle))
 						{	double csat = mpm[p]->GetConcSaturation();
-							value += mpm[p]->pPreviousConcentration*csat*mpm[p]->mp;
+							value += diffusion->GetPrevParticleValue(mpm[p])*csat*mpm[p]->mp;
 							totalWeight += mpm[p]->mp;
 						}
 					}
@@ -741,12 +780,13 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			{	// Volume weighted average is Sum (Vp pp) / Sum Vp
 				// where Vp = J mp/rho0
 				for(p=p0;p<pend;p++)
-				{	matid=mpm[p]->MatID();
-					if(IncludeThisMaterial(matid))
+				{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+					matid=mpm[p]->MatID();
+					if(IncludeThisMaterial(matid,singleParticle))
 					{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 						Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 						Vp = Jp*mpm[p]->mp/rho0;
-						value += Vp*mpm[p]->pPreviousConcentration;
+						value += Vp*diffusion->GetPrevParticleValue(mpm[p]);
 						Vtot += Vp;
 					}
 				}
@@ -759,6 +799,10 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		
 		case STEP_NUMBER:
 			value=(double)fmobj->mstep;
+			break;
+		
+		case RESERVOIR_SIZE:
+			value=(double)mpmReservoir->currentCount();;
 			break;
 		
 		// always in seconts
@@ -781,8 +825,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
             
 		case HISTORY_VARIABLE:
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	rho0 = theMaterials[matid]->GetRho(mpm[p]);
 					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
 					Vp = Jp*mpm[p]->mp/rho0;
@@ -818,7 +863,8 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		{	// this vector will be filled
 			Vector ftotal;
 			ZeroVector(&ftotal);
-			bool hasForce = false;
+			// First step has zero force
+			bool hasForce = fmobj->mstep==0 ? true : false;
 			
 			if(!hasForce)
 			{	// Three options
@@ -904,8 +950,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		// linear momentum (Legacy N-sec)
 		case LINMOMX:
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 					value += mpm[p]->mp*mpm[p]->vel.x;
 			}
 			value *= UnitsController::Scaling(1.e-6);
@@ -913,8 +960,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		case LINMOMY:
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 					value += mpm[p]->mp*mpm[p]->vel.y;
 			}
 			value *= UnitsController::Scaling(1.e-6);
@@ -922,8 +970,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			
 		case LINMOMZ:
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 					value += mpm[p]->mp*mpm[p]->vel.z;
 			}
 			value *= UnitsController::Scaling(1.e-6);
@@ -936,8 +985,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		{	Vector Ltot = MakeVector(0.,0.,0.);
 			Vector cp;
 			for(p=p0;p<pend;p++)
-			{	matid = mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
 				{	// get Mp Xp X Vp
 					CrossProduct(&cp,&mpm[p]->pos,&mpm[p]->vel);
 					AddScaledVector(&Ltot,&cp,mpm[p]->mp);
@@ -950,6 +1000,72 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			else
 				value = Ltot.z;
 			value *= UnitsController::Scaling(1.e-9);
+			break;
+		}
+
+		// particle spin angular momentum (Legacy J-sec)
+		// zero unless tracking particle spin
+		case LPMOMX:
+		case LPMOMY:
+		case LPMOMZ:
+		{	Vector Ltot = MakeVector(0.,0.,0.);
+			for(p=p0;p<pend;p++)
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
+				{	Vector Lp = mpm[p]->GetParticleAngMomentum();
+					AddVector(&Ltot,&Lp);
+				}
+			}
+			if(quantity==LPMOMX)
+				value = Ltot.x;
+			else if(quantity==LPMOMY)
+				value = Ltot.y;
+			else
+				value = Ltot.z;
+			value *= UnitsController::Scaling(1.e-9);
+			break;
+		}
+			
+		// average particle angular velocity (radians per sec)
+		// zero unless tracking particle spin
+		case ANGVELX:
+		case ANGVELY:
+		case ANGVELZ:
+		{	// sum over all particles
+			Vector wptot = MakeVector(0.,0.,0.);
+			for(p=p0;p<pend;p++)
+			{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+				matid = mpm[p]->MatID();
+				if(IncludeThisMaterial(matid,singleParticle))
+				{	// get volume
+					rho0 = theMaterials[matid]->GetRho(mpm[p]);
+					Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
+					Vp = Jp*mpm[p]->mp/rho0;
+					Vtot += Vp;
+					
+					// angular spatial velocity gradient
+					Matrix3 spatialGradVp = mpm[p]->GetParticleGradVp(true);
+						
+					// Extract angular velocity for antisymmetric spon
+					if(fmobj->IsThreeD())
+					{	Vector wp = MakeVector(0.5*(spatialGradVp(2,1)-spatialGradVp(1,2)),
+											   0.5*(spatialGradVp(0,2)-spatialGradVp(2,0)),
+											   0.5*(spatialGradVp(1,0)-spatialGradVp(0,1)));
+						AddScaledVector(&wptot,&wp,Vp);
+					}
+					else
+					{	double wpz = 0.5*(spatialGradVp(1,0)-spatialGradVp(0,1));
+						wptot.z += Vp*wpz;
+					}
+				}
+			}
+			if(quantity==ANGVELX)
+				value = wptot.x/Vtot;
+			else if(quantity==ANGVELY)
+				value = wptot.y/Vtot;
+			else
+				value = wptot.z/Vtot;
 			break;
 		}
 
@@ -1025,13 +1141,14 @@ const char *GlobalQuantity::PickColor(int byNum)
 #pragma mark GlobalQuantity::ACCESSORS
 
 // decide if archiving this material
-// return true is matches material (rigid or nonrigid), but of whichMat is zero
-//      only return true if it is a non-rigid material. This one material can
-//      average only any material, but average over all particles is non rigid only
-bool GlobalQuantity::IncludeThisMaterial(int matid)
+// return true is matches material (rigid or nonrigid) or is for a single partle.
+// But ff whichMat is zero only return true if it is a non-rigid material.
+//      Thus one material can average only any material, but average over all
+//		particles is non rigid only
+bool GlobalQuantity::IncludeThisMaterial(int matid,bool singleParticle)
 {
 	// accept any specified material
-	if(matid+1==whichMat) return (bool)true;
+	if(matid+1==whichMat || singleParticle) return (bool)true;
 	
 	// otherwise only allow non-rigid materials
 	if(whichMat==0 && !theMaterials[matid]->IsRigid()) return (bool)true;
@@ -1059,7 +1176,8 @@ bool GlobalQuantity::IsTracerParticle(void) { return ptPos!=NULL; }
 GlobalQuantity *GlobalQuantity::SetTracerParticle(void)
 {	if(ptPos!=NULL)
 	{	char pnum[25];
-		sprintf(pnum,"%d",ptNum+1);
+		size_t psize=25;
+		snprintf(pnum,psize,"%d",ptNum+1);
 		strcat(name,pnum);
 	}
 	return nextGlobal;

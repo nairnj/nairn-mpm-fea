@@ -65,8 +65,9 @@ class CrackHeader : public LinkedObject
 		// crack setup
 		bool addSegment(CrackSegment *,bool);
 		bool addSegmentTip(CrackSegment *, int);
-		virtual void PreliminaryCrackCalcs(double,bool);
-	
+		virtual void PreliminaryCrackCalcs(double,bool,bool);
+		virtual void setSegmentCZM(int,int,int);
+
 		// crack hierarchy
 		virtual bool CreateHierarchy(void);
 		virtual void MoveHierarchy(void);
@@ -86,9 +87,6 @@ class CrackHeader : public LinkedObject
         short CrackCrossOneSegment(CrackSegment *,Vector *,Vector *,Vector *,short) const;
 		short CrackCrossLeafOnce(CrackLeaf *,Vector *,Vector *,CrackSegment **) const;
 
-		// Methods added for 3D
-		virtual void Update_NodeList_Edges_Normal();
-	
         // calculate J-integral (YJG)
         virtual void JIntegral(void);      	  // J-Integral calculation
         void PrintContour(ContourPoint *,ContourPoint *,Vector &);
@@ -111,6 +109,7 @@ class CrackHeader : public LinkedObject
 		// Accessors
 		double Length(void) const;
         double DebondedLength(void) const;
+		void SetNumberKeypoints(void);
 		int NumberOfSegments(void) const;
 		int NumberOfFacets(void) const;
 		void SetNumber(int);
@@ -143,6 +142,7 @@ class CrackHeader : public LinkedObject
 
     protected:
         int numberSegments;
+		int numberKeypoints;
 		int numberFacets;						// only used for 3D cracks, otherwise 0
 		int fixedCrack,number,customContactLawID;
 		int customTractionPropID;

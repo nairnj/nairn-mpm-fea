@@ -49,6 +49,7 @@
 #include "Boundary_Conditions/InitialCondition.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "System/UnitsController.hpp"
+#include "Read_MPM/AreaOfInterest.hpp"
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
@@ -70,6 +71,9 @@ char angleAxes[4];
 char *initTranslate[3];
 char *initDeform[3][3];
 bool isDeformed;
+
+AreaOfInterest *axisAoi[3];
+int axisStyle[3],bmin[3],bmax[3];
 
 // to allow new elements, add attribute or command to change this for grid
 // Create those element in ElementsController::MeshElement()
@@ -100,8 +104,14 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         numAttr=(int)attrs.getLength();
 		Xmin=Xmax=Ymin=Ymax=Zmin=Zmax=0.;
 		Z2DThickness=1.0;
-        for(i=0;i<numAttr;i++) {
-            aName=XMLString::transcode(attrs.getLocalName(i));
+		
+		axisAoi[0]=axisAoi[1]=axisAoi[2]=NULL;
+		axisStyle[0]=axisStyle[1]=axisStyle[2]=-1;			// means not set
+		bmin[0]=bmin[1]=bmin[2]=1;
+		bmax[0]=bmax[1]=bmax[2]=1;
+		
+        for(i=0;i<numAttr;i++)
+        {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"xmin")==0)
                 sscanf(value,"%lf",&Xmin);
@@ -168,6 +178,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			{	sscanf(value,"%lf",&Xsymmax);
 				xsymmaxdir = +1;
 			}
+			else if(strcmp(aName,"style")==0)
+				sscanf(value,"%d",&axisStyle[0]);
             delete [] aName;
             delete [] value;
         }
@@ -193,6 +205,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			{	sscanf(value,"%lf",&Ysymmax);
 				ysymmaxdir = +1;
 			}
+			else if(strcmp(aName,"style")==0)
+				sscanf(value,"%d",&axisStyle[1]);
            	delete [] aName;
             delete [] value;
         }
@@ -218,6 +232,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			{	sscanf(value,"%lf",&Zsymmax);
 				zsymmaxdir = +1;
 			}
+			else if(strcmp(aName,"style")==0)
+				sscanf(value,"%d",&axisStyle[2]);
            	delete [] aName;
             delete [] value;
         }
@@ -227,14 +243,106 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	// Read AreaOfInterest (x1,x2,nx each direction)
 	//-----------------------------------------------------------
 	else if(strcmp(xName,"AreaOfInterest")==0)
-	{	throw SAXException("<AreaOfInterest> command requires OSParticulas.");
+	{	ValidateCommand(xName,GRIDBLOCK,ANY_DIM);
+		aScaling=ReadUnits(attrs,LENGTH_UNITS);
+        numAttr=(int)attrs.getLength();
+		double ax1=0.,ax2=-1.,ay1=0.,ay2=-1.,az1=0.,az2=-1.;
+		int anx=0,any=0,anz=0;
+        for(i=0;i<numAttr;i++)
+		{	aName=XMLString::transcode(attrs.getLocalName(i));
+            value=XMLString::transcode(attrs.getValue(i));
+            if(strcmp(aName,"x1")==0)
+                sscanf(value,"%lf",&ax1);
+            else if(strcmp(aName,"x2")==0)
+                sscanf(value,"%lf",&ax2);
+            else if(strcmp(aName,"y1")==0)
+                sscanf(value,"%lf",&ay1);
+            else if(strcmp(aName,"y2")==0)
+                sscanf(value,"%lf",&ay2);
+            else if(strcmp(aName,"z1")==0)
+                sscanf(value,"%lf",&az1);
+            else if(strcmp(aName,"z2")==0)
+                sscanf(value,"%lf",&az2);
+            else if(strcmp(aName,"nx")==0)
+                sscanf(value,"%d",&anx);
+            else if(strcmp(aName,"ny")==0)
+                sscanf(value,"%d",&any);
+            else if(strcmp(aName,"nz")==0)
+                sscanf(value,"%d",&anz);
+            delete [] aName;
+            delete [] value;
+        }
+		ax1*=aScaling;
+		ax2*=aScaling;
+		ay1*=aScaling;
+		ay2*=aScaling;
+		az1*=aScaling;
+		az2*=aScaling;
+		
+		// check settings
+		int maxax = 2;
+		if(ax1<Xmin || ax2>Xmax || ax2<=ax1 || anx<1)
+		{	throw SAXException("Invalid x direction parameters in a grid area of interest");
+		}
+		if(ay1<Ymin || ay2>Ymax || ay2<=ay1 || any<1)
+		{	throw SAXException("Invalid y direction parameters in a grid area of interest");
+		}
+		if(fmobj->IsThreeD())
+		{	if(az1<Zmin || az2>Zmax || az2<=az1 || anz<1)
+			{	throw SAXException("Invalid z direction parameters in a grid area of interest");
+			}
+			maxax = 3;
+		}
+		
+		// create area of interest
+		AreaOfInterest *aoi = new AreaOfInterest(ax1,ax2,anx,ay1,ay2,any,az1,az2,anz);
+		
+		// sort each direction into list
+		for(int iax=0;iax<maxax;iax++)
+		{	// Find insert location between prev and next
+			AreaOfInterest *prevAoi = NULL;
+			AreaOfInterest *nextAoi = axisAoi[iax];
+			while(nextAoi!=NULL)
+			{	if(aoi->IsBefore(nextAoi,iax)) break;
+				prevAoi = nextAoi;
+				nextAoi = prevAoi->GetNextAOI(iax);
+			}
+			
+			// was not assigned
+			if(prevAoi == NULL)
+				axisAoi[iax] = aoi;
+			else
+				prevAoi->SetNextAOI(iax,aoi);
+			aoi->SetNextAOI(iax,nextAoi);
+		}
 	}
 
-    //--------------------------------------------------------------
-    // Border element for tartan mesh (min, max each directino)
-    //--------------------------------------------------------------
+	// Border element for tartan mesh (min, max each directino)
     else if(strcmp(xName,"Border")==0)
-	{	throw SAXException("<Border> command requires OSParticulas.");
+	{	ValidateCommand(xName,GRIDBLOCK,ANY_DIM);
+        numAttr=(int)attrs.getLength();
+        for(i=0;i<numAttr;i++) {
+            aName=XMLString::transcode(attrs.getLocalName(i));
+            value=XMLString::transcode(attrs.getValue(i));
+            if(strcmp(aName,"xmin")==0)
+                sscanf(value,"%d",&bmin[0]);
+            else if(strcmp(aName,"xmax")==0)
+                sscanf(value,"%d",&bmax[0]);
+            else if(strcmp(aName,"ymin")==0)
+                sscanf(value,"%d",&bmin[1]);
+            else if(strcmp(aName,"ymax")==0)
+                sscanf(value,"%d",&bmax[1]);
+            else if(strcmp(aName,"zmin")==0)
+                sscanf(value,"%d",&bmin[2]);
+            else if(strcmp(aName,"zmax")==0)
+                sscanf(value,"%d",&bmax[2]);
+            delete [] aName;
+            delete [] value;
+        }
+		
+		if(bmin[0]<0 || bmax[0]<0 || bmin[1]<0 || bmax[1]<0 || bmin[2]<0 || bmax[2]<0)
+		{	throw SAXException("All Border options must be >= 0");
+		}
 	}
 	
     //--------------------------------------------------------------
@@ -254,15 +362,15 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		isDeformed = false;
 		fmobj->customPtsPerElement = -1;			// <0 means a hole)
         if(strcmp(xName,"Body")==0)
-        {   Thick=mpmgrid.GetDefaultThickness();
+		{	Thick=mpmgrid.GetDefaultThickness();
             Angle=Vel.x=Vel.y=Vel.z=0.0;
-			pConc = diffusion->reference;
+			pConc = fmobj->HasFluidTransport() ? diffusion->reference : 0.;
 			pTempSet = thermal.reference;
             numAttr=(int)attrs.getLength();
 			rotationAxes[0]=0;			// no rotations yet
             vel0Expr[0] = vel0Expr[1] = vel0Expr[2] = NULL;     // optional velocity functions
-            fmobj->customPtsPerElement = 0;						// 0 means Body can change it
-            for(i=0;i<numAttr;i++)
+			fmobj->customPtsPerElement = 0;						// 0 means Body can change it
+			for(i=0;i<numAttr;i++)
 			{	aName=XMLString::transcode(attrs.getLocalName(i));
                 value=XMLString::transcode(attrs.getValue(i));
 				if(strcmp(aName,"mat")==0)
@@ -320,15 +428,84 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             if(Thick<=0. && !fmobj->IsThreeD() && !fmobj->IsAxisymmetric())
                 throw SAXException("Positive material thickness needed in <Body> element for planar 2D analyses.");
         }
-    }
+}
 
-    //--------------------------------------------------------------
-    // Read into membrane properties (materID, thick, velocities)
-    //--------------------------------------------------------------
-    else if(strcmp(xName,"Membrane")==0)
-	{	throw SAXException("<Membrane> command requires OSParticulas");
+	//--------------------------------------------------------------
+	// Allocate particles for the reservoir (materID, angle, thick, velocities)
+	//--------------------------------------------------------------
+	else if(strcmp(xName,"Fill")==0)
+	{	ValidateCommand(xName,POINTSBLOCK,ANY_DIM);
+		// default absolute size relative to element 0
+		Vector lp = theElements[0]->GetDeltaBox();
+		ScaleVector(&lp,1./((double)fmobj->ptsPerSide));
+		if(!fmobj->IsThreeD()) lp.z = 1.;
+		// other parameters
+		MatID = 0;
+		char matname[200];
+		matname[0]=0;
+		int numToFill = 0;
+		numAttr=(int)attrs.getLength();
+		for(i=0;i<numAttr;i++)
+		{	aName=XMLString::transcode(attrs.getLocalName(i));
+			value=XMLString::transcode(attrs.getValue(i));
+			if(strcmp(aName,"mat")==0)
+				sscanf(value,"%d",&MatID);
+			else if(strcmp(aName,"matname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(matname,value);
+			}
+			else if(strcmp(aName,"lx")==0)
+				sscanf(value,"%lf",&lp.x);
+			else if(strcmp(aName,"ly")==0)
+				sscanf(value,"%lf",&lp.y);
+			else if(strcmp(aName,"lz")==0)
+				sscanf(value,"%lf",&lp.z);
+			else if(strcmp(aName,"num")==0)
+				sscanf(value,"%d",&numToFill);
+			delete [] aName;
+			delete [] value;
+		}
+		
+		// if gave a matname, it takes precedence over mat number
+		if(strlen(matname)>0)
+			MatID = matCtrl->GetIDFromNewName(matname);
+		if(MatID<=0)
+			throw SAXException("Positive material ID needed in <Fill> element.");
+		if(numToFill<1)
+			throw SAXException("The <Fill> command must request 1 or more particles.");
+		
+		// get zero of element 1
+		Vector pos;
+		theElements[0]->GetXYZCentroid(&pos);
+		double thick2D = lp.z;
+		
+		// convert to dimensionless size
+		lp.x /= theElements[0]->GetDeltaX();
+		lp.y /= theElements[0]->GetDeltaY();
+		if(fmobj->IsThreeD())
+			lp.z /= theElements[0]->GetDeltaZ();
+		else
+			lp.z = 1.;
+		
+		// fill the reservoir
+		MPMBase *newMpt;
+		for(int j=0;j<numToFill;j++)
+		{	if(fmobj->IsThreeD())
+				newMpt=new MatPoint3D(1,MatID,0.);
+			else if(fmobj->IsAxisymmetric())
+				newMpt=new MatPointAS(1,MatID,0.,pos.x);
+			else
+				newMpt=new MatPoint2D(1,MatID,0.,thick2D);
+			newMpt->SetPosition(&pos);
+			newMpt->SetOrigin(&pos);
+			newMpt->SetDimensionlessSize(&lp);
+
+			// add the point at reference concentration and temperature
+			double conc =  diffusion!=NULL ? diffusion->reference : 0.;
+			mpCtrl->AddMaterialPoint(newMpt,conc,thermal.reference);
+		}
 	}
-	
+
     //-----------------------------------------------------------
     // Read into geometry parameters for Body shape objects
     //-----------------------------------------------------------
@@ -365,22 +542,21 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		rotationAxes[0]=0;
 	}
 
-    else if(strcmp(xName,"vel0X")==0 || strcmp(xName,"vel0Y")==0 || strcmp(xName,"vel0Z")==0)
-    {   if(block!=BODYPART)
+	else if(strcmp(xName,"vel0X")==0 || strcmp(xName,"vel0Y")==0 || strcmp(xName,"vel0Z")==0
+			|| strcmp(xName,"Lp0X")==0 || strcmp(xName,"Lp0Y")==0 || strcmp(xName,"Lp0Z")==0)
+	{
+		if(block!=BODYPART)
 			ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
 		input=TEXT_BLOCK;
 		inputID=CHAR_ARRAY;
 		inputPtr=NULL;
 	}
     
-    else if(strcmp(xName,"Lp0X")==0 || strcmp(xName,"Lp0Y")==0 || strcmp(xName,"Lp0Z")==0)
-    {   throw SAXException("<Lp0(XYZ)> commands require OSParticulas.");
-    }
-    
     //-----------------------------------------------------------
     // Read into geometry parameters for Body shape objects
     //-----------------------------------------------------------
-    else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0 || (strcmp(xName,"Line")==0 && block!=CRACKLIST)
+    else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0
+                || (strcmp(xName,"Line")==0 && block!=CRACKLIST)
 				|| strcmp(xName,"Sphere")==0 || strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0 || strcmp(xName,"Arc")==0
 				|| strcmp(xName,"Polyhedron")==0 || strcmp(xName,"Torus")==0 || strcmp(xName,"Shell")==0)
 	{	// only allowed in BODYPART, BCSHAPE when current shape is empty, or within a parent BODY_SHAPE
@@ -468,20 +644,6 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	}
 
     //-----------------------------------------------------------
-    // Read into geometry parameters for Mambrane shape objects
-    //-----------------------------------------------------------
-    else if(strcmp(xName,"MemLine")==0)
-	{	throw SAXException("<MemLine> command requires OSParticulas");
-	}
-	
-    //-----------------------------------------------------------
-    // Read into geometry parameters for Mambrane shape objects
-    //-----------------------------------------------------------
-    else if(strcmp(xName,"MemPlane")==0)
-	{	throw SAXException("<MemPlane> command requires OSParticulas");
-	}
-    
-    //-----------------------------------------------------------
     // Read into geometry parameters for crack segments
     //       Line (xmin,ymin,xmax,ymax)
 	//       Circle (xmin,ymin,xmax,ymax)
@@ -549,16 +711,11 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		MPMCracks(crackShape,resolution,start_angle,end_angle,startTip,endTip);
     }
 	
-	//-----------------------------------------------------------
-	// Read into geometry parameters for a crack plane
-	//       Line (xmin,ymin,xmax,ymax)
-	// Chad
-	//-----------------------------------------------------------
 	else if ((strcmp(xName, "Plane") == 0 && block == CRACKLIST))
 	{	throw SAXException("<Plane> command for 3D cracks requires OSParticulas");
 	}
 	
-	// add to polygon body object
+    // add to polygon body object
     else if(strcmp(xName,"pt")==0)
 	{	ValidateCommand(xName,BODY_SHAPE,MUST_BE_2D);
 		if(theShape == NULL)
@@ -812,7 +969,34 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			{	NodalVelBC *newVelBC=new NodalVelBC(nd[i]->num,dof,style,dispvel,ftime,angle,angle2);
 				newVelBC->SetFunction(function);
 				newVelBC->SetID(velID);
-				velocityBCs->AddObject(newVelBC);
+				
+				// If skewed, verify OK to add it now. I must be unique normal for this node
+				bool validBC = true;
+				if(dof>10)
+				{	Vector *bcNorm = newVelBC->GetNormalVector();
+					int nodeNum = newVelBC->GetNodeNum();
+					NodalVelBC *nextBC = (NodalVelBC *)velocityBCs->firstObject;
+					while(nextBC!=NULL)
+					{	// only check BCs on the same node
+						if(nodeNum==nextBC->GetNodeNum())
+						{	// find dot product - must be parallel or orthogonal only
+							double dotNorms = DotVectors(bcNorm,nextBC->GetNormalVector());
+							if(!DbleEqual(dotNorms,0.) && !DbleEqual(dotNorms,1.))
+							{	validBC = false;
+								break;
+							}
+						}
+						
+						// next BC
+						nextBC = (NodalVelBC *)nextBC->GetNextObject();
+					}
+				}
+				
+				// add if OK, or delete it
+				if(validBC)
+					velocityBCs->AddObject(newVelBC);
+				else
+					delete newVelBC;
 			}
 			else
 			{	NodalVelGradBC *newVelGradBC=new NodalVelGradBC(nd[i]->num,dof,style,ftime,gradDepth);
@@ -847,6 +1031,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		int tempBC=strcmp(xName,"TempBC")==0 ? TRUE : FALSE;
         double bcvalue=0.0,ftime=0.0;
         int style=CONSTANT_VALUE;
+		int phaseStyle=MOISTURE_DIFFUSION;
 		char *function=NULL;
         numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
@@ -858,6 +1043,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&ftime);
             else if(strcmp(aName,"style")==0)
                 sscanf(value,"%d",&style);
+			else if(strcmp(aName,"phase")==0)
+				sscanf(value,"%d",&phaseStyle);
             else if(strcmp(aName,"function")==0)
 			{	if(function!=NULL) delete [] function;
 				function=new char[strlen(value)+1];
@@ -879,7 +1066,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		else
 		{	theShape->resetNodeEnumerator();
 			while((i=theShape->nextNode()))
-			{	NodalConcBC *newConcBC=new NodalConcBC(nd[i]->num,style,bcvalue,ftime);
+			{	NodalConcBC *newConcBC=new NodalConcBC(nd[i]->num,style,bcvalue,ftime,phaseStyle);
 				newConcBC->SetFunction(function);
 				concBCs->AddObject(newConcBC);
 			}
@@ -921,6 +1108,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         int dof=0,style=1,face=1;
         double ftime=0.0,load=0.0;
 		char *function=NULL;
+        int phaseStyle=MOISTURE_DIFFUSION;
         numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -935,6 +1123,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&load);
             else if(strcmp(aName,"ftime")==0 || strcmp(aName,"time")==0 || strcmp(aName,"bath")==0)
                 sscanf(value,"%lf",&ftime);
+            else if(strcmp(aName,"phase")==0)
+                sscanf(value,"%d",&phaseStyle);
             else if(strcmp(aName,"function")==0)
 			{	if(function!=NULL) delete [] function;
 				function=new char[strlen(value)+1];
@@ -1015,7 +1205,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			MatPtFluxBC *newFluxBC;
 			theShape->resetParticleEnumerator();
 			while((i=theShape->nextParticle())>=0)
-			{   newFluxBC=new MatPtFluxBC(i+1,dof,style,face);
+			{   newFluxBC=new MatPtFluxBC(i+1,dof,style,face,phaseStyle);
 				newFluxBC->SetBCValue(load);
 				newFluxBC->SetBCFirstTime(ftime);
 				newFluxBC->SetFunction(function);
@@ -1050,6 +1240,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         Vector dnorm = MakeVector(0.,0.,0.);
         Vector dvals = MakeVector(1.,1.,1.);
 		double dmode = 1.;			// user must override if aniostropic
+		double phaseField = -1.;	// if setting a phase field
         numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -1068,18 +1259,28 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&dvals.z);
 			else if(strcmp(aName,"mode")==0)
 				sscanf(value,"%lf",&dmode);
+			else if(strcmp(aName,"phi")==0)
+				sscanf(value,"%lf",&phaseField);
             delete [] aName;
             delete [] value;
         }
         
         InitialCondition *newIC;
         theShape->resetParticleEnumerator();
-        while((i=theShape->nextParticle())>=0)
-        {   newIC = new InitialCondition(INITIAL_DAMAGE,i+1);
-            newIC->SetInitialDamage(&dnorm,&dvals,dmode);
-            damageICCtrl->AddObject(newIC);
-        }
-        cout << endl;
+		if(phaseField<0.)
+		{	while((i=theShape->nextParticle())>=0)
+			{   newIC = new InitialCondition(INITIAL_DAMAGE,i+1);
+				newIC->SetInitialDamage(&dnorm,&dvals,dmode);
+				damageICCtrl->AddObject(newIC);
+			}
+		}
+		else
+		{	while((i=theShape->nextParticle())>=0)
+			{   newIC = new InitialCondition(INITIAL_PHASEFIELD,i+1);
+				newIC->SetInitialPhaseField(phaseField);
+				damageICCtrl->AddObject(newIC);
+			}
+		}
     }
 	
 	// Not recognized as a generator element
@@ -1120,7 +1321,7 @@ short MPMReadHandler::EndGenerator(char *xName)
 		}
     	block=POINTSBLOCK;
 	}
-    
+
 	else if(strcmp(xName,"RotateZ")==0 || strcmp(xName,"RotateY")==0 || strcmp(xName,"RotateX")==0)
 	{	if(inputPtr==NULL)
 			throw SAXException("No rotation angle or expression was provided in <RotateX(YZ)> command.");
@@ -1147,11 +1348,16 @@ short MPMReadHandler::EndGenerator(char *xName)
 			}
 		}
 	}
+
+ 	else if(strcmp(xName,"Lp0X")==0 || strcmp(xName,"Lp0Y")==0 || strcmp(xName,"Lp0Z")==0)
+	{	// ignore these commands unless has particle spin activated
+	}
 	
 	else if(strcmp(xName,"Hole")==0)
     	block=POINTSBLOCK;
     
-	else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0 || (strcmp(xName,"Line")==0 && block!=CRACKLIST)
+	else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0
+            || (strcmp(xName,"Line")==0 && block!=CRACKLIST)
 			|| strcmp(xName,"Sphere")==0 || strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0 || strcmp(xName,"Arc")==0
 			|| strcmp(xName,"Polyhedron")==0 || strcmp(xName,"Torus")==0 || strcmp(xName,"Shell")==0)
 	{	// check shapes that require more parameters
@@ -1232,7 +1438,6 @@ void MPMReadHandler::MPMPts(void)
 		}
 	}
 	
-	
 	// if deformed, create translation  and deformation gradient functions
 	int firstTranslate = fnum;
 	if(isDeformed)
@@ -1257,23 +1462,26 @@ void MPMReadHandler::MPMPts(void)
 	}
 	
 	// if custom points, must be valid
-	int usePtsPerElement = fmobj->ptsPerElement;
+	int currentSize = fmobj->ptsPerElement;
 	int usePtsPerSide = fmobj->ptsPerSide;
 	if(fmobj->customPtsPerElement>0)
 	{	// switch
-		usePtsPerElement = fmobj->customPtsPerElement;
+        currentSize = fmobj->customPtsPerElement;
 		usePtsPerSide = fmobj->customPtsPerSide;
 	}
 
 	// get vector
-	Vector *ppos = new Vector[usePtsPerElement];
+	Vector *ppos = new Vector[currentSize];
 
     try
     {   for(i=1;i<=nelems;i++)
-		{	theElements[i-1]->MPMPoints(usePtsPerSide,ppos);
+        {   int numFound = currentSize;
+            Vector psize;
+            theElements[i-1]->MPMPoints(usePtsPerSide,ppos,numFound,&ppos,&psize);
+            if(numFound>currentSize) currentSize = numFound;
 			
 			// loop over all partiles
-            for(k=0;k<usePtsPerElement;k++)
+            for(k=0;k<numFound;k++)
             {   // if particle size is already used, then go to next location
                 // this check is skipped when creating shifted and/or deformed particles
 				if(!isDeformed)
@@ -1290,8 +1498,8 @@ void MPMReadHandler::MPMPts(void)
                 if(theShape->ShapeContainsPoint(ppos[k]))
                 {   // for Region (MatID>0) create the particle
                     // for Hole (MatID<=0), just set the point flag
-                	if(MatID>0)
-                    {	if(fmobj->IsThreeD())
+					if(MatID>0)
+					{	if(fmobj->IsThreeD())
                             newMpt=new MatPoint3D(i,MatID,Angle);
                         else if(fmobj->IsAxisymmetric())
                             newMpt=new MatPointAS(i,MatID,Angle,ppos[k].x);
@@ -1299,7 +1507,8 @@ void MPMReadHandler::MPMPts(void)
                             newMpt=new MatPoint2D(i,MatID,Angle,Thick);
                         newMpt->SetPosition(&ppos[k]);
                         newMpt->SetOrigin(&ppos[k]);
- 						newMpt->SetDimensionlessByPts(usePtsPerSide);
+                        newMpt->SetDimensionlessSize(&psize);
+ 						//newMpt->SetDimensionlessByPts(usePtsPerSide);
  						
 						// velocity
 						if(hasVelOrLp)
@@ -1318,8 +1527,8 @@ void MPMReadHandler::MPMPts(void)
 							}
 						}
                         newMpt->SetVelocity(&Vel);
-						
-						// custom angles
+
+                        // custom angles
                         SetMptAnglesFromFunctions(rotationAxes,NULL,&ppos[k],newMpt);
 						
 						// translate and deform the point
@@ -1381,7 +1590,6 @@ void MPMReadHandler::MPMPts(void)
 	
 	// delete vector
 	delete [] ppos;
-	
 }
 
 //------------------------------------------------------------------
@@ -1453,56 +1661,105 @@ char *MPMReadHandler::LastBC(char *firstBC)
 	return (char *)lastBC;
 }
 
-// Create a regular MPM grid
-// throws std::bad_alloc
+// Creating a tartan grid
+// throws std::bad_alloc, SAXException()
 void MPMReadHandler::grid()
 {
-	int i,j,k,curPt=0,curEl=0;
+    int i,j,k,curPt=0,curEl=0;
 	int node,element,enode[MaxElNd]={0};
-	double xpt,ypt,zpt;
 	bool is3D = fmobj->IsThreeD();
+    //double xpt,ypt,zpt;
 	
-	// use cell sizes instead
-	if(cellHoriz>0.)
-	{	Nhoriz=(int)((Xmax-Xmin)/cellHoriz);
-		double newMax=Xmin+Nhoriz*cellHoriz;
-		if(newMax<Xmax)
-		{	Xmax=newMax+cellHoriz;
-			Nhoriz++;
+	// check for Tartan grid, and if used, count elements in each area of interest
+	if(axisAoi[0]!=NULL)
+	{	// Get ratios
+		if(Rhoriz<=1.) Rhoriz = 0.5*(sqrt(5.)+1);			// golden ratio
+		if(Rvert<=1.) Rvert = Rhoriz;
+		if(Rdepth<=1.) Rdepth = Rhoriz;
+		
+		// get axis styles
+		if(axisStyle[0]<0) axisStyle[0] = GEOMETRIC_STYLE;
+		if(axisStyle[1]<0) axisStyle[1] = axisStyle[0];
+		if(axisStyle[2]<0) axisStyle[2] = axisStyle[0];
+		
+		Nhoriz = 0;
+		AreaOfInterest *nextAoi = axisAoi[0];
+		double prevEdge = Xmin;
+		while(nextAoi!=NULL)
+		{	nextAoi = nextAoi->GetCellCounts(0,prevEdge,Xmax,Rhoriz,&Nhoriz,axisStyle[0]);
+		}
+		Nvert = 0;
+		nextAoi = axisAoi[1];
+		prevEdge = Ymin;
+		while(nextAoi!=NULL)
+		{	nextAoi = nextAoi->GetCellCounts(1,prevEdge,Ymax,Rvert,&Nvert,axisStyle[1]);
+		}
+		if(is3D)
+		{	Ndepth = 0;
+			nextAoi = axisAoi[2];
+			prevEdge = Zmin;
+			while(nextAoi!=NULL)
+			{	nextAoi = nextAoi->GetCellCounts(2,prevEdge,Zmax,Rdepth,&Ndepth,axisStyle[2]);
+			}
+		}
+		else
+			Ndepth = 0;
+	}
+    
+	// regular grid - if set cell size, adjust maximum to be on grid line
+	else
+	{	// set to 1
+		Rhoriz = 1.;
+		Rvert = 1.;
+		Rdepth = 1.;
+	
+		// use cell sizes instead
+		if(cellHoriz>0.)
+		{	Nhoriz=(int)((Xmax-Xmin)/cellHoriz);
+			double newMax=Xmin+Nhoriz*cellHoriz;
+			if(newMax<Xmax)
+			{	Xmax=newMax+cellHoriz;
+				Nhoriz++;
+			}
+		}
+		if(cellVert>0.)
+		{	Nvert=(int)((Ymax-Ymin)/cellVert);
+			double newMax=Ymin+Nvert*cellVert;
+			if(newMax<Ymax)
+			{	Ymax=newMax+cellVert;
+				Nvert++;
+			}
+		}
+		if(cellDepth>0. && is3D)
+		{	Ndepth=(int)((Zmax-Zmin)/cellDepth);
+			double newMax=Zmin+Ndepth*cellDepth;
+			if(newMax<Zmax)
+			{	Zmax=newMax+cellDepth;
+				Ndepth++;
+			}
 		}
 	}
-	if(cellVert>0.)
-	{	Nvert=(int)((Ymax-Ymin)/cellVert);
-		double newMax=Ymin+Nvert*cellVert;
-		if(newMax<Ymax)
-		{	Ymax=newMax+cellVert;
-			Nvert++;
-		}
-	}
-	if(cellDepth>0. && is3D)
-	{	Ndepth=(int)((Zmax-Zmin)/cellDepth);
-		double newMax=Zmin+Ndepth*cellDepth;
-		if(newMax<Zmax)
-		{	Zmax=newMax+cellDepth;
-			Ndepth++;
-		}
+
+	// check has grid with at least 1 element in each direction
+    if(Nhoriz<1 || Nvert<1 || (Ndepth<1 && is3D))
+	{	throw SAXException("Number of grid elements in all direction must be >= 1.");
+		return;
 	}
 	
-	// check has grid settings
-	if(Nhoriz<1 || Nvert<1 || (Ndepth<1 && is3D))
-		throw SAXException("Number of grid elements in all direction must be >= 1.");
-	
-	// save the limits before extra GIMP layer
-	mxmin=Xmin;
-	mxmax=Xmax;
-	mymin=Ymin;
-	mymax=Ymax;
-	mzmin=Zmin;
-	mzmax=Zmax;
-	
-	// allow for GIMP
-	if(ElementBase::useGimp != POINT_GIMP)
-	{	double cell=(Xmax-Xmin)/(double)Nhoriz;
+	// in regular grid, extend one element for CPDI or GIMP
+	// but if tartan grid expand for border settings and then one more for CPDI or GIMP
+	if(axisAoi[0]==NULL)
+	{	// save the limits before extra GIMP layer
+		mxmin=Xmin;
+		mxmax=Xmax;
+		mymin=Ymin;
+		mymax=Ymax;
+		mzmin=Zmin;
+		mzmax=Zmax;
+			
+		// allow for GIMP (but do for POINT_GIMP too to simplify other coding)
+		// Deleted this check: if(ElementBase::useGimp != POINT_GIMP)
+		double cell=(Xmax-Xmin)/(double)Nhoriz;
 		Nhoriz+=2;
 		Xmin-=cell;
 		Xmax+=cell;
@@ -1517,10 +1774,30 @@ void MPMReadHandler::grid()
 			Ndepth+=2;
 		}
 	}
+	else
+	{	Nhoriz += bmin[0]+bmax[0];
+		Nvert += bmin[1]+bmax[1];
+		if(is3D)
+			Ndepth += bmin[2]+bmax[2];
+		
+		// extra elements for GIMP (but do for POINT_GIMP too to simplify other coding)
+		// Deleted this check: if(ElementBase::useGimp != POINT_GIMP)
+		Nhoriz += 2;
+		Nvert += 2;
+		if(is3D)
+			Ndepth +=2;
+	}
 	
+	// arrays for data points
+	double *xpts = new double[Nhoriz+1];
+	double *ypts = new double[Nvert+1];
+	double *zpts = is3D ? new double[Ndepth+1] : NULL;
+    
+	// For regular grid, set grid style and build arrays of equally spaced ppints
+	// For tartan grid, set grid style and build arrays of variable points
 	double zparam,gridz = 0.;
-	if(DbleEqual(Rhoriz,1.) && DbleEqual(Rvert,1.) && (!is3D || DbleEqual(Rdepth,1.)))
-	{   // Orthogonal, and all elements are the same size
+	if(axisAoi[0]==NULL)
+    {   // Orthogonal, and all elements are the same size
 		if(is3D)
 		{	zparam = Zmin;
 			gridz = (Zmax-Zmin)/(double)Ndepth;
@@ -1529,45 +1806,76 @@ void MPMReadHandler::grid()
 			zparam = 1.0;
 		else
 			zparam = Z2DThickness;
-		// actual type determined in the methof
+        // actual type determined in the method
 		mpmgrid.SetCartesian(SQUARE_GRID,(Xmax-Xmin)/(double)Nhoriz,(Ymax-Ymin)/(double)Nvert,gridz);
 		mpmgrid.SetElements(Nhoriz,Nvert,Ndepth,Xmin,Ymin,zparam,Xmax,Ymax,Zmax);
+		
+		// get regular points
+		double delta = (Xmax-Xmin)/(double)Nhoriz;
+		for(i=0;i<=Nhoriz;i++)
+			xpts[i]=Xmin+(double)i*delta;
+		delta = (Ymax-Ymin)/(double)Nvert;
+		for(i=0;i<=Nvert;i++)
+			ypts[i]=Ymin+(double)i*delta;
+		if(is3D)
+		{	delta = (Zmax-Zmin)/(double)Ndepth;
+			for(i=0;i<=Ndepth;i++)
+				zpts[i]=Zmin+(double)i*delta;
+		}
 	}
 	else
-	{   // Orthogonal, but elements do not have equal sides in all dimensions
+    {   // Orthogonal, but elements do not have equal sides in all dimensions
 		int gridType = VARIABLE_RECTANGULAR_GRID;
 		if(is3D)
 		{	zparam = Zmin;
-			gridz = 1.0;
 			gridType = VARIABLE_ORTHOGONAL_GRID;
 		}
 		else if(fmobj->IsAxisymmetric())
 			zparam = 1.0;
 		else
 			zparam = Z2DThickness;
-		mpmgrid.SetCartesian(gridType,0.,0.,gridz);
-		mpmgrid.SetElements(Nhoriz,Nvert,Ndepth,Xmin,Ymin,zparam,Xmax,Ymax,Zmax);
-	}
+		
+		// extra for GIMP or CPDI
+		int nOffset = ElementBase::useGimp != POINT_GIMP ? 1 : 0 ;
+		
+		// x axis
+		gridAxis(0,nOffset,&Xmin,&Xmax,Rhoriz,xpts,Nhoriz,&mxmin,&mxmax);
+
+		// y axis
+		gridAxis(1,nOffset,&Ymin,&Ymax,Rvert,ypts,Nvert,&mymin,&mymax);
 	
-	// number of nodes and elements
+		// z axis
+		if(zpts!=NULL)
+		{	gridAxis(2,nOffset,&Zmin,&Zmax,Rdepth,zpts,Ndepth,&mzmin,&mzmax);
+			zparam = Zmin;
+		}
+		
+		// set the type
+		mpmgrid.SetCartesian(gridType,0.,0.,0.);
+		mpmgrid.SetElements(Nhoriz,Nvert,Ndepth,Xmin,Ymin,zparam,Xmax,Ymax,Zmax);
+    }
+	
+    // number of nodes and elements
 	if(is3D)
-	{	nnodes=(Nhoriz+1)*(Nvert+1)*(Ndepth+1);
+    {	nnodes=(Nhoriz+1)*(Nvert+1)*(Ndepth+1);
 		nelems=Nhoriz*Nvert*Ndepth;
 	}
 	else if(mpm2DElement==FOUR_NODE_ISO)
-	{	nnodes=(Nhoriz+1)*(Nvert+1);
+    {	nnodes=(Nhoriz+1)*(Nvert+1);
 		nelems=Nhoriz*Nvert;
 	}
+	/* he NINE_NODE_LAGRANGE option is currently disabled
 	else
 	{	// 9 node Lagranging and side nodes and internal nodes adding one per element in each direction
-		nnodes=(Nhoriz+1+Nhoriz)*(Nvert+1+Nvert);
+    	nnodes=(Nhoriz+1+Nhoriz)*(Nvert+1+Nvert);
 		nelems=Nhoriz*Nvert;
 	}
+	*/
 	
 	// space for nodal points (1 based)
-	curPt=1;
+    curPt=1;
 	nd = new (std::nothrow) NodalPoint *[nnodes+1];
-	if(nd==NULL) throw SAXException("Out of memory allocating space for nodes.");
+    if(nd==NULL) throw SAXException("Out of memory allocating space for nodes.");
 	
 	// space for active nodes (1 based, counter in 0) and set to all nodes for first step
 	nda = new (std::nothrow) int[nnodes+1];
@@ -1575,23 +1883,23 @@ void MPMReadHandler::grid()
 	for(i=1;i<=nnodes;i++) nda[i] = i;
 	nda[0] = nnodes;
 
-	// space for elements (0 based)
-	curEl=0;
+    // space for elements (0 based)
+    curEl=0;
 	theElements = new (std::nothrow) ElementBase *[nelems];
-	if(theElements==NULL) throw SAXException("Out of memory allocating space for elements.");
-	
-	// create the elements
+    if(theElements==NULL) throw SAXException("Out of memory allocating space for elements.");
+
+    // create the elements
 	if(is3D)
 	{	// create the nodes: vary x first, then y, last z
 		for(k=0;k<=Ndepth;k++)
-		{	zpt=Zmin+(double)k*(Zmax-Zmin)/(double)Ndepth;
+		{	//zpt=Zmin+(double)k*(Zmax-Zmin)/(double)Ndepth;
 			for(j=0;j<=Nvert;j++)
-			{	ypt=Ymin+(double)j*(Ymax-Ymin)/(double)Nvert;
+			{	//ypt=Ymin+(double)j*(Ymax-Ymin)/(double)Nvert;
 				for(i=0;i<=Nhoriz;i++)
-				{	xpt=Xmin+(double)i*(Xmax-Xmin)/(double)Nhoriz;
-					zpt=Zmin+(double)k*(Zmax-Zmin)/(double)Ndepth;
+				{	//xpt=Xmin+(double)i*(Xmax-Xmin)/(double)Nhoriz;
+					//zpt=Zmin+(double)k*(Zmax-Zmin)/(double)Ndepth;
 					node=k*(Nhoriz+1)*(Nvert+1)+j*(Nhoriz+1)+(i+1);
-					nd[curPt] = NodalPoint::Create3DNode(node,xpt,ypt,zpt);
+					nd[curPt] = NodalPoint::Create3DNode(node,xpts[i],ypts[j],zpts[k]);
 					curPt++;
 				}
 			}
@@ -1620,11 +1928,11 @@ void MPMReadHandler::grid()
 	else if(mpm2DElement==FOUR_NODE_ISO)
 	{	// create the nodes vary x first, y second
 		for(j=0;j<=Nvert;j++)
-		{	ypt=Ymin+(double)j*(Ymax-Ymin)/(double)Nvert;
+		{	//ypt=Ymin+(double)j*(Ymax-Ymin)/(double)Nvert;
 			for(i=0;i<=Nhoriz;i++)
-			{	xpt=Xmin+(double)i*(Xmax-Xmin)/(double)Nhoriz;
+			{	//xpt=Xmin+(double)i*(Xmax-Xmin)/(double)Nhoriz;
 				node=j*(Nhoriz+1)+(i+1);
-				nd[curPt] = NodalPoint::Create2DNode(node,xpt,ypt);
+				nd[curPt] = NodalPoint::Create2DNode(node,xpts[i],ypts[j]);
 				curPt++;
 			}
 		}
@@ -1642,6 +1950,8 @@ void MPMReadHandler::grid()
 			}
 		}
 	}
+	/* The NINE_NODE_LAGRANGE option is currently disabled
+		To bring back, at least need this section to allow for unequal element sizes
 	else
 	{	// 2D Lagrange adds side and internal nodes
 		// create the nodes vary x first, y second
@@ -1674,6 +1984,50 @@ void MPMReadHandler::grid()
 			}
 		}
 	}
+	*/
+	
+	// clear nodal coordinate arrays
+	delete [] xpts;
+	delete [] ypts;
+	if(zpts!=NULL) delete [] zpts;
+}
+
+// set points along on acis
+void MPMReadHandler::gridAxis(int ax,int nOffset,double *gmin,double *gmax,double rmax,double *pts,int Naxis,double *mgmin,double *mgmax)
+{
+	int num = bmin[ax]+nOffset;
+	AreaOfInterest *nextAoi = axisAoi[ax];
+	double prevEdge = *gmin;
+	while(nextAoi!=NULL)
+	{	nextAoi = nextAoi->MeshAreaOfInterest(ax,prevEdge,*gmax,rmax,&num,pts,axisStyle[ax]);
+	}
+	
+	// left border
+	int numEdge=bmin[ax]+nOffset;
+	double acell = pts[numEdge+1]-pts[numEdge];
+	for(int ii=1;ii<=numEdge;ii++) pts[numEdge-ii] = pts[numEdge-ii+1]-acell;
+	
+	// right border
+	numEdge=bmax[ax]+nOffset;
+	acell = pts[Naxis-numEdge]-pts[Naxis-numEdge-1];
+	for(int ii=1;ii<=numEdge;ii++) pts[Naxis-numEdge+ii] = pts[Naxis-numEdge+ii-1]+acell;
+	
+	// final limits
+	*gmin = pts[0];
+	*gmax = pts[Naxis];
+	*mgmin = pts[nOffset];
+	*mgmax = pts[Naxis-nOffset];
+	
+	// debugging option
+	/*
+	 cout << "Nodes on axis " << ax << " set: " << num-1+bmax[ax]+nOffset << " of: " << Naxis << endl;
+	 for(int ii=0;ii<=Naxis;ii++)
+	 {	cout << "  " << pts[ii];
+		if(ii>0 && ii<Naxis) cout << "," << (pts[ii+1]-pts[ii])/(pts[ii]-pts[ii-1]) << "," << (pts[ii+1]-pts[ii])-(pts[ii]-pts[ii-1]);
+		cout << endl;
+	 }
+	 */
+	
 }
 
 //-----------------------------------------------------------
@@ -1723,28 +2077,40 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 	{	if(fmobj->IsAxisymmetric() && symdir<0)
 			throw SAXException("Axisymetric grid that includes the origin does not have zero along a grid line.");
 		char msg[200];
+		size_t msgSize=200;
 		char ax = 'x';
 		if(axis==Y_DIRECTION) ax = 'y';
 		if(axis==Z_DIRECTION) ax = 'z';
-		sprintf(msg,"Symmetry direction for %c axis at location %g is outside the grid, on grid edge, or not along a grid line.",ax,gridsym);
+		snprintf(msg,msgSize,"Symmetry direction for %c axis at location %g is outside the grid, on grid edge, or not along a grid line.",ax,gridsym);
 		throw SAXException(msg);
 	}
 	
 	// remove current velocities at or beyond the symmetry plane
+	// but do not remove orthogonal ones
 	int i;
-	double ni;
+	double ni,dotNorms;
 	NodalVelBC *lastValidBC = NULL;
 	NodalVelBC *nextBC = firstVelocityBC;
 	while(nextBC != NULL)
-	{	i = nextBC->GetNodeNum();
+	{	// get ni node relative to symmetrty plot
+		i = nextBC->GetNodeNum();
+		Vector *bcNorm = nextBC->GetNormalVector();
 		if(axis==X_DIRECTION)
-			ni = (nd[i]->x-gridsym)/gridout;
+		{	ni = (nd[i]->x-gridsym)/gridout;
+			dotNorms = bcNorm->x;
+		}
 		else if(axis==Y_DIRECTION)
-			ni = (nd[i]->y-gridsym)/gridout;
+		{	ni = (nd[i]->y-gridsym)/gridout;
+			dotNorms = bcNorm->y;
+		}
 		else
-			ni = (nd[i]->z-gridsym)/gridout;
+		{	ni = (nd[i]->z-gridsym)/gridout;
+			dotNorms = bcNorm->z;
+		}
 		if(symdir>0) ni = -ni;
-		if(ni<0.5 && nextBC->dir==axis)
+		
+		// remove if beyond symmetry plane and has component in axis direction
+		if(ni<0.5 && dotNorms!=0.)
 		{	// remove this velocity BC
 			nextBC->UnsetDirection();
 			
@@ -1784,7 +2150,9 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 		{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
 			NodalVelBC *newVelBC = new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 			nd[node]->SetFixedDirection(XSYMMETRYPLANE_DIRECTION);
-            newVelBC->SetID(velID);
+			newVelBC->SetID(velID);
+			//lastVelocityBC = (NodalVelBC *)LinkedObject::InsertObject((LinkedObject *)newVelBC,
+			//					 (LinkedObject *)lastVelocityBC,(LinkedObject **)(&firstVelocityBC));
 			
 			// add to linked list
 			if(lastVelocityBC == NULL)
@@ -1829,7 +2197,9 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 				NodalVelBC *newVelBC = new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 				nd[node]->SetFixedDirection(YSYMMETRYPLANE_DIRECTION);
                 newVelBC->SetID(velID);
-				
+				//lastVelocityBC = (NodalVelBC *)LinkedObject::InsertObject((LinkedObject *)newVelBC,
+				//					 (LinkedObject *)lastVelocityBC,(LinkedObject **)(&firstVelocityBC));
+
 				// add to linked list
 				if(lastVelocityBC == NULL)
 				{	// first one
@@ -1872,7 +2242,9 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,in
 			NodalVelBC *newVelBC = new NodalVelBC(node,Z_DIRECTION_INPUT,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 			nd[node]->SetFixedDirection(ZSYMMETRYPLANE_DIRECTION);
             newVelBC->SetID(velID);
-			
+			//lastVelocityBC = (NodalVelBC *)LinkedObject::InsertObject((LinkedObject *)newVelBC,
+			//					 (LinkedObject *)lastVelocityBC,(LinkedObject **)(&firstVelocityBC));
+
 			// add to linked list
 			if(lastVelocityBC == NULL)
 			{	// first one

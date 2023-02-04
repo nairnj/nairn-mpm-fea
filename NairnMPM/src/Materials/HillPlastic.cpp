@@ -23,6 +23,7 @@ HillPlastic::HillPlastic(char *matName,int matID) : AnisoPlasticity(matName,matI
 	nhard=1.;
     exphard=0.;
     hardStyle = AP_LINEAR;
+	alphaMax=-1.;
 }
 
 #pragma mark HillPlastic::Initialize
@@ -50,21 +51,31 @@ char *HillPlastic::InputMaterialProperty(char *xName,int &input,double &gScaling
         return((char *)&exphard);
     }
 
+	// exphard - hardening exponential rate
+	else if(strcmp(xName,"alphaMax")==0)
+	{   input=DOUBLE_NUM;
+		return((char *)&alphaMax);
+	}
+
     return(AnisoPlasticity::InputMaterialProperty(xName,input,gScaling));
 }
 
 // verify settings and some initial calculations
-// NOTE: This code duplicated in OrthoPlasticSoftening. Keep them in sync
 const char *HillPlastic::VerifyAndLoadProperties(int np)
 {
     if(hardStyle==AP_UNKNOWN)
     {   hardStyle = nhard<=0. ? AP_NONLINEAR1 : AP_NONLINEAR2;
         nhard = fabs(nhard);
+        if(DbleEqual(nhard,1.)) hardStyle=AP_LINEAR;
     }
     else if(hardStyle==AP_EXPONENTIAL)
-    {   if(exphard==0.)
-            return "The exphard parameter cannot be zero.";
+    {   if(exphard<=0.)
+            return "The exphard parameter must be >= zero.";
         Kexp = Khard/exphard;
+		if(alphaMax>0)
+		{	slopeMin = Khard*exp(-exphard*alphaMax);
+			hmax = 1+Kexp-slopeMin*(alphaMax+1./exphard);
+		}
     }
     
     // call super class
@@ -84,16 +95,23 @@ void HillPlastic::PrintYieldProperties(void) const
             cout << "(1 + " << Khard << "*alpha)^" << nhard;
             break;
         case AP_EXPONENTIAL:
-            if(exphard>0.)
-                cout << "1 + (" << Kexp << ")*(1-exp[-" << exphard << "*alpha])";
+			if(alphaMax>0)
+			{	cout << "1 + (" << Kexp << ")*(1-exp[-" << exphard << "*alpha]) for alpha<" << alphaMax << endl;
+				cout << "                 " << hmax << " + " << slopeMin << "*alpha for alpha>" << alphaMax;
+			}
             else
-                cout << "1 + (" << Kexp << ")*(1-exp[" << fabs(exphard) << "*alpha])";
-            break;
+				cout << "1 + (" << Kexp << ")*(1-exp[-" << exphard << "*alpha])";
+			break;
         default:
             cout << "1 + " << Khard << "*alpha^" << nhard;
             break;
     }
     cout << endl;
+	
+	if(h.style==SQRT_TERMS)
+		cout << "Hill style: sqrt(sAs)-relY" << endl;
+	else
+		cout << "Hill style: sAs - relY^2" << endl;
 }
 
 #pragma mark HillPlastic:History Data Methods
@@ -118,7 +136,10 @@ double HillPlastic::GetYield(AnisoPlasticProperties *p) const
         case AP_NONLINEAR1:
             return pow(1. + Khard*p->aint,nhard);
         case AP_EXPONENTIAL:
-            return 1. + Kexp*(1.-exp(-exphard*p->aint));
+			if(alphaMax<0 || p->aint<alphaMax)
+				return 1. + Kexp*(1.-exp(-exphard*p->aint));
+			else
+				return hmax + slopeMin*p->aint;
         default:
             return 1. + Khard*pow(p->aint,nhard);
      }
@@ -132,7 +153,10 @@ double HillPlastic::GetGPrime(AnisoPlasticProperties *p) const
         case AP_NONLINEAR1:
             return Khard*nhard*pow(1. + Khard*p->aint,nhard-1.);
         case AP_EXPONENTIAL:
-            return Khard*exp(-exphard*p->aint);
+			if(alphaMax<0 || p->aint<alphaMax)
+				return Khard*exp(-exphard*p->aint);
+			else
+				return slopeMin;
         default:
             if(nhard<1. && p->aint<ALPHA_EPS)
                 return Khard*nhard*pow(ALPHA_EPS,nhard-1.);

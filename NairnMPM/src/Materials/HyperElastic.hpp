@@ -33,7 +33,7 @@ class HyperElastic : public MaterialBase
         virtual void SetInitialParticleState(MPMBase *,int,int) const;
     
 		// Methods (make virtual if any subclass needs them)
-		virtual double GetIncrementalResJ(MPMBase *,ResidualStrains *) const;
+		virtual double GetIncrementalResJ(MPMBase *,ResidualStrains *,double) const;
 		virtual double IncrementDeformation(MPMBase *,Matrix3,Tensor *,int) const;
 		virtual double GetResidualStretch(MPMBase *,double &,ResidualStrains *) const;
         virtual double GetCpMinusCv(MPMBase *) const;

@@ -44,7 +44,7 @@ void BMPLevel::SetDefaults(void)
 	ZeroVector(&vel);
 #ifdef MPM_CODE
     thickness = mpmgrid.GetDefaultThickness();
-    concentration = diffusion->reference;
+	concentration = diffusion!=NULL ? diffusion->reference : 0.;
     temperature = thermal.reference;
 #else
     thickness=1.;

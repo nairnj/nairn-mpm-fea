@@ -20,27 +20,35 @@ XYFileImporter::XYFileImporter()
 {	fp = NULL;
 	fullPath = NULL;
 	readingXML = true;
+	mustReverse = false;
 }
 
-XYFileImporter::XYFileImporter(char *filePath,bool isReadingXML)
+XYFileImporter::XYFileImporter(char *filePath,bool isReadingXML,int dataType)
 {
 	readingXML = isReadingXML;
 	
 	// save file name
 	fullPath = new char[strlen(filePath)+1];
 	strcpy(fullPath,filePath);
-	
-	// open the file
-	if((fp=fopen(fullPath,"rb"))==NULL)
-		XYFileImportError("The bit mapped file could not be opened.");
-	
-	// BMP files are claimed to be little endian (least signficant first)
-    // If int test 1, has zero in (char *)&test, computer is big endian and must reverse read data
-	mustReverse=false;
-	int test=1;
-	char *testPtr=(char *)&test;
-	if(*testPtr==0) mustReverse=true;
+	mustReverse = false;
 
+	// text files
+	if(dataType>=TEXT_DELIMITED)
+	{	// open the file
+		if((fp=fopen(fullPath,"r"))==NULL)
+			XYFileImportError("The text file could not be opened.");
+	}
+	else
+	{	// open the file
+		if((fp=fopen(fullPath,"rb"))==NULL)
+			XYFileImportError("The bit mapped or binary file could not be opened.");
+	
+		// This option assumes all binary files are little endian (true for BMP, others will need to be)
+		// If int test 1, has zero in (char *)&test, computer is big endian and must reverse read data
+		int test = 1;
+		char *testPtr = (char *)&test;
+		if(*testPtr==0) mustReverse = true;
+	}
 }
 
 // Destructor (and it is virtual)

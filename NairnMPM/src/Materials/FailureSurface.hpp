@@ -45,6 +45,7 @@ class FailureSurface
 		// initialize
 		virtual char *InputInitationProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
+        virtual void RemapProperties(int);
 		virtual void PrintInitiationProperties(void) const;
 	
 		// methods
@@ -75,6 +76,13 @@ class FailureSurface
 		MaterialBase *parent;
 		int failureSurface;
         int pdModel;
+
+        // pressure dependence properties
+        double tauh,tauhRed;
+        double parg1,parg2;
+        double shearShift;
+        double maxPressure;
+        double P1Red,P2Red;
 };
 
 #endif

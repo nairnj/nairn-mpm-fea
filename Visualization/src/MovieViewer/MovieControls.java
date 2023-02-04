@@ -39,7 +39,7 @@ public class MovieControls extends JPanel
 	int particleSize=100;
 	
 	private JLabel elongSelected=new JLabel("Max F: 20",JLabel.LEFT);
-	public JSlider maxElongSlider=new JSlider(JSlider.HORIZONTAL,0,20,1);
+	public JSlider maxElongSlider=new JSlider(JSlider.HORIZONTAL,-1,10,1);
 
 	// axes
 	private String xchar="x";
@@ -214,7 +214,7 @@ public class MovieControls extends JPanel
 					NFMVPrefs.maxElongDef);
 			maxElongSlider.setValue((int)(maxElong+0.5));
 			elongSelected.setText("Max F: "+(int)(maxElong+0.5));
-			maxElongSlider.setToolTipText("Set maximum elongation plot (=0 to for no limit)");
+			maxElongSlider.setToolTipText("Set maximum elongation plot (=0 for no limit, -1 for no transform)");
 			
 		}
 
@@ -292,6 +292,7 @@ public class MovieControls extends JPanel
 				pcmpnt.setEnabled(true);
 				break;
 			
+			case PlotQuantity.MPMANGLEZ:
 			case PlotQuantity.MPMSPINVELOCITYX:
 			case PlotQuantity.MPMSPINMOMENTUMX:
 				if(resDoc.is3D())

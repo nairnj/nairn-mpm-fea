@@ -35,13 +35,14 @@ class TaitLiquid : public HyperElastic
         // history data
 		virtual int SizeOfHistoryData(void) const;
  		virtual char *InitHistoryData(char *,MPMBase *);
-   		virtual int NumberOfHistoryDoubles(void) const;
+		virtual void ResetHistoryData(char *,MPMBase *);
+  		virtual int NumberOfHistoryDoubles(void) const;
     
         // contitutive law methods
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
 		virtual double GetTwoEtaOverRho(double) const;
 		virtual double BracketContactLawShearRate(double,double,double &,double &,double &,double &) const;
-    
+	
         // accessors
         virtual const char *MaterialType(void) const;
         virtual double WaveSpeed(bool,MPMBase *) const;

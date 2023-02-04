@@ -20,7 +20,7 @@
 #pragma mark Constructors and Destructors
 
 // Constructors
-PeriodicXPIC::PeriodicXPIC()
+PeriodicXPIC::PeriodicXPIC() : CustomTask()
 {
 	verbose = 0;
 	periodicXPICorder = 0;
@@ -32,9 +32,16 @@ PeriodicXPIC::PeriodicXPIC()
 	periodicFMPMorder = 0;
 	gridBCOption = -1;
 	
-	periodicTimeConduction = periodicTimeDiffusion = -1.;
-	periodicCFLConduction = periodicCFLDiffusion = -1.;
-	periodicStepsConduction = periodicStepsDiffusion = -1;
+	periodicTimeConduction = -1.;
+	periodicCFLConduction = -1.;
+    periodicStepsConduction = -1;
+	conductionFractionFMPM = -1.;
+	for(int i=0;i<MAX_DIFFUSION_TASKS;i++)
+	{	periodicTimeDiffusion[i] = -1.;
+		periodicCFLDiffusion[i] = -1.;
+		diffusionFractionFMPM[i] = -1.;
+        periodicStepsDiffusion[i] = -1;
+	}
 }
 
 // Return name of this task
@@ -44,6 +51,14 @@ const char *PeriodicXPIC::TaskName(void) { return "Periodic XPIC Implementation"
 //    and return pointer to the class variable
 char *PeriodicXPIC::InputParam(char *pName,int &input,double &gScaling)
 {
+	// check for terminal number
+	int paramNum = 0;
+	char lastChar = pName[strlen(pName)-1];
+	if(lastChar>='0' && lastChar<='9')
+	{	paramNum = (int)lastChar - (int)'0';
+		pName[strlen(pName)-1] = 0;
+	}
+	
 	if(strcmp(pName,"verbose")==0)
 	{	input=INT_NUM;
 		return (char *)&verbose;
@@ -82,24 +97,39 @@ char *PeriodicXPIC::InputParam(char *pName,int &input,double &gScaling)
 	}
 	
 	else if(strcmp(pName,"periodicStepsConduction")==0)
-	{	input=INT_NUM;
-		return (char *)&periodicStepsConduction;
+	{	input=DOUBLE_NUM;
+		return (char *)&conductionFractionFMPM;
 	}
 	
 	// diffusion
 	else if(strcmp(pName,"periodicTimeDiffusion")==0)
-	{	input=DOUBLE_NUM;
-		return UnitsController::ScaledPtr((char *)&periodicTimeDiffusion,gScaling,1.e-3);
+	{	if(paramNum>=MAX_DIFFUSION_TASKS)
+		{	cout << "Diffusion parameter number must be less the maximum number of diffusion tasks";
+			cout << " (" << MAX_DIFFUSION_TASKS << ")" << endl;
+			return NULL;
+		}
+		input=DOUBLE_NUM;
+		return UnitsController::ScaledPtr((char *)&periodicTimeDiffusion[paramNum],gScaling,1.e-3);
 	}
 	
 	else if(strcmp(pName,"periodicCFLDiffusion")==0)
-	{	input=DOUBLE_NUM;
-		return (char *)&periodicCFLDiffusion;
+	{	if(paramNum>=MAX_DIFFUSION_TASKS)
+		{	cout << "Diffusion parameter number must be less the maximum number of diffusion tasks";
+			cout << " (" << MAX_DIFFUSION_TASKS << ")" << endl;
+			return NULL;
+		}
+		input=DOUBLE_NUM;
+		return (char *)&periodicCFLDiffusion[paramNum];
 	}
 	
 	else if(strcmp(pName,"periodicStepsDiffusion")==0)
-	{	input=INT_NUM;
-		return (char *)&periodicStepsDiffusion;
+	{	if(paramNum>=MAX_DIFFUSION_TASKS)
+		{	cout << "Diffusion parameter number must be less the maximum number of diffusion tasks";
+			cout << " (" << MAX_DIFFUSION_TASKS << ")" << endl;
+			return NULL;
+		}
+		input=DOUBLE_NUM;
+		return (char *)&diffusionFractionFMPM[paramNum];
 	}
 	
 	else if(strcmp(pName,"FMPMOrder")==0)
@@ -128,16 +158,14 @@ void PeriodicXPIC::SetTextParameter(char *fxn,char *ptr)
 		else if(CIstrcmp(fxn,"lumped")==0)
 			gridBCOption = GRIDBC_LUMPED_ONLY;
 		else
-		{	ThrowSAXException("GridBCOption must be 'combined', 'velocity', or 'lumped'");
-			return;
-		}
+			ThrowSAXException("GridBCOption must be 'combined', 'velocity', or 'lumped'");
 	}
 	else
 		CustomTask::SetTextParameter(fxn,ptr);
 }
 
 // Called while reading when done setting all parameters
-// Make and needed settings, throw SAXExecption on error
+// Make any needed settings, throw SAXExecption on error
 void PeriodicXPIC::Finalize(void)
 {
 	if(periodicXPICorder<1 && periodicFMPMorder<1)
@@ -163,20 +191,39 @@ void PeriodicXPIC::Finalize(void)
 		xpicActive = true;
 
 	// conduction
-	if(periodicStepsConduction>0)
-	{	periodicTimeConduction = periodicCFLConduction -1.;
+	if(conductionFractionFMPM>0.)
+	{	periodicTimeConduction = periodicCFLConduction = -1.;
+		if(conductionFractionFMPM<1.)
+		{	periodicStepsConduction=1;
+		}
+		else
+		{	periodicStepsConduction=int(conductionFractionFMPM+0.5);
+			conductionFractionFMPM=1.;
+		}
 		xpicActive = true;
 	}
 	else if(periodicTimeConduction>0. || periodicCFLConduction>0.)
 		xpicActive = true;
 	
-	// diffusion
-	if(periodicStepsDiffusion>0)
-	{	periodicTimeDiffusion = periodicCFLDiffusion = -1.;
-		xpicActive = true;
+	// diffusion tasks
+	for(int i=0;i<MAX_DIFFUSION_TASKS;i++)
+    {   if(diffusionFractionFMPM[i]>0.)
+		{	periodicTimeDiffusion[i] = periodicCFLDiffusion[i] = -1.;
+			if(diffusionFractionFMPM[i]<1.)
+			{	periodicStepsDiffusion[i]=1;
+			}
+			else
+			{	periodicStepsDiffusion[i]=int(diffusionFractionFMPM[i]+0.5);
+				diffusionFractionFMPM[i]=1.;
+			}
+			xpicActive = true;
+		}
+		else if(periodicTimeDiffusion[i]>0. || periodicCFLDiffusion[i]>0.)
+        {   periodicStepsDiffusion[i] = -1;
+            diffusionFractionFMPM[i] = 1.;          // need because not used in this mode
+			xpicActive = true;
+        }
 	}
-	else if(periodicTimeDiffusion>0. || periodicCFLDiffusion>0.)
-		xpicActive = true;
 	
 	// error if nothing
 	if(!xpicActive)
@@ -206,11 +253,8 @@ CustomTask *PeriodicXPIC::Initialize(void)
 	if(periodicTime>0. || periodicCFL>0.)
 	{	if(periodicCFL>0.) periodicTime = periodicCFL*fmobj->timeStepMinMechanics;
 		cout << periodicTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
+        // if this time < timestep, then done every time step
 		nextPeriodicTime = periodicTime;
-		if(periodicTime<=timestep)
-		{	periodicTime = -1.;
-			periodicSteps = 1;
-		}
 	}
 	else if(periodicSteps>0)
 	{	if(periodicSteps>1)
@@ -248,17 +292,15 @@ CustomTask *PeriodicXPIC::Initialize(void)
 		if(periodicTimeConduction>0. || periodicCFLConduction>0.)
 		{	if(periodicCFLConduction>0.) periodicTimeConduction = periodicCFLConduction*conduction->GetTimeStep();
 			cout << periodicTimeConduction*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
-			nextPeriodicTimeConduction = periodicTimeConduction;
+            // if this time < timestep, then done every time step
+            nextPeriodicTimeConduction = periodicTimeConduction;
 			TransportTask::hasXPICOption = true;
-			if(periodicTimeConduction<=timestep)
-			{	periodicTimeConduction = -1.;
-				periodicStepsConduction = 1;
-				nextPeriodicStepConduction = periodicStepsConduction;
-			}
 		}
 		else if(periodicStepsConduction>0)
 		{	if(periodicStepsConduction>1)
 				cout << periodicStepsConduction << " time steps" << endl;
+			else if(conductionFractionFMPM<1.)
+				cout << "fraction " << conductionFractionFMPM << " with rest FLIP every time step" << endl;
 			else
 				cout << "every time step" << endl;
 			nextPeriodicStepConduction = periodicStepsConduction;
@@ -268,30 +310,51 @@ CustomTask *PeriodicXPIC::Initialize(void)
 			cout << "not used" << endl;
 	}
 	
-	// Diffusion XPIC
-	if(fmobj->HasFluidTransport())
-	{	cout << "   Periodic " << GetType() << " interval for diffusion: ";
-		if(periodicTimeDiffusion>0. || periodicCFLDiffusion>0.)
-		{	if(periodicCFLDiffusion>0.) periodicTimeDiffusion = periodicCFLDiffusion*diffusion->GetTimeStep();
-			cout << periodicTimeDiffusion*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
-			nextPeriodicTimeDiffusion = periodicTimeDiffusion;
-			TransportTask::hasXPICOption = true;
-			if(periodicTimeDiffusion<=timestep)
-			{	periodicTimeDiffusion = -1.;
-				periodicStepsDiffusion = 1;
-				nextPeriodicStepDiffusion = periodicStepsDiffusion;
+	// Diffusion XPIC/FMPM (each can set their own)
+	// Note: assumes diffusion tasks created before creating this custom task
+	// [0] is always for standard diffusion (if active)
+	// [i>0] is for otherDiffsion tasks (numbered from 1)
+	if(numDiffusion>0)
+    {	DiffusionTask *nextTask;
+        int d1,d2;
+        if(diffusion==NULL)
+        {   nextTask = otherDiffusion;
+            d1 = 1;
+            d2 = numDiffusion+1;
+        }
+        else
+        {   nextTask = diffusion;
+            d1 = 0;
+            d2 = numDiffusion;
+        }
+		for(int i=d1;i<d2;i++)
+		{	cout << "   Periodic " << GetType() << " interval for ";
+			cout << nextTask->StyleName() << " (number " << nextTask->GetNumber() << "): ";
+			if(periodicTimeDiffusion[i]>0. || periodicCFLDiffusion[i]>0.)
+			{	if(periodicCFLDiffusion[i]>0.)
+					periodicTimeDiffusion[i] = periodicCFLDiffusion[i]*nextTask->GetTimeStep();
+				cout << periodicTimeDiffusion[i]*UnitsController::Scaling(1.e3) << " "
+							<< UnitsController::Label(ALTTIME_UNITS) << endl;
+                // if this time < timestep, then done every time step
+				nextPeriodicTimeDiffusion[i] = periodicTimeDiffusion[i];
+                TransportTask::hasXPICOption = true;
 			}
-		}
-		else if(periodicStepsDiffusion>0)
-		{	if(periodicStepsDiffusion>1)
-				cout << periodicStepsDiffusion << " time steps" << endl;
+			else if(periodicStepsDiffusion[i]>0)
+			{	if(periodicStepsDiffusion[i]>1)
+					cout << periodicStepsDiffusion[i] << " time steps" << endl;
+				else if(diffusionFractionFMPM[i]<1.)
+					cout << "fraction " << diffusionFractionFMPM[i] << " with rest FLIP every time step" << endl;
+				else
+					cout << "every time step" << endl;
+				nextPeriodicStepDiffusion[i] = periodicStepsDiffusion[i];
+				TransportTask::hasXPICOption = true;
+			}
 			else
-				cout << "every time step" << endl;
-			nextPeriodicStepDiffusion = periodicStepsDiffusion;
-			TransportTask::hasXPICOption = true;
+				cout << "not used" << endl;
+			
+			// next task
+			nextTask = i==0 ? otherDiffusion : (DiffusionTask *)nextTask->GetNextTransportTask();
 		}
-		else
-			cout << "not used" << endl;
 	}
 	
 	// Run for first time step
@@ -310,13 +373,13 @@ CustomTask *PeriodicXPIC::PrepareForStep(bool &needExtraps)
 {
 	doXPIC = false;
 	doXPICConduction = false;
-	doXPICDiffusion = false;
+	for(int i=0;i<numDiffusion;i++) doXPICDiffusion[i] = false;
 
 	if(periodicTime>0.)
 	{	// controlledby step time
 		if(mtime+timestep>=nextPeriodicTime)
 		{	doXPIC = true;
-			nextPeriodicTime += periodicTime;
+			nextPeriodicTime = mtime+timestep+periodicTime;
 		}
 	}
 	else if(periodicSteps>0)
@@ -332,7 +395,7 @@ CustomTask *PeriodicXPIC::PrepareForStep(bool &needExtraps)
 		{	// controlled by step time
 			if(mtime+timestep>=nextPeriodicTimeConduction)
 			{	doXPICConduction = true;
-				nextPeriodicTimeConduction += periodicTimeConduction;
+				nextPeriodicTimeConduction = mtime+timestep+periodicTimeConduction;
 			}
 		}
 		else if(periodicStepsConduction>0)
@@ -344,20 +407,37 @@ CustomTask *PeriodicXPIC::PrepareForStep(bool &needExtraps)
 		}
 	}
 	
-	if(fmobj->HasFluidTransport())
-	{	if(periodicTimeDiffusion>0.)
-		{	// controlled by step time
-			if(mtime+timestep>=nextPeriodicTimeDiffusion)
-			{	doXPICDiffusion = true;
-				nextPeriodicTimeDiffusion += periodicTimeDiffusion;
+	// set true if any diffusion task wants XPIC.FMPM
+	if(numDiffusion>0)
+	{	DiffusionTask *nextTask;
+        int d1,d2;
+        if(diffusion==NULL)
+        {   nextTask = otherDiffusion;
+            d1 = 1;
+            d2 = numDiffusion+1;
+        }
+        else
+        {   nextTask = diffusion;
+            d1 = 0;
+            d2 = numDiffusion;
+        }
+        for(int i=d1;i<d2;i++)
+		{	if(periodicTimeDiffusion[i]>0.)
+			{	// controlled by step time
+				if(mtime+timestep>=nextPeriodicTimeDiffusion[i])
+				{	doXPICDiffusion[i] = true;
+					nextPeriodicTimeDiffusion[i] = mtime+timestep+periodicTimeDiffusion[i];
+				}
 			}
-		}
-		else if(periodicStepsDiffusion>0)
-		{	// controlled by step count
-			if(fmobj->mstep+1>=nextPeriodicStepDiffusion)
-			{	doXPICDiffusion = true;
-				nextPeriodicStepDiffusion += periodicStepsDiffusion;
+			else if(periodicStepsDiffusion[i]>0)
+			{	// controlled by step count
+				if(fmobj->mstep+1>=nextPeriodicStepDiffusion[i])
+				{	doXPICDiffusion[i] = true;
+					nextPeriodicStepDiffusion[i] += periodicStepsDiffusion[i];
+				}
 			}
+			
+			nextTask = (i==0) ? otherDiffusion : (DiffusionTask *)nextTask->GetNextTransportTask();
 		}
 	}
 	
@@ -372,10 +452,10 @@ CustomTask *PeriodicXPIC::StepCalculation(void)
 	bodyFrc.SetUsingVstar(VSTAR_NOT_USED);
 
 	TransportTask::XPICOrder = 0;
-	if(ConductionTask::active) conduction->SetUsingTransportXPIC(false);
-	if(fmobj->HasFluidTransport()) diffusion->SetUsingTransportXPIC(false);
+	if(ConductionTask::active) conduction->SetUsingTransportXPIC(false,1.);
+	if(numDiffusion>0) DiffusionTask::SetDiffusionXPIC(false);
 
-	// mechanics XPIC
+	// mechanics XPIC/FMPM
 	if(doXPIC)
 	{	// switch to XPIC for next time step
 		bodyFrc.SetXPICOrder(periodicXPICorder);
@@ -387,7 +467,9 @@ CustomTask *PeriodicXPIC::StepCalculation(void)
 #endif
 		}
 		else
+		{	// for order 1
 			bodyFrc.SetUsingVstar(VSTAR_NOT_USED);
+		}
 	
 		if(verbose)
 		{	cout <<"# Use " << GetType() << "(" << periodicXPICorder << ") in step " << (fmobj->mstep+1) << endl;
@@ -398,21 +480,40 @@ CustomTask *PeriodicXPIC::StepCalculation(void)
 	if(doXPICConduction)
 	{	// switch to XPIC for next time step
 		TransportTask::XPICOrder = periodicXPICorder;
-		conduction->SetUsingTransportXPIC(true);
+		conduction->SetUsingTransportXPIC(true,conductionFractionFMPM);
 		
 		if(verbose)
 		{	cout <<"# Use " << GetType() << "(" << periodicXPICorder << ") for conduction in step " << (fmobj->mstep+1) << endl;
 		}
 	}
 	
-	// conduction XPIC
-	if(doXPICDiffusion)
-	{	// switch to XPIC for next time step
-		TransportTask::XPICOrder = periodicXPICorder;
-		diffusion->SetUsingTransportXPIC(true);
-		
-		if(verbose)
-		{	cout <<"# Use " << GetType() << "(" << periodicXPICorder << ") for diffusion in step " << (fmobj->mstep+1) << endl;
+	// diffusion XPIC/FMPM
+	if(numDiffusion>0)
+	{	DiffusionTask *nextTask;
+        int d1,d2;
+        if(diffusion==NULL)
+        {   nextTask = otherDiffusion;
+            d1 = 1;
+            d2 = numDiffusion+1;
+        }
+        else
+        {   nextTask = diffusion;
+            d1 = 0;
+            d2 = numDiffusion;
+        }
+        for(int i=d1;i<d2;i++)
+		{	if(doXPICDiffusion[i])
+			{	// switch to XPIC for next time step (make sure fraction is 1 unless mean it)
+				TransportTask::XPICOrder = periodicXPICorder;
+				nextTask->SetUsingTransportXPIC(true,diffusionFractionFMPM[i]);
+				
+				if(verbose)
+				{	cout <<"# Use " << GetType() << "(" << periodicXPICorder << ") for ";
+					cout << nextTask->TaskName() << " in step " << (fmobj->mstep+1) << endl;
+				}
+			}
+			
+			nextTask = (i==0) ? otherDiffusion : (DiffusionTask *)nextTask->GetNextTransportTask();
 		}
 	}
 

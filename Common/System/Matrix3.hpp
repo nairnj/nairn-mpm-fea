@@ -6,8 +6,8 @@
 	Copyright (c) 2012 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
-#ifndef _MATRIX3_
-#define _MATRIX3_
+#ifndef _JAN_MATRIX3_
+#define _JAN_MATRIX3_
 
 class Matrix3
 {

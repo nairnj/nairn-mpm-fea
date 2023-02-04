@@ -38,7 +38,9 @@ bool SetRigidContactVelTask::Execute(int taskOption)
 	
 #pragma omp parallel for private(hasDir)
 	for(int p=nmpmsRB;p<nmpmsRC;p++)
-	{   MPMBase *mpmptr = mpm[p];
+	{	// pointer, skip if in reservoir
+		MPMBase *mpmptr = mpm[p];
+		if(mpmptr->InReservoir()) continue;
 		const RigidMaterial *matID = (RigidMaterial *)theMaterials[mpm[p]->MatID()];
 		try
 		{	matID->GetVectorSetting(&mpmptr->vel,hasDir,mtime,&mpmptr->pos);
@@ -49,7 +51,7 @@ bool SetRigidContactVelTask::Execute(int taskOption)
 #pragma omp critical (error)
 				rcErr = new CommonException(err);
 			}
-		}
+ 		}
 	}
 	
 	// throw now - only known error is problem with function for velocity setting

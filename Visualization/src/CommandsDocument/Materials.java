@@ -88,15 +88,13 @@ public class Materials
 		// and type
 		HashMap<String,Integer> options = new HashMap<String,Integer>(60);
 		options.put("isotropic", new Integer(1));
-		options.put("transverse 1", new Integer(2));
-		options.put("transverse 2", new Integer(3));
+		options.put("transverse", new Integer(2));
 		options.put("orthotropic", new Integer(4));
 		if(doc.isFEA())
 		{	options.put("interface", new Integer(5));
 		}
 		else
-		{	options.put("tiviscoelastic 1", new Integer(5));
-			options.put("tiviscoelastic 2", new Integer(6));
+		{	options.put("tiviscoelastic", new Integer(5));
 			options.put("viscoelastic", new Integer(7));
 			options.put("mooney", new Integer(8));
 			options.put("vonmises", new Integer(9));
@@ -131,12 +129,13 @@ public class Materials
 			options.put("rigidblock", new Integer(36));
 			options.put("mooneymembrane", new Integer(40));
 			options.put("isosoftening", new Integer(50));
-			options.put("transisosoftening 1", new Integer(51));
-			options.put("transisosoftening 2", new Integer(52));
+			options.put("transisosoftening", new Integer(51));
 			options.put("isoplasticsoftening", new Integer(53));
 			options.put("orthosoftening", new Integer(54));
 			options.put("isoplasticinterface", new Integer(55));
 			options.put("orthoplasticsoftening", new Integer(56));
+			options.put("isophasefieldsoftening", new Integer(57));
+			options.put("isodamagemechanics", new Integer(58));
 			options.put("phasetransition", new Integer(30));
 			options.put("ignorecontact", new Integer(60));
 			options.put("coulombfriction", new Integer(61));
@@ -147,6 +146,22 @@ public class Materials
 			options.put("debondinginterface", new Integer(66));
 		}
 		matType = doc.readIntOption(args.get(3),options,null);
+		
+		// deprecated materials
+		if(matType<0)
+		{	options = new HashMap<String,Integer>(6);
+			options.put("transverse 1", new Integer(2));
+			options.put("transverse 2", new Integer(3));
+			if(doc.isMPM())
+			{	options.put("tiviscoelastic 1", new Integer(5));
+				options.put("tiviscoelastic 2", new Integer(6));
+				options.put("transisosoftening 1", new Integer(51));
+				options.put("transisosoftening 2", new Integer(52));
+			}
+			matType = doc.readIntOption(args.get(3),options,null);
+		}
+		
+		// if not found then error
 		if(matType<0)
 		{	if(doc.isFEA())
 				throw new Exception("'Material' type not supported in FEA commands.\nUse XML method if possible: "+args);
@@ -504,8 +519,8 @@ public class Materials
 			if(args.size()>2)
 			{	if(args.size()<4)
 					throw new Exception("Color material needs, 1, 3, or 4 values.");
-				green = doc.readDoubleArg(args.get(3));
-				blue = doc.readDoubleArg(args.get(2));
+				green = doc.readDoubleArg(args.get(2));
+				blue = doc.readDoubleArg(args.get(3));
 				if(args.size()>4) alpha = doc.readDoubleArg(args.get(4));
 			}
 			xmldata.append("    <color red='"+red+"' green='"+green+

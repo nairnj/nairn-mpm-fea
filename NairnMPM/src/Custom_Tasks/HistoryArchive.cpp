@@ -17,7 +17,7 @@ static int historyArg;
 #pragma mark Constructors and Destructors
 
 // Constructors
-HistoryArchive::HistoryArchive()
+HistoryArchive::HistoryArchive() : CustomTask()
 {
 	customArchiveTime = -1.;
 	nextCustomArchiveTime = -1.;

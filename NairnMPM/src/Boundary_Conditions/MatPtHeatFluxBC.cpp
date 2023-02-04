@@ -40,8 +40,9 @@ MatPtHeatFluxBC::MatPtHeatFluxBC(int num,int dof,int sty,int edge) : MatPtLoadBC
 BoundaryCondition *MatPtHeatFluxBC::PrintBC(ostream &os)
 {
     char nline[200];
+	size_t nlsize=200;
     
-    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,
+    snprintf(nline,nlsize,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,
 			UnitsController::Scaling(1.e-3)*GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
 	PrintFunction(os);
@@ -109,14 +110,10 @@ MatPtLoadBC *MatPtHeatFluxBC::AddMPFluxBC(double bctime)
     {	// coupled surface flux
 		if(bctime>=GetBCFirstTime())
 		{	// time variable (t) is replaced by particle temperature, result should be E/(T-L^2)
-#ifdef USE_ASCII_MAP
+            // (see Expression vmap)
 			double vars[7];
 			vars[0] = 6.5;
 			vars[1] = mpmptr->pPreviousTemperature;		//t
-#else
-			unordered_map<string, double> vars;
-			vars["t"] = mpmptr->pPreviousTemperature;
-#endif
 			GetPositionVars(vars);
 			
 			// Legacy scaling of W/m^2 to nW/mm^2

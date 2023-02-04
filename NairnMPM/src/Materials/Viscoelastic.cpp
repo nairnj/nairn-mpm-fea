@@ -397,7 +397,7 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
     mref /= concSaturation;
     if(mref>=0. && Cm2<=0.)
         return "Cm2 must be greater than zero";
-    
+
 	// call super class
 	return MaterialBase::VerifyAndLoadProperties(np);
 }
@@ -451,6 +451,17 @@ char *Viscoelastic::InitHistoryData(char *pchr,MPMBase *mptr)
     return (char *)p;
 }
 
+// reset history data
+void Viscoelastic::ResetHistoryData(char *pchr,MPMBase *mptr)
+{	ZeroDoubles(pchr,numHistory);
+	// J history starts at 1
+	if(numJHistory>0)
+	{	double *p = (double *)pchr;
+		p[MGJ_HISTORY] = 1.;
+		p[MGJRES_HISTORY] = 1.;
+	}
+}
+
 // Number of history variables - only the plastic law
 int Viscoelastic::NumberOfHistoryDoubles(void) const { return numHistory; }
 
@@ -466,7 +477,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 {
 	// Note: cannot call generic method because need detdF and Vrot below
 	
-	// current previous deformation gradient and stretch
+	// previous deformation gradient and stretch
 	Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
 	
 	// get incremental deformation gradient and decompose it
@@ -484,6 +495,15 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	// get strain increments in current configuration (dF-dR)F(n-1)Rn^T
 	Matrix3 dFmdR = dF - dR;
 	Matrix3 detot = dFmdR*(pFnm1*Rn.Transpose());
+    
+    // shift factors based on mptr->pPreviousTemperature and mptr->pPreviousConcentration
+#ifdef TOTAL_STRESS_CALC
+    double bshift=1.;
+    double pGered = bshift*Gered;
+    double pKered = bshift*Kered;
+#else
+    double bshift=1.;
+#endif
 	
     // Effective strain by deducting thermal strain (no shear thermal strain because isotropic)
 	double eres=CTE*res->dT;
@@ -540,6 +560,16 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 
 	// increment particle deviatoric stresses - elastic part (factor of 2 in de)
 	double dsig[6];
+#ifdef TOTAL_STRESS_CALC
+	dsig[XX] = pGered*(ed.xx+de.xx);
+	dsig[YY] = pGered*(ed.yy+de.yy);
+	dsig[ZZ] = pGered*(ed.zz+de.zz);
+	dsig[XY] = pGered*(ed.xy+de.xy);
+	if(np==THREED_MPM)
+	{	dsig[XZ] = pGered*(ed.xz+de.xz);
+		dsig[YZ] = pGered*(ed.yz+de.yz);
+	}
+#else
 	dsig[XX] = Gered*de.xx;
 	dsig[YY] = Gered*de.yy;
 	dsig[ZZ] = Gered*de.zz;
@@ -548,13 +578,10 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	{	dsig[XZ] = Gered*de.xz;
 		dsig[YZ] = Gered*de.yz;
 	}
+#endif
     
     // get effective time increment
-#ifdef OSPARTICULAS
-    double delEffTime = GetEffectiveIncrement(mptr,res,delTime,Tref,C1,C2,mref,Cm1,Cm2,kMS,Cms1,Cms2);
-#else
     double delEffTime = GetEffectiveIncrement(mptr,res,delTime,Tref,C1,C2,mref,Cm1,Cm2,0.,0.,0.);
-#endif
     
 	// get internal variable increments, update them, add to incremental stress, and get dissipated energy
     // For plane stress, this gets initial deviatoric stress update only
@@ -568,21 +595,11 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
         dak.xy = omtmp*(0.5*ed.xy-ak[ai+XY_HISTORY]) + omtmp2*de.xy;
         dak.zz = omtmp*(0.5*ed.zz-ak[ai+ZZ_HISTORY]) + omtmp2*de.zz;
 		
-		// add to stress increments
-		dsig[XX] -= TwoGkred[k]*dak.xx;
-		dsig[YY] -= TwoGkred[k]*dak.yy;
-		dsig[ZZ] -= TwoGkred[k]*dak.zz;
-		dsig[XY] -= TwoGkred[k]*dak.xy;
-		
 		// extra terms for 3D
 		if(np==THREED_MPM)
 		{	// internal variables
 			dak.xz = omtmp*(0.5*ed.xz-ak[ai+XZ_HISTORY]) + omtmp2*de.xz;
 			dak.yz = omtmp*(0.5*ed.yz-ak[ai+YZ_HISTORY]) + omtmp2*de.yz;
-			
-			// add to stress increments
-			dsig[XZ] -= TwoGkred[k]*dak.xz;
-			dsig[YZ] -= TwoGkred[k]*dak.yz;
 			
 			// update history on particle
 			ak[ai+XX_HISTORY] += dak.xx;
@@ -593,7 +610,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 			ak[ai+YZ_HISTORY] += dak.yz;
 			
 			// dissipation (updated deviatoric strain minus updated alpha, remove factor of 2 from strain)
-			dispEnergy += TwoGkred[k]*(dak.xx*(0.5*(ed.xx+de.xx)-ak[ai+XX_HISTORY])
+			dispEnergy += bshift*TwoGkred[k]*(dak.xx*(0.5*(ed.xx+de.xx)-ak[ai+XX_HISTORY])
 									   + dak.yy*(0.5*(ed.yy+de.yy)-ak[ai+YY_HISTORY])
 									   + dak.zz*(0.5*(ed.zz+de.zz)-ak[ai+ZZ_HISTORY])
 									   + dak.xy*(0.5*(ed.xy+de.xy)-ak[ai+XY_HISTORY])
@@ -604,7 +621,8 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
             ai += 6;
 		}
         else if(np==PLANE_STRESS_MPM)
-        {   ai += 4;
+        {   // history abd dissipated energy done later
+            ai += 4;
         }
 		else
 		{	// update history on particle
@@ -614,7 +632,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 			ak[ai+ZZ_HISTORY] += dak.zz;
 
 			// dissipation  (updated deviatoric strain minus updated alpha, remove factor of 2 from strain)
-			dispEnergy += TwoGkred[k]*(dak.xx*(0.5*(ed.xx+de.xx)-ak[ai+XX_HISTORY])
+			dispEnergy += bshift*TwoGkred[k]*(dak.xx*(0.5*(ed.xx+de.xx)-ak[ai+XX_HISTORY])
 									   + dak.yy*(0.5*(ed.yy+de.yy)-ak[ai+YY_HISTORY])
 									   + dak.zz*(0.5*(ed.zz+de.zz)-ak[ai+ZZ_HISTORY])
 									   + dak.xy*(0.5*(ed.xy+de.xy)-ak[ai+XY_HISTORY]));
@@ -622,37 +640,69 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
             // next history
             ai += 4;
 		}
+		
+#ifdef TOTAL_STRESS_CALC
+		// add to stress using updated alphas
+		dsig[XX] -= bshift*TwoGkred[k]*ak[ai+XX_HISTORY];
+		dsig[YY] -= bshift*TwoGkred[k]*ak[ai+YY_HISTORY];
+		dsig[ZZ] -= bshift*TwoGkred[k]*ak[ai+ZZ_HISTORY];
+		dsig[XY] -= bshift*TwoGkred[k]*ak[ai+XY_HISTORY];
+		if(np==THREED_MPM)
+		{	dsig[XZ] -= bshift*TwoGkred[k]*ak[ai+XZ_HISTORY];
+			dsig[YZ] -= bshift*TwoGkred[k]*ak[ai+YZ_HISTORY];
+		}
+#else
+		// add to stress increments
+		dsig[XX] -= TwoGkred[k]*dak.xx;
+		dsig[YY] -= TwoGkred[k]*dak.yy;
+		dsig[ZZ] -= TwoGkred[k]*dak.zz;
+		dsig[XY] -= TwoGkred[k]*dak.xy;
+		if(np==THREED_MPM)
+		{	dsig[XZ] -= TwoGkred[k]*dak.xz;
+			dsig[YZ] -= TwoGkred[k]*dak.yz;
+		}
+#endif
 	}
     
     double dP=0.,Vstar=0.;
     if(pressureLaw==TIME_DEPENDENT_PRESSURE)
     {   double dTemp=mptr->pPreviousTemperature-thermal.reference;
         double eresStretch=CTE*dTemp;
-        if(DiffusionTask::HasFluidTransport())
-        {   double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
+        if(DiffusionTask::HasDiffusion())
+		{   double dConc = diffusion->GetDeltaConcentration(mptr);
             eresStretch = CME*dConc;
         }
     
         // find initial V* (diagonal has 1+eii)
         Vstar = Vrot(0,0)+Vrot(1,1)+Vrot(2,2)-3.-3.*eresStretch;
-        
+
+#ifdef TOTAL_STRESS_CALC
+		// elastic pressure
+		dP = -bshift*Kered*(Vstar+delV);
+#else
         // elastic pressure increment
         dP = -Kered*delV;
+#endif
         
         // viscoelastic history
         for(k=0;k<ntaus;k++)
         {   GetAlphaArgs(delEffTime,tauKk[k],omtmp,omtmp2);
             double dalphaV = omtmp*(Vstar-ak[ai]) + 2.*omtmp2*delV;
             
-            // add to pressure increments
-            dP += Kkred[k]*dalphaV;
+#ifdef TOTAL_STRESS_CALC
+            // add to pressure
+            dP += bshift*Kkred[k]*(ak[ai]+dalphaV);
+#else
+			// add to pressure increments
+			dP += Kkred[k]*dalphaV;
+#endif
             
             if(np!=PLANE_STRESS_MPM)
-            {   // update history on particle
+            {   // update history on particle (plane stress done later)
                 ak[ai] += dalphaV;
 
                 // dissipation (updated deviatoric strain minus updated alpha)
-                dispEnergy += Kkred[k]*dalphaV*(Vstar+delV-ak[ai]);
+                dispEnergy += bshift*Kkred[k]*dalphaV*(Vstar+delV-ak[ai]);
             }
                 
             // next history
@@ -663,14 +713,20 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	// For plane stress, find dezz and adjust all terms
 	if(np==PLANE_STRESS_MPM)
 	{	double phi = Gered;
-        for(k=0;k<ntaus;k++) phi -= TwoGkred[k]*GetPSArg(delEffTime,tauk[k]);
+        for(k=0;k<ntaus;k++) phi -= bshift*TwoGkred[k]*GetPSArg(delEffTime,tauk[k]);
 
         double phiK = Kered;
         if(pressureLaw==TIME_DEPENDENT_PRESSURE)
-        {   for(k=0;k<ntausK;k++) phiK -= Kkred[k]*2.*GetPSArg(delEffTime,tauKk[k]);
+        {   for(k=0;k<ntausK;k++) phiK -= bshift*Kkred[k]*2.*GetPSArg(delEffTime,tauKk[k]);
         }
         else
-            dP = -Kered*delV;
+		{
+#ifdef TOTAL_STRESS_CALC
+			dP = -bshift*Kered*(Vstar+delV);
+#else
+			dP = -Kered*delV;
+#endif
+		}
         
         // dezz
         double dezz = (dP - dsig[ZZ])/(phiK + 4.*phi/3.);
@@ -712,7 +768,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 			ak[ai+ZZ_HISTORY] += dak.zz;
 			
 			// dissipation
-			dispEnergy += TwoGkred[k]*(dak.xx*(0.5*(ed.xx+de.xx)-ak[ai+XX_HISTORY])
+			dispEnergy += bshift*TwoGkred[k]*(dak.xx*(0.5*(ed.xx+de.xx)-ak[ai+XX_HISTORY])
 									   + dak.yy*(0.5*(ed.yy+de.yy)-ak[ai+YY_HISTORY])
 									   + dak.zz*(0.5*(ed.zz+de.zz)-ak[ai+ZZ_HISTORY])
 									   + dak.xy*(0.5*(ed.xy+de.xy)-ak[ai+XY_HISTORY]));
@@ -734,7 +790,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
                 ak[ai] += dalphaV;
                 
                 // dissipation (updated volumetric strain minus updated alpha)
-                dispEnergy += Kkred[k]*dalphaV*(Vstar+delV-ak[ai]);
+                dispEnergy += bshift*Kkred[k]*dalphaV*(Vstar+delV-ak[ai]);
                     
                 // next history
                 ai++;
@@ -745,9 +801,21 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	// Update particle deviatoric stresses
 	Tensor *sp=mptr->GetStressTensor();
 	
+#ifdef TOTAL_STRESS_CALC
+    if(np==THREED_MPM)
+    {   // total stress
+        Matrix3 stn(dsig[XX],dsig[XY],dsig[XZ],dsig[XY],dsig[YY],dsig[YZ],dsig[XZ],dsig[YZ],dsig[ZZ]);
+        
+    }
+    else
+    {   // total stress
+        Matrix3 stn(dsig[XX],dsig[XY],dsig[XY],dsig[YY],dsig[ZZ]);
+        
+    }
+#else
 	//Tensor st0 = *sp;
 	if(np==THREED_MPM)
-	{	// incremental rotate of prior stress
+	{   // incremental rotate of prior stress
 		Matrix3 stn(sp->xx,sp->xy,sp->xz,sp->xy,sp->yy,sp->yz,sp->xz,sp->yz,sp->zz);
 		Matrix3 str = stn.RMRT(dR);
 
@@ -790,6 +858,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 			sp->zz += dsig[ZZ];
 		}
 	}
+#endif
 	
 	// incremental work energy = shear energy (dilation and residual energy done in update pressure)
     double shearEnergy = sp->xx*detot(0,0) + sp->yy*detot(1,1) + sp->zz*detot(2,2) + sp->xy*de.xy;
@@ -802,10 +871,10 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	mptr->SetDeformationGradientMatrix(pF);
 	
 	// Now update pressure
-    double dTq0 = dP;               // passed pressure increment found above, it returns as dTq0
+    double dTq0 = dP;               // pass pressure increment found above, it returns as dTq0
 	UpdatePressure(mptr,delV,res,eres,detdF,dJres,delTime,dTq0,dispEnergy);
     
-    // dissipated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
+    // dissipated energy per unit mass (dPhi/(rho0 V0)) (Legacy nJ/g)
     mptr->AddPlastEnergy(dispEnergy);
     
     // heat energy
@@ -1008,10 +1077,10 @@ double Viscoelastic::GetEffectiveIncrement(MPMBase *mptr,ResidualStrains *res,do
     // Up to here
     // lnR = ln aT(T)/(aT(T+dT)) and mlogaold = - ln aT(T) and shifted=true if lnR!=0
 
-    // now check if moisture effect too
-    if(m0>=0.)
+    // now check if moisture effect too (only if solve has a concentration in pDiff[0])
+    if(m0>=0. && diffusion!=NULL)
     {   // concentrations from the grid
-        double cnew = mptr->pPreviousConcentration;
+        double cnew = mptr->pDiff[0]->prevConc;
         double cold = cnew - res->dC;
         
         // only deviates from ln 1=0 and only change ln R when dC changes)

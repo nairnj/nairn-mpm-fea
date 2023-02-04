@@ -44,6 +44,7 @@ MaterialBase::MaterialBase(char *matName,int matID)
 	concSaturation=1.;
 	betaI=0.;
 	red=-1.;
+    swapz=0;
 #ifdef MPM_CODE
     rho=1.;
     KIc=KIIc=JIc=JIIc=-1.;				// traction laws assumes -1
@@ -84,6 +85,7 @@ MaterialBase::MaterialBase(char *matName,int matID)
 	alphaPE=0.;
 	Ku=UnitsController::Scaling(1.e6);			// Legacy MPa and default 1 MPa
 #endif
+	
 #endif
 }
 
@@ -132,7 +134,8 @@ void MaterialBase::PrintProperty(const char *propName,double value,const char *u
 	
 	// value
 	char valueStr[50];
-	sprintf(valueStr,"= %g",value);
+	size_t valueSize=50;
+	snprintf(valueStr,valueSize,"= %g",value);
 	strcat(prop,valueStr);
 	
 	// units
@@ -186,8 +189,25 @@ void MaterialBase::PrintProperty(const char *text,bool rightJustify)
 	cout << prop;
 }
 
-    
 // return material type and ID
 const char *MaterialBase::MaterialType(void) const { return "Unknown Material Type"; }
 const int MaterialBase::MaterialID(void) const { return materialID; }
 
+// Swap y and z axes (2 sets of properties)
+// do not override
+void MaterialBase::SwapProperties(double &pyy,double &pzz,double &pxz,double &pxy)
+{   pswap(pyy,pzz);
+    pswap(pxz,pxy);
+}
+
+// Swap y and z axes
+void MaterialBase::SwapProperties(double &pyy,double &pzz)
+{   pswap(pyy,pzz);
+}
+
+// swap p1 and p2
+void MaterialBase::pswap(double &p1,double &p2)
+{   double tmp = p1;
+    p1 = p2;
+    p2 = tmp;
+}

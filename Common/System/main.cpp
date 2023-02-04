@@ -37,6 +37,9 @@ int main(int argc,const char *argv[])
 #else
 	fmobj=new NairnFEA();
 #endif
+	
+	// Initialize things for random numbers
+	InitRandom(0);
     
 	// ---------------------------------------------
     // 2. Check command line and extract arguments.
@@ -114,9 +117,6 @@ int main(int argc,const char *argv[])
 #endif
     fmobj->SetNumberOfProcessors(numProcs);
 	
-	// seed random number generator
-	srand((unsigned int)time(NULL));
-	
 	//-------------------------------------------------------------
     // 3. Read the input file, exceptions handled in ReadFile()
 	retval=fmobj->ReadFile(argv[parmInd],useWorkingDir);
@@ -141,6 +141,15 @@ int main(int argc,const char *argv[])
         return err.ErrorCode();
     }
 	
+    catch(CommonException* err)
+    {   cout << "Warning: pipe timing may prevent error details from appearing below" << endl;
+#ifdef MPM_CODE
+        err->Display(fmobj->mstep,mtime);
+#else
+        err->Display();
+#endif
+        return err->ErrorCode();
+    }
 	catch(const char *errMsg)
     {   // send to output results and error pipe
         cout << "\n" << errMsg << endl;

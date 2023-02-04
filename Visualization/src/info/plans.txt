@@ -1,16 +1,42 @@
 -------------------------------------------------------------------
-New Script Options
+Run Remote on Windows
 -------------------------------------------------------------------
-New Command Ideas
-* user input (string)
-* user option (buttons)
-* user choice (list)
-* Crack Closure
-* user openFile (is it needed?)
-* user save (is it needed?)
 
-New Properties
-* Find Node near (x,y)
+Needs to support the follow
+ssh connection
+sftp channel for file transfers, folder creating, etc.
+exec channel for following commands
+    cd (parent);(code launch)
+    cd (parent);cd ..;rm -f (parent).zip;zip -r (parent).zip (parent)
+    rm -r (detinationFolder)
+    
+-------------------------------------------------------------------
+New Script Options - update to match some in NFM for Mac
+-------------------------------------------------------------------
+Next Steps
+* xyplot and timeplot object command
+	option to plot vector magnitudes (2D) and (3D)
+* Direct commands (done in NFM)
+	UserInput - In place, but cannot customize buttons
+* Direct commands (do in NFM and NFMViz)
+	user option (buttons)
+	user choice (list)
+	user openFile (is it needed?)
+	user save (is it needed?)
+	close
+* List object commands to add
+	addlist
+	join
+	pop
+	sort
+	sublist
+* Results Document object commands to add
+	Crack Closure
+	Find Node near (x,y)
+* Dictionary object attributes
+	sortedKeys
+	keysSortedByNumericValues
+	keysSortedByStringValues
 
 -------------------------------------------------------------------
 Interface Options
@@ -25,7 +51,7 @@ Interface Options
 
 * Preferences
 ** Spectra inversion and brightness
-** Support setup of multiple servers
+** Temp and Conc BC colors
 
 * Remote execution
 ** Background submits (use submit commands instead of run, and no download) add exception until it is implemented
@@ -40,7 +66,7 @@ Interface Options
 ** Maintain library of subroutines to load
 ** Entity - Look for other commands to support its use
 ** Maintain library of material definitions
-** See if NairnFEAMPM can allow same commands and assignments in materials
+** See if NairnFEAMPM (for Mac) can allow same commands and assignments in materials
 
 -------------------------------------------------------------------
 Development Notes

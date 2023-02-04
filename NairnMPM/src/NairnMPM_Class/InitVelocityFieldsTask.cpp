@@ -47,7 +47,7 @@ bool InitVelocityFieldsTask::Execute(int taskOption)
 	CommonException *initErr = NULL;
 	
 	int tp = fmobj->GetTotalNumberOfPatches();
-	
+
 #pragma omp parallel
 	{
 #ifdef CONST_ARRAYS
@@ -76,14 +76,29 @@ bool InitVelocityFieldsTask::Execute(int taskOption)
 				// like done in subsequent tasks, otherwise node numbers will not align correctly
 				// only thing used from return are numnds and nds
 				int *nds = ndsArray;
-				elref->GetShapeFunctions(fn,&nds,mpmptr);
+				try
+				{	elref->GetShapeFunctions(fn, &nds, mpmptr);
+				}
+				catch(CommonException& err)
+                {   if(initErr==NULL)
+                    {
+    #pragma omp critical (error)
+                        initErr = new CommonException(err);
+                    }
+                    break;
+                }
+				catch(...)
+				{	if(initErr==NULL)
+						initErr = new CommonException("Unexpected error","InitVelocityFieldsTask::Execute");
+                    break;
+				}
 				int numnds = nds[0];
-				
+
 				// Only need to decipher crack velocity field if has cracks (firstCrack!=NULL)
 				//      and if this material allows cracks.
-				bool decipherCVF = (firstCrack!=NULL) && matID->AllowsCracks();
-				
-				// Check each node
+                bool decipherCVF = (firstCrack!=NULL) && matID->AllowsCracks();
+
+                // Check each node seen by this material point
 				for(int i=1;i<=numnds;i++)
 				{	// use real node in this loop
 					NodalPoint *ndptr = nd[nds[i]];
@@ -92,46 +107,49 @@ bool InitVelocityFieldsTask::Execute(int taskOption)
 					// always zero when no cracks (or when ignoring cracks)
 					short vfld = 0;
 					
-					// If need, find velocity field and for each field set location
+					// If needed, find velocity field and for each field set location
 					// (above or below crack) and crack number (1 based) or 0 for NO_CRACK
 					if(decipherCVF)
-					{	// in CRAMP, find crack crossing and appropriate velocity field
+                    {   // in CRAMP, find crack crossing and appropriate velocity field
 						CrackField cfld[2];
 						cfld[0].loc = NO_CRACK;			// NO_CRACK=0, ABOVE_CRACK=1, or BELOW_CRACK=2
 						cfld[1].loc = NO_CRACK;
-						int cfound=0;
+						int cfound = 0;
 						Vector norm;					// track normal vector for crack plane
-						
-						CrackHeader *nextCrack = firstCrack;
-						while(nextCrack!=NULL)
-						{	// get cross details
+
+						// Loop over potential crack crossings
+                        int numCheck = numberOfCracks;
+                        CrackHeader *nextCrack;
+
+                        for(int cn=0;cn<numCheck;cn++)
+                        {
+                            nextCrack = crackList[cn];
+                            
+							// get cross details
 							vfld = nextCrack->CrackCross(&(mpmptr->pos), &ndpt, &norm, nds[i]);
-							
 							if(vfld!=NO_CRACK)
-							{	cfld[cfound].loc=vfld;
-								cfld[cfound].norm=norm;
+							{   cfld[cfound].loc = vfld;
+								cfld[cfound].norm = norm;
 #ifdef IGNORE_CRACK_INTERACTIONS
 								// appears to always be same crack, and stop when found one
-								cfld[cfound].crackNum=1;
+								cfld[cfound].crackNum = 1;
 								break;
 #endif
-								
 								// Get crack number (default code does not ignore interactions)
-								cfld[cfound].crackNum=nextCrack->GetNumber();
+								cfld[cfound].crackNum = nextCrack->GetNumber();
 								cfound++;
-								
+                                
 								// stop if found two because code can only handle two interacting cracks
 								// It exits loop now to go ahead with the first two found, by physics may be off
 								if(cfound>1) break;
 							}
-							nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 						}
-						
+                        
 						// find (and allocate if needed) the velocity field
 						// Use vfld=0 if no cracks found
 						if(cfound>0)
 						{   // Some stuff in below needs critical. Two options to are to make it all critical
-							// (use here comment all pragma's inside the method) or comment out here and keep
+							// (use here comment out all pragma's inside the method) or comment out here and keep
 							// all in the method
 //#pragma omp critical (addcvf)
 							{   try
@@ -140,10 +158,12 @@ bool InitVelocityFieldsTask::Execute(int taskOption)
 								catch(std::bad_alloc&)
 								{   if(initErr==NULL)
 										initErr = new CommonException("Memory error","InitVelocityFieldsTask::Execute");
+                                    break;
 								}
 								catch(...)
 								{	if(initErr==NULL)
 										initErr = new CommonException("Unexpected error","InitVelocityFieldsTask::Execute");
+                                    break;
 								}
 							}
 						}
@@ -162,13 +182,12 @@ bool InitVelocityFieldsTask::Execute(int taskOption)
 							catch(std::bad_alloc&)
 							{   if(initErr==NULL)
 									initErr = new CommonException("Memory error","InitVelocityFieldsTask::Execute");
-							}
+ 							}
 							catch(...)
 						 	{	if(initErr==NULL)
 									initErr = new CommonException("Unexpected error","InitVelocityFieldsTask::Execute");
-							}
+ 							}
 						}
-						
 					}
 						
 					// set material point velocity field for this node
@@ -180,15 +199,16 @@ bool InitVelocityFieldsTask::Execute(int taskOption)
 			}
 		}
 	}
-		
+
+
 	// was there an error?
-	if(initErr!=NULL) throw *initErr;
+	if(initErr!=NULL) throw initErr;
 	
 	// copy crack and material fields on real nodes to ghost nodes
 	if(tp>1)
 	{   for(int pn=0;pn<tp;pn++)
 			patches[pn]->InitializationReduction();
 	}
-        
+ 
     return true;
 }

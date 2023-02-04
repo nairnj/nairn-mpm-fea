@@ -54,9 +54,9 @@ void CrackVelocityFieldSingle::AddFtotSpreadTask3(Vector *f)
 }
 
 // Add gravity and body force at a node in g mm/sec^2
-void CrackVelocityFieldSingle::AddGravityAndBodyForceTask3(Vector *gridBodyForce,double gridAlpha,double gridForceAlpha)
+void CrackVelocityFieldSingle::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
 {	if(mvf[0]->numberPoints>0)
-		mvf[0]->AddGravityAndBodyForceTask3(gridBodyForce,gridAlpha,gridForceAlpha);
+		mvf[0]->AddGravityAndBodyForceTask3(gridBodyForce);
 }
 
 #ifdef RESTART_OPTION
@@ -249,4 +249,4 @@ void CrackVelocityFieldSingle::Describe(void) const
 	cout << "#     single material" << endl;
 	mvf[0]->Describe(0);
 }
-	
+

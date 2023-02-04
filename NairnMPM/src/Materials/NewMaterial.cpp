@@ -1,9 +1,9 @@
 /********************************************************************************
-    NewMaterial.cpp
-    nairn-mpm-fea
-    
-    Created by John Nairn, June 16, 2008.
-    Copyright (c) 2008 John A. Nairn, All rights reserved.
+	NewMaterial.cpp
+	nairn-mpm-fea
+	
+	Created by John Nairn, June 16, 2008.
+	Copyright (c) 2008 John A. Nairn, All rights reserved.
  
 	See Create_MPM_Material for details in google code web site wiki
 ********************************************************************************/
@@ -29,12 +29,12 @@ NewMaterial::NewMaterial(char *matName,int matID) : MaterialBase(matName,matID)
 char *NewMaterial::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
 	// read properties for this material
-    if(strcmp(xName,"newproperty")==0)
-    {	input=DOUBLE_NUM;
-        return((char *)&newproperty);
-    }
+	if(strcmp(xName,"newproperty")==0)
+	{	input=DOUBLE_NUM;
+		return((char *)&newproperty);
+	}
 	
-    return(MaterialBase::InputMaterialProperty(xName,input,gScaling));
+	return MaterialBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 // Verify input properties do calculations; if problem return string with an error message

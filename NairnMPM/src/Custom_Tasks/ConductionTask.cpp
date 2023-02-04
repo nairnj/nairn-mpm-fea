@@ -68,7 +68,8 @@ TransportTask *ConductionTask::Initialize(void)
 	
 	// time step
 	char fline[256];
-	sprintf(fline,"   Conduction time step (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),transportTimeStep*UnitsController::Scaling(1.e3));
+	size_t fsize=256;
+	snprintf(fline,fsize,"   Conduction time step maximum (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),transportTimeStep*UnitsController::Scaling(1.e3));
 	cout << fline << endl;
 	cout << "   Time step factor: " << fmobj->GetTransCFLCondition() << endl;
 	
@@ -80,7 +81,7 @@ TransportTask *ConductionTask::Initialize(void)
 	if(matContactHeating)
 		cout << "   Material contact frictional heating activated" << endl;
 	
-	// allocate conduction data on each particle
+	// allocate conduction data on each particle (reservoir too)
     // done before know number of nonrigid, so do on all
 	int size = 3;
 	if(crackGradT>0) size+=3;
@@ -102,7 +103,7 @@ TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr
 	double Cv = theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);		// nJ/(g-K) using Cv is correct
 	double CTShape = mptr->mp*Cv*shape;
 	TransportField *gTrans = GetTransportFieldPtr(ndpt);
-	double mTpTValueShape = mptr->pTemperature*CTShape;
+	double mTpTValueShape = GetParticleValue(mptr)*CTShape;
 	gTrans->gTValue += mTpTValueShape;
 	gTrans->gVCT += CTShape;
 	Task1ContactExtrapolation(ndpt,vfld,matfld,mTpTValueShape,CTShape);
@@ -149,6 +150,7 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double 
 // adjust forces at grid points with temperature BCs to have rates be correct
 // to carry extrapolated temperatures (before impose BCs) to the correct
 // one selected by grid based BC
+// only used when TRANSPORT_FMPM is not define; that method uses new methods
 TransportTask *ConductionTask::SetTransportForceAndFluxBCs(double deltime)
 {
     // Paste back noBC temperature
@@ -157,7 +159,7 @@ TransportTask *ConductionTask::SetTransportForceAndFluxBCs(double deltime)
     while(nextBC!=NULL)
     {   i=nextBC->GetNodeNum(mtime);
 		if(i!=0)
-		{	nextBC->PasteNodalValue(nd[i]);
+		{	nextBC->PasteNodalValue(nd[i],GetTransportFieldPtr(nd[i]));
 			nextBC->InitQReaction();
 			double qflow = -nd[i]->gCond.gQ;
 			nextBC->SuperposeQReaction(qflow);
@@ -208,6 +210,8 @@ TransportTask *ConductionTask::SetTransportForceAndFluxBCs(double deltime)
 }
 #endif
 
+#pragma mark UPDATE PARTICLES TASKS
+
 #pragma mark CUSTOM METHODS
 
 // If crack tip heating activated and there are cracks
@@ -246,7 +250,9 @@ NodalValueBC *ConductionTask::GetFirstBCPtr(void) const { return firstTempBC; }
 MatPtLoadBC *ConductionTask::GetFirstFluxBCPtr(void) const { return firstHeatFluxPt; }
 
 // particle values
+double ConductionTask::GetParticleValue(MPMBase *mptr) const { return mptr->pTemperature; }
 double *ConductionTask::GetParticleValuePtr(MPMBase *mptr) const { return &(mptr->pTemperature); }
+double ConductionTask::GetPrevParticleValue(MPMBase *mptr) const { return mptr->pPreviousTemperature; }
 double *ConductionTask::GetPrevParticleValuePtr(MPMBase *mptr) const { return &(mptr->pPreviousTemperature); }
 
 #pragma mark CLASS METHODS

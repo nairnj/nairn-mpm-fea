@@ -113,7 +113,8 @@ void TaitLiquid::PrintMechanicalProperties(void) const
 	{	PrintProperty("eta",viscosity[i]*UnitsController::Scaling(1.e3),UnitsController::Label(VISCOSITY_UNITS));
 		if(numViscosity>1)
 		{	char hline[100];
-			sprintf(hline,"1/(%s)",UnitsController::Label(TIME_UNITS));
+            size_t hsize=100;
+			snprintf(hline,hsize,"1/(%s)",UnitsController::Label(TIME_UNITS));
 			PrintProperty("log(rate)",logShearRate[i],hline);
 		}
 		cout << endl;
@@ -144,7 +145,7 @@ void TaitLiquid::SetInitialParticleState(MPMBase *mptr,int np,int offset) const
 	{	// function should be for pressure in MPa (e.g., rho*g*h)
 		unordered_map<string,double> vars;
 		vars["x"] = mptr->pos.x;
-		vars["x"] = mptr->pos.y;
+		vars["y"] = mptr->pos.y;
 		vars["z"] = mptr->pos.z;
 		
 		// convert to internal specific pressure units of N/m^2 mm^3/g
@@ -182,6 +183,14 @@ char *TaitLiquid::InitHistoryData(char *pchr,MPMBase *mptr)
 	return (char *)p;
 }
 
+// reset history data
+void TaitLiquid::ResetHistoryData(char *pchr,MPMBase *mptr)
+{	double *p = (double *)pchr;
+	p[J_History]=1.;					// J
+	p[J_History+1]=1.;					// Jres
+	p[J_History+2]=0.;
+}
+
 // Number of history variables
 int TaitLiquid::NumberOfHistoryDoubles(void) const { return 3; }
 
@@ -200,8 +209,8 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	mptr->SetHistoryDble(J_History,J,historyOffset);
 	
     // account for residual stresses
-	double dJres = GetIncrementalResJ(mptr,res);
-	double Jresprev = mptr->GetHistoryDble(J_History+1,historyOffset);
+    double Jresprev = mptr->GetHistoryDble(J_History+1,historyOffset);
+	double dJres = GetIncrementalResJ(mptr,res,Jresprev);
 	double Jres = dJres * Jresprev;
 	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
     double Jeff = J/Jres;
@@ -382,8 +391,8 @@ double TaitLiquid::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
     double J = mptr->GetHistoryDble(J_History,offset);;
 	double dTemp=mptr->pPreviousTemperature-thermal.reference;
 	double resStretch = CTE1*dTemp;
-	if(DiffusionTask::HasFluidTransport())
-	{	double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
+	if(DiffusionTask::HasDiffusion())
+	{	double dConc = diffusion->GetDeltaConcentration(mptr);
 		resStretch += exp(CME1*dConc);
 	}
 	double Jres = exp(3.*resStretch);
@@ -433,4 +442,3 @@ double TaitLiquid::GetViscosity(double shearRate) const { return 0.5*rho*GetTwoE
 
 // if a subclass material supports artificial viscosity, override this and return TRUE
 bool TaitLiquid::SupportsArtificialViscosity(void) const { return true; }
-

@@ -38,7 +38,8 @@ public class ReadArchive
 	static final int ARCH_History59=21;
 	static final int ARCH_History1014=22;
 	static final int ARCH_History1519=23;
-	static final int ARCH_MAXMPMITEMS=24;
+	static final int ARCH_Size=24;
+	static final int ARCH_MAXMPMITEMS=25;
 
 	// Archiving options for crack segments
 	static final int ARCH_JIntegral=2;
@@ -172,7 +173,7 @@ public class ReadArchive
 
 					// add the segment
 					CrackSegment cs=new CrackSegment();
-					cs.readRecord(bb,crackOrder,doc.units);
+					cs.readRecord(bb,crackOrder,doc.units,doc.is3D());
 					ch.add(cs);
 					
 					// next record
@@ -274,11 +275,22 @@ public class ReadArchive
 		mpmRecSize+=CountHistoryBits(mpmOrder[ARCH_History59])*sizeofDouble;
 		mpmRecSize+=CountHistoryBits(mpmOrder[ARCH_History1014])*sizeofDouble;
 		mpmRecSize+=CountHistoryBits(mpmOrder[ARCH_History1519])*sizeofDouble;
+		if(mpmOrder[ARCH_Size]=='Y')
+		{	mpmRecSize+=2*sizeofDouble;
+			if(doc.is3D()) mpmRecSize+=sizeofDouble;
+		}
 			   
 		// check what will be there for crack segments
 		crackRecSize+=sizeofInt+sizeofDouble+sizeofShort+2;
+		
+		// all recent files are 'Y'
 		if(crackOrder[ARCH_Defaults]=='Y')
-			crackRecSize+=2*sizeofInt+8*sizeofDouble;
+		{	crackRecSize+=2*sizeofInt;
+			if(doc.is3D())
+				crackRecSize+=12*sizeofDouble;
+			else
+				crackRecSize+=8*sizeofDouble;
+		}
 		else
 			crackRecSize+=20*sizeofDouble;
 		if(crackOrder[ARCH_JIntegral]=='Y')

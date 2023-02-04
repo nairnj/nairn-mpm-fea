@@ -65,7 +65,6 @@ bool PostForcesTask::Execute(int taskOption)
 	// Add gravity and body forces (if any are present)
 	// Note: If ever need to implement body force that depend on particle state (stress, strain, etc.)
 	//			then move the body force addition into GridForcesTask loop where gravity is commented out
-	double gridAlpha = -1.,gridForceAlpha = -1.;
 	Vector gridBodyForce;
 	if(bodyFrc.HasGridDampingForces())
 	{	CommonException *bfErr = NULL;
@@ -76,7 +75,7 @@ bool PostForcesTask::Execute(int taskOption)
 			try
 			{	Vector fpos = MakeVector(ndptr->x,ndptr->y,ndptr->z);
 				bodyFrc.GetGridBodyForce(&gridBodyForce,&fpos,mtime);
-				ndptr->AddGravityAndBodyForceTask3(&gridBodyForce,gridAlpha,gridForceAlpha);
+				ndptr->AddGravityAndBodyForceTask3(&gridBodyForce);
 			}
 			catch(CommonException &err)
 			{   if(bfErr==NULL)
@@ -84,7 +83,7 @@ bool PostForcesTask::Execute(int taskOption)
 #pragma omp critical (error)
 					bfErr = new CommonException(err);
 				}
-			}
+ 			}
 		}
 			
 		// throw now - only known error is problem with function for body force setting
@@ -100,7 +99,7 @@ bool PostForcesTask::Execute(int taskOption)
 
 #ifdef RESTART_OPTION
     if(fabs(fmobj->restartScaling)>1.e-6)
-    {   // check if anuy node is moving too fast
+    {   // check if any node is moving too fast
         double maxDist = fmobj->restartCFL*mpmgrid.GetMinCellDimension();
         for(int i=1;i<=*nda;i++)
         {   if(nd[nda[i]]->IsTravelTooMuch(timestep,maxDist))

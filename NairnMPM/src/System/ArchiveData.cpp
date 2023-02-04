@@ -13,6 +13,7 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "System/ArchiveData.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "NairnMPM_Class/Reservoir.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Global_Quantities/GlobalQuantity.hpp"
@@ -24,6 +25,7 @@
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "System/UnitsController.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
+#include "Custom_Tasks/CustomTask.hpp"
 
 // archiver global
 ArchiveData *archiver;
@@ -42,6 +44,7 @@ ArchiveData::ArchiveData()
 	
 	globalFile=NULL;		// path to global results file
 	decohesionFile=NULL;	// path to decohesion file
+	ptDimsFile=NULL;		// path to PtDims.txt file
 	decohesionModes[0]=0;	// observed decohesion modes
 	threeD=FALSE;			// three D calculations
 	
@@ -76,6 +79,7 @@ bool ArchiveData::MakeArchiveFolder(void)
     //---------------------------------------------------
     // Create directory for archived files (if needed)
 	char syscmd[600];
+	size_t syssize=600;
 	if(strlen(archiveParent)>0 || forceUnique)
 	{	// find unique archiveParent if requested
 		if(forceUnique)
@@ -84,15 +88,15 @@ bool ArchiveData::MakeArchiveFolder(void)
 			{
 #ifdef WINDOWS_EXE
 				if(strlen(archiveParent)>0)
-					sprintf(syscmd,"if not exist \"%s%s\\%d\" exit 1",outputDir,archiveParent,folderID);
+					snprintf(syscmd,syssize,"if not exist \"%s%s\\%d\" exit 1",outputDir,archiveParent,folderID);
 				else
-					sprintf(syscmd,"if not exist \"%s%d\" exit 1",outputDir,folderID);
+					snprintf(syscmd,syssize,"if not exist \"%s%d\" exit 1",outputDir,folderID);
 				int exists=system(syscmd);
 #else
 				if(strlen(archiveParent)>0)
-					sprintf(syscmd,"test -d '%s%s/%d'",outputDir,archiveParent,folderID);
+					snprintf(syscmd,syssize,"test -d '%s%s/%d'",outputDir,archiveParent,folderID);
 				else
-					sprintf(syscmd,"test -d '%s%d'",outputDir,folderID);
+					snprintf(syscmd,syssize,"test -d '%s%d'",outputDir,folderID);
 				int exists=system(syscmd);
 #endif
 				if(exists!=0) break;			// zero means it already exists
@@ -106,7 +110,8 @@ bool ArchiveData::MakeArchiveFolder(void)
 			int insertPos=(int)strlen(archiveParent);
 			if(insertPos>0)
 			{	char fldrNum[10];
-				sprintf(fldrNum,"/%d",folderID);			// max length is 4, and space was saved for it
+				size_t fldrSize=10;
+				snprintf(fldrNum,fldrSize,"/%d",folderID);			// max length is 4, and space was saved for it
 				int endPos=(int)strlen(archiveRoot);
 				int numLength=(int)strlen(fldrNum);
 				int i;
@@ -119,9 +124,9 @@ bool ArchiveData::MakeArchiveFolder(void)
 				strcat(archiveParent,fldrNum);
 			}
 			else
-			{	sprintf(syscmd,"%d/%s",folderID,archiveRoot);			// space was saved for insertion
+			{	snprintf(syscmd,syssize,"%d/%s",folderID,archiveRoot);			// space was saved for insertion
 				strcpy(archiveRoot,syscmd);
-				sprintf(syscmd,"%s/%d",archiveParent,folderID);
+				snprintf(syscmd,syssize,"%s/%d",archiveParent,folderID);
 				strcpy(archiveParent,syscmd);
 			}
 #ifdef WINDOWS_EXE
@@ -178,13 +183,14 @@ bool ArchiveData::MakeArchiveFolder(void)
 	// test by creating dummy file because return value above may be system dependent
 	// If logging progress, keep the temporary file for future use
     FILE *fp;
+	size_t logSize=strlen(outputDir)+strlen(archiveRoot)+6;
 #ifdef LOG_PROGRESS
-	logFile=new char[strlen(outputDir)+strlen(archiveRoot)+6];
+	logFile=new char[logSize];
 	logStartTime=fmobj->CPUTime();
 #else
-	char *logFile=new char[strlen(outputDir)+strlen(archiveRoot)+6];
+	char *logFile=new char[logSize];
 #endif
-	GetFilePath(logFile,"%s%s.log");
+	GetFilePath(logFile,logSize,"%s%s.log");
     if((fp=fopen(logFile,"w"))==NULL) return false;
 	fclose(fp);
 #ifndef LOG_PROGRESS
@@ -387,6 +393,13 @@ void ArchiveData::CalcArchiveSize(void)
     mpmRecSize += CountHistoryBits(mpmOrder[ARCH_History59])*sizeof(double);
     mpmRecSize += CountHistoryBits(mpmOrder[ARCH_History1014])*sizeof(double);
     mpmRecSize += CountHistoryBits(mpmOrder[ARCH_History1519])*sizeof(double);
+	
+	if(mpmOrder[ARCH_Size]=='Y')
+	{	if(threeD)
+			mpmRecSize+=3*sizeof(double);
+		else
+			mpmRecSize+=2*sizeof(double);
+	}
 
     // check what will be there for crack segments
 	
@@ -395,7 +408,12 @@ void ArchiveData::CalcArchiveSize(void)
 			above element (int), above (Vector) below element (int), below (Vector)
 	*/
     crackRecSize+=sizeof(int)+sizeof(double)+sizeof(short)+2;
-	crackRecSize+=2*sizeof(int)+8*sizeof(double);
+	crackRecSize+=2*sizeof(int);
+    // 4 vectors (X2 in 2D, X3 in 3D)
+    if(threeD)
+        crackRecSize += 12*sizeof(double);
+    else
+        crackRecSize += 8*sizeof(double);
     if(crackOrder[ARCH_JIntegral]=='Y')
         crackRecSize+=2*sizeof(double);
     if(crackOrder[ARCH_StressIntensity]=='Y')
@@ -517,8 +535,9 @@ void ArchiveData::CreateGlobalFile(void)
 		}
 
 		// get relative path name to the file
-		globalFile = new char[strlen(outputDir)+strlen(archiveRoot)+8];
-		GetFilePath(globalFile,"%s%s.global");
+		size_t globalSize=strlen(outputDir)+strlen(archiveRoot)+8;
+		globalFile = new char[globalSize];
+		GetFilePath(globalFile,globalSize,"%s%s.global");
 	
 		// create and open the file
 		if((fp=fopen(globalFile,"w"))==NULL)
@@ -559,8 +578,9 @@ void ArchiveData::CreateGlobalFile(void)
 	// Create Decohsion file
 	if(hasDecohesion)
 	{	// get relative path name to the file
-		decohesionFile = new char[strlen(outputDir)+strlen(archiveRoot)+8];
-		GetFilePath(decohesionFile,"%s%s.decohn");
+		size_t decohesionSize = strlen(outputDir)+strlen(archiveRoot)+8;
+		decohesionFile = new char[decohesionSize];
+		GetFilePath(decohesionFile,decohesionSize,"%s%s.decohn");
 		
 		// create and open the file
 		if((fp=fopen(decohesionFile,"w"))==NULL)
@@ -598,8 +618,9 @@ char *ArchiveData::CreateFileInArchiveFolder(char *fileName)
 	FILE *fp;
 	
 	// get relative path name to the file
-	char *newFile = new char[strlen(outputDir)+strlen(archiveRoot)+strlen(fileName)+1];
-	GetFilePath(newFile,"%s%s");
+	size_t newSize = strlen(outputDir)+strlen(archiveRoot)+strlen(fileName)+1;
+	char *newFile = new char[newSize];
+	GetFilePath(newFile,newSize,"%s%s");
 	strcat(newFile,fileName);
 	
 	// create and open the file
@@ -607,7 +628,7 @@ char *ArchiveData::CreateFileInArchiveFolder(char *fileName)
 	
 	// close the file
 	if(fclose(fp)!=0) goto abort;
-	
+    
 	return newFile;
 	
 abort:
@@ -621,15 +642,16 @@ abort:
 // Nodal velocity conditions
 void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 {
-	BoundaryCondition *nextBC=firstBC;
+	BoundaryCondition *nextBC = firstBC;
 	
 	if(archiveMesh)
 	{	char fname[500];
+		size_t fsize = 500;
 		ofstream outfile;
-		GetFilePath(fname,"%s%s_VelBCs.txt");
+		GetFilePath(fname,fsize,"%s%s_VelBCs.txt");
 		outfile.open(fname);
 		if(outfile)
-    	{	sprintf(fname,"%s_VelBCs.txt",archiveRoot);
+    	{	snprintf(fname,fsize,"%s_VelBCs.txt",archiveRoot);
 			cout << "File: " << fname << endl << endl;
 			while(nextBC!=NULL)
 				nextBC=nextBC->PrintBC(outfile);
@@ -651,10 +673,13 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 // Particle sizes - file has actual sizes in current dimensions (e.g. mm)
 // Full particle size (i.e. "diameter")
 void ArchiveData::ArchivePointDimensions(void)
-{	char fname[500];
+{
 	ofstream outfile;
-	GetFilePath(fname,"%s%s_PtDims.txt");
-	outfile.open(fname);
+	// get relative path name to the file
+	size_t ptDimsSize = strlen(outputDir)+strlen(archiveRoot)+12;
+	ptDimsFile = new char[ptDimsSize];
+	GetFilePath(ptDimsFile,ptDimsSize,"%s%s_PtDims.txt");
+	outfile.open(ptDimsFile);
 	
 	if(outfile)
 	{	outfile << "Particle dimensions" << endl;
@@ -664,13 +689,25 @@ void ArchiveData::ArchivePointDimensions(void)
 		int p;
 		Vector lp;
 		char nline[200];
+		size_t nlsize=200;
 		
 		if(mpmgrid.IsStructuredEqualElementsGrid())
 		{	Vector grid = mpmgrid.GetCellSize();
 			for(p=0;p<nmpms;p++)
 			{
 				mpm[p]->GetDimensionlessSize(lp);
-				sprintf(nline,"%7d %g %g %g",p+1,lp.x*grid.x,lp.y*grid.y,lp.z*grid.z);
+				snprintf(nline,nlsize,"%7d %g %g %g",p+1,lp.x*grid.x,lp.y*grid.y,lp.z*grid.z);
+				outfile << nline << endl;
+			}
+		}
+
+        // Tartan Grid
+		else
+		{	for(p=0;p<nmpms;p++)
+			{
+				mpm[p]->GetDimensionlessSize(lp);
+				ElementBase *elref = theElements[mpm[p]->ElemID()];
+				snprintf(nline,nlsize,"%7d %g %g %g",p+1,lp.x*elref->GetDeltaX(),lp.y*elref->GetDeltaY(),lp.z*elref->GetDeltaZ());
 				outfile << nline << endl;
 			}
 		}
@@ -678,26 +715,28 @@ void ArchiveData::ArchivePointDimensions(void)
 	}
 }
 
-// Archive the results if it is time
+// Archive the results if it is time or it was the last time step
 // throws CommonException()
-void ArchiveData::ArchiveResults(double atime)
+void ArchiveData::ArchiveResults(double atime,bool lastStep)
 {
 	double rho,rho0;
     double sxx,syy,sxy;
     char fname[500],fline[500];
+	size_t fnsize=500,flsize=500;
     int i,p;
     CrackHeader *nextCrack;
 	
 	// test global archiving based on specified time
 	if(firstGlobal!=NULL && globalTime>=0.)
-    {	if(atime>nextGlobalTime)
+    {	// archive is past archive time or if last step
+		if(atime>nextGlobalTime || lastStep)
 	 	{	GlobalArchive(atime);
 			nextGlobalTime+=globalTime;
 		}
 	}
     
-    // If not ready, not archive, unless forces by propagation counts
-	if(atime<nextArchTime)
+	// exit if not time (unless forced by propagation counts)
+	if(atime<nextArchTime && !lastStep)
 	{	// not ready to archive, unless propagations have happened
 		if(maxProps[archBlock]<=0 || propgationCounter<maxProps[archBlock]) return;
 		propgationCounter=0;
@@ -717,14 +756,18 @@ void ArchiveData::ArchiveResults(double atime)
 	if(firstGlobal!=NULL && globalTime<0.)
 		GlobalArchive(atime);
 	
+	// output cached reservoir resizings
+	if(mpmReservoir!=NULL)
+		ArchiveResizings(atime*UnitsController::Scaling(1.e3),fmobj->mstep);
+	
     // get relative path name to the file
-	GetFilePathNum(fname,"%s%s.%d",fmobj->mstep);
+	GetFilePathNum(fname,fnsize,"%s%s.%d",fmobj->mstep);
     
     // output step number, time, and file name to results file
     for(i=(int)strlen(fname);i>=0;i--)
     {	if(fname[i]=='/' || fname[i]=='\\') break;
     }
-    sprintf(fline,"%7d %15.7e  %s",fmobj->mstep,atime*UnitsController::Scaling(1.e3),&fname[i+1]);
+    snprintf(fline,flsize,"%7d %15.7e  %s",fmobj->mstep,atime*UnitsController::Scaling(1.e3),&fname[i+1]);
     cout << fline << endl;
 
     // open the file
@@ -983,36 +1026,39 @@ void ArchiveData::ArchiveResults(double atime)
 		}
 		
 		// ------- concentration and gradients convert to wt fraction units using csat for this material
-		// for pore pressure it is poroelasticity
+		// for pore pressure it is poroelasticity. When there, always in pDiff[0]
         if(mpmOrder[ARCH_Concentration]=='Y')
-		{	double csat=mpm[p]->GetConcSaturation();
+		{	if(fmobj->HasFluidTransport())
+			{	// scale by csat
+				double csat=mpm[p]->GetConcSaturation();
 #ifdef POROELASTICITY
-			if(fmobj->HasPoroelasticity())
-				csat = UnitsController::Scaling(1.e-6);
+				if(fmobj->HasPoroelasticity())
+				{	// use for units in poroelasticity (MPa in Legacy)
+					csat = UnitsController::Scaling(1.e-6);
+				}
 #endif
-			
-			*(double *)app=mpm[p]->pConcentration*csat;
-            app+=sizeof(double);
-			
-			if(mpm[p]->pDiffusion!=NULL)
-			{	*(double *)app=mpm[p]->pDiffusion[gGRADx]*csat;
+				*(double *)app=mpm[p]->pDiff[0]->conc*csat;
 				app+=sizeof(double);
 				
-				*(double *)app=mpm[p]->pDiffusion[gGRADy]*csat;
+				*(double *)app=mpm[p]->pDiff[0]->grad.x*csat;
+				app+=sizeof(double);
+				
+				*(double *)app=mpm[p]->pDiff[0]->grad.y*csat;
 				app+=sizeof(double);
 				
 				if(threeD)
-				{	*(double *)app=mpm[p]->pDiffusion[gGRADz]*csat;
+				{	*(double *)app=mpm[p]->pDiff[0]->grad.y*csat;
 					app+=sizeof(double);
 				}
 			}
 			else
- 			{	*(double *)app=0.;
-				app+=sizeof(double);
-				
+			{	// 3 or 4 zeros
 				*(double *)app=0.;
 				app+=sizeof(double);
-				
+				*(double *)app=0.;
+				app+=sizeof(double);
+				*(double *)app=0.;
+				app+=sizeof(double);
 				if(threeD)
 				{	*(double *)app=0.;
 					app+=sizeof(double);
@@ -1077,8 +1123,8 @@ void ArchiveData::ArchiveResults(double atime)
 		// Particle spin momentum (Legacy Units J-sec)
 		// zero unless tracking particle spin
 		if(mpmOrder[ARCH_SpinMomentum]=='Y')
-		{   Vector Lp = MakeVector(0.,0.,0.);
-			double Lscale = 1.;
+		{	Vector Lp = mpm[p]->GetParticleAngMomentum();
+			double Lscale = UnitsController::Scaling(1.e-9);
 			if(threeD)
 			{	*(double *)app=Lscale*Lp.x;
 				app+=sizeof(double);
@@ -1096,9 +1142,13 @@ void ArchiveData::ArchiveResults(double atime)
 		// Particle spin velocity (Legacy units 1/sec)
 		// zero unless using affine MPM methods
 		if(mpmOrder[ARCH_SpinVelocity]=='Y')
-		{
-			// angular velocity
-			Vector wp = MakeVector(0.,0.,0.);
+		{	// angular spatial velocity gradient
+			Matrix3 spatialGradVp = mpm[p]->GetParticleGradVp(true);
+			
+			// Extract angular velocity for antisymmetric spon
+			Vector wp = MakeVector(0.5*(spatialGradVp(2,1)-spatialGradVp(1,2)),
+								   0.5*(spatialGradVp(0,2)-spatialGradVp(2,0)),
+								   0.5*(spatialGradVp(1,0)-spatialGradVp(0,1)));
 			
 			// add to archive
 			if(threeD)
@@ -1189,12 +1239,34 @@ void ArchiveData::ArchiveResults(double atime)
 			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(17,mpm[p]->GetHistoryPtr(0));
 				app+=sizeof(double);
 			}
+			// note that no material uses history 18 or 19
+			// until archiving of custom history available, 18 will be custom 1 and 19 will by custom 2
 			if(mpmOrder[ARCH_History1519]&0x08)
-			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(18,mpm[p]->GetHistoryPtr(0));
+			{   //*(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(18,mpm[p]->GetHistoryPtr(0));
+				if(CustomTask::numberCustomHistoryVariables>0)
+					*(double *)app = mpm[p]->GetCustomHistoryDble(0);
+				else
+					*(double *)app = 0.;
 				app+=sizeof(double);
 			}
 			if(mpmOrder[ARCH_History1519]&0x10)
-			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(19,mpm[p]->GetHistoryPtr(0));
+			{   //*(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(19,mpm[p]->GetHistoryPtr(0));
+				if(CustomTask::numberCustomHistoryVariables>0)
+					*(double *)app = mpm[p]->GetCustomHistoryDble(1);
+				else
+					*(double *)app = 0.;
+				app+=sizeof(double);
+			}
+		}
+		
+		if(mpmOrder[ARCH_Size]=='Y')
+		{	Vector part = mpm[p]->GetParticleSize();
+			*(double *)app = part.x;
+			app+=sizeof(double);
+			*(double *)app = part.y;
+			app+=sizeof(double);
+			if(threeD)
+			{	*(double *)app = part.z;
 				app+=sizeof(double);
 			}
 		}
@@ -1380,6 +1452,13 @@ void ArchiveData::ArchiveResults(double atime)
 				if(mpmOrder[ARCH_History1519]&0x10) app+=Reverse(app,sizeof(double));
 			}
 			
+			// particle angular velocity
+			if(mpmOrder[ARCH_Size]=='Y')
+			{	app+=Reverse(app,sizeof(double));
+				app+=Reverse(app,sizeof(double));
+				if(threeD) app+=Reverse(app,sizeof(double));
+			}
+			
 			// padding
             if(mpmRecSize<recSize)
                 app+=recSize-mpmRecSize;
@@ -1433,6 +1512,7 @@ void ArchiveData::GlobalArchive(double atime)
 	
 	// clear previous ones
 	lastArchived.clear();
+    lastArchivedStep = fmobj->mstep;
 	
 	// each global quantity
 	GlobalQuantity *nextGlobal=firstGlobal;
@@ -1441,10 +1521,11 @@ void ArchiveData::GlobalArchive(double atime)
     
 	// time (Legacy units ms)
 	char fline[1000],numStr[100];
-	sprintf(fline,"%g",UnitsController::Scaling(1000.)*atime);
+	size_t fsize=1000,numSize=100;
+	snprintf(fline,fsize,"%g",UnitsController::Scaling(1000.)*atime);
 	int i;
 	for(i=0;i<lastArchived.size();i++)
-	{	sprintf(numStr,"\t%e",lastArchived[i]);
+	{	snprintf(numStr,numSize,"\t%e",lastArchived[i]);
 		strcat(fline,numStr);
 	}
 	
@@ -1453,13 +1534,13 @@ void ArchiveData::GlobalArchive(double atime)
 	try
 	{	global.open(globalFile,ios::out | ios::app);
 		if(!global.is_open())
-			FileError("File error opening global results",globalFile,"ArchiveData::GlobalArchive");
+			FileError("File error opening global results ",globalFile,"ArchiveData::GlobalArchive");
 		global << fline << endl;
 		if(global.bad())
-			FileError("File error writing global results",globalFile,"ArchiveData::GlobalArchive");
+			FileError("File error writing global results ",globalFile,"ArchiveData::GlobalArchive");
 		global.close();
 		if(global.bad())
-			FileError("File error closing global results",globalFile,"ArchiveData::GlobalArchive");
+			FileError("File error closing global results ",globalFile,"ArchiveData::GlobalArchive");
 	}
 	
     catch(CommonException& err)
@@ -1472,16 +1553,70 @@ void ArchiveData::GlobalArchive(double atime)
 }
 
 // Archive global results if it is time
+void ArchiveData::ArchiveResizings(double atime,int stepnum)
+{
+	// if never wrote the original file
+	if(ptDimsFile==NULL) return;
+	
+	// grab the resizings, exit if nothing to write
+	vector <double> resizings = mpmReservoir->GetResizings();
+	if(resizings.size()==0) return;
+	
+	// append to global results file
+	ofstream ptDims;
+	char fline[200];
+	size_t fsize=200;
+	try
+	{	ptDims.open(ptDimsFile,ios::out | ios::app);
+		if(!ptDims.is_open())
+			FileError("File error opening file ",ptDimsFile,"ArchiveData::ArchiveResizings");
+		
+		// initial line (-(step number), time (ms in Legacy), 0, 0
+		snprintf(fline,fsize,"%7d %g %g %g",-stepnum,atime,(double)resizings.size(),0.);
+		ptDims << fline << endl;
+		
+		// each resizing (in blocks of four number)
+		if(fmobj->IsThreeD())
+		{	for(int i=0;i<resizings.size();i+=4)
+			{	snprintf(fline,fsize,"%7d %g %g %g",(int)(resizings[i]+.1),resizings[i+1],resizings[i+2],resizings[i+3]);
+				ptDims << fline << endl;
+			}
+		}
+		else
+		{	for(int i=0;i<resizings.size();i+=3)
+			{	snprintf(fline,fsize,"%7d %g %g 0",(int)(resizings[i]+.1),resizings[i+1],resizings[i+2]);
+				ptDims << fline << endl;
+			}
+		}
+		if(ptDims.bad())
+			FileError("File error writing to file ",ptDimsFile,"ArchiveData::ArchiveResizings");
+		ptDims.close();
+		if(ptDims.bad())
+			FileError("File error closing file ",ptDimsFile,"ArchiveData::ArchiveResizings");
+	}
+	
+	catch(CommonException& err)
+	{   // divert to standard output and try to continue
+		cout << "# File error - check disk for amount of free space" << endl;
+		cout << "# " << err.Message() << endl;
+		if(ptDims.is_open()) ptDims.close();
+	}
+	
+	// all done, clear the resizings cache
+	mpmReservoir->ClearResizings();
+}
+
+// Archive global results if it is time
 void ArchiveData::Decohesion(double atime,MPMBase *mptr,double alpha,double beta,double gamma,
 							 		double GI,double GII1,double GII2,double decohesionCode)
 {
 	// write in the main results file instead
 	if(decohesionFile==NULL)
-	{
+    {       double forDegrees = 180./PI_CONSTANT;       // change to 1 for radians
 #pragma omp critical (output)
 		{	cout << "# Decohesion: t=" << atime*UnitsController::Scaling(1000.);
 			cout << " x=(" << mptr->pos.x << "," << mptr->pos.y << "," << mptr->pos.z << ")";
-			cout << " angles=(" << alpha << "," << beta << "," << gamma << ")";
+			cout << " angles=(" << forDegrees*alpha << "," << forDegrees*beta << "," << forDegrees*gamma << ")";
 			cout << "  (GI,GII1,GII2,Gtot)=(" << GI << "," << GII1 << "," << GII2 << "," << GI+GII1+GII2 << ")" << endl;
 		}
 		return;
@@ -1506,22 +1641,23 @@ void ArchiveData::Decohesion(double atime,MPMBase *mptr,double alpha,double beta
 	
 	// time (Legacy units ms)
 	char fline[1000],numStr[200];
-	sprintf(fline,"%g",UnitsController::Scaling(1000.)*atime);
+	size_t fsize=1000,numSize=200;
+	snprintf(fline,fsize,"%g",UnitsController::Scaling(1000.)*atime);
 	
 	// material ID
-	sprintf(numStr,"\t%d\t%.2lf",mptr->MatID()+1,decohesionCode);
+	snprintf(numStr,numSize,"\t%d\t%.2lf",mptr->MatID()+1,decohesionCode);
 	strcat(fline,numStr);
 	
 	// position
-	sprintf(numStr,"\t%d\t%g\t%g\t%g",mptr->GetNum(),mptr->pos.x,mptr->pos.y,mptr->pos.z);
+	snprintf(numStr,numSize,"\t%d\t%g\t%g\t%g",mptr->GetNum(),mptr->pos.x,mptr->pos.y,mptr->pos.z);
 	strcat(fline,numStr);
 
 	// angles
-	sprintf(numStr,"\t%g\t%g\t%g",alpha,beta,gamma);
+	snprintf(numStr,numSize,"\t%g\t%g\t%g",alpha,beta,gamma);
 	strcat(fline,numStr);
 
 	// energies
-	sprintf(numStr,"\t%g\t%g\t%g\t%g",GI,GII1,GII2,GI+GII1+GII2);
+	snprintf(numStr,numSize,"\t%g\t%g\t%g\t%g",GI,GII1,GII2,GI+GII1+GII2);
 	strcat(fline,numStr);
 
 #pragma omp critical (decohesion)
@@ -1554,17 +1690,19 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 											vector< char * > quantityName,vector< int > qparam,double **vtk,int onemat)
 {
     char fname[300],fline[300];
+	size_t fnsize=300,flsize=300;
 	
     // get relative path name to the file
 	if(onemat<0)
-		GetFilePathNum(fname,"%s%s_%d.vtk",fmobj->mstep);
+		GetFilePathNum(fname,fnsize,"%s%s_%d.vtk",fmobj->mstep);
 	else
-	{	char matname[20];
-		sprintf(matname,"%d",onemat);
+	{	char matname[200];
+		size_t matsize=200;
+		snprintf(matname,matsize,"%d",onemat);
 		strcpy(fline,"%s%s_mat_");
 		strcat(fline,matname);
 		strcat(fline,"_%d.vtk");
-		GetFilePathNum(fname,fline,fmobj->mstep);
+		GetFilePathNum(fname,fnsize,fline,fmobj->mstep);
 	}
     
     // open the file
@@ -1577,7 +1715,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 	afile << "# vtk DataFile Version 4.0" << endl;
 	
 	// title (Legacy time units ms)
-	sprintf(fline,"step:%d time:%15.7e %s",fmobj->mstep,atime*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
+	snprintf(fline,flsize,"step:%d time:%15.7e %s",fmobj->mstep,atime*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
 	afile << fline << endl;
 	
 	// header
@@ -1608,6 +1746,40 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 			afile << " " << csz.z << endl;
 		else
 			afile << " " << csz.x << endl;
+	}
+	else
+	{	// Tartan grid
+		afile << "DATASET RECTILINEAR_GRID" << endl;
+		
+		afile << "DIMENSIONS " << ptx << " " << pty;
+		if(fmobj->IsThreeD())
+			afile << " " << ptz << endl;
+		else
+			afile << " 1" << endl;
+		
+		afile << "X_COORDINATES " << ptx << " double" << endl;
+		int nnum=1;
+		for(int i=0;i<ptx;i++)
+		{	afile << nd[nnum]->x << endl;
+			nnum++;
+		}
+		afile << "Y_COORDINATES " << pty << " double" << endl;
+		nnum=1;
+		for(int i=0;i<pty;i++)
+		{	afile << nd[nnum]->y << endl;
+			nnum += mpmgrid.yplane;
+		}
+		
+		afile << "Z_COORDINATES " << ptz << " double" << endl;
+		if(fmobj->IsThreeD())
+		{	nnum=1;
+			for(int i=0;i<ptz;i++)
+			{	afile << nd[nnum]->z << endl;
+				nnum += mpmgrid.zplane;
+			}
+		}
+		else
+			afile << "0." << endl;
 	}
 	
 	// title (Legacy time units ms)
@@ -1770,9 +1942,10 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 void ArchiveData::ArchiveHistoryFile(double atime,vector< int > quantity)
 {
     char fname[300],fline[600],subline[100];
+	size_t fnsize=300,flsize=300,subsize=100;
 	
     // get relative path name to the file
-    GetFilePathNum(fname,"%s%s_History_%d.txt",fmobj->mstep);
+    GetFilePathNum(fname,fnsize,"%s%s_History_%d.txt",fmobj->mstep);
     
     // open the file
 	ofstream afile;
@@ -1784,14 +1957,14 @@ void ArchiveData::ArchiveHistoryFile(double atime,vector< int > quantity)
 	afile << "Particle History Data File" << endl;
 	
 	// title
-	sprintf(fline,"step:%d time:%15.7e %s",fmobj->mstep,atime*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
+	snprintf(fline,flsize,"step:%d time:%15.7e %s",fmobj->mstep,atime*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
     afile << fline << endl;
 	
 	strcpy(fline,"#\tx\ty");
     if(threeD) strcat(fline,"\tz");
 	unsigned int q;
 	for(q=0;q<quantity.size();q++)
-	{	sprintf(subline,"\t%d",quantity[q]);
+	{	snprintf(subline,subsize,"\t%d",quantity[q]);
 		strcat(fline,subline);
 	}
 	afile << fline << endl;
@@ -1818,7 +1991,7 @@ void ArchiveData::ArchiveHistoryFile(double atime,vector< int > quantity)
         FileError("File error closing a particle history archive file",fname,"ArchiveData::ArchiveHistoryFile");
 }
 
-// force archive now, but stay on archiving schedule after that
+// force archive this time step, but stay on archiving schedule after that
 void ArchiveData::ForceArchiving(void)
 {	nextArchTime-=archTimes[archBlock];
 	if(firstGlobal!=NULL && globalTime>=0.) nextGlobalTime-=globalTime;
@@ -1828,7 +2001,8 @@ void ArchiveData::ForceArchiving(void)
 // throws CommonException()
 void ArchiveData::FileError(const char *msg,const char *filename,const char *method)
 {	char errNo[50];
-	sprintf(errNo,"%d",errno);
+	size_t errSize=50;
+	snprintf(errNo,errSize,"%d",errno);
 	char *errMsg=new (std::nothrow) char[strlen(msg)+strlen(filename)+strlen(errNo)+15];
 	if(errMsg !=NULL)
 	{	strcpy(errMsg,msg);
@@ -1963,27 +2137,15 @@ int ArchiveData::GetArchiveContactStepInterval(void)
 	return archiveStepInterval;
 }
 
-// check if passed last archve
-bool ArchiveData::PassedLastArchived(int qIndex,double criticalValue)
-{
-	// if no archived yet say false or invalid
-	if(qIndex<0 || qIndex>=lastArchived.size()) return false;
-	
-	//cout << qIndex << "," << criticalValue << "," << lastArchived[qIndex] << "," << (lastArchived[qIndex]>=criticalValue) << endl;
-	
-	if(criticalValue>=0.)
-		return lastArchived[qIndex] >= criticalValue;
-	else
-		return lastArchived[qIndex] <= criticalValue;
-	
-}
-
 // get last archived value
 double ArchiveData::GetLastArchived(int qIndex)
 {	// if no archived yet say false or invalid
 	if(qIndex<0 || qIndex>=lastArchived.size()) return 0.;
 	return lastArchived[qIndex];
 }
+
+// get last step that was archived
+int ArchiveData::GetLastArchivedStep(void) { return lastArchivedStep; }
 
 // Propgation Counter
 void ArchiveData::IncrementPropagationCounter(void) { propgationCounter++; }

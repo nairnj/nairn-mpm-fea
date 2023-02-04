@@ -32,31 +32,41 @@ public class PlotOptions extends PlotControl
 	static final int CLIP_TO_PARTICLES=12;
 	static final int NUM_OPTIONS=13;
 	
+	// bits to default flags
+	static final int ShowMaterialPts = 0x0001;
+	static final int ShowMesh = 0x0002;
+	static final int ShowCrackSurfaces = 0x0004;
+	static final int ShowBCs = 0x0008;
+	static final int ShowDisplacedMesh = 0x0010;
+	static final int TransformPts = 0x0020;
+	static final int SquareMaterialPts = 0x0040;
+	static final int ShowMatPtNumbers = 0x0080;
+	static final int ShowCrackPlanes = 0x0100;
+	static final int ShowNodeNumbers = 0x0200;
+	static final int ShowElemNumbers = 0x0400;
+	static final int ShowNodes = 0x0800;
+	static final int ClipToParticles = 0x1000;
+	
 	// default on
-	JCheckBox showPts=new JCheckBox("Show Material Pts",true);
-	JCheckBox showMesh=new JCheckBox("Show Mesh",true);
-	JCheckBox showCrackSurf=new JCheckBox("Show Crack Surfaces",true);
-	JCheckBox showMeshBCs=new JCheckBox("Show BCs",true);
-	JCheckBox showDispMesh=new JCheckBox("Show Displaced Mesh",true);
-	JCheckBox transformPts=new JCheckBox("Transform Pts",true);
-	JCheckBox showSquarePts=new JCheckBox("Square Material Pts",true);
+	JCheckBox showPts=new JCheckBox("Show Material Pts");
+	JCheckBox showMesh=new JCheckBox("Show Mesh");
+	JCheckBox showCrackSurf=new JCheckBox("Show Crack Surfaces");
+	JCheckBox showMeshBCs=new JCheckBox("Show BCs");
+	JCheckBox showDispMesh=new JCheckBox("Show Displaced Mesh");
+	JCheckBox transformPts=new JCheckBox("Transform Pts");
+	JCheckBox showSquarePts=new JCheckBox("Square Material Pts");
 	
 	// default off
-	JCheckBox showPtNums=new JCheckBox("Show Mat Pt Numbers",false);
-	JCheckBox showCrackPlanes=new JCheckBox("Show Crack Planes",false);
-	JCheckBox showNodeNums=new JCheckBox("Show Node Numbers",false);
-	JCheckBox showElemNums=new JCheckBox("Show Elem Numbers",false);
-	JCheckBox showNodes=new JCheckBox("Show Nodes",false);
-	JCheckBox clipParticles=new JCheckBox("Clip To Particles",false);
-	
+	JCheckBox showPtNums=new JCheckBox("Show Mat Pt Numbers");
+	JCheckBox showCrackPlanes=new JCheckBox("Show Crack Planes");
+	JCheckBox showNodeNums=new JCheckBox("Show Node Numbers");
+	JCheckBox showElemNums=new JCheckBox("Show Elem Numbers");
+	JCheckBox showNodes=new JCheckBox("Show Nodes");
+	JCheckBox clipParticles=new JCheckBox("Clip To Particles");
 	// particle size
 	private JLabel sizeSelected=new JLabel("100",JLabel.LEFT);
 	public JSlider mpmParticleSize=new JSlider(JSlider.HORIZONTAL,0,200,5);
 	int particleSize=100;
-	
-	// store settings
-	private static boolean [] previousFlags = null;
-	private static int previousSize = 100;
 	
 	PlotOptions(DocViewer dc)
 	{   super(ControlPanel.WIDTH,142,dc);
@@ -90,15 +100,14 @@ public class PlotOptions extends PlotControl
 		gridbag.setConstraints(sizeSelected, c);
 		sizePanel.add(sizeSelected);
 
+		particleSize = NFMVPrefs.prefs.getInt(NFMVPrefs.ParticleSizeKey,NFMVPrefs.ParticleSizeDef);
 		mpmParticleSize.setValue(particleSize);
 		mpmParticleSize.setToolTipText("Scale particle size as percent of cell size (default is 100%)");
-		mpmParticleSize.setValue(previousSize);
-		particleSize = previousSize;
 		mpmParticleSize.addChangeListener(new ChangeListener()
 		{   public void stateChanged(ChangeEvent e)
 			{	particleSize=mpmParticleSize.getValue();
 				sizeSelected.setText(""+particleSize);
-				previousSize = particleSize;
+				NFMVPrefs.prefs.putInt(NFMVPrefs.ParticleSizeKey, particleSize);
 			}
 		});
 		c.insets=new Insets(0,0,0,0);
@@ -112,22 +121,36 @@ public class PlotOptions extends PlotControl
 		sizeSelected.setMinimumSize(sizeSelected.getPreferredSize());
 		sizeSelected.setText(""+particleSize);
 		
-		if(previousFlags!=null)
-		{	showMesh.setSelected(previousFlags[SHOW_MESH]);
-			showMeshBCs.setSelected(previousFlags[SHOW_MESHBCS]);
-			showNodeNums.setSelected(previousFlags[SHOW_NODENUMS]);
-			showElemNums.setSelected(previousFlags[SHOW_ELEMNUMS]);
-			showPts.setSelected(previousFlags[SHOW_MATPTS]);
-			showCrackPlanes.setSelected(previousFlags[SHOW_CRACKPLANES]);
-			showCrackSurf.setSelected(previousFlags[SHOW_CRACKSURFACES]);
-			showSquarePts.setSelected(previousFlags[SHOW_SQUAREPTS]);
-			showPtNums.setSelected(previousFlags[SHOW_MATPTNUMS]);
-			showNodes.setSelected(previousFlags[SHOW_NODES]);
-			showDispMesh.setSelected(previousFlags[SHOW_DISPLACEDMESH]);
-			transformPts.setSelected(previousFlags[TRANSFORM_PTS]);
-			clipParticles.setSelected(previousFlags[CLIP_TO_PARTICLES]);
-		}
-
+		int optionsFlags = NFMVPrefs.prefs.getInt(NFMVPrefs.PlotOptionsFlagsKey,
+									NFMVPrefs.PlotOptionsFlagsDef);
+		// bits to default flags
+		showMesh.setSelected((optionsFlags&ShowMesh)!=0);
+		showMeshBCs.setSelected((optionsFlags&ShowBCs)!=0);
+		showNodeNums.setSelected((optionsFlags&ShowNodeNumbers)!=0);
+		showElemNums.setSelected((optionsFlags&ShowElemNumbers)!=0);
+		showPts.setSelected((optionsFlags&ShowMaterialPts)!=0);
+		showCrackPlanes.setSelected((optionsFlags&ShowCrackPlanes)!=0);
+		showCrackSurf.setSelected((optionsFlags&ShowCrackSurfaces)!=0);
+		showSquarePts.setSelected((optionsFlags&SquareMaterialPts)!=0);
+		showPtNums.setSelected((optionsFlags&ShowMatPtNumbers)!=0);
+		showNodes.setSelected((optionsFlags&ShowNodes)!=0);
+		showDispMesh.setSelected((optionsFlags&ShowDisplacedMesh)!=0);
+		transformPts.setSelected((optionsFlags&TransformPts)!=0);
+		clipParticles.setSelected((optionsFlags&ClipToParticles)!=0);
+		
+		showMesh.setFocusable(false);
+		showMeshBCs.setFocusable(false);
+		showNodeNums.setFocusable(false);
+		showElemNums.setFocusable(false);
+		showPts.setFocusable(false);
+		showCrackPlanes.setFocusable(false);
+		showCrackSurf.setFocusable(false);
+		showSquarePts.setFocusable(false);
+		showPtNums.setFocusable(false);
+		showNodes.setFocusable(false);
+		showDispMesh.setFocusable(false);
+		transformPts.setFocusable(false);
+		clipParticles.setFocusable(false);
 	}
 
 	// enable or disable check boxes
@@ -209,10 +232,23 @@ public class PlotOptions extends PlotControl
 		flags[TRANSFORM_PTS]=transformPts.isSelected();
 		flags[CLIP_TO_PARTICLES]=clipParticles.isSelected();
 		
-		if(previousFlags==null) previousFlags = new boolean[NUM_OPTIONS];
-		{	for(int i=0;i<NUM_OPTIONS;i++)
-				previousFlags[i] = flags[i];
-		}
+		// save to preferences
+		int optionsFlags = 0;
+		if(flags[SHOW_MESH]) optionsFlags += ShowMesh;
+		if(flags[SHOW_MESHBCS]) optionsFlags += ShowBCs;
+		if(flags[SHOW_NODENUMS]) optionsFlags += ShowNodeNumbers;
+		if(flags[SHOW_ELEMNUMS]) optionsFlags += ShowElemNumbers;
+		if(flags[SHOW_MATPTS]) optionsFlags += ShowMaterialPts;
+		if(flags[SHOW_CRACKPLANES]) optionsFlags += ShowCrackPlanes;
+		if(flags[SHOW_CRACKSURFACES]) optionsFlags += ShowCrackSurfaces;
+		if(flags[SHOW_SQUAREPTS]) optionsFlags += SquareMaterialPts;
+		if(flags[SHOW_MATPTNUMS]) optionsFlags += ShowMatPtNumbers;
+		if(flags[SHOW_NODES]) optionsFlags += ShowNodes;
+		if(flags[SHOW_DISPLACEDMESH]) optionsFlags += ShowDisplacedMesh;
+		if(flags[TRANSFORM_PTS]) optionsFlags += TransformPts;
+		if(flags[CLIP_TO_PARTICLES]) optionsFlags += ClipToParticles;
+		NFMVPrefs.prefs.putInt(NFMVPrefs.PlotOptionsFlagsKey, optionsFlags);
+
 		return flags;
 	}
 }

@@ -27,7 +27,7 @@ enum { UNKNOWN_QUANTITY,AVG_SXX,AVG_SYY,AVG_SXY,AVG_SZZ,AVG_SXZ,AVG_SYZ,
 			AVG_FXX,AVG_FXY,AVG_FXZ,AVG_FYX,AVG_FYY,AVG_FYZ,AVG_FZX,AVG_FZY,AVG_FZZ,
 			TOT_REACTQ,FRICTION_WORK,LINMOMX,LINMOMY,LINMOMZ,ANGMOMX,ANGMOMY,ANGMOMZ,
 			LPMOMX,LPMOMY,LPMOMZ,ANGVELX,ANGVELY,ANGVELZ,DECOHESION,
-            CRACK_LENGTH,DEBONDED_CRACK_LENGTH };
+            CRACK_LENGTH,DEBONDED_CRACK_LENGTH,RESERVOIR_SIZE };
 
 class GlobalQuantity
 {
@@ -45,7 +45,7 @@ class GlobalQuantity
 		GlobalQuantity *AppendQuantity(vector<double> &);
 	
 		// accessors
-		bool IncludeThisMaterial(int);
+		bool IncludeThisMaterial(int,bool);
 		GlobalQuantity *GetNextGlobal(void);
 		void SetNextGlobal(GlobalQuantity *);
 		bool IsSameQuantity(int,int,int);

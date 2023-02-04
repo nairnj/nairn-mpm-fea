@@ -9,9 +9,10 @@
 #
 # Add 'SYSTEM=system' where the lower case system is where
 #    you are compiling. Supported systems are:
-#       carbon - Unix cluster at OSU
+#       carbon - Unix cluster at OSU with installed gcc7
 #       mac - MacOS X using gcc
-#       mac-clang - MacOS X using clang-mp
+#       mac-clang - MacOS X using clang-mp 11
+#       mac-clang9 - MacOS X using clang-mp 9.0
 #
 # Other options are
 #    make clean - to remove all compiled tool objects and executables
@@ -43,13 +44,16 @@ SYSTEM=carbon
 #     CP is path/options to copy command (used only in make install
 CC= g++
 ifeq ($(SYSTEM),carbon)
-    CC= /usr/local/gcc48/bin/g++
+    CC= /usr/local/gcc7/bin/g++
 endif
 ifeq ($(SYSTEM),mac)
     CC= /opt/local/bin/g++-mp-4.9
 endif
 ifeq ($(SYSTEM),mac-clang)
-    CC= /opt/local/bin/clang-mp-7.0
+    CC= /opt/local/bin/clang-mp-11
+endif
+ifeq ($(SYSTEM),mac-clang9)
+    CC= /opt/local/bin/clang-mp-9.0
 endif
 RM= rm
 CP= cp
@@ -70,6 +74,9 @@ CP= cp
 CFLAGS= -c -O3
 LFLAGS=
 ifeq ($(SYSTEM),mac-clang)
+    LFLAGS= -lc++
+endif
+ifeq ($(SYSTEM),mac-clang9)
     LFLAGS= -lc++
 endif
 

@@ -40,9 +40,12 @@ IsoSoftening::IsoSoftening(char *matName,int matID) : IsotropicMat(matName,matID
 	softeningModeI = new LinearSoftening();
 	softeningModeII = new LinearSoftening();
 	tractionFailureSurface = CUBOID_SURFACE;
+	distributionMode = SOFTDIST_NONE;
+	softenStatsMode = VARY_STRENGTH;
 	softenCV = 0.;
-    softenCVMode = VARY_STRENGTH;
-	frictionCoeff = -1.;				// <0 diables friction
+ 	wAlpha = -1.;
+	wV0 = -1.;
+	frictionCoeff = -1.;				// <0 disables friction
     
     // tolerance of fabs(delta(decexx))/deltaMax when using Ovoid
     // mode with pressure-dependent shear strength
@@ -83,14 +86,29 @@ char *IsoSoftening::InputMaterialProperty(char *xName,int &input,double &gScalin
 	// softening coefficient of variation
 	else if(strcmp(xName,"coefVariation")==0)
 	{	input=DOUBLE_NUM;
+		distributionMode=SOFTDIST_NORMAL;
 		return((char *)&softenCV);
 	}
 	
     // coefficient of variation for strength (1), toughness (2), or both (3)
-    else if(strcmp(xName,"coefVariationMode")==0)
+    else if(strcmp(xName,"coefVariationMode")==0 || strcmp(xName,"statDistributionMode")==0)
     {	input=INT_NUM;
-        return((char *)&softenCVMode);
+        return((char *)&softenStatsMode);
     }
+	
+	// Weibull alpha or scale parameter
+	else if(strcmp(xName,"wShape")==0)
+	{	input=DOUBLE_NUM;
+		distributionMode=SOFTDIST_WEIBULL;
+		return((char *)&wAlpha);
+	}
+	
+	// Weibull reference length
+	else if(strcmp(xName,"wV0")==0)
+	{	input=DOUBLE_NUM;
+		distributionMode=SOFTDIST_WEIBULL;
+		return((char *)&wV0);
+	}
 	
 	// coefficient of friction (and activates friction)
 	else if(strcmp(xName,"coeff")==0)
@@ -98,30 +116,32 @@ char *IsoSoftening::InputMaterialProperty(char *xName,int &input,double &gScalin
 		return (char *)&frictionCoeff;
 	}
 	
-    // coefficient of friction (and activates friction)
+    // pressure dependent loop tolerances
     else if(strcmp(xName,"PDTol")==0)
     {   input=DOUBLE_NUM;
         return (char *)&pdOvoidTolerance;
     }
     
-    // coefficient of friction (and activates friction)
+    // pressure dependent loop maximum passes
     else if(strcmp(xName,"PDPasses")==0)
     {   input=INT_NUM;
         return (char *)&maxOvoidPasses;
     }
     
     // check initiation law
-    char *ptr = initiationLaw->InputInitationProperty(xName,input,gScaling);
-    if(ptr != NULL) return ptr;
+	if(initiationLaw!=NULL)
+	{	char *ptr = initiationLaw->InputInitationProperty(xName,input,gScaling);
+		if(ptr != NULL) return ptr;
+	}
 	
 	// if possible check softening laws
-	if(strlen(xName)>3)
+	if(strlen(xName)>2)
 	{	if(xName[0]=='I' && xName[1]=='-')
-		{	ptr = softeningModeI->InputSofteningProperty(&xName[2],input,gScaling);
+		{	char *ptr = softeningModeI->InputSofteningProperty(&xName[2],input,gScaling);
 			if(ptr != NULL) return ptr;
 		}
-		else if(xName[0]=='I' && xName[1]=='I' && xName[2]=='-')
-		{	ptr = softeningModeII->InputSofteningProperty(&xName[3],input,gScaling);
+		else if(xName[0]=='I' && xName[1]=='I' && xName[2]=='-' && strlen(xName)>3)
+		{	char *ptr = softeningModeII->InputSofteningProperty(&xName[3],input,gScaling);
 			if(ptr != NULL) return ptr;
 		}
 	}
@@ -136,13 +156,13 @@ bool IsoSoftening::AcceptInitiationLaw(FailureSurface *iLaw,int lawID)
 	// only allows max principle stress
 	if(lawID != MAXPRINCIPALSTRESS) return false;
 	
-	delete initiationLaw;
+	if(initiationLaw!=NULL) delete initiationLaw;
     initiationLaw = iLaw;
     return true;
 }
 
 // Allows mode I and mode II softening laws
-bool IsoSoftening::AcceptSofteningLaw(SofteningLaw *sLaw,int lawID,int mode)
+bool IsoSoftening::AcceptSofteningLaw(SofteningLaw *sLaw,int mode)
 {
 	if(mode==SOFTI_LAW_SELECTION)
 	{	delete softeningModeI;
@@ -181,7 +201,6 @@ const char *IsoSoftening::VerifyAndLoadProperties(int np)
             return "Simulations with poroelasticity cannot model pressure-dependent initiation stress";
     }
 #endif
-
 	
 	// constant properties
 	// (note both stress and stiffness are divided by rho so strains are absolute)
@@ -194,17 +213,36 @@ const char *IsoSoftening::VerifyAndLoadProperties(int np)
 		gs0 = initiationLaw->sigmaII()/pr.C[3][3];
 	}
     
-    if(softenCVMode<VARY_STRENGTH || softenCVMode>VARY_STRENGTH_AND_TOUGHNESS)
+    if(softenStatsMode<VARY_STRENGTH || softenStatsMode>VARY_STRENGTH_AND_TOUGHNESS)
         return "Invalid option selected for which softening properties to vary";
 	
+	// verify distibution parameters
+	if(distributionMode==SOFTDIST_NORMAL)
+	{	if(softenCV<0.)
+			return "Coefficient of variation cannot be negative";
+		else if(softenCV==0.)
+			distributionMode=SOFTDIST_NONE;
+	}
+	else if(distributionMode==SOFTDIST_WEIBULL)
+	{	if(wAlpha<=0. || wV0<=0.)
+			return "Weibull scale and reference volume must be greater than 0";
+		wGam1A = gamma_fxn(1.+1./wAlpha);
+		softenCV = sqrt(gamma_fxn(1.+2./wAlpha)/(wGam1A*wGam1A) - 1.);
+	}
+			
 	// make sure have a valid setting
 	if(tractionFailureSurface!=CUBOID_SURFACE
 	   		&& tractionFailureSurface!=CYLINDER_SURFACE
-			&& tractionFailureSurface!=OVOID_SURFACE)
-	{	return "Invalid option selected for the traction failure surface (must be 0 to 2)";
+			&& tractionFailureSurface!=OVOID_SURFACE
+			&& tractionFailureSurface!=COUPLED_CUBOID_SURFACE)
+	{	return "Invalid option selected for the traction failure surface (must be 0 to 3)";
 		
 	}
-    
+	
+	// did not implement pressure dependence in the coupled cuboid surface (would not be hard though)
+	if(tractionFailureSurface==COUPLED_CUBOID_SURFACE && initiationLaw->IsPressureDependent())
+		return "Simulations with coupled cuboid surface cannot model pressure-dependent initiation stress";
+	
     return NULL;
 }
 
@@ -218,11 +256,15 @@ void IsoSoftening::PrintMechanicalProperties(void) const
 	softeningModeI->PrintSofteningProperties(rho*initiationLaw->sigmaI());
 	cout << "Mode II Softening: ";
 	softeningModeII->PrintSofteningProperties(rho*initiationLaw->sigmaII());
-    cout << "Coefficient of Variation = " << softenCV << endl;
-    if(softenCV>0.)
-    {   if(softenCVMode==VARY_STRENGTH_AND_TOUGHNESS)
+	if(distributionMode==SOFTDIST_WEIBULL)
+	{	cout << "Weibull scale = " << wAlpha << " and V0 = " << wV0 <<
+                " " << UnitsController::Label(CULENGTH_UNITS) << "^3" << endl;
+	}
+	cout << "Coefficient of Variation = " << softenCV << endl;
+    if(distributionMode!=SOFTDIST_NONE)
+    {   if(softenStatsMode==VARY_STRENGTH_AND_TOUGHNESS)
             cout << "    Vary strength and toughness" << endl;
-        else if(softenCVMode==VARY_TOUGHNESS)
+        else if(softenStatsMode==VARY_TOUGHNESS)
             cout << "    Vary toughness" << endl;
         else
             cout << "    Vary strength" << endl;
@@ -234,8 +276,10 @@ void IsoSoftening::PrintMechanicalProperties(void) const
 		cout << "cylindrical" << endl;
 	else if(tractionFailureSurface == CUBOID_SURFACE)
 		cout << "cuboid" << endl;
-	else
+	else if(tractionFailureSurface == OVOID_SURFACE)
 		cout << "ovoid" << endl;
+	else
+		cout << "coupled cuboid" << endl;
 	
 	cout << "Post-failure contact: ";
 	if(frictionCoeff>0.)
@@ -261,17 +305,29 @@ char *IsoSoftening::InitHistoryData(char *pchr,MPMBase *mptr)
 	// set damage state to 0.1 instead of zero for help in plotting on a grid
 	p[SOFT_DAMAGE_STATE] = 0.1;
 	
-	// set relative strength
+	// set relative strength and toughness
+	// Note that both set to see if used. Future idea would be to use different
+	//		stats for strength and toughness
 	p[RELATIVE_STRENGTH] = 1.;
 	p[RELATIVE_TOUGHNESS] = 1.;
-	if(softenCV>0.)
-	{	double fract = (double)(rand() % 998 + 1)/1000.;		// .001 to .999, max +/- 3.09 std dev
-		if(softenCVMode&VARY_STRENGTH)
-			p[RELATIVE_STRENGTH] = fmax(1. + softenCV*NormalCDFInverse(fract),0.1);
-		if(softenCVMode&VARY_TOUGHNESS)
-			p[RELATIVE_TOUGHNESS] = fmax(1. + softenCV*NormalCDFInverse(fract),0.1);
+	if(distributionMode==SOFTDIST_NORMAL)
+	{	double fract = RandomRange(0.001,0.999);		// .001 to .999, max +/- 3.09 std dev
+		double relValue = fmax(1. + softenCV*NormalCDFInverse(fract),0.05);
+		if(softenStatsMode&VARY_STRENGTH)
+			p[RELATIVE_STRENGTH] = relValue;
+		if(softenStatsMode&VARY_TOUGHNESS)
+			p[RELATIVE_TOUGHNESS] = relValue;
 	}
-	
+	else if(distributionMode==SOFTDIST_WEIBULL)
+	{	double fract = RandomRange(0.001,0.999);		// .001 to .999 limited range
+        double vp = mptr->GetUnscaledVolume();
+		double relValue = fmax(pow(-wV0*log(1.-fract)/vp,1./wAlpha)/wGam1A,0.05);
+		if(softenStatsMode&VARY_STRENGTH)
+			p[RELATIVE_STRENGTH] = relValue;
+		if(softenStatsMode&VARY_TOUGHNESS)
+			p[RELATIVE_TOUGHNESS] = relValue;
+	}
+
 	// Validate this law (in use) is stable on current grid
 	// redundant when all particle same size and same relative values, but general if not
     double delx = mptr->GetMinParticleLength();
@@ -290,19 +346,32 @@ char *IsoSoftening::InitHistoryData(char *pchr,MPMBase *mptr)
     }
     
     // mode II
-	sigma0 = rho*initiationLaw->sigmaII();
-	Gc = p[RELATIVE_TOUGHNESS]*softeningModeII->GetGc();
-    // get relative strength possibly pressure dependent
-	scale = p[RELATIVE_STRENGTH]*initiationLaw->sigmaIIStabilityScale();
-	ratio = delx*gs0*sigma0*scale*scale/(softeningModeII->GetEtaStability()*Gc);
-	if(ratio>1.)
-	{	cout << "Need to increase GIIc or decrease particle size " << ratio
-                << " fold or decrease tauc[P] " << sqrt(ratio)
-                << " fold for spatial stability." << endl;
-		throw CommonException("Shear softening law needs smaller grid cells","IsoSoftening::InitHistoryData");
+	if(softeningModeII!=NULL)
+	{	sigma0 = rho*initiationLaw->sigmaII();
+		Gc = p[RELATIVE_TOUGHNESS]*softeningModeII->GetGc();
+		// get relative strength possibly pressure dependent
+		scale = p[RELATIVE_STRENGTH]*initiationLaw->sigmaIIStabilityScale();
+		ratio = delx*gs0*sigma0*scale*scale/(softeningModeII->GetEtaStability()*Gc);
+		if(ratio>1.)
+		{	cout << "Need to increase GIIc or decrease particle size " << ratio
+					<< " fold or decrease tauc[P] " << sqrt(ratio)
+					<< " fold for spatial stability." << endl;
+			throw CommonException("Shear softening law needs smaller grid cells","IsoSoftening::InitHistoryData");
+		}
 	}
 
 	return (char *)p;
+}
+
+// reset history data
+void IsoSoftening::ResetHistoryData(char *pchr,MPMBase *mptr)
+{	double *p = (double *)pchr;
+	double relStrength = p[RELATIVE_STRENGTH];
+	double relToughness = p[RELATIVE_TOUGHNESS];
+	ZeroDoubles(pchr,SOFT_NUMBER_HISTORY);
+	p[SOFT_DAMAGE_STATE] = 0.1;
+	p[RELATIVE_STRENGTH] = relStrength;
+	p[RELATIVE_TOUGHNESS] = relToughness;
 }
 
 // Number of history variables
@@ -313,8 +382,8 @@ void IsoSoftening::SetInitialConditions(InitialCondition *ic,MPMBase *mptr,bool 
 {
     double *soft = GetSoftHistoryPtr(mptr);
 
-	if (is3D) {
-		Vector dnorm = ic->GetDamageNormal();
+	if(is3D)
+    {   Vector dnorm = ic->GetDamageNormal();
 		soft[NORMALDIR1] = atan2(dnorm.y,dnorm.x); // Euler angle alpha (should be (y,x))
 		soft[NORMALDIR2] = asin(dnorm.z);  //Euler angle beta using asin()Da
 		soft[NORMALDIR3] = 0.0; // only 2 angles needed for a normal vector
@@ -356,8 +425,8 @@ void IsoSoftening::SetInitialConditions(InitialCondition *ic,MPMBase *mptr,bool 
 				soft[DELTASHEAR2] = softeningModeII->GetDeltaFromDamage(dparams.z,scale,relgs0,-1.);
 		}
 	}
-	else {
-		// 2D damage
+	else
+    {   // 2D damage
 		Vector dnorm = ic->GetDamageNormal();
 		soft[NORMALDIR1] = dnorm.x;
 		soft[NORMALDIR2] = dnorm.y;
@@ -427,7 +496,7 @@ void IsoSoftening::SetRelativeToughness(MPMBase *mptr,double rel)
     soft[RELATIVE_TOUGHNESS] = rel;
 }
 
-#pragma mark IsoSoftening::Accessors
+#pragma mark IsoSoftening::Methods
 
 /* Take increments in strain and calculate new Particle: strains, rotation strain,
 		stresses, strain energy,
@@ -491,8 +560,8 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		// Using wrong de would affect initiation when there are residual stresses
 		Tensor dstr = GetStressIncrement(deij,np,properties);
 		
-		// Load str with effective stress in initial configuraiton used to look for initiation of failure
-		// It is particle stress
+		// Load str with effective stress in initial configuration used to look for initiation of failure
+		// Need initial, because strains were found in initial configuration
 		Tensor str = Rnm1.RTVoightR(sp,true,is2D);
 
 		// Add incremental stress
@@ -503,7 +572,7 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		double ppadd = 0.;
 		if(DiffusionTask::HasPoroelasticity())
 		{	// adding specific pore pressure
-			ppadd = alphaPE*fmax(mptr->pConcentration,0.)/rho0;
+			ppadd = alphaPE*fmax(mptr->pDiff[0]->conc,0.)/rho0;
 			str.xx += ppadd;
 			str.yy += ppadd;
 			if(np==THREED_MPM) str.zz += ppadd;
@@ -545,6 +614,13 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		soft[NORMALDIR2] = norm.y;										// sin(theta) (2D) or Euler beta (3D)  to normal
 		soft[NORMALDIR3] = norm.z;										// unused (2D) or Euler gamma (3D) to normal
 		
+		// hack to fix the normal
+		/*
+		soft[NORMALDIR1] = 0.;
+		soft[NORMALDIR2] = norm.y>0. ? 1. : 0. ;
+		soft[NORMALDIR3] = 0.;
+		*/
+		
 		// get intersection area (for 3D convert angle to normal)
 		if(np==THREED_MPM)
 		{	Matrix3 RInit;
@@ -553,7 +629,7 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		}
 
 		soft[GCSCALING] = GetAcOverVp(np,mptr,&norm)/rho;			// rho because is divided by specific stress
-	}
+    }
 	
 #pragma mark ... Code for Damaged Material
 	// A crack is present
@@ -566,14 +642,13 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	// get total rotation to crack axis system
 	Rnm1 *= RToCrack;
 	Rtot *= RToCrack;
-
-	// Get particle stress now rotated to the crack axis system
-	Tensor str = Rnm1.RTVoightR(sp,true,is2D);
+    
+    Tensor str = Rnm1.RTVoightR(sp,true,is2D);
 
 #ifdef POROELASTICITY
 	// Poroelasticity bases damage on solid stress by adding alphaB*pp*I
 	if(DiffusionTask::HasPoroelasticity())
-	{	double ppadd = alphaPE*fmax(mptr->pConcentration,0.)/rho0;
+	{	double ppadd = alphaPE*fmax(mptr->pDiff[0]->conc,0.)/rho0;
 		str.xx += ppadd;
 		str.yy += ppadd;
 		if(np==THREED_MPM) str.zz += ppadd;
@@ -594,7 +669,7 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 // soft is pointer to first sofening history variable
 // Tensor de = total elastic strain increment in crack axis system
 // eres and ezzres used to find effective strains (from de - eres*I), ezzres for plain strain energy
-// str is prior stress in the crack axis system
+// str is prior stress in the crack axis system (smoothed stress is usng that option)
 // res fir temperature and/or concentration/pore pressure change
 // dR and Rtot are incemental and total rotation matrices
 // p is pointer to isotropic elastic properties
@@ -607,7 +682,7 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
 	// set 2D flag
 	bool is2D = np == THREED_MPM ? false : true;
 	
-	// get effectiive strain increments (effective in plane strain)
+	// get effective strain increments (effective in plane strain)
 	Tensor deres = MakeTensor(eres,eres,eres,0.,0.,0.);
 	Tensor deij = de;
 	SubTensor(&deij,&deres);
@@ -660,7 +735,7 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
 		
 		// independent tensile damage (2D and 3D)
 		bool hasDecxx = false;
-		if(tractionFailureSurface!=OVOID_SURFACE)
+		if(tractionFailureSurface<OVOID_SURFACE)
 		{	hasDecxx = SoftenAxis(mptr,den,soft,DELTANORMAL,DAMAGENORMAL,sigmaI,scaleI,softeningModeI,
 								  C11,str.xx,-1.,-1.,decxx,dispEnergyN,criticalStrain);
 		}
@@ -692,7 +767,8 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
 		if(is2D)
 		{	// cuboid and cylinder both use 1D methods for shear update
 			// ovoid also uses it if in compression (but decxx was already set above for this case)
-			if(tractionFailureSurface!=OVOID_SURFACE)
+            // do not need to iterate pressure effects because shear update does not change decxx
+			if(tractionFailureSurface<OVOID_SURFACE)
 			{	// 2D shear strain only for x-y shear
 				double dgs = str.xy>0. ? deij.xy : -deij.xy;		// * sign(tauxy)
 				if(SoftenAxis(mptr,dgs,soft,DELTASHEAR,DAMAGESHEAR,sigmaII,scaleII,softeningModeII,
@@ -717,10 +793,10 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
                     h.damageN = soft[DAMAGENORMAL];
                     h.damageS = soft[DAMAGESHEAR];
                     h.ecxx = ecrack->xx;
-                    if(!OvoidSoftening(mptr,is2D,den,deij.xy,deij.xz,&h,str,C11,Gshear,
-                                       sigmaI,scaleI,sigmaII,scaleII,sigmaIIAlpha,scaleIIAlpha,
-                                       dispEnergyN,dispEnergyXY,criticalStrain))
-                    {	// elastic loading, decxx was set above
+					if(!OvoidSoftening(mptr,is2D,den,deij.xy,deij.xz,&h,str,C11,Gshear,
+													  sigmaI,scaleI,sigmaII,scaleII,sigmaIIAlpha,scaleIIAlpha,
+													  dispEnergyN,dispEnergyXY,criticalStrain))
+					{	// elastic loading, decxx was set above
                         dgcxy = soft[DAMAGESHEAR]*deij.xy;
                         
                         // particle history
@@ -872,7 +948,7 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
 			cutoff = pow(relGI,nmix) + pow(relGII,nmix) + pow(relGIIxz,nmix);
 		}
 		else
-		{	// for isotropic material, two delta and two d (cuboid and cylinder) or one d (ovoid)
+		{	// for isotropic material, two delta and two d (cuboid (2D only) and cylinder) or one d (ovoid)
 			// store GI and GII
 			soft[DAMAGEGI] += dispEnergyN/soft[GCSCALING];
 			soft[DAMAGEGII] += dispEnergyXY/soft[GCSCALING];
@@ -884,7 +960,7 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
 			relGII = soft[DAMAGEGII]/(relShearToughness*softeningModeII->GetGc());
 			
 			// mixed mode failure criterion
-			if(tractionFailureSurface != OVOID_SURFACE)
+			if(tractionFailureSurface < OVOID_SURFACE)
 				cutoff = pow(relGI,nmix) + pow(relGII,nmix);
 		}
 
@@ -942,7 +1018,7 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
 		}
 		
 		// dissipated energy from damage (plasticity was added before if it occurred)
-        // print to 10/15/2020, plastic energy was added here too might have double counted
+        // prior to 10/15/2020, plastic energy was added here too might have double counted
 		mptr->AddPlastEnergy(dispEnergyN + dispEnergyXY + dispEnergyXZ);
 	}
 		
@@ -951,7 +1027,7 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
 	// update cracking strains (in plastic strain)
 	// current was rotated by dR (above) now add increment rotated by Rtot
 	
-	// rotate previous stress by rotation increment
+	// rotate previous stress by rotation increment (this switch from smoothed stress, if used, to particle stres now)
 	Tensor *sp = mptr->GetStressTensor();
 	str = dR.RVoightRT(sp,true,is2D);
 
@@ -1127,7 +1203,7 @@ bool IsoSoftening::CoupledShearSoftening(double dgxy,double dgxz,double *history
 	// note that when sigmaAlpha>0, sigma, scale, and delta are
 	//			changed to sigmaAlpha, scaleAlpha, and delta+ddeltaElastic
 	double en0 = sigma/Gshear;				 // initiation strain
-	double ddelta = softeningModeII->GetDDelta(dgs,en0,delta,scale);
+	double ddelta = softeningModeII->GetDDelta(dgs,en0,delta,ds,scale);
 	
 	// check if failed
 	double deltaPrevious = delta;			// = delta + ddeltaelastic if occurred
@@ -1169,6 +1245,14 @@ bool IsoSoftening::OvoidSoftening(MPMBase *mptr,bool is2D,double den,double dgxy
         double sigmaI,double scaleI,double sigmaII,double scaleII,double sigmaIIAlpha,double scaleIIAlpha,
         double &dispIEnergy,double &dispIIEnergy,bool &criticalStrain) const
 {
+	// switch for a different surface
+	if(tractionFailureSurface==COUPLED_CUBOID_SURFACE)
+	{	return CoupledCuboidSoftening(mptr,is2D,den,dgxy,dgxz,h,str,C11,Gshear,
+									  sigmaI,scaleI,sigmaII,scaleII,sigmaIIAlpha,scaleIIAlpha,
+									  dispIEnergy,dispIIEnergy,criticalStrain);
+		
+	}
+	
 	// get parameter (dn and ds are coupled)
 	double d = h->damageN;
 	
@@ -1188,7 +1272,7 @@ bool IsoSoftening::OvoidSoftening(MPMBase *mptr,bool is2D,double den,double dgxy
 	double FII = sigmaII*softeningModeII->GetFFxn(dels,scaleII);
 	
 	// look for alpha variables (only allowed in sigmaII for now)
-	// Current shear only
+	// Currently shear only
 	double FIIstar = FII,ddeltaSElastic=0.;
 	if(sigmaIIAlpha>0.)
     {   // switch to delta+ddeltaSElastic, alpha+dAlpha on damage surface
@@ -1446,7 +1530,7 @@ bool IsoSoftening::OvoidSoftening(MPMBase *mptr,bool is2D,double den,double dgxy
 		//			changed to sigmaAlpha, scaleAlpha, and delta+ddeltaElastic
 		double gs0 = sigmaII/Gshear;
         // This used softeningModeI unti 9/30/2020
-		ddeltas = softeningModeII->GetDDelta(dgs2,gs0,dels,scaleII);
+		ddeltas = softeningModeII->GetDDelta(dgs2,gs0,dels,d,scaleII);
 
 		double newD;
 		
@@ -1519,6 +1603,200 @@ bool IsoSoftening::OvoidSoftening(MPMBase *mptr,bool is2D,double den,double dgxy
 	}
 
     return true;
+}
+
+// Coupled cuboid damage evolution surface for isotropic materials
+bool IsoSoftening::CoupledCuboidSoftening(MPMBase *mptr,bool is2D,double den,double dgxy,double dgxz,
+			  DamageState *h,Tensor &str,double C11,double Gshear,
+			  double sigmaI,double scaleI,double sigmaII,double scaleII,double sigmaIIAlpha,double scaleIIAlpha,
+			  double &dispIEnergy,double &dispIIEnergy,bool &criticalStrain) const
+{
+	// get parameter (all coupled)
+	double d = h->damageN;
+	
+	// get parameters (deln and dels may differ)
+	double deln = h->deltaN;
+	double dels = h->deltaS;
+	
+	// trial stress and increments
+	double C111md = C11*(1.-d);
+	double dTntrial = C111md*den;
+	double G1md = Gshear*(1.-d);
+	double dTxytrial = G1md*dgxy;
+	double dTxztrial = is2D ? 0. : G1md*dgxz;
+
+	// softening laws
+	double FI = sigmaI*softeningModeI->GetFFxn(deln,scaleI);
+	double FII = sigmaII*softeningModeII->GetFFxn(dels,scaleII);
+	
+	// look for alpha variables (only allowed in sigmaII for now)
+	// Pressure dependence not currently allowed in coupled cuboid surface
+
+	// additions for 3D
+	if(is2D)
+	{   // check for elastic (caller gets cracking strains)
+		if((str.xx+dTntrial<=FI) && (fabs(str.xy+dTxytrial)<=FII))
+			return false;
+	}
+	else
+	{   // check for elastic (caller gets cracking strains)
+		if((str.xx+dTntrial<=FI) && (fabs(str.xy+dTxytrial)<=FII) && (fabs(str.xz+dTxztrial)<=FII))
+			return false;
+	}
+	
+	// damage has occurred in at least on direction
+	double ddeltaN=0.,ddeltaXY=0.,ddeltaXZ=0.;
+	double dDn=0.,dDxy=0.,dDxz=0.;
+	double den2,dgxy2,dgxz2;
+	double en0 = sigmaI/C11,gs0 = sigmaII/Gshear;
+	criticalStrain = false;
+
+	// ratios of current stress to strength (should alays be <= 1)
+	double sfN=str.xx/FI,sfXY=str.xy/FII;
+	double sfXZ = is2D ? 0. : str.xz/FII;
+	
+	// normal direction
+	if(str.xx+dTntrial>=FI)
+	{   // go to elastic surface and then damage (T(trial)-F)/(E(1-D))
+		den2 = (str.xx+dTntrial-FI)/C111md;
+		ddeltaN = softeningModeI->GetDDelta(den2,en0,deln,d,scaleI);
+		if(ddeltaN<0.)
+			criticalStrain = true;
+		else
+		{   // get change in Dn
+			double delNew = deln+ddeltaN;
+			double Fnew = softeningModeI->GetFFxn(delNew,scaleI);
+			dDn = delNew/(delNew + en0*Fnew) - d;
+		}
+	}
+	
+	// shear xy direction
+	if(!criticalStrain && fabs(str.xy+dTxytrial)>=FII)
+	{   // go to elastic surface and then damage (T(trial)-F)/(E(1-D))
+		dgxy2 = (fabs(str.xy+dTxytrial)-FII)/Gshear;
+		ddeltaXY = softeningModeII->GetDDelta(dgxy2,gs0,dels,d,scaleII);
+		if(ddeltaXY<0.)
+			criticalStrain = true;
+		else
+		{   // get change in Dxy
+			double delNew = dels+ddeltaXY;
+			double Fnew = softeningModeII->GetFFxn(delNew,scaleII);
+			dDxy = delNew/(delNew + gs0*Fnew) - d;
+		}
+	}
+	
+	// shear xz strain
+	if(!criticalStrain && !is2D && fabs(str.xz+dTxztrial)>=FII)
+	{   // go to elastic surface and then damage
+		dgxz2 = (fabs(str.xz+dTxztrial)-FII)/Gshear;
+		ddeltaXZ = softeningModeII->GetDDelta(dgxz2,gs0,dels,d,scaleII);
+		if(ddeltaXZ<0.)
+			criticalStrain = true;
+		else
+		{   // get change in Dxz
+			double delNew = dels+ddeltaXZ;
+			double Fnew = softeningModeII->GetFFxn(delNew,scaleII);
+			dDxz = delNew/(delNew + gs0*Fnew) - d;
+		}
+	}
+	
+	// see if failed or find direction with most damage
+	double dD=0.;
+	bool damageN=false,damageXY=false,damageXZ=false;
+	if(criticalStrain)
+	{   // Decohesion: set delta=deltaMax, D=1
+		// caller will get cracking strain in post-failure update code
+		h->deltaN = softeningModeI->GetDeltaMax(scaleI);
+		ddeltaN = h->deltaN - deln;
+		h->deltaS = softeningModeII->GetDeltaMax(scaleII);
+		ddeltaXY = h->deltaS - dels;
+		ddeltaXZ = ddeltaXY;
+		dD = 1.-d;
+		damageN = damageXY = damageXZ = true;
+		
+		// limit to 1, seems rare and not sure how ever, but might help last energy calc
+		sfN = fmin(1.,sfN);
+		sfXY = fmin(1.,fabs(sfXY));
+		if(!is2D) sfXZ = fmin(1.,fabs(sfXZ));
+	}
+	
+	else if(dDn>=fmax(dDxy,dDxz))
+	{   // normal direction damages most
+		h->deltaN += ddeltaN;
+		dD = dDn;
+		h->decxx = d*(den-den2) + ddeltaN;
+		sfN = 1.;
+		damageN = true;
+	}
+	
+	else if(dDxy>=dDxz)
+	{   // shear x-y damages most
+		h->deltaS += ddeltaXY;
+		dD = dDxy;
+		h->dgcxy = d*(fabs(dgxy)-dgxy2) + ddeltaXY;
+		if(str.xy<0.) h->dgcxy = -h->dgcxy;
+		sfXY = 1.;
+		damageXY = true;
+	}
+	
+	else if(!is2D)
+	{   // shear x-z damages most
+		h->deltaS += ddeltaXZ;
+		dD = dDxz;
+		h->dgcxz = d*(fabs(dgxz)-dgxz2) + ddeltaXZ;
+		if(str.xz<0.) h->dgcxz = -h->dgcxz;
+		sfXZ = 1.;
+		damageXZ = true;
+	}
+	
+	// do non-damaging directions
+	if(!damageN)
+	{   // one shear direction failed, get deln from the new D
+		h->deltaN = softeningModeI->GetDeltaFromDamage(d+dD,scaleI,en0,deln);
+		ddeltaN = h->deltaN - deln;
+		
+		// get cracking strain from initial values and stress at start of damage
+		double Fnp = softeningModeI->GetFpFxn(deln,scaleI);
+		h->decxx = d*den + sfN*(1.-d*(1+en0*Fnp))*ddeltaN;
+		if(h->ecxx+h->decxx<0.) h->decxx = -h->ecxx;
+		
+		// find shear direction that did not fail (3D only)
+		double Fs = softeningModeII->GetFpFxn(dels,scaleII);
+		if(!is2D)
+		{	if(!damageXY)
+			{	ddeltaXY = h->deltaS - dels;
+				h->dgcxy = d*dgxy + sfXY*(1.-d*(1+gs0*Fs))*ddeltaXY;
+			}
+			else
+			{	ddeltaXZ = h->deltaS - dels;
+				h->dgcxz = d*dgxz + sfXZ*(1.-d*(1+gs0*Fs))*ddeltaXZ;
+			}
+		}
+	}
+	else if(!criticalStrain)
+	{	// Normal direction damaged, get dels from the new D
+		h->deltaS = softeningModeII->GetDeltaFromDamage(d+dD,scaleII,gs0,dels);
+		ddeltaXY = h->deltaS - dels;
+		
+		// get cracking strain from initial values and stress at start of damage
+		double Fs = softeningModeII->GetFpFxn(dels,scaleII);
+		h->dgcxy = d*dgxy + sfXY*(1.-d*(1+gs0*Fs))*ddeltaXY;
+		if(!is2D)
+		{	ddeltaXZ = ddeltaXY;
+			h->dgcxz = d*dgxz + sfXZ*(1.-d*(1+gs0*Fs))*ddeltaXZ;
+		}
+	}
+	
+	// Get energy dissipation
+	
+	// dissipated energy increment per unit mass using dOmega = (1/2) (S/F)^2 phi ddelta
+	if(str.xx>0.)
+		dispIEnergy = 0.5*sfN*sfN*sigmaI*softeningModeI->GetPhiFxn(deln,scaleI)*ddeltaN;
+	double modeII = sigmaII*softeningModeI->GetPhiFxn(dels,scaleII);
+	dispIIEnergy = 0.5*sfXY*sfXY*modeII*ddeltaXY;
+	if(!is2D) dispIIEnergy = 0.5*sfXZ*sfXZ*modeII*ddeltaXZ;
+
+	return true;
 }
 
 // For isotropic elastic material, find de(eff). Results same for isotropic material in all coordinate systems
@@ -1693,4 +1971,3 @@ double *IsoSoftening::GetSoftHistoryPtr(MPMBase *mptr) const
 
 // get traction failure surface (or <0 if not a softening material)
 int IsoSoftening::GetTractionFailureSurface(void) const { return tractionFailureSurface; }
-

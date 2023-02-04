@@ -13,6 +13,10 @@
 
 #define _MPM_BASE_
 
+// If define, traction BC always integrate on deformed edge, regardless of shape function
+// being used. If not defined, uGIMP and and non-GIMP use undeformed edges
+//#define TRACTION_ALWAYS_DEFORMED
+
 #define DEFORMED_VOLUME 0
 #define DEFORMED_AREA 1
 #define DEFORMED_AREA_FOR_GRADIENT 2
@@ -21,6 +25,9 @@
 #define GRAD_SECOND 3
 #define GRAD_THIRD 6
 enum { gGRADx=0,gGRADy,gGRADz };
+
+// maxElementIntersections - max number of elements for finite GIMP
+extern int maxElementIntersections;
 
 class MaterialBase;
 
@@ -38,7 +45,7 @@ class MPMBase : public LinkedObject
 		ResidualStrains dTrans;
 
 		// conc potential (0 to 1) (archived * concSaturation)
-		double pConcentration,pPreviousConcentration,*pDiffusion;
+		DiffusionInfo **pDiff;
 	
 		// for generalized plane stress or strain
 		double oopIncrement;
@@ -54,24 +61,25 @@ class MPMBase : public LinkedObject
 		void AllocateJStructures(void);
         bool AllocateCPDIorGIMPStructures(int,bool);
 		bool AllocateGIMPStructures(int,bool);
-    
+		void ResetMaterialPoint(void);
+
         // virtual methods
 		virtual ResidualStrains ScaledResidualStrains(int);
         virtual double thickness(void) = 0;
         virtual void SetOrigin(Vector *) = 0;
         virtual void SetPosition(Vector *) = 0;
         virtual void SetVelocity(Vector *) = 0;
-		virtual void UpdateStrain(double,int,int,void *,int) = 0;
+		virtual void UpdateStrain(double,int,int,void *,int,bool) = 0;
 		virtual void GetFintPlusFext(Vector *,double,double,double,double) = 0;
 		virtual void MoveParticle(GridToParticleExtrap *) = 0;
 		virtual void MovePosition(double) = 0;
 		virtual void SetVelocitySpeed(double) = 0;
 		virtual void AddTemperatureGradient(int);
 		virtual void AddTemperatureGradient(int,Vector *) = 0;
-		virtual void AddConcentrationGradient(void);
-		virtual void AddConcentrationGradient(Vector *) = 0;
+		virtual void AddConcentrationGradient(int);
+		virtual void AddConcentrationGradient(int,Vector *) = 0;
 		virtual double FCond(int,double,double,double,TransportProperties *) = 0;
-		virtual double FDiff(double,double,double,TransportProperties *) = 0;
+		virtual double FDiff(double,double,double,TransportProperties *,int) = 0;
 		virtual double KineticEnergy(void) = 0;
 		virtual Matrix3 GetDeformationGradientMatrix(void) const = 0;
 		virtual Matrix3 GetElasticBiotStrain(void) = 0;
@@ -101,12 +109,11 @@ class MPMBase : public LinkedObject
         // defined virtual methods
 		virtual double GetUnscaledVolume(void);
 		virtual void IncrementDeformationGradientZZ(double dezz);
-        virtual void DeleteParticle(Vector *);
-        virtual bool IsDeleted(Vector *) const;
-
+ 
 		// base only methods (make virtual if need to override)
 		int MatID(void) const;
 		int ArchiveMatID(void) const;
+		bool InReservoir(void) const;
 		int ElemID(void) const;
 		void ChangeElemID(int,bool);
 		int ArchiveElemID(void);
@@ -148,7 +155,7 @@ class MPMBase : public LinkedObject
 		void IncrementRotationStrain(double);
 		void IncrementRotationStrain(double,double,double);
 		virtual void InitializeMass(double,double,bool);
-		void SetConcentration(double,double);
+		void SetConcentration(double,bool);
 		void SetTemperature(double,double);
         void SetVelocityGradient(double,double,double,double,int);
 		Vector *GetPFext(void);
@@ -174,6 +181,7 @@ class MPMBase : public LinkedObject
         double GetEntropy(void);
         void SetEntropy(double);
         void AddEntropy(double,double);
+		void AddEntropy(double,double,double);
         double GetInternalEnergy(void);
         void IncrementPressure(double);
         void SetPressure(double);
@@ -190,17 +198,34 @@ class MPMBase : public LinkedObject
 		void SetHistoryPtr(char *);
 		double GetHistoryDble(int,int);
 		void SetHistoryDble(int,double,int);
+		char *GetCustomHistoryPtr();
+		void SetCustomHistoryPtr(char *);
+		double GetCustomHistoryDble(int);
+		void SetCustomHistoryDble(int,double);
         void Describe(void);
 		double GetRho(void);
-		double GetConcSaturation(void);
-		double GetDiffusionCT(void);
-        void Add_dpud(double);
-        double GetClear_dpud(void);
+		double GetConcSaturation();
+        void AddParticleDiffusionSource(int,double);
+        bool GetClearParticleDiffusionSource(int,double &);
         void SetRelativeStrength(double);
         void SetRelativeToughness(double);
 		virtual void GetExactTractionInfo(int,int,int *,Vector *,Vector *,int *) const;
         void SetNum(int zeroBasedNumber);
         int GetNum(void) const;
+    
+        // These always defined, but a reserved for a future feature
+		Matrix3 GetParticleGradVp(bool);
+		Vector GetParticleAngMomentum(void);
+	
+		bool AllocateFiniteGIMPStructures(bool);
+		virtual void GetFiniteGIMP_Integrals(void);
+		FiniteGIMPInfo *GetFiniteGIMPInfo(void);
+
+#ifdef SUPPORT_MEMBRANES
+		virtual void GetOrientation(double *,double *,double *) const;
+		virtual void SetOrientation(double ang1,double ang2,double ang3);
+		virtual bool isMembranePt(void) const;
+#endif
 	
 	protected:
 		// variables (changed in MPM time step)
@@ -224,8 +249,8 @@ class MPMBase : public LinkedObject
         double entropy;             // total entropy on the particle
 		double resEnergy;			// total residual energy sigma.dres
 		char *matData;				// material history if needed (init NULL)
+		char *customMatData;		// particle history by custom tasks
 		Matrix3 *Rtot;				// only track for large rotation hypo and 3D aniso small rotation
-		double buffer_dpud;			// instantaneous pressure rise due to volume change in poroelasticity
 	
 		// constants (not changed in MPM time step)
  		double anglez0;				// initial cw x rotation angle (2D or 3D) (stored in radians)

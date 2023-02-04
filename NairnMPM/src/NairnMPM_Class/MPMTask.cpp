@@ -26,7 +26,8 @@ MPMTask::MPMTask(const char *name) : CommonTask(name) {}
 void MPMTask::WriteLogFile(void)
 {	// task number
 	char logLine[200];
-	sprintf(logLine,"  Task #%d: %s",taskNumber,GetTaskName());
+    size_t logSize=200;
+	snprintf(logLine,logSize,"  Task #%d: %s",taskNumber,GetTaskName());
 	archiver->WriteLogFile(logLine,NULL);
 }
 
@@ -34,7 +35,8 @@ void MPMTask::WriteLogFile(void)
 void MPMTask::WriteLogFile(const char *comment)
 {	// task number
 	char logLine[200];
-	sprintf(logLine,"... %s",comment);
+    size_t logSize=200;
+	snprintf(logLine,logSize,"... %s",comment);
 	archiver->WriteLogFile(logLine,NULL);
 }
 

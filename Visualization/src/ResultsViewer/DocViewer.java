@@ -8,9 +8,11 @@
 
 import java.awt.*;
 import java.awt.event.*;
-
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import javax.swing.*;
-
 import geditcom.JNFramework.*;
 
 public class DocViewer extends JNDocument
@@ -30,6 +32,7 @@ public class DocViewer extends JNDocument
 	private ShowPartnerAction showPartnerCommand = new ShowPartnerAction();
 	private ScaleResultsAction scaleResultsCommand = new ScaleResultsAction();
 	private StartPlotAction startPlotCommand = new StartPlotAction();
+	private ExportVTKAction exportVTKAction = new ExportVTKAction();
 	
 	public DocViewer(boolean openMesh)
 	{   super("DocViewer");
@@ -94,6 +97,7 @@ public class DocViewer extends JNDocument
 		menuBar.add(menu);
 		menu.add(startPlotCommand);
 		menu.add(scaleResultsCommand);
+		menu.add(exportVTKAction);
 
 		// Window
 		menu = new JMenu("Window");
@@ -114,6 +118,38 @@ public class DocViewer extends JNDocument
 	{	display.readFile(getFile(),fileText);
 		controls.fileHasLoaded();
 		setTitle(resDoc.name);
+	}
+	
+	// reread the file when it has changed (i.e., reuse window for new calculations)
+	public void loadNewTextFromFile()
+	{
+		// read the file's text (UTF-8 encoding)
+		String fileText;
+		try
+		{	FileInputStream theFile = new FileInputStream(getFile());
+			BufferedReader read = new BufferedReader(new InputStreamReader(theFile, "UTF-8"));
+		
+			StringBuffer buffer = new StringBuffer();
+			String str = read.readLine();
+			if(str!=null)
+			{	buffer.append(str);
+				while((str=read.readLine()) != null)
+				{	buffer.append((char)0x0A);
+					buffer.append(str);
+				}
+			}
+			
+			read.close();
+			theFile.close();
+			
+			// convert to a string
+			fileText = buffer.toString();
+			loadTextFromFile(fileText);
+		}
+		catch (Exception re)
+		{	JNUtilities.showMessage(null,"Error rereading calculation results '"+getFile().getName()+": " + re);
+			return;
+		}
 	}
 	
 	//----------------------------------------------------------------------------
@@ -138,7 +174,8 @@ public class DocViewer extends JNDocument
 				}
 				MoviePlotWindow movieFrame=getMovieFrame();
 				if(!currentMovieIsOK(currentClass,movieFrame))
-				{	if(newType==LoadArchive.PARTICLE_PLOT)
+				{	// current one not available - create a new window
+					if(newType==LoadArchive.PARTICLE_PLOT)
 						movieFrame=(MoviePlotWindow)(new MPMParticlePlotWindow(resDoc,this));
 					else if(resDoc.isMPMAnalysis())
 						movieFrame=(MoviePlotWindow)(new MeshPlotWindow(resDoc,this));
@@ -147,18 +184,14 @@ public class DocViewer extends JNDocument
 					
 					// manually set to current setting in main window controls
 					controls.plotOpened();
-					int newComponent=controls.getPlotComponent(-1);
+					int newComponent=controls.getPlotComponent(-1,true,null);
 					movieFrame.setTitle(resDoc.name+" ("+PlotQuantity.plotName(newComponent,resDoc)+")");
 					movieFrame.setVisible(true);
 					movieFrame.toFront();
 				}
 				else
-				{	// existing window
-					int newComponent;
-					if(newType==controls.getPlotType())
-						newComponent=controls.getPlotComponent(-1);
-					else
-						newComponent=movieFrame.movieControls.getPlotComponent();
+				{	// reuse the current movie plot window
+					int newComponent=controls.getPlotComponent(-1,true,null);
 					movieFrame.setTitle(resDoc.name+" ("+PlotQuantity.plotName(newComponent,resDoc)+")");
 					movieFrame.setVisible(true);
 					movieFrame.toFront();
@@ -177,7 +210,7 @@ public class DocViewer extends JNDocument
 				}
 				
 				try
-				{	timeFrame.addPlot(controls);
+				{	timeFrame.addPlot(controls,null);
 				}
 				catch(Exception tpe)
 				{	JNApplication.appBeep();
@@ -194,7 +227,7 @@ public class DocViewer extends JNDocument
 				}
 				
 				try
-				{	xyPlotFrame.addPlot(controls);
+				{	xyPlotFrame.addPlot(controls,null);
 				}
 				catch(Exception tpe)
 				{	JNApplication.appBeep();
@@ -206,6 +239,100 @@ public class DocViewer extends JNDocument
 			default:
 				break;
 		}
+	}
+	
+	// start mesh 2D plot in script control
+	public ISListType scriptTimeplot(ISDictType settings) throws Exception
+	{	// look for global results
+		String menutext = (String)settings.gcis_objectForKey("menutext");
+		if(menutext==null)
+			throw new Exception("timeplot settings does not specity what to plot in 'menutext'");
+		
+		// trap global data plot
+		if(menutext.equals("Global Results"))
+		{	ISListType plotResults = new ISListType(null,false);
+			resDoc.collectTimePlotData(settings,plotResults);
+			if(plotResults.count()<2)
+				throw new Exception("The timeplot command found no plot data");
+			return plotResults;
+		}
+
+		TimePlotWindow timeFrame=getTimeFrame();
+		if(timeFrame==null)
+		{	timeFrame=new TimePlotWindow(this);
+			controls.plotOpened();
+		}
+		int startPlots = timeFrame.getNumberOfPlots();
+		timeFrame.addPlot(controls,settings);
+		
+		// wait for run to be done
+		while(true)
+		{	Thread.sleep(250);
+			if(timeFrame==null) break;
+			if(!timeFrame.isPlotting())
+				break;
+		}
+		
+		if(timeFrame==null)
+			throw new Exception("Scripted plot failed");
+		int endPlots = timeFrame.getNumberOfPlots();
+		if(startPlots==endPlots)
+			throw new Exception("Scripted plot failed");
+		
+		// get plot results
+		ISListType plotResults = timeFrame.getLastPlot();
+		
+		// close unless "close" says "no"
+		String closePlot = (String)settings.gcis_objectForKey("close");
+		if(closePlot!=null)
+		{	if(!closePlot.equals("no"))
+				timeFrame.dispose();
+		}
+		else
+			timeFrame.dispose();
+		
+		// return the results
+		return plotResults;
+	}
+
+	// start mesh 2D plot in script control
+	public ISListType scriptXYplot(ISDictType settings) throws Exception
+	{	XYPlotWindow xyPlotFrame=getXYPlotFrame();
+		if(xyPlotFrame==null)
+		{	xyPlotFrame=new XYPlotWindow(this);
+			controls.plotOpened();
+		}
+		int startPlots = xyPlotFrame.getNumberOfPlots();
+		xyPlotFrame.addPlot(controls,settings);
+		
+		// wait for run to be done
+		while(true)
+		{	Thread.sleep(250);
+			if(xyPlotFrame==null) break;
+			if(!xyPlotFrame.isPlotting())
+				break;
+		}
+		
+		if(xyPlotFrame==null)
+			throw new Exception("Scripted plot failed");
+		int endPlots = xyPlotFrame.getNumberOfPlots();
+		if(startPlots==endPlots)
+			throw new Exception("Scripted plot failed");
+		
+		// get plot results
+		ISListType plotResults = xyPlotFrame.getLastPlot();
+		
+		// close unless "close" says "no"
+		String closePlot = (String)settings.gcis_objectForKey("close");
+		if(closePlot!=null)
+		{	if(!closePlot.equals("no"))
+				xyPlotFrame.dispose();
+		}
+		else
+			xyPlotFrame.dispose();
+		
+		// return the results
+		return plotResults;
 	}
 	
 	// see if current movie is same class and requested movie
@@ -282,6 +409,70 @@ public class DocViewer extends JNDocument
 	{	return (XYPlotWindow)getFirstChildOfType("xyPlotFrame");
 	}
 	
+	// Scripting attributes for internal scripts for results document
+	public Object gcis_getObjectAttribute(String attr,CmdViewer server)
+	{
+		if(attr.contentEquals("archives"))
+		{	ISListType archs = new ISListType(null);
+			for(int i=0;i<resDoc.mpmArchives.size();i++)
+				archs.gcis_addObject(resDoc.mpmArchives.get(i));
+			return archs;
+		}
+		
+		return null;
+	}
+
+	// Scripting attributes for internal scripts for GEDCOMObject
+	public String gcis_getAttribute(String [] atoms,int i,CmdViewer server)
+	{
+	    String attr = server.grabAtom(atoms,i);
+	    
+	    if(attr.equals("energy"))
+			return resDoc.getEnergy();
+		
+		else if(attr.equals("section"))
+		{	i++;
+			if(i >= atoms.length)
+				return "ERROR: The section name is missing";
+			attr = server.grabAtom(atoms,i);
+			
+			// check for quoted text
+			int clen = attr.length();
+			if(clen > 1)
+			{	if(attr.charAt(0) == '"' && attr.charAt(clen - 1) == '"')
+					attr =  attr.substring(1, clen - 1);
+			}
+
+			return resDoc.section(attr);
+		}
+	    
+		else if(attr.equals("name"))
+		{	File theFile = getFile();
+			if(theFile!=null)
+				return theFile.getName();
+			return "Untitled";
+		}
+
+		else if(attr.equals("path"))
+		{	File theFile = getFile();
+			if(theFile!=null)
+				return theFile.getPath();
+			return "Untitled";
+		}
+
+		else if(attr.equals("folder"))
+		{	File theFile = getFile();
+			if(theFile!=null)
+				return theFile.getParent();
+			return "";
+		}
+	    
+		else if(attr.equals("class"))
+			return "ResultsDocument";
+
+		return null;
+	}
+	
 	// set command window when opened by simulation here
 	public void setCommandsWindow(CmdViewer theCmds) { commandsWindow=theCmds; }
 
@@ -337,6 +528,12 @@ public class DocViewer extends JNDocument
 		controls.plotOpened();
 	}
 
+	// open dialog to extrack VTK files
+	public void startExtractVTK()
+	{	// dialog to extract VTK
+		new ExtractVTK(this);
+	}
+
 	//----------------------------------------------------------------------------
 	// Actions as inner classes
 	//----------------------------------------------------------------------------
@@ -368,10 +565,7 @@ public class DocViewer extends JNDocument
 		public void actionPerformed(ActionEvent e) { scaleResults(); }
 	}
 	
-	// action to start a plot
-	public StartPlotAction getStartPlotAction() { return startPlotCommand; }
-
-	// action to shaw partner menu command
+	// action to show partner menu command
 	protected class StartPlotAction extends JNAction
 	{	private static final long serialVersionUID = 1L;
 
@@ -382,4 +576,17 @@ public class DocViewer extends JNDocument
 		public void actionPerformed(ActionEvent e) { startNewPlot(controls.getPlotType()); }
 	}
 
+	// action to start a plot
+	public StartPlotAction getStartPlotAction() { return startPlotCommand; }
+
+		// action to export VTK
+	protected class ExportVTKAction extends JNAction
+	{	private static final long serialVersionUID = 1L;
+
+		public ExportVTKAction()
+		{	super("Export Particle VTKs...");
+		}
+ 
+		public void actionPerformed(ActionEvent e) { startExtractVTK(); }
+	}
 }

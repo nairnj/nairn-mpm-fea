@@ -16,6 +16,7 @@
 #include "Materials/MaterialBase.hpp"
 
 class CrackSegment;
+class CrackHeader;
 
 class TractionLaw : public MaterialBase
 {
@@ -37,7 +38,7 @@ class TractionLaw : public MaterialBase
 		virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);
 		virtual double CrackWorkEnergy(CrackSegment *,double,double);
 		virtual void CrackDissipatedEnergy(CrackSegment *,double &,double &);
-    
+
         // Core functions
         virtual double Strength(int,double);
         virtual double WorkEnergy(int,double);

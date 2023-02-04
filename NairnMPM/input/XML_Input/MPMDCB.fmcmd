@@ -82,6 +82,7 @@ Problem: DCB specimen
     <E>&beammod;</E>
     <nu>0.33</nu>
     <alpha>60</alpha>
+    <PDamping>100</PDamping>
   </Material>
 
   <GridBCs>

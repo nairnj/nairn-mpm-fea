@@ -132,10 +132,12 @@ public class Regions
 				// add it and increment
 				if(prop.equals("res"))
 				{	int totalPoints;
+					double dabs=Math.abs(dvalue);
 					if(doc.isMPM3D())
-						totalPoints = (int)(dvalue*dvalue*dvalue+0.1);
+						totalPoints = (int)(dabs*dabs*dabs+0.1);
 					else
-						totalPoints = (int)(dvalue*dvalue+0.1);	
+						totalPoints = (int)(dabs*dabs+0.1);	
+					if(dvalue<0.) totalPoints = -totalPoints;
 					ptsPerElement = "<MatlPtsPerElement>" + totalPoints + "</MatlPtsPerElement>";
 				}
 				else
@@ -1312,6 +1314,48 @@ public class Regions
 			xmlRegions
 					.append(" minAngle='" + doc.formatDble(angle1) + "' maxAngle='" + doc.formatDble(angle2) + "'/>\n");
 		}
+	}
+	
+	// Fill command num,material,lx,ly,lz
+	public void FillReservoir(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		doc.requiresMPM(args);
+		
+		// verify not nested
+		if(inRegion != 0)
+			throw new Exception("Fill cannot be in a Region, Hole, or BMPRegion block:\n" + args);
+
+		// read material by ID
+		if(args.size() < 3)
+			throw new Exception("'Fill' command required a number an a rmaterial ID:\n" + args);
+		
+		// number of particles (required)
+		int numParticles = doc.readIntArg(args.get(1));
+		if(numParticles<-0)
+			throw new Exception("'Fill' command requires number > 0:\n" + args);
+		
+		String matID = doc.readStringArg(args.get(2));
+		int matnum = doc.mats.getMatID(matID);
+		if(matnum <= 0)
+			throw new Exception("'Fill' command has unknown material ID:\n" + args);
+		
+		// optional size
+		double lx=-1.,ly=-1.,lz=-1.;
+		if(args.size()>3) lx = doc.readDoubleArg(args.get(3));
+		if(args.size()>4) ly = doc.readDoubleArg(args.get(4));
+		if(args.size()>5) lz = doc.readDoubleArg(args.get(5));
+
+		//<Fill mat='2' num='&numw;' lx='&lpx;' ly='&lpy;' lz='&lpz;'/>
+		String xmlData = "    <Fill mat='" + matnum + "' num='" + numParticles + "'";
+		if(lx>0.)
+		{	xmlData = xmlData + " lx='" + doc.formatDble(lx) + "'";
+			if(ly>0.)
+			{	xmlData = xmlData + " ly='" + doc.formatDble(ly) + "'";
+				if(lz>0.)
+					xmlData = xmlData + " lz='" + doc.formatDble(lz) + "'";
+			}
+		}
+		AddXML(xmlData + "/>\n");
 	}
 
 	// insert XML data in pieces or xml data

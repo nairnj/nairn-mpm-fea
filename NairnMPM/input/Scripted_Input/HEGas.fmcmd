@@ -1,25 +1,28 @@
 ! ********** Introduction **********
 
 ! ********** Preamble Section **********
-Title "3D Tensile Test"
+Title "Compression or expansion of a gas"
 Name "John Nairn"
 
 ! Header
 Header
-   MPM Analysis using NairnFEAMPM and NairnMPM
+   Test gas modeling in 3D, 2D plane strain, or 2D axisymmetric
 EndHeader
 
 ! "Plane Strain MPM" or "3D MPM"
-#analysis$="Plane Strain MPM"
-Analysis #analysis$
-MPMMethod "USL-",lCPDI
-Processors 4
+#analysis="Plane Strain MPM"
+Analysis #analysis
+MPMMethod "USL-",B2CPDI
+Processors 1
+#cfl=0.1
+#xpic=4
 
 ! ********** Parameters Section **********
-#matID$="idealgas"		! can be "idealgas" or "liquid"
-#mode$="Adiabatic"		! Isothermal or Adiabatic
+#matID="idealgas"		! can be "idealgas" or "liquid"
+#mode="Adiabatic"		! Isothermal or Adiabatic
+#walls="WallBCs"		! WallBCs or RigidBC
 
-#strain=-40				! strain
+#strain=-60				! strain
 #room=40				! extra strain room for thermal expansion
 #tmult=20				! load in this multiple of wave transits
 
@@ -28,14 +31,37 @@ Processors 4
 #zwidth=40              ! width in the z direction (mult of cell)
 #length=100             ! Length in x direction (mult of cell)
 
-StressFreeTemp 288.15
+#Tinit=288.15
+StressFreeTemp #Tinit
 #startTemp=288.15
 
 ! calculate wave speed (mm/sec)
-#P0=.101
+#P0=.101325
+#userel="no"
 #T0=288.15
-#rho0=0.001164
+#rho0=0.001225
+#atomic=2				! 1 monatomic, 2 diatomic
 #speed=1000000*sqrt(5000*#P0*#startTemp*#rho0/(3*#T0))
+
+! For N2 in mm^6 MPa/mol and mm^3/mol
+#vdwa=40*1.37e11
+#vdwb=20*0.0387e6
+#rho0/=0.93265276
+#vdwa=-1
+
+! Gas viscosity (if mu0>0)
+#mu0=0.0176
+#Smu=111
+#mu0=-1
+
+! To try free expansion
+! Only set up for 2D with walls (easy to add to others)
+#free="yes"
+if #free="yes"
+  !XMLData "MPMHeader"
+  !  <RestartScaling CFL='.01'>-.1</RestartScaling>
+  !EndXMLData
+endif
 
 #transit=1000*#length/#speed             ! transit time in ms
 #time=#tmult*#transit                    ! time to peak load in ms
@@ -51,65 +77,134 @@ if #totalHeat>0
 else
   #constP=-1
 endif
-conduction "Yes",#mode$
+conduction "Yes",#mode
 
 if #constP<0
-    Comment "Displacement rate = "&(#disprate/1000)&" m/s"
-    Comment "Strain (%) = "&(100*#disprate/#length/1000)&"*x (x is time in ms)"
+  Comment "Displacement rate = "&(#disprate/1000)&" m/s"
+  Comment "Strain (%) = "&(100*#disprate/#length/1000)&"*x (x is time in ms)"
 endif
 
 ! Print some theories for gas only (do not apply to liquids yet and assumed monotonic)
 ! strain vs time
 #et=#disprate/(1000*#length)
-if #mode$="Isothermal"
-  Comment "Temperature = "&#T0
-  Comment "Stress = "&(-#P0)&"/(1+("&#et&")*x) (x is time in ms)"
-  Comment "Work = "&(-#P0*#length*#ywidth*#zwidth/1000)&"*log(1+("&#et&")*x) (x is time in ms)"
-  Comment "Heat = -Work"
-  Comment "Entropy = "&(#P0*#length*#ywidth*#zwidth/(1000*#T0))&"*log(1+("&#et&")*x) (x is time in ms)"
+#Pi=#P0*#startTemp/#T0
+! Factor 1000 to converted implied rho to g/mm^3
+#vol=#length*#ywidth*#zwidth/1000
+if #vdwa>0
+  #P0Pa=#P0*1e6
+  #R=8.31446261815324e9
+  #V0=#R*#T0/#P0Pa
+  #abar=#vdwa*1e6/(#V0*#V0)
+  #bbar=#vdwb/#V0
+  #xn=1
+  Repeat "#i",1,10
+    #axbar = #abar/(#xn*#xn)
+    #fxn = (#P0Pa+#axbar)*(#xn-#bbar)-#P0Pa
+    #fpxn = #P0Pa - #axbar + 2.*#axbar*#bbar/#xn
+    #dxn=#fxn/#fpxn
+    #xn-=#dxn
+    !write "i="&#i&", xn="&#xn&", fx0="&#fxn&", dxn="&#dxn
+    if abs(#dxn)<1.e-8
+      break
+    endif
+  EndRepeat
+  Comment "Van der Waals V/n/Ideal V/n = "&#xn
+  #V0n=#xn*#V0
+  #aprime = #vdwa/(#V0n*#V0n)
+  #bprime = #vdwb/#V0n
+  #P0prime=(#P0+#aprime)*(1-#bprime)
+  #Pi=#P0prime*#startTemp/#T0
+endif
+
+if #userel="no"
+  #P0th=0
 else
-  Comment "Temperature = "&#T0&"/(1+("&#et&")*x)^(2/3) (x is time in ms)"
-  Comment "Stress = "&(-#P0)&"/(1+("&#et&")*x)^(5/3) (x is time in ms)"
-  Comment "Work = "&(1.5*#P0*#length*#ywidth*#zwidth/1000)&"*(1/(1+("&#et&")*x)^(2/3)-1) (x is time in ms)"
+  #P0th=#P0
+endif
+if #mode="Isothermal"
+  Comment "Temperature = "&#startTemp
+  if #vdwa>0
+    Comment "Stress = "&(-#Pi)&"/(1+("&#et&")*x-"&#bprime&")+"&#P0th&"+"&#aprime&"/(1+("&#et&")*x)^2 (x is time in ms)"
+    Comment "Internal Energy = "&(#aprime*#vol)&"*(1-1/(1+("&#et&")*x)) (x is time in ms)"
+    Comment "Work = "&(-#Pi*#vol)&"*log((1+("&#et&")*x-"&#bprime&")/(1-"&#bprime&"))+"&(#aprime*#vol)&"*(1-1/(1+("&#et&")*x)) (x is time in ms)"
+    Comment "Heat = "&(#Pi*#vol)&"*log((1+("&#et&")*x-"&#bprime&")/(1-"&#bprime&")) (x is time in ms)"
+    Comment "Entropy = "&(#P0prime*#vol/#T0)&"*log((1+("&#et&")*x-"&#bprime&")/(1-"&#bprime&")) (x is time in ms)"
+  else
+    Comment "Stress = "&(-#Pi)&"/(1+("&#et&")*x)+"&#P0th&" (x is time in ms)"
+    Comment "Internal Energy = 0"
+    Comment "Work = "&(-#Pi*#vol)&"*log(1+("&#et&")*x) (x is time in ms)"
+    Comment "Heat = -Work"
+    Comment "Entropy = "&(#P0*#vol/#T0)&"*log(1+("&#et&")*x) (x is time in ms)"
+  endif  
+else
+  if #atomic<=1
+    #gam=5/3
+  else
+    #gam=7/5
+  endif
+  #gam1=#gam-1
+  if #vdwa>0
+    Comment "Stress = "&(-#Pi)&"*(1-"&#bprime&")^("&#gam1&")/(1+("&#et&")*x-"&#bprime&")^("&#gam&")+"&#P0th&"+"&#aprime&"/(1+("&#et&")*x)^2 (x is time in ms)"
+    Comment "Temperature = "&#startTemp&"*(1-"&#bprime&")^("&#gam1&")/(1+("&#et&")*x-"&#bprime&")^("&#gam1&") (x is time in ms)"
+    Comment "Work = "&(#Pi*#vol/#gam1)&"*((1-"&#bprime&")^("&#gam1&")/(1+("&#et&")*x-"&#bprime&")^("&#gam1&")-1) (x is time in ms)"
+  else
+    Comment "Temperature = "&#startTemp&"/(1+("&#et&")*x)^("&#gam1&") (x is time in ms)"
+    Comment "Stress = "&(-#Pi)&"/(1+("&#et&")*x)^("&#gam&")+"&#P0th&" (x is time in ms)"
+    Comment "Work = "&(#Pi*#vol/#gam1)&"*(1/(1+("&#et&")*x)^("&#gam1&")-1) (x is time in ms)"
+  endif
+  Comment "Internal Energy = Work"
   Comment "Heat = 0"
   Comment "Entropy = 0"
 endif
 
 ! Archiving
-Archive "Results/"&#matID$
-TimeStep 1000,#time,.05
+Archive "Results/"&#matID
+TimeStep 1000,#time,#cfl
 ArchiveTime #time/40
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain,temperature,history1,heatenergy
 
 ! ********** Materials Section **********
-if #matID$="idealgas"
-  Material #matID$,"Ideal Gas","idealgas"
+if #matID="idealgas"
+  Material #matID,"Ideal Gas","idealgas"
     rho #rho0
-    P0 #P0
+    if #userel="no"
+      P0 #P0
+    endif
     T0 #T0
     kCond 300
+    Cv #atomic
+    if #vdwa>=0
+      vdwa #vdwa
+      vdwb #vdwb
+    endif
+    if #mu0>0
+      mu0 #mu0
+      Smu #Smu
+    endif
   Done
 endif
 
-! Pistonc
-Material "rigid","Loading Clamp","Rigid"
-  direction 1
-  SettingFunction #disprate
-  mirrored 1
-Done
+if #walls="RigidBCs"
+  ! Piston
+  Material "rigid","Loading Clamp","Rigid"
+    direction 1
+    SettingFunction #disprate
+    mirrored 1
+  Done
 
-Material "floor","Wall","Rigid"
-  direction 1
-  mirrored -1
-Done
+  Material "floor","Wall","Rigid"
+    direction 1
+    mirrored -1
+  Done
 
-Material "wally","Wall","Rigid"
-  direction 2
-Done
+  Material "wally","Wall","Rigid"
+    direction 2
+  Done
 
-Material "wallz","Wall","Rigid"
-  direction 4
-Done
+  Material "wallz","Wall","Rigid"
+    direction 4
+  Done
+endif
 
 if #constP>0
   Material "plug","Isotropic","Isotropic"
@@ -121,14 +216,14 @@ if #constP>0
 endif
 
 ! global archive
-GlobalArchive sxx,#matID$
-GlobalArchive exx,#matID$
-GlobalArchive "Strain Energy",#matID$
-GlobalArchive "Entropy",#matID$
-GlobalArchive "Heat Energy",#matID$
-GlobalArchive "Work Energy",#matID$
-GlobalArchive "Internal Energy",#matID$
-GlobalArchive "temp",#matID$
+GlobalArchive sxx,#matID
+GlobalArchive exx,#matID
+GlobalArchive "Strain Energy",#matID
+GlobalArchive "Entropy",#matID
+GlobalArchive "Heat Energy",#matID
+GlobalArchive "Work Energy",#matID
+GlobalArchive "Internal Energy",#matID
+GlobalArchive "temp",#matID
 GlobalArchiveTime #time/100
 
 ! ********** Grid and Material Points Section **********
@@ -145,49 +240,77 @@ endif
 #xcells=int((#length+#excess)/#cell+.5)+1
 GridHoriz #xcells
 GridVert #ycells
-if #analysis$="3D MPM"
+if #analysis="3D MPM"
   GridDepth #zcells
   GridRect -#cell,#length+#excess,-2*#cell,#ywidth+2*#cell,-2*#cell,#zwidth+2*#cell
 
-  Region #matID$,0,0,0,"temp",#startTemp
+  Region #matID,0,0,0,"temp",#startTemp
     Box 0,#length,0,#ywidth,0,#zwidth
   EndRegion
 
-  Region "floor",0,0,0
-    Box -#cell,0,-2*#cell,#ywidth+2*#cell,-2*#cell,#zwidth+2*#cell
-  EndRegion
+  if #walls="RigidBCs"
+    Region "floor",0,0,0
+      Box -#cell,0,-2*#cell,#ywidth+2*#cell,-2*#cell,#zwidth+2*#cell
+    EndRegion
 
-  Region "wally",0,0,0
-    Box 0,#length,-#cell,0,-#cell,#zwidth+#cell
-    Box 0,#length,#ywidth,#ywidth+#cell,-#cell,#zwidth+#cell
-  EndRegion
-  Region "wallz",0,0,0
-    Box 0,#length,0,#ywidth,-#cell,0
-    Box 0,#length,0,#ywidth,#zwidth,#zwidth+#cell
-  EndRegion
+    Region "wally",0,0,0
+      Box 0,#length,-#cell,0,-#cell,#zwidth+#cell
+      Box 0,#length,#ywidth,#ywidth+#cell,-#cell,#zwidth+#cell
+    EndRegion
+    Region "wallz",0,0,0
+      Box 0,#length,0,#ywidth,-#cell,0
+      Box 0,#length,0,#ywidth,#zwidth,#zwidth+#cell
+    EndRegion
 
-  Region "rigid",1,0,0
-    Box #length,#length+#cell,-2*#cell,#ywidth+2*#cell,-2*#cell,#zwidth+2*#cell
-  EndRegion
+    Region "rigid",1,0,0
+      Box #length,#length+#cell,-2*#cell,#ywidth+2*#cell,-2*#cell,#zwidth+2*#cell
+    EndRegion
+  else
+    Stop "Wall BCs not implements in 3D yet"
+  endif
 
 else
   GridThickness #zwidth
   GridRect -#cell,#length+#excess,-2*#cell,#ywidth+2*#cell
 
-  Region #matID$,0,0,#zwidth,"temp",#startTemp
-    Rect 0,#length,0,#ywidth
+  if #free="yes"
+    #left=#length/2
+  else
+    #left = 0
+  endif
+  Region #matID,0,0,#zwidth,"temp",#startTemp
+    Rect #left,#length,0,#ywidth
   EndRegion
 
-  Region "floor",0,0, #zwidth
-    Rect -#cell,0,-2*#cell,#ywidth+2*#cell
-  EndRegion
+  if #walls="RigidBCs"
+    Region "floor",0,0, #zwidth
+      Rect -#cell,0,-2*#cell,#ywidth+2*#cell
+    EndRegion
 
-  Region "wally",0,0, #zwidth
-    Rect 0,#length+#excess,-#cell,0
-    Rect 0,#length+#excess,#ywidth,#ywidth+#cell
-  EndRegion
+    Region "wally",0,0, #zwidth
+      Rect 0,#length+#excess,-#cell,0
+      Rect 0,#length+#excess,#ywidth,#ywidth+#cell
+    EndRegion
+  else
+    GridBC
+      Line 0,0,-2*#cell,#ywidth+2*#cell
+      if #free="yes"
+        Velocity "x","gradient",0,0,-1.5
+      else
+        Velocity "x","gradient",0,0,-1.5,#disprate/#length
+      endif
+    EndGridBC
+    GridBC
+      Line -2*#cell,#length+#excess,#ywidth,#ywidth
+      Velocity "y","gradient",0,0,1.5
+    EndGridBC
+    GridBC
+      Line -2*#cell,#length+#excess,0,0
+      Velocity "y","gradient",0,0,-1.5
+    EndGridBC
+  endif
 
-  ! Load by traction for constant P or load witgh strain rate
+  ! Load by traction for constant P or load with strain rate
   if #constP>0
     Region "plug",0,0,#zwidth
       Rect #length,#length+2*#cell,0,#ywidth
@@ -197,32 +320,56 @@ else
       Traction "x",2,"constant",-0.101
     EndParticleBC
   else
-    Region "rigid",1,0, #zwidth
-      Rect #length,#length+#cell,-2*#cell,#ywidth+2*#cell
-    EndRegion
+    if #walls="RigidBCs"
+      Region "rigid",1,0, #zwidth
+        Rect #length,#length+#cell,-2*#cell,#ywidth+2*#cell
+      EndRegion
+    else
+      GridBC
+        Line #length,#length,-2*#cell,#ywidth+2*#cell
+        if #free="yes"
+          Velocity "x","gradient",0,0,1.5	 ! to stop piston
+        else
+          Velocity "x","gradient",#disprate,0,1.5,#disprate/#length,(#disprate/1000)&"*t"
+        endif
+      EndGridBC
+    endif
   endif
   
   if #totalHeat>0
-     #area=2*(#length+#ywidth)*#zwidth/1e6   ! in m^2
-  	 #dQ=1000*#totalHeat/(#time*#area)		  ! J/(m^2-s)
-  	 ParticleBC
-       Line #cell/4,#cell/4,0,#ywidth
-       HeatFlux "external",4,"constant",#dQ
-     EndParticleBC
-     ParticleBC
-       Line #length-#cell/4,#length-#cell/4,0,#ywidth
-       HeatFlux "external",2,"constant",#dQ
-     EndParticleBC
-     ParticleBC
-       Line 0,#length,#cell/4,#cell/4
-       HeatFlux "external",1,"constant",#dQ
-     EndParticleBC
-     ParticleBC
-       Line 0,#length,#ywidth-#cell/4,#ywidth-#cell/4
-       HeatFlux "external",3,"constant",#dQ
-     EndParticleBC
+    #area=2*(#length+#ywidth)*#zwidth/1e6   ! in m^2
+    #dQ=1000*#totalHeat/(#time*#area)		  ! J/(m^2-s)
+    ParticleBC
+      Line #cell/4,#cell/4,0,#ywidth
+      HeatFlux "external",4,"constant",#dQ
+    EndParticleBC
+    ParticleBC
+      Line #length-#cell/4,#length-#cell/4,0,#ywidth
+      HeatFlux "external",2,"constant",#dQ
+    EndParticleBC
+    ParticleBC
+      Line 0,#length,#cell/4,#cell/4
+      HeatFlux "external",1,"constant",#dQ
+    EndParticleBC
+    ParticleBC
+      Line 0,#length,#ywidth-#cell/4,#ywidth-#cell/4
+      HeatFlux "external",3,"constant",#dQ
+    EndParticleBC
   endif
 endif
 
 CustomTask AdjustTimeStep
 Parameter verbose,1
+if #free="yes"
+  Parameter maxIncrease,0.1
+endif
+
+if #xpic!=0
+  CustomTask "PeriodicXPIC"
+  if #xpic<0
+    Parameter "XPICOrder",-#xpic
+  else
+    Parameter "FMPMOrder",#xpic
+  endif
+  Parameter "periodicSteps",1
+endif

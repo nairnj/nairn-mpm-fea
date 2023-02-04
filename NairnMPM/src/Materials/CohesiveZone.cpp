@@ -4,17 +4,17 @@
  
     This material is parent class of any traction law that has an initial
     linear elastic region. It adds parameters for slope and displacement
-    at end of linear elatic regime. This instands implements a sawtooth
+    at end of linear elatic regime. This instance implements a sawtooth
     (or triangular law).
  
     This material uses decoupled mode I and mode II (e.g., see work of
     Thouless and others). If either mode exceeds its critical COD, that it debonds.
-    If neither does, this decoupled approach need a failure criterion. The
+    If neither does, this decoupled approach needs a failure criterion. The
     one used is
  
-    (GI/GIc)^n + (GII/GIIc)^n = 1
+       (GI/GIc)^n + (GII/GIIc)^n = 1
  
-    Seom subclasses of this class implemeted coupled methods
+    Some subclasses of this class implemeted coupled methods
  
     Created by John Nairn on 3/21/08.
     Copyright (c) 2008 John A. Nairn, All rights reserved.
@@ -102,7 +102,7 @@ void CohesiveZone::PrintMechanicalProperties(void) const
 // history variables:
 // h[0=CZ_DELN] is max mode I opening (starting at first peak location)
 // h[1=CZ_DELT] is max mode II opening (starting at first peak location)
-char *CohesiveZone::InitHistoryData(char *pchr)
+char *CohesiveZone::InitHistoryData(char *pchr,MPMBase *mptr)
 {
     numTractionHistory = 2;
     double *p = CreateAndZeroDoubles(pchr,2);

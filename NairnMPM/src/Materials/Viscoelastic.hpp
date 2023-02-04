@@ -33,7 +33,8 @@ class Viscoelastic : public MaterialBase
 	
 		// history data
 		virtual char *InitHistoryData(char *,MPMBase *);
-        virtual int NumberOfHistoryDoubles(void) const;
+		virtual void ResetHistoryData(char *,MPMBase *);
+		virtual int NumberOfHistoryDoubles(void) const;
 	
 		// const methods
 		virtual void PrintMechanicalProperties(void) const;
@@ -85,11 +86,6 @@ class Viscoelastic : public MaterialBase
         double Tref,C1,C1base10,C2;
         double mref,Cm1,Cm2,Cm1base10,Cm2base10;
 
-#ifdef OSPARTICULAS
-        // Mechno-sorption properties
-        double kMS,Cms1,Cms2,Cms1base10,Cms2base10;
-#endif
-    
         // history variables
         int numJHistory,numHistory;
 };

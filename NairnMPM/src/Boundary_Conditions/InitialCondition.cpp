@@ -22,6 +22,7 @@ InitialCondition::InitialCondition(int cType,int num) : MatPtLoadBC(num,1,1)
     icType = cType;
     dnorm = MakeVector(1.,0.,0.);
     dvals = MakeVector(0.,0.,0.);
+	phaseField = -1.;
 }
 
 #pragma mark InitialCondition: Methods
@@ -67,5 +68,11 @@ Vector InitialCondition::GetDamageParams(double &mode)
 {	mode = dmode;
 	return dvals;
 };
+
+// set phase field set and get
+void InitialCondition::SetInitialPhaseField(double pf)
+{	phaseField = pf;
+}
+double InitialCondition::GetPhaseField(void) { return phaseField; }
 
 

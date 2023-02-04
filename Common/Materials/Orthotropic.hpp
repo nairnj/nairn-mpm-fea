@@ -6,7 +6,7 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 
 	Dependencies
-		TranIsotropic.hpp (MaterialBase.hpp)
+		TranIsotropic.hpp (Elastic.hpp MaterialBase.hpp)
 ********************************************************************************/
 
 #ifndef ORTHO

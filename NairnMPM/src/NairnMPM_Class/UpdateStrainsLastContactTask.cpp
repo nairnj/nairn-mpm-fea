@@ -104,7 +104,6 @@ bool UpdateStrainsLastContactTask::Execute(int taskOption)
 					vfld = mpmptr->vfld[i];
 					ndptr->AddMassMomentumLast(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
 				}
-				
 				// next material point
 				mpmptr = (MPMBase *)mpmptr->GetNextObject();
 			}

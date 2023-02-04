@@ -426,13 +426,23 @@ int ElementsController::ElementSides(void)
 ********************************************************************************/
 
 int ElementsController::CurrentElemID(void) { return currentElemID; }
-bool ElementsController::SetElemIDStr(char *value,int eblock)
+
+// Only called from FEA code
+bool ElementsController::SetElemIDStr(char *value)
 {	int tempID;
 	sscanf(value,"%d",&tempID);
-	if(eblock==CRACKELEMENTLIST) return tempID==CS_TRIANGLE;
-	return SetCurrentElemID(tempID,eblock);
+	return SetCurrentElemID(tempID);
 }
-bool ElementsController::SetCurrentElemID(int elemID,int eblock)
+
+// only called from MPM, but might be ELEMENTLIST or 3D CRACKELEMENTLIST
+bool ElementsController::SetElemIDCodes(int elemID,int eblock)
+{	if(eblock!=CRACKELEMENTLIST) return SetCurrentElemID(elemID);
+	// here for 3D cracks - requireds triangle elements
+	return elemID==CS_TRIANGLE;
+}
+
+// Set next element ID for mesh element
+bool ElementsController::SetCurrentElemID(int elemID)
 {
 	int oldElemID=currentElemID;
 	currentElemID=elemID;

@@ -45,15 +45,15 @@ bool UpdateMomentaTask::Execute(int taskOption)
 {	
 #pragma omp parallel for
 	for(int i=1;i<=*nda;i++)
-	{	NodalPoint *ndptr = nd[nda[i]];
-		
+	{   NodalPoint *ndptr = nd[nda[i]];
+        
 		// update nodal momenta
 		ndptr->UpdateMomentum(timestep);
-		
-		// get grid transport rates
+        
+        // get grid transport rates
 		TransportTask::UpdateTransportOnGrid(ndptr);
 	}
-	
+
 	// contact and BCs
 	ContactAndMomentaBCs(UPDATE_MOMENTUM_CALL);
 	
@@ -65,18 +65,35 @@ bool UpdateMomentaTask::Execute(int taskOption)
     return true;
 }
 
-// do contact calculations and impose momenta conditions
+// Do contact calculations and impose momenta conditions
 // passType == MASS_MOMENTUM_CALL, UPDATE_MOMENTUM_CALL, UPDATE_STRAINS_LAST_CALL
+// For MASS_MOMENTUM_CALL and UPDATE_STRAINS_LAST_CALL, always impose momenta conditions, but:
+//		MASS_MOMENTUM_CALL only does symetry BCs if using USL- or USL+ because no strain being found
+//		UPDATE_STRAINS_LAST_CALL only occurs for USL+ and USAVG+
+//		These only change p that is needed for subsequent strain update
+// For UPDATE_MOMENTUM_CALL, update gets correct momenta, so only done if contact
+//		might have change them (and change p and f to keep consistent)
 void UpdateMomentaTask::ContactAndMomentaBCs(int passType)
 {
 	// material contact
-	MaterialContactNode::ContactOnKnownNodes(timestep,passType);
+	bool hasContact = MaterialContactNode::ContactOnKnownNodes(timestep,passType);
 	
 	// adjust momenta and forces for crack contact on known nodes
-	CrackNode::ContactOnKnownNodes(timestep,passType);
+	hasContact = CrackNode::ContactOnKnownNodes(timestep,passType) ? true : hasContact;
+    
+    // In theory, if the above did not change momenta (i.e., hasCracks=false) and this
+    // if the UPDATE_MOMENTUM_CALL, the velocity should be correct (the update should
+    // have changed initial velocities into final velocites. In other words, the
+    // code can exit. A method equivalent to follow call was add in revision 3158
+    // of OSPARTICULAS. It was noticed in revision 3618 that exiting now changed
+    // the results. I am not sure which method is best, but it is likly there is
+    // no problem making sure velocities are exact as set. The following line
+    // was therefore commented out in revision 3619
+    //if(UPDATE_MOMENTUM_CALL && !hasContact) return;
 
-	// Reimmpose velocity BCs (if needed)
-	// Probably needed if have contact or mirrored BCs
+	// For FLIP, reimpose velocity BCs. For FMPM impose them unless using option
+    // that only does velocity BCs in the particle update
 	if(bodyFrc.GetXPICOrder()<=1 || bodyFrc.GridBCOption()!=GRIDBC_VELOCITY_ONLY)
-		NodalVelBC::GridVelocityConditions(passType);
+    {	NodalVelBC::GridVelocityConditions(passType);
+    }
 }

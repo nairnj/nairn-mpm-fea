@@ -28,7 +28,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		virtual double GetTotalMassAndCount(bool &);
 	
 		virtual void AddFtotSpreadTask3(Vector *);
-		virtual void AddGravityAndBodyForceTask3(Vector *,double,double);
+		virtual void AddGravityAndBodyForceTask3(Vector *);
 #ifdef RESTART_OPTION
         virtual bool IsTravelTooMuch(double,double) const;
 #endif
@@ -63,6 +63,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 	
 		// XPIC
 		virtual void XPICSupport(int,int,NodalPoint *,double,int,int,double);
+	
 };
 
 #endif

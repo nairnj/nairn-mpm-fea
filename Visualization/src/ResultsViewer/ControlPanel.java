@@ -19,8 +19,8 @@ public class ControlPanel extends JPanel
 	//----------------------------------------------------------------------------
 	// variables and constants
 	//----------------------------------------------------------------------------
-	static final int TOP_MARGIN=10;
-	static final int LEFT_MARGIN=10;
+	static final int TOP_MARGIN=16;
+	static final int LEFT_MARGIN=16;
 	static final int ROW_SPACING=24;
 	static final int COL_SPACING=16;
 	static final int WIDTH=340;
@@ -29,7 +29,7 @@ public class ControlPanel extends JPanel
 	
 	private LoadArchive load;
 	private TimeSelector selectTime;
-	private PlotQuantity quantity;
+	public PlotQuantity quantity;
 	private PlotOptions options;
 	private TimePlotOptions timeoptions;
 	private CrackSelector thecrack;
@@ -116,14 +116,14 @@ public class ControlPanel extends JPanel
 		Graphics2D g2=(Graphics2D)g;
 		
 		// fill background (and erase prior view)
-		g2.setColor(Color.gray);
+		g2.setColor(new Color(0.617f,0.685f,0.791f));
 		Dimension d=getSize();
 		g2.fill(new Rectangle2D.Double(0.,0.,(double)d.width,(double)d.height));
 		
 		int selected=load.getSelected();
 		
-		g2.setColor(Color.blue);
-		g2.setStroke(new BasicStroke((float)2.));
+		g2.setColor(new Color(1.0f,0.0f,0.0f));
+		g2.setStroke(new BasicStroke((float)3.));
 		switch(selected)
 		{	case LoadArchive.PARTICLE_PLOT:
 			case LoadArchive.MESH_PLOT:
@@ -234,14 +234,16 @@ public class ControlPanel extends JPanel
 	// call when select new plot option and may need to adjust controls
 	public void hiliteControls()
 	{
+		// type of plot 0,1,2,3 (-1 is no plot)
 		int selected=load.getSelected();
+		
 		quantity.setEnabled(selected);
 		selectTime.setEnabled(selected);
 		options.setEnabled(selected);
 		
-		int plotComponent=getPlotComponent(selected);
+		int plotComponent=getPlotComponent(selected,false,null);
 		thelimits.setEnabled(selected,plotComponent);
-		timeoptions.setEnabled(selected,plotComponent,docCtrl.resDoc.isMPMAnalysis());
+		timeoptions.setEnabled(selected,plotComponent,docCtrl.resDoc);
 		thecrack.setEnabled(selected,plotComponent);
 		
 		plotOpened();
@@ -254,8 +256,8 @@ public class ControlPanel extends JPanel
 	// call when select new plot component
 	public void changeComponent()
 	{	int selected=load.getSelected();
-		int plotComponent=getPlotComponent(selected);
-		timeoptions.setEnabled(selected,plotComponent,docCtrl.resDoc.isMPMAnalysis());
+		int plotComponent=getPlotComponent(selected,false,null);
+		timeoptions.setEnabled(selected,plotComponent,docCtrl.resDoc);
 		thecrack.setEnabled(selected,plotComponent);
 		/*
 		// include this to replot on each menu change in control panel, but user might
@@ -286,14 +288,27 @@ public class ControlPanel extends JPanel
 	{	launch.progress.setValue(thisSteps);
 	}
 	
+	public boolean isPlotting()
+	{	return launch.progress.isEnabled();
+	}
+	
 	//----------------------------------------------------------------------------
 	// accessors
 	//----------------------------------------------------------------------------
 	
 	// get plot wanted
-	public int getPlotComponent(int selected) { return quantity.getPlotComponent(selected); }
+	public int getPlotComponent(int selected,boolean getExpression,ISDictType settings)
+	{	return quantity.getPlotComponent(selected,getExpression,settings);
+	}
 	public JComboBox<PlotMenuItem> getQuantityMenu() { return quantity.quant; }
 	public JComboBox<String> getComponentMenu() { return quantity.cmpnt; }
+	public String getExpression() { return quantity.getExpression(); }
+	public double evaluateExpressionMP(MaterialPoint mptr,double angle,ResultsDocument doc)
+	{	return quantity.evaluateExpressionMP(mptr,angle,doc);
+	}
+	public double evaluateExpressionNode(ElementBase eptr,int ndi,double angle,ResultsDocument doc)
+	{	return quantity.evaluateExpressionNode(eptr,ndi,angle,doc);
+	}
 	
 	// set to item for checking the mesh
 	public void setCheckMeshItem() { quantity.setCheckMeshItem(); }
@@ -310,15 +325,55 @@ public class ControlPanel extends JPanel
 	
 	// get current plotting type
 	public int getPlotType() { return load.getSelected(); }
+	public void changePlotType(int newType) { load.changeSelected(newType); }
 	
 	// get particle number option for time plots
-	public int getParticleNumber() throws Exception { return timeoptions.getParticleNumber(); }
+	public int getParticleNumber(ISDictType settings) throws Exception
+	{	if(settings==null)
+			return timeoptions.getParticleNumber();
+	
+		// default if xy plot
+		String ptype = (String)settings.gcis_objectForKey("plottype");
+		if(ptype.contentEquals("xyplot")) return 1;
+	
+		// get material option, then wif needed get material or point number
+		int mopt = settings.gcis_integerForKey("materialoption");
+		if(mopt==1 || mopt==3)
+			return 0;
+		else if(mopt==2 || mopt==4)
+			return -settings.gcis_integerForKey("materialnumber");
+		else
+			return settings.gcis_integerForKey("initialpoint");
+	}
 	
 	// get particle number option for time plots
-	public int getCrackNumber() throws Exception { return thecrack.getCrackNumber(); }
+	public boolean getAveraging(ISDictType settings) throws Exception
+	{ 	if(settings==null)
+			return timeoptions.getAveraged();
+	
+		// default if xy plot
+		String ptype = (String)settings.gcis_objectForKey("plottype");
+		if(ptype.contentEquals("xyplot")) return true;
+
+		// default to true if needed
+		int mopt = settings.gcis_integerForKey("materialoption");
+		if(mopt==1 || mopt==2) return true;
+		return false;
+	}
 	
 	// get particle number option for time plots
-	public int getCrackTip() { return thecrack.getCrackTip(); }
+	public int getCrackNumber(ISDictType settings) throws Exception
+	{ 	if(settings==null)
+			return thecrack.getCrackNumber();
+		return settings.gcis_integerForKey("cracknumber");
+	}
+	
+	// get particle number option for time plots
+	public int getCrackTip(ISDictType settings) throws Exception
+	{	if(settings==null)
+			return thecrack.getCrackTip();
+		return settings.gcis_integerForKey("tipnumber");
+	}
 	
 	// adjust limits if desired
 	public Point2D.Double adjustLimits(double dmin,double dmax)
@@ -328,8 +383,9 @@ public class ControlPanel extends JPanel
 	}
 	
 	// for time plots, adjust for total options
-	public int adjustComponent(int theComponent) throws Exception
-	{	if(getParticleNumber()>0) return theComponent;
+	// skip if averaging has been set
+	public int adjustComponent(int theComponent,ISDictType settings) throws Exception
+	{	if(getParticleNumber(settings)>0 || getAveraging(settings)) return theComponent;
 		switch(theComponent)
 		{	case PlotQuantity.MPMSTRENERGY:
 				theComponent=PlotQuantity.MPMTOTSTRENERGY;
@@ -359,13 +415,38 @@ public class ControlPanel extends JPanel
 	}
 	
 	// get selected item for contour menu options
-	public int getContour() { return timeoptions.getContour(); }
+	// if settings, integer 0 to 6 (return -1 error on not set)
+	public int getContour(ISDictType settings)
+	{	if(settings==null)
+			return timeoptions.getContour();
+		try
+		{	return settings.gcis_integerForKey("variable");
+		}
+		catch(Exception e) { }
+		return -1;
+	}
 	
 	// get contour expression
-	public String getContourFunction() { return timeoptions.getContourFunction(); }
+	// if settings get string (return "" error if not set)
+	public String getContourFunction(ISDictType settings)
+	{	if(settings==null)
+			return timeoptions.getContourFunction();
+		String ct = (String)settings.gcis_objectForKey("contour");
+		if(ct==null) return "";
+		return ct;
+	}
 	
 	// get contour +/- range (or zero if empty)
-	public double getPlusMinus() throws Exception { return timeoptions.getPlusMinus(); }
+	// if settings return 0 if none provided
+	public double getPlusMinus(ISDictType settings) throws Exception
+	{	if(settings==null)
+			return timeoptions.getPlusMinus();
+		try
+		{	return settings.gcis_doubleForKey("contourrange");
+		}
+		catch(Exception e) { }
+		return 0.;
+	}
 	
 	//----------------------------------------------------------------------------
 	// static methods

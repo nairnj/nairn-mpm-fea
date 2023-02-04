@@ -67,7 +67,7 @@ CoupledSawTooth::CoupledSawTooth(char *matName,int matID) : CohesiveZone(matName
 
 #pragma mark CoupledSawTooth::Initialization
 
-// Read properteis (read read in super classes)
+// Read properties (read read in super classes)
 char *CoupledSawTooth::InputTractionLawProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"alpha")==0)
@@ -93,7 +93,7 @@ const char *CoupledSawTooth::VerifyAndLoadProperties(int np)
     if(model==EXPONENTIALTRACTIONMATERIAL)
     {   // adjust uc of each mode to keep Gc as input (or culculated)
         if(alpha<=0.)
-            return "Coupled xxponential cohesive laws must specify alpha > 0";
+            return "Coupled exponential cohesive laws must specify alpha > 0";
         expalpha = exp(-alpha);
         romexpalpha = 1./(1.-expalpha);
         double fealpha = 2.*(1./alpha - expalpha*romexpalpha);
@@ -143,7 +143,7 @@ void CoupledSawTooth::PrintMechanicalProperties(void) const
 // h[1=HOG_DW] is cumulative work
 // h[2=HOG_UN] is nCod stored to get dun on next step
 // h[3=HOG_UT] is tCod stored to get dut on next step
-char *CoupledSawTooth::InitHistoryData(char *pchr)
+char *CoupledSawTooth::InitHistoryData(char *pchr,MPMBase *mptr)
 {
     numTractionHistory = 4;
 	double *p = CreateAndZeroDoubles(pchr,numTractionHistory);

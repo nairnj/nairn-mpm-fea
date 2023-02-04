@@ -15,8 +15,12 @@ h2 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 	background-color: #CCCCCC; }
 h3 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
 	font-size: 12pt;
-	margin-left: 3pt;
+	margin-left: 6pt;
 	color: #005500;}
+h4 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	margin-left: 12pt;
+	color: #000000;}
 p { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
 	font-size: 12pt;
 	margin-top: 0pt;
@@ -64,7 +68,7 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 
 <div id="pagetitle"><h1>NairnFEAMPMViz Scripting Language</h1></div>
 
-<p>The same <a href="commands.html#language">interpretive language</a> used by <b>NairnFEAMPMViz</b> to set up FEA and MPM calculations can also be used to provide scripted control of this application to automate running of multiple calculations. This section explains how to create and run scripts and documents all application scripting commands. 
+<p>The same <a href="commands.html#language">interpretive language</a> used by <b>NairnFEAMPMViz</b> to set up FEA and MPM calculations can also be used to provide scripted control of this application to automate running of multiple calculations on interpretation of results. This section explains how to create and run scripts and documents all application scripting commands. 
 </p>
 
 <h2><a name="cindex"></a>Documentation Outline</h2>
@@ -73,10 +77,10 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 
 <ul>
 <li><a href="#create">Creating and Running a Script</a></li>
-<li><a href="#vars">Script Variables</a></li>
-<li><a href="#basic">Basic Scripting Commands</a></li>
-<li><a href="#objects">Scripting Commands for Objects</a></li>
-<li><a href="#properties">Object Properties</a></li>
+<li><a href="#vars">Script Object Variables</a></li>
+<li><a href="#properties">Object Type and Properties</a></li>
+<li><a href="#basic">Direct Scripting Commands</a></li>
+<li><a href="#objects">Object Commands for Scripts</a></li>
 </ul>
 
 <h2><a name="create"></a>Creating a Script</h2>
@@ -89,43 +93,275 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
-<h2><a name="vars"></a>Script Variables</h2>
+<h2><a name="vars"></a>Script Object Variables</h2>
 
-<p>Scripts allow standard numeric and string variables supported by the <a href="commands.html#language">interpretive language</a>. In addition, scripts define a new type of variable to represent "objects," which for <b>NairnFEAMPMViz</b> scripts are either commands documents or results documents. Commands documents are documents with commands to run FEA or MPM calculations and results documents are documents with the output results of calculations. Object variables must begin in a letter and can contain only letters, numbers, and the underscore character.</p>
+<p>Scripts allow standard numeric and string variables defined by the <a href="commands.html#language">interpretive language</a>. In addition, scripts define a new type of variable to represent "objects," which for <b>NairnFEAMPMViz</b> scripts are objects such as command documents, results documents, and <a href="#properties">more</a>. Object variables must begin in a letter and can contain only letters, numbers, and the underscore character.</p>
 
-<p>When a script tells a commands document to interpret its commands or to interpret and run calculations, all variables defined in the script are transferred to the document. The typical script will define variables to control a calculation and then run one or more calculations.</p>
+<p>Although not required in the <a href="commands.html#language">interpretive language</a>, it is recommended that all standard variables names in scripts start in a number sign ("#"). This approach insures scripts can distinguish object names from variable names and some scripting commands and methods only work correctly when used with variable names starting in "#".</p>
 
-<p>Most FEA and MPM commands documents are written as stand-alone documents, which means they define all their own variables. To allow such documents to use script-defined variables when run from a script but their own variables when run on their own, a running script will also define a read only variable named <code>_ScriptMode_</code>. Thus, an FEA or MPM commands document can contain a section like:</p>
+<p>Whenever an object name is needed for an existing object, such as when <a href="#objects">targeting a command</a> or as arguments for commands, the object name can be dereferenced through a variable by using <code>^#name</code>. The caret, <code>^</code>, means to use the object whose name is equal to the value of the provided variable (here <code>#name</code>).</p>
 
-<blockquote>ifNDef _ScriptMode_<br>
-  &nbsp;&nbsp;&nbsp;#myVar = 23<br>
-  &nbsp;&nbsp;&nbsp;(define variables to run as stand-alone file)<br>
-  &nbsp;&nbsp;&nbsp;...<br>
-endif</blockquote>
+<p>When writing internal scripts, object names are global. <a href="commands.html#subs">Subroutines</a> should be careful not to overwrite objects in the main commands. When writing a subroutine whose result is to define an object, the main commands can access any objects using the name defined in the subroutine. Because <a href="commands.html#subs">subroutine</a> arguments are only strings that are assigned to variables, passing an object to a subroutine must use one of the following two methods:</p>
+<pre>     Sub UseObject,#obj
+       GetObject obj,#obj
+       obj.0.get "#listItem"
+  
+       ! ... or directly dereference the object name
+       ^#obj.1.get passedObj
+     EndSub
 
-<p>When this FEA or MPM commands document is run in script control, the script will be expected to define all the variables defined in the above block and the commands document will use the script-defined variables instead of it's local variables. When that document is run by itself, however, it will execute the above section and define all variables need to run as a stand-alone file.</p>
+     CreateList mylist,"one string item",anObject
+     GoSub UseObject,"mylist"
+</pre>
+<p>The object name <code>mylist</code> is passed as a string that gets set to the subroutine variable <code>#obj</code>. The GetObject command evaluates that variable as an object name and then sets <code>obj</code> to that object. Alternatively, the object can be directly dereferenced with <code>^#obj</code>.</p>
 
-<h2><a name="basic"></a>Basic Scripting Commands</h2>
 
-<p>These are the basic scripting commands.</p>
+<h2><a name="properties"></a>Object Types and Properties</h2>
+
+<p>This section defines all the objects supported by internal scripts. Each object type may have "properties", "to-one attributes", or "to-many attributes". Once you have an object in an <a href="#vars">object variable</a> you can read its properties and attributes by the following methods:
+<p>
+
+<ul>
+<li><b>Properties</b>: object "properties" are strings or numbers related to an object. You can read properties using <a href="commands.html#atexp">"At" expressions</a> such as <code>@resdoc.energy</code> where <code>resdoc</code> is an object name for a <a href="#rdocs">Results Document</a> and "energy" is the property to be read. When using <a href="#list">lists</a>, one can extract an object from the list and then get a property of that object using:
+<pre>    #var = @mylist.3.energy
+</pre>
+This use assumes <code>mylist</code> is a <a href="#list">list</a> object and the item at index 3 of that list is a <a href="#rdocs">Results Document</a>. If items in a list are strings or numbers (instead of objects), they can directly be set to a variable using:
+<pre>    #var = @mylist.2
+</pre>
+</li>
+
+<li><b>To-One Attributes</b> and <b>To-Many Attributes</b>: "To-one attributes" are single objects related to an object while "To-many attributes" are lists of objects, strings, or numbers related to an object. These attributes are both accessed using the <code>get</code> command described <a href="#get">below</a>.
+</li>
+</ul>
+
+<p>The following objects are available when writing scripts:</p>
+<ul>
+<li><a href="#app">NairnFEAMPMViz Application</a></li>
+<li><a href="#cdocs">Command Documents</a></li>
+<li><a href="#rdocs">Results Documents</a></li>
+<li><a href="#mpmarchive">MPM Archive</a></li>
+<li><a href="#list">List</a></li>
+<li><a href="#dict">Dictionary</a></li>
+<li><a href="#none">None Type</a></li>
+</ul>
+
+<h3><a name="app"></a>NairnFEAMPMViz Application</h3>
+
+<p>All scripts will have object variable <code>nfmapp</code> automatically assigned the the main application objects. You can use <code>nfmapp</code> to access application properties.</p>
+
+<h4>Properties</h4>
+
+<ul>
+<li><b>name</b> (r/o) : "NairnFEAMPMViz" or "NairnFEAMPMViz-OSP" or "NairnFEAMPM" (the last is when running an internal script in the NairnFEAMPM Mac application instead of this Java application).</li>
+
+<li><b>version</b> (r/o) : The current version running</li>
+
+<li><b>class</b> (r/o) : "application"</li>
+
+</ul>
+
+<h4>To-One Attributes</h4>
+
+<ul>
+<li><b>frontCommandDocument</b> : the front-most opened <a href="#cdocs">Command document</a> not counting the currently-running script.</li>
+<li><b>frontResultsDocument</b> : the front-most opened <a href="#rdocs">Results document</a></li>
+</ul>
+
+<h4>To-Many Attributes</h4>
+
+<ul>
+<li><b>commandDocuments</b> : an ordered <a href="#list">list</a> of opened <a href="#cdocs">Command documents</a>. Item 0 is the front most command document. The list will not include the currently-running script, but may include other scripts (if any are open).</li>
+<li><b>resultsDocuments</b> : an ordered <a href="#list">list</a> of opened <a href="#rdocs">Results documents</a>. Item 0 is the front most results document.</li>
+</ul>
+
+<h3><a name="cdocs"></a>Command Documents</h3>
+
+<p>Command documents are documents with commands to run FEA or MPM calculations.</p>
+
+<h4>Properties</h4>
+
+<ul>
+<li><b>get.varName</b> (r/o) : FEA and MPM commands documents can read all variables defined in scripts, but any changes made to those variables are not communicated back to the script. Furthermore, the commands documents may define other variables that would be useful to know in a script. Once FEA or MPM commands have be interpreted or run, this "At" expression can read any variable, where <code>varName</code> is the variable to read.</li>
+
+<li><b>class</b> (r/o) : "CommandDocument"</li>
+
+<li><b>name</b> (r/o): The document's file name (or "Untitled" if it has never been saved)</li>
+<li><b>path</b> (r/o): The document's file path (or "" if it has never been saved)</li>
+<li><b>folder</b> (r/o) : The document's folder path (or "" if it has never been saved)</li>
+</ul>
+
+<h4>To-One Attributes</h4>
+
+<ul>
+<li>None</li>
+</ul>
+
+<h4>To-Many Attributes</h4>
+
+<ul>
+<li>None</li>
+</ul>
+
+<h3><a name="rdocs">ResultsDocuments</h3>
+
+<p>Results documents are documents with the output results of FEA or MPM calculations.</a> 
+
+<h4>Properties</h4>
+
+<ul>
+<li><b>section.(sectionName)</b> (r/o) : Returns the entire text to the section titled <code>(sectionName)</code>, which must be a string, a quoted string, or a string variable. The section names are the complete, case-sensitive text of the sections listed on the top left index of a results document. Hint: the text read from a section can be parsed using <a href="commands.html#debug"><code>Lines</code> and <code>Words</code> commands</a> and <a href="commands.html#varexp">string expressions</a>.</li>
+
+<li><b>energy</b> (r/o) : Returns the total strain energy in an FEA results document (assuming the output file contains the strain energy results). It is a common quantity to read when doing script control of FEA calculations.</li>
+
+<li><b>name</b> (r/o): The document's file name (or "Untitled" if it has never been saved)</li>
+<li><b>path</b> (r/o): The document's file path (or "" if it has never been saved)</li>
+<li><b>folder</b> (r/o) : The document's folder path (or "" if it has never been saved)</li>
+
+<li><b>class</b> (r/o) : "ResultsDocument"</li>
+
+</ul>
+
+<h4>To-One Attributes</h4>
+
+<ul>
+<li>None</li>
+</ul>
+
+<h4>To-Many Attributes</h4>
+
+<ul>
+<li><b>arhives</b> : a <a href="#list">list</a> of <a href="#mpmarchve">MPM archives</a> for the document</li>
+</ul>
+
+<h3><a name="mpmarchive"></a>MPM Archive</h3>
+
+<p>Information on one MPM archive file for the current <a href="#rdocs">Results document</a>.</p>
+
+<h4>Properties</h4>
+<ul>
+<li><b>filename</b> (r/o) : full path name to the archive file.</li>
+<li><b>time</b> (r/o) : the time for the archive.</li>
+<li><b>step</b> (r/o): the step number of the archive.</li>
+<li><b>class</b> (r/o) : "MPMAchive".</li>
+</ul>
+
+<h4>To-One Attributes</h4>
+<ul>
+<li>None</li>
+</ul>
+
+<h4>To-Many Attributes</h4>
+<ul>
+<li>None</li>
+</ul>
+
+<h3><a name="list"></a>Lists</h3>
+
+<p>A list object is a scripting tool for storing a collection of other objects, strings, or numbers.
+
+<h4>Properties</h4>
+
+<ul>
+<li><b>count</b> (r/o) : Number of items in the list. Lists are indexed with the first item being 0 and the last index being one less than this count.</li>
+
+<li><b>class</b> (r/o) : "list"</li>
+
+</ul>
+
+<h4>To-One Attributes</h4>
+
+<ul>
+<li>None</li>
+</ul>
+
+<h4>To-Many Attributes</h4>
+
+<ul>
+<li>None</li>
+</ul>
+
+<h3><a name="dict"></a>Dictionaries</h3>
+
+<p>Dictionaries store objects, strings, or numbers in key-value pairs.</p>
+
+<h4>Properties</h4>
+
+<ul>
+<li><b>count</b> (r/o) : Number of key-value pairs in the dictionary.</li>
+
+<li><b>class</b> (r/o) : "dictionary"</li>
+</ul>
+
+<h4>To-One Attributes</h4>
+
+<ul>
+<li>None</li>
+</ul>
+
+<h4>To-Many Attributes</h4>
+
+<ul>
+<li><b>allKeys</b>: A <a href="#list">list</a> containing all keys in the dictionary.</li>
+
+<li><b>allValues</b>: A <a href="#list">list</a> containing all values in the dictionary.</li>
+</ul>
+
+<h3><a name="none"></a>None Type</h3>
+
+<p>This object is returned by any "To-One" object attribute that does not have that connection and by several other commands when an object cannot be found. If <code>objName</code> is a "None" type object, the conditional <a href="commands.html#conditionals">ifDef objName</a> is false and the conditional <a href="commands.html#conditionals">ifNDef objName</a> is true. Alternatively, you can check for "None" type object by seeing if <code>@objName.class</code> is equal to "none".</p>
+
+<h4>Properties</h4>
+<ul>
+<li><b>class</b> : equal to "none"</li>
+</ul>
+
+<h4>To-One Attributes</h4>
+<ul>
+<li>None</li>
+</ul>
+
+<h4>To-Many Attributes</h4>
+<ul>
+<li>None</li>
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="basic"></a>Direct Scripting Commands</h2>
+
+<p>A direct scripting commmand is a command defined only when writing scripts. Furthermore, these command are stand alone, which means they do not need to specify a target object (those are <a href="#objects">object commands</a> defined below). All scripts must begin with the following command</p>
 
 <ul>
 <li><code>Script</code><br>
 This command must be the first command in a script. Its presence is how <b>NairnFEAMPMViz</b> knows to interpret the commands as a script rather than as commands to setup FEA or MPM calculations.</li>
+</ul>
+
+<p>The other direct commands are list here (in alphabetical order):</p>
+
+<ul>
+
+<li><code>CreateDictionary objName</code><br>
+Create a <a href="#dict">dictionary</a> object and set <code>objName</code> object name to the created dictionary.</li>
+
+<li><code>CreateList objName,&lt;(item1),(item2),...&gt;</code><br>
+Create a <a href="#list">list</a> object and set <code>objName</code> object name to the created list. If optional arguments are provided, they are added to the lists. Strings and numbers are added. If any paramaters match an existing object name, that object is added to the list.</li>
+
+<li><code>Export &lt;(path)&gt;</code><br>
+This command will save the contents of the script window's console pane
+to the file specified by <code>(path)</code>. The optional <code>(path)</code> can be a full path or a path relative to the script document. The folder to receive the output file must already exist.
+If <code>(path)</code> is omitted, the user is given a file-saving dialog box to select file name and save location.</li>
+
+<li><a name="getobject"></a><code>GetObject objName1,objName2[.#i]</code><br>
+Because object names cannot be used in expressions, this command provides the equivalent of <code>objName1 = objName2[.#i]</code> when needed. If <code>objName2[.#i]</code> is not a <a href="#vars">valid object</a>, <code>objName1</code> will be set to <a href="#none">None</a> object that can be checked with <a href="commands.html#conditionals">ifDef or ifNDef</a> conditionals. One common use of this command is to pass objects to <a href="#vars">subroutines</a>.
+</li>
 
 <li><code>Open (doc),&lt;(path)&gt;</code><br>
-Open a document and set the object variable in <code>(doc)</code> (which must be a <a href="#vars">valid object
-variable name</a> and not an expression) to the opened document. The optional <code>(path)</code> argument is full
+Open a document and set the object name in <code>(doc)</code> to the opened document object. The optional <code>(path)</code> argument is full
 or relative path to the document to be opened or is "_results_" or "_commands_". Relative paths are given from
-the saved script document. If this variable is omitted, the user is presented a standard file-opening dialog box
-and asked to select the file to be opened. If the requested file is already opened, its window will be brought to the front.
-If <code>(path)</code> is "_results_" or "_commands_", this command will open (and bring to the front) the first results
-or commands document it finds that is already open (not counting the script itself as a commands document). The order
-of documents is not reliable, which means this option works best when only one such document
-is available.</li>
+the saved script document. If this variable is omitted, the user is presented a standard file-opening dialog box and asked to select the file to be opened. If the requested file is already opened, its window will be brought to the front.
+If <code>(path)</code> is "_results_" or "_commands_", this command will open (and bring to the front) the first results or command document it finds that is already open (not counting the script itself as a command document). The order of documents is not reliable, which means this option works best when only one such document is available.</li>
 
-
-<li><code>OpenFolder (strVar),&lt;(title)&gt;,&lt;(path)&gt;</code><br>
+<li><code>OpenFolder "#var",&lt;(title)&gt;,&lt;(path)&gt;</code><br>
 This command will select a folder and create it if needed. If the optional <code>(path)</code> variable is omitted,
 this command presents the user with a file opening dialog that can select only folders
 (and can create new folders if desired). If provided, the title of the folder selection window will
@@ -133,8 +369,8 @@ be <code>(title)</code>.
 If optional <code>(path)</code> is provided, that folder will be created (along with all intervening folders).
 The <code>(path)</code> can be a full path or relative to the script file (note: when providing <code>(path)</code>,
 you must also provide <code>(title)</code>, but it can be an empty string ("")).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;When done, the <code>(strVar)</code>
-(which must contain an unquoted and valid variable name and cannot be an expression) will be set to the full path
+&nbsp;&nbsp;&nbsp;&nbsp;When done, the <code>#var</code> variable
+(which must be  an unquoted and valid variable name and cannot be an expression) will be set to the full path
 to the selected or created folder. If a selection process is cancelled, the variable will be
 set to an empty string. The returned path will be terminated by the system-dependent path separator.
 For example, the folder path might be:
@@ -146,23 +382,59 @@ when running in Mac or Linux. You can provide a system-independent path to files
 where <code>#fldr</code> was the <code>(strVar)</code> argument to the <code>OpenFolder</code> command.
 </li>
 
+<li><code>UserInput "#var",(title),(prompt),&lt;(initialText)&gt;,&lt;(btn1)&gt;,&lt;(btn2)&gt;,&lt;(btn3)&gt;</code><br>
+Will display a dialog box where the user can enter one line of text. The <code>title</code> is displayed in the title bar of the window. The <code>(prompt)</code> is displayed above the text field to explain the requested input (it can be any length and use multiple lines). The three optional buttons can change the text of the default &quot;OK&quot; and &quot;Cancel&quot; buttons and optionally add a third button, but these are currently ignored. The results  are returned in a variable array using the provided (and quoted) variable --- <code>#var[1]</code> set to text of clicked button and <code>#var[2]</code> set to text entered by the user (also sets <code>#var[0]=2</code>).<br />
+</li>
+
 </ul>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
-<h2><a name="objects"></a>Scripting Commands for Objects</h2>
+<h2><a name="objects"></a>Object Commands for Scripts</h2>
 
-<p>The commands in this section only make sense when sent to an object (<i>i.e.</i>, to a commands document or a results document). They are used by starting the command with the object variable for that document (in place of <code>object</code> used in each command name below), followed by a period, and then followed by the command and it's arguments. The object commands are:</p>
+<p>The commands in this section are commands that target a <a href="#properties">specific type of object</a>. The object being targeted is specified one of two ways:</p>
+
+<ol>
+<li>Object name: just provide the <a href="#vars">object name</a> for the desired object (or use a <a href="#vars">dereferenced name</a>).</li>
+<li>Object in a list: If some objects are stored in a <a href="#list">list</a>, you can extract on object from the list using <code>myList.#i</code> where <code>myList</code> is object name for the list and <code>#i</code> is index of desired object in the list (the first item in a list is index zero). The index can be an integer or a single variable (when a variable, the name must begin in <code>#</code>)</li>
+</ol>
+
+<p>The object specified (in place of <code>object</code> used in each command listed below) is followed by a period, and then followed by the command and it's arguments. The object commands supported by each <a href="#properties">object type</a> are listed below. First, the following command is supported by <a href="#list">lists</a> and by any object that has <a href="#properties">"to-one attributes" or "to-many attributes"</a>.</p>
+
+<ul>
+<li><a name="get"></a><code>object.get ("#var" or objName),(attribute)</code></br>
+This command has multiple functions depending on the <code>object</code> and <code>(attribute)</code>:
+<ol>
+<li><code>object.get (objName),(attribute)</code>: this form sets object name in <code>(objName)</code> to the <a href="#properties">"to-one attribute" or "to-many attribute"</a> defined by name in the <code>(attribute)</code> argument. Note the "to-many attributes" will always set <code>(objName)</code> to a <a href="list">list</a>. It will be an empty list if no information is available. If a "to-one attribute" is not available, <code>(objName)</code> will be set to <a href="#none">None</a> type object. This results can be checked with <a href="commands.html#conditionals">ifDef or ifNDef</a> conditionals</a></li>
+<li><code>object.get (objName)</code>: if <code>(attribute)</code> is missing, this command will set <code>(objName)</code> to the target object. This command is most useful with using a <a href="#list">list</a>. For example,
+<pre>    mylist.5.get myObj</pre>
+will set <code>myObj</code> to the object at index 5 in the <code>mylist</code> <a href="#list">list</a> object.</li>
+<li><code>mylist.#i.get "#var"</code>: if the <a href="#list">list</a> in <code>mylist</code> contains strings and number, this option will set <code>#var</code> to the selected string or number. Note that <code>#var</code> must be quoted and must begin in a number sign. Although this command works, a simpler way to extract a string or number from a <a href="#list">list</a> is with an "@" expression: <pre>    #var=@mylist.#i</pre></li>
+</ol>
+</li>
+</ul>
+
+<h3>Commands for Commands Documents</h3>
+
+<p>The first three commands below tell a command document to interpret its commands or to interpret and run calculations, all variables defined in the script are transferred to the document. The typical script will define variables to control a calculation and then run one or more calculations. Most FEA and MPM command documents are written as stand-alone documents, which means they define all their own variables. To allow such documents to use script-defined variables when run from a script but their own variables when run on their own, a running script will also define a read only variable named <code>_ScriptMode_</code>. Thus, an FEA or MPM commands document can contain a section like:</p>
+
+<blockquote>ifNDef _ScriptMode_<br>
+  &nbsp;&nbsp;&nbsp;#myVar = 23<br>
+  &nbsp;&nbsp;&nbsp;(define variables to run as stand-alone file)<br>
+  &nbsp;&nbsp;&nbsp;...<br>
+endif</blockquote>
+
+<p>When this FEA or MPM commands document is run in script control, the script will be expected to define all the variables defined in the above block and the command document will use those script-defined variables. When that document is run by itself, however, it will execute the above section and define all variables needed to run as a stand-alone file.</p>
 
 <ul>
 <li><code>object.interpret</code><br>
-Interpret the commands in the object document (which can only be a commands document). The resulting XML commands will appear in the console pane of that document. This command will wait until the interpretations are done before returning control to the script. One use of this command is to follow it with an <code>object.export</code> command to save the XML commands to a file.</li>
+Interpret the commands in the object document. The resulting XML commands will appear in the console pane of that document. This command will wait until the interpretations are done before returning control to the script. One use of this command is to follow it with an <code>object.export</code> command to save the XML commands to a file.</li>
 
 <li><code>object.run (resDoc),(path)</code><br>
-Interpret the commands in the object document (which can only be a commands document), run the calculations (locally), save the result to the results document using the <code>(path)</code> argument, and finally set the object variable in <code>(resDoc)</code> (which must be a valid object variable name and not an expression) to the final results document. This command will wait until the calculations are done before returning control to the script. The <code>(path)</code> can be a full path or a path relative to the script document. The folder to receive the output file must already exist.</li>
+Interpret the commands in the object document, run the calculations (locally), save the result to the results document using the <code>(path)</code> argument, and finally set the object name in <code>(resDoc)</code> to the final results document. This command will wait until the calculations are done before returning control to the script. The <code>(path)</code> can be a full path or a path relative to the script document. The folder to receive the output file must already exist.</li>
 
 <li><code>object.runRemote (resDoc),(remoteFile),(remoteOption),(localFolder),(localOption)</code><br>
-Interpret the commands in the object document (which can only be a commands document), run the calculations remotely using the specified options:
+Interpret the commands in the object document, run the calculations remotely using the specified options:
 <ol>
 <li><code>(remoteFile)</code> - relative path to <a href="help.html#remoutput">saved file on the server</a>.</li>
 <li><code>(remoteOption)</code> - output file option <code>Overwrite</code>, <code>Unique</code>, or <code>Clear</code>. See <a href="help.html#remoptions">remote options</a> for details. (Default is <code>Overwrite</code>)</li>
@@ -175,15 +447,38 @@ or <code>Home</code>. See <a href="help.html#locoptions">local folder options</a
 if it is not provided)</li>
 </ol>
 </li>
-When the calculations are done the object variable in <code>(resDoc)</code> (which must be a valid object variable name and not an expression) will be set to the final results document, but if <code>(localOption)</code> is <code>NoDownload</code>, no results document will be opened and <code>(resDoc)</code> will not be set. This command will wait until the calculations are done before returning control to the script.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Before this command can be used, you must <a href="help.html#setserver">set up the server</a> for remote calculations. If you do not specify a password when setting up the server, this command will ask for one; thus to run an unattended script of many calculations, you should enter a password in the server setup.</li>
+When the calculations are done the object name in <code>(resDoc)</code> (which must be a valid object variable name and not an expression) will be set to the final results document, but if <code>(localOption)</code> is <code>NoDownload</code>, no results document will be opened and <code>(resDoc)</code> will not be set. This command will wait until the calculations are done before returning control to the script.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Before this command can be used, you must <a href="help.html#setserver">set up the server</a> for remote calculations. If you do not specify a password when setting up the server, this command will ask for one; thus to run an unattended script for many calculations, you should enter a password in the server setup.</li>
 
 <li><code>object.export &lt;(path)&gt;</code><br>
-This command will save the contents of the console pane in the object document (which can only be a commands document)
+This command will save the contents of the console pane in the object document
 to the file specified by <code>(path)</code>. The optional <code>(path)</code> can be a full path or a path relative
 to the script document. The folder to receive the output file must already exist.
 If <code>(path)</code> is omitted, the user is given a file-saving dialog box to select file name and save location.</li>
 </ul>
+
+<h3>Commands for Results Documents</h3>
+
+<ul>
+<li><a name="timeplot"></a><code>@object.timeplot (xyData),(settings)</code><br>
+Set object name <code><(xyData)</code> to plot of the selected quantity as a function of time in a <a href="list">list</a> that contains two lists at index 0 and 1 for time data and y data respectively (for MPM calculations only). The data to plot are defined by options entered in the the <a href="#dict">dictionary</a> with object name <code>(settings)</code>. The keys to be set in the dictionary are
+<ul>
+<li><code>menutext</code> - quantity by name in "Plot:" menu (string, case sensitive). Except, to plot history or traction data, enter "History Data" or "Crack Traction Data" and set <code>tensorindex</code> ans explained next.</li>
+<li><code>tensorindex</code> - when plotting tensors (like "Stress") select component of tensor to plot (numbered from 0 in the "Component:" menu). For history or traction data, enter number to plot minus 1 (<i>i.e.</i>, history data n is at tensor index n-1).</li>
+<li><code>vectorindex</code> -when plotting vectors (like "Velocity") select component of vector to plot (numbered from 0 in the "Component:" menu)</li>
+<!--<li><code>angle</code> - rotate vector or tensor (in degrees)</li>-->
+<li><code>expression</code> - when plotting  "Expression...", enter an valid expression to plot (string)</li>
+<li><code>expressiontitle</code> - when plotting  "Expression...", enter a optional title for the plotted expression (string)</li>
+<li><code>close</code> - this command opens a plot window, plots the results, and results the data to the script. By default, the plot window closes. Set this optional key to "no" to leave the plot open (note: if left open, subsequent plots by the script will use the same plot window).</li>
+<li><code>quantity</code> - when plotting "Global Results", this value is the global quantity, by name, to plot. Note that first item in returned list is the plotted quantity and the values start at the second item.</li>
+<li><code>materialoption</code> - plot for one material point (0), average all points (1), average the provided material number (2), sum all points (3), or sum the provided material number (4)</li>
+<li><code>initialpoint</code> - the material point number to plot when <code>materialoption</code> = 0.</li>
+<li><code>materialnumber</code> - the material number to average when <code>materialoptoin</code> = 2 or 4.</li>
+<li><code>cracknumber</code> - when plotting crack data, pick the crack number to plot</li>
+<li><code>tipnumber</code> - when plotting crack data, pick crack tip to plot for start (0) or end (1).</li>
+</ul>
+Note that all invalid values will be returned as "nan" text. Scripts should check for "nan" before using the value in numeric expressions. The "nan" values are return to allow scripts to determine when potentially poor results were obtained.
+</li>
 
 <li><code>object.plottable (table)</code><br>
 This command will plot a table of data as a child window of the object document (which can only be a results document)
@@ -193,49 +488,74 @@ no data for specific x can be left empty. The <code>(table)</code> can include a
 These lines are at the beginning of the table, each begin with "#", and can use any commands documented in the
 PublishPlotJ application. A single <code>plottable</code>
 command can plot multiple tables if the are separated by blank lines with the <code>(table)</code> string argument.
-The use of multiple <code>plottable</code> will create multiple plot windows.
+The use of multiple <code>plottable</code> will create multiple plot windows.</li>
+
+<li><a name="xyplot"></a><code>@object.xyplot (xyData),(settings)</code><br>
+Set object name <code><(xyData)</code> to plot of selected quantity as a function of position in a <a href="list">list</a> that contains two lists at index 0 and 1 for x data and y data respectively.
+The data to plot are defined by options entered in the the <a href="#dict">dictionary</a> with object name <code>(settings)</code>. The first six keys are the same is listed for <a href="#timeplot">timeplot</a> command. The extra keys in the dictionary for for x-y plots are:
+<ul>
+<li><code>archive</code> - select time to plot by archive index (numbered from 1)</li>
+<li><code>variable</code> - plot option (by number) for path though the mesh as 0: x or r, 1: y or z, 2: D, 3: T, 4: p:x+d*t, 5: p0:x0+d*t, or 6: Histogram</li>
+<li><code>contour</code> - an expression for the plot contour (string even if just a number). For particle plots can be comma separated list of 1 to 6 numbers as needed.</li>
+<li><code>contourrange</code> - range (+/-) to average along the contour (number)</li>
+<li><code>cracknumber</code> - crack number to plot</li>
+</ul>
+Note that all invalid values will be returned as "nan" text. Scripts should check for "nan" before using the value in numeric expressions. The "nan" values are return to allow scripts to determine when potentially poor results were obtained.
+</li>
 </ul>
 
+<h3>Commands for Lists</h3>
+
+<ul>
+<li><a name="addstring"></a>object.addString (expr1),[(expr2),...]<br>
+Adds one or more strings to the target <a href="#list">list</a>. All parameters must be valid <a href="commands.html#varexp">expressions</a>.
+</li>
+
+<li><a name="addobject"></a>object.addObject (obj1),[(obj2),...]<br>
+Adds one or more objects to the list. Any parameters that do not correspond to a valid object will be skipped. Objects that are other <a href="#list">lists</a> are added as list objects (<i>i.e.</i>, a list can contain other lists). Use <a href="#addlist">addList</a> to add elements of those lists to the target list.
+</li>
+
+<li><a name="insertobject"></a>object.insertObject objName[.#i],(index)<br>
+Inserts one object at <code>index</code> in the list. The provided <code>objName[.#i]</code> must be an existing object and list indices are zero based.
+</li>
+
+<li><a name="insertobject"></a>object.insertString (expr),(index)<br>
+Inserts one string or number at <code>index</code> in the list. The provided <code>(expr)</code> must be a valid <a href="commands.html#varexp">expression</a>.
+</li>
+
+<li><a name="remove"></a>object.remove (index)</br>
+Remove item in the list at <code>(index)</code>.
+</li>
+</ul>
+
+
+<h3>Commands for Dictionaries</h3>
+
+<ul>
+<li><code>object.setObjectForKey (obj),(key)</code><br>
+Sets value in the dictionary for key in <code>(key)</code> to the object in <code>(obj)</code>, which must be name for an existing <a a href="#vars">object</a>.
+</li>
+
+<li><code>object.setStringForKey (string),(key)</code><br>
+Sets value in the dictionary for key in <code>(key)</code> to the string in <code>(string)</code>, which can be any string <a href="commands.html#varexp">expression</a>.
+</li>
+
+<li><code>object.setNumberForKey (number),(key)</code><br>
+Sets value in the dictionary for key in <code>(key)</code> to the number in <code>(number)</code>, which can be any numeric <a href="commands.html#varexp">expression</a>.
+</li>
+	
+<li><code>object.valueForkey ("#var" or objName)(key)</code><br>
+Fetches the value from the dictionary corresponding to <code>(key)</code>. If the value is a string or a number, set <code>#var</code> (which must be a quoted variable name starting in "#") to that value. If the value is an <a href="#vars">object</a>, set <code>objName</code> (which must be a valid object name) to that object. A mismatch between value type and the first parameter will cause an error. If <code>(key)</code> is not in the dictionary, <code>"#var"</code> will be undefined or <code>objName</code> will set to <a href="#none">None</a> type. Both these can be checked with  <a href="commands.html#conditionals">ifDef or ifNDef</a> conditionals</a>.
+</li>
+
+<li><code>object.removeValueForKey (key)</code><br>
+Remove value in a <a href="#dict">dictionary</a> corresponding to <code>(key)</code>, which can be any valid <a href="commands.html#varexp">expression</a>.
+</li>
+
+</ul>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
-<h2><a name="properties"></a>Object Properties</h2>
-
-<p>You can read properties of object documents by using <a href="commands.html#atexp">"At" expressions</a>. These property expressions can be used within other expressions. The currently supported properties are given below. In each property, the "object" at the beginning is replaced by the object variable for the desired document. The remaining elements (which are separated by periods) are keywords or numbers. Elements that expect text can be replaced by quoted text or string variables; elements that expect numbers can be replaced by numeric variables.</p>
-
-<h3>Properties for Commands Documents</h3>
-
-<ul>
-<li><code>@object.get.varName</code><br>
-FEA and MPM commands documents can read all variables defined in scripts, but any changes made to those variables are not communicated back to the script. Furthermore, the commands documents may define other variables that would be useful to know in a script. Once FEA or MPM commands have be interpreted or run, this "At" expression can read any variable, where <code>varName</code> is the variable to read. It only works for commands documents.</li>
-</ul>
-
-<h3>Properties for Results Documents</h3>
-
-<ul>
-<li><code>@object.section.(sectionName)</code><br>
-Returns the entire text to the section titled <code>(sectionName)</code>, which must be a quoted string or a string variable. The section names are the complete, case-sensitive text of the sections listed on the top left index of a results document. Hint: the text read from a section can be parsed using <a href="commands.html#debug"><code>Lines</code> and <code>Words</code> commands</a> and <a href="commands.html#varexp">string expressions</a>.</li>
-
-<li><code>@object.energy</code><br>
-Returns the total strain energy in an FEA results document (assuming the output file contains the strain energy results). It is a common quantity to read when doing script control of FEA calculations.</li>
-
-<li><code>@object.timeplot (quantity).(arg1).(arg2)...</code><br>
-Returns the selected quantity as a function of time in a single string (for MPM calculations only).
-Each line will have time (ms) and the quantity separated by a space.
-The number of lines will be the number of data points.
-The string can be decoded using <a href="commands.html#debug"><code>Lines</code>
-and <code>Words</code> commands</a>.The currently supported plot quantities (which are case sensitive) are:
-<ul>
-<li>global: plot global quantity specified in (arg1), which must exactly match the global archive quantity name and that quantity must be in the global results.</li>
-<li>J1, J2, KI, KII, TipNCOD, TipSCOD, DebondNCOD, DebondSCOD, CrackRelease, CrackAbsorb: plot crack tip property for crack number (arg1) with (arg2) equal to 0 or 1 for crack tip at start or end of the crack. For COD's, "N" and "S" refer to normal and shear opening.</li>
-<li>Length: plot length of crack number (arg1).</li>
-<li>DebondLength: plot length of crack with no traction laws for crack number (arg1).</li>
-</ul>
-
-
-</ul>
-
-<p>|<a href="#cindex">Documentation Index</a>|</p>
 
 
 </body>

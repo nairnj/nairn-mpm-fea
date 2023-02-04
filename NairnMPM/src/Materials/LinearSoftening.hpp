@@ -17,23 +17,24 @@
 class LinearSoftening : public SofteningLaw
 {
 	public:
-		// methods
+		// required methods
+		virtual const char *GetSofteningLawName(void) const;
 		virtual double GetFFxn(double,double) const;
+		virtual double GetDeltaMax(double) const;
 		virtual double GetFpFxn(double,double) const;
-		virtual double GetDDelta(double,double,double,double) const;
-        virtual double GetDDeltaElastic(double,double,double,double,double) const;
 		virtual double GetGToDelta(double,double) const;
 		virtual double GetGoverGc(double,double) const;
-		virtual double GetMaxSlope(double) const;
-		virtual double GetDeltaFromDamage(double,double,double,double);
-		virtual double GetRdFxn(double,double,double) const;
-		virtual double GetPhiFxn(double,double) const;
-	
-		// accessors
-		virtual const char *GetSofteningLawName(void) const;
-		virtual double GetDeltaMax(double) const;
-		virtual bool IsLinear(void) const;
 		virtual double GetEtaStability(void) const;
+		virtual double GetPhiFxn(double,double) const;
+		virtual double GetRdFxn(double,double,double) const;
+
+		// optional methods
+		virtual double GetDeltaFromDamage(double,double,double,double);
+		virtual double GetDDelta(double,double,double,double,double) const;
+        virtual double GetDDeltaElastic(double,double,double,double,double) const;
+	
+		// optoinal accessor
+		virtual bool IsLinear(void) const;
 };
 
 #endif

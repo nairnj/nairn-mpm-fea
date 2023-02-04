@@ -511,7 +511,7 @@ bool Elastic::SoftenAxis(MPMBase *mptr,double den,double *history,int deltaParam
 	// note that when sigmaAlpha>0, sigma, scale, and delta are
 	//			changed to sigmaAlpha, scaleAlpha, and delta+ddeltaElastic
 	double en0 = sigma/Es;				 // initiation strain
-	double ddelta = softLaw->GetDDelta(den2,en0,delta,scale);
+	double ddelta = softLaw->GetDDelta(den2,en0,delta,d,scale);
 	
 	// check if failed
 	double deltaPrevious = delta;			// = delta + ddeltaelastic if occurred
@@ -719,7 +719,7 @@ void Elastic::UpdateCrackingStrain(int np,Tensor *ecrack,double decxx,double dgc
 }
 
 // Rotate stress increment in crack axis system to global axes
-// and then add to sp
+// and then add to sp (str has sp rotated already by dR)
 void Elastic::UpdateCrackingStress(int np,Tensor *sp,Tensor *dsig,Tensor *str,Matrix3 Rtot) const
 {
 	if(np==THREED_MPM)

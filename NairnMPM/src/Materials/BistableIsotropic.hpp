@@ -51,6 +51,7 @@ class BistableIsotropic : public IsotropicMat
 	
 		// history data
 		virtual char *InitHistoryData(char *,MPMBase *);
+		virtual void ResetHistoryData(char *,MPMBase *);
 		virtual double GetHistory(int,char *) const;
 	
 		// const methods

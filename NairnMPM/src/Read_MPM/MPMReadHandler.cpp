@@ -84,7 +84,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     char *aName,*value;
     char quantityName[100];
     unsigned int i,numAttr;
-    
+	
     //-------------------------------------------------------
     // <MPMHeader> section
     if(strcmp(xName,"MPMHeader")==0)
@@ -97,7 +97,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     }
     
     else if(strcmp(xName,"MatlPtsPerElement")==0)
-	{	// XML expects total points pere element, the end element code converts to linear
+	{	// XML expects total points per element, the end element code converts to linear
 		if(block==MPMHEADER)
 		{	input=INT_NUM;
         	inputPtr=(char *)&fmobj->ptsPerElement;
@@ -383,9 +383,6 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         }
     }
 
-    else if(strcmp(xName,"FDamping")==0)
-    {	throw SAXException("<FDamping> command requires OSParticulas.");
-    }
 	// XPIC option - get order (1=PIC, 2 is XPIC, <1 invalid)
     else if(strcmp(xName,"XPIC")==0)
 	{	throw SAXException("<XPIC> command no longer allowed; use PeriodicXPIC custom task.");
@@ -393,16 +390,35 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 
     else if(strcmp(xName,"Diffusion")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
-		if(fmobj->HasDiffusion())
-			throw SAXException("Only one 'Diffusion' command allowed in an analysis.");
-#ifdef POROELASTICITY
-		else if(fmobj->HasPoroelasticity())
-			throw SAXException("Cannot use both 'Diffusion' and 'Poroelasticity' in the same analysis.");
-#endif
-		DiffusionTask::active = MOISTURE_DIFFUSION;
-		DiffusionTask::reference=ReadNumericAttribute("reference",attrs,(double)0.0);
-		if(DiffusionTask::reference<0.) DiffusionTask::reference=0.;
-		if(DiffusionTask::reference>1.) DiffusionTask::reference=1.;
+		
+		// read attributes to get style and reference
+		numAttr=(int)attrs.getLength();
+		double refCon=0.;
+		int diffStyle=MOISTURE_DIFFUSION;
+		for(i=0;i<numAttr;i++)
+		{   aName=XMLString::transcode(attrs.getLocalName(i));
+			value=XMLString::transcode(attrs.getValue(i));
+			if(strcmp(aName,"reference")==0)
+				sscanf(value,"%lf",&refCon);
+			else if(strcmp(aName,"style")==0)
+				sscanf(value,"%d",&diffStyle);
+			delete [] aName;
+			delete [] value;
+		}
+		
+		if(diffStyle==MOISTURE_DIFFUSION)
+		{	if(fmobj->HasDiffusion())
+				throw SAXException("Only one 'Diffusion' task allowed in an analysis.");
+	#ifdef POROELASTICITY
+			else if(fmobj->HasPoroelasticity())
+				throw SAXException("Cannot use both 'Diffusion' and 'Poroelasticity' in the same analysis.");
+	#endif
+			// create task
+			diffusion = new DiffusionTask(fmin(fmax(refCon,0.),1.),1.,MOISTURE_DIFFUSION);
+		}
+		else
+		{	throw SAXException("An unrecognized 'Diffusion' style was requeted.");
+		}
     }
 	
 #ifdef POROELASTICITY
@@ -412,14 +428,16 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			throw SAXException("Only one 'Poroelasticity' command allowed in an analysis.");
 		else if(fmobj->HasDiffusion())
 			throw SAXException("Cannot use both 'Poroelasticity' and 'Diffusion' in the same analysis.");
-		DiffusionTask::active = POROELASTICITY_DIFFUSION;
 		
 		// Reference pressure: legacy units are MPa - convert to Pa and must be positive
-		DiffusionTask::reference = UnitsController::Scaling(1.e6)*ReadNumericAttribute("reference",attrs,(double)0.0);
+		double refPressure = UnitsController::Scaling(1.e6)*ReadNumericAttribute("reference",attrs,(double)0.0);
 		
 		// Viscosity: Legacy units are cP - 1 cP = 0.001 Pa-sec
 		// Default: .001 Pa-sec in Legacy and 1 in CU
-		DiffusionTask::viscosity = UnitsController::Scaling(1.e-3)*ReadNumericAttribute("viscosity",attrs,(double)1.0);
+		double ppViscosity = UnitsController::Scaling(1.e-3)*ReadNumericAttribute("viscosity",attrs,(double)1.0);
+		
+		// create task
+		diffusion = new DiffusionTask(refPressure,ppViscosity,POROELASTICITY_DIFFUSION);
 	}
 #else
 	else if(strcmp(xName,"Poroelasticity")==0)
@@ -442,21 +460,12 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
 		fmobj->skipPostExtrapolation = true;
 	}
-
+	
 	else if(strcmp(xName,"TrackParticleSpin")==0 || strcmp(xName,"TrackGradV")==0)
-	{	throw SAXException("<TrackParticleSpin> command requires OSParticulas.");
+	{
+		throw SAXException("<TrackParticleSpin> requires OSParticulas and compiled with ADD_PARTICLE_SPIN");
 	}
 	
-	else if(strcmp(xName,"TransportOnly")==0)
-	{	// future may want to programmatically active this mode
-		throw SAXException("<TransportOnly> command requires OSParticulas.");
-	}
-	
-	else if(strcmp(xName,"NeedsMechanics")==0)
-	{	// future may want to programmatically active this mode
-		// ignore because always doing mechanics
-	}
-
 	else if(strcmp(xName,"ExactTractions")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
 		fmobj->exactTractions = true;
@@ -474,7 +483,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		}
 		else
 		{	ElementBase::gridNiNodes = 4;
-			maxShapeNodes = 28;
+			maxShapeNodes = 10;
 		}
 		
 		// look at attributes
@@ -503,6 +512,11 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 					maxShapeNodes = fmobj->np==THREED_MPM ? 40 : 37 ;
 					ElementBase::gridNiNodes = fmobj->np==THREED_MPM ? 8 : 4 ;
                 }
+				else if(strcmp(value,"Finite")==0 || strcmp(value,"4")==0)
+				{   ElementBase::useGimp = FINITE_GIMP;
+					maxShapeNodes = fmobj->np==THREED_MPM ? 40 : 20 ;		// 3D not allowed yet
+					ElementBase::gridNiNodes = fmobj->np==THREED_MPM ? 8 : 4 ;
+				}
 				else if(strcmp(value,"B2GIMP")==0 || strcmp(value,"5")==0)
 				{   ElementBase::useGimp = BSPLINE_GIMP;
 					maxShapeNodes = fmobj->np==THREED_MPM ? 65 : 17 ;
@@ -665,7 +679,9 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 					archByte = ARCH_ElementCrossings;
 				else if(CIstrcmp(value,"damagenormal")==0)
 					archByte = ARCH_DamageNormal;
-				
+				else if(CIstrcmp(value,"size")==0)
+					archByte = ARCH_Size;
+
 				else if(CIstrcmp(value,"jintegral")==0)
 					archByte = -ARCH_JIntegral;
 				else if(CIstrcmp(value,"stressintensity")==0)
@@ -764,17 +780,58 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     }
 
     else if(strcmp(xName,"LeaveLimit")==0)
-	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+	{	// <0 to allow delete that many, >0 to push back then many, 0 (default) set to 1% of particles
+		ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=INT_NUM;
         inputPtr=(char *)&fmobj->warnParticleLeftGrid;
     }
 
     else if(strcmp(xName,"DeleteLimit")==0)
-    {   ValidateCommand(xName,MPMHEADER,ANY_DIM);
+    {	// >1 deletes and continues until that many nan particles, <=1 aborts on first nan partiles
+		ValidateCommand(xName,MPMHEADER,ANY_DIM);
         input=INT_NUM;
         inputPtr=(char *)&fmobj->warnParticleDeleted;
     }
+	
+	// Custom patching in MPM Header
+	else if(strcmp(xName,"PatchGrid")==0)
+	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+		block=PATCHGRID;
+		int xnum=1,ynum=1,znum=1;
+		numAttr=(int)attrs.getLength();
+		for(i=0;i<numAttr;i++)
+		{   aName=XMLString::transcode(attrs.getLocalName(i));
+			value=XMLString::transcode(attrs.getValue(i));
+			if(strcmp(aName,"x")==0)
+				sscanf(value,"%d",&xnum);
+			else if(strcmp(aName,"y")==0)
+				sscanf(value,"%d",&ynum);
+			else if(strcmp(aName,"z")==0)
+				sscanf(value,"%d",&znum);
+			delete [] value;
+			delete [] aName;
+		}
+		mpmgrid.SetCustomPatching(xnum,ynum,znum);
+	}
     
+	else if(strcmp(xName,"Xpatches")==0)
+	{	ValidateCommand(xName,PATCHGRID,ANY_DIM);
+		mpmgrid.SetSizeDirection(1);
+		input = PATCH_SIZES;
+	}
+	
+	else if(strcmp(xName,"Ypatches")==0)
+	{	ValidateCommand(xName,PATCHGRID,ANY_DIM);
+		mpmgrid.SetSizeDirection(2);
+		input = PATCH_SIZES;
+	}
+	
+	else if(strcmp(xName,"Zpatches")==0)
+	{	ValidateCommand(xName,PATCHGRID,ANY_DIM);
+		mpmgrid.SetSizeDirection(3);
+		input = PATCH_SIZES;
+	}
+	
     // Cracks in MPM Header
     else if(strcmp(xName,"Cracks")==0)
 	{	ValidateCommand(xName,MPMHEADER,cracksDim);
@@ -849,6 +906,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     {	if(block!=CRACKHEADER && block!=MATERIAL)
 			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
 		ValidateCommand(xName,NO_BLOCK,cracksDim);
+        if(fmobj->IsThreeD())
+            throw SAXException("3D cracks not yet programming for crack propagation.");
     	numAttr=(int)attrs.getLength();
 		
 		// get which to set
@@ -938,11 +997,6 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
     }
 	
-	else if(strcmp(xName,"CrackParticleSize")==0)
-	{
-		throw SAXException("<CrackParticleSize> command requires OSParticulas.");
-	}
-	
     else if(strcmp(xName,"JContour")==0)
 	{	ValidateCommand(xName,CRACKHEADER,cracksDim);
     	numAttr=(int)attrs.getLength();
@@ -970,7 +1024,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     // <Mesh> section
 	
 	// Start Mesh section - may be at root level or in a 3D crack list
-    else if(strcmp(xName,"Mesh")==0)
+	else if(strcmp(xName,"Mesh")==0)
 	{	ValidateCommand(xName,NO_BLOCK,ANY_DIM);
 		block = MESHBLOCK;
 		archiver->SetArchiveMesh(false);
@@ -985,12 +1039,35 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{
 		ValidateCommand(xName,ELEMENTLIST,ANY_DIM);
     	input=NODE_BLOCK;
-		value=ReadTagValue("type",attrs);
-		if(value==NULL)
-            throw SAXException("<elem> does not specify element type.");
-		if(!theElems->SetElemIDStr(value, block))
+		numAttr=(int)attrs.getLength();
+		double segLength = -1.;
+		int elemType = -1;
+		int czmID=0;
+		char czmName[200];
+		czmName[0]=0;
+		for(i=0;i<numAttr;i++)
+		{	aName=XMLString::transcode(attrs.getLocalName(i));
+			value=XMLString::transcode(attrs.getValue(i));
+			if(strcmp(aName,"type")==0)
+				sscanf(value,"%d",&elemType);
+			else if(strcmp(aName,"length")==0)
+				sscanf(value,"%lf",&segLength);
+			else if(strcmp(aName,"czm")==0)
+				sscanf(value,"%d",&czmID);
+			else if(strcmp(aName,"czmname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(czmName,value);
+			}
+			delete [] aName;
+			delete [] value;
+		}
+		// if gave a matname, it takes precedence over mat number
+		if(strlen(czmName)>0)
+			czmID = matCtrl->GetIDFromNewName(czmName);
+		if(elemType<0)
+            throw SAXException("<elem> does not specify an element type.");
+		if(!theElems->SetElemIDCodes(elemType,block))
 			throw SAXException("Invalid or incompatible element type.");
-        delete [] value;
     }
     
     //-------------------------------------------------------
@@ -1067,13 +1144,16 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		ScaleVector(&xp,aScaling);
         
         if(block==NODELIST)
+		{	// for mesh only
 			theNodes->AddNode(xp.x,xp.y,xp.z);
+		}
         else if(block==MATLPTS)
 		{	if(!mpCtrl->SetPtOrVel(xName,&xp))
 				throw SAXException("A material point in an <mp> command is not within the grid.");
         }
         else if(block==CRACKLIST)
-		{	if(!crackCtrl->AddSegment(new CrackSegment(&xp,tipMatnum,matid),false))
+		{
+            if(!crackCtrl->AddSegment(new CrackSegment(&xp,tipMatnum,matid),false))
                 throw SAXException("Crack point not in the mesh or out of memory adding a crack segment.");
         }
 		else if(block==INTENSITYBLOCK)
@@ -1086,7 +1166,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,MATLPTS,ANY_DIM);
 		int elemNum=1;
     	int matl=0;
-        double angle=0.,pConcInitial=diffusion->reference,dval;
+		double angle=0.,dval;
+		double pConcInitial = diffusion!=NULL ? diffusion->reference : 0.;
 		double thick=mpmgrid.GetDefaultThickness();
 		double pTempInitial=thermal.reference;
     	numAttr=(int)attrs.getLength();
@@ -1195,7 +1276,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,NO_BLOCK,cracksDim);
     	block=CRACKLIST;
 		CrackHeader *newCrack = new CrackHeader();
-		crackCtrl->AddCrack(newCrack);
+		crackCtrl->AddCrack(newCrack,fmobj->IsThreeD());
 		
 		// only needed for 2D
 		double gridThickness=mpmgrid.GetThickness();
@@ -1276,7 +1357,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		int finalLawID = currentContact->contactProps.contactLawID;
 		if(finalLawID<0 && hasCustomContact)
 		{	char ccName[100];
-			sprintf(ccName,"Crack #%d",newCrack->GetNumber());
+			size_t ccSize=100;
+			snprintf(ccName,ccSize,"Crack #%d",newCrack->GetNumber());
 			finalLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,&(currentContact->contactProps),0,ccName);
 		}
 		
@@ -1620,7 +1702,11 @@ void MPMReadHandler::myEndElement(char *xName)
     {	block=POINTSBLOCK;
     }
     
-    else if(strcmp(xName,"Cracks")==0)
+	else if(strcmp(xName,"PatchGrid")==0)
+	{	block=MPMHEADER;
+	}
+	
+	else if(strcmp(xName,"Cracks")==0)
     {	// install frictionless if not provded
         // but only if Cracks element is in the MPMHeader
 		if(contact.crackContactLawID<0)
@@ -1694,7 +1780,7 @@ void MPMReadHandler::myEndElement(char *xName)
         else if(block==MPMHEADER)
             totalPoints = fmobj->ptsPerElement;
         else
-            totalPoints = fmobj->customPtsPerElement;
+            totalPoints = abs(fmobj->customPtsPerElement);
 		if(totalPoints<0)
 			throw SAXException("Material points per element must be positive.");
 		int oneSide;
@@ -1714,7 +1800,10 @@ void MPMReadHandler::myEndElement(char *xName)
         if(block==BMPBLOCK)
             bmpCustomPtsPerSide = oneSide;
 		else
-			fmobj->customPtsPerSide = oneSide;
+        {   // if provided negative number, set per side to negative (keep total points positive)
+            fmobj->customPtsPerSide = fmobj->customPtsPerElement>0 ? oneSide : -oneSide;
+            fmobj->customPtsPerElement = totalPoints;
+        }
 	}
 }
 
@@ -1791,6 +1880,10 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 		case POLYHEDRON_BLOCK:
 			// must be in active body controller
 			theShape->SetProperty(xData,this);
+			break;
+		
+		case PATCH_SIZES:
+			mpmgrid.SetPatchSizes(xData);
 			break;
         
         case HARDENING_LAW_SELECTION:

@@ -3,7 +3,12 @@
     nairn-mpm-fea
     
     Created by John Nairn on Tues Feb 07 2002.
-    Copyright (c) 2001 John A. Nairn, All rights reserved.    
+    Copyright (c) 2001 John A. Nairn, All rights reserved.
+ 
+    On error, code should throw CommonException (not new CommonException)
+    Catch blocks can catch(CommonException& err)
+    Only main and NairnMPM had catch(CommonException* err) because many
+        MPMTasks might through pointer instead of the the object itself
 ********************************************************************************/
 
 #include "stdafx.h"
@@ -48,7 +53,7 @@ CommonException::CommonException(const char *errMsg,const char *inCode,int errCo
 // display message and step info
 void CommonException::Display(int mstep,double mtime)
 {   // in both results window and in error pipe
-	cout << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
+	cout << msg << "\nIn Subroutine: " << code << "()" << endl;
     if(mstep>0)
         cout << "Step Number: " << mstep << " Current Time: " << mtime << endl;
 	
@@ -62,7 +67,7 @@ void CommonException::Display(int mstep,double mtime)
 // display message only
 void CommonException::Display(void)
 {	// in both results window and in error pipe
-    cout << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
+    cout << msg << "\nIn Subroutine: " << code << "()" << endl;
 	if(errID!=noErr)
     	cerr << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
 }

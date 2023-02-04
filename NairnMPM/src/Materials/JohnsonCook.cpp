@@ -16,9 +16,6 @@
 #include "Exceptions/CommonException.hpp"
 #include "System/UnitsController.hpp"
 
-// needed to access dflag[7]
-#include "NairnMPM_Class/NairnMPM.hpp"
-
 #pragma mark JohnsonCook::Constructors and Destructors
 
 JohnsonCook::JohnsonCook() {}

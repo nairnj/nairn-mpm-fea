@@ -149,11 +149,17 @@ int Neohookean::SizeOfHistoryData(void) const { return 2*sizeof(double); }
 // Store Jres for residual stress calculations
 // initialize both to 1
 char *Neohookean::InitHistoryData(char *pchr,MPMBase *mptr)
-{
-	double *p = CreateAndZeroDoubles(pchr,2);
+{	double *p = CreateAndZeroDoubles(pchr,2);
 	p[0] = 1.;
 	p[1] = 1.;
 	return (char *)p;
+}
+
+// reset history data
+void Neohookean::ResetHistoryData(char *pchr,MPMBase *mptr)
+{	double *p = (double *)pchr;
+	p[0] = 1.;
+	p[1] = 1.;
 }
 
 // Number of history variables
@@ -178,8 +184,9 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     Tensor *B = mptr->GetAltStrainTensor();
 	
     // account for residual stresses
-	double dJres = GetIncrementalResJ(mptr,res);
-	double Jres = dJres*mptr->GetHistoryDble(J_History+1,historyOffset);
+    double Jres = mptr->GetHistoryDble(J_History+1,historyOffset);
+    double dJres = GetIncrementalResJ(mptr,res,Jres);
+    Jres *= dJres;
 	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
 	double resStretch = pow(Jres,1./3.);
 	double Jres23 = resStretch*resStretch;

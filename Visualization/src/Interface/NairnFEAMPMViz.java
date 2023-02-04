@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
@@ -26,10 +27,10 @@ public class NairnFEAMPMViz extends JNApplication
 	//----------------------------------------------------------------------------
 	
 	public NairnFEAMPMViz()
-	{	super("NairnFEAMPMViz-OSP","Version 8.0",
-				"Java application for running and visualizing OSParticulas and NairnFEA calculations.");
-		//super("NairnFEAMPMViz","Version 7.4",
-		//		"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
+	{	//super("NairnFEAMPMViz-OSP","Version 10.0",
+		//		"Java application for running and visualizing OSParticulas and NairnFEA calculations.");
+		super("NairnFEAMPMViz","Version 10.0",
+				"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
 		NFMVPrefs.setWorkspace(chooser);
 		
 		// path to folder containing this jar file ending in slash
@@ -200,9 +201,12 @@ public class NairnFEAMPMViz extends JNApplication
 		
 		// optional info strings
 		JNApplication.iconResource="Resources/AboutIcon.png";
-		JNApplication.copyright="Copyright 2004-2019, John A. Nairn, All Rights Reserved";
+		JNApplication.copyright="Copyright 2004-2023, John A. Nairn, All Rights Reserved";
 		JNApplication.author="Written and documented by John A. Nairn";
 		JNApplication.webSite="http://www.cof.orst.edu/cof/wse/faculty/Nairn/";
+		
+		// dialog box line width
+		JNUtilities.setWrapLength(100);
 		
 		// set document types
 		String[] exts1={"fmcmd","cmd"};
@@ -284,4 +288,74 @@ public class NairnFEAMPMViz extends JNApplication
 			readData="";
 		}
     }
+    
+	// Scripting attributes for internal scripts
+	public String gcis_getAttribute(String [] atoms,int i,CmdViewer server)
+	{
+	    String attr = server.grabAtom(atoms,i);
+	    
+	    // appVersionNumber
+	    if(attr.equals("version"))
+	       return JNApplication.versionReadable;
+
+	    // class
+	    else if(attr.equals("class"))
+	        return "application";
+
+	    // name
+	    else if(attr.equals("name"))
+	        return JNApplication.appNameReadable;
+
+		return null;
+	}
+
+	// Scripting attributes for internal scripts for results document
+	public Object gcis_getObjectAttribute(String attr,CmdViewer server)
+	{
+		if(attr.contentEquals("frontResultsDocument"))
+		{	ArrayList<JNDocument> docs = getDocuments();
+			for(int i=docs.size()-1;i>=0;i--)
+			{	JNDocument doc = docs.get(i);
+				if(doc.getClass().equals(DocViewer.class))
+					return doc;
+			}
+			return new ISNoneType();
+		}
+		
+		else if(attr.contentEquals("frontCommandDocument"))
+		{	ArrayList<JNDocument> docs = getDocuments();
+			for(int i=docs.size()-1;i>=0;i--)
+			{	JNDocument doc = docs.get(i);
+				if(doc.getClass().equals(CmdViewer.class))
+					return doc;
+			}
+			return new ISNoneType();
+		}
+		
+		else if(attr.contentEquals("commandDocuments"))
+		{	ISListType rdocs = new ISListType(null);
+			ArrayList<JNDocument> docs = getDocuments();
+			for(int i=docs.size()-1;i>=0;i--)
+			{	JNDocument doc = docs.get(i);
+				if(doc.getClass().equals(CmdViewer.class))
+					rdocs.gcis_addObject(doc);
+			}
+			return rdocs;
+		}
+		
+		else if(attr.contentEquals("resultsDocuments"))
+		{	ISListType rdocs = new ISListType(null);
+			ArrayList<JNDocument> docs = getDocuments();
+			for(int i=docs.size()-1;i>=0;i--)
+			{	JNDocument doc = docs.get(i);
+				if(doc.getClass().equals(DocViewer.class))
+					rdocs.gcis_addObject(doc);
+			}
+			return rdocs;
+		}
+		
+		return null;
+	}
+
+
 }

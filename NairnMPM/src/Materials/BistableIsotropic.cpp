@@ -196,14 +196,15 @@ void BistableIsotropic::PrintMechanicalProperties(void) const
 	cout << endl;
     
     char mline[200];
+	size_t msize=200;
 	if(rule==DILATION_RULE)
-    {   sprintf(mline,"Dilation transition at dV = %g%c to V offset = %g%c",100.*dVcrit,'%',100.*dVii,'%');
+    {   snprintf(mline,msize,"Dilation transition at dV = %g%c to V offset = %g%c",100.*dVcrit,'%',100.*dVii,'%');
 	}
 	else if(rule==DISTORTION_RULE)
-    {   sprintf(mline,"Distortion transition at sqrt(0.5*e'ij e'ij) = %g%c",100.*dVcrit,'%');
+    {   snprintf(mline,msize,"Distortion transition at sqrt(0.5*e'ij e'ij) = %g%c",100.*dVcrit,'%');
 	}
 	else if(rule==VONMISES_RULE)
-    {   sprintf(mline,"Distortion transition at sqrt(0.5*s'ij s'ij) = %g MPa",rho*dVcrit*UnitsController::Scaling(1.e-6));
+    {   snprintf(mline,msize,"Distortion transition at sqrt(0.5*s'ij s'ij) = %g MPa",rho*dVcrit*UnitsController::Scaling(1.e-6));
 	}
 
 	cout << mline << endl;
@@ -219,17 +220,18 @@ void BistableIsotropic::PrintMechanicalProperties(void) const
 void BistableIsotropic::PrintTransportProperties(void) const
 {
     char mline[200];
+	size_t msize=200;
 	
 	// Diffusion constants
 	if(DiffusionTask::HasDiffusion())
-	{   sprintf(mline,"D0 =%12.3g   Dd =%12.3f mm^2/sec  csat = %9.5lf",diff0,diffd,concSaturation);
+	{   snprintf(mline,msize,"D0 =%12.3g   Dd =%12.3f mm^2/sec  csat = %9.5lf",diff0,diffd,concSaturation);
 		cout << mline << endl;
-	    sprintf(mline,"b0 =%12.6g   bD =%12.6g 1/wt fr",beta0,betad);
+		snprintf(mline,msize,"b0 =%12.6g   bD =%12.6g 1/wt fr",beta0,betad);
 		cout << mline << endl;
 	}
 	// Conductivity constants (Cp is also mJ/(g-K))
 	if(ConductionTask::active)
-	{   sprintf(mline,"k0 =%12.3g %s  kd =%12.3g %s  C   =%12.3g %s",
+	{   snprintf(mline,msize,"k0 =%12.3g %s  kd =%12.3g %s  C   =%12.3g %s",
 				rho*kCond0*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS),
 				rho*kCondd*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS),
 				heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
@@ -299,6 +301,12 @@ char *BistableIsotropic::InitHistoryData(char *pchr,MPMBase *mptr)
     *h=INITIAL_STATE;
 	
     return p;
+}
+
+// reset history
+void BistableIsotropic::ResetHistoryData(char *pchr,MPMBase *mptr)
+{	short *h=(short *)pchr;
+	*h=INITIAL_STATE;
 }
 
 // archive material data for this material type when requested.
@@ -414,10 +422,13 @@ void BistableIsotropic::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTim
 		}
 		
         //LoadMechanicalProps(mptr,np);
-		double er = p->alpha[1]*(mptr->pPreviousTemperature-thermal.reference)
-		+ p->beta[1]*(mptr->pPreviousConcentration-DiffusionTask::reference);
-		double erzz = alphazz*(mptr->pPreviousTemperature-thermal.reference)
-		+ betazz*(mptr->pPreviousConcentration-DiffusionTask::reference);
+		double er = p->alpha[1]*(mptr->pPreviousTemperature-thermal.reference);
+		double erzz = alphazz*(mptr->pPreviousTemperature-thermal.reference);
+		if(DiffusionTask::HasDiffusion())
+		{	double dConc = diffusion->GetDeltaConcentration(mptr);
+			er += p->beta[1]*dConc;
+			erzz += betazz*dConc;
+		}
 		double exx,eyy;
 		
 		if(np==PLANE_STRAIN_MPM)
@@ -522,10 +533,13 @@ void BistableIsotropic::SRConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTim
 		}
 
         //LoadMechanicalProps(mptr,np);
-		double er = p->alpha[1]*(mptr->pPreviousTemperature-thermal.reference)
-						+ p->beta[1]*(mptr->pPreviousConcentration-DiffusionTask::reference);
-		double erzz = alphazz*(mptr->pPreviousTemperature-thermal.reference)
-						+ betazz*(mptr->pPreviousConcentration-DiffusionTask::reference);
+		double er = p->alpha[1]*(mptr->pPreviousTemperature-thermal.reference);
+		double erzz = alphazz*(mptr->pPreviousTemperature-thermal.reference);
+		if(DiffusionTask::HasDiffusion())
+		{	double dConc = diffusion->GetDeltaConcentration(mptr);
+			er += p->beta[1]*dConc;
+			erzz += betazz*dConc;
+		}
 		double exx,eyy;
 
 		if(np==PLANE_STRAIN_MPM)

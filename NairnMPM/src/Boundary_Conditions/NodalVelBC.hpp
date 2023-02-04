@@ -22,6 +22,7 @@ class NodalVelBC : public BoundaryCondition
 {
     public:
         int dir;
+		static bool holdAllVelocityBCs;
         
         // constructors and destructors
         NodalVelBC(int,int,int,double,double,double,double);
@@ -41,6 +42,7 @@ class NodalVelBC : public BoundaryCondition
 		NodalVelBC *AddReactionForce(Vector *,int);
         int ConvertToDirectionBits(int);
         void SetNormalVector(void);
+		Vector *GetNormalVector(void);
         int ConvertToInputDof(void);
 		void SetReflectedNode(int,double);
 		void SetMirrorSpacing(int);

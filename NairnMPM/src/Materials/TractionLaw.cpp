@@ -1,6 +1,10 @@
 /********************************************************************************
     TractionLaw.cpp
     nairn-mpm-fea
+ 
+    Thie abstract class is parent for all cohesive laws (and coheive beamn laws.
+    The only propertiies are stress1, stress2 that can be set with
+    sigmaI and sigmaII inpiut commands (initialized to -1)
     
     Created by John Nairn on Feb 22 2008.
     Copyright (c) 2008 John A. Nairn, All rights reserved.
@@ -195,5 +199,3 @@ int TractionLaw::MaterialStyle(void) const { return TRACTION_MAT; }
 
 // Number of history variables (used by some materials when creating array of doubles)
 int TractionLaw::NumberOfHistoryDoubles(void) const { return numTractionHistory; }
-
-

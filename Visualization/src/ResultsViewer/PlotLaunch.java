@@ -26,6 +26,7 @@ public class PlotLaunch extends PlotControl
 		plotBtn.setAction(docCtrl.getStartPlotAction());
 		plotBtn.setActionCommand("Start Plot");
 		plotBtn.setSize(plotBtn.getPreferredSize());
+		plotBtn.setFocusable(false);
 		int centerLoc=(36-plotBtn.getHeight())>>1;
 		plotBtn.setLocation(10,centerLoc);
 		//plotBtn.addActionListener(docCtrl);

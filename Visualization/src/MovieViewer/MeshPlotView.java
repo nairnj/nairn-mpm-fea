@@ -93,11 +93,13 @@ public class MeshPlotView extends JPanel
 		// fill elements
 		if(plotType!=LoadArchive.PARTICLE_PLOT && plotComponent!=PlotQuantity.MESHONLY)
 		{	// clip MPM mesh plots to the current particle settings
-			if(plotType==LoadArchive.MESH_PLOT && clipToParticles)
+			if(plotType==LoadArchive.MESH_PLOT && clipToParticles && !resDoc.isFEAAnalysis())
 			{	// clip to particles
 				GeneralPath clipPath=new GeneralPath();
 				for(i=0;i<resDoc.mpmPoints.size();i++)
-				{	resDoc.mpmPoints.get(i).addToClip(this,resDoc,clipPath);
+				{	MaterialPoint mptr = resDoc.mpmPoints.get(i);
+					if(mptr.inReservoir()) continue;
+					mptr.addToClip(this,resDoc,clipPath);
 				}
 				g2Loc.setClip(clipPath);
 			}
@@ -118,17 +120,17 @@ public class MeshPlotView extends JPanel
 		{	for(i=0;i<resDoc.elements.size();i++)
 			{	(resDoc.elements.get(i)).stroke(this,false);
 			}
-			
-			// mesh BCs
-			if(showMeshBCs)
-			{	for(i=0;i<resDoc.gridBCs.size();i++)
-				{	(resDoc.gridBCs.get(i)).stroke(this,resDoc);
-				}
-				g2Loc.setColor(meshLineColor);
-				setLineWidth(ElementBase.lineWidth);
-			}
 		}
 		
+		// mesh BCs
+		if(showMeshBCs)
+		{	for(i=0;i<resDoc.gridBCs.size();i++)
+			{	(resDoc.gridBCs.get(i)).stroke(this,resDoc);
+			}
+			g2Loc.setColor(meshLineColor);
+			setLineWidth(ElementBase.lineWidth);
+		}
+
 		// displaced mesh - if requested and if available
 		if(showDisplaced)
 		{	Color dispMeshLineColor=NFMVPrefs.getPrefColor(NFMVPrefs.dispMeshLineColorKey,NFMVPrefs.dispMeshLineColorDef);
@@ -169,7 +171,9 @@ public class MeshPlotView extends JPanel
 		// material point
 		if(showMatPts)
 		{	for(i=0;i<resDoc.mpmPoints.size();i++)
-			{	resDoc.mpmPoints.get(i).stroke(this,resDoc);
+			{	MaterialPoint mptr = resDoc.mpmPoints.get(i);
+				if(mptr.inReservoir()) continue;
+				mptr.stroke(this,resDoc);
 			}
 		}
 		
@@ -186,7 +190,9 @@ public class MeshPlotView extends JPanel
 		g2Loc.setColor(textColor);
 		if(showMatPtNums)
 		{	for(i=0;i<resDoc.mpmPoints.size();i++)
-			{	resDoc.mpmPoints.get(i).number(this,resDoc);
+			{	MaterialPoint mptr = resDoc.mpmPoints.get(i);
+				if(mptr.inReservoir()) continue;
+				mptr.number(this,resDoc);
 			}
 		}
 		

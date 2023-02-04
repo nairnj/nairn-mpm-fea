@@ -70,8 +70,8 @@ public class LoadArchive extends PlotControl implements ActionListener
 				rbIcon[TIME_PLOT].setEnabled(true);
 				plotType[MESH_PLOT].setEnabled(false);
 				rbIcon[MESH_PLOT].setEnabled(false);
-				plotType[MESH2D_PLOT].setEnabled(false);
-				rbIcon[MESH2D_PLOT].setEnabled(false);
+				plotType[MESH2D_PLOT].setEnabled(true);
+				rbIcon[MESH2D_PLOT].setEnabled(true);
 			}
 			else
 			{	newSelected=PARTICLE_PLOT;
@@ -154,6 +154,16 @@ public class LoadArchive extends PlotControl implements ActionListener
 		{	selected=MESH2D_PLOT;
 		}
 
+		previousPlotOption = selected;
+		if(selected!=oldSelected)
+		{	plotType[selected].setSelected(true);
+			docCtrl.controls.hiliteControls();
+		}
+	}
+	
+	public void changeSelected(int newType)
+	{	int oldSelected=selected;
+		selected = newType;
 		previousPlotOption = selected;
 		if(selected!=oldSelected)
 		{	plotType[selected].setSelected(true);

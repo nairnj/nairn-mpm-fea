@@ -272,13 +272,14 @@ void ShapeController::AddCutoutShape(ShapeController *cutout)
 #pragma mark ShapeController: MPM only methods
 
 #ifdef MPM_CODE
-// return next node for this shape or -1 if no more
+// return next particle number for this shape or -1 if no more
+// Used for BCs, because reservoir is skipped, they never get a BC
 int ShapeController::nextParticle(void)
 {
 	if(particleNum>=nmpms) return -1;
-	int i;
-	for(i=particleNum;i<nmpms;i++)
-    {   Vector nv = MakeVector(mpm[i]->pos.x,mpm[i]->pos.y,mpm[i]->pos.z);
+	for(int i=particleNum;i<nmpms;i++)
+	{	if(mpm[i]->InReservoir()) continue;
+		Vector nv = MakeVector(mpm[i]->pos.x,mpm[i]->pos.y,mpm[i]->pos.z);
 	    if(ShapeContainsPoint(nv))
 		{	particleNum=i+1;
 			return i;
@@ -309,6 +310,15 @@ double ShapeController::particleCount(void) { return numParticles>0 ? (double)nu
 
 // reset nodeNum and return NULL (no errors except in other shapes)
 void ShapeController::resetParticleEnumerator(void) { particleNum=0; }
+
+#ifdef SUPPORT_MEMBRANES
+// Membrane shapes should override to loop over membrane particle locations
+bool ShapeController::StartMembraneLoop(void) { return true; }
+bool ShapeController::NextMembraneLocation(Vector *loc) { return false; }
+
+// Membrane shapes should override to store membrane initial geometry on the particle
+void ShapeController::SetMembraneProperties(MPMBase *mpt) {}
+#endif
 
 #endif
 

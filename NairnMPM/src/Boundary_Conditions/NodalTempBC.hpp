@@ -26,8 +26,8 @@ class NodalTempBC: public NodalValueBC
         NodalTempBC(int,int,double,double);
     
         // methods
- 		NodalTempBC *CopyNodalValue(NodalPoint *);
-		NodalTempBC *PasteNodalValue(NodalPoint *);
+ 		NodalTempBC *CopyNodalValue(NodalPoint *,TransportField *);
+		NodalTempBC *PasteNodalValue(NodalPoint *,TransportField *);
 	
         // reaction heat calculation
 		NodalTempBC *AddHeatReaction(double *,int);
@@ -37,7 +37,6 @@ class NodalTempBC: public NodalValueBC
     
         // accessors
         virtual int GetSetDirection(void) const;
-        virtual TransportField *GetTransportFieldPtr(NodalPoint *) const;
 };
 
 // variables (changed in MPM time step)

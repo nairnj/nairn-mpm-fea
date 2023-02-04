@@ -40,7 +40,7 @@ void LinearTraction::PrintMechanicalProperties(void) const
 }
 
 // Doesn't need parent class history
-char *LinearTraction::InitHistoryData(char *pchr) { return NULL; }
+char *LinearTraction::InitHistoryData(char *pchr,MPMBase *mptr) { return NULL; }
 
 #pragma mark LinearTraction::Traction Law
 

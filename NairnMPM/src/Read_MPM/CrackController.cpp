@@ -13,10 +13,17 @@
 
 CrackController *crackCtrl=NULL;
 
+#pragma mark CrackController: constructor
+
+// constructor
+CrackController::CrackController() : ParseController()
+{
+}
+
 #pragma mark CrackController: methods
 
 // start new crack
-void CrackController::AddCrack(CrackHeader *newCrack)
+void CrackController::AddCrack(CrackHeader *newCrack,bool is3D)
 {
 	int newNumber = (lastObject==NULL) ? 1 :
 					((CrackHeader *)lastObject)->GetNumber()+1;
@@ -52,6 +59,7 @@ int CrackController::SetCracksArray(void)
 		numberOfCracks++;
 		obj=(CrackHeader *)obj->GetNextObject();
 	}
+
  	return true;
 }
 

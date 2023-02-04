@@ -57,6 +57,13 @@ class ShapeController
 		double particleCount(void);
 		virtual void resetParticleEnumerator(void);
 		virtual int nextParticle(void);
+
+ #ifdef SUPPORT_MEMBRANES
+		// membranes
+		virtual bool StartMembraneLoop(void);
+		virtual bool NextMembraneLocation(Vector *loc);
+		virtual void SetMembraneProperties(MPMBase *);
+ #endif
 #endif
     
         // accessors

@@ -27,7 +27,7 @@
 #pragma mark Constructors and Destructors
 
 // Constructors
-CarnotCycle::CarnotCycle()
+CarnotCycle::CarnotCycle() : CustomTask()
 {
 	V1rel = -1.;
 	V2rel = 1.;
@@ -107,7 +107,8 @@ CustomTask *CarnotCycle::StepCalculation(void)
     
     // loop over nonrigid material points
     for(p=0;p<nmpmsNR;p++)
-	{	numgas++;
+	{	if(mpm[p]->InReservoir()) continue;
+		numgas++;
 		Vrel += mpm[p]->GetRelativeVolume();
 		Tgas += mpm[p]->pPreviousTemperature;
 	}
@@ -143,7 +144,8 @@ CustomTask *CarnotCycle::StepCalculation(void)
 				
 				// find velocity
 				for(p=0;p<nmpms;p++)
-				{	// verify material is defined and sets if field number (in in multimaterial mode)
+				{	if(mpm[p]->InReservoir()) continue;
+					// verify material is defined and sets if field number (in in multimaterial mode)
 					matID=theMaterials[mpm[p]->MatID()];	// material object for this particle
 					if(matID->IsRigid())
 						mpm[p]->ReverseParticle(false,false);

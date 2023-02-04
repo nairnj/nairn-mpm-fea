@@ -26,7 +26,7 @@ double PropagateTask::cellsPerPropagationStep=0.5;
 #pragma mark Constructors and Destructors
 
 // Constructors
-PropagateTask::PropagateTask()
+PropagateTask::PropagateTask() : CustomTask()
 {
     propagateTask = this;
     arrested = false;

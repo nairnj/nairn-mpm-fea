@@ -11,7 +11,9 @@
 		external forces, and body forces.
 	* If transport activated, add equivalent forces for transport.
 	* Reduction phase to copy from ghost nodes at the end
-******************************************************************************************/
+    * After main loop, make transport tasks forces consistent with transport nodal BCs
+            (TO only because these done in PostForcesTasks in regular MPM)
+*****************************************************************************************/
 
 #include "stdafx.h"
 #include "NairnMPM_Class/GridForcesTask.hpp"
@@ -62,8 +64,8 @@ bool GridForcesTask::Execute(int taskOption)
 			while(mpmptr!=NULL)
 			{	const MaterialBase *matref = theMaterials[mpmptr->MatID()];		// material class (read only)
 				int matfld = matref->GetField(); 
-				
-				// get transport tensors (if needed)
+
+                // get transport tensors (if needed)
 				TransportProperties t;
 				if(transportTasks!=NULL)
 					matref->GetTransportProps(mpmptr,fmobj->np,&t);
@@ -79,6 +81,7 @@ bool GridForcesTask::Execute(int taskOption)
 				NodalPoint *ndptr;
 				for(int i=1;i<=numnds;i++)
 				{	vfld = (short)mpmptr->vfld[i];					// crack velocity field to use
+                    ndptr = GetNodePointer(pn,nds[i]);
 
 					// total force vector = internal + external forces
 					//	(in g mm/sec^2 or micro N)
@@ -88,8 +91,19 @@ bool GridForcesTask::Execute(int taskOption)
 					// add body forces (do in outside loop now)
 					
 					// add the total force to nodal point
-                    ndptr = GetNodePointer(pn,nds[i]);
 					ndptr->AddFtotTask3(vfld,matfld,&theFrc);
+
+#ifdef CHECK_NAN
+                    if(theFrc.x!=theFrc.x || theFrc.y!=theFrc.y || theFrc.z!=theFrc.z)
+                    {
+#pragma omp critical (output)
+						{	cout << "\n# GridForcesTask::Execute: bad nodal force vfld = " << vfld << ", matfld = " << matfld;
+							PrintVector(" theFrc = ",&theFrc);
+							cout << endl;
+							ndptr->Describe(true);
+						}
+                    }
+#endif
 					
 					// transport forces
 					TransportTask *nextTransport=transportTasks;
@@ -134,6 +148,6 @@ bool GridForcesTask::Execute(int taskOption)
 	{	for(int pn=0;pn<totalPatches;pn++)
 			patches[pn]->GridForcesReduction();
 	}
-    
+
     return true;
 }

@@ -46,6 +46,8 @@ AnisoPlasticity::AnisoPlasticity(char *matName,int matID) : Orthotropic(matName,
 	tyxy=-1.;
 	tyxz=-1.;
 	tyyz=-1.;
+	
+	h.style = SQUARED_TERMS;
 }
 
 #pragma mark AnisoPlasticity::Initialization
@@ -83,18 +85,31 @@ char *AnisoPlasticity::InputMaterialProperty(char *xName,int &input,double &gSca
 		return UnitsController::ScaledPtr((char *)&tyyz,gScaling,1.e6);
     }
 	
+	else if(strcmp(xName,"HillStyle")==0)
+	{	input=INT_NUM;
+		return (char *)(&h.style);
+	}
+	
 	return Orthotropic::InputMaterialProperty(xName,input,gScaling);
 }
 
 // verify settings and some initial calculations
-// NOTE: This code duplicated in OrthoPlasticSoftening. Keep them in sync
 const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
 {
 #ifdef POROELASTICITY
 	if(DiffusionTask::HasPoroelasticity())
 		return "Anisotropic plasticity materials cannot yet be used when poroelasticity is activated";
 #endif
-	
+    
+    if(swapz==1)
+    {   // swap x and z, xx->zz, xy->yz, xz same, yz->xy
+        SwapProperties(syxx,syzz,tyyz,tyxy);
+    }
+    else if(swapz>1)
+    {   // swap y and z, yy->zz, xy->xz, xz->xy, yz same
+        SwapProperties(syyy,syzz,tyxz,tyxy);
+    }
+
 	// requires large rotation mode
 	if(useLargeRotation==0) useLargeRotation = 1;
 	
@@ -111,7 +126,8 @@ const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
 	{	// OK if all the same
 	}
 	else
-	{	double rsxx=0.,rsyy=0.,rszz=0.;
+	{	// <0 means infinite so reciprocal is zero
+		double rsxx=0.,rsyy=0.,rszz=0.;
 		if(syxx>0.)
 			rsxx=1./(syxx*syxx);
 		if(syyy>0.)
@@ -145,7 +161,7 @@ const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
 	else
 		h.syzz2=0.;		// 1/inf^2
 	
-	// reciprocals of reduced shear yield stresses
+	// reciprocals of reduced shear yield stresses (actually 2*standard Hill L, N, and M)
 	if(tyxy>0.)
     {	h.N=rho/tyxy;
 		h.N*=h.N;
@@ -169,17 +185,27 @@ const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
     h.F = 0.5*(h.syyy2 + h.syzz2 - h.syxx2);
     h.G = 0.5*(h.syzz2 + h.syxx2 - h.syyy2);
     h.H = 0.5*(h.syxx2 + h.syyy2 - h.syzz2);
+    //cout << "F=" << h.F*1.e12/(rho*rho) << ", G=" << h.G*1.e12/(rho*rho) << ", H=" << h.H*1.e12/(rho*rho) << endl;
+    //cout << "L=" << h.L*1.e12/(2.*rho*rho) << ", M=" << h.M*1.e12/(2.*rho*rho) << ", N=" << h.N*1.e12/(2.*rho*rho) << endl;
 	
 	// reference yield stress (it is actually sqrt(2/3)/sigma(Y,ref))
     double sumNormal = h.F+h.G+h.H;
 	if(sumNormal<=0.) return "(F+G+H) for Hill plastic potential must be positive";
+	
+	// The materials.tex notes skip the 2/3 term here and throughout)
 	sqrt23OversigmaYref = sqrt(2.*sumNormal/3.);
 	
 	// for convergence problems
 	warnNonconvergence=warnings.CreateWarning("Anisotropic plastic algorithm failed to converge",-1,3);
     
 	// call super class
-	return Orthotropic::VerifyAndLoadProperties(np);
+	const char *errMsg = Orthotropic::VerifyAndLoadProperties(np);
+	if(errMsg!=NULL) return errMsg;
+	
+	// set more hill properties
+	FillHillStyleProperties(np,h,pr);
+
+	return NULL;
 }
 
 // if cannot be used in current analysis type
@@ -290,8 +316,16 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3
 	
     // Step 3: Calculate plastic potential f
 	p->aint = mptr->GetHistoryDble(0,0);
-	p->sAsmag = GetHillMagnitude(strial,&h,np);
-	double ftrial = p->sAsmag - GetYield(p);
+	// NEW_HILL two surface options
+	double halfsPs = GetHillMagnitude(strial,&h,np);
+	double yield = GetYield(p);
+	double ftrial;
+	if(h.style==SQRT_TERMS)
+	{	p->sAQsmag = halfsPs;
+		ftrial = p->sAQsmag - yield;
+	}
+	else
+		ftrial = halfsPs - yield*yield;
 	
 	// Step 4: Done if elastic
 	if(ftrial<=0.)
@@ -300,7 +334,7 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3
 		return;
     }
     
-	// Step 5: Solve for plastic strain increment
+	// Step 5: Solve for plastic strain increment and new stress and new alpha
 	Tensor dep = SolveForPlasticIncrement(mptr,np,ftrial,strial,p);
 	
 	// Step 8: update the particle
@@ -362,56 +396,165 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3
 	
 }
 
-// Solve numerically plastic strain increment by explicit radial return
+// Solve numerically plastic strain increment by implicit radial return
+// stk is trial stress state assuming elastic increment (lambda=0)
+// ftrial>0 is in Phi(lambda=0) for elastic increment
+// alphak in p->aint in alpha(lambda=0)
 Tensor AnisoPlasticity::SolveForPlasticIncrement(MPMBase *mptr,int np,double fk,Tensor &stk,AnisoPlasticProperties *p) const
 {
-	// collect total plastic strain increment from subincrements
 	Tensor dep;
 	ZeroTensor(&dep);
-	// stk is trial stress state assuming elastic increment
-	// ftrial>0 is in fk for elastic increment
-	// alphak in p->aint
-	double cutoff = 1.e-10;
+	double cutoff = 1.e-10*GetYield(p);
 	int nsteps=0;
-	//cout << "Start with f = " << fk << ", a = " << p->aint << endl;
-	while(nsteps<10)
-	{	// find dlambda = f/((df/dsig)C(df/dsig) + g'(alphak))
-		GetDfCdf(stk,np,p);
-        double dlambda = fk/(p->dfCdf + sqrt23OversigmaYref*GetGPrime(p));
-        //cout << "     dfCdf=" << p->dfCdf << ", sqrt(2/3)g'(a)/sYRef="
-        //            << sqrt23OversigmaYref*GetGPrime(p) << ", dlambda=" << dlambda << endl;
-
-		// update variables
-		p->aint += sqrt23OversigmaYref*dlambda;
-		
-		// next subincrement in plastic strain
-		Tensor ddep = p->dfds;
-		ScaleTensor(&ddep,dlambda);
-		
-		// update stress
-		stk.xx -= dlambda*p->Cdf.xx;
-		stk.yy -= dlambda*p->Cdf.yy;
-		stk.zz -= dlambda*p->Cdf.zz;
-		stk.xy -= dlambda*p->Cdf.xy;
-		if(np==THREED_MPM)
-		{	stk.xz -= dlambda*p->Cdf.xz;
-			stk.yz -= dlambda*p->Cdf.yz;
-		}
-		
-		// total incremental plastic strain accumulated
-		AddTensor(&dep,&ddep);
-		
-		// get new magniture and potential
-		p->sAsmag = GetHillMagnitude(stk,&h,np);
-		fk = p->sAsmag - GetYield(p);
-		
-		// check for convergence
-		nsteps++;
-		//cout << "   " << nsteps << ": f = " << fk << ", a = " << p->aint << ", dlambda = " << dlambda << endl;
-		if(fabs(fk)<cutoff) break;
-		
-	}
 	
+	//int dstep=1000;
+	//if(fmobj->mstep>dstep)
+	//{	cout << "Start with f = " << fk << ", a = " << p->aint << ", step = "
+	//		<< fmobj->mstep << ", cutoff = " << cutoff << endl;
+	//}
+	
+	// NEW_HILL plastic increment
+	if(h.style==SQUARED_TERMS)
+	{	double lambdak = 0;
+		Tensor strial = stk;
+		double atrial = p->aint;
+		
+		// P strial = DPhi/dSigma, (2/3)Q strial, and sqrt((2/3)strial Q strial) stored in p->
+		GetHillDfDsigmaPQsigma(strial,np,p,&h);
+		
+		// get (I + lambdak CP)^{-1} for first step when lambdak=0
+		Matrix3 IlamCPInv = Matrix3::Identity();
+		double lamInv[3][3];
+		IlamCPInv.get(lamInv);
+		
+		while(nsteps<10)
+		{	// stk = sigma(lambdak) = (I + lambda CP)^{-1}strial (from above=strial or end of previous step)
+			
+			// get P stk, (2/3)Q stk, and sqrt((2/3)stk Q stk) (from above using strial or end of previous step)
+
+			// dsigma/dlambda = -(I + lamdak CP)^{-1) CP.sigma(lambdak)
+			Tensor CPSigma,dSigdLam;
+			CPSigma.xx = h.CP11*stk.xx + h.CP12*stk.yy + h.CP13*stk.zz;
+			CPSigma.yy = h.CP21*stk.xx + h.CP22*stk.yy + h.CP23*stk.zz;
+			CPSigma.zz = h.CP31*stk.xx + h.CP32*stk.yy + h.CP33*stk.zz;
+			CPSigma.xy = h.CP66*stk.xy;
+			if(np==THREED_MPM)
+			{   CPSigma.yz = h.CP44*stk.yz;
+				CPSigma.xz = h.CP55*stk.xz;
+			}
+			dSigdLam.xx = -lamInv[0][0]*CPSigma.xx - lamInv[0][1]*CPSigma.yy - lamInv[0][2]*CPSigma.zz;
+			dSigdLam.yy = -lamInv[1][0]*CPSigma.xx - lamInv[1][1]*CPSigma.yy - lamInv[1][2]*CPSigma.zz;
+			dSigdLam.zz = -lamInv[2][0]*CPSigma.xx - lamInv[2][1]*CPSigma.yy - lamInv[2][2]*CPSigma.zz;
+			dSigdLam.xy = -CPSigma.xy/(1.+lambdak*h.CP66);
+			if(np==THREED_MPM)
+			{   dSigdLam.yz = -CPSigma.yz/(1.+lambdak*h.CP44);
+                dSigdLam.xz = -CPSigma.xz/(1.+lambdak*h.CP55);
+			}
+			
+			// hardining terms
+			p->aint = atrial + lambdak*p->sAQsmag;
+			double hardTerm = 2.*GetYield(p)*GetGPrime(p);
+			
+			// remaining terms
+			double ppterm,a2term;
+			if(np==THREED_MPM)
+			{	ppterm = DotTensors(&(p->dfdsPsigma),&dSigdLam);
+				a2term = p->sAQsmag + lambdak*DotTensors(&(p->CdfQsigma),&dSigdLam)/p->sAQsmag;
+			}
+			else
+			{	ppterm = DotTensors2D(&(p->dfdsPsigma),&dSigdLam);
+				a2term = p->sAQsmag + lambdak*DotTensors2D(&(p->CdfQsigma),&dSigdLam)/p->sAQsmag;
+			}
+			
+			// the final scalar derivative
+			double dPhidLambda = ppterm - hardTerm*a2term;
+			
+			// the update
+			double dlambda = -fk/dPhidLambda;
+			lambdak += dlambda;
+			
+			// get new stress (I + lambdak CP)^{-1}strial
+			// get (I+lambdak CP) - 3X3 upper left, diagonal bottom right
+			Matrix3 IlamCP = Matrix3(1.+lambdak*h.CP11,lambdak*h.CP12,lambdak*h.CP13,
+									lambdak*h.CP21,1.+lambdak*h.CP22,lambdak*h.CP23,
+									lambdak*h.CP31,lambdak*h.CP32,1.+lambdak*h.CP33);
+			IlamCPInv = IlamCP.Inverse();
+			IlamCPInv.get(lamInv);
+			stk.xx = lamInv[0][0]*strial.xx + lamInv[0][1]*strial.yy + lamInv[0][2]*strial.zz;
+			stk.yy = lamInv[1][0]*strial.xx + lamInv[1][1]*strial.yy + lamInv[1][2]*strial.zz;
+			stk.zz = lamInv[2][0]*strial.xx + lamInv[2][1]*strial.yy + lamInv[2][2]*strial.zz;
+			stk.xy = strial.xy/(1.+lambdak*h.CP66);
+			if(np==THREED_MPM)
+			{   stk.yz = strial.yz/(1.+lambdak*h.CP44);
+				stk.xz = strial.xz/(1.+lambdak*h.CP55);
+			}
+			
+			// P stk = DPhi/dSigma, (2/3)Q stk, and sqrt((2/3)stk Q stk)
+			GetHillDfDsigmaPQsigma(stk,np,p,&h);
+
+			// get new alpha
+			p->aint = atrial + lambdak*p->sAQsmag;
+
+			// check convergenve with new values
+			double halfsPs = GetHillMagnitude(stk,&h,np);
+			double yield = GetYield(p);
+			fk = halfsPs - yield*yield;
+			
+			// check for convergence
+			nsteps++;
+			//if(fmobj->mstep>dstep)
+			//{	cout << "   " << nsteps << ": f = " << fk << ", a = " << p->aint << ", dlambda = "
+			//            << dlambda << ", lambda = " << lambdak << ", dfk/dlam = " << dPhidLambda << endl;
+			//}
+			if(fabs(fk)<cutoff)
+			{	// get final plastic strain
+				dep = p->dfdsPsigma;
+				ScaleTensor(&dep,lambdak);
+				break;
+			}
+		}
+	}
+	else
+	{	// Newton's method to solve for plastic strain
+		while(nsteps<10)
+		{	// find dlambda = f/((df/dsig)C(df/dsig) + g'(alphak))
+			GetDfCdf(stk,np,p);
+			double dlambda = fk/(p->dfCdf + sqrt23OversigmaYref*GetGPrime(p));
+			//cout << "     dfCdf=" << p->dfCdf << ", sqrt(2/3)g'(a)/sYRef="
+			//            << sqrt23OversigmaYref*GetGPrime(p) << ", dlambda=" << dlambda << endl;
+
+			// update variables
+			p->aint += sqrt23OversigmaYref*dlambda;
+			
+			// next subincrement in plastic strain
+			Tensor ddep = p->dfdsPsigma;
+			ScaleTensor(&ddep,dlambda);
+			
+			// update stress
+			stk.xx -= dlambda*p->CdfQsigma.xx;
+			stk.yy -= dlambda*p->CdfQsigma.yy;
+			stk.zz -= dlambda*p->CdfQsigma.zz;
+			stk.xy -= dlambda*p->CdfQsigma.xy;
+			if(np==THREED_MPM)
+			{	stk.xz -= dlambda*p->CdfQsigma.xz;
+				stk.yz -= dlambda*p->CdfQsigma.yz;
+			}
+			
+			// total incremental plastic strain accumulated
+			AddTensor(&dep,&ddep);
+			
+			// get new magniture and potential
+			p->sAQsmag = GetHillMagnitude(stk,&h,np);
+			fk = p->sAQsmag - GetYield(p);
+			
+			// check for convergence
+			nsteps++;
+			//cout << "   " << nsteps << ": f = " << fk << ", a = " << p->aint << ", dlambda = " << dlambda << endl;
+			if(fabs(fk)<cutoff) break;
+			
+		}
+	}
+
 	// check number of steps
 	if(nsteps>hstepsMax)
 	{	hstepsMax = nsteps;
@@ -425,75 +568,135 @@ Tensor AnisoPlasticity::SolveForPlasticIncrement(MPMBase *mptr,int np,double fk,
 	return dep;
 }
 
+// Only called when h.style == SQRT_TERMS
 // Find C.df and df.C.df at given stress - store results in plastic property variables active only during the loop
 // and only for current material point
 void AnisoPlasticity::GetDfCdf(Tensor &stk,int np,AnisoPlasticProperties *p) const
 {
-	// Get dfds
-	GetHillDfDsigma(stk,np,p,&h);
+	// Get dfds (in dfdsPsigma)
+	GetHillDfDsigmaPQsigma(stk,np,p,&h);
 	
-	// get C df and df C df, which needs df/dsig
+	// get C df (in CdfQsigma) and df C df (in dfCdf), which needs df/dsig
 	ElasticProperties *r = p->ep;
 	if(np==THREED_MPM)
-	{	p->Cdf.xx = r->C[0][0]*p->dfds.xx + r->C[0][1]*p->dfds.yy + r->C[0][2]*p->dfds.zz;
-		p->Cdf.yy = r->C[1][0]*p->dfds.xx + r->C[1][1]*p->dfds.yy + r->C[1][2]*p->dfds.zz;
-		p->Cdf.zz = r->C[2][0]*p->dfds.xx + r->C[2][1]*p->dfds.yy + r->C[2][2]*p->dfds.zz;
-		p->Cdf.yz = r->C[3][3]*p->dfds.yz;
-		p->Cdf.xz = r->C[4][4]*p->dfds.xz;
-		p->Cdf.xy = r->C[5][5]*p->dfds.xy;
-		p->dfCdf = p->dfds.xx*p->Cdf.xx + p->dfds.yy*p->Cdf.yy + p->dfds.zz*p->Cdf.zz
-						+ p->dfds.yz*p->Cdf.yz + p->dfds.xz*p->Cdf.xz + p->dfds.xy*p->Cdf.xy;
+	{	p->CdfQsigma.xx = r->C[0][0]*p->dfdsPsigma.xx + r->C[0][1]*p->dfdsPsigma.yy + r->C[0][2]*p->dfdsPsigma.zz;
+		p->CdfQsigma.yy = r->C[1][0]*p->dfdsPsigma.xx + r->C[1][1]*p->dfdsPsigma.yy + r->C[1][2]*p->dfdsPsigma.zz;
+		p->CdfQsigma.zz = r->C[2][0]*p->dfdsPsigma.xx + r->C[2][1]*p->dfdsPsigma.yy + r->C[2][2]*p->dfdsPsigma.zz;
+		p->CdfQsigma.yz = r->C[3][3]*p->dfdsPsigma.yz;
+		p->CdfQsigma.xz = r->C[4][4]*p->dfdsPsigma.xz;
+		p->CdfQsigma.xy = r->C[5][5]*p->dfdsPsigma.xy;
+		p->dfCdf = p->dfdsPsigma.xx*p->CdfQsigma.xx + p->dfdsPsigma.yy*p->CdfQsigma.yy
+						+ p->dfdsPsigma.zz*p->CdfQsigma.zz + p->dfdsPsigma.yz*p->CdfQsigma.yz
+						+ p->dfdsPsigma.xz*p->CdfQsigma.xz + p->dfdsPsigma.xy*p->CdfQsigma.xy;
 	}
 	else
-	{	p->Cdf.xx = r->C[1][1]*p->dfds.xx + r->C[1][2]*p->dfds.yy;
-		p->Cdf.yy = r->C[1][2]*p->dfds.xx + r->C[2][2]*p->dfds.yy;
-		p->Cdf.xy = r->C[3][3]*p->dfds.xy;
-		p->Cdf.zz = r->C[4][1]*p->dfds.xx + r->C[4][2]*p->dfds.yy + r->C[4][4]*p->dfds.zz;
-		p->dfCdf = p->dfds.xx*p->Cdf.xx + p->dfds.yy*p->Cdf.yy + p->dfds.xy*p->Cdf.xy + p->dfds.zz*p->Cdf.zz;
+	{	p->CdfQsigma.xx = r->C[1][1]*p->dfdsPsigma.xx + r->C[1][2]*p->dfdsPsigma.yy;
+		p->CdfQsigma.yy = r->C[1][2]*p->dfdsPsigma.xx + r->C[2][2]*p->dfdsPsigma.yy;
+		p->CdfQsigma.xy = r->C[3][3]*p->dfdsPsigma.xy;
+		p->CdfQsigma.zz = r->C[4][1]*p->dfdsPsigma.xx + r->C[4][2]*p->dfdsPsigma.yy + r->C[4][4]*p->dfdsPsigma.zz;
+		p->dfCdf = p->dfdsPsigma.xx*p->CdfQsigma.xx + p->dfdsPsigma.yy*p->CdfQsigma.yy
+							+ p->dfdsPsigma.xy*p->CdfQsigma.xy + p->dfdsPsigma.zz*p->CdfQsigma.zz;
 	}
 }
 
 #pragma mark AnisoPlasticity::Class Methods
 
+// NEW_HILL properties
+// get properties for Hill style 2 (or revert to style 1
+// This is a static because it is called by OrthoPlasticSofetning too
+void AnisoPlasticity::FillHillStyleProperties(int np,HillProperties &h,ElasticProperties &pr)
+{
+	if(h.style==SQUARED_TERMS)
+	{	// matrix C.P (non-zero elements)
+		// Elements of P = 2A are scaled by rho^2 and P by 1/rho so CP is * rho
+		if(np==THREED_MPM)
+		{	h.CP11 = 2.*( pr.C[0][0]*h.syxx2 - pr.C[0][1]*h.H - pr.C[0][2]*h.G );
+			h.CP12 = 2.*( -pr.C[0][0]*h.H + pr.C[0][1]*h.syyy2 - pr.C[0][2]*h.F );
+			h.CP13 = 2.*( -pr.C[0][0]*h.G - pr.C[0][1]*h.F + pr.C[0][2]*h.syzz2 );
+			h.CP21 = 2.*( pr.C[0][1]*h.syxx2 - pr.C[1][1]*h.H - pr.C[1][2]*h.G );
+			h.CP22 = 2.*( -pr.C[0][1]*h.H + pr.C[1][1]*h.syyy2 - pr.C[1][2]*h.F );
+			h.CP23 = 2.*( -pr.C[0][1]*h.G - pr.C[1][1]*h.F + pr.C[1][2]*h.syzz2 );
+			h.CP31 = 2.*( pr.C[0][2]*h.syxx2 - pr.C[1][2]*h.H - pr.C[2][2]*h.G );
+			h.CP32 = 2.*( -pr.C[0][2]*h.H + pr.C[1][2]*h.syyy2 - pr.C[2][2]*h.F );
+			h.CP33 = 2.*( -pr.C[0][2]*h.G - pr.C[1][2]*h.F + pr.C[2][2]*h.syzz2 );
+			h.CP44 = 2.*pr.C[3][3]*h.L;
+			h.CP55 = 2.*pr.C[4][4]*h.M;
+			h.CP66 = 2.*pr.C[5][5]*h.N;
+		}
+		else
+		{	h.CP11 = 2.*( pr.C[1][1]*h.syxx2 - pr.C[1][2]*h.H - pr.C[4][1]*h.G );
+			h.CP12 = 2.*( -pr.C[1][1]*h.H + pr.C[1][2]*h.syyy2 - pr.C[4][1]*h.F );
+			h.CP13 = 2.*( -pr.C[1][1]*h.G - pr.C[1][2]*h.F + pr.C[4][1]*h.syzz2 );
+			h.CP21 = 2.*( pr.C[1][2]*h.syxx2 - pr.C[2][2]*h.H - pr.C[4][2]*h.G );
+			h.CP22 = 2.*( -pr.C[1][2]*h.H + pr.C[2][2]*h.syyy2 - pr.C[4][2]*h.F );
+			h.CP23 = 2.*( -pr.C[1][2]*h.G - pr.C[2][2]*h.F + pr.C[4][2]*h.syzz2 );
+			h.CP31 = 2.*( pr.C[4][1]*h.syxx2 - pr.C[4][2]*h.H - pr.C[4][4]*h.G );
+			h.CP32 = 2.*( -pr.C[4][1]*h.H + pr.C[4][2]*h.syyy2 - pr.C[4][4]*h.F );
+			h.CP33 = 2.*( -pr.C[4][1]*h.G - pr.C[4][2]*h.F + pr.C[4][4]*h.syzz2 );
+			h.CP44 = 0.;
+			h.CP55 = 0.;
+			h.CP66 = 2.*pr.C[3][3]*h.N;
+		}
+		
+		// Q = PZP matrix (scale by rho^2 and symmetric)
+		// same 2D and 3D
+		h.Q11 = 8.*(h.G*h.G + h.G*h.H + h.H*h.H);
+		h.Q12 = 4.*(h.F*(h.G-h.H) - h.H*(h.G+2.*h.H));
+		h.Q13 = 4.*(-h.G*(h.F+h.G) + h.F*h.H - h.G*(h.G+h.H));
+		h.Q22 = 8.*(h.F*h.F + h.F*h.H + h.H*h.H);
+		h.Q23 = 4.*(-2.*h.F*h.F + h.G*h.H - h.F*(h.G+h.H));
+		h.Q33 = 8.*(h.F*h.F + h.F*h.G + h.G*h.G);
+		h.Q44 = 2.*h.L*h.L;
+		h.Q55 = 2.*h.M*h.M;
+		h.Q66 = 2.*h.N*h.N;
+	}
+	else
+	{	// revert to valid option is was not set to 1 or 2
+		h.style = SQRT_TERMS;
+	}
+}
+
 // print just yield properties to output window
 void AnisoPlasticity::PrintAPYieldProperties(double yld1,double yld2,double yld3,double yld23,double yld13,double yld12)
 {
     if(yld1>=0.)
-        PrintProperty("yld1",yld1*UnitsController::Scaling(1.e-6),"");
+        PrintProperty("syxx",yld1*UnitsController::Scaling(1.e-6),"");
     else
-        PrintProperty("yld1= inf",false);
+        PrintProperty("syxx= inf",false);
         
     if(yld2>=0.)
-        PrintProperty("yld2",yld2*UnitsController::Scaling(1.e-6),"");
+        PrintProperty("syyy",yld2*UnitsController::Scaling(1.e-6),"");
     else
-        PrintProperty("yld2= inf",false);
+        PrintProperty("syyy= inf",false);
         
     if(yld3>=0.)
-        PrintProperty("yld3",yld3*UnitsController::Scaling(1.e-6),"");
+        PrintProperty("syzz",yld3*UnitsController::Scaling(1.e-6),"");
     else
-        PrintProperty("yld3= inf",false);
+        PrintProperty("syzz= inf",false);
         
     cout << endl;
 
     if(yld23>=0.)
-        PrintProperty("yld23",yld23*UnitsController::Scaling(1.e-6),"");
+        PrintProperty("tyyz",yld23*UnitsController::Scaling(1.e-6),"");
     else
-        PrintProperty("yld23= inf",false);
+        PrintProperty("tyyz= inf",false);
 
     if(yld13>=0.)
-        PrintProperty("yld13",yld13*UnitsController::Scaling(1.e-6),"");
+        PrintProperty("tyxz",yld13*UnitsController::Scaling(1.e-6),"");
     else
-        PrintProperty("yld13= inf",false);
+        PrintProperty("tyxz= inf",false);
     
     if(yld12>=0.)
-        PrintProperty("yld12",yld12*UnitsController::Scaling(1.e-6),"");
+        PrintProperty("tyxy",yld12*UnitsController::Scaling(1.e-6),"");
     else
-        PrintProperty("yld12= inf",false);
+        PrintProperty("tyxy= inf",false);
     
     cout << endl;
 }
 
-// Get sqrt(s As) where srot is stress in material axis system
+// NEW_HILL get magnitude (static)
+// h->style==SQRT_TERMS: Get sqrt(sAs) where srot is stress in material axis system (negative retruned as zero)
+// h->style==SQUARED_TERMS: Get (1/2)sPs where srot is stress in material axis system (negative retruned as zero)
 double AnisoPlasticity::GetHillMagnitude(Tensor &srot,const HillProperties *h,int np)
 {
     // initialize (with 3D shear)
@@ -506,29 +709,66 @@ double AnisoPlasticity::GetHillMagnitude(Tensor &srot,const HillProperties *h,in
     sAs += h->F*dyz*dyz + h->G*dxz*dxz + h->H*dxy*dxy + srot.xy*srot.xy*h->N;
     
     // check on negative sAs can happen due to round-off error when stresses near zero
-    return sAs>0. ? sqrt(sAs) : 0 ;
+	if(h->style==SQRT_TERMS)
+		return sAs>0. ? sqrt(sAs) : 0 ;
+	else
+		return sAs>0. ? sAs : 0 ;
 }
 
-// Find dfds = A sigma/sqrt(sigma.Asigma) in material axes
-// load it into plastic properties
-void AnisoPlasticity::GetHillDfDsigma(Tensor &stk,int np,AnisoPlasticProperties *p,const HillProperties *h)
+// NEW_HILL get tensors (static)
+// h->stylee=SQRT_TERMS: Find dfds = A sigma/sqrt(sigma.Asigma) in material axes
+// h->style=SQUARED_TERMS: Find P sigma = 2 A sigma, (2/3)Q sigma and sqrt((2/3)sigma.CdfQsigma)
+// load all into plastic properties
+void AnisoPlasticity::GetHillDfDsigmaPQsigma(Tensor &stk,int np,AnisoPlasticProperties *p,const HillProperties *h)
 {
-    // df = A.sigma/rootSAS
-    if(p->sAsmag>0.)
-    {   p->dfds.xx = (h->syxx2*stk.xx - h->H*stk.yy - h->G*stk.zz) / p->sAsmag;
-        p->dfds.yy = (-h->H*stk.xx + h->syyy2*stk.yy - h->F*stk.zz) / p->sAsmag;
-        p->dfds.zz = (-h->G*stk.xx - h->F*stk.yy + h->syzz2*stk.zz) / p->sAsmag;
-        p->dfds.xy = h->N*stk.xy / p->sAsmag;
-        if(np==THREED_MPM)
-        {   p->dfds.yz = h->L*stk.yz / p->sAsmag;
-            p->dfds.xz = h->M*stk.xz / p->sAsmag;
-        }
-    }
-    
-    else
-    {   // negative root implies zero stress within roundoff error
-        p->dfds.xx = p->dfds.yy = p->dfds.zz = p->dfds.yz = p->dfds.xz = p->dfds.xy = 0.;
-    }
+	if(h->style==SQUARED_TERMS)
+	{	// Get P sigma = 2 A sigma
+		p->dfdsPsigma.xx = 2.*(h->syxx2*stk.xx - h->H*stk.yy - h->G*stk.zz);
+		p->dfdsPsigma.yy = 2.*(-h->H*stk.xx + h->syyy2*stk.yy - h->F*stk.zz);
+		p->dfdsPsigma.zz = 2.*(-h->G*stk.xx - h->F*stk.yy + h->syzz2*stk.zz);
+		p->dfdsPsigma.xy = 2.*h->N*stk.xy;
+		if(np==THREED_MPM)
+		{   p->dfdsPsigma.yz = 2.*h->L*stk.yz;
+			p->dfdsPsigma.xz = 2.*h->M*stk.xz;
+		}
+		
+		// Get (2/3)Q sigma(lambdak)
+		p->CdfQsigma.xx = h->Q11*stk.xx + h->Q12*stk.yy + h->Q13*stk.zz;
+		p->CdfQsigma.yy = h->Q12*stk.xx + h->Q22*stk.yy + h->Q23*stk.zz;
+		p->CdfQsigma.zz = h->Q13*stk.xx + h->Q23*stk.yy + h->Q33*stk.zz;
+		p->CdfQsigma.xy = h->Q66*stk.xy;
+		if(np==THREED_MPM)
+		{   p->CdfQsigma.yz = h->Q44*stk.yz;
+			p->CdfQsigma.xz = h->Q55*stk.xz;
+		}
+		ScaleTensor(&(p->CdfQsigma),2./3.);
+		
+		// get sqrt((2/3)sigma.CdfQsigma)
+		p->sAQsmag = stk.xx*p->CdfQsigma.xx + stk.yy*p->CdfQsigma.yy + stk.zz*p->CdfQsigma.zz + stk.xy*p->CdfQsigma.xy;
+		if(np==THREED_MPM) p->sAQsmag += stk.yz*p->CdfQsigma.yz + stk.xz*p->CdfQsigma.xz;
+		p->sAQsmag = sqrt(p->sAQsmag);
+	}
+	else
+	{	// using SQRT_TERMS
+		
+		// dfds = A.sigma/rootSAS
+		if(p->sAQsmag>0.)
+		{   p->dfdsPsigma.xx = (h->syxx2*stk.xx - h->H*stk.yy - h->G*stk.zz) / p->sAQsmag;
+			p->dfdsPsigma.yy = (-h->H*stk.xx + h->syyy2*stk.yy - h->F*stk.zz) / p->sAQsmag;
+			p->dfdsPsigma.zz = (-h->G*stk.xx - h->F*stk.yy + h->syzz2*stk.zz) / p->sAQsmag;
+			p->dfdsPsigma.xy = h->N*stk.xy / p->sAQsmag;
+			if(np==THREED_MPM)
+			{   p->dfdsPsigma.yz = h->L*stk.yz / p->sAQsmag;
+				p->dfdsPsigma.xz = h->M*stk.xz / p->sAQsmag;
+			}
+		}
+		
+		else
+		{   // negative root implies zero stress within roundoff error
+			p->dfdsPsigma.xx = p->dfdsPsigma.yy = p->dfdsPsigma.zz = 0.;
+			p->dfdsPsigma.yz = p->dfdsPsigma.xz = p->dfdsPsigma.xy = 0.;
+		}
+	}
 }
 
 #pragma mark AnisoPlasticity::Accessors

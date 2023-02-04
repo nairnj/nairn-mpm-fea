@@ -88,6 +88,7 @@ const char *CoulombFriction::VerifyAndLoadProperties(int np)
 void CoulombFriction::PrintContactLaw(void) const
 {
 	char hline[200];
+	size_t hsize=200;
 	
 	switch(frictionStyle)
 	{	case STICK:
@@ -99,13 +100,13 @@ void CoulombFriction::PrintContactLaw(void) const
 			break;
 		
 		default:
-			sprintf(hline,"Contact by Coulomb friction with coefficient of friction: %.6f",frictionCoeff);
+			snprintf(hline,hsize,"Contact by Coulomb friction with coefficient of friction: %.6f",frictionCoeff);
 			cout << hline << endl;
 			break;
 	}
 	
 	if(frictionCoeffStatic>0.)
-	{	sprintf(hline,"                      and static coefficient of friction: %.6f",frictionCoeffStatic);
+	{	snprintf(hline,hsize,"                      and static coefficient of friction: %.6f",frictionCoeffStatic);
 		cout << hline << endl;
 	}
 	
@@ -227,6 +228,10 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
         }
 	}
 	
+	// hacks to using velocity only for contact
+	//if(dotn>=0.) return false;
+	//inContact = true;
+	
 	// Get frictional sliding force be Sslide Ac dt = f(N) Ac dt where NAcDt = -fnaDt
 	double SslideAcDt = GetSslideAcDt(-fnaDt,dott,mred,contactArea,inContact,deltime);
 	
@@ -329,6 +334,59 @@ double CoulombFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred
 	// S = mu N   or   S Ac dt = mu N Ac dt
 	return frictionCoeff*NAcDt;
 }
+
+#ifdef THREE_MAT_CONTACT
+
+// Cannot handle velocity dependent coefficient until 3+ material code extended to non-linear laws
+// Technically cannot handle smooth static to dynamic, but does handle as if not smooth for 3+ pairs
+bool CoulombFriction::CanHandleTwoPairContact(void) const { return true; }
+
+// On call Smin=0 and Smax=Sstick, change if needed for this law
+void CoulombFriction::BracketSSlide(double &Smin,double &Smax,double contactArea,double deltime)
+{
+	if(frictionCoeff<=0.)
+	{	// frictionless (not often called here)
+		Smax = 0.;
+	}
+	else if(frictionCoeffStatic>frictionCoeff)
+	{	// adjust max is has static coefficient of friction
+		Smax *= frictionCoeffStatic/frictionCoeff;
+	}
+	
+}
+// Return d(Sslide Ac dt)/d(N Ac dt)
+// Assuming node is sliding and is in contact
+double CoulombFriction::GetDSslideAcDt(double NAcDt) const
+{
+	return frictionCoeff;
+}
+
+
+// Decide is this contact law might be in contact
+// Only used in three+ material contact code
+bool CoulombFriction::ProvisionalInContact(Vector *delPi,Vector *norm,double dotn,double deltaDotn,
+												 double contactArea,double deltime) const
+{
+	// stick is always in contact
+	if(frictionStyle==STICK) return true;
+	
+	// frictionlaw but no adhesion - Check contact at start only
+	if(deltaDotn<0.)
+	{	// contact if stress below cutoff
+		double fnaDtMax = 0.;
+		if(displacementOnly>0.1)
+			fnaDtMax = dotn+1.;
+		else if(displacementOnly<0.)
+			fnaDtMax = -displacementOnly*contactArea*deltime;
+		if(dotn<fnaDtMax)
+			return true;
+	}
+	
+	// separated so no contact
+	return false;
+}
+
+#endif // end THREE_MAT_CONTACT
 
 #pragma mark CoulombFriction::Accessors
 

@@ -41,7 +41,8 @@ MatPoint3D::MatPoint3D(int inElemNum,int theMatl,double angin) : MPMBase(inElemN
 // Update Strains for this particle
 // Velocities for all fields are present on the nodes
 // matRef is the material and properties have been loaded, matFld is the material field
-void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
+// postUpdate true means after particle position updated
+void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld,bool postUpdate)
 {
 #ifdef CONST_ARRAYS
 	int ndsArray[MAX_SHAPE_NODES];
@@ -126,14 +127,8 @@ void MatPoint3D::MoveParticle(GridToParticleExtrap *gp)
 		SubVector(&delV,&delXRate);
 		
 		// finish midpoint position update
-		if(gp->m>1 || fmobj->dflag[11]==0)
-		{	// 2*del X = (V(n+1)+V(n))
-			AddVector(&delXRate,&vel);
-		}
-		else
-		{	// Use PIC based on FLIP position update
-			delXRate = vel;
-		}
+		// 2*del X = (V(n+1)+V(n))
+        AddVector(&delXRate,&vel);
 		AddScaledVector(&pos,&delXRate,0.5*timestep);
 	}
 	else if(gp->m==0)
@@ -178,7 +173,16 @@ void MatPoint3D::MoveParticle(GridToParticleExtrap *gp)
 
 	// J Integral needs effective particle acceleration
 	acc = MakeVector(delV.x/timestep,delV.y/timestep,delV.z/timestep);
-	
+		
+#ifdef CHECK_NAN
+	if(pos.x!=pos.x || pos.y!=pos.y || pos.z!=pos.z || vel.x!=vel.x || vel.y!=vel.y || vel.z!=vel.z)
+	{
+#pragma omp critical (output)
+		{	cout << "\n# MatPoint2D::MoveParticle: bad pos or vel" << endl;
+			Describe();
+		}
+	}
+#endif
 }
 
 // Move rigid particle by new current velocity
@@ -238,6 +242,22 @@ void MatPoint3D::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double 
 	theFrc->x = -mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv) + fni*pFext.x;
 	theFrc->y = -mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv+sp.yz*zDeriv) + fni*pFext.y;
 	theFrc->z = -mp*(sp.xz*xDeriv+sp.yz*yDeriv+(sp.zz-pressure)*zDeriv) + fni*pFext.z;
+	
+#ifdef CHECK_NAN
+	if(theFrc->x!=theFrc->x || theFrc->y!=theFrc->y || theFrc->z!=theFrc->z)
+	{
+#pragma omp critical (output)
+		{	cout << "\n# MatPoint3D::GetFintPlusFext: bad nodal fint+fext";
+			PrintVector(" = ",theFrc);
+			cout << endl;
+			cout << "# sp = (" << sp.xx << "," << sp.yy << "," << sp.zz << "," << sp.yz
+				<< "," << sp.xz << "," << sp.xy << ") P = " << pressure << endl;
+			PrintVector("# pFext = ",&pFext);
+			cout << endl;
+			cout << "# Sip = " << fni << " Gip = (" << xDeriv << "," << yDeriv << "," << zDeriv << ")" << endl;
+		}
+	}
+#endif
 }
 
 // add to the concentration gradient (non-rigid particles only)
@@ -259,19 +279,20 @@ double MatPoint3D::FCond(int offset,double dshdx,double dshdy,double dshdz,Trans
 }
 
 // add to the concentration gradient
-void MatPoint3D::AddConcentrationGradient(Vector *grad)
-{	pDiffusion[gGRADx]+=grad->x;
-    pDiffusion[gGRADy]+=grad->y;
-    pDiffusion[gGRADz]+=grad->z;
+void MatPoint3D::AddConcentrationGradient(int dnum,Vector *grad)
+{	pDiff[dnum]->grad.x += grad->x;
+	pDiff[dnum]->grad.y += grad->y;
+	pDiff[dnum]->grad.z += grad->z;
 }
 
 // return diffusion force = - V [D] Grad C . Grad S
-double MatPoint3D::FDiff(double dshdx,double dshdy,double dshdz,TransportProperties *t)
+double MatPoint3D::FDiff(double dshdx,double dshdy,double dshdz,TransportProperties *t,int number)
 {
 	Tensor *Dten = &(t->diffusionTensor);
-	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pDiffusion[gGRADx] + Dten->xy*pDiffusion[gGRADy] + Dten->xz*pDiffusion[gGRADz])*dshdx
-						+ (Dten->xy*pDiffusion[gGRADx] + Dten->yy*pDiffusion[gGRADy] + Dten->yz*pDiffusion[gGRADz])*dshdy
-						+ (Dten->xz*pDiffusion[gGRADx] + Dten->yz*pDiffusion[gGRADy] + Dten->zz*pDiffusion[gGRADz])*dshdz);
+    Vector pgrad = pDiff[number]->grad;
+	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pgrad.x + Dten->xy*pgrad.y + Dten->xz*pgrad.z)*dshdx
+                                      + (Dten->xy*pgrad.x + Dten->yy*pgrad.y + Dten->yz*pgrad.z)*dshdy
+                                      + (Dten->xz*pgrad.x + Dten->yz*pgrad.y + Dten->zz*pgrad.z)*dshdz);
 }
 
 // return kinetic energy (g mm^2/sec^2) = nanoJ
@@ -566,7 +587,8 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 	}
     catch(CommonException& err)
     {   char msg[200];
-        sprintf(msg,"A CPDI particle domain node has left the grid: %s",err.Message());
+		size_t msgSize=200;
+		snprintf(msg,msgSize,"A CPDI particle domain node has left the grid: %s",err.Message());
         throw CommonException(msg,"MatPoint3D::GetCPDINodesAndWeights");
     }
     
@@ -605,46 +627,37 @@ Vector MatPoint3D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Ve
 	GetSemiSideVectors(&r1,&r2,&r3);
 	double uGIMPsize = -1.;
 #ifndef TRACTION_ALWAYS_DEFORMED
-	switch(ElementBase::useGimp)
-	{	case UNIFORM_GIMP:
-		case UNIFORM_GIMP_AS:
-		case BSPLINE_GIMP:
-		case BSPLINE_GIMP_AS:
-		case BSPLINE:
-		case POINT_GIMP:
-		{	double rx,ry,rz;
-			
-			// get deformed area
-			Vector Ap;
-			switch(face)
-			{	case 1:
-				case 3:
-					CrossProduct(&Ap,&r1,&r3);
-					break;
-				case 4:
-				case 2:
-					CrossProduct(&Ap,&r2,&r3);
-					break;
-				case 5:
-				default:
-					CrossProduct(&Ap,&r1,&r2);
-					break;
+    // this option uses undeformed edge for all GIMP except finite GIMP
+    if(!ElementBase::UsingCPDIMethod() && ElementBase::useGimp!=FINITE_GIMP)
+    {	double rx,ry,rz;
+        
+        // get deformed area
+        Vector Ap;
+        switch(face)
+        {	case 1:
+            case 3:
+                CrossProduct(&Ap,&r1,&r3);
+                break;
+            case 4:
+            case 2:
+                CrossProduct(&Ap,&r2,&r3);
+                break;
+            case 5:
+            default:
+                CrossProduct(&Ap,&r1,&r2);
+                break;
 
-			}
-			uGIMPsize = sqrt(DotVectors(&Ap,&Ap));
-			
-			// for extrapolations, however, switch to uGIMP nodes
-			GetUndeformedSemiSides(&rx,&ry,&rz);
-			ZeroVector(&r1);
-			ZeroVector(&r2);
-			ZeroVector(&r3);
-			r1.x = rx;
-			r2.y = ry;
-			r3.z = rz;
-			break;
-		}
-		default:
-			break;
+        }
+        uGIMPsize = sqrt(DotVectors(&Ap,&Ap));
+        
+        // for extrapolations, however, switch to uGIMP nodes
+        GetUndeformedSemiSides(&rx,&ry,&rz);
+        ZeroVector(&r1);
+        ZeroVector(&r2);
+        ZeroVector(&r3);
+        r1.x = rx;
+        r2.y = ry;
+        r3.z = rz;
 	}
 #endif
 	
@@ -786,7 +799,8 @@ Vector MatPoint3D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Ve
 	}
 	catch(CommonException& err)
 	{   char msg[200];
-		sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
+		size_t msgSize=200;
+		snprintf(msg,msgSize,"A Traction edge node has left the grid: %s",err.Message());
 		throw CommonException(msg,"MatPoint3D::GetSurfaceInfo");
 	}
 	

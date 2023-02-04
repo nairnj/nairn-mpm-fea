@@ -13,6 +13,7 @@
 #include "Materials/MaterialBase.hpp"
 #include "System/UnitsController.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "Exceptions/CommonException.hpp"
 
 // Tested with some laws and wide range seems to work
 // Likely no need to make it smaller
@@ -31,7 +32,6 @@ SofteningLaw::SofteningLaw()
 
 // Destructor (and it is virtual)
 SofteningLaw::~SofteningLaw() {}
-
 
 #pragma mark SofteningLaw::Initialize
 
@@ -61,7 +61,7 @@ void SofteningLaw::PrintSofteningProperties(double sigmac)
 	MaterialBase::PrintProperty("Gc",Gc*UnitsController::Scaling(1.e-3),UnitsController::Label(ERR_UNITS));
 
 	// ucrit = d(max)/(s sigmac) and we assume d(max) is proportional to s
-    unscaledDeltaMax = -log(minFdelta)*Gc;
+    unscaledDeltaMax = -log(minFdelta)*Gc;			// only used by exponential softening
 	double ucrit = GetDeltaMax(1.)/sigmac;
 	MaterialBase::PrintProperty("ucrit",ucrit,UnitsController::Label(CULENGTH_UNITS));
 	
@@ -71,10 +71,29 @@ void SofteningLaw::PrintSofteningProperties(double sigmac)
 	cout << endl;
 }
 
-#pragma mark SofteningLaw::Methods
+#pragma mark SofteningLaw::General Methods (optional overrides)
+
+// Get energy released (per unit volume per unit stress or Gbar/sigma) up to delta.
+// General result int_0^delta f(delta) - delta*f(delta)/2
+// Current code not longer calls this method. Cohesive laws need not override
+double SofteningLaw::GetGToDelta(double delta,double gScaling) const
+{	throw CommonException("GetGToDelta() called for cohesive law lacking its implementation",
+						  "SofteningLaw::GetGoverGc");
+}
+
+// Get G/Gc up to delta Gbar(delta)/Gbar(deltaMax) = 0.5*delta/(0.5*deltaMax) = delta/deltaMax
+// Also equal to GetGToDelta(delta)/GetGToDelta(deltaMax)
+// gScaling must include relative toughness
+// This method is only called for cubic failure surface and for isotropic materials, it is only called in 3D
+// Laws to be used in these modes must override.
+double SofteningLaw::GetGoverGc(double delta,double gScaling) const
+{	throw CommonException("GetGOverGc() called for cohesive law lacking its implementation",
+						  "SofteningLaw::GetGoverGc");
+}
 
 // Find f(delta+x)/f(delta)
 // Only needed in Newton's law in GetDDelta() and law can override if has more efficient answer
+// 		but need not override is not making use of Newton's method
 // gScaling must include relative toughness, e0 must include relative strength
 double SofteningLaw::GetRelFFxn(double delta,double x,double gScaling) const
 {	return GetFFxn(delta+x,gScaling)/GetFFxn(delta,gScaling);
@@ -82,20 +101,79 @@ double SofteningLaw::GetRelFFxn(double delta,double x,double gScaling) const
 
 // Find f'(delta+x)/f(delta)
 // Only needed in Newton's law in GetDDelta() and law can override if has more efficient answer
+// 		but need not override is not making use of Newton's method
 // gScaling must include relative toughness
 double SofteningLaw::GetRelFpFxn(double delta,double x,double gScaling) const
 {	return GetFpFxn(delta+x,gScaling)/GetFFxn(delta,gScaling);
 }
 
-// Check if new delta is too high (adjust ddel if it is)
-// gScaling must include relative toughness
-bool SofteningLaw::HasFailed(double delta,double &ddel,double gScaling) const
-{	double deltaMax = GetDeltaMax(gScaling);
-	if(delta+ddel>deltaMax)
-	{	ddel=deltaMax-delta;
-		return true;
+// Calculate delta parameter from damage parameter D  (only when subcritical, initial damage state)
+// numerically solves g(delta) = 0 =  delta*(1-d) - d*e0*f(delta)
+// For Newton's method g'(delta) = 1-d - d*e0*f'(delta)
+// g(delta+ddelta) = 0 = g(delta) + g'(delta)*ddelta or ddelta = -g(delta)/g'(delta)
+// gScaling and e0 must include relative values
+double SofteningLaw::GetDeltaFromDamage(double d,double gScaling,double e0,double deltaGuess)
+{	// if outside brackets, return and end point
+	double dmin = 0.;
+	if(d<=0.) return dmin;
+	double dmax = GetDeltaMax(gScaling);
+	if(d>=1.) return dmax;
+	
+	// solution for delta bracketed between 0 (g(0) = -d*e0 < 0) and
+	//			deltaMax (g(deltaMax) = delta*(1-d) > 0)
+	
+	/*
+	// Simple binary search, Newton's method might be better, but this only
+	// called during initiatialization phaase
+	double dmid;
+	int i=0,nsteps = 10;
+	while(i<nsteps)
+	{	// value at midpoint
+		dmid = 0.5*(dmin+dmax);
+		double gmid = d*e0*GetFFxn(dmid,gScaling) - dmid*(1.-d);
+		
+		// see if done or move one bracket
+		if(gmid==0.)
+			return dmid;
+		else if(gmid>0.)
+			dmin = dmid;
+		else
+			dmax = dmid;
+		
+		// next step
+		i++;
 	}
-	return false;
+	
+	// last step - interpolate g = gmin + (delta-dmin)*(gmax-gmin)/(dmax-dmin) = gmin + fract*(delta-dmin)
+	// Sovling for zero: delta = dmin - gmin/fract = (dmin*gmax-gmin*dmax)/(gmax-gmin)
+	double gmin = d*e0*GetFFxn(dmin,gScaling) - dmin*(1.-d);
+	double gmax = d*e0*GetFFxn(dmax,gScaling) - dmax*(1.-d);
+	dmid = (dmin*gmax-gmin*dmax)/(gmax-gmin);
+	return dmid;
+	*/
+	
+	// This is unbracketed Newton with no checks for non-convergence. It is likely
+	// safe for typical softening laws. It is not used for linear (or any other model
+	// with an analytical solution for delta as function of d)
+	double delk = deltaGuess>-0. ? deltaGuess : 0.5*dmax;
+	double dx;
+	int step = 1;
+	while(true)
+	{	// update iterative variables (lambda, alpha)
+		double gdel = delk*(1.-d) - d*e0*GetFFxn(delk,gScaling);
+		double slope = 1. - d - d*e0*GetFpFxn(delk,gScaling);
+		
+		dx = gdel/slope;
+		double temp = delk;
+		delk -= dx;
+		if(temp == delk) break;  // change in root is negligible
+		
+		// check for convergence
+		step++;
+		if(step>15 || fabs(dx/dmax)<1.e-8) break;
+	}
+
+	return delk;
 }
 
 //#define TRACK_NEWTON
@@ -105,11 +183,11 @@ bool SofteningLaw::HasFailed(double delta,double &ddel,double gScaling) const
 // Solve numerically here by Newton's method with custom bracketing.
 //      Subclass can override if has better option
 // Return ddelta if not failed or -1 if failed
-double SofteningLaw::GetDDelta(double de,double e0,double delta,double gScaling) const
+double SofteningLaw::GetDDelta(double de,double e0,double delta,double d,double gScaling) const
 {
-    // The solution for ddelta is bracketd by de (because e0*(f(delta+ddelta)-f(delta)) <= 0 )
+    // The solution for ddelta is bracketd by D*de (because f'(delta)<f(delta)/delta) <= 0 )
     // and de + e0*f(delta) (if ddelta caused failure where f(delta+ddelta) = 0).
-	double xl = de;
+	double xl = d*de;
 	double fdelta = GetFFxn(delta,gScaling);
 	double b = e0*fdelta;
 	double xh = de + b;
@@ -193,6 +271,8 @@ double SofteningLaw::GetDDelta(double de,double e0,double delta,double gScaling)
 //#define TRACK_NEWTON
 
 // Solve for increment in delta during elastic deformation based on starting d
+//		The equation is delta + ddeltae = F(delta + ddeltae,alpa+dalpha)/(E(1-d))
+// On input scaleAlpha is updated value and sigmaAlpha is updated stress.
 // Only needed when softening law depends on extra variables
 // Solve numerically by Newton's method with bracketing; subclass can override if better solution
 double SofteningLaw::GetDDeltaElastic(double delta,double sigmaAlpha,double scaleAlpha,double d,double E1md) const
@@ -201,7 +281,7 @@ double SofteningLaw::GetDDeltaElastic(double delta,double sigmaAlpha,double scal
     // delta=0 has trivial solution of zero
     if(sigmaAlpha<0. || delta==0.) return 0.;
     
-    // solving g(x) = E1md*(x+delta) - d*sigmaAlpha*GetFFxn(delta+x,scaleAlpha) = 0
+    // solving g(x) = E1md*(delta+x) - d*sigmaAlpha*GetFFxn(delta+x,scaleAlpha) = 0
     //    with
     // g'(x) = E1md - d*sigmaAlpha*GetFpFxn(delta+x,scaleAlpha)
     
@@ -289,80 +369,22 @@ double SofteningLaw::GetDDeltaElastic(double delta,double sigmaAlpha,double scal
     return xk;
 }
 
-// calculate maximum cracking strain from damage  (only when subcritical, initial damage state)
-// numerically solves g(delta) = 0 =  delta*(1-d) - d*e0*f(delta)
-// For Newton's method g'(delta) = 1-d - d*e0*f'(delta)
-// g(delta+ddelta) = 0 = g(delta) + g'(delta)*ddelta or ddelta = -g(delta)/g'(delta)
-// gScaling and e0 must include relative values
-double SofteningLaw::GetDeltaFromDamage(double d,double gScaling,double e0,double deltaGuess)
-{	// if outside brackets, return and end point
-	double dmin = 0.;
-	if(d<=0.) return dmin;
-	double dmax = GetDeltaMax(gScaling);
-	if(d>=1.) return dmax;
-	
-	// solution for delta bracketed between 0 (g(0) = -d*e0 < 0) and
-	//			deltaMax (g(deltaMax) = delta*(1-d) > 0)
-	
-	/*
-	// Simple binary search, Newton's method might be better, but this only
-	// called during initiatialization phaase
-	double dmid;
-	int i=0,nsteps = 10;
-	while(i<nsteps)
-	{	// value at midpoint
-		dmid = 0.5*(dmin+dmax);
-		double gmid = d*e0*GetFFxn(dmid,gScaling) - dmid*(1.-d);
-		
-		// see if done or move one bracket
-		if(gmid==0.)
-			return dmid;
-		else if(gmid>0.)
-			dmin = dmid;
-		else
-			dmax = dmid;
-		
-		// next step
-		i++;
-	}
-	
-	// last step - interpolate g = gmin + (delta-dmin)*(gmax-gmin)/(dmax-dmin) = gmin + fract*(delta-dmin)
-	// Sovling for zero: delta = dmin - gmin/fract = (dmin*gmax-gmin*dmax)/(gmax-gmin)
-	double gmin = d*e0*GetFFxn(dmin,gScaling) - dmin*(1.-d);
-	double gmax = d*e0*GetFFxn(dmax,gScaling) - dmax*(1.-d);
-	dmid = (dmin*gmax-gmin*dmax)/(gmax-gmin);
-	return dmid;
-	*/
-	
-	// This is unbracketed Newton with no checks for non-convergence. It is likely
-	// safe for typical softening laws. It is not used for linear (or any other model
-	// with an analytical solution for delta as functino of d)
-	double delk = deltaGuess>-0. ? deltaGuess : 0.5*dmax;
-	double dx;
-	int step = 1;
-	while(true)
-	{	// update iterative variables (lambda, alpha)
-		double gdel = delk*(1.-d) - d*e0*GetFFxn(delk,gScaling);
-		double slope = 1. - d - d*e0*GetFpFxn(delk,gScaling);
-		
-		dx = gdel/slope;
-		double temp = delk;
-		delk -= dx;
-		if(temp == delk) break;  // change in root is negligible
-		
-		// check for convergence
-		step++;
-		if(step>15 || fabs(dx/dmax)<1.e-8) break;
-	}
-
-	return delk;
-}
-
-#pragma mark SofteningLaw::Accessors
+#pragma mark SofteningLaw::General Accessors (Optional overrides)
 
 // toughness
 double SofteningLaw::GetGc(void) const { return Gc; }
 
 // if it linear softening (constant derivative)
 bool SofteningLaw::IsLinear(void) const { return false; }
+
+// Check if new delta is too high (adjust ddel if it is)
+// gScaling must include relative toughness
+bool SofteningLaw::HasFailed(double delta,double &ddel,double gScaling) const
+{	double deltaMax = GetDeltaMax(gScaling);
+	if(delta+ddel>deltaMax)
+	{	ddel=deltaMax-delta;
+		return true;
+	}
+	return false;
+}
 

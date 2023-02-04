@@ -73,6 +73,7 @@ void IsotropicMat::PrintMechanicalProperties(void) const
 	PrintProperty("E",E*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("v",nu,"");
 	PrintProperty("G",G*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("K",E*UnitsController::Scaling(1.e-6)/(3.*(1.-2.*nu)),"");
 #else
 	PrintProperty("E",E,"");
 	PrintProperty("v",nu,"");
@@ -82,7 +83,7 @@ void IsotropicMat::PrintMechanicalProperties(void) const
 	
 	PrintProperty("a",aI,"");
 #ifdef MPM_CODE
-	PrintProperty("K",E*UnitsController::Scaling(1.e-6)/(3.*(1.-2.*nu)),"");
+	PrintProperty("lambda",E*UnitsController::Scaling(1.e-6)*nu/((1.+nu)*(1.-2.*nu)),"");
 	PrintProperty("gam0",gamma0,"");
 #endif
     cout << endl;
@@ -140,7 +141,7 @@ const char *IsotropicMat::VerifyAndLoadProperties(int np)
 		diffusionCT = alphaPE/Qalpha;
 		
 		// diffusion tensor changed using global viscosity
-		diffusionCon = Darcy/DiffusionTask::viscosity;
+		diffusionCon = Darcy/diffusion->viscosity;
 	}
 	else
 	{	// diffusion CT is 1
@@ -150,6 +151,7 @@ const char *IsotropicMat::VerifyAndLoadProperties(int np)
 	// diffusion CT is 1
 	diffusionCT = 1.;
 #endif
+
 #endif
 	
     // analysis properties

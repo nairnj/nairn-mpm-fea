@@ -33,7 +33,7 @@ class NodalPoint : public LinkedObject
 		CrackVelocityField **cvf;	// crack velocity fields
 		TransportField gCond;		// conduction
 		//double gTemperature,gMpCp,fcond;		// conduction
-		TransportField gDiff;		// diffusion
+		TransportField *gDiff;		// diffusion(s)
 		//double gConcentration,gVolume,fdiff;	// diffusion
 		unsigned short fixedDirection;
 		MaterialContactNode *contactData;
@@ -72,7 +72,8 @@ class NodalPoint : public LinkedObject
 		short AddCrackVelocityField(int,CrackField *);
 		void AddMatVelocityField(short,int);
         bool NeedsMatVelocityField(short,int) const;
-	
+		void CreateDiffusionVariables(void);
+
 		void AddMassMomentum(MPMBase *,short,int,double,double,double,double,int,bool);
         void AddMassMomentumLast(MPMBase *,short,int,double,double,double,double);
 		void AddMomentumTask1(short,int,double,Vector *,int);
@@ -86,18 +87,17 @@ class NodalPoint : public LinkedObject
 		void AddFtotTask3(short,int,Vector *);
 		void AddFtotSpreadTask3(short,Vector);
 		bool AddTractionTask3(MPMBase *,short,int,Vector *);
-		void AddGravityAndBodyForceTask3(Vector *,double,double);
-#ifdef RESTART_OPTION
+		void AddGravityAndBodyForceTask3(Vector *);
+ #ifdef RESTART_OPTION
         bool IsTravelTooMuch(double,double) const;
-#endif
+ #endif
 		void CopyGridForces(NodalPoint *);
 		void UpdateMomentum(double);
 		void IncrementDelvaTask5(short,int,double,GridToParticleExtrap *) const;
 
-		double GetCrackSurfaceMass(short,int,double,CrackSegment *) const;
 		bool IncrementDelvSideTask8(short,int,double,Vector *,Vector *,double *,CrackSegment *,double) const;
 		bool GetCMVelocityTask8(Vector *,Vector *) const;
-		short GetFieldForSurfaceParticle(short,int,CrackSegment *) const;
+		short GetFieldForSurfaceParticle(short,int,CrackSegment *,bool) const;
 		void SurfaceCrossesCracks(Vector *,Vector *,CrackField *) const;
 		int SurfaceCrossesOneCrack(Vector *,Vector *,int) const;
 		int SurfaceCrossesOtherCrack(Vector *,Vector *,int) const;
@@ -116,7 +116,6 @@ class NodalPoint : public LinkedObject
 		int NumberNonrigidCracks(void);
 		bool NodeHasNonrigidParticles(void) const;
 		bool NodeHasParticles(void) const;
-		double GetNodalMass(bool) const;
 		void Describe(bool) const;
 		void AddContactTerms(short,int,ContactTerms *);
         void AddUGradient(short,double,double,double,double,double,int,double);
@@ -153,11 +152,12 @@ class NodalPoint : public LinkedObject
 		void AddVStarNext(short,int,Vector *,Vector *,Vector *,Matrix3 *,double,double);
 		virtual Vector *GetVStarPrev(short,int) const;
 		double GetMaterialMass(short,int) const;
-#else
+	
+#else // not MPM_CODE
 		// FEA code
         void InitForceField(void);
         void PrintAvgStress(void);
-#endif
+#endif // end MPM_CODE
 	
 		// class methods
 #ifdef MPM_CODE
@@ -174,9 +174,8 @@ class NodalPoint : public LinkedObject
 #endif
     
     private:
-		
 #ifdef MPM_CODE
-        //methods - MPM only
+        // methods - MPM only
 		void AverageStrain(DispField *,DispField *,DispField *,double);
         void AdjustContact(short,short,Vector *,int,int,double);
 #endif

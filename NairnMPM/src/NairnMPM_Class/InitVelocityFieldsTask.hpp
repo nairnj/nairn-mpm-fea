@@ -18,7 +18,6 @@
 class InitVelocityFieldsTask : public MPMTask
 {
 	public:
-	
 		// constructor
 		InitVelocityFieldsTask(const char *);
 	

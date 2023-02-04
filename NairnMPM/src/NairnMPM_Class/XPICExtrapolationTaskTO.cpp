@@ -48,14 +48,19 @@ int XPICExtrapolationTaskTO::GetXPICOrder(void)
 void XPICExtrapolationTaskTO::InitializeXPICData(NodalPoint *ndptr,double timestep,int xpicOption)
 {	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
-		nextTransport = nextTransport->InitializeForXPIC(ndptr,timestep,xpicOption);
+	{	if(nextTransport->IsUsingTransportXPIC())
+			nextTransport = nextTransport->InitializeForXPIC(ndptr,timestep,xpicOption);
+		else
+			nextTransport = nextTransport->GetNextTransportTask();
+	}
 }
 
 // gTnext needs to be zero on ghost nodes too
 void XPICExtrapolationTaskTO::InitializeXPICData(GridPatch *patchPtr,int xpicOption)
 {	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
-	{	patchPtr->InitializeForXPICTransport(nextTransport,xpicOption);
+	{	if(nextTransport->IsUsingTransportXPIC())
+			patchPtr->InitializeForXPICTransport(nextTransport,xpicOption);
 		nextTransport = nextTransport->GetNextTransportTask();
 	}
 }
@@ -138,7 +143,11 @@ void XPICExtrapolationTaskTO::CopyXStar(NodalPoint *ndptr)
 		{	// swap gTstar to gTvalue (swap option may not be needed in the end)
 			TransportField *gTrans = nextTransport->GetTransportFieldPtr(ndptr);
 			double tmp = gTrans->gTValue;
+			
+			// Now gTValue = theta(k) = ck^{-1} tau (from paper)
 			gTrans->gTValue = gTrans->gTstar;
+			
+			// cTstar stores lumped result theta^(L+) on grid if ever needed
 			gTrans->gTstar = tmp;
 		}
 		// next transport

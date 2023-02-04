@@ -40,7 +40,8 @@ MatPointAS::MatPointAS(int inElemNum,int theMatl,double angin,double thickin) : 
 // Update Strains for this particle
 // Velocities for all fields are present on the nodes
 // matRef is the material and properties have been loaded, matFld is the material field
-void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
+// postUpdate true if after particle position updated
+void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld,bool postUpdate)
 {
 #ifdef CONST_ARRAYS
 	int ndsArray[MAX_SHAPE_NODES];
@@ -222,7 +223,8 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 		
     catch(CommonException& err)
     {   char msg[200];
-        sprintf(msg,"A CPDI particle domain node has left the grid: %s",err.Message());
+		size_t msgSize=200;
+		snprintf(msg,msgSize,"A CPDI particle domain node has left the grid: %s",err.Message());
         throw CommonException(msg,"MatPointAS::GetCPDINodesAndWeights");
     }
     

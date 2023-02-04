@@ -11,7 +11,10 @@
 
 #define FEA_CODE
 
-// To compile with OpenMP
+#define OSPARTICULAS
+
+// Note that when OpenMP is available, it defines _OPENMP
+// This define just says to include omp.h
 #define USE_OPENMP
 
 // C includes

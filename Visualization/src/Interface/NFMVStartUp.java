@@ -58,7 +58,20 @@ public class NFMVStartUp extends JNStartUpBase
 		
 		// Panel of buttons
 		JPanel buttons = new JPanel();
-		buttons.setLayout(new GridLayout(5,1));
+		GridBagLayout gridbag = new GridBagLayout();
+		GridBagConstraints c = new GridBagConstraints();
+		buttons.setLayout(gridbag);
+
+		int top=0;
+		int bottom = 3;
+		int left = 2;
+		int right = 2;
+		c.insets=new Insets(top,left,bottom,right);			// tlbr
+		c.gridx=0;
+		c.gridwidth = 1;
+		c.weightx = 1.0;		
+		c.weighty = 1.0;
+		c.fill = GridBagConstraints.HORIZONTAL;
 		
 		JButton openDoc = new JButton("Open existing document");
 		openDoc.setActionCommand("openDocument");
@@ -87,10 +100,15 @@ public class NFMVStartUp extends JNStartUpBase
 		JLabel seeAlso = new JLabel("(See menu commands for more options)",JLabel.CENTER);
 		
 		// add buttons and add to window
+		gridbag.setConstraints(openDoc, c);
 		buttons.add(openDoc);
+		gridbag.setConstraints(newMPM, c);
 		buttons.add(newMPM);
+		gridbag.setConstraints(newFEA, c);
 		buttons.add(newFEA);
+		gridbag.setConstraints(quitApp, c);
 		buttons.add(quitApp);
+		gridbag.setConstraints(seeAlso, c);
 		buttons.add(seeAlso);
 		add(buttons,BorderLayout.CENTER);
 

@@ -24,6 +24,12 @@ class LinkedObject
 		// methods
 		void SetNextObject(LinkedObject *);
 		LinkedObject *GetNextObject(void) const;
+		LinkedObject *GetPreviousObject(LinkedObject *) const;
+	
+		// class methods
+		static LinkedObject *DeleteObject(LinkedObject *,LinkedObject **);
+		static LinkedObject *InsertObject(LinkedObject *,LinkedObject *,LinkedObject **);
+
 };
 
 #endif

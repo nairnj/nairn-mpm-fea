@@ -25,17 +25,17 @@ NodalValueBC::NodalValueBC(int num,int setStyle,double concentration,double argT
 #pragma mark NodalValueBC: Methods
 
 // save nodal concentration and zero it
-NodalValueBC *NodalValueBC::CopyNodalValue(NodalPoint *nd)
+NodalValueBC *NodalValueBC::CopyNodalValue(NodalPoint *nd,TransportField *gTrans)
 {
-    TransportField *gTrans = GetTransportFieldPtr(nd);
+    //cout << fmobj->mstep << ": copy node " << nd->num << " value " << gTrans->gTValue << endl;
     valueNoBC = gTrans->gTValue;
     return (NodalValueBC *)GetNextObject();
 }
 
 // restore nodal concentration and get initial force to cancel no-BC result
-NodalValueBC *NodalValueBC::PasteNodalValue(NodalPoint *nd)
+NodalValueBC *NodalValueBC::PasteNodalValue(NodalPoint *nd,TransportField *gTrans)
 {
-    TransportField *gTrans = GetTransportFieldPtr(nd);
+    //cout << fmobj->mstep << ": paste node " << nd->num << " value " << valueNoBC << endl;
     gTrans->gTValue = valueNoBC;
     return (NodalValueBC *)GetNextObject();
 }

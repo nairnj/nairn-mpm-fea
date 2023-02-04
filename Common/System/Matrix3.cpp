@@ -9,9 +9,9 @@
     of these matrices (i.e., with xz, yz, zx, and zy terms zero)
  
  Creation
-    Matrix() - zero
-    Matrix(xx,xy,xz,yx,yy,yz,zx,zy,zz) - full matrix
-    Matrix(xx,xy,yz,yy,zz) - 2D matrix
+    Matrix3() - zero
+    Matrix3(xx,xy,xz,yx,yy,yz,zx,zy,zz) - full matrix
+    Matrix3(xx,xy,yz,yy,zz) - 2D matrix
 
  Methods
     Zero() - sets all elements to zero
@@ -452,9 +452,9 @@ Matrix3 Matrix3::Inverse(void) const
 	}
 	
 	// general 3D
-	Matrix3 inv3(m[1][1]*m[2][2]-m[2][1]*m[1][2], -(m[0][1]*m[2][2]-m[2][1]*m[0][2]), m[1][0]*m[1][2]-m[1][1]*m[0][2],
-				 -(m[1][0]*m[2][2]-m[2][0]*m[1][2]), m[0][0]*m[2][2]-m[2][0]*m[0][2], -(m[0][0]*m[1][2]-m[1][0]*m[0][2]),
-				   m[1][0]*m[2][1]-m[2][0]*m[1][1], -(m[0][0]*m[2][1]-m[2][0]*m[0][1]), m[0][0]*m[1][1]-m[1][0]*m[0][1]);
+	Matrix3 inv3(m[1][1]*m[2][2]-m[2][1]*m[1][2], -(m[0][1]*m[2][2]-m[2][1]*m[0][2]), m[0][1]*m[1][2]-m[1][1]*m[0][2],
+		-(m[1][0]*m[2][2]-m[2][0]*m[1][2]), m[0][0]*m[2][2]-m[2][0]*m[0][2], -(m[0][0]*m[1][2]-m[1][0]*m[0][2]),
+		m[1][0]*m[2][1]-m[2][0]*m[1][1], -(m[0][0]*m[2][1]-m[2][0]*m[0][1]), m[0][0]*m[1][1]-m[1][0]*m[0][1]);
 	inv3.Scale(1./determinant());
 	return inv3;
 }

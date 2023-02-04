@@ -14,7 +14,7 @@
 			+ Extrapolate deformed area volume
 			+ It multimaterial extrapolate volume gradient
 		- Transport tasks
-			+ Extrapolate gTValue and gVCT for transport tasks
+			+ Extrapolate gTValue, gtValueForGrad, and gVCT for transport tasks
 			+ If contact extrapolate corresponding CVF and MVF terms
 		- If particle spin extrapolate more momentum
 	* For each rigid contact material
@@ -91,7 +91,7 @@ bool MassAndMomentumTask::Execute(int taskOption)
 						ndptr->AddMassMomentum(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],
 												1,block==FIRST_NONRIGID);
 					}
-					
+
 					// next material point
 					mpmptr = (MPMBase *)mpmptr->GetNextObject();
 				}
@@ -142,3 +142,4 @@ int MassAndMomentumTask::GetParticleFunctions(MPMBase *mpmptr,int **nds,double *
 	
 	return matfld;
 }
+

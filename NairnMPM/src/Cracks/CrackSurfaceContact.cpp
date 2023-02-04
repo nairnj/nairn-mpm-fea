@@ -269,7 +269,8 @@ double CrackSurfaceContact::MaterialSeparation(double dbdotn,double dadotn,Vecto
 		{	dnorm = dbdotn-dadotn - r*dist.x;
 		}
 		else
-		{	r = -r;
+		{	// power law fit from nanoindentation paper to improve linear cutoff method
+			r = -r;
 			double pa = dadotn - ndptr->x*norm->x - ndptr->y*norm->y - ndptr->z*norm->z;
 			double da = pa>0. ? 2.*pow(pa/(1.25*dist.x),r) - 1. : 1 - 2.*pow(-pa/(1.25*dist.x),r);
 			double pb = dbdotn - ndptr->x*norm->x - ndptr->y*norm->y - ndptr->z*norm->z;

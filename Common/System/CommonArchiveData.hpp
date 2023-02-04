@@ -34,9 +34,9 @@ class CommonArchiveData
 		void SetArchiveMesh(bool);
 		void SetInputDirPath(const char *,bool);
 		char *ExpandOutputPath(const char *);
-		void GetFilePath(char *,const char *);
-		void GetFilePathNum(char *,const char *,int);
-		void GetRelativeFilePathNum(char *, const char *,int);
+		void GetFilePath(char *,size_t,const char *);
+		void GetFilePathNum(char *,size_t,const char *,int);
+		void GetRelativeFilePathNum(char *,size_t,const char *,int);
 
 	protected:
 		char *inputDir,*archiveRoot,*globalFile,*archiveParent,*archiveDosRoot;

@@ -26,6 +26,7 @@
 #include "Custom_Tasks/TransportTask.hpp"
 #include "Materials/RigidMaterial.hpp"
 #include "System/UnitsController.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
 
 // class statics
 double NodalPoint::interfaceEnergy=0.;
@@ -42,6 +43,11 @@ NodalPoint::~NodalPoint()
 				delete cvf[i];
 		}
 		delete [] cvf;
+	}
+	
+	// delete diffusion variables
+	if(gDiff!=NULL)
+	{	delete [] gDiff;
 	}
 }
 
@@ -61,6 +67,11 @@ void NodalPoint::PrepareForFields()
 	for(int i=1;i<maxCrackFields;i++) cvf[i]=NULL;
 }
 
+// When transport tasks created, allocate memory they need
+void NodalPoint::CreateDiffusionVariables(void)
+{	if(numDiffusion<=0 || gDiff!=NULL) return;
+	gDiff = new TransportField[numDiffusion];
+}
 
 // zero data and reduce to one field at start of a step
 void NodalPoint::InitializeForTimeStep(void)
@@ -70,11 +81,20 @@ void NodalPoint::InitializeForTimeStep(void)
 			cvf[i]->Zero(0,0,true);
 	}
 	
-	// for diffusion
-	gDiff.gTValue=0.;
-	gDiff.gVCT=0.;
-	gDiff.gQ=0.;
-	
+	// for diffusion(s)
+	if(gDiff!=NULL)
+    {   for(int i=0;i<numDiffusion;i++)
+		{	gDiff[i].gTValue=0.;
+#ifdef USE_GTVALUEREL
+			gDiff[i].gTValueRel=0.;
+#else
+			gDiff[i].gTRelValue=0.;
+#endif
+			gDiff[i].gVCT=0.;
+			gDiff[i].gQ=0.;
+		}
+	}
+
 	// for conduction
 	gCond.gTValue=0.;
 	gCond.gVCT=0.;
@@ -183,7 +203,8 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 					else
 					{	// prepare warning comment
 						char comment[100];
-						sprintf(comment,"For crack number %d that had side %d",cfld[c2].crackNum,cvf[3]->location(SECOND_CRACK));
+                        size_t comSize=100;
+						snprintf(comment,comSize,"For crack number %d that had side %d",cfld[c2].crackNum,cvf[3]->location(SECOND_CRACK));
 
 						// c2 crack is wrong or node may be on c2 crack, might be better to use [1] or [2]
 						// (i.e., to change side of c2 to same side and try again with a single cracks
@@ -202,7 +223,8 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 				else if(cfld[c2].loc==cvf[3]->location(SECOND_CRACK))
 				{	// prepare warning comment
 					char comment[100];
-					sprintf(comment,"For crack number %d that had side %d",cfld[c1].crackNum,cvf[3]->location(FIRST_CRACK));
+                    size_t comSize=100;
+                    snprintf(comment,comSize,"For crack number %d that had side %d",cfld[c1].crackNum,cvf[3]->location(FIRST_CRACK));
 					
 					// c2 crack correct, but c1 is wrong or node may be on c1 crack, might be better to use [1] or [2]
 					// (i.e., change side of c1 to same side and try again with a single crack)
@@ -225,7 +247,8 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 					
 					// warn
 					char comment[100];
-					sprintf(comment,"For crack numbers %d and %d",cfld[0].crackNum,cfld[1].crackNum);
+                    size_t comSize=100;
+                    snprintf(comment,comSize,"For crack numbers %d and %d",cfld[0].crackNum,cfld[1].crackNum);
 					if(warnings.Issue(CrackHeader::warnNodeOnCrack,23,comment)==GAVE_WARNING) Describe(true);
 				}
 			}
@@ -270,7 +293,8 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 						// Here means both above and below same crack for field [1], which can only happen if a
                         // node is on a crack
 						char comment[100];
-						sprintf(comment,"For crack number %d that had side %d",cfld[0].crackNum,cvf[1]->location(FIRST_CRACK));
+                        size_t comSize=100;
+                        snprintf(comment,comSize,"For crack number %d that had side %d",cfld[0].crackNum,cvf[1]->location(FIRST_CRACK));
                         if(warnings.Issue(CrackHeader::warnNodeOnCrack,11,comment)==GAVE_WARNING) Describe(true);
  					}
 				}
@@ -309,7 +333,8 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 							// Here means both above and below crack for field [2], which can only happen if a
                             // node is on a crack
 							char comment[100];
-							sprintf(comment,"For crack number %d that had side %d",cfld[0].crackNum,cvf[2]->location(FIRST_CRACK));
+                            size_t comSize=100;
+                            snprintf(comment,comSize,"For crack number %d that had side %d",cfld[0].crackNum,cvf[2]->location(FIRST_CRACK));
                             if(warnings.Issue(CrackHeader::warnNodeOnCrack,12,comment)==GAVE_WARNING) Describe(true);
 						}
 					}
@@ -500,12 +525,12 @@ void NodalPoint::RestoreMomenta(void)
 // In mass and momentum task
 // 1. Add momentum (if any set) (uses mvf[0]->pk and mvf[0]->vk[0])
 // 2. Add temperture and concentration (if either set)
-//			(uses gCond.gTValue, gCond.gQ, gDiff.gTValue, gDiff.gQ temporariily, zeroed when BC are set)
+//			(uses gCond.gTValue, gCond.gQ, gDiff[].gTValue, gDiff[[].gQ temporariily, zeroed when BC are set)
 //			(only allowed if transport tasks is active)
 // 3. Track setting flags (uses numberPoints in field [0])
 // This only used when extrapolating rigid BCs before setting those BCs
 void NodalPoint::AddRigidBCInfo(MPMBase *mptr,double shape,int setFlags,Vector *rvel)
-{
+{   
 	// add momentum
 	double mp = mptr->mp;
 	double fnmp = shape*mp;
@@ -522,11 +547,11 @@ void NodalPoint::AddRigidBCInfo(MPMBase *mptr,double shape,int setFlags,Vector *
 		gCond.gQ += fnmp;
 	}
 		
-	// controlled concentration
-	if(setFlags&CONTROL_CONCENTRATION)
-	{	gDiff.gTValue += fnmp*mptr->pConcentration;
-		gDiff.gQ += fnmp;
-	}
+	// controlled concentration (in gDiff[0] and pDiff[0] if there)
+	if(setFlags&CONTROL_CONCENTRATION && fmobj->HasFluidTransport())
+    {	gDiff[0].gTValue += fnmp*mptr->pDiff[0]->conc;
+        gDiff[0].gQ += fnmp;
+    }
 	
 	// save flags and veocity
 	cvf[0]->AddRigidVelocityAndFlags(&wtvel,fnmp,setFlags);
@@ -547,11 +572,11 @@ int NodalPoint::ReadAndZeroRigidBCInfo(Vector *rvel,double *tempValue,double *co
 		gCond.gQ = 0.;
 	}
 	
-	// controlled concentration
-	if(setFlags&CONTROL_CONCENTRATION)
-	{	*concValue = gDiff.gTValue/gDiff.gQ;
-		gDiff.gTValue = 0.;
-		gDiff.gQ = 0.;
+	// controlled concentration (in gDiff[0] if there)
+	if(setFlags&CONTROL_CONCENTRATION && fmobj->HasFluidTransport())
+	{	*concValue = gDiff[0].gTValue/gDiff[0].gQ;
+		gDiff[0].gTValue = 0.;
+		gDiff[0].gQ = 0.;
 	}
 
 	return setFlags;
@@ -584,7 +609,9 @@ void NodalPoint::MirrorIgnoredCrackFields(void)
 // Add to internal force
 // throws CommonException()
 void NodalPoint::AddFtotTask3(short vfld,int matfld,Vector *f)
-{	//if(cvf[vfld]==NULL) throw CommonException("NULL crack velocity field in grid forces test","NodalPoint::AddFtotTask3");
+{	// note that if finding different nodes in same task thann found in InitVelocityFieldsTasks, a null
+	// field will crash. Activate this line to check for that, but otherwise faster to comment it out
+	//if(cvf[vfld]==NULL) throw CommonException("NULL crack velocity field in grid forces test","NodalPoint::AddFtotTask3");
 	cvf[vfld]->AddFtotTask3(matfld,f);
 }
 
@@ -611,11 +638,11 @@ bool NodalPoint::AddTractionTask3(MPMBase *mpmptr,short vfld,int matfld,Vector *
 }
 
 // Add gravity and body forces on node in g mm/sec^2
-void NodalPoint::AddGravityAndBodyForceTask3(Vector *gridBodyForce,double gridAlpha,double gridForceAlpha)
+void NodalPoint::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
 {	int i;
     for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->AddGravityAndBodyForceTask3(gridBodyForce,gridAlpha,gridForceAlpha);
+			cvf[i]->AddGravityAndBodyForceTask3(gridBodyForce);
 	}
 }
 
@@ -937,7 +964,7 @@ void NodalPoint::CalcStrainField(void)
 // Interpolate two nodes (near crack plane). This method is only called in J calculation for the
 //		phantom nodes placed on the crack plane of cracks that cross the countour
 // Interpolate [0] from node1 and [1] or [2] that crosses CrackNum from node2 to phantom [0]
-// Interpolate [0] from node2 and [1] or [2] that crosses CrackNum from nod1 to phantom [1]
+// Interpolate [0] from node2 and [1] or [2] that crosses CrackNum from node1 to phantom [1]
 // Symbolically gets [0] = (1-fract)*n1[0] + fract*n2[i]
 //                   [1] = (1-fract)*n1[i] + fract*n2[0]
 // where [i] is [1] or [2] for field on opposite side of crack crackNum
@@ -1034,7 +1061,7 @@ void NodalPoint::AverageStrain(DispField *dest,DispField *src1,DispField *src2,d
 bool NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Vector *delv,Vector *dela,double *fnorm,CrackSegment *seg,double surfaceMass) const
 {
 	// get velocity field to use for surface particle to node pair
-	short vfld = GetFieldForSurfaceParticle(side,crackNumber,seg);
+	short vfld = GetFieldForSurfaceParticle(side,crackNumber,seg,false);
 	
 	// Exit if no field
 	if(vfld<0) return false;
@@ -1054,12 +1081,13 @@ bool NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Vec
 // The side is a side of crack crackNumber. Look for that crack in the fields first, otherwise
 //		do a crack crossing calculation
 // SCWarning - may look at [2] and [3] - perhaps two sections - one for one crack and one for more
-short NodalPoint::GetFieldForSurfaceParticle(short side,int crackNumber,CrackSegment *seg) const
+// If usePlae is try find field for crack plane particle to this node
+short NodalPoint::GetFieldForSurfaceParticle(short side,int crackNumber,CrackSegment *seg,bool usePlane) const
 {
 	int otherSide;
 	short vfld=-1;
-	Vector xp1 = MakeVector(seg->surf[side-1].x,seg->surf[side-1].y,seg->surf[side-1].z);
-	Vector xp2 = MakeVector(x,y,z);;
+    Vector xp1 = MakeVector(seg->surf[side-1].x,seg->surf[side-1].y,seg->surf[side-1].z);
+	Vector xp2 = MakeVector(x,y,z);
 	
 	// 1. Has field [1] with crackNumber
 	//      Node with: [1], [1]&[2], [0]&[1], [1]&[3], [0]&[1]&[2], [0]&[1]&[3], [1]&[2]&[3], or [0]&[1]&[2]&[3]
@@ -1413,6 +1441,9 @@ int NodalPoint::HasCrackContact(void)
 	int has3 = CrackVelocityField::ActiveNonrigidField(cvf[3]) ? 8 : 0;
 	if(!has0 && !has3) return 0;	// True for [1] and [1]&[2]
 	
+	// skip for now so 3D limited to opening cracks
+	//if(fmobj->IsThreeD()) return 0;
+	
 	return has0+has1+has2+has3;
 }
 
@@ -1508,7 +1539,7 @@ void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,int 
     Vector delP;
 	int inContact;
 	bool changeMomentum = contact.GetDeltaMomentum(this,&delP,cvf[a],cvf[b],norm,crackNumber,callType,deltime,&inContact);
-	
+
 	// exit if no momentum change
 	if(!changeMomentum) return;
 
@@ -1653,10 +1684,9 @@ NodalPoint *NodalPoint::Create3DNode(int nodeNum,double xPt,double yPt,double zP
 	return newNode;
 }
 
-// create 2D node with or without cracks
+// create ghost node
 NodalPoint *NodalPoint::CreateGhostFromReal(NodalPoint *real)
 {
 	NodalPoint *newNode = new NodalPoint(real);
 	return newNode;
 }
-

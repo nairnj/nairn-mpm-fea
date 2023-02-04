@@ -11,6 +11,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "NairnMPM_Class/Reservoir.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Custom_Tasks/DeleteDamaged.hpp"
 #include "System/UnitsController.hpp"
@@ -20,14 +21,11 @@
 extern double damageState;
 
 // Constructors
-DeleteDamaged::DeleteDamaged()
+DeleteDamaged::DeleteDamaged() : CustomTask()
 {
 	//  Initial values
 	material = -1;
 	matName = NULL;
-	
-	// put particle here
-    ZeroVector(&Store);
 	
 	// direction and optional cod requirement
 	damage_direction = TOTAL_COD;
@@ -57,21 +55,6 @@ char *DeleteDamaged::InputParam(char *pName, int &input, double &gScaling)
 		input = TEXT_PARAMETER;
 		return (char *)&matName;
 	}
-	else if(strcmp(pName,"store_x") == 0)
-	{
-		input = DOUBLE_NUM;
-        return (char *)&Store.x;
-	}
-	else if(strcmp(pName,"store_y") == 0)
-	{
-		input = DOUBLE_NUM;
-        return (char *)&Store.y;
-	}
-	else if(strcmp(pName,"store_z") == 0)
-	{
-		input = DOUBLE_NUM;
-        return (char *)&Store.z;
-	}
 	else if(strcmp(pName,"direction") == 0)
 	{	// must be 1,2,3,4,5 (see constants), anything else changed to TOTAL_COD=4
 		input = INT_NUM;
@@ -99,17 +82,11 @@ void DeleteDamaged::SetTextParameter(char *tdata,char *ptr)
 	if(ptr == (char *)&matName)
 	{	// material name needed
 		if(matName!=NULL)
-		{	ThrowSAXException("Duplicate material name supplied to task");
-			return;
-		}
+			ThrowSAXException("Duplicate material name supplied to task");
 		if(tdata==NULL)
-		{	ThrowSAXException("Material name is missing");
-			return;
-		}
+			ThrowSAXException("Material name is missing");
 		if(strlen(tdata)==0)
-		{	ThrowSAXException("Material name is missing");
-			return;
-		}
+			ThrowSAXException("Material name is missing");
 		
 		// save is
 		matName = new char[strlen(tdata)+1];
@@ -125,8 +102,10 @@ void DeleteDamaged::SetTextParameter(char *tdata,char *ptr)
 // called once at start of MPM analysis - initialize and print info
 CustomTask *DeleteDamaged::Initialize(void)
 {
-    // make sure z zero is not 3D
-    if(!fmobj->IsThreeD()) Store.z = 0.;
+	// requires reservoir
+	if(mpmReservoir==NULL)
+		throw CommonException("DeleteDamaged custom task requires an available reservoir (i.e., a structured grid)",
+							  "DeleteDamaged::Initialize");
     
 	// Check materials
 	if(material <= 0 || material > nmat)
@@ -176,8 +155,7 @@ CustomTask *DeleteDamaged::Initialize(void)
     {   cout << "   Removes particles at time " << deleteTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
     }
 
-    PrintVector("   Storage location: ",&Store);
-    cout << endl;
+	cout << endl;
 
 	return nextTask;
 }
@@ -189,18 +167,19 @@ CustomTask *DeleteDamaged::StepCalculation(void)
 #pragma omp parallel for
 	for(int p = 0; p<nmpms; p++)
     {   MPMBase *point = mpm[p];
-
+		if(point->InReservoir()) continue;
+		
 		// only look a particles of the selected material (convert to 1 based)
 		if((point->MatID() + 1) != material) continue;
         
-        // is it deleted already
-        if(point->IsDeleted(&Store)) continue;
-        
         // is it time to delete?
         if((deleteTime>0.) && (mtime>=deleteTime))
-        {   point->DeleteParticle(&Store);
-#pragma omp atomic
-            numDeleted++;
+        {
+#pragma omp critical (delparticle)
+			{
+				mpmReservoir->DeleteParticle(point);
+				numDeleted++;
+			}
             continue;
         }
 		
@@ -234,9 +213,12 @@ CustomTask *DeleteDamaged::StepCalculation(void)
 			
 			// delete the particle
 			if(magCod>minRelativeCod)
-			{   point->DeleteParticle(&Store);
-#pragma omp atomic
-                numDeleted++;
+			{
+#pragma omp critical (delparticle)
+				{
+					mpmReservoir->DeleteParticle(point);
+					numDeleted++;
+				}
  			}
 		}
 	}

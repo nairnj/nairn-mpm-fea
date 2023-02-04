@@ -32,7 +32,7 @@ class ElementBase3D : public ElementBase
 		virtual void GetRange(int,double &,double &) const;
 		virtual bool IntersectsBox(Vector,double,double) const;
 		virtual bool OnTheEdge(void);
-		virtual void GetListOfNeighbors(int *);
+		virtual void GetListOfNeighbors(int *) const;
 };
 
 #endif

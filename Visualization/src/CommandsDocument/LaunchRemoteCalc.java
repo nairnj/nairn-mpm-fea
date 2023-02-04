@@ -45,9 +45,10 @@ public class LaunchRemoteCalc extends JNDialog
 	public static final int NO_DOWNLOAD = 1;
 	public static final int OPEN_ON_SERVER = 2;
 
-	public LaunchRemoteCalc(CmdViewer cmdCtrl,String initName,boolean initUnique,String initOutput,
+	public LaunchRemoteCalc(CmdViewer cmdCtrl,String serverName,String initName,boolean initUnique,String initOutput,
 								int initDown,boolean initClear)
-	{	super(cmdCtrl,"Launch Remote Calculations","Select output file on server and local folder for optional download",
+	{	super(cmdCtrl,"Run on "+serverName,
+			"Select output file on server and local folder for optional download",
 			" OK ","Cancel",null);
 	
 		GridBagLayout gridbag = new GridBagLayout();
@@ -197,7 +198,8 @@ public class LaunchRemoteCalc extends JNDialog
 		int offset = path.lastIndexOf("/");
 		
 		if(offset<1 || offset>=path.length()-1)
-		{	JOptionPane.showMessageDialog(this,"The remote folder must have at least a folder and a name (e.g., 'folder/name')");
+		{	JOptionPane.showMessageDialog(this,
+				"The remote folder must have at least a folder and a name (e.g., 'folder/name')");
 			return false;
 		}
 		
@@ -205,8 +207,8 @@ public class LaunchRemoteCalc extends JNDialog
 		remoteFileName = path.substring(offset+1);
 		
 		if(getClearContents() && !getMakeUnique())
-		{	String message = "Are you sure you want to clear entire entire contents\n of folder '~/"
-					+remoteFolder+"' before the new calculations";
+		{	String message = "Are you sure you want to clear entire entire contents\nof folder '~/"
+					+remoteFolder+"' on the server\nbefore the new calculations?";
 			int decide = JOptionPane.showConfirmDialog(this, message, "Delete Folder?", JOptionPane.OK_CANCEL_OPTION);
 			if(decide==JOptionPane.CANCEL_OPTION) return false;
 		}

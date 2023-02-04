@@ -126,6 +126,35 @@ double ContactLaw::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred,
 	return 0.;
 }
 
+#ifdef THREE_MAT_CONTACT
+
+// Contact laws cannot handle two-pair contact unless then override this method and validate
+bool ContactLaw::CanHandleTwoPairContact(void) const { return false; };
+
+// On call Smin=0 and Smax=Sstick, contact law must override if need to change either one
+void ContactLaw::BracketSSlide(double &Smin,double &Smax,double contactArea,double deltime)
+{
+}
+
+// Return d(Sslide Ac dt)/d(N Ac dt)
+// Assuming node is sliding and is in contact
+// Not sure what for stick and LiquidContact not supported
+double ContactLaw::GetDSslideAcDt(double NAcDt) const
+{
+	return 0.;
+}
+
+// Decide is this contact law might be in contact
+// Only used in three+ material contact code
+// Liquid contact not handled
+bool ContactLaw::ProvisionalInContact(Vector *delPi,Vector *norm,double dotn,double deltaDotn,
+												 double contactArea,double deltime) const
+{	// stick is always in contact
+	return true;
+}
+
+#endif // end THREE_MAT_CONTACT
+
 // Used by imperfect interfaces and maybe contact laws
 // Get sineTerm = 1-sin phi/phi and sincosTerm = sin phi/phi -  (1-cos phi)/phi^2 stable even for phi near zero
 // return phi
@@ -189,25 +218,26 @@ int ContactLaw::ConvertOldStyleToContactLaw(MaterialController *matCtrl,ContactI
 	// create contact law to recreate old style parameters
 	ContactLaw *newContactLaw = NULL;
 	char tempName[100];
+	size_t tempSize=100;
 	int numLaw = matCtrl->NumAutoContactLaws()+1;
 	double newFriction = contactProps!=NULL ? contactProps->friction : useFriction;
 	if(newFriction<-10.)
-	{	sprintf(tempName,"Ignore Contact (Auto %d for %s)",numLaw,why);
+	{	snprintf(tempName,tempSize,"Ignore Contact (Auto %d for %s)",numLaw,why);
 		newContactLaw = new ContactLaw(tempName,CONTACTLAW);
 	}
 	else if(newFriction<0.)
-	{	sprintf(tempName,"Stick Contact (Auto %d for %s)",numLaw,why);
+	{	snprintf(tempName,tempSize,"Stick Contact (Auto %d for %s)",numLaw,why);
 		newContactLaw = new CoulombFriction(tempName,COULOMBFRICTIONLAW);
 		((CoulombFriction *)newContactLaw)->SetFrictionCoeff(-1.);
 	}
 	else if(newFriction<10.)
-	{	sprintf(tempName,"Frictional Contact (Auto %d for %s)",numLaw,why);
+	{	snprintf(tempName,tempSize,"Frictional Contact (Auto %d for %s)",numLaw,why);
 		newContactLaw = new CoulombFriction(tempName,COULOMBFRICTIONLAW);
 		((CoulombFriction *)newContactLaw)->SetFrictionCoeff(newFriction);
 	}
 	else
 	{	// Better have contactProps here
-		sprintf(tempName,"Imperfect Interface (Auto %d for %s)",numLaw,why);
+		snprintf(tempName,tempSize,"Imperfect Interface (Auto %d for %s)",numLaw,why);
 		newContactLaw = new LinearInterface(tempName,LINEARINTERFACELAW);
 		if(contactProps!=NULL)
 		{	if(contactProps->Dnc<-100.e6)

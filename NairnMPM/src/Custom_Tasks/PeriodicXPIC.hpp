@@ -14,6 +14,7 @@
 #define _PERIODICXPICTASK_
 
 #include "Custom_Tasks/CustomTask.hpp"
+#include "Custom_Tasks/TransportTask.hpp"
 
 class PeriodicXPIC : public CustomTask
 {
@@ -45,12 +46,13 @@ class PeriodicXPIC : public CustomTask
 		bool doXPIC;
 		bool usingFMPM;
 		int gridBCOption,periodicFMPMorder;
-		double periodicTimeConduction,periodicTimeDiffusion;
-		double periodicCFLConduction,periodicCFLDiffusion;
-		int periodicStepsConduction,periodicStepsDiffusion;
-		double nextPeriodicTimeConduction,nextPeriodicTimeDiffusion;
-		int nextPeriodicStepConduction,nextPeriodicStepDiffusion;
-		bool doXPICConduction,doXPICDiffusion;
+		double periodicTimeConduction,periodicTimeDiffusion[MAX_DIFFUSION_TASKS];
+		double periodicCFLConduction,periodicCFLDiffusion[MAX_DIFFUSION_TASKS];
+		int periodicStepsConduction,periodicStepsDiffusion[MAX_DIFFUSION_TASKS];;
+		double conductionFractionFMPM,diffusionFractionFMPM[MAX_DIFFUSION_TASKS];
+		double nextPeriodicTimeConduction,nextPeriodicTimeDiffusion[MAX_DIFFUSION_TASKS];
+		int nextPeriodicStepConduction,nextPeriodicStepDiffusion[MAX_DIFFUSION_TASKS];
+		bool doXPICConduction,doXPICDiffusion[MAX_DIFFUSION_TASKS];
 };
 
 #endif

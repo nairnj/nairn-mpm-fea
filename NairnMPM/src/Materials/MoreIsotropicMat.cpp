@@ -43,7 +43,7 @@ void IsotropicMat::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 			SRConstitutiveLaw2D(mptr,du,delTime,np,properties,res);
 	}
 }
-		
+
 #pragma mark IsotropicMat::Methods (Large Rotation)
 
 /* Take increments in strain and calculate new Particle: strains, rotation strain,

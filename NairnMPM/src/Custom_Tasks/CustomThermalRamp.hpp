@@ -49,6 +49,8 @@ class CustomThermalRamp : public CustomTask
         double lifetimes;       // use (1-exp(-t*lifetimes/ramptime))
         double stretch;         // if entered and exponential use (1-exp(-(t*lifetimes/ramptime)^stretch))
 		int property;			// RAMP_TEMP,RAMP_CONC, or RAMP_PP
+		double kcon,ksig;		// sigmoidal settings
+		double normExp;			// exponential normalization
 		Expression *scaleFxn;
 	
 		// for imaged ramp

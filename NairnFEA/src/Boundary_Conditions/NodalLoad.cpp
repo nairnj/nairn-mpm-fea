@@ -26,8 +26,9 @@ NodalLoad::NodalLoad(int num,int dof) : FEABoundaryCondition()
 NodalLoad *NodalLoad::PrintLoad(void)
 {
     char nline[200];
+    size_t nlsize=200;
     
-    sprintf(nline,"%5d  %2d  %15.7e",nodeNum,direction,bcValue);
+    snprintf(nline,nlsize,"%5d  %2d  %15.7e",nodeNum,direction,bcValue);
     cout << nline << endl;
 	
 	return (NodalLoad *)nextObject;

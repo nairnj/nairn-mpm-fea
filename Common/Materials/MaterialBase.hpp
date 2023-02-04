@@ -28,12 +28,16 @@ class FailureSurface;
 class SofteningLaw;
 class InitialCondition;
 enum { VARY_STRENGTH=1,VARY_TOUGHNESS,VARY_STRENGTH_AND_TOUGHNESS };
+enum { SOFTDIST_NONE=0,SOFTDIST_NORMAL,SOFTDIST_WEIBULL };
 
 // softening history variables
 enum { SOFT_DAMAGE_STATE=0,DELTANORMAL,DELTASHEAR,DELTASHEAR2,DAMAGENORMAL,DAMAGESHEAR,DAMAGESHEAR2,
 	NORMALDIR1,NORMALDIR2,NORMALDIR3,GCSCALING,RELATIVE_STRENGTH,RELATIVE_TOUGHNESS,
 	SOFT_NUMBER_HISTORY };
-enum { CUBOID_SURFACE=0,CYLINDER_SURFACE,OVOID_SURFACE};
+enum { CUBOID_SURFACE=0,CYLINDER_SURFACE,OVOID_SURFACE,COUPLED_CUBOID_SURFACE};
+
+enum { NO_DIFFUSION=0,MOISTURE_DIFFUSION,POROELASTICITY_DIFFUSION,
+    FRACTURE_PHASE_FIELD,BATTERY_PHASE_FIELD,CONDUCTION_PHASE_FIELD,NUM_DUFFUSION_OPTIONS };
 
 #else
 
@@ -101,14 +105,18 @@ class MaterialBase : public LinkedObject
         virtual char *InputMaterialProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintMechanicalProperties(void) const;
+        void SwapProperties(double &,double &,double &,double &);
+        void SwapProperties(double &,double &);
+        static void pswap(double &,double &);
 #ifdef MPM_CODE
 		// history data
 		virtual int SizeOfHistoryData(void) const;
-		virtual char *InitHistoryData(char *);
-		virtual char *InitHistoryData(char *,MPMBase *mptr);
+		virtual char *InitHistoryData(char *,MPMBase *);
+		virtual void ResetHistoryData(char *,MPMBase *);
    		virtual int NumberOfHistoryDoubles(void) const;
 		virtual double GetHistory(int,char *) const;
 		double *CreateAndZeroDoubles(char *,int) const;
+		void ZeroDoubles(char *,int) const;
         virtual void SetInitialConditions(InitialCondition *,MPMBase *,bool);
 		virtual Vector GetDamageNormal(MPMBase *,bool) const;
 	
@@ -135,13 +143,18 @@ class MaterialBase : public LinkedObject
         virtual int SizeOfMechanicalProperties(int &) const;
 		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *,int) const;
 		virtual double GetHeatCapacity(MPMBase *) const;
-		virtual double GetCpHeatCapacity(MPMBase *) const;
+		//virtual double GetCpHeatCapacity(MPMBase *) const;
 		virtual double GetCpMinusCv(MPMBase *) const;
 		virtual double GetDiffusionCT(void) const;
+		virtual bool NeedsCrelExtrap(void) const;
+		virtual double GetCsatRelative(MPMBase *) const;
+		virtual double GetMatDiffusionSource(int,MPMBase *,double,double,double,double,double,double) const;
+		virtual bool GetParticleDiffusionSource(DiffusionTask *,MPMBase *,double,double *) const;
+    
         virtual void IncrementHeatEnergy(MPMBase *,double,double) const;
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int,Tensor *) const;
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
-		virtual double GetIncrementalResJ(MPMBase *,ResidualStrains *) const;
+		virtual double GetIncrementalResJ(MPMBase *,ResidualStrains *,double) const;
     	virtual Matrix3 LRGetStrainIncrement(int,MPMBase *,Matrix3,Matrix3 *,Matrix3 *,Matrix3 *,Matrix3 *) const;
 #else
 		virtual void LoadMechanicalPropertiesFEA(int,double,int);
@@ -181,6 +194,7 @@ class MaterialBase : public LinkedObject
 		virtual bool IsRigidBC(void) const;
 		virtual bool IsRigidContact(void) const;
 		virtual bool IsRigidBlock(void) const;
+		virtual bool IsRigidSpringBlock(void) const;
 		virtual int MaterialStyle(void) const;
 		virtual int KeepsCrackTip(void) const;
 		virtual void SetFriction(int,int);
@@ -230,7 +244,7 @@ class MaterialBase : public LinkedObject
 		virtual void SetInitiationLaw(char *);
 		virtual bool AcceptInitiationLaw(FailureSurface *,int);
 		virtual void SetSofteningLaw(char *,int);
-		virtual bool AcceptSofteningLaw(SofteningLaw *,int,int);
+		virtual bool AcceptSofteningLaw(SofteningLaw *,int);
 		virtual double *GetSoftHistoryPtr(MPMBase *) const;
 		virtual int GetTractionFailureSurface(void) const;
 	
@@ -238,6 +252,14 @@ class MaterialBase : public LinkedObject
 		virtual void UndrainedPressIncrement(MPMBase *,double) const;
 		virtual void UndrainedPressIncrement(MPMBase *,double,double,double) const;
 #endif
+	
+#ifdef SUPPORT_MEMBRANES
+		// membrane materials
+		virtual void MPMMembrane2DLaw(MPMBase *,double,double &,double &,double &,double &,bool &,double,int,void *,ResidualStrains *) const;
+		virtual void MPMMembrane3DLaw(MPMBase *,double,double,double &,double,double,
+								  double &,double &,double &,bool &,double,int,void *,ResidualStrains *) const;
+		static short GetMVFIsMembrane(int);
+#endif // end SUPPORT_MEMBRANES
 	
 #endif	// MPM_CODE
 	
@@ -248,6 +270,7 @@ class MaterialBase : public LinkedObject
 		static const char *PreferredDirection(int);
 		static int GetMVFFlags(int);
 		static int GetFieldMatID(int);
+		static MaterialBase *GetFieldMaterial(int);
 		static int GetActiveMatID(int);
 		static int GetContactLawNum(int);
 #endif
@@ -272,7 +295,7 @@ class MaterialBase : public LinkedObject
 		double alphaPE,Qalpha;			// Poroelasticity Biot coefficent
 		double Ku;						// Poroelasticity undrained bulk modulus
 #endif
-
+	
 #endif	// MPM_CODE
 	
 		// constants (changed in MPM time step)
@@ -284,6 +307,7 @@ class MaterialBase : public LinkedObject
 		int field,activeField;
 		int shareMatField;
 #endif
+        int swapz;
 };
 
 // List of Materials from theMaterials[0] to theMaterials[nmat-1]

@@ -11,8 +11,8 @@
 	  to the particle
 	* When activated, extrapolate transport rates to particle
 	* Update particle position, velocity, and spin
-	* Update particle temperature and concentration
-	  (if an adiabatic heating term, add to particle temperature)
+	* Update particle temperature, concentration, and other diffusion values
+		 (if an adiabatic heating term, add to particle temperature)
 	* After main loop, update position of all rigid particles
 ********************************************************************************/
 
@@ -23,14 +23,15 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
-#include "Global_Quantities/BodyForce.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
-#include "Custom_Tasks/TransportTask.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Global_Quantities/BodyForce.hpp"
 #include "NairnMPM_Class/XPICExtrapolationTask.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
-#include "NairnMPM_Class/XPICExtrapolationTaskTO.hpp"
+#ifdef TRANSPORT_FMPM
+    #include "NairnMPM_Class/XPICExtrapolationTaskTO.hpp"
+#endif
 
 #pragma mark CONSTRUCTORS
 
@@ -52,6 +53,7 @@ bool UpdateParticlesTask::Execute(int taskOption)
 	int ndsArray[maxShapeNodes];
 	double fn[maxShapeNodes];
 #endif
+	double rate[MAX_TRANSPORT_TASKS],value[MAX_TRANSPORT_TASKS],pic[MAX_TRANSPORT_TASKS];
 
 	// data structure for extrapolations
 	GridToParticleExtrap gp;
@@ -83,8 +85,10 @@ bool UpdateParticlesTask::Execute(int taskOption)
 	
 #ifdef TRANSPORT_FMPM
 	// get grid transport values
+	int xpicOrder = 0;
 	if(XPICTransportTask!=NULL)
-	{	if(XPICTransportTask->GetXPICOrder()>1)
+	{	xpicOrder = XPICTransportTask->GetXPICOrder();
+		if(xpicOrder>1)
 		{
 #pragma omp parallel for
 			for(int i=1;i<=*nda;i++)
@@ -94,10 +98,12 @@ bool UpdateParticlesTask::Execute(int taskOption)
 	}
 #endif
 
-	// Update particle position, velocity, temp, and conc
-#pragma omp parallel for private(ndsArray,fn,gp)
+	// Update particle position, velocity, temp, conc, and other diffusion values
+#pragma omp parallel for private(ndsArray,fn,gp,rate,value,pic)
 	for(int p=0;p<nmpmsNR;p++)
 	{	MPMBase *mpmptr = mpm[p];
+		if(mpmptr->InReservoir()) continue;
+		
 		try
 		{	// get shape functions
 			const ElementBase *elemRef = theElements[mpmptr->ElemID()];
@@ -124,16 +130,18 @@ bool UpdateParticlesTask::Execute(int taskOption)
 				// XPIC(k>1) needs separate velocity extrapolation
 				if(m<-1) ZeroVector(&gp.Svlumped);
 			}
-			
-			// only two possible transport tasks
-			double rate[2],value[2];
-			if(transportTasks!=NULL)
-			{	rate[0] = rate[1] = value[0] = value[1] = 0.;
+						
+			// zero for each transport tasks
+			for(int i=0;i<numTransport;i++)
+			{	rate[i]=0.;
+				value[i]=0.;
+				pic[i]=0.;
 			}
+			
+			// Loop over nodes for this particle and extrapolate grid results
+			// to this particle
 			int task;
 			TransportTask *nextTransport;
-			
-			// Loop over nodes
 			for(int i=1;i<=numnds;i++)
 			{	// increment velocity and acceleraton
 				NodalPoint *ndptr = nd[nds[i]];
@@ -142,22 +150,39 @@ bool UpdateParticlesTask::Execute(int taskOption)
 				// increment
 				ndptr->IncrementDelvaTask5(vfld,matfld,fn[i],&gp);
 				
-				// increment transport rates
+				// extraplate to the particle
+				// FLIP: value and rate
+				// FMPM(k): value, FLIP/FMPM(1): value and rate, FLIP/FMPM(k)>1; value, rate, and pic
 				nextTransport=transportTasks;
 				task=0;
 				while(nextTransport!=NULL)
-				{	value[task] += nextTransport->IncrementValueExtrap(ndptr,fn[i],vfld,matfld);
+				{	// always get value
+					value[task] += nextTransport->IncrementValueExtrap(ndptr,fn[i],vfld,matfld);
 #ifdef TRANSPORT_FMPM
-					if(!nextTransport->IsUsingTransportXPIC())
+					double fractFMPM;
+					if(nextTransport->IsUsingTransportXPIC(fractFMPM))
+					{	// step includes FMPM(k), but FLIP only in fractMPM<1
+						if(fractFMPM<1)
+						{	// step blended FLIP/FMPM
+							rate[task] += nextTransport->IncrementTransportRate(ndptr,fn[i],vfld,matfld);
+							if(xpicOrder>1)
+							{	// blended FLIP/FMPM(k>1)
+								pic[task] += nextTransport->IncrementLumpedValueExtrap(ndptr,fn[i],vfld,matfld);
+							}
+						}
+					}
+					else
+					{	// FLIP only
 						rate[task] += nextTransport->IncrementTransportRate(ndptr,fn[i],vfld,matfld);
+					}
 #else
-					rate[task] += nextTransport->IncrementTransportRate(ndptr,fn[i],vfld,matfld);
-#endif
+                    rate[task] += nextTransport->IncrementTransportRate(ndptr,fn[i],vfld,matfld);
+#endif // end TRANSPORT_FMPM
 					nextTransport = nextTransport->GetNextTransportTask();
 					task++;
 				}
 			}
-			
+
 			// Update velocity and position
 			mpmptr->MoveParticle(&gp);
 			
@@ -170,62 +195,72 @@ bool UpdateParticlesTask::Execute(int taskOption)
 			while(nextTransport!=NULL)
 			{	// mechanics would need to add to store returned value on particle (or get delta from rate?)
 				if(nextTransport == conduction)
-				{	res.dT = nextTransport->GetDeltaValue(mpmptr,value[task]);
-#ifdef TRANSPORT_FMPM
-					dTcond = nextTransport->IsUsingTransportXPIC() ? res.dT : rate[task]*timestep;
-#else
-					dTcond = rate[task]*timestep;
-#endif
+				{	// Store grid extrapolation on the particle and get change from grid values
+					double fractFMPM,gridValue=value[task];
+					if(nextTransport->ShouldBlendFromGrid(fractFMPM))
+						gridValue = fractFMPM*value[task] + (1.-fractFMPM)*pic[task];
+					nextTransport->GetDeltaValue(mpmptr,gridValue,&res.dT);
+					
+					// dTcond is change in particle temperature due to conduction alone,
+					//   which uses smoothed increment found above (changed to smoothed 10/25/2022)
+					// It is used below to get heat energy, entropy, and phase transitions.
+					dTcond = res.dT;
 				}
 				else
-					res.dC = nextTransport->GetDeltaValue(mpmptr,value[task]);
+				{	// When coupled with mechanics, add particle source terms from
+					// constitutive laws now
+					int transNumber = ((DiffusionTask *)nextTransport)->GetNumber();
+                    double dvalue;
+                    if(mpmptr->GetClearParticleDiffusionSource(transNumber,dvalue))
+                    {   value[task] += dvalue;
+                        pic[task] += dvalue;
+                        rate[task] += dvalue/timestep;
+                    }
+
+					// give task a chance to change rate and value(s)
+					nextTransport->AdjustRateAndValue(mpmptr,value[task],rate[task],pic[task],timestep);
+					
+					// Store grid extrapolation on the partle and get change from grid values
+					// Note that only base diffusion sets res.dC
+					double fractFMPM,gridValue=value[task];
+					if(nextTransport->ShouldBlendFromGrid(fractFMPM))
+						gridValue = fractFMPM*value[task] + (1.-fractFMPM)*pic[task];
+					nextTransport->GetDeltaValue(mpmptr,gridValue,&res.dC);
+				}
+
+				// change particle value, then on to next task
 				nextTransport=nextTransport->MoveTransportValue(mpmptr,timestep,rate[task],value[task]);
 				task++;
 			}
 			
 			// energy coupling here adds adiabatic temperature rise
 			if(ConductionTask::adiabatic)
-			{	dTad = mpmptr->GetClear_dTad();						// in K
+			{	// increment temperatures and res.dT by Tad, but not dTcond
+				dTad = mpmptr->GetClear_dTad();						// in K
 				mpmptr->pTemperature += dTad;						// in K
 				mpmptr->pPreviousTemperature += dTad;				// in K
 				res.dT += dTad;
 			}
 			
-			// for heat energy and entropy
+			// for heat energy and entropy due to dTcond alone
 			if(ConductionTask::active)
-			{	double dq = matRef->GetHeatCapacity(mpmptr)*dTcond;
-				mpmptr->AddHeatEnergy(dq);
-				mpmptr->AddEntropy(dq,mpmptr->pPreviousTemperature);
+			{	// heat energy from dTcond only
+				double cv = matRef->GetHeatCapacity(mpmptr);
+				mpmptr->AddHeatEnergy(cv*dTcond);
+				
+				// Entropy for change due to dTcond alone (i.e. reversible)
+				// Inreverible is handled when material calls IncrementHeatEnergy
+				mpmptr->AddEntropy(cv,mpmptr->pPreviousTemperature-dTcond,mpmptr->pPreviousTemperature);
+				
+				// Isothermal mode subtracts dTad from dTcond, but that is handled
+				// when material calls IncrementHeatEnergy
 			}
 			else
 			{	// when conduction off, update previous temp here
 				res.dT = mpmptr->pTemperature - mpmptr->pPreviousTemperature;
 				mpmptr->pPreviousTemperature = mpmptr->pTemperature;
 			}
-			
-#ifdef POROELASTICITY
-			// poroelasticity update
-			if(fmobj->HasPoroelasticity())
-			{	double dpud = mpmptr->GetClear_dpud();					// in MPa
-				mpmptr->pConcentration += dpud;							// in MPa
-				
-				// update previous and residual change
-				mpmptr->pPreviousConcentration += dpud;				// in MPa
-				res.dC += dpud;
-				
-				if(mpmptr->pPreviousConcentration<0.)
-				{	// do not let pPreviousConcentration go negative
-					// if C-dC>0 (previous dC), set dC to -previous, othersize zero
-					res.dC = -fmax(mpmptr->pPreviousConcentration-res.dC,0.);
-					mpmptr->pPreviousConcentration = 0.;
-				}
-				else if(mpmptr->pPreviousConcentration-res.dC<0.)
-				{	// adjust dC if was negative, but now position to be new positive value
-					res.dC = mpmptr->pPreviousConcentration;
-				}
-			}
-#endif
-			
+
 			// for generalized plane stress or strain, increment szz if needed
 			if(fmobj->np==PLANE_STRESS_MPM || fmobj->np==PLANE_STRAIN_MPM)
 			{	res.doopse = mpmptr->oopIncrement;
@@ -241,13 +276,6 @@ bool UpdateParticlesTask::Execute(int taskOption)
 			{
 #pragma omp critical (error)
 				upErr = new CommonException(err);
-			}
-		}
-		catch(CommonException* err)
-		{	if(upErr==NULL)
-			{
-#pragma omp critical (error)
-				upErr = new CommonException(*err);
 			}
 		}
 		catch(std::bad_alloc&)
@@ -268,11 +296,12 @@ bool UpdateParticlesTask::Execute(int taskOption)
 	
 	// throw any errors
 	if(upErr!=NULL) throw *upErr;
-    
-    // rigid materials move at their current velocity
-    for(int p=nmpmsRB;p<nmpms;p++)
-    {	mpm[p]->MovePosition(timestep);
-    }
+	
+	// rigid materials move at their current velocity
+	for(int p=nmpmsRB;p<nmpms;p++)
+	{	if(mpm[p]->InReservoir()) continue;
+		mpm[p]->MovePosition(timestep);
+	}
     
     return true;
 }

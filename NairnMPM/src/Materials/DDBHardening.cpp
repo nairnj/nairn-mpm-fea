@@ -213,7 +213,8 @@ void DDBHardening::PrintYieldProperties(void) const
     
     // yield
 	char ulab[50];
-	sprintf(ulab,"1/%s^2",UnitsController::Label(CULENGTH_UNITS));
+	size_t usize=50;
+	snprintf(ulab,usize,"1/%s^2",UnitsController::Label(CULENGTH_UNITS));
     MaterialBase::PrintProperty("Initial cell dislocation density, pc",rhoC0,ulab);
 	MaterialBase::PrintProperty("Initial cell wall dislocation density, pw",rhoW0,ulab);
 	MaterialBase::PrintProperty("Taylor Factor",tayM,"");

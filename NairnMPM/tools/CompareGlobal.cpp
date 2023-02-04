@@ -329,6 +329,7 @@ void CompareGlobalFiles(const char *mpmFile,int fileIndex,int lastIndex)
 
 	// print summary
 	char rep[200];
+    size_t repsize=200;
 	for(int i=0;i<=nCols;i++)
 	{	if(i==0)
 			strcpy(rep,"Time ");
@@ -345,7 +346,7 @@ void CompareGlobalFiles(const char *mpmFile,int fileIndex,int lastIndex)
 		// get results (max, MAE, MaxAE, SMAPE(%), MaxAPE(%)
 		double MAE = stats[i][0]>0. ? stats[i][0]/((double)nrows) : 0.;
 		double SMAPE = stats[i][2]>0. ? 100.*stats[i][2]/((double)nrows) : 0.;
-		sprintf(rep," %12g %12g %12g %12g %12g",0.5*stats[i][4],MAE,stats[i][1],SMAPE,100.*stats[i][3]);
+		snprintf(rep,repsize," %12g %12g %12g %12g %12g",0.5*stats[i][4],MAE,stats[i][1],SMAPE,100.*stats[i][3]);
 		cout << rep << endl;
 	}
 }
@@ -398,7 +399,7 @@ unsigned char *ReadLine(unsigned char *bptr,unsigned char *bend,unsigned char *r
 	return bptr;
 }
 
-// open file, read to  buffer, close file, return the buffer
+// open file, read to buffer, close file, return the buffer
 unsigned char *ReadGlobalFile(const char *filename,long &fileLength)
 {
 	FILE *fo;

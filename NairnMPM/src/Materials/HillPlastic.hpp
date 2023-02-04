@@ -19,7 +19,7 @@ class HillPlastic : public AnisoPlasticity
 {
     public:
         // Harding constantsL Y/Yref = (1 + Khard alpha^nhard)
-		double Khard,nhard,exphard,Kexp;
+		double Khard,nhard,exphard,Kexp,alphaMax,hmax,slopeMin;
         int hardStyle;
         
         // constructors and destructors

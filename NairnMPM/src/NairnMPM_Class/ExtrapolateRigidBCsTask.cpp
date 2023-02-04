@@ -64,8 +64,9 @@ bool ExtrapolateRigidBCsTask::Execute(int taskOption)
 	// This loop not parallel because because it is normally small (only loops over rigid BC particles)
 	// To make parallel, need ghost nodes and reduction step
 	for(int p=nmpmsRC;p<nmpms;p++)
-	{	// get material point and the rigid material
+	{	// get material point and the rigid material (skip in in reservoir)
 		MPMBase *mpmptr = mpm[p];
+		if(mpmptr->InReservoir()) continue;
 		const RigidMaterial *rigid = (RigidMaterial *)theMaterials[mpmptr->MatID()];				// material object for this particle
 		
 		// get rigid BC particle velocity
@@ -87,13 +88,15 @@ bool ExtrapolateRigidBCsTask::Execute(int taskOption)
 		// get rigid particle temperature
 		if(rigid->RigidTemperature() && ConductionTask::active)
 		{	setFlags += CONTROL_TEMPERATURE;
+            // if has function change it, otherwise leave as is
 			if(rigid->GetValueSetting(&tempValue,mtime,&mpmptr->pos)) mpmptr->pTemperature = tempValue;
 		}
 		
-		// concentration
+		// concentration (but only if has diffusion or poroelasticity and always in pDiff[0])
 		if(rigid->RigidConcentration() && fmobj->HasFluidTransport())
 		{	setFlags += CONTROL_CONCENTRATION;
-			if(rigid->GetValueSetting(&concValue,mtime,&mpmptr->pos)) mpmptr->pConcentration = concValue;
+            // if has function change it, otherwise leave as is
+			if(rigid->GetValueSetting(&concValue,mtime,&mpmptr->pos)) mpmptr->pDiff[0]->conc = concValue;
 		}
 		
 		// get nodes and classic shape function for rigid material point p

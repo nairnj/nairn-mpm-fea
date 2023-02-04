@@ -42,7 +42,7 @@ CrackVelocityField::CrackVelocityField(int num,short theLoc,int cnum)
 	if(maxMaterialFields==1)
 	{	mvf[0] = CreateMatVelocityField(0);
 	}
-	
+
 	// clear all data.
     // But creating it, implies it has points so set hasCrackPoints to true
 	Zero(theLoc,cnum,false);
@@ -82,7 +82,7 @@ void CrackVelocityField::Zero(short theLoc,int cnum,bool zeroMVFs)
 	ZeroVector(&norm[SECOND_CRACK]);
 	numberPoints=0;
     hasCrackPoints = false;
-	
+
 	// can't call when constructing because subclass not ready yet for this
 	// pure virtual method
 	if(zeroMVFs) ZeroMatFields();
@@ -527,5 +527,4 @@ CrackVelocityField *CrackVelocityField::CreateCrackVelocityField(int fieldNum,sh
 	else
 		return (CrackVelocityField *)(new CrackVelocityFieldMulti(fieldNum,theLoc,cnum));
 }
-
 

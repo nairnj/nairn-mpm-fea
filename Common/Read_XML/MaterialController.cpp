@@ -17,7 +17,6 @@
 	#include "NairnMPM_Class/NairnMPM.hpp"
 	#include "Materials/Viscoelastic.hpp"
 	#include "Materials/HillPlastic.hpp"
-	#include "Materials/WoodMaterial.hpp"
 	#include "Materials/IsoPlasticity.hpp"
 	#include "Materials/Mooney.hpp"
     #include "Materials/HEIsotropic.hpp"
@@ -44,10 +43,13 @@
 	#include "Materials/LiquidContact.hpp"
 	#include "Read_MPM/CrackController.hpp"
 	#include "Materials/IsoSoftening.hpp"
-#else
-	// FEA code materials
+
+#else // not MPM_CODE
+
+	// Material for FEA only
 	#include "Materials/ImperfectInterface.hpp"
-#endif
+
+#endif // end MPM_CODE
 
 MaterialController *matCtrl=NULL;
 
@@ -91,7 +93,7 @@ MaterialController::~MaterialController()
 int MaterialController::AddMaterial(int matID,char *matName)
 {
 	MaterialBase *newMaterial;
-	
+ 	
 	switch(matID)
 	{   case ISOTROPIC:
 			newMaterial=new IsotropicMat(matName,matID);
@@ -103,7 +105,10 @@ int MaterialController::AddMaterial(int matID,char *matName)
 		case ORTHO:
 			newMaterial=new Orthotropic(matName,matID);
 			break;
+            
 #ifdef MPM_CODE
+            
+        // Material for MPM modeling only
 		case VISCOELASTIC:
 			newMaterial=new Viscoelastic(matName,matID);
 			break;
@@ -142,9 +147,6 @@ int MaterialController::AddMaterial(int matID,char *matName)
 			break;
 		case HILLPLASTIC:
 			newMaterial=new HillPlastic(matName,matID);
-			break;
-		case WOODMATERIAL:
-			newMaterial=new WoodMaterial(matName,matID);
 			break;
 		case TRILINEARTRACTIONMATERIAL:
 			newMaterial=new TrilinearTraction(matName,matID);
@@ -192,12 +194,16 @@ int MaterialController::AddMaterial(int matID,char *matName)
 		case ISOSOFTENING:
 			newMaterial=new IsoSoftening(matName,matID);
 			break;
-#else
-		// FEA code materials
+			
+#else // not MPM_CODE
+            
+		// Materials for FEA only
 		case INTERFACEPARAMS:
 			newMaterial=new ImperfectInterface(matName,matID);
 			break;
-#endif
+            
+#endif  // end MPM_CODE
+            
 		default:
 			return FALSE;
 	}

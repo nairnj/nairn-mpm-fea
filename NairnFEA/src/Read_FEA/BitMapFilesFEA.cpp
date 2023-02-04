@@ -92,8 +92,9 @@ void FEAReadHandler::TranslateBMPFiles(void)
 			
 			// is there an angle image too?
 			if(setAngles)
-			{	double totalIntensity = FindAverageValue(map,angleRows);
-				if(totalIntensity>0.)
+			{	bool hasWeight = false;
+				double totalIntensity = FindAverageValue(map,angleRows,BYTE_DATA,hasWeight);
+				if(hasWeight)
 				{	double matAngle=minAngle[0]+(totalIntensity-minIntensity[0])*angleScale[0];
 					elem->SetAngleInDegrees(matAngle);
 				}

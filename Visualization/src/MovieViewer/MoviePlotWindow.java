@@ -39,6 +39,10 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 
 	// command file chooser
 	private JFileChooser chooser=new JFileChooser();
+	
+	private static Cursor zoomIn = null;
+	private static Cursor zoomOut = null;
+	private static Cursor zoomNo = null;
 
 	// initialize
 	public MoviePlotWindow(ResultsDocument gResDoc,DocViewer gDocView)
@@ -57,7 +61,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		Container content=getContentPane();
 		plotView=new MeshPlotView(resDoc);
 		
-		// list to clicks in the plot view
+		// listen to clicks in the plot view
 		plotView.addMouseListener(new MouseAdapter()
 		{	public void mouseClicked(MouseEvent e)
 		    {	if(e.isMetaDown())
@@ -112,6 +116,33 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		    }
 		});
 		
+		// listen to clicks in the plot view
+		plotView.addMouseMotionListener(new MouseMotionListener()
+		{	public void mouseMoved(MouseEvent e)
+			{	if(e.isMetaDown())
+				{	if(e.isAltDown())
+					{	if(currentScale<1.25)
+							plotView.setCursor(zoomNo);
+						else
+							plotView.setCursor(zoomOut);
+					}
+					else
+					{	if(currentScale>8.)
+							plotView.setCursor(zoomNo);
+						else
+							plotView.setCursor(zoomIn);
+					}
+				}
+				else
+				{	plotView.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				}
+		    }
+		
+			public void mouseDragged(MouseEvent e)
+			{
+			}
+		});
+		
 		// scroll pane
 		plotScroll=new MeshPlotScroll(plotView);
 		content.add(plotScroll,BorderLayout.CENTER);
@@ -127,6 +158,18 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("PlotQuantityChanged",gDocView,this);
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("ParticleSizeChanged",gDocView,this);
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("MaxElongChanged",gDocView,this);
+		
+		// load cursors
+		if(zoomIn==null)
+		{	Toolkit toolkit = Toolkit.getDefaultToolkit();
+			Class<?> baseClass=JNApplication.main.getClass();
+			ImageIcon cIcon = new ImageIcon(baseClass.getResource("Resources/ZoomMinus.png"));
+			zoomOut = toolkit.createCustomCursor(cIcon.getImage(),new Point(8,8),"zoomOut");
+			cIcon = new ImageIcon(baseClass.getResource("Resources/ZoomPlus.png"));
+			zoomIn = toolkit.createCustomCursor(cIcon.getImage(),new Point(8,8),"zoomIn");
+			cIcon = new ImageIcon(baseClass.getResource("Resources/ZoomNo.png"));
+			zoomNo = toolkit.createCustomCursor(cIcon.getImage(),new Point(8,8),"zoomNo");
+		}
 		
 		finishFrameworkWindow(false);
 	}
@@ -207,13 +250,13 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 				catch(Exception e)
 				{	dispose();
 					Toolkit.getDefaultToolkit().beep();
-					JOptionPane.showMessageDialog(null,"Error loading plot data: "+e.getMessage());
+					JNUtilities.showMessage(null,"Error loading plot data: "+e.getMessage());
 					break;
 				}
 				catch(OutOfMemoryError me)
 				{	dispose();
 					Toolkit.getDefaultToolkit().beep();
-					JOptionPane.showMessageDialog(null,"Out of memory error: "+me.getMessage());
+					JNUtilities.showMessage(null,"Out of memory error: "+me.getMessage());
 					break;
 				}
 				plotView.repainting=true;
@@ -251,12 +294,12 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		catch(Exception e)
 		{	dispose();
 			Toolkit.getDefaultToolkit().beep();
-			JOptionPane.showMessageDialog(null,"Error loading plot data: "+e.getMessage());
+			JNUtilities.showMessage(null,"Error loading plot data: "+e.getMessage());
 		}
 		catch(OutOfMemoryError me)
 		{	dispose();
 			Toolkit.getDefaultToolkit().beep();
-			JOptionPane.showMessageDialog(null,"Out of memory error: "+me.getMessage());
+			JNUtilities.showMessage(null,"Out of memory error: "+me.getMessage());
 		}
 	}
 	
@@ -406,27 +449,25 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		}
 	
 		else if(obj.getName().equals("PlotQuantityChanged"))
-		{	int ctrlPlotType=((DocViewer)document).controls.getPlotType();
+		{	// called when choose new quantity on component in a move plot window
 			JComboBox<?> qmenu = (JComboBox<?>)obj.getUserInfo();
 			if(qmenu==movieControls.pquant)
 			{	// changed in plot window, synch with results window
-				if(ctrlPlotType==getPlotType())
-				{	int newIndex=movieControls.pquant.getSelectedIndex();
-					JComboBox<PlotMenuItem> plotQuant=((DocViewer)document).controls.getQuantityMenu();
-					if(plotQuant.getSelectedIndex()!=newIndex)
-						plotQuant.setSelectedIndex(newIndex);
-				}
+				((DocViewer)document).controls.changePlotType(getPlotType());
+				int newIndex=movieControls.pquant.getSelectedIndex();
+				JComboBox<PlotMenuItem> plotQuant=((DocViewer)document).controls.getQuantityMenu();
+				if(plotQuant.getSelectedIndex()!=newIndex)
+					plotQuant.setSelectedIndex(newIndex);
 				if(!movieControls.disableStartPlot)
 					((DocViewer)document).startNewPlot(getPlotType());
 			}
 			else if(qmenu==movieControls.pcmpnt)
 			{	// changed in plot window, synch with results window
-				if(ctrlPlotType==getPlotType())
-				{	int newIndex=movieControls.pcmpnt.getSelectedIndex();
-					JComboBox<String> plotCmpnt=((DocViewer)document).controls.getComponentMenu();
-					if(plotCmpnt.getSelectedIndex()!=newIndex)
-						plotCmpnt.setSelectedIndex(newIndex);
-				}
+				((DocViewer)document).controls.changePlotType(getPlotType());
+				int newIndex=movieControls.pcmpnt.getSelectedIndex();
+				JComboBox<String> plotCmpnt=((DocViewer)document).controls.getComponentMenu();
+				if(plotCmpnt.getSelectedIndex()!=newIndex)
+					plotCmpnt.setSelectedIndex(newIndex);
 				if(!movieControls.disableStartPlot)
 					((DocViewer)document).startNewPlot(getPlotType());
 			}
@@ -480,7 +521,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		}
 		catch(Exception fe)
 		{	Toolkit.getDefaultToolkit().beep();
-			JOptionPane.showMessageDialog(this,"Error exporting graphic image: " + fe);
+			JNUtilities.showMessage(this,"Error exporting graphic image: " + fe);
 			return false;
 		}
 		return true;
@@ -503,7 +544,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 	//----------------------------------------------------------------------------
 	
 	public void windowOpened(WindowEvent e)
-	{	int newComponent=((DocViewer)document).controls.getPlotComponent(-1);
+	{	int newComponent=((DocViewer)document).controls.getPlotComponent(-1,false,null);
 		beginNewIndexNewComponent(((DocViewer)document).controls.getArchiveIndex(),newComponent);
 		plotView.setFirstLoad(true);
 		super.windowOpened(e);

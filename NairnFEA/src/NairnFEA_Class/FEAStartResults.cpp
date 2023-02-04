@@ -35,6 +35,7 @@ void NairnFEA::PrintAnalysisTitle(void)
 void NairnFEA::CMStartResultsOutput(void)
 {
     char hline[200];
+    size_t hsize=200;
     int i;
     
     //---------------------------------------------------
@@ -54,10 +55,10 @@ void NairnFEA::CMStartResultsOutput(void)
 		strcpy(temperatureExpr,"?");
 	}
 	
-	sprintf(hline,"T0: %.2lf C\nT: %s C",stressFreeTemperature,temperatureExpr);
+	snprintf(hline,hsize,"T0: %.2lf C\nT: %s C",stressFreeTemperature,temperatureExpr);
 	cout << hline << endl;
 	if(stressFreeTemperature!=0)
-	{	sprintf(hline,"T-T0: %s - %.2lf C",temperatureExpr,stressFreeTemperature);
+	{	snprintf(hline,hsize,"T-T0: %s - %.2lf C",temperatureExpr,stressFreeTemperature);
 		cout << hline << endl;
 	}
 	cout << endl;
@@ -89,7 +90,7 @@ void NairnFEA::CMStartResultsOutput(void)
     //---------------------------------------------------
     // Stress element faces
 	if(firstEdgeBC!=NULL)
-	{	sprintf(hline,"FACES WITH APPLIED STRESS (%s)",UnitsController::Label(PRESSURE_UNITS));
+	{	snprintf(hline,hsize,"FACES WITH APPLIED STRESS (%s)",UnitsController::Label(PRESSURE_UNITS));
 		PrintSection(hline);
 		cout << " Elem  Fc   Type      Nodal Stress     Nodal Stress     Nodal Stress\n"
 			<< "----------------------------------------------------------------------\n";
@@ -105,15 +106,15 @@ void NairnFEA::CMStartResultsOutput(void)
     {	PrintSection("PERIODIC DIRECTIONS");
 		// x periodic, but y not (not allowed for axisymmetric)
 		if(fmobj->periodic.dof==1)
-		{	sprintf(hline,"x direction from %g to %g %s",periodic.xmin,periodic.xmax,UnitsController::Label(CULENGTH_UNITS));
+		{	snprintf(hline,hsize,"x direction from %g to %g %s",periodic.xmin,periodic.xmax,UnitsController::Label(CULENGTH_UNITS));
 			cout << hline << endl;
 			if(periodic.fixDu)
-			{	sprintf(hline,"   Displacement jump fixed at %g %s for exx = %g",periodic.du,
+			{	snprintf(hline,hsize,"   Displacement jump fixed at %g %s for exx = %g",periodic.du,
 						UnitsController::Label(CULENGTH_UNITS),periodic.du/(periodic.xmax-periodic.xmin));
 				cout << hline << endl;
 			}
 			if(periodic.fixDudy)
-			{	sprintf(hline,"   Displacement jump slope fixed at %g",periodic.dudy);
+			{	snprintf(hline,hsize,"   Displacement jump slope fixed at %g",periodic.dudy);
 				cout << hline << endl;
 			}
 		}
@@ -121,48 +122,48 @@ void NairnFEA::CMStartResultsOutput(void)
 		// y periodic, but x not (only option for axisymmetrix - z periodic, but r not)
 		else if(fmobj->periodic.dof==2)
 		{	char pax = fmobj->IsAxisymmetric() ? 'z' : 'y' ;
-			sprintf(hline,"%c direction from %g to %g %s",pax,periodic.ymin,periodic.ymax,UnitsController::Label(CULENGTH_UNITS));
+            snprintf(hline,hsize,"%c direction from %g to %g %s",pax,periodic.ymin,periodic.ymax,UnitsController::Label(CULENGTH_UNITS));
 			cout << hline << endl;
 			if(periodic.fixDv)
-			{	sprintf(hline,"   Displacement jump fixed at %g %s for e%c%c = %g",periodic.dv,
+			{	snprintf(hline,hsize,"   Displacement jump fixed at %g %s for e%c%c = %g",periodic.dv,
 						UnitsController::Label(CULENGTH_UNITS),pax,pax,periodic.dv/(periodic.ymax-periodic.ymin));
 				cout << hline << endl;
 			}
 			if(periodic.fixDvdx)
-			{	sprintf(hline,"   Displacement jump slope fixed at %g",periodic.dvdx);
+			{	snprintf(hline,hsize,"   Displacement jump slope fixed at %g",periodic.dvdx);
 				cout << hline << endl;
 			}
 		}
 		
 		// x and y both periodic (not allowed for axisymmetric)
 		else
-		{	sprintf(hline,"x direction from %g to %g %s",periodic.xmin,periodic.xmax,UnitsController::Label(CULENGTH_UNITS));
+		{	snprintf(hline,hsize,"x direction from %g to %g %s",periodic.xmin,periodic.xmax,UnitsController::Label(CULENGTH_UNITS));
 			cout << hline << endl;
 			if(periodic.fixDu)
-			{	sprintf(hline,"   Displacement jump fixed at %g %s for exx = %g",periodic.du,
+			{	snprintf(hline,hsize,"   Displacement jump fixed at %g %s for exx = %g",periodic.du,
 						UnitsController::Label(CULENGTH_UNITS),periodic.du/(periodic.xmax-periodic.xmin));
 				cout << hline << endl;
 			}
 			if(periodic.fixDvdx)
-			{	sprintf(hline,"   Displacement jump dv fixed at %g",periodic.dvdx);
+			{	snprintf(hline,hsize,"   Displacement jump dv fixed at %g",periodic.dvdx);
 				cout << hline << endl;
 			}
-			sprintf(hline,"y direction from %g to %g %s",periodic.ymin,periodic.ymax,UnitsController::Label(CULENGTH_UNITS));
+            snprintf(hline,hsize,"y direction from %g to %g %s",periodic.ymin,periodic.ymax,UnitsController::Label(CULENGTH_UNITS));
 			cout << hline << endl;
 			if(periodic.fixDv)
-			{	sprintf(hline,"   Displacement jump fixed at %g %s for eyy = %g",periodic.dv,
+			{	snprintf(hline,hsize,"   Displacement jump fixed at %g %s for eyy = %g",periodic.dv,
 						UnitsController::Label(CULENGTH_UNITS),periodic.dv/(periodic.ymax-periodic.ymin));
 				cout << hline << endl;
 			}
 			if(periodic.fixDudy)
-			{	sprintf(hline,"   Displacement jump du fixed at %g",periodic.dudy);
+			{	snprintf(hline,hsize,"   Displacement jump du fixed at %g",periodic.dudy);
 				cout << hline << endl;
 				
 				// if both Dudy and Dvdx then global shear is specified
 				if(periodic.fixDvdx)
 				{	double b=periodic.dvdx/(periodic.xmax-periodic.xmin);
 					double d=periodic.dudy/(periodic.ymax-periodic.ymin);
-					sprintf(hline,"    for gxy = %g and rotation = %g",b+d,(d-b)/2);
+                    snprintf(hline,hsize,"    for gxy = %g and rotation = %g",b+d,(d-b)/2);
 					cout << hline << endl;
 				}
 			}

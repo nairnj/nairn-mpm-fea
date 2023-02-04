@@ -30,9 +30,10 @@ ThermalRamp::ThermalRamp()
 void ThermalRamp::Output(void)
 {
 	char hline[200];
+    size_t hsize=200;
 	
 	// always prints reference temperature
-	sprintf(hline,"Reference Temperature: %g K",reference);
+	snprintf(hline,hsize,"Reference Temperature: %g K",reference);
 	cout << hline << endl;
 }
 

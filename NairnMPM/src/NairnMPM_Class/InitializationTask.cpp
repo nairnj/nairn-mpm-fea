@@ -46,7 +46,6 @@ bool InitializationTask::Execute(int taskOption)
 	
 	// Zero Mass Matrix and vectors
 	warnings.BeginStep();
-	
 #pragma omp parallel
 	{
 		// zero active nodal variables on real nodes (first step does all)
@@ -62,7 +61,9 @@ bool InitializationTask::Execute(int taskOption)
 #pragma omp for nowait
 		for(int p=0;p<nmpms;p++)
         {   MPMBase *mpmptr = mpm[p];                                       // pointer
-			const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
+			int elemIndex = mpmptr->ElemID();
+			if(elemIndex==0) continue;
+			const ElementBase *elref = theElements[elemIndex];		// element containing this particle
 			try
 			{	elref->GetShapeFunctionData(mpmptr);
 			}
@@ -72,14 +73,14 @@ bool InitializationTask::Execute(int taskOption)
 #pragma omp critical (error)
 					initErr = new CommonException(err);
 				}
-			}
+ 			}
 			catch(...)
 			{	if(initErr==NULL)
 				{
 #pragma omp critical (error)
 					initErr = new CommonException("Unexpected error","InitializationTask::Execute");
 				}
-			}
+ 			}
 		}
 	}
 	

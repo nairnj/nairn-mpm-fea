@@ -19,6 +19,9 @@
 #include "Custom_Tasks/CustomThermalRamp.hpp"
 #include "Custom_Tasks/PeriodicXPIC.hpp"
 #include "Custom_Tasks/DeleteDamaged.hpp"
+#include "Custom_Tasks/FluidSource.hpp"
+#include "Custom_Tasks/TrackError.hpp"
+#include "Custom_Tasks/LoadControl.hpp"
 
 // Create custom task
 void MPMReadHandler::ScheduleCustomTask(const Attributes& attrs)
@@ -74,6 +77,22 @@ void MPMReadHandler::ScheduleCustomTask(const Attributes& attrs)
             {    nextTask = (CustomTask *)(new DeleteDamaged());
                 if (nextTask == NULL) throw SAXException("Out of memory creating a custom task.");
             }
+            
+            else if (strcmp(value, "FluidSource") == 0)
+            {    nextTask = (CustomTask *)(new FluidSource());
+                if (nextTask == NULL) throw SAXException("Out of memory creating a custom task.");
+            }
+            
+            else if (strcmp(value, "TrackError") == 0)
+            {   nextTask = (CustomTask *)(new TrackError());
+                if (nextTask == NULL) throw SAXException("Out of memory creating a custom task.");
+            }
+            
+            else if(strcmp(value,"LoadControl")==0)
+            {   nextTask=(CustomTask *)(new LoadControl());
+                if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
+            }
+            
 			else
 				throw SAXException("Unknown custom task requested for scheduling.");
 			
@@ -123,7 +142,8 @@ void MPMReadHandler::SetCustomTasksParameter(const Attributes& attrs)
 			// error message
 			if(inputPtr==NULL)
 			{	char errMsg[200];
-				sprintf(errMsg,"Unrecognized custom task parameter: '%s'",value);
+                size_t errSize=200;
+				snprintf(errMsg,errSize,"Unrecognized custom task parameter: '%s'",value);
 				delete [] value;
 				throw SAXException(errMsg);
 			}

@@ -6,7 +6,7 @@
  * Copyright 2007 RSAC Software. All rights reserved.
  */
 
-import javax.swing.*;
+import geditcom.JNFramework.JNUtilities;
 import java.util.*;
 import java.io.*;
 import java.nio.*;
@@ -23,6 +23,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 	// for plot thread calculations
 	private int component;
 	private ControlPanel controls;
+	private ISDictType settings;
 
 	// initialize
 	public TimePlotWindow(DocViewer parent)
@@ -31,14 +32,20 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 	}
 	
 	// add another plot
-	public void addPlot(ControlPanel plotControls) throws Exception
+	public void addPlot(ControlPanel plotControls,ISDictType plotSettings) throws Exception
 	{
 		// the component to plot
+		settings=plotSettings;
+		if(settings!=null)
+			settings.gcis_setObjectforKey("timeplot","plottype");
 		controls=plotControls;
-		component=controls.adjustComponent(controls.getPlotComponent(LoadArchive.TIME_PLOT));
+		component=controls.getPlotComponent(LoadArchive.TIME_PLOT,true,settings);
+		if(component<0)
+			throw new Exception("The result to be plotted was not recognized");
+		component=controls.adjustComponent(component,settings);
 		ResultsDocument resDoc=((DocViewer)document).resDoc;
 		
-		// plot file of global results
+		// plot file of global results (never in scripted plot)
 		if(component==PlotQuantity.MPMGLOBALRESULTS)
 		{	if(resDoc.globalArchive==null)
 				throw new Exception("Global results file not found ");
@@ -62,7 +69,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			return;
 		}
 		
-		// plot file of global results
+		// plot file of global results (never in scripted file)
 		else if(component==PlotQuantity.IMPORTANDPLOTFILE)
 		{	importAndPlotFile();			
 			return;
@@ -73,13 +80,17 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 		plot2DThread.start();
 	}
 	
+	public boolean isPlotting()
+	{	return controls.isPlotting();
+	}
+	
 	//----------------------------------------------------------------------------
 	// detachable thread for loading time plot data
 	//----------------------------------------------------------------------------
 	
 	public void run()
 	{
-		controls.enableProgress(((DocViewer)document).resDoc.archives.size());
+		controls.enableProgress(((DocViewer)document).resDoc.mpmArchives.size());
 		
 		try
 		{	switch(component)
@@ -90,7 +101,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 				case PlotQuantity.MPMTOTPLASTICENERGY:
 				case PlotQuantity.MPMTOTHEATENERGY:
 				case PlotQuantity.MPMTOTELEMENTCROSSINGS:
-					plotTotalEnergy(false);
+					plotTotalEnergy(controls.getAveraging(settings));
 					break;
 				
 				case PlotQuantity.MPMJ1:
@@ -116,7 +127,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 		}
 		catch(Exception pe)
 		{	Toolkit.getDefaultToolkit().beep();
-			JOptionPane.showMessageDialog(this,"Time plot error: "+pe.getMessage());
+			JNUtilities.showMessage(this,"Time plot error: "+pe.getMessage());
 			if(plot2DView.getNumberOfPlots()==0) dispose();
 			controls.disableProgress();
 			return;
@@ -138,15 +149,15 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 	{
 		// settings
 		ResultsDocument resDoc=((DocViewer)document).resDoc;
-		int ptNum=controls.getParticleNumber();
+		int ptNum=controls.getParticleNumber(settings);
 		
 		// trap averaged quantity
 		if(ptNum<=0)
-		{	plotTotalEnergy(true);
+		{	plotTotalEnergy(controls.getAveraging(settings));
 			return;
 		}
 		
-		int i,npts=resDoc.archives.size();
+		int i,npts=resDoc.mpmArchives.size();
 		double angle=0.;
 		
 		// array for results
@@ -194,7 +205,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			mpm.readRecord(bb,mpmOrder,resDoc.units,resDoc.is3D());
 			
 			// find particle property and add to plot
-			x.add(new Double(resDoc.archiveTimes.get(i)));
+			x.add(new Double(resDoc.mpmArchives.get(i).getTime()));
 			y.add(new Double(mpm.getForPlot(component,angle,resDoc)));
 		}
 		
@@ -213,8 +224,8 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 		// settings
 		ResultsDocument resDoc=((DocViewer)document).resDoc;
 		double total,angle=0.;
-		int p,i,npts=resDoc.archives.size();
-		int matNumOption=-controls.getParticleNumber();		// 0 for all or (material #) for one material
+		int p,i,npts=resDoc.mpmArchives.size();
+		int matNumOption=-controls.getParticleNumber(settings);		// 0 for all or (material #) for one material
 		
 		// array for results
 		ArrayList<Double> x=new ArrayList<Double>(npts);
@@ -262,6 +273,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 				bb.position(headerLength+p*resDoc.recSize);
 				mpm.readRecord(bb,mpmOrder,resDoc.units,resDoc.is3D());
 				mpm.setNum(p+1);
+				if(mpm.inReservoir()) continue;
 			
 				// exit if crack or continue if do not want this material
 				if(mpm.material<0) break;
@@ -288,7 +300,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			if(average && numadded>0) total/=totalVol;
 			
 			// add total calculation to the  plot
-			x.add(new Double(resDoc.archiveTimes.get(i)));
+			x.add(new Double(resDoc.mpmArchives.get(i).getTime()));
 			y.add(new Double(total));
 		}
 		
@@ -308,11 +320,11 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 	{
 		// settings
 		ResultsDocument resDoc=((DocViewer)document).resDoc;
-		int npts=resDoc.archives.size();
+		int npts=resDoc.mpmArchives.size();
 		
 		// read crack number and tip
-		int crackNum=controls.getCrackNumber();
-		int tipNum=controls.getCrackTip();
+		int crackNum=controls.getCrackNumber(settings);
+		int tipNum=controls.getCrackTip(settings);
 		
 		// array for results
 		ArrayList<Double> x=new ArrayList<Double>(npts);

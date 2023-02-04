@@ -98,6 +98,15 @@ char *IsoPlasticity::InitHistoryData(char *pchr,MPMBase *mptr)
     return (char *)p;
 }
 
+// reset history data
+void IsoPlasticity::ResetHistoryData(char *pchr,MPMBase *mptr)
+{	int num = plasticLaw->HistoryDoublesNeeded();
+	if(num==0) return;
+	ZeroDoubles(pchr,num);
+	double *p = (double *)pchr;
+	plasticLaw->InitPlasticHistoryData(p);
+}
+	
 // Number of history variables - only the plastic law
 int IsoPlasticity::NumberOfHistoryDoubles(void) const
 {	return plasticLaw->HistoryDoublesNeeded();
@@ -188,6 +197,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,i
 	double dexxr = de(0,0)-eres;
 	double deyyr = de(1,1)-eres;
 	double dezzr = de(2,2)-eres;			// In plane strain trial de(2,2)=0, but not in axisymmetric
+                                            // de(2,2)=0 in plane stress and needs to be set below
 	
 	// Task 2: Update Pressure
 	//--------------------------
@@ -331,28 +341,50 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,i
 	Tensor dfds;
 	if(np==PLANE_STRESS_MPM)
 	{	// Note this plane stress codes assumes J2 plasticity, should generalize when write a subclass
-		double d1 = (1 + p->psKred*lambdak);
+		double d1 = (1. + p->psKred*lambdak);
 		double d2 = (1.+2.*p->Gred*lambdak);
 		double n1 = (strial.xx+strial.yy-2.*Pfinal)/d1;
 		double n2 = (-strial.xx+strial.yy)/d2;
 		double sxx = (n1-n2)/2.;
 		double syy = (n1+n2)/2.;
 		double txy = strial.xy/d2;
-		
-		// find increment in deviatoric stress
-		dels.xx = sxx+Pfinal-st0.xx;
-		dels.yy = syy+Pfinal-st0.yy;
-		dels.xy = txy-st0.xy;
-		
-		// get final direction
-		dfds.xx = (2.*sxx-syy)/3.;
-		dfds.yy = (2.*syy-sxx)/3.;
-		dfds.zz = -(dfds.xx+dfds.yy);
-		dfds.xy = txy;				// tensorial shear strain
-		
-		// zz deformation
-		de.set(2,2,-p->psLr2G*(dexxr+deyyr - lambdak*(dfds.xx+dfds.yy)) + eres + lambdak*dfds.zz);
-		mptr->IncrementDeformationGradientZZ(de(2,2));
+        
+        // get final direction (it is not constant in plane stress)
+        dfds.xx = (2.*sxx-syy)/3.;
+        dfds.yy = (2.*syy-sxx)/3.;
+        dfds.zz = -(dfds.xx+dfds.yy);
+        dfds.xy = txy;                // tensorial shear strain
+        
+        // now the pressure has changed from Pfinal
+        double dPps = -n1/3. - Pfinal;
+        mptr->IncrementPressure(dPps);
+        
+        // Extra work energy due plane stress pressure increment (half dPps because midpoint rule used)
+        //      and dezzp needs to be included in de (it already has elastic dezz)
+        // The total pressure work is -(Pfinal+dPps)*(delV+3*eres+p->psRed*dezzp)
+        // Update pressure did -Pfinal*(delV+3*eres). The work that remains is
+        //   -Pfinal*dezzp-(dPps/2)*(delV + 3*eres + dezzp)
+        // Residual energy is -3*(Pfinal+dPps)*eres and pressure update did first term.
+        double dezzp = lambdak*dfds.zz;
+        double dVoverV = delV + 3.*eres + p->psRed*dezzp;
+        mptr->AddWorkEnergyAndResidualEnergy(-Pfinal*p->psRed*dezzp-dPps*dVoverV,-3.*dPps*eres);
+        
+        // New final pressure
+        Pfinal = mptr->GetPressure();
+
+        // get dezz
+        double dezz = -p->psLr2G*(dexxr + deyyr - lambdak*(dfds.xx+dfds.yy)) + dezzp + eres;
+        de.set(2,2,dezz);
+        mptr->IncrementDeformationGradientZZ(de(2,2));
+        
+        // extra temperature increment
+        dTq0 -= gamma0*mptr->pPreviousTemperature*dezzp;
+
+		// find deviatoric stress on the particle
+        sp->xx = sxx + Pfinal;
+        sp->yy = syy + Pfinal;
+        sp->xy = txy;
+        sp->zz = Pfinal;
 	}
 	else
 	{   // get final direction
@@ -372,6 +404,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,i
 	AddTensor(eplast,&dep);
 	
 	// Task 8: Increment particle deviatoric stress
+    // Note that plane stress was already set above
 	//-----------------------------------------------
 	if(!is2D)
 	{	sp->xx = strial.xx - 2.*p->Gred*dep.xx;
@@ -387,22 +420,15 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,i
 		sp->zz = strial.zz - 2.*p->Gred*dep.zz;
 		sp->xy = strial.xy - p->Gred*dep.xy;
 	}
-	else
-	{	// note that dels is change in code above specific to J2, plane stress plasticity
-		sp->xx = st0.xx + dels.xx;
-		sp->yy = st0.yy + dels.yy;
-		sp->xy = st0.xy + dels.xy;
-		sp->zz = Pfinal;          // now equal to Pfinal
-	}
 	
 	// Task 9: Increment all energies
 	//-------------------------------
 	// Elastic work increment per unit mass
 	double workEnergy = sp->xx*de(0,0) + sp->yy*de(1,1) + sp->xy*dgxy;
-	if(np==AXISYMMETRIC_MPM)
+    if(np==THREED_MPM)
+        workEnergy += sp->zz*de(2,2) + sp->yz*dgyz + sp->xz*dgxz;
+	if(np!=PLANE_STRAIN_MPM)
 		workEnergy += sp->zz*de(2,2);
-	else if(!is2D)
-		workEnergy += sp->zz*de(2,2) + sp->yz*dgyz + sp->xz*dgxz;
 	mptr->AddWorkEnergy(workEnergy);
 	
 	// plastic strain work
@@ -431,39 +457,35 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,Matrix3 de,double delTime,i
 // 2. Update particle pressure
 // 3. Increment the particle energy
 // 4. Call plasticLaw to see if it wants to change the shear modulus
-// 5. Optionally change delV (which is passed by reference)
 // Notes:
-//  delV is incremental volume change on this step.
+//  delV is effective incremental volume change on this step (subtracting eres)
 void IsoPlasticity::UpdatePressure(MPMBase *mptr,double delV,int np,PlasticProperties *p,
 								   ResidualStrains *res,double eres,double delTime,
 								   double &dTq0,double &AVEnergy) const
 {   // pressure change
 	double dP = -p->Kred*delV;
 
+    // get total dV without residual stresses
+    // plane stress will need to correct if any dezzp
+    double dVoverV = delV + 3.*eres;
+    
 	// artifical viscosity
-	// delV is total incremental volumetric strain = total Delta(V)/V
-	if(delV<0. && artificialViscosity)
+	// dVoverV is total incremental volumetric strain = total Delta(V)/V
+	if(dVoverV<0. && artificialViscosity)
 	{	// Wants K/rho
-		double QAVred = GetArtificialViscosity(delV/delTime,sqrt(p->Kred),mptr);
-		AVEnergy += fabs(QAVred*delV);
+		double QAVred = GetArtificialViscosity(dVoverV/delTime,sqrt(p->Kred),mptr);
+		AVEnergy += fabs(QAVred*dVoverV);
 		dP += QAVred;
 	}
 	
 	// increment pressure
 	mptr->IncrementPressure(dP);
-
-	// get total dV
-	double dVoverV;
-	if(np==PLANE_STRESS_MPM)
-		dVoverV = delV + 2.*p->psRed*eres;
-	else
-		dVoverV = delV + 3.*eres;
 	
     // work energy is dU = -P dVtot + s.de(total)
 	// Here do hydrostatic term
     // Work energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-    double avgP = mptr->GetPressure()-0.5*dP;
-    mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-3.*avgP*eres);
+    double Pfinal = mptr->GetPressure();
+    mptr->AddWorkEnergyAndResidualEnergy(-Pfinal*dVoverV,-3.*Pfinal*eres);
 	
 	// Isoentropic temperature rise = -(K 3 alpha T)/(rho Cv) (dV/V) = - gamma0 T (dV/V)
 	dTq0 = -gamma0*mptr->pPreviousTemperature*dVoverV;

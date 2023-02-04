@@ -20,6 +20,7 @@ class CustomTask
 {
     public:
         CustomTask *nextTask;
+		static int numberCustomHistoryVariables;
         
         // constructors and destructors
         CustomTask();
@@ -31,10 +32,12 @@ class CustomTask
         virtual char *InputParam(char *,int &,double &);
 		virtual void SetTextParameter(char *,char *);
         virtual CustomTask *Initialize(void);
+		virtual void ClaimHistoryVariables(void);
 	
 		// run the task
         virtual CustomTask *PrepareForStep(bool &);
         virtual CustomTask *StepCalculation(void);
+        virtual CustomTask *Step0Calculation(void);
 		virtual CustomTask *FinishForStep(bool &);
         virtual bool HasReport(void);
         virtual CustomTask *Report(void);

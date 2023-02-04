@@ -163,11 +163,17 @@ char *Mooney::InitHistoryData(char *pchr,MPMBase *mptr)
 	return (char *)p;
 }
 
+// reset history data
+void Mooney::ResetHistoryData(char *pchr,MPMBase *mptr)
+{	double *p = (double *)pchr;
+	p[0] = 1.;
+	p[1] = 1.;
+}
+
 // Number of history variables
 int Mooney::NumberOfHistoryDoubles(void) const { return 2; }
 
 #pragma mark Mooney::Methods
-
 
 /* Take increments in strain and calculate new Particle: strains, rotation strain,
         stresses, strain energy,
@@ -190,8 +196,9 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     Tensor *B = mptr->GetAltStrainTensor();
 	
     // account for residual stresses
-	double dJres = GetIncrementalResJ(mptr,res);
-	double Jres = dJres*mptr->GetHistoryDble(J_History+1,historyOffset);
+    double Jres = mptr->GetHistoryDble(J_History+1,historyOffset);
+	double dJres = GetIncrementalResJ(mptr,res,Jres);
+	Jres *= dJres;
 	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
 
 	// Deformation gradients and Cauchy tensor differ in plane stress
@@ -238,7 +245,11 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 			iter+=1;
 		}
         
-        if(iter>=20) cout << "# Not enough iterations in plane stress Mooney-Rivlin material" << endl;
+        if(iter>=20)
+        {
+#pragma omp critical (output)
+            cout << "# Not enough iterations in plane stress Mooney-Rivlin material" << endl;
+        }
         
         // Done and xn = new B->zz = Fzz^2 = dFzz*(old Bzz)*dFzz = dFzz^2*(old Bzz),
 		//    and Fzz = dFzz*(old Fzz) = 1 + ep->zz
