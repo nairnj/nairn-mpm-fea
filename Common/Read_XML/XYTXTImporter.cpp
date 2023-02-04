@@ -32,7 +32,9 @@ void XYTXTImporter::GetXYFileHeader(XYInfoHeader &info)
 		XYFileImportError("Error reading the specified text file.");
 	fileLength=ftell(fp);
 	rewind(fp);
-	
+    if(fileLength==0)
+        XYFileImportError("The text file is empty.");
+
 	// create buffer
 	buffer=(unsigned char *)malloc(fileLength);
 	if(buffer==NULL)
@@ -71,6 +73,10 @@ void XYTXTImporter::GetXYFileHeader(XYInfoHeader &info)
 		}
 	}
 	
+    // check for last line not ending in new line character
+    if(buffer[fileLength-1]!='\r' && buffer[fileLength-1]!='\n')
+        info.height++;
+    
 	if(info.height==0 || info.width==1)
 		XYFileImportError("Text file has no rows or no delimited columns");
 	
