@@ -1596,7 +1596,8 @@
 			children = (
 				A77FA041090E76A7007E0B3B /* makefile */,
 			);
-			path = build;
+			name = build;
+			path = ../build;
 			sourceTree = "<group>";
 		};
 		A7A7578C042249080063AF10 /* Elements */ = {
