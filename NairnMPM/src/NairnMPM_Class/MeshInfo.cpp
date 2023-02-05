@@ -20,6 +20,7 @@
 #include "Materials/ContactLaw.hpp"
 #include "Exceptions/MPMWarnings.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
+#include <algorithm>
 
 // global class for grid information
 MeshInfo mpmgrid;

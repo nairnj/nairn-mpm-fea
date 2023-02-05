@@ -119,11 +119,14 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CustomThermalRamp.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\DeleteDamaged.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\DiffusionTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\FluidSource.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\GridArchive.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\HistoryArchive.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\LoadControl.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PeriodicXPIC.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PropagateTask.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ReverseLoad.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TrackError.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TransportTask.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\VTKArchive.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Elements\EightNodeIsoparamBrick.hpp" />
@@ -141,6 +144,7 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CoulombFriction.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CoupledSawTooth.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\CubicTraction.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\DbleExpSoftening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\DDBHardening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\ExponentialSoftening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\ExponentialTraction.hpp" />
@@ -176,7 +180,6 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TractionLaw.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Viscoelastic.hpp" />
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\WoodMaterial.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint2D.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint3D.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPointAS.hpp" />
@@ -193,6 +196,7 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\PostExtrapolationTask.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\PostForcesTask.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ProjectRigidBCsTask.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\Reservoir.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ResetElementsTask.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\RunCustomTasksTask.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\SetRigidContactVelTask.hpp" />
@@ -210,6 +214,7 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Nodes\MatVelocityField.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Patches\GhostNode.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Patches\GridPatch.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\AreaOfInterest.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\CrackController.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\MPMReadHandler.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\MpsController.hpp" />
@@ -251,6 +256,7 @@
     <ClInclude Include="..\..\..\..\Read_XML\ShapeController.hpp" />
     <ClInclude Include="..\..\..\..\Read_XML\XYBMPImporter.hpp" />
     <ClInclude Include="..\..\..\..\Read_XML\XYFileImporter.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\XYTXTImporter.hpp" />
     <ClInclude Include="..\..\..\..\System\CommonAnalysis.hpp" />
     <ClInclude Include="..\..\..\..\System\CommonArchiveData.hpp" />
     <ClInclude Include="..\..\..\..\System\CommonTask.hpp" />
@@ -288,11 +294,14 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\CustomThermalRamp.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\DeleteDamaged.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\DiffusionTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\FluidSource.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\GridArchive.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\HistoryArchive.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\LoadControl.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PeriodicXPIC.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PropagateTask.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ReverseLoad.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TrackError.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TransportTask.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\VTKArchive.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Elements\EightNodeIsoparamBrick.cpp" />
@@ -311,6 +320,7 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\CoulombFriction.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\CoupledSawTooth.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\CubicTraction.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\DbleExpSoftening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\DDBHardening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ElasticMPM.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ExponentialSoftening.cpp" />
@@ -349,7 +359,6 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TractionLaw.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Viscoelastic.cpp" />
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\WoodMaterial.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint2D.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint3D.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPointAS.cpp" />
@@ -366,6 +375,7 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\PostExtrapolationTask.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\PostForcesTask.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ProjectRigidBCsTask.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\Reservoir.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\ResetElementsTask.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\RunCustomTasksTask.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\SetRigidContactVelTask.cpp" />
@@ -386,6 +396,7 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Nodes\NodalPointMPM.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Patches\GhostNode.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Patches\GridPatch.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\AreaOfInterest.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\BitMapFiles.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\CrackController.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\Generators.cpp" />
@@ -429,6 +440,7 @@
     <ClCompile Include="..\..\..\..\Read_XML\ShapeController.cpp" />
     <ClCompile Include="..\..\..\..\Read_XML\XYBMPImporter.cpp" />
     <ClCompile Include="..\..\..\..\Read_XML\XYFileImporter.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\XYTXTImporter.cpp" />
     <ClCompile Include="..\..\..\..\System\CommonAnalysis.cpp" />
     <ClCompile Include="..\..\..\..\System\CommonArchiveData.cpp" />
     <ClCompile Include="..\..\..\..\System\CommonTask.cpp" />
