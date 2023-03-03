@@ -25,9 +25,6 @@ class MatPtLoadBC;
 //		extrapolated c/extrapolated crel
 #define USE_GTVALUEREL
 
-// to allow c/csat>1, but not Less than zero (only affects diffusion code)
-//#define NO_UPPER_LIMIT
-
 enum { CONTACT_EQUILIBRATED=0, CONTACT_CONVECTED };
 
 // One for conduction, one for diffusion (or poroelastity), and

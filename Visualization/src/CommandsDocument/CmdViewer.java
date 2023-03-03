@@ -706,6 +706,9 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("damage"))
 			mpmParticleBCs.AddCondition(args, MPMParticleBCs.ADD_DAMAGE);
 
+		else if(theCmd.equals("phasefield"))
+			mpmParticleBCs.AddCondition(args, MPMParticleBCs.ADD_PHASEFIELD);
+
 		else if(theCmd.equals("heatflux"))
 			mpmParticleBCs.AddCondition(args, MPMParticleBCs.ADD_HEATFLUX);
 
@@ -3343,12 +3346,10 @@ public class CmdViewer extends JNCmdTextDocument
 		// Moisture and Poroelasticy has a references (optionally)
 		double ref = 0.;
 		if(diffMode<=2 && args.size() > 2)
-		{
+		{	// require ref>=0, but allow any positive number
 			ref = readDoubleArg(args.get(2));
 			if(ref < 0.)
 				throw new Exception("'" + args.get(0) + "' second parameter must >= 0:\n" + args);
-			if(isMoisture && ref > 0.)
-				throw new Exception("'" + args.get(0) + "' second parameter must <= 1:\n" + args);
 		}
 
 		// viscosity for poroelasticity

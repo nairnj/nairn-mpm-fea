@@ -1247,12 +1247,12 @@ needed for thermal calculations (coefficient of thermal expansion).</p>
 
 <ul>
 
-<li><code>Diffusion (diff),&lt;(res)&gt;</code><br>
-To turn on diffusion calculations. <code>(diff)</code> is "yes" or "no" to activate diffusion. <code>(res)</code> can specify a reference concentration between 0 and 1 (default is 0).</li>
+<li><code>Diffusion (diff),&lt;(conc0)&gt;,&lt;(nolimit)&gt;</code><br>
+To turn on diffusion calculations. <code>(diff)</code> is "yes" or "no" to activate diffusion. <code>(conc0)</code> can specify a stress-free concentration potential and the value to set for initial concentration potential of material points that do not set their concentration (default is 0). By default, the concentration potential must be between 0 and 1. If this parameter is 1 (or the text "nolimit"), the potential is allowed to have any non-negative value.</li>
 
 </ul>
 
-<p>When doing concentration calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for diffusions calculations (coefficient of moisture expansion, diffusion constant, saturation concentration). You can apply <a href="#bconds">concentration and concentration flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregionmpm">BMPRegion</a> commands to set initial particle concentration. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to add concentration concentration gradients to archive files. Diffusion calculations often benefit by using <a href="#XPICFMPM">periodic FMPM</a>.
+<p>When doing concentration calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for diffusions calculations (coefficient of moisture expansion, diffusion constant, saturation concentration). The saturation concentration is used to define concentration potential as <code>c/csat</code>. You can apply <a href="#bconds">concentration and concentration flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregionmpm">BMPRegion</a> commands to set initial particle concentration. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to add concentration concentration gradients to archive files. Diffusion calculations often benefit by using <a href="#XPICFMPM">periodic FMPM</a>.
 </p>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
@@ -1362,7 +1362,10 @@ Apply pore fluid volume fraction flux to selected particles on face <code>(face)
 <li><a name="damage"></a><code>Damage (nx),(ny),&lt;(nz)&gt;,&lt;(dn)&gt;,&lt;(dxy)&gt;,&lt;(dxz)&gt;,&lt;(mode)&gt;
 </code><br>
 Set initial particle damage where <code>(nx, ny, nz)</code> is normal vector for the damage plane, <code>(dn, dxy, dxz)</code> defines the three damage parameters (default 1), and <code>(mode)</code> is damage mode or value for first damage history variable (default 1). In 2D calculations, <code>(nz)</code> and <code>(dxz)</code> are ignored, but are needed for parameter alignment.</li>
-</ul>
+
+<li><code>PhaseField (phi)
+</code><br>
+Set initial particle phase field to <code>(phi)</code> entered as a <a href="#function">user-defined function</a> of particle position. It is truncated, if needed, to the range 0 to 1.</li>
 
 </ul>
 
@@ -1540,15 +1543,20 @@ custom task parameters do not take a value.
 <li>strainenergy - the strain energy (in <a href="#units">energy units</a>, can be "workenergy" as well).</li>
 <li>heatenergy - the heat energy (in <a href="#units">energy units</a>).</li>
 <li>plasticenergy - the plastic energy (in <a href="#units">energy units</a>).</li>
+<li>history,(num) - material-dependent history variable using the provided (num) argument.</li>
 <li>contactforce - the nodal force on the grid for <code>MultiMaterialMode</code> simulations
 when they include rigid materials that have <code>SetDirection</code>=8. It is force of the rigid material on the object in <a href="#units">force units</a>.</li>
-<li>volumegradient,(mat) - the volume gradient used for contact calculations when running in multimaterial model.
-The (mat) argument is the material ID whose gradient is archived.</li>
+<li>volumegradient,(mat) - the volume gradient used for contact calculations when running in multimaterial model. The (mat) argument is the material ID whose gradient is archived.</li>
 <li>numpoints - the number of material points interacting with each node in the grid.</li>
 <li>archiveTime,(time) - enter the time interval (in <a href="#units">alt time units</a>) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives.</li>
 <li>firstArchiveTime,(time) - enter the time to save the first results (in <a href="#units">alt time units</a>). This parameter is ignored unless archiveTime has be set as well.</li>
 <li>selectMaterial,(matnum) - selects a material (by material number only) to archive grid results only from that material. You can use multiple <code>VTKArchive</code> custom tasks to output different materials. The default is to omit this parameter and export from all materials.</li>
 </ul>
+
+<p>Any quantity can be followed by a colon and a name such as:</p>
+<pre>Parameter "history:Equivalent Plastic Strain",1
+</pre>
+<p>When the VTK files are written, the name will used in the VTK file and other software can display by that name rather then the quantity name. This option is most useful for history variables. Note that VTK files cannot accept spaces in names and any used in the name will be replaced by underscores.</p>
 
 <p><a name="biot">Note:</a> when archiving strains, they are calculated as a Biot strain in the current configuration.
 The Biot strain is defined is <B>V-I</B> where <B>V</B> is the left-stretch tensor.

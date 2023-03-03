@@ -29,6 +29,7 @@ class DiffusionTask : public TransportTask
 		double reference;
 		double viscosity;
 		int style;
+        bool noLimit;
 
 		// constructors and destructors
 		DiffusionTask(double,double,int);

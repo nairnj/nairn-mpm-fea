@@ -463,7 +463,7 @@ If <code>(path)</code> is omitted, the user is given a file-saving dialog box to
 <li><a name="timeplot"></a><code>@object.timeplot (xyData),(settings)</code><br>
 Set object name <code><(xyData)</code> to plot of the selected quantity as a function of time in a <a href="list">list</a> that contains two lists at index 0 and 1 for time data and y data respectively (for MPM calculations only). The data to plot are defined by options entered in the the <a href="#dict">dictionary</a> with object name <code>(settings)</code>. The keys to be set in the dictionary are
 <ul>
-<li><code>menutext</code> - quantity by name in "Plot:" menu (string, case sensitive). Except, to plot history or traction data, enter "History Data" or "Crack Traction Data" and set <code>tensorindex</code> ans explained next.</li>
+<li><code>menutext</code> - quantity by name in "Plot:" menu (string, case sensitive). Except, to plot history or traction data, enter "History Data" or "Crack Traction Data" and set <code>tensorindex</code> as explained next.</li>
 <li><code>tensorindex</code> - when plotting tensors (like "Stress") select component of tensor to plot (numbered from 0 in the "Component:" menu). For history or traction data, enter number to plot minus 1 (<i>i.e.</i>, history data n is at tensor index n-1).</li>
 <li><code>vectorindex</code> -when plotting vectors (like "Velocity") select component of vector to plot (numbered from 0 in the "Component:" menu)</li>
 <!--<li><code>angle</code> - rotate vector or tensor (in degrees)</li>-->

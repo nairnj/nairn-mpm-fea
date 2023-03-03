@@ -395,6 +395,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		numAttr=(int)attrs.getLength();
 		double refCon=0.;
 		int diffStyle=MOISTURE_DIFFUSION;
+        int noLimit=0;
 		for(i=0;i<numAttr;i++)
 		{   aName=XMLString::transcode(attrs.getLocalName(i));
 			value=XMLString::transcode(attrs.getValue(i));
@@ -402,6 +403,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 				sscanf(value,"%lf",&refCon);
 			else if(strcmp(aName,"style")==0)
 				sscanf(value,"%d",&diffStyle);
+            else if(strcmp(aName,"nolimit")==0)
+                sscanf(value,"%d",&noLimit);
 			delete [] aName;
 			delete [] value;
 		}
@@ -414,7 +417,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 				throw SAXException("Cannot use both 'Diffusion' and 'Poroelasticity' in the same analysis.");
 	#endif
 			// create task
-			diffusion = new DiffusionTask(fmin(fmax(refCon,0.),1.),1.,MOISTURE_DIFFUSION);
+            diffusion = new DiffusionTask(fmax(refCon,0.),(double)noLimit,MOISTURE_DIFFUSION);
 		}
 		else
 		{	throw SAXException("An unrecognized 'Diffusion' style was requeted.");

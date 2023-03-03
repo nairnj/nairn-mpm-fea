@@ -41,6 +41,7 @@ class PressureLaw : public TractionLaw
 	protected:
 		Expression *function;
 		double minCOD;
+        bool useMinCOD;
 	
 };
 

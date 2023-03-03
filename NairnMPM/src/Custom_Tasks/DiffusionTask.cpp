@@ -48,6 +48,10 @@ DiffusionTask::DiffusionTask(double prop1,double prop2,int diffusionStyle) : Tra
 {
 	reference = prop1;
 	viscosity = prop2;			// only for poroelasticity
+    if(diffusionStyle==MOISTURE_DIFFUSION)
+    {   // moisture diffution onle
+        noLimit = prop2>0.5 ? true : false ;
+    }
 	style = diffusionStyle;     // 1 for diffusion, 2 forporoelasticity, id for subclass PhaseFieldDiffusion
 	number = 0;					// for diffusion, others will get a number when CountDiffusionTasks() called
 }
@@ -77,7 +81,11 @@ TransportTask *DiffusionTask::Initialize(void)
 	}
 	else if(style==MOISTURE_DIFFUSION)
 	{	snprintf(fline,fsize," =%8.4lf",reference);
-		cout << "   Reference concentration" << fline << endl;
+        cout << "   Reference concentration" << fline;
+        if(noLimit)
+            cout << "   c/csat >= 0" << endl;
+        else
+            cout << "   0 <= c/csat <= 1" << endl;
 	}
 	
 	return nextTask;
@@ -178,55 +186,56 @@ void DiffusionTask::AdjustRateAndValue(MPMBase *mptr,double &value,
 	// Poroelasticity does not change anything
 	if(style==POROELASTICITY_DIFFUSION) return;
 	
-#ifdef NO_UPPER_LIMIT
-	// note value must be above zero
-	if(value<0.) value = 0.;
-	
-	// do lumped value just in case (only needed for Blended FLIP/FMPM(k>1)
-	if(lumpedValue<0.) lumpedValue = 0.;
-	
-	// check rate, unless pure FMPM
-	if(!usingXPIC || usingFraction<1.)
-	{	// grab particle value
-		double pConc = GetParticleValue(mptr);
-
-		// make sure rate does not jump negative (only needed for FLIP)
-		// minimum rate is when pConc + mincdt*deltime = 0 or mincdt = -pConc/deltim
-		double mincdt = -pConc/deltime;
-		if(rate<mincdt) rate = mincdt;
-	}
-#else
-	// new value must stay between 0 and csatRelative for both using XPIC or FLIP
-	double csatRelative = 1.;
-	if(doCrelExtrapolation)
-	{	MaterialBase *matref = theMaterials[mptr->MatID()];
-		csatRelative = matref->GetCsatRelative(mptr);
-	}
-	value = fmax(fmin(csatRelative,value),0.);
-	
-	// do lumped value just in case (only needed for Blended FLIP/FMPM(k>1)
-	lumpedValue = fmax(fmin(csatRelative,lumpedValue),0.);
-	
-	// check rate, unless pure FMPM
-	if(!usingXPIC || usingFraction<1.)
-	{	// grab particle value
-		double pConc = GetParticleValue(mptr);
-		
-		// make sure rate does not jump outside the range
-		// minimum rate for FLIP is when pConc+mincdt*dt=0 or mincdt = -pConc/dt
-		double mincdt = -pConc/deltime;
-		if(rate<mincdt)
-		{	rate = mincdt;
-		}
-		else
-		{	// maximum rate is when pConc+maxcdt*dt = csatRelative
-			double maxcdt = csatRelative/deltime+mincdt;
-			if(rate>maxcdt)
-			{	rate = maxcdt;
-			}
-		}
-	}
-#endif
+    if(noLimit)
+    {   // note value must be above zero
+        if(value<0.) value = 0.;
+        
+        // do lumped value just in case (only needed for Blended FLIP/FMPM(k>1)
+        if(lumpedValue<0.) lumpedValue = 0.;
+        
+        // check rate, unless pure FMPM
+        if(!usingXPIC || usingFraction<1.)
+        {    // grab particle value
+            double pConc = GetParticleValue(mptr);
+            
+            // make sure rate does not jump negative (only needed for FLIP)
+            // minimum rate is when pConc + mincdt*deltime = 0 or mincdt = -pConc/deltim
+            double mincdt = -pConc/deltime;
+            if(rate<mincdt) rate = mincdt;
+        }
+    }
+    else
+    {   // new value must stay between 0 and csatRelative for both using XPIC or FLIP
+        double csatRelative = 1.;
+        if(doCrelExtrapolation)
+        {    MaterialBase *matref = theMaterials[mptr->MatID()];
+            csatRelative = matref->GetCsatRelative(mptr);
+        }
+        value = fmax(fmin(csatRelative,value),0.);
+        
+        // do lumped value just in case (only needed for Blended FLIP/FMPM(k>1)
+        lumpedValue = fmax(fmin(csatRelative,lumpedValue),0.);
+        
+        // check rate, unless pure FMPM
+        if(!usingXPIC || usingFraction<1.)
+        {    // grab particle value
+            double pConc = GetParticleValue(mptr);
+            
+            // make sure rate does not jump outside the range
+            // minimum rate for FLIP is when pConc+mincdt*dt=0 or mincdt = -pConc/dt
+            double mincdt = -pConc/deltime;
+            if(rate<mincdt)
+            {    rate = mincdt;
+            }
+            else
+            {    // maximum rate is when pConc+maxcdt*dt = csatRelative
+                double maxcdt = csatRelative/deltime+mincdt;
+                if(rate>maxcdt)
+                {    rate = maxcdt;
+                }
+            }
+        }
+    }
 }
 
 // After extrapolate, find dC value in super class method

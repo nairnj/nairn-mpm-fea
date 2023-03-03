@@ -26,6 +26,7 @@ public class MPMParticleBCs
 	public static final int ADD_HEATFLUX=3;
 	public static final int ADD_CONCENTRATIONFLUX=4;
 	public static final int ADD_DAMAGE=5;
+	public static final int ADD_PHASEFIELD=6;
 	
 	//----------------------------------------------------------------------------
 	// Initialize
@@ -119,6 +120,13 @@ public class MPMParticleBCs
 		{	if(args.size()<3 || (doc.isMPM3D() && args.size()<4))
 	    		throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 			
+		}
+		else if(theType==ADD_PHASEFIELD)
+		{	if(args.size()<2)
+    			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+			String phi = doc.readStringArg(args.get(1));
+			bcSettings.append("      <Damage phi='"+phi+"'/>\n");
+			return;
 		}
 		else if((theType!=ADD_LOAD && args.size()<5) || (theType==ADD_LOAD && args.size()<4))
 	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
