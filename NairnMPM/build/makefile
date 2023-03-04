@@ -766,7 +766,8 @@ ExtrapolateRigidBCsTask.o : $(ExtrapolateRigidBCsTask).cpp $(dprefix) $(Extrapol
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ExtrapolateRigidBCsTask).cpp
 ProjectRigidBCsTask.o : $(ProjectRigidBCsTask).cpp $(dprefix) $(ProjectRigidBCsTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(RigidMaterial).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp $(CommonException).hpp \
-			$(BoundaryCondition).hpp $(NodalVelBC).hpp $(NodalValueBC).hpp $(NodalTempBC).hpp $(NodalConcBC).hpp
+			$(BoundaryCondition).hpp $(NodalVelBC).hpp $(NodalValueBC).hpp $(NodalTempBC).hpp $(NodalConcBC).hpp \
+			$(DiffusionTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ProjectRigidBCsTask).cpp
 PostExtrapolationTask.o : $(PostExtrapolationTask).cpp $(dprefix) $(PostExtrapolationTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(CommonException).hpp $(CrackHeader).hpp $(CrackSurfaceContact).hpp $(TransportTask).hpp \

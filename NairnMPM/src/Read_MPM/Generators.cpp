@@ -393,8 +393,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				{	// only used if diffusion is active
 					if(fmobj->HasDiffusion())
 					{	sscanf(value,"%lf",&pConc);
-						if(pConc<0. || pConc>1.)
-							throw SAXException("Material point concentration potential must be from 0 to 1");
+						if(pConc<0.)
+							throw SAXException("Material point concentration potential must be >= 0");
 					}
 				}
 				else if(strcmp(aName,"wtconc")==0)

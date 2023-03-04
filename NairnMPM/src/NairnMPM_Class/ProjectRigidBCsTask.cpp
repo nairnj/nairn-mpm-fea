@@ -24,6 +24,7 @@
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -130,7 +131,7 @@ bool ProjectRigidBCsTask::Execute(int taskOption)
 				if(fmobj->HasDiffusion())
 				{	if(mpmptr->pDiff[0]->conc<0.)
 						mpmptr->pDiff[0]->conc=0.;
-					else if(mpmptr->pDiff[0]->conc>1.)
+					else if(!diffusion->noLimit && mpmptr->pDiff[0]->conc>1.)
 						mpmptr->pDiff[0]->conc=1.;
 				}
  				SetRigidBCs(mi,matid0,CONC_DIRECTION,mpmptr->pDiff[0]->conc,0.,0,

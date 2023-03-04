@@ -569,11 +569,11 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 			}
 #endif
 			else if(property==RAMP_CONC)
-			{	// add concentration, constrained to 0 to 1 (never occurs unless diffusion is active)
+			{	// add concentration (never occurs unless diffusion is active)
 				mpm[p]->pDiff[0]->conc += dTp;
 				if(mpm[p]->pDiff[0]->conc<0.)
 					mpm[p]->pDiff[0]->conc = 0.;
-				else if(mpm[p]->pDiff[0]->conc>1.)
+				else if(!diffusion->noLimit && mpm[p]->pDiff[0]->conc>1.)
 					mpm[p]->pDiff[0]->conc = 1.;
 			}
             else if(property==RAMP_STRENGTH)
@@ -628,11 +628,11 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 			}
 #endif
 			else if(property==RAMP_CONC)
-			{	// add temperature contrained to 0 to 1 (never occurs unless diffusion is active)
+			{	// add concentration (never occurs unless diffusion is active)
 				mptr->pDiff[0]->conc += deltaT;
 				if(mptr->pDiff[0]->conc<0.)
 					mptr->pDiff[0]->conc = 0.;
-				else if(mptr->pDiff[0]->conc>1.)
+				else if(!diffusion->noLimit && mptr->pDiff[0]->conc>1.)
 					mptr->pDiff[0]->conc = 1.;
 			}
             else if(property==RAMP_STRENGTH)

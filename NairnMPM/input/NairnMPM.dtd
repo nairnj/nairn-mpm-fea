@@ -457,7 +457,8 @@
 <!ELEMENT	Diffusion EMPTY>
 <!ATTLIST	Diffusion
 			reference CDATA #IMPLIED
-            style CDATA #IMPLIED>
+            style CDATA #IMPLIED
+            nolimit CDATA #IMPLIED>
 <!ELEMENT	Conduction EMPTY>
 <!ELEMENT	CrackTipHeating EMPTY>
 <!ELEMENT	CrackContactHeating EMPTY>
