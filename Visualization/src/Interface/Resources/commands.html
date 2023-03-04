@@ -1248,7 +1248,7 @@ needed for thermal calculations (coefficient of thermal expansion).</p>
 <ul>
 
 <li><code>Diffusion (diff),&lt;(conc0)&gt;,&lt;(nolimit)&gt;</code><br>
-To turn on diffusion calculations. <code>(diff)</code> is "yes" or "no" to activate diffusion. <code>(conc0)</code> can specify a stress-free concentration potential and the value to set for initial concentration potential of material points that do not set their concentration (default is 0). By default, the concentration potential must be between 0 and 1. If this parameter is 1 (or the text "nolimit"), the potential is allowed to have any non-negative value.</li>
+To turn on diffusion calculations. <code>(diff)</code> is "yes" or "no" to activate diffusion. <code>(conc0)</code> can specify a stress-free concentration potential and the value to set for initial concentration potential of material points that do not set their concentration (default is 0). By default, the concentration potential must be between 0 and 1. If <code>(nolimit)</code> is 1 (or the text "nolimit"), the potential is allowed to have any non-negative value.</li>
 
 </ul>
 
@@ -1354,7 +1354,7 @@ Specify loads in current shape command as "net" loads or "perParticle" loads (de
 Apply heat flux to selected particles on face <code>(face)</code> (see <a href="#traction">Traction command</a> for meaning of (face) parameter). For <code>(mode)</code>=external, <code>(style)</code> is style with <code>(value)</code> (in <a href="#units">heat flux units</a>) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition. For <code>(mode)</code>=coupled, <code>(style)</code> must be "function", <code>(value)</code> is a <a href="#function">user-defined function</a> where <code>t</code> is particle temperature, and if <code>(time)</code> is supplied the coupled condition is applied only after the entered time (in <a href="#units">alt time units</a>).</li>
 
 <li><a name="cflux"></a><code>ConcentrationFlux (mode),(face),(style),(value),&lt;(time)&gt;</code><br>
-Apply concentration flux to selected particles on face <code>(face)</code> (see <a href="#traction">Traction command</a> for meaning of (face) parameter). For <code>(mode)</code>=external, <code>(style)</code> is style with <code>(value)</code> (in concentration potential) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition. For <code>(mode)</code>=coupled, <code>(style)</code> must be "function", <code>(value)</code> is a <a href="#function">user-defined function</a> where <code>t</code> is difference between particle concentration (0 to 1) and a reservoir concentration, and <code>(time)</code> is the reservoir concentration (0 to 1).</li>
+Apply concentration flux to selected particles on face <code>(face)</code> (see <a href="#traction">Traction command</a> for meaning of (face) parameter). For <code>(mode)</code>=external, <code>(style)</code> is style with <code>(value)</code> (in concentration potential) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition. For <code>(mode)</code>=coupled, <code>(style)</code> must be "function", <code>(value)</code> is a <a href="#function">user-defined function</a> where <code>t</code> is difference between particle concentration potential and a reservoir concentration potential, and <code>(time)</code> is the reservoir concentration.</li>
 
 <li><a name="ppflux"></a><code>PorePressureFlux (mode),(face),(style),(value),&lt;(time)&gt;</code><br>
 Apply pore fluid volume fraction flux to selected particles on face <code>(face)</code> (see <a href="#traction">Traction command</a> for meaning of (face) parameter). For <code>(mode)</code>=external, <code>(style)</code> is style with <code>(value)</code> (in pore fluid volume fraction/(<a href="#units">(length units)^2</a>-sec) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition. For <code>(mode)</code>=coupled, <code>(style)</code> must be "function", <code>(value)</code> is a <a href="#function">user-defined function</a> where <code>t</code> is difference between particle pore pressure and a reservoir pore pressure, and <code>(time)</code> is the reservoir pore pressure (both in <a href="#units">pressure units</a>).</li>
@@ -1599,7 +1599,7 @@ For small strain problems it is equivalent to the small strain tensor.
 <ol start="0">
 <li>Temperature</li>
 <li>Out-of-plane stress or strain for <a href="#header">generalized plane stress or strain</a></li>
-<li>Concentration or pore pressure. For <a href="#conc">diffusion calculations</a>, this option will ramp particle concentration potential (between 0 and 1). For <a href="#poro">poroelasticity calculations</a>, this option will ramp particle pore pressure.</li>
+<li>Concentration or pore pressure. For <a href="#conc">diffusion calculations</a>, this option will ramp particle concentration potential. For <a href="#poro">poroelasticity calculations</a>, this option will ramp particle pore pressure.</li>
 <li>Relative initiation stress</li>
 <li>Relative toughness</li>
 </ol>
