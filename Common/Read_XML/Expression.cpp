@@ -598,6 +598,13 @@ void Expression::DoFunction(Atomic *atom) const
 				fxnValue = arg1*sin(PI_CONSTANT*arg2);
 			break;
 		}
+        case MOD_FXN:
+        {    // function = mod(arg1,arg2)
+            double arg2 = 1.;
+            arg = GetFunctionArg(atom,arg,arg2);
+            fxnValue = fmod(arg1,arg2);
+            break;
+        }
 		case SGN_FXN:
 			if(arg1<0.)
 				fxnValue = -1.;
