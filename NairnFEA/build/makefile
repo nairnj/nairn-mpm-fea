@@ -5,13 +5,11 @@
 # give the command 'make SYSTEM=system' where the lower case system is where
 #    you are compiling. Supported systems are:
 #       mac - MacOS X using gcc
-#       mac-clang - MacOS X using clang-mp 9.0
+#       mac-clang - MacOS X using clang-mp 11
+#       mac-clang9 - MacOS X using clang-mp 9.0
 #       mac-clang7 - MacOS X using clang-mp 7.0
-#       carbon - OSU carbon/hedera cluster (the default)
-#		gcc7 - OSU cluster using gcc7
+#       carbon - OSU cluster using installed gcc7 (the default)
 #		mpm - OSU machine
-#       cygwin - Standard cygwin install in Windows
-#       cygwinbin - Standard cygwin install using cygwin binary xerces
 #       zia - A Debian linux machine
 # Other options are
 #    make clean - to remove all compiled objects
@@ -43,23 +41,17 @@ endif
 ifeq ($(SYSTEM),mac-clang)
 	xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
+ifeq ($(SYSTEM),mac-clang9)
+	xercesSo = /usr/local/lib/libxerces-c.dylib
+endif
 ifeq ($(SYSTEM),mac-clang7)
 	xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
 ifeq ($(SYSTEM),carbon)
 	xercesSo = /usr/local/xerces3/lib/libxerces-c.so
 endif
-ifeq ($(SYSTEM),gcc7)
-	xercesSo = /usr/local/xerces3/lib/libxerces-c.so
-endif
 ifeq ($(SYSTEM),mpm)
-	xercesSo = /usr/lib/libxerces-c.so
-endif
-ifeq ($(SYSTEM),cygwin)
-	xercesSo = -L/usr/local/lib -lxerces-c
-endif
-ifeq ($(SYSTEM),cygwinbin)
-	xercesSo = -L/lib -lxerces-c
+	xercesSo = /usr/lib/x86_64-linux-gnu/libxerces-c.so
 endif
 ifeq ($(SYSTEM),zia)
 	xercesSo = /usr/lib/libxerces-c.so
@@ -70,14 +62,8 @@ headersPath= /usr/local/include
 ifeq ($(SYSTEM),carbon)
 	headersPath = /usr/local/xerces3/include
 endif
-ifeq ($(SYSTEM),gcc7)
-	headersPath = /usr/local/xerces3/include
-endif
 ifeq ($(SYSTEM),mpm)
 	headersPath = /usr/include
-endif
-ifeq ($(SYSTEM),cygwinbin)
-	headersPath= /usr/include
 endif
 ifeq ($(SYSTEM),zia)
 	headersPath = /usr/include/xercesc
@@ -89,15 +75,15 @@ endif
 #     CP is path/options to copy command (used only in make install
 CC= g++
 ifeq ($(SYSTEM),carbon)
-    CC= /usr/local/gcc48/bin/g++
-endif
-ifeq ($(SYSTEM),carbon)
     CC= /usr/local/gcc7/bin/g++
 endif
 ifeq ($(SYSTEM),mac)
     CC= /opt/local/bin/g++-mp-4.9
 endif
 ifeq ($(SYSTEM),mac-clang)
+    CC= /opt/local/bin/clang-mp-11
+endif
+ifeq ($(SYSTEM),mac-clang9)
     CC= /opt/local/bin/clang-mp-9.0
 endif
 ifeq ($(SYSTEM),mac-clang7)
@@ -125,6 +111,9 @@ LFLAGS= -fopenmp
 ifeq ($(SYSTEM),mac-clang)
     LFLAGS= -fopenmp -lc++
 endif
+ifeq ($(SYSTEM),mac-clang9)
+    LFLAGS= -fopenmp -lc++
+endif
 ifeq ($(SYSTEM),mac-clang7)
     LFLAGS= -fopenmp -lc++
 endif
@@ -149,6 +138,9 @@ std = ../../Common/Headers
 # Macros for headers and all files
 headers = -I$(src) -I$(std) -I$(com) -I$(headersPath)
 ifeq ($(SYSTEM),mac-clang)
+    headers = -I$(src) -I$(std) -I$(com) -I$(headersPath) -I/opt/local/include/libomp
+endif
+ifeq ($(SYSTEM),mac-clang9)
     headers = -I$(src) -I$(std) -I$(com) -I$(headersPath) -I/opt/local/include/libomp
 endif
 ifeq ($(SYSTEM),mac-clang7)
@@ -181,7 +173,7 @@ FEABoundaryCondition = $(src)/Boundary_Conditions/FEABoundaryCondition
 FEAReadHandler = $(src)/Read_FEA/FEAReadHandler
 FEAStartResults = $(src)/NairnFEA_Class/FEAStartResults
 FourNodeIsoparam = $(com)/Elements/FourNodeIsoparam
-Gauss = $(src)/Numerical/Gauss
+Gauss = $(com)/System/Gauss
 ImperfectInterface = $(src)/Materials/ImperfectInterface
 Interface2D = $(src)/Elements/Interface2D
 IsotropicMat = $(com)/Materials/IsotropicMat
@@ -226,6 +218,7 @@ UnitsController = $(com)/System/UnitsController
 Utilities = $(src)/System/Utilities
 XYFileImporter = $(com)/Read_XML/XYFileImporter
 XYBMPImporter = $(com)/Read_XML/XYBMPImporter
+XYTXTImporter = $(com)/Read_XML/XYTXTImporter
 
 # path from 'makefile' to prefix header file
 prefix = $(src)/System/FEAPrefix.hpp
@@ -272,8 +265,9 @@ dprefix = $(src)/System/FEAPrefix.hpp $(com)/System/DataTypes.hpp \
 # RectController.hpp : ShapeController.hpp
 # SixNodeTriangle.hpp : Quad2D.hpp (ElementBase.hpp)
 # TransIsotropic.hpp : Elastic.hpp (MaterialBase.hpp)
-# XYFileImporter.hpp : CommonReadHandler.hpp
 # XYBMPImporter.hpp : XYFileImporter.hpp, CommonReadHandler.hpp
+# XYFileImporter.hpp : CommonReadHandler.hpp
+# XYTXTImporter.hpp : XYFileImporter.hpp, CommonReadHandler.hpp
 
 # Header files with no dependencies
 # Area.hpp CommonArchiveData.hpp CommonException.hpp CommonReadHandler.hpp FEABoundaryCondition.hpp
@@ -289,7 +283,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		LineController.o MaterialController.o IsotropicMat.o TransIsotropic.o BoxController.o \
 		Orthotropic.o NodalPoint.o FEAArchiveData.o Utilities.o NairnFEA.o FEAStartResults.o \
 		FEAReadHandler.o KeypointsController.o Keypoint.o PathsController.o Path.o Area.o \
-		XYFileImporter.o XYBMPImporter.o \
+		XYFileImporter.o XYBMPImporter.o XYTXTImporter.o \
 		EdgeBCController.o NodalDispBCController.o NodalLoadController.o MaterialBaseFEA.o \
 		ImperfectInterface.o MoreElementBase.o Quad2D.o EightNodeIsoparam.o SixNodeTriangle.o \
 		CSTriangle.o Interface2D.o LinearInterface.o QuadInterface.o MoreNodalPoint.o \
@@ -324,6 +318,8 @@ svninfo.o : $(svninfo).cpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(svninfo).cpp
 UnitsController.o : $(UnitsController).cpp $(UnitsController).hpp $(CommonReadHandler).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UnitsController).cpp
+Gauss.o : $(Gauss).cpp $(dprefix)
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Gauss).cpp
 
 # Common: Read_XML
 CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp \
@@ -331,10 +327,12 @@ CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).h
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonReadHandler).cpp
 XYFileImporter.o : $(XYFileImporter).cpp $(dprefix) $(XYFileImporter).hpp $(CommonReadHandler).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(XYFileImporter).cpp
-XYBMPImporter.o : $(XYFileImporter).cpp $(dprefix) $(XYBMPImporter).hpp $(XYFileImporter).hpp $(CommonReadHandler).hpp
+XYBMPImporter.o : $(XYBMPImporter).cpp $(dprefix) $(XYBMPImporter).hpp $(XYFileImporter).hpp $(CommonReadHandler).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(XYBMPImporter).cpp
+XYTXTImporter.o : $(XYTXTImporter).cpp $(dprefix) $(XYTXTImporter).hpp $(XYFileImporter).hpp $(CommonReadHandler).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(XYTXTImporter).cpp
 BitMapFilesCommon.o : $(BitMapFilesCommon).cpp $(dprefix) $(CommonReadHandler).hpp $(BMPLevel).hpp $(MaterialController).hpp \
-			$(XYFileImporter).hpp $(XYBMPImporter).hpp
+			$(XYFileImporter).hpp $(XYBMPImporter).hpp $(XYTXTImporter).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BitMapFilesCommon).cpp
 BMPLevel.o : $(BMPLevel).cpp $(dprefix) $(BMPLevel).hpp $(NairnFEA).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BMPLevel).cpp
@@ -513,10 +511,6 @@ EdgeBC.o : $(EdgeBC).cpp $(dprefix) $(EdgeBC).hpp $(ElementBase).hpp $(FEABounda
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(EdgeBC).cpp
 Constraint.o : $(Constraint).cpp $(dprefix) $(Constraint).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Constraint).cpp
-
-# FEA: Numerical
-Gauss.o : $(Gauss).cpp $(dprefix)
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Gauss).cpp
 
 # -------------------------------------------------------------------------
 # To make executable
