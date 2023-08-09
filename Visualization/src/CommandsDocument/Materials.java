@@ -449,8 +449,9 @@ public class Materials
 			// 0 or 1
 			int value = doc.readIntArg(args.get(1));
 			if(value<0 || value>1)
-				throw new Exception("Rigid 'SetTemperature' property must be integer 0 or 1:\n"+args);
-			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+				throw new Exception("Rigid 'temperature' property must be integer 0 or 1:\n"+args);
+			if(value>0)
+				xmldata.append("    <"+prop+"/>\n");
 			return;
 		}
 		else if(prop.toLowerCase().equals("concentration"))
@@ -459,7 +460,8 @@ public class Materials
 			int value = doc.readIntArg(args.get(1));
 			if(value<0 || value>1)
 				throw new Exception("Rigid 'concentration' property must be integer 0 or 1:\n"+args);
-			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			if(value>0)
+				xmldata.append("    <"+prop+"/>\n");
 			return;
 		}
 		else if(prop.toLowerCase().equals("porepressure"))
@@ -468,7 +470,8 @@ public class Materials
 			int value = doc.readIntArg(args.get(1));
 			if(value<0 || value>1)
 				throw new Exception("Rigid 'porepressure' property must be integer 0 or 1:\n"+args);
-			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			if(value>0)
+				xmldata.append("    <"+prop+"/>\n");
 			return;
 		}
 		else if(prop.toLowerCase().equals("mirrored"))

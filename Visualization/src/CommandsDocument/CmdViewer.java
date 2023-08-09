@@ -2325,7 +2325,7 @@ public class CmdViewer extends JNCmdTextDocument
 			if(matnum <= 0)
 			{
 				if(type.equals("reactionx") || type.equals("reactionx") || type.equals("reactionz")
-						|| type.equals("reactionR") || type.equals("reactionZ"))
+						|| type.equals("reactionR") || type.equals("reactionZ") || type.equals("heatWatts"))
 				{
 					matnum = readIntArg(args.get(2));
 				}
