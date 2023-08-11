@@ -2324,7 +2324,7 @@ public class CmdViewer extends JNCmdTextDocument
 			matnum = mats.getMatID(readStringArg(args.get(2)));
 			if(matnum <= 0)
 			{	// look for boundaryID, but not yet for heatWatts
-				if(type.equals("reactionx") || type.equals("reactionx") || type.equals("reactionz")
+				if(type.equals("reactionx") || type.equals("reactiony") || type.equals("reactionz")
 						|| type.equals("reactionR") || type.equals("reactionZ"))
 				{
 					matnum = readIntArg(args.get(2));
