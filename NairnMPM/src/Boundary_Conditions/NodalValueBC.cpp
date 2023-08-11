@@ -19,7 +19,6 @@ NodalValueBC::NodalValueBC(int num,int setStyle,double concentration,double argT
                 : BoundaryCondition(setStyle,concentration,argTime)
 {
     nodeNum=num;
-    nd[nodeNum]->SetFixedDirection(GetSetDirection());
 }
 
 #pragma mark NodalValueBC: Methods

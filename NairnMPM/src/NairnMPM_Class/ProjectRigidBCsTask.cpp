@@ -219,16 +219,17 @@ void ProjectRigidBCsTask::SetRigidBCs(int mi,int matid0,int type,double value,do
 			if(*reuseRigidBC!=NULL)
 				newBC=(*reuseRigidBC)->SetRigidProperties(mi,type,CONSTANT_VALUE,value);
 			else
-				newBC=(BoundaryCondition *)(new NodalTempBC(mi,CONSTANT_VALUE,value,(double)0.));
+            {   newBC=(BoundaryCondition *)(new NodalTempBC(mi,CONSTANT_VALUE,value,(double)0.));
+            }
 			break;
 			
 		case CONC_DIRECTION:
  			if(*reuseRigidBC!=NULL)
 				newBC=(*reuseRigidBC)->SetRigidProperties(mi,type,CONSTANT_VALUE,value);
 			else
-			{	newBC=(BoundaryCondition *)(new NodalConcBC(mi,CONSTANT_VALUE,value,
-															(double)0.,MOISTURE_DIFFUSION));
-			}
+            {   newBC=(BoundaryCondition *)(new NodalConcBC(mi,CONSTANT_VALUE,value,
+                                                            (double)0.,MOISTURE_DIFFUSION));
+            }
 			break;
 			
 		default:

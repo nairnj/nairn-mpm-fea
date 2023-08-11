@@ -10,7 +10,7 @@
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
-#include "NairnMPM_Class/NairnMPM.hpp"
+//#include "NairnMPM_Class/NairnMPM.hpp"
 
 // Nodal temperature BC global
 NodalTempBC *firstTempBC=NULL;
@@ -24,6 +24,7 @@ NodalTempBC::NodalTempBC(int num,int setStyle,double temperature,double argTime)
 		: NodalValueBC(num,setStyle,temperature,argTime)
 {
 	temperatureNoBC = NULL;
+    nd[nodeNum]->SetFixedDirection(TEMP_DIRECTION);
 }
 
 #pragma mark NodalTempBC: Methods
@@ -37,9 +38,10 @@ NodalTempBC *NodalTempBC::CopyNodalValue(NodalPoint *nd,TransportField *gTrans)
 	{
 		temperatureNoBC = new double[1];
 	}
-	
+
 	// copy global one first
 	temperatureNoBC[0] = nd->gCond.gTValue;
+    //cout << "# " << fmobj->mstep << ": copy " << temperatureNoBC[0] << endl;
 
 	// return next task
 	return (NodalTempBC *)GetNextObject();
@@ -49,6 +51,7 @@ NodalTempBC *NodalTempBC::CopyNodalValue(NodalPoint *nd,TransportField *gTrans)
 NodalTempBC *NodalTempBC::PasteNodalValue(NodalPoint *nd,TransportField *gTrans)
 {
 	// paste global temperature
+    //cout << "# " << fmobj->mstep << ": paste " << temperatureNoBC[0] << endl;
 	nd->gCond.gTValue = temperatureNoBC[0];
 
 	// return next task

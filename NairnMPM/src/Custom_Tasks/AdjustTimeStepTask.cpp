@@ -17,6 +17,9 @@
 #include "System/UnitsController.hpp"
 #include "Exceptions/CommonException.hpp"
 
+// save base tranport time step
+double AdjustTimeStepTask::transportBaseTimeStep = 1.e30;
+
 // class globals
 AdjustTimeStepTask *adjustTimeStepTask=NULL;
 
@@ -178,7 +181,7 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
        
        // Pick highest speed
        if(crot1>crot)
-       {    crot=crot1;
+       {   crot=crot1;
 #pragma omp atomic
            Max_Velocity_Condition++;
        }
@@ -205,12 +208,19 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
        
        // transport time steps (if it can change during calculations)
        if(checkTransportTimeStep!=0)
-       {
+       {    // future code to check transport time steps
        }
     }
-
+    
     // in case no particles checked for time step
     if(newTimestep>1.e14) return nextTask;
+    
+    // If each particle not checked above for transport, make duer
+    // does not exceed the base transport time steo found in Preliminary calcs
+    if(checkTransportTimeStep==0)
+    {   if(transportBaseTimeStep<newTimestep)
+            newTimestep = transportBaseTimeStep;
+    }
     
     // change to new values
     ChangeTimestep(newTimestep,newPropTime,true);

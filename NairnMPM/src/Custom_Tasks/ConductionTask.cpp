@@ -159,7 +159,7 @@ TransportTask *ConductionTask::SetTransportForceAndFluxBCs(double deltime)
     while(nextBC!=NULL)
     {   i=nextBC->GetNodeNum(mtime);
 		if(i!=0)
-		{	nextBC->PasteNodalValue(nd[i],GetTransportFieldPtr(nd[i]));
+		{   nextBC->PasteNodalValue(nd[i],GetTransportFieldPtr(nd[i]));
 			nextBC->InitQReaction();
 			double qflow = -nd[i]->gCond.gQ;
 			nextBC->SuperposeQReaction(qflow);

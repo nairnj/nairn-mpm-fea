@@ -38,6 +38,7 @@
 #include "Custom_Tasks/PropagateTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "Custom_Tasks/AdjustTimeStepTask.hpp"
 #include "Nodes/CrackVelocityFieldMulti.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
@@ -53,9 +54,6 @@
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Exceptions/CommonException.hpp"
-#ifdef RESTART_OPTION
-    #include "Custom_Tasks/AdjustTimeStepTask.hpp"
-#endif
 #ifdef TRANSPORT_FMPM
    #include "NairnMPM_Class/XPICExtrapolationTaskTO.hpp"
 #endif
@@ -1230,12 +1228,18 @@ void NairnMPM::CFLTimeStep()
 	// FractCellTime and TransFractCellTime are CFL factors for mechanics and transport
 	double timeStepMin = FractCellTime*timeStepMinMechanics;
 	// Transport property time steps - these calculated before, now adjust by CFL
+    double transTimeStepMin = 1.e30;
 	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
 	{	double tst = TransFractCellTime*nextTransport->GetTimeStep();
-		if(tst < timeStepMin) timeStepMin = tst;
+		if(tst < transTimeStepMin) transTimeStepMin = tst;
 		nextTransport = nextTransport->GetNextTransportTask();
 	}
+    
+    // Up to here timeStepMin = mechanics time step (or 1e30 if no mechanics)
+    //   transTimeStepMin = tranport time step (or 1e30 if not transport)
+    AdjustTimeStepTask::transportBaseTimeStep = transTimeStepMin;
+    timeStepMin = fmin(timeStepMin,transTimeStepMin);
 
 	// use timeStepMin, unless specified time step is smaller
 	if(timeStepMin<timestep) timestep = timeStepMin;

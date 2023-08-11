@@ -18,6 +18,8 @@
 class AdjustTimeStepTask : public CustomTask
 {
     public:
+        static double transportBaseTimeStep;
+    
         // constructors and destructors
         AdjustTimeStepTask();
     

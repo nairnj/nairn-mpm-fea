@@ -157,6 +157,8 @@ TransportTask *TransportTask::GetTransportNodalValue(NodalPoint *ndptr)
 {	if(ndptr->NodeHasNonrigidParticles())
 	{	TransportField *gTrans = GetTransportFieldPtr(ndptr);
 		gTrans->gTValue /= gTrans->gVCT;
+        if(gTrans->gTValue>350)
+            doutCritical("node gTValue",(double)ndptr->num,gTrans->gTValue);
 		if(doCrelExtrapolation)
 		{
 #ifdef USE_GTVALUEREL

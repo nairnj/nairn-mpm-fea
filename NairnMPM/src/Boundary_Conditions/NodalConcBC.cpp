@@ -32,6 +32,21 @@ NodalConcBC::NodalConcBC(int num,int setStyle,double concentration,double argTim
             phaseStyle = POROELASTICITY_DIFFUSION;
 #endif
     }
+    
+    // set fixed direction
+    switch(phaseStyle)
+    {   case MOISTURE_DIFFUSION:
+        case POROELASTICITY_DIFFUSION:
+            nd[num]->SetFixedDirection(CONC_DIRECTION);
+        case FRACTURE_PHASE_FIELD:
+            nd[num]->SetFixedDirection(FRACTURE_PHASE_DIRECTION);
+        case BATTERY_PHASE_FIELD:
+            nd[num]->SetFixedDirection(BATTERY_PHASE_DIRECTION);
+        case CONDUCTION_PHASE_FIELD:
+            nd[num]->SetFixedDirection(POISSON_DIFF_DIRECTION);
+        default:
+            nd[num]->SetFixedDirection(CONC_DIRECTION);
+    }
 }
 
 // print it (if can be used)
