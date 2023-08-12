@@ -988,7 +988,8 @@
 			style (1|2|3|4|6) "1"
 			time CDATA #IMPLIED
 			function CDATA #IMPLIED
-            phase (1|2|3|4|5) #IMPLIED>
+            phase (1|2|3|4|5) #IMPLIED
+            id CDATA #IMPLIED>
 
 <!ELEMENT	ConcFluxBC EMPTY>
 <!ATTLIST	ConcFluxBC
@@ -1015,7 +1016,8 @@
 			value CDATA #IMPLIED
 			style (1|2|3|4|6) "1"
 			time CDATA #IMPLIED
-			function CDATA #IMPLIED>
+			function CDATA #IMPLIED
+            id CDATA #IMPLIED>
 
 <!ELEMENT	net EMPTY>
 <!ELEMENT	perParticle EMPTY>

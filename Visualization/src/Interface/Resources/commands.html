@@ -1312,7 +1312,7 @@ Apply pore pressure conditions to selected nodes. <code>(style)</code> is style 
 </li>
 
 <li><code>BoundaryID &lt;(id)&gt;</code><br>
-Set ID for subsequent velocity boundary condition for use when global archiving reaction forces. The <code>(id)</code> should be negative. If omitted it is set to 0 (which means ID is not set). These IDs are needed when archiving <a href="#globalarchive">reaction forces</a>. If you need to get reaction force on boundary conditions created by <a href="#gridhoriz">symmetry planes</a> or by rigid particles when <a href="#mhother"><code>ExtrapolateRigid</code> command</a> is used, those conditions will automatically have the following boundary IDs:
+Set ID for subsequent velocity or temperature boundary condition. The <code>(id)</code> should be negative. If omitted it is set to 0 (which means ID is not set). These IDs are needed when archiving <a href="#globalarchive">reaction forces or heat watts</a>. If you need to get reaction forces on velocity boundary conditions created by <a href="#gridhoriz">symmetry planes</a> or by rigid particles when <a href="#mhother"><code>ExtrapolateRigid</code> command</a> is used, those conditions will automatically have the following boundary IDs:
 <ul>
 <li>-10: plane a minimum x edge</li>
 <li>-11: plane a maximum x edge</li>

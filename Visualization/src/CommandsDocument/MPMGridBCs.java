@@ -461,6 +461,9 @@ public class MPMGridBCs
 		if (phaseStyle>2)
 			bcSettings.append(" phase='" + phaseStyle + "'");
 
+		// BC ID
+		if(boundaryID!=0)
+			bcSettings.append(" id='" + boundaryID + "'");
 		bcSettings.append("/>\n");
 	}
 

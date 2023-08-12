@@ -1030,7 +1030,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
 		int tempBC=strcmp(xName,"TempBC")==0 ? TRUE : FALSE;
         double bcvalue=0.0,ftime=0.0;
-        int style=CONSTANT_VALUE;
+        int style=CONSTANT_VALUE,tempconcID=0;
 		int phaseStyle=MOISTURE_DIFFUSION;
 		char *function=NULL;
         numAttr=(int)attrs.getLength();
@@ -1050,6 +1050,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				function=new char[strlen(value)+1];
 				strcpy(function,value);
 			}
+            else if(strcmp(aName,"id")==0)
+                sscanf(value,"%d",&tempconcID);
             delete [] aName;
             delete [] value;
         }
@@ -1060,6 +1062,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			while((i=theShape->nextNode()))
 			{	NodalTempBC *newTempBC=new NodalTempBC(nd[i]->num,style,bcvalue,ftime);
 				newTempBC->SetFunction(function);
+                newTempBC->SetID(tempconcID);
 				tempBCs->AddObject(newTempBC);
 			}
 		}
@@ -1068,6 +1071,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			while((i=theShape->nextNode()))
 			{	NodalConcBC *newConcBC=new NodalConcBC(nd[i]->num,style,bcvalue,ftime,phaseStyle);
 				newConcBC->SetFunction(function);
+                newConcBC->SetID(tempconcID);
 				concBCs->AddObject(newConcBC);
 			}
 		}
