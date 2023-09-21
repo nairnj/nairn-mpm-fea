@@ -378,8 +378,9 @@ void IsoSoftening::ResetHistoryData(char *pchr,MPMBase *mptr)
 int IsoSoftening::NumberOfHistoryDoubles(void) const { return SOFT_NUMBER_HISTORY; }
 
 // Initialize damage when requested
-void IsoSoftening::SetInitialConditions(InitialCondition *ic,MPMBase *mptr,bool is3D)
+void IsoSoftening::SetInitialConditions(InitialCondition *ic,int ptNum,bool is3D)
 {
+    MPMBase *mptr = mpm[ptNum-1];
     double *soft = GetSoftHistoryPtr(mptr);
 
 	if(is3D)
@@ -511,7 +512,7 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
     Matrix3 dR,Rnm1,Rtot;
     Matrix3 deT = LRGetStrainIncrement(INITIAL_CONFIGURATION,mptr,du,&dR,NULL,&Rnm1,&Rtot);
     
-    // convert matrix to Tensor in initial configuration
+    // convert matrix to Tensor in initial configuration - total strain increment (engr shear strains)
 	Tensor de = is2D ?
 		MakeTensor2D(deT(0,0), deT(1,1), deT(2,2), deT(0,1) + deT(1,0)) :
 		MakeTensor(deT(0,0), deT(1,1), deT(2,2), deT(1,2)+deT(2,1), deT(0,2)+deT(2,0), deT(0,1)+deT(1,0));
@@ -523,7 +524,7 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	Tensor *sp = mptr->GetStressTensor();
 	
 	// residual strain (thermal and moisture)
-	// (CTE1 and CME1 are reduced to plane strain, but not CTE3 and CME3)
+	// (CTE1 and CME1 are reduced for plane strain, but not CTE3 and CME3)
 	double eres = CTE1*res->dT;
 	double ezzres = CTE3*res->dT;
 	if(DiffusionTask::HasDiffusion())
@@ -531,7 +532,7 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		eres += CME1*res->dC;
 		ezzres += CME3*res->dC;
 	}
-	// Uses reduced values
+	// Uses reduced values in plane strain
 	Tensor deres = MakeTensor(eres,eres,eres,0.,0.,0.);
 	
 	// Poroelasticity needs to handle current specific pore pressure
@@ -578,7 +579,7 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 			if(np==THREED_MPM) str.zz += ppadd;
 		}
 #endif
-		
+        
 		// check if has failed
 		Vector norm;
 		double relStrength = soft[RELATIVE_STRENGTH];
@@ -669,8 +670,8 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 // soft is pointer to first sofening history variable
 // Tensor de = total elastic strain increment in crack axis system
 // eres and ezzres used to find effective strains (from de - eres*I), ezzres for plain strain energy
-// str is prior stress in the crack axis system (smoothed stress is usng that option)
-// res fir temperature and/or concentration/pore pressure change
+// str is prior stress in the crack axis system (smoothed stress is using that option)
+// res for temperature and/or concentration/pore pressure change
 // dR and Rtot are incemental and total rotation matrices
 // p is pointer to isotropic elastic properties
 // ecrack is cracking strain in the crack axis system
@@ -1019,7 +1020,10 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
 		
 		// dissipated energy from damage (plasticity was added before if it occurred)
         // prior to 10/15/2020, plastic energy was added here too might have double counted
-		mptr->AddPlastEnergy(dispEnergyN + dispEnergyXY + dispEnergyXZ);
+        // 2D tracks damage only in NORMALDIR3 history; subtract it from plastic to get plastic energy
+        double dispEnergyDam = dispEnergyN + dispEnergyXY + dispEnergyXZ;
+        if(is2D) soft[NORMALDIR3] += UnitsController::Scaling(1.e-9)*mptr->mp*dispEnergyDam;
+		mptr->AddPlastEnergy(dispEnergyDam);
 	}
 		
 #pragma mark ... Update Cracking Strain and Stresses
@@ -1905,7 +1909,7 @@ void IsoSoftening::AcceptTrialStress(MPMBase *mptr,Tensor &str,Tensor *sp,int np
 #pragma mark IsoSoftening::Accessors
 
 // return material type
-const char *IsoSoftening::MaterialType(void) const { return "Isotropic Softening"; }
+const char *IsoSoftening::MaterialType(void) const { return "Anisotropic Softening of Isotropic Material"; }
 
 // store plastic strain in alt strain
 int IsoSoftening::AltStrainContains(void) const

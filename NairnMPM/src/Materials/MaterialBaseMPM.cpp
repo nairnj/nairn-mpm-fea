@@ -1861,7 +1861,7 @@ double MaterialBase::BracketContactLawShearRate(double gmaxdot,double k,double &
 
 // for initial conditions (usually in history data)
 // Currently used for initial damage state or initial phase field value
-void MaterialBase::SetInitialConditions(InitialCondition *ic,MPMBase *mptr,bool is3D) {}
+void MaterialBase::SetInitialConditions(InitialCondition *ic,int ptNum,bool is3D) {}
 
 // Material that allow damage initiaion laws must accept
 // the final call and use if supported

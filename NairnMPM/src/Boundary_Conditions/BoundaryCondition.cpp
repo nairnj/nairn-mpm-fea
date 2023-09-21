@@ -99,6 +99,7 @@ double BoundaryCondition::BCValue(double stepTime)
         default:
             break;
     }
+ 
     return currentValue;
 }
 

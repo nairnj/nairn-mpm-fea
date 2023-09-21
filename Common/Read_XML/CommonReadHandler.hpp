@@ -135,7 +135,7 @@ class CommonReadHandler : public DefaultHandler
 		static const char *DecodeBMPWidthAndHeight(XYInfoHeader,double &,double &,double &,Vector &,bool);
 		static bool MapDomainToImage(XYInfoHeader,Vector,Vector,Vector,Vector,double,double,DomainMap &);
 		static int BMPIndex(double,int);
-		static BMPLevel *FindBMPLevel(BMPLevel *,DomainMap,unsigned char **);
+		static BMPLevel *FindBMPLevel(BMPLevel *,DomainMap,unsigned char **,int);
 		static double FindAverageValue(DomainMap,unsigned char **,int,bool &);
 	
     protected:

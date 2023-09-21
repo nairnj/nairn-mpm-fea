@@ -30,7 +30,7 @@ class MixedModeTraction : public TrilinearTraction
         virtual char *InputTractionLawProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
         virtual void PrintMechanicalProperties(void) const;
-        virtual char *InitHistoryData(char *);
+        virtual char *InitHistoryData(char *,MPMBase *);
     
         // traciton law methods
         virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);

@@ -192,7 +192,7 @@ const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
     double sumNormal = h.F+h.G+h.H;
 	if(sumNormal<=0.) return "(F+G+H) for Hill plastic potential must be positive";
 	
-	// The materials.tex notes skip the 2/3 term here and throughout)
+	// The materials.tex notes define this term as 1/sigmaYref = sqrt23OversigmaYref.
 	sqrt23OversigmaYref = sqrt(2.*sumNormal/3.);
 	
 	// for convergence problems
@@ -335,11 +335,12 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3
     }
     
 	// Step 5: Solve for plastic strain increment and new stress and new alpha
+    double alpha0 = p->aint;
 	Tensor dep = SolveForPlasticIncrement(mptr,np,ftrial,strial,p);
 	
 	// Step 8: update the particle
 	
-	// get energies in material axes (Need more plastic energy - c.f. istropic term)
+	// get energies in material axes
 	double workEnergy,dispEnergy,resEnergy;
 	if(np==THREED_MPM)
 	{	// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
@@ -349,14 +350,14 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3
 		// Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 		dispEnergy = strial.xx*dep.xx + strial.yy*dep.yy + strial.zz*dep.zz
 						+ strial.xy*dep.xy + strial.xz*dep.xz + strial.yz*dep.yz;
-		
+        
 		// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 		resEnergy = strial.xx*er(0,0) + strial.yy*er(1,1) + strial.zz*er(2,2)
 						+ 2.*(strial.xy*er(0,1) + strial.xz*er(0,2) + strial.yz*er(1,2));
 	}
 	else
 	{	// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-		workEnergy = strial.xx*de(0,0) + strial.yy*de(1,1) + strial.zz*de(1,1) + 2.*strial.xy*de(0,1);
+		workEnergy = strial.xx*de(0,0) + strial.yy*de(1,1) + strial.zz*de(2,2) + 2.*strial.xy*de(0,1);
 		
 		// Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 		dispEnergy = strial.xx*dep.xx + strial.yy*dep.yy + strial.zz*dep.zz + strial.xy*dep.xy;
@@ -368,7 +369,8 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3
 	// add now
 	mptr->AddWorkEnergyAndResidualEnergy(workEnergy,resEnergy);
 	
-	// add dissipated energy to plastic energy to the particle
+	// add dissipated energy to plastic energy to the particle after subtracting q*dalpha
+    dispEnergy -= (GetYield(p)-1.)*(p->aint-alpha0)/sqrt23OversigmaYref;
 	mptr->AddPlastEnergy(dispEnergy);
 	
 	// rotate strain increment to current config and add to eplast in current config

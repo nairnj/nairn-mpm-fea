@@ -26,6 +26,7 @@ class ParseController
 		bool AddObject(LinkedObject *);
 		LinkedObject *currentObject(void);
 		void ClearObjects(void);
+        void ClearObjects(LinkedObject *);
 };
 
 #endif

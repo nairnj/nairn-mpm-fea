@@ -514,7 +514,8 @@ bool CommonReadHandler::MapDomainToImage(XYInfoHeader info,Vector spot,Vector or
 }
 
 // Find the most prominent level withing a domain on top of and bmp grid
-BMPLevel *CommonReadHandler::FindBMPLevel(BMPLevel *startLevel,DomainMap map,unsigned char **rows)
+BMPLevel *CommonReadHandler::FindBMPLevel(BMPLevel *startLevel,DomainMap map,
+                                          unsigned char **rows,int dataType)
 {
 	// clear level weights
 	BMPLevel *nextLevel = startLevel;
@@ -541,10 +542,16 @@ BMPLevel *CommonReadHandler::FindBMPLevel(BMPLevel *startLevel,DomainMap map,uns
 				
 			// find ID (i.e., material) at this level
 			// (note: last level with ID=0 catches empty space when doing materials)
-			nextLevel=startLevel;
+ 			nextLevel=startLevel;
 			while(nextLevel!=NULL)
-			{	int levID=nextLevel->Material(rows[row][col],weight);
-				if(levID>=0) break;
+            {   int levID;
+                if(dataType==BYTE_DATA)
+                    levID=nextLevel->Material(rows[row][col],weight);
+                else
+                {   unsigned char rowChar = (unsigned char)(((float **)rows)[row][col]);
+                    levID=nextLevel->Material(rowChar,weight);
+                }
+ 				if(levID>=0) break;
 				nextLevel=(BMPLevel *)nextLevel->GetNextObject();
 			}
 		}

@@ -1204,6 +1204,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		else if(strcmp(xName,"ConcFluxBC")==0)
         {	if(dof==2 && style!=FUNCTION_VALUE)
 				throw SAXException("Coupled option in <ConcFluxBC> element must use function style");
+            else if(style>POROELASTICITY_DIFFUSION && style==SILENT)
+                throw SAXException("Silent <ConcFluxBC> only allowed for solvent diffusion and poroelasticity");
 			
 			// check each material point
 			MatPtFluxBC *newFluxBC;
@@ -1244,7 +1246,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         Vector dnorm = MakeVector(0.,0.,0.);
         Vector dvals = MakeVector(1.,1.,1.);
 		double dmode = 1.;			// user must override if aniostropic
-		double phaseField = -1.;	// if setting a phase field
+        char *function = NULL;
         numAttr=(int)attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -1264,14 +1266,17 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			else if(strcmp(aName,"mode")==0)
 				sscanf(value,"%lf",&dmode);
 			else if(strcmp(aName,"phi")==0)
-				sscanf(value,"%lf",&phaseField);
+            {   if(function!=NULL) delete [] function;
+                function=new char[strlen(value)+1];
+                strcpy(function,value);
+            }
             delete [] aName;
             delete [] value;
         }
         
         InitialCondition *newIC;
         theShape->resetParticleEnumerator();
-		if(phaseField<0.)
+		if(function==NULL)
 		{	while((i=theShape->nextParticle())>=0)
 			{   newIC = new InitialCondition(INITIAL_DAMAGE,i+1);
 				newIC->SetInitialDamage(&dnorm,&dvals,dmode);
@@ -1281,7 +1286,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		else
 		{	while((i=theShape->nextParticle())>=0)
 			{   newIC = new InitialCondition(INITIAL_PHASEFIELD,i+1);
-				newIC->SetInitialPhaseField(phaseField);
+				newIC->SetInitialPhaseField(function);
 				damageICCtrl->AddObject(newIC);
 			}
 		}

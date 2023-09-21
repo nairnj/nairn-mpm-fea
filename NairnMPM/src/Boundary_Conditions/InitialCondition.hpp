@@ -32,7 +32,7 @@ class InitialCondition : public MatPtLoadBC
         virtual void SetInitialDamage(Vector *,Vector *,double);
         Vector GetDamageParams(double &);
 		Vector GetDamageNormal(void);
-		virtual void SetInitialPhaseField(double);
+		virtual void SetInitialPhaseField(char *);
 		double GetPhaseField(void);
 	
     protected:

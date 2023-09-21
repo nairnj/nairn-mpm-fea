@@ -23,6 +23,15 @@ typedef struct {
 	double z;
 } Vector;
 
+// rect in 2D
+typedef struct {
+    double xmin;
+    double xmax;
+    double ymin;
+    double ymax;
+} Rect;
+
+
 // index to the sig components
 enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 
@@ -225,6 +234,10 @@ Vector TensorEigenvalues(Tensor *,bool,bool);
 Matrix3 TensorToMatrix(Tensor *,bool);
 Matrix3 TensorToMatrix2D(Tensor *,bool);
 #endif
+
+bool XYInRect(double,double,Rect *);
+bool PtInRect(Vector *,Rect *);
+double RectArea(Rect *);
 
 unsigned charConvertToLower(unsigned char);
 int CIstrcmp(const char *, const char *);

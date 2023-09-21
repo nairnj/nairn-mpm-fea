@@ -117,7 +117,7 @@ class MaterialBase : public LinkedObject
 		virtual double GetHistory(int,char *) const;
 		double *CreateAndZeroDoubles(char *,int) const;
 		void ZeroDoubles(char *,int) const;
-        virtual void SetInitialConditions(InitialCondition *,MPMBase *,bool);
+        virtual void SetInitialConditions(InitialCondition *,int,bool);
 		virtual Vector GetDamageNormal(MPMBase *,bool) const;
 	
 		virtual void FillTransportProperties(TransportProperties *);

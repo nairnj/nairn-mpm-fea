@@ -412,15 +412,15 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		if(diffStyle==MOISTURE_DIFFUSION)
 		{	if(fmobj->HasDiffusion())
 				throw SAXException("Only one 'Diffusion' task allowed in an analysis.");
-	#ifdef POROELASTICITY
+#ifdef POROELASTICITY
 			else if(fmobj->HasPoroelasticity())
 				throw SAXException("Cannot use both 'Diffusion' and 'Poroelasticity' in the same analysis.");
-	#endif
+#endif
 			// create task
             diffusion = new DiffusionTask(fmax(refCon,0.),(double)noLimit,MOISTURE_DIFFUSION);
 		}
 		else
-		{	throw SAXException("An unrecognized 'Diffusion' style was requeted.");
+		{	throw SAXException("An unrecognized 'Diffusion' style was requested.");
 		}
     }
 	
@@ -468,7 +468,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{
 		throw SAXException("<TrackParticleSpin> requires OSParticulas and compiled with ADD_PARTICLE_SPIN");
 	}
-	
+
 	else if(strcmp(xName,"ExactTractions")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
 		fmobj->exactTractions = true;

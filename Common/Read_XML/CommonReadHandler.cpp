@@ -15,6 +15,7 @@
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Exceptions/StrX.hpp"
+#include "Read_XML/Expression.hpp"
 
 #pragma mark CommonReadHandler: Constructors and Destructor
 
@@ -346,6 +347,19 @@ void CommonReadHandler::characters(const XMLCh* const chars,const XMLSize_t leng
             sscanf(xData,"%lf",(double *)inputPtr);
 			*((double *)inputPtr)*=gScaling;
 			gScaling=1.;
+            break;
+        
+        case EXPRESSION_STR:
+            // if needed, cannot be NULL, empty, or a duplicate
+            if(strlen(xData)==0)
+            {   ThrowSAXException("A material expression with zero-length string");
+                return;
+            }
+            if(*((Expression **)inputPtr)!=NULL)
+            {    ThrowSAXException("Duplicate expression found for the same material property");
+                return;
+            }
+            *((Expression **)inputPtr) =  Expression::CreateExpression(xData,"Material expression is not a valid function");
             break;
 		
 		case ANALYSIS_NUM:

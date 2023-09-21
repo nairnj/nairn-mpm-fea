@@ -452,7 +452,7 @@ CustomTask *CustomThermalRamp::Initialize(void)
 				double particleDeltaT = 0.;
 				bool hasWeight = false;
 				if(firstLevel!=NULL)
-				{	BMPLevel *nextLevel = CommonReadHandler::FindBMPLevel(firstLevel,map,rows);
+				{	BMPLevel *nextLevel = CommonReadHandler::FindBMPLevel(firstLevel,map,rows,info.dataType);
 					if(nextLevel!=NULL)
 					{	hasWeight = true;
 						particleDeltaT = nextLevel->temperature;
@@ -569,13 +569,13 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 			}
 #endif
 			else if(property==RAMP_CONC)
-			{	// add concentration (never occurs unless diffusion is active)
-				mpm[p]->pDiff[0]->conc += dTp;
-				if(mpm[p]->pDiff[0]->conc<0.)
-					mpm[p]->pDiff[0]->conc = 0.;
-				else if(!diffusion->noLimit && mpm[p]->pDiff[0]->conc>1.)
-					mpm[p]->pDiff[0]->conc = 1.;
-			}
+            {   // add concentration (never occurs unless diffusion is active)
+                mpm[p]->pDiff[0]->conc += dTp;
+                if(mpm[p]->pDiff[0]->conc<0.)
+                    mpm[p]->pDiff[0]->conc = 0.;
+                else if(!diffusion->noLimit && mpm[p]->pDiff[0]->conc>1.)
+                    mpm[p]->pDiff[0]->conc = 1.;
+            }
             else if(property==RAMP_STRENGTH)
             {   mpm[p]->SetRelativeStrength(newDeltaT);
             }
@@ -628,13 +628,13 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 			}
 #endif
 			else if(property==RAMP_CONC)
-			{	// add concentration (never occurs unless diffusion is active)
-				mptr->pDiff[0]->conc += deltaT;
-				if(mptr->pDiff[0]->conc<0.)
-					mptr->pDiff[0]->conc = 0.;
-				else if(!diffusion->noLimit && mptr->pDiff[0]->conc>1.)
-					mptr->pDiff[0]->conc = 1.;
-			}
+            {   // add concentration (never occurs unless diffusion is active)
+                mptr->pDiff[0]->conc += deltaT;
+                if(mptr->pDiff[0]->conc<0.)
+                    mptr->pDiff[0]->conc = 0.;
+                else if(!diffusion->noLimit && mptr->pDiff[0]->conc>1.)
+                    mptr->pDiff[0]->conc = 1.;
+            }
             else if(property==RAMP_STRENGTH)
             {   mptr->SetRelativeStrength(newDeltaT);
             }

@@ -512,6 +512,31 @@ TensorAntisym *ZeroTensorAntisym(TensorAntisym *a)
 
 #endif
 
+#pragma mark Rect Functions
+
+// true if (x,y) is in the Rect
+bool XYInRect(double x,double y,Rect *rect)
+{   if(x<rect->xmin) return false;
+    if(x>rect->xmax) return false;
+    if(y<rect->ymin) return false;
+    if(y>rect->ymax) return false;
+    return true;
+}
+
+// true if (x,y) of vectir is in the Rect
+bool PtInRect(Vector *pt,Rect *rect)
+{   if(pt->x<rect->xmin) return false;
+    if(pt->x>rect->xmax) return false;
+    if(pt->y<rect->ymin) return false;
+    if(pt->y>rect->ymax) return false;
+    return true;
+}
+
+// area of the rect
+double RectArea(Rect *rect)
+{   return (rect->xmax-rect->xmin)*(rect->ymax-rect->ymin);
+}
+
 #pragma mark String Functions
 
 // convert character to lower case
@@ -918,7 +943,7 @@ double Random(void)
 double NormalCDFInverse(double p)
 {	if(p <= 0.0 || p >= 1.0)
 	{   // invalid numbers return zero or get mean value
-        return 0.;
+		return 0.;
 	}
 	else if(p < 0.5)
 	{	// F^-1(p) = - G^-1(p)

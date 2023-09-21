@@ -271,7 +271,7 @@ double SofteningLaw::GetDDelta(double de,double e0,double delta,double d,double 
 //#define TRACK_NEWTON
 
 // Solve for increment in delta during elastic deformation based on starting d
-//		The equation is delta + ddeltae = F(delta + ddeltae,alpa+dalpha)/(E(1-d))
+//		The equation is delta + ddeltae = d*F(delta + ddeltae,alpa+dalpha)/(E(1-d))
 // On input scaleAlpha is updated value and sigmaAlpha is updated stress.
 // Only needed when softening law depends on extra variables
 // Solve numerically by Newton's method with bracketing; subclass can override if better solution

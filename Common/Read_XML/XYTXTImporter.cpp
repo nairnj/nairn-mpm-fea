@@ -72,11 +72,11 @@ void XYTXTImporter::GetXYFileHeader(XYInfoHeader &info)
 			if(info.height==0) info.width++;
 		}
 	}
-	
+    
     // check for last line not ending in new line character
     if(buffer[fileLength-1]!='\r' && buffer[fileLength-1]!='\n')
         info.height++;
-    
+	
 	if(info.height==0 || info.width==1)
 		XYFileImportError("Text file has no rows or no delimited columns");
 	

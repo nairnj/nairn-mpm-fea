@@ -24,7 +24,7 @@ NodalConcBC *firstDiffBC[NUM_DUFFUSION_OPTIONS];
 NodalConcBC::NodalConcBC(int num,int setStyle,double concentration,double argTime,int phase)
                     : NodalValueBC(num,setStyle,concentration,argTime)
 {
-	phaseStyle = phase;
+    phaseStyle = phase;
     if(phaseStyle<FRACTURE_PHASE_FIELD)
     {   phaseStyle = MOISTURE_DIFFUSION;
 #ifdef POROELASTICITY
@@ -72,7 +72,7 @@ void NodalConcBC::SetBCValue(double bcvalue)
 	BoundaryCondition::SetBCValue(rescale*bcvalue);
 }
 
-// get set direction
+// get set direction (changes in constructor above too)
 int NodalConcBC::GetSetDirection(void) const
 {   // depends on style
     switch(phaseStyle)

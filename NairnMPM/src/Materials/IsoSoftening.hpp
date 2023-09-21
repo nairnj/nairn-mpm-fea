@@ -51,7 +51,7 @@ class IsoSoftening : public IsotropicMat
 		virtual char *InitHistoryData(char *,MPMBase *);
 		virtual void ResetHistoryData(char *,MPMBase *);
    		virtual int NumberOfHistoryDoubles(void) const;
-        virtual void SetInitialConditions(InitialCondition *,MPMBase *,bool);
+        virtual void SetInitialConditions(InitialCondition *,int,bool);
 		virtual Vector GetDamageNormal(MPMBase *,bool) const;
 	
 		// methods

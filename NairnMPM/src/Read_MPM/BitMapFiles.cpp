@@ -58,11 +58,11 @@ void MPMReadHandler::TranslateBMPFiles(void)
 {
 	// file info and data
 	unsigned char **rows,**angleRows = NULL,**angle2Rows = NULL,**angle3Rows = NULL;
-	XYInfoHeader info;
+	XYInfoHeader info,angleInfo,angleInfo2,angleInfo3;
 	
 	// read image file
 	char *bmpFullPath=archiver->ExpandOutputPath(bmpFileName);
-	rows = (unsigned char **)ReadXYFile(bmpFullPath,info,true,true);
+    rows = (unsigned char **)ReadXYFile(bmpFullPath,info,false,true);
 	delete [] bmpFullPath;
 	
 	// angle file name (overrides other angle settings)
@@ -73,7 +73,6 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	{	setAngles = true;
 		
 		// first file always there
-		XYInfoHeader angleInfo;
 		char *bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[0]);
 		angleRows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,true,true);
 		if(info.height!=angleInfo.height || info.width!=angleInfo.width)
@@ -86,8 +85,8 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		
 		if(fileRotations>1)
 		{	bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[1]);
-			angle2Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,true,true);
-			if(info.height!=angleInfo.height || info.width!=angleInfo.width)
+			angle2Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo2,true,true);
+			if(info.height!=angleInfo2.height || info.width!=angleInfo2.width)
 				throw SAXException(XYFileError("The image file and second angle file sizes do not match.",bmpFileName));
 			delete [] bmpFullAnglePath;
 			if(numAngles<2)
@@ -100,8 +99,8 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		
 		if(fileRotations>2)
 		{	bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName[2]);
-			angle3Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo,true,true);
-			if(info.height!=angleInfo.height || info.width!=angleInfo.width)
+			angle3Rows = (unsigned char **)ReadXYFile(bmpFullAnglePath,angleInfo3,true,true);
+			if(info.height!=angleInfo3.height || info.width!=angleInfo3.width)
 				throw SAXException(XYFileError("The image file and second angle file sizes do not match.",bmpFileName));
 			delete [] bmpFullAnglePath;
 			if(numAngles<3)
@@ -164,7 +163,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
             ElementBase *elem=theElements[ii-1];
             if(!elem->IntersectsBox(orig,bwidth,bheight))
                 continue;
-            
+
             // load point coordinates
             elem->MPMPoints(usePtsPerSide,mpos,numFound,NULL,NULL);
         
@@ -189,7 +188,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 				if(MapDomainToImage(info,mpos[k],orig,del,pw,bwidth,bheight,map))
 				{	// find maximum level and its material ID or none (a hole)
 					int matID=-1;
-					BMPLevel *nextLevel = FindBMPLevel(firstLevel,map,rows);
+					BMPLevel *nextLevel = FindBMPLevel(firstLevel,map,rows,info.dataType);
                     if(nextLevel!=NULL) matID = nextLevel->Material();
  					
                     // create a material point if one at this spot using matID and nextLevel
@@ -216,14 +215,14 @@ void MPMReadHandler::TranslateBMPFiles(void)
 						if(setAngles)
 						{	double matAngle[3];
 							bool hasWeight = false;
-							double totalIntensity = FindAverageValue(map,angleRows,BYTE_DATA,hasWeight);
+							double totalIntensity = FindAverageValue(map,angleRows,angleInfo.dataType,hasWeight);
 							matAngle[0] = minAngle[0]+(totalIntensity-minIntensity[0])*angleScale[0];
  							if(fileRotations>1)
-							{	totalIntensity = FindAverageValue(map,angle2Rows,BYTE_DATA,hasWeight);
+							{	totalIntensity = FindAverageValue(map,angle2Rows,angleInfo2.dataType,hasWeight);
 								matAngle[1] = minAngle[1]+(totalIntensity-minIntensity[1])*angleScale[1];
 							}
 							if(fileRotations>2)
-							{	totalIntensity = FindAverageValue(map,angle3Rows,BYTE_DATA,hasWeight);
+							{	totalIntensity = FindAverageValue(map,angle3Rows,angleInfo3.dataType,hasWeight);
 								matAngle[2] = minAngle[2]+(totalIntensity-minIntensity[2])*angleScale[2];
 							}
 							SetMptAnglesFromFunctions(angleAxes,matAngle,&mpos[k],newMpt);

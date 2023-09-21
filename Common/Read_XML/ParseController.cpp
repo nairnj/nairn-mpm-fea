@@ -48,4 +48,33 @@ void ParseController::ClearObjects(void)
 	numObjects=0;
 }
 
-
+// delete all linked objects starting with one object
+void ParseController::ClearObjects(LinkedObject *obj)
+{
+    // if first one, clear them all
+    if(obj==firstObject)
+    {   ClearObjects();
+        return;
+    }
+    
+    bool deleting = false;
+    numObjects = 0;
+    LinkedObject *nextObj = firstObject;
+    while(nextObj!=NULL)
+    {   LinkedObject *holdObj = nextObj->GetNextObject();
+        if(deleting)
+        {   delete nextObj;
+        }
+        else if(holdObj==obj)
+        {   // now reached the starting object to start deleting
+            nextObj->SetNextObject(NULL);
+            lastObject = nextObj;
+            deleting = true;
+        }
+        else
+        {   // count those remaining
+            numObjects++;
+        }
+        nextObj = holdObj;
+    }
+}

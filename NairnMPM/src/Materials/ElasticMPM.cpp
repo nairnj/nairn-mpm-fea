@@ -201,7 +201,7 @@ void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3 &er,Mat
 		mptr->AddWorkEnergyAndResidualEnergy(workEnergy, resEnergy);
 	}
     
-    // no more heat energy (should get dTq0)
+    // no heat energy (should get dTq0)
     //IncrementHeatEnergy(mptr,dTq0,0.);
 	
 #ifdef POROELASTICITY
