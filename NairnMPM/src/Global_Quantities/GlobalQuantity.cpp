@@ -23,6 +23,7 @@
 #include "System/ArchiveData.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Boundary_Conditions/NodalTempBC.hpp"
+#include "Boundary_Conditions/NodalConcBC.hpp"
 #include "System/UnitsController.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
@@ -56,7 +57,7 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 		snprintf(nameStr,nameSize,"%s mat %d",quant,whichMat);
 	else
 		strcpy(nameStr,quant);
-	FinishNewQuantity(nameStr);
+ 	FinishNewQuantity(nameStr);
 }
 
 // throws std::bad_alloc
@@ -245,6 +246,8 @@ int GlobalQuantity::DecodeGlobalQuantity(const char *quant,int *hcode,int *mcode
 		theQuant=AVG_TEMP;
 	else if(strcmp(quant,"concentration")==0 || strcmp(quant,"porepressure")==0)
 		theQuant=WTFRACT_CONC;
+    else if(strcmp(quant,"concFlux")==0)
+        theQuant=TOT_FLUX;
 	else if(strcmp(quant,"Step number")==0)
 		theQuant=STEP_NUMBER;
 	else if(strcmp(quant,"CPU time")==0)
@@ -321,6 +324,17 @@ int GlobalQuantity::DecodeGlobalQuantity(const char *quant,int *hcode,int *mcode
 			}
 		}
         
+        // possibly a concentration flux which must be "concFlux n"
+        if(theQuant==UNKNOWN_QUANTITY && strlen(quant)>8)
+        {   char nameStr[200];
+            strcpy(nameStr,quant);
+            nameStr[8] = 0;
+            if(strcmp(nameStr,"concFlux")==0)
+            {   sscanf(quant,"%*s %d",hcode);
+                theQuant = TOT_FLUX;
+             }
+        }
+        
         // possibly a crack length which must be "crack length n"
         if(theQuant==UNKNOWN_QUANTITY && strlen(quant)>12)
         {   char nameStr[200];
@@ -333,7 +347,18 @@ int GlobalQuantity::DecodeGlobalQuantity(const char *quant,int *hcode,int *mcode
             }
         }
         
-        // possibly a crack length which must be "debonded crack length n"
+        // possibly a concentration which must be "concentration n"
+        if(theQuant==UNKNOWN_QUANTITY && strlen(quant)>13)
+        {   char nameStr[200];
+            strcpy(nameStr,quant);
+            nameStr[13] = 0;
+            if(strcmp(nameStr,"concentration")==0)
+            {   sscanf(quant,"%*s %d",hcode);
+                theQuant = WTFRACT_CONC;
+            }
+        }
+        
+       // possibly a debonded crack length which must be "debonded crack length n"
         if(theQuant==UNKNOWN_QUANTITY && strlen(quant)>21)
         {   char nameStr[200];
             strcpy(nameStr,quant);
@@ -761,19 +786,39 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			break;
 		
 		case WTFRACT_CONC:
-		{	if(fmobj->HasDiffusion())
+		{   if(subcode>0)
+            {   // other diffusion tasks
+                DiffusionTask *otherDiffusion = DiffusionTask::FindDiffusionTaskByOrder(subcode);
+                if(otherDiffusion!=NULL)
+                {   // Volume weighted average is Sum (Vp pDiff->prevConc) / Sum Vp
+                    // where Vp = J mp/rho0
+                    for(p=p0;p<pend;p++)
+                    {   if(mpm[p]->InReservoir()) continue;        // do not average those in resevoir
+                        matid=mpm[p]->MatID();
+                        if(IncludeThisMaterial(matid,singleParticle))
+                        {   rho0 = theMaterials[matid]->GetRho(mpm[p]);
+                            Jp = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],0);
+                            Vp = Jp*mpm[p]->mp/rho0;
+                            value += Vp*otherDiffusion->GetPrevParticleValue(mpm[p]);
+                            Vtot += Vp;
+                        }
+                    }
+                    if(Vtot>0.) value /= Vtot;
+                }
+            }
+            else if(fmobj->HasDiffusion())
 			{	// get total solvent content divided by total mass for total weight fraction
-					double totalWeight=0.;
-					for(p=p0;p<pend;p++)
-					{	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
-						matid = mpm[p]->MatID();
-						if(IncludeThisMaterial(matid,singleParticle))
-						{	double csat = mpm[p]->GetConcSaturation();
-							value += diffusion->GetPrevParticleValue(mpm[p])*csat*mpm[p]->mp;
-							totalWeight += mpm[p]->mp;
-						}
-					}
-					if(totalWeight>0.) value /= totalWeight;
+                double totalWeight=0.;
+                for(p=p0;p<pend;p++)
+                {	if(mpm[p]->InReservoir()) continue;		// do not average those in resevoir
+                    matid = mpm[p]->MatID();
+                    if(IncludeThisMaterial(matid,singleParticle))
+                    {	double csat = mpm[p]->GetConcSaturation();
+                        value += diffusion->GetPrevParticleValue(mpm[p])*csat*mpm[p]->mp;
+                        totalWeight += mpm[p]->mp;
+                    }
+                }
+                if(totalWeight>0.) value /= totalWeight;
 			}
 #ifdef POROELASTICITY
 			else if(fmobj->HasPoroelasticity())
@@ -796,7 +841,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 #endif
 			break;
 		}
-		
+        		
 		case STEP_NUMBER:
 			value=(double)fmobj->mstep;
 			break;
@@ -947,6 +992,31 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			break;
 		}
 		
+        // diffusion flux
+        case TOT_FLUX:
+        {   // get flow for BCs with provided ID and diffusion style
+            // convert to diffusion task, and exit with zero if none
+            DiffusionTask *qdiff = DiffusionTask::FindDiffusionTaskByOrder(subcode);
+            if(qdiff==NULL) break;
+            
+            // get reaction flow for diffusion task
+            value = NodalConcBC::TotalConcReaction(whichMat,qdiff);
+            
+            // scale concentration and poroelasticity
+            if(qdiff==diffusion)
+            {
+                double csat = 1.;
+#ifdef POROELASTICITY
+                if(fmobj->HasPoroelasticity())
+                {    // use for units in poroelasticity (convert to MPa in Legacy)
+                    csat = UnitsController::Scaling(1.e-6);
+                }
+#endif
+                value*=csat;
+            }
+            break;
+        }
+            
 		// linear momentum (Legacy N-sec)
 		case LINMOMX:
 			for(p=p0;p<pend;p++)

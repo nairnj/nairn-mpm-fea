@@ -29,9 +29,7 @@
 #include "Global_Quantities/BodyForce.hpp"
 #include "NairnMPM_Class/XPICExtrapolationTask.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
-#ifdef TRANSPORT_FMPM
-    #include "NairnMPM_Class/XPICExtrapolationTaskTO.hpp"
-#endif
+#include "NairnMPM_Class/XPICExtrapolationTaskTO.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -83,7 +81,6 @@ bool UpdateParticlesTask::Execute(int taskOption)
 	// change sign of m if not FMPM
 	if(!bodyFrc.UsingFMPM()) m = -m;
 	
-#ifdef TRANSPORT_FMPM
 	// get grid transport values
 	int xpicOrder = 0;
 	if(XPICTransportTask!=NULL)
@@ -96,7 +93,6 @@ bool UpdateParticlesTask::Execute(int taskOption)
 			TransportTask::TransportGridBCs(mtime,timestep,UPDATE_GRID_STRAINS_CALL);
 		}
 	}
-#endif
 
 	// Update particle position, velocity, temp, conc, and other diffusion values
 #pragma omp parallel for private(ndsArray,fn,gp,rate,value,pic)
@@ -158,7 +154,6 @@ bool UpdateParticlesTask::Execute(int taskOption)
 				while(nextTransport!=NULL)
 				{	// always get value
 					value[task] += nextTransport->IncrementValueExtrap(ndptr,fn[i],vfld,matfld);
-#ifdef TRANSPORT_FMPM
 					double fractFMPM;
 					if(nextTransport->IsUsingTransportXPIC(fractFMPM))
 					{	// step includes FMPM(k), but FLIP only in fractMPM<1
@@ -175,9 +170,6 @@ bool UpdateParticlesTask::Execute(int taskOption)
 					{	// FLIP only
 						rate[task] += nextTransport->IncrementTransportRate(ndptr,fn[i],vfld,matfld);
 					}
-#else
-                    rate[task] += nextTransport->IncrementTransportRate(ndptr,fn[i],vfld,matfld);
-#endif // end TRANSPORT_FMPM
 					nextTransport = nextTransport->GetNextTransportTask();
 					task++;
 				}

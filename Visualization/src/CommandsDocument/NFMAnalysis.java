@@ -113,9 +113,9 @@ public class NFMAnalysis  implements Runnable
 				myDTD=NFMVPrefs.prefs.get(NFMVPrefs.NairnMPMDTDKey,NFMVPrefs.NairnMPMDTDDef);
 				doValidate=NFMVPrefs.prefs.getBoolean(NFMVPrefs.NairnMPMValidateKey,NFMVPrefs.NairnMPMValidateDef);
 				if(myCmd.indexOf("$(bundle)")>=0)
-					myCmd=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnMPM"+exe;
+					myCmd=NairnFEAMPMViz.bundleFolder+"NairnMPM"+exe;
 				if(myDTD.indexOf("$(bundle)")>=0)
-					myDTD=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnMPM.dtd";
+					myDTD=NairnFEAMPMViz.bundleFolder+"NairnMPM.dtd";
 			}
 			else
 			{	// get path to NairnFEA and NairnMPM
@@ -123,9 +123,9 @@ public class NFMAnalysis  implements Runnable
 				myDTD=NFMVPrefs.prefs.get(NFMVPrefs.NairnFEADTDKey,NFMVPrefs.NairnFEADTDDef);
 				doValidate=NFMVPrefs.prefs.getBoolean(NFMVPrefs.NairnFEAValidateKey,NFMVPrefs.NairnFEAValidateDef);
 				if(myCmd.indexOf("$(bundle)")>=0)
-					myCmd=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnFEA"+exe;
+					myCmd=NairnFEAMPMViz.bundleFolder+"NairnFEA"+exe;
 				if(myDTD.indexOf("$(bundle)")>=0)
-					myDTD=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnFEA.dtd";
+					myDTD=NairnFEAMPMViz.bundleFolder+"NairnFEA.dtd";
 			}
 		}
 		else
@@ -583,8 +583,8 @@ public class NFMAnalysis  implements Runnable
 					System.out.println("Revised path:"+myCmd);
 					
 					// if in bundle correct that path too
-					if(NairnFEAMPMViz.jarFolder.indexOf("%20")>0)
-						NairnFEAMPMViz.jarFolder = NairnFEAMPMViz.jarFolder.replaceAll("%20", " ");
+					if(NairnFEAMPMViz.bundleFolder.indexOf("%20")>0)
+						NairnFEAMPMViz.bundleFolder = NairnFEAMPMViz.bundleFolder.replaceAll("%20", " ");
 				}
 				else
 				{	JNApplication.appBeep();
@@ -653,7 +653,7 @@ public class NFMAnalysis  implements Runnable
 					if(result==0)
 					{	DocViewer newResults = doc.linkToResults();
 						if(newResults!=null && openMesh==RUN_CHECK_MESH && !newResults.resDoc.is3D())
-						{	newResults.checkMeshNow();
+						{	newResults.startCheckMesh = true;
 						}
 					}
 					else
@@ -673,7 +673,7 @@ public class NFMAnalysis  implements Runnable
 			}
 			catch(Exception tpe)
 			{	JNApplication.appBeep();
-				JNUtilities.showMessage(doc,"Caught Error: "+tpe.getLocalizedMessage());
+				JNUtilities.showMessage(doc,"NFMAnalysis run error: "+tpe.getLocalizedMessage());
 			}
 			
 			// destroy process if needed
@@ -857,7 +857,7 @@ public class NFMAnalysis  implements Runnable
 					
 					// if check mesh, show mesh
 					if(newResults!=null && openMesh==RUN_CHECK_MESH && !newResults.resDoc.is3D())
-					{	newResults.checkMeshNow();
+					{	newResults.startCheckMesh = true;
 					}			
 				}
 				

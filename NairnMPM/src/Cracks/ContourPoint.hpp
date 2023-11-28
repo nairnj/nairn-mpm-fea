@@ -14,6 +14,9 @@
 #define _CONTOURPOINT_
 
 class NodalPoint;
+class CrackHeader;
+class CrackSegment;
+class ContourPoint;
 
 // line orientations
 enum { ANGLED=-1,HORIZONTAL,VERTICAL};
@@ -28,6 +31,14 @@ class ContourPoint
         double ds;
 		bool phantomNode;
     
+        // other crack into
+        CrackHeader *otherCrack;
+        CrackSegment *startSeg;
+        CrackSegment *endSeg;
+        int crackSign;
+        ContourPoint *nextOther;
+        ContourPoint *endingPt;
+    
         // constructors and destructors
         ContourPoint();
         ContourPoint(NodalPoint *);
@@ -37,6 +48,7 @@ class ContourPoint
         int SetNextPoint(ContourPoint *);
         double Fraction(Vector &);
 		void SetPhantomNode(bool);
+        void SetOtherCrack(CrackHeader *,CrackSegment *,int,ContourPoint *,Rect *);
 
     private:
 };

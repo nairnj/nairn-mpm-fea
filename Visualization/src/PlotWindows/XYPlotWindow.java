@@ -8,6 +8,9 @@
 
 import geditcom.JNFramework.*;
 import java.util.*;
+
+import javax.swing.SwingUtilities;
+
 import java.awt.Toolkit;
 import java.awt.geom.*;
 //import com.primalworld.math.*;
@@ -262,10 +265,14 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 			return;
 		}
 		
-		// finish up
-		controls.disableProgress();
-		setVisible(true);
-		toFront();
+		// finish up on EDT
+		SwingUtilities.invokeLater(new Runnable()
+		{	public void run()
+			{	controls.disableProgress();
+				setVisible(true);
+				toFront();
+			}
+		});
 	}
 	
 	// evaluate expression at tval
@@ -712,8 +719,12 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 	{
 		try
 		{	plot2DView.readTable(plotTable);
-			setVisible(true);
-			toFront();
+			SwingUtilities.invokeLater(new Runnable()
+			{	public void run()
+				{	setVisible(true);
+					toFront();
+				}
+			});
 		}
 		catch (Exception e)
 		{	throw new Exception("Could not plot table of data:\n   " + e.getMessage());

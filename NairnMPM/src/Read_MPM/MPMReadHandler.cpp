@@ -46,6 +46,7 @@
 #include "Materials/ContactLaw.hpp"
 #include "Elements/FourNodeIsoparam.hpp"
 #include "Boundary_Conditions/InitialCondition.hpp"
+#include "Custom_Tasks/PhaseFieldDiffusion.hpp"
 
 int cracksDim = MUST_BE_2D;
 
@@ -192,7 +193,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     }
 #else
     else if(strcmp(xName,"RestartScaling")==0)
-    {    throw SAXException("<RestartScaling> command requires RESTART_OPTION activated in MPMPrefix.hpp.");
+    {    throw SAXException("<RestartScaling> requires code compiled with RESTART_OPTION");
     }
 #endif
     
@@ -417,7 +418,47 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 				throw SAXException("Cannot use both 'Diffusion' and 'Poroelasticity' in the same analysis.");
 #endif
 			// create task
-            diffusion = new DiffusionTask(fmax(refCon,0.),(double)noLimit,MOISTURE_DIFFUSION);
+			diffusion = new DiffusionTask(fmax(refCon,0.),(double)noLimit,MOISTURE_DIFFUSION);
+		}
+        else if(diffStyle==POROELASTICITY_DIFFUSION)
+        {
+#ifdef POROELASTICITY
+            if(fmobj->HasPoroelasticity())
+                throw SAXException("Only one 'Poroelasticity' command allowed in an analysis.");
+            else if(fmobj->HasDiffusion())
+                throw SAXException("Cannot use both 'Poroelasticity' and 'Diffusion' in the same analysis.");
+            
+            // Reference pressure: legacy units are MPa - convert to Pa and must be positive
+            double refPressure = UnitsController::Scaling(1.e6)*refCon;
+            
+            // Viscosity: Legacy units are cP - 1 cP = 0.001 Pa-sec
+            // Default: .001 Pa-sec in Legacy and 1 in CU
+            double ppViscosity = UnitsController::Scaling(1.e-3)*ReadNumericAttribute("viscosity",attrs,(double)1.0);
+            
+            // create task
+            diffusion = new DiffusionTask(refPressure,ppViscosity,POROELASTICITY_DIFFUSION);
+#else
+            throw SAXException("Unrecognized 'Diffusion' style.");
+#endif
+        }
+		else if(diffStyle<NUM_DUFFUSION_OPTIONS)
+		{	// create task for fracture, battery, or conduction modeling
+            PhaseFieldDiffusion *phaseTask = new PhaseFieldDiffusion(diffStyle);
+			
+			// tack on to other diffustion tasks list
+			if(otherDiffusion==NULL)
+				otherDiffusion = phaseTask;
+			else
+			{	// insert at end of the list
+				TransportTask *currentTask = (TransportTask *)otherDiffusion;
+				while(currentTask!=NULL)
+				{	if(currentTask->nextTask==NULL)
+					{	currentTask->nextTask = phaseTask;
+						break;
+					}
+					currentTask = currentTask->GetNextTransportTask();
+				}
+			}
 		}
 		else
 		{	throw SAXException("An unrecognized 'Diffusion' style was requested.");
@@ -466,7 +507,16 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	
 	else if(strcmp(xName,"TrackParticleSpin")==0 || strcmp(xName,"TrackGradV")==0)
 	{
-		throw SAXException("<TrackParticleSpin> requires OSParticulas and compiled with ADD_PARTICLE_SPIN");
+		throw SAXException("<TrackParticleSpin> requires OSParticulas compiled with ADD_PARTICLE_SPIN");
+	}
+
+	else if(strcmp(xName,"TransportOnly")==0)
+	{	// future may want to programmatically active this mode
+		throw SAXException("<TransportOnly> setting requires OSParticulas compiled with TRANSPORT_ONLY");
+	}
+	
+	else if(strcmp(xName,"NeedsMechanics")==0)
+	{	// future may want to programmatically active this mode
 	}
 
 	else if(strcmp(xName,"ExactTractions")==0)
@@ -548,6 +598,11 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		input=DOUBLE_NUM;
 		inputPtr=(char *)&ElementBase::rcrit;
 	}
+
+    else if(strcmp(xName,"CPDIrcritdynamic")==0)
+    {
+        throw SAXException("<CPDIrcritdynamic> requires OSParticulas compiled with RCRIT_VERIFICATION");
+    }
 
 	else if(strcmp(xName,"MultiMaterialMode")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
@@ -1000,6 +1055,11 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
     }
 	
+	else if(strcmp(xName,"CrackParticleSize")==0)
+	{
+		throw SAXException("<CrackParticleSize> feature requires OSParticulas compiled with CRACK_GIMP");
+	}
+	
     else if(strcmp(xName,"JContour")==0)
 	{	ValidateCommand(xName,CRACKHEADER,cracksDim);
     	numAttr=(int)attrs.getLength();
@@ -1020,7 +1080,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     }
 
 	else if(strcmp(xName,"ShiftCracks")==0 )
-	{	throw SAXException("<ShiftCracks> command requires OSParticulas.");
+	{	throw SAXException("<ShiftCracks> feature requires OSParticulas compiled with SHIFT_CRACKS");
 	}
 	
     //-------------------------------------------------------

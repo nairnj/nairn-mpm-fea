@@ -58,6 +58,9 @@ void CrackSurfaceContact::Output(void)
 	// print other settings
 	cout << "Contact Detection: Normal cod < 0 AND normal dv < 0" << endl;
     mpmgrid.OutputContactByDisplacements(false,crackContactByDisplacements,crackPositionCutoff);
+    
+    cout << "Crack Particle Position Updates: ";
+    cout << "XPIC(1)" << endl;
 	if(GetMoveOnlySurfaces())
 		cout << "Crack Plane Updating: Average of the crack surfaces" << endl;
 	else

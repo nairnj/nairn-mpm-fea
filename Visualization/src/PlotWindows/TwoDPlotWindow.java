@@ -282,8 +282,12 @@ public class TwoDPlotWindow extends JNChildWindow
 			fr.close();
 			String plotData = new String(buffer);
 			plot2DView.readTable(plotData);
-			setVisible(true);
-			toFront();
+			SwingUtilities.invokeLater(new Runnable()
+			{	public void run()
+				{	setVisible(true);
+					toFront();
+				}
+			});
 		}
 		catch (Exception e)
 		{	throw new Exception("Could not load plot data file:\n   " + e.getMessage());

@@ -277,10 +277,11 @@ void Reservoir::DeleteParticle(MPMBase *mpmptr)
     // when history is not a list of doubles.
 	theMaterials[mpmptr->MatID()]->ResetHistoryData(mpmptr->GetHistoryPtr(0),mpmptr);
 	
-	// Remove particle BC on the delete particle
+	// Remove particle BC on the deleted particle
 	MatPtLoadBC::DeleteParticleBCs(mpmptr,&firstLoadedPt);
 	MatPtLoadBC::DeleteParticleBCs(mpmptr,(MatPtLoadBC **)&firstTractionPt);
-	MatPtLoadBC::DeleteParticleBCs(mpmptr,(MatPtLoadBC **)&firstFluxPt);
+    for(int i=0;i<NUM_DUFFUSION_OPTIONS;i++)
+        MatPtLoadBC::DeleteParticleBCs(mpmptr,(MatPtLoadBC **)&firstDiffFluxBC[i]);
 	MatPtLoadBC::DeleteParticleBCs(mpmptr,(MatPtLoadBC **)&firstHeatFluxPt);
 
 	// move it to element 1 and update elements list (if active)

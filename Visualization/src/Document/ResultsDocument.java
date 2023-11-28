@@ -414,7 +414,7 @@ public class ResultsDocument extends AbstractTableModel
 			sline.close();
 			sline = null;
 			
-			// decode material properteis
+			// decode material properties
 			matl.decodeData(s);
 			materials.add(matl);
 		}
@@ -424,6 +424,10 @@ public class ResultsDocument extends AbstractTableModel
 		//----------------------------------------------------------
 		// mesh boundary conditions
 		String bcs=section("NODAL POINTS WITH FIXED DISPLACEMENTS");
+		// set up calculation might end in line with *****
+		int stopStars = bcs.indexOf("*****");
+		if(stopStars>0)
+			bcs = bcs.substring(0,stopStars).trim();
 		lineStart=findNextLine(bcs,"-----");
 		if(lineStart>0 && lineStart<bcs.length())
 		{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));

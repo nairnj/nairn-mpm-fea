@@ -414,7 +414,7 @@ class ExtractVTK extends JNDialog implements Runnable
 		// get path to ExtractMPM required in same folder as NairnMPM
 		String myCmd=NFMVPrefs.prefs.get(NFMVPrefs.NairnMPMKey,NFMVPrefs.NairnMPMDef);
 		if(myCmd.indexOf("$(bundle)")>=0)
-			myCmd=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"ExtractMPM"+exe;
+			myCmd=NairnFEAMPMViz.bundleFolder+"ExtractMPM"+exe;
 		else
 		{	int lastSep = myCmd.lastIndexOf(pathDelim);
 			if(lastSep<0) throw new Exception("Invalid path name for ExtractMPM:\n"+myCmd);

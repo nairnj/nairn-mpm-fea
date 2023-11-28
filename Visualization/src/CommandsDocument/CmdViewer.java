@@ -127,7 +127,7 @@ public class CmdViewer extends JNCmdTextDocument
 	// ----------------------------------------------------------------------------
 
 	public CmdViewer(String aType)
-	{ // font is for output pane on lower half of the window
+	{	// font is for output pane on lower half of the window
 		super(aType, null,
 				new ConsolePane(new Font(NFMVPrefs.prefs.get(NFMVPrefs.OutputFontKey, NFMVPrefs.OutputFontDef),
 						Font.PLAIN, NFMVPrefs.prefs.getInt(NFMVPrefs.OutputFontSizeKey, NFMVPrefs.OutputFontSizeDef))));
@@ -338,7 +338,10 @@ public class CmdViewer extends JNCmdTextDocument
 			return;
 
 		if(runningScript)
-		{	toFront();
+		{	// to front on EDT
+			SwingUtilities.invokeLater(new Runnable()
+			{	public void run() { toFront();}
+			});
 			return;
 		}
 
@@ -861,12 +864,12 @@ public class CmdViewer extends JNCmdTextDocument
 			doContactLaw(args, 0);
 
 		else if(theCmd.equals("friction"))
-		{ // Deprecated - Use ContactCracks
+		{	// Deprecated - Use ContactCracks
 			doFriction(args, 0);
 		}
 
 		else if(theCmd.equals("imperfectinterface"))
-		{ // Deprecated - Use ContactCracks
+		{	// Deprecated - Use ContactCracks
 			doImperfectInterface(args, 0);
 		}
 
@@ -874,18 +877,17 @@ public class CmdViewer extends JNCmdTextDocument
 			doContactLaw(args, 1);
 
 		else if(theCmd.equals("frictionmm"))
-		{ // deprecated - use ContactMM
+		{	// deprecated - use ContactMM
 			doFriction(args, 1);
 		}
 
 		else if(theCmd.equals("imperfectinterfacemm"))
-		{ // deprecated - use
-				// ContactMM
+		{	// deprecated - use ContactMM
 			doImperfectInterface(args, 1);
 		}
 
 		else if(theCmd.equals("crackinterface"))
-		{ // Deprecated - used (frict) parameter for newCrack
+		{	// Deprecated - used (frict) parameter for newCrack
 			doImperfectInterface(args, 3);
 		}
 
@@ -1075,7 +1077,8 @@ public class CmdViewer extends JNCmdTextDocument
 				}
 				
 				if(openedDoc!=null)
-				{	openedDoc.setVisible(true);
+				{	// maybe should be on EDT
+					openedDoc.setVisible(true);
 					openedDoc.toFront();
 				}
 			}
@@ -1462,7 +1465,7 @@ public class CmdViewer extends JNCmdTextDocument
 				throw new Exception("The folder selected for output does not exist.\n" + args);
 			scriptParams.add(scriptPath);
 
-			// start analysis
+			// start analysis (maybe should do GUI on EDT)
 			NFMVPrefs.setRemoteMode(false);
 			((CmdViewer) obj).setVisible(true);
 			((CmdViewer) obj).toFront();
@@ -1946,12 +1949,10 @@ public class CmdViewer extends JNCmdTextDocument
 	// convert @ expression to String
 	public String getScriptAtString(String s)
 	{	
-		String badResult = "ERROR: expression error";
-		
 	    // break up by periods
 		String [] atoms = s.trim().split("[.]");
 	    if(atoms.length<2)
-	    {   return "ERROR: bar @ expression: "+s;
+	    {   return "ERROR: bad @ expression: "+s;
 	    }
 	    
 		// first must be object variable (and cannot be an expression, but can be a variable)
@@ -3997,6 +3998,21 @@ public class CmdViewer extends JNCmdTextDocument
 	}
 	public DocViewer getLinkedResults() { return linkedResults; }
 
+	// block in running something
+	public boolean closeDocument(boolean verifyClose,ArrayList<String> openPaths)
+	{	if(!running)
+		{	if(nfmAnalysis==null)
+				return super.closeDocument(verifyClose,openPaths);
+			else if(!nfmAnalysis.isRunning())
+				return super.closeDocument(verifyClose,openPaths);
+		}
+	
+		// somthing is running so stop the close
+		String message = "Cannot close this window while it is running\ncalculations or doing script control?";
+		JOptionPane.showMessageDialog(this,message);
+		return false;
+	}
+
 	// tell linked results your are closing
 	public void windowClosed(WindowEvent e)
 	{
@@ -4010,10 +4026,8 @@ public class CmdViewer extends JNCmdTextDocument
 	{	if(linkedResults!=null)
 		{	// reuse window if same file,but new results
 			if(linkedResults.getFile().getPath().equals(soutConsole.getFile().getPath()))
-			{	// new results for the same file
+			{	// clear plot window
 				linkedResults.loadNewTextFromFile();
-				linkedResults.setVisible(true);
-				linkedResults.toFront();
 				return linkedResults;
 			}
 			// close previous linked results
@@ -4021,7 +4035,7 @@ public class CmdViewer extends JNCmdTextDocument
 			linkedResults = null;
 		}
 	
-		// get new reuslts window
+		// get new results window
 		NairnFEAMPMViz.main.openDocument(soutConsole.getFile());
 		linkedResults = (DocViewer) NairnFEAMPMViz.main.findDocument(soutConsole.getFile());
 		linkedResults.setCommandsWindow(this);
@@ -4299,7 +4313,8 @@ public class CmdViewer extends JNCmdTextDocument
 		public void actionPerformed(ActionEvent e)
 		{
 			if(linkedResults != null)
-				linkedResults.toFront();
+			{	linkedResults.toFront();
+			}
 			else
 				JNApplication.appBeep();
 		}

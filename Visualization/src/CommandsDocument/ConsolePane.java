@@ -38,6 +38,7 @@ public class ConsolePane extends JNConsolePane
 	
 		if(theFont!=null)
 			console.setFont(theFont);
+		console.setTabSize(14);
 		
 		// set file filter
 		JNFileFilter filter=new JNFileFilter();

@@ -123,7 +123,7 @@ void Usage(const char *msg)
 		"    -o path            Original file name (required)\n"
 		"		                       (quoted if name has spaces)\n"
 		"    -m pow             Ignore values with symmetric mean < 1.e(-pow)\n"
-        "    -H (or -?)         Show this help and exit\n"
+        "    -H (or -h)         Show this help and exit\n"
 		"\n"
           <<  endl;
 }

@@ -70,13 +70,12 @@ public class CrackSelector extends PlotControl
 		if(tip==1) endTip.setSelected(true);
 		add(endTip);
 		
-		setEnabled(LoadArchive.NO_PLOT,0);
-		
+		//setEnabled(LoadArchive.NO_PLOT,0);
 	}
 	
 	// set current state
 	public void setEnabled(int plotType,int plotComponent)
-	{
+	{	
 		if(plotType==LoadArchive.TIME_PLOT)
 		{	switch(plotComponent)
 			{	case PlotQuantity.MPMJ1:
@@ -92,6 +91,7 @@ public class CrackSelector extends PlotControl
 				case PlotQuantity.MPMSHEARCTOD:
 				case PlotQuantity.MPMDEBONDNCTOD:
 				case PlotQuantity.MPMDEBONDSCTOD:
+					this.setVisible(true);
 					crackLabel.setEnabled(true);
 					crackNumberText.setEnabled(true);
 					startTip.setEnabled(true);
@@ -99,7 +99,7 @@ public class CrackSelector extends PlotControl
 					break;
 				
 				default:
-					setEnabled(LoadArchive.NO_PLOT,0);
+					this.setVisible(false);
 					break;
 			}
 		}
@@ -122,6 +122,7 @@ public class CrackSelector extends PlotControl
 				case PlotQuantity.MPMTRACTION8:
 				case PlotQuantity.MPMTRACTION9:
 				case PlotQuantity.MPMTRACTION10:
+					this.setVisible(true);
 					crackLabel.setEnabled(true);
 					crackNumberText.setEnabled(true);
 					startTip.setEnabled(false);
@@ -129,15 +130,18 @@ public class CrackSelector extends PlotControl
 					break;
 				
 				default:
-					setEnabled(LoadArchive.NO_PLOT,0);
+					this.setVisible(false);
 					break;
 			}
 		}
 		else
-		{	crackLabel.setEnabled(false);
+		{	this.setVisible(false);
+			/*
+			crackLabel.setEnabled(false);
 			crackNumberText.setEnabled(false);
 			startTip.setEnabled(false);
 			endTip.setEnabled(false);
+			*/
 		}
 	}
 	

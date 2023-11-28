@@ -57,7 +57,7 @@ class IsoSoftening : public IsotropicMat
 		// methods
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int,Tensor *) const;
 		virtual void DamageEvolution(MPMBase *,int,double *,Tensor &,Tensor &,double,double,ResidualStrains *,
-								  			Matrix3 &,Matrix3 &,ElasticProperties *,Tensor *,double) const;
+								  			Matrix3 &,Matrix3 &,ElasticProperties *,Tensor *,double,double) const;
 		virtual bool GetRToCrack(Matrix3 *,double *,bool,int) const;
 	
 		// isotropic elasticity methods

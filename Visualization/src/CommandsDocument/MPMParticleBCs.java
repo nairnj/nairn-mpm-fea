@@ -102,11 +102,13 @@ public class MPMParticleBCs
 		inBC = 0;
 	}
 	
-	// Add on of the following boundary conditions
-	// Load dir,style,arg1,arg2 
-	// Traction dir,face,style,arg1,arg2
-	// HeatFlux "external",face,style,arg1,arg2
-	// ConcentrationFlux "external",face,style,arg1,arg2
+	// Add one of the following boundary conditions
+	// ADD_LOAD: Load dir,style,arg1,arg2
+	// ADD_TRACTION: Traction dir,face,style,arg1,arg2
+	// ADD_HEATFLUX: HeatFlux "external",face,style,arg1,arg2
+	// ADD_CONCENTRATIONFLUX: ConcentrationFlux "external",face,style,arg1,arg2,phaseStyle
+	// ADD_DAMAGE: Damage (nx),(ny),<(nz)>,<(dn)>,<(dxy)>,<(dxz)>,<(mode)>
+	// ADD_PHASEFIELD: PhaseField (phi)
 	public void AddCondition(ArrayList<String> args,int theType) throws Exception
 	{
 		// MPM only
@@ -134,12 +136,14 @@ public class MPMParticleBCs
 		// read direction
 		HashMap<String,Integer> options = new HashMap<String,Integer>(7);
 		if(theType==ADD_CONCENTRATIONFLUX || theType==ADD_HEATFLUX)
-		{	options.put("external", new Integer(1));
+		{	// external or coupled
+			options.put("external", new Integer(1));
 			options.put("coupled", new Integer(2));
 		}
 		else if(theType==ADD_DAMAGE)
 		{	// (#1,#2,#3) is normal vector, (#4,#5,#6) are dn, dxy, and dxz
 			// #7 is mode
+			// process and then done with this BC type
 			double nx = doc.readDoubleArg(args.get(1)); 
 			double ny = doc.readDoubleArg(args.get(2));
 			double nz = args.size()>=4 ? doc.readDoubleArg(args.get(3)) : 0.; 
@@ -162,7 +166,8 @@ public class MPMParticleBCs
 			return;
 		}
 		else
-		{	options.put("x", new Integer(1));
+		{	// directions for load and traction
+			options.put("x", new Integer(1));
 			options.put("y", new Integer(2));
 			options.put("z", new Integer(3));
 			options.put("R", new Integer(1));
@@ -174,7 +179,7 @@ public class MPMParticleBCs
 		}
 		int dof = doc.readIntOption(args.get(1),options,"Load, traction, or flux style direction");
 		
-		// face if needed
+		// face if needed (all except load which is at particle center)
 		int face=0;
 		int arg=2;
 		if(theType!=ADD_LOAD)
@@ -190,6 +195,7 @@ public class MPMParticleBCs
 		options.put("linear", new Integer(2));
 		options.put("sine", new Integer(3));
 		options.put("cosine", new Integer(4));
+		// silent not allowed for traction of for concentrationflux with phaseStyle not solvent
 		if(theType!=ADD_TRACTION) options.put("silent", new Integer(5));
 		options.put("function", new Integer(6));
 		int style = doc.readIntOption(args.get(arg),options,"Load, traction, or flux style");
@@ -213,6 +219,20 @@ public class MPMParticleBCs
 		if(args.size()>arg)
 		{	hasArg2 = true;
 			arg2 = doc.readDoubleArg(args.get(arg));
+			arg++;
+		}
+		
+		// get optional phaseStyle
+		int phaseStyle = 1;
+		if(theType==ADD_CONCENTRATIONFLUX && args.size()>arg)
+		{	options = new HashMap<String,Integer>(5);
+			options.put("solvent", new Integer(1));
+			options.put("moisture", new Integer(1));
+			options.put("fracture", new Integer(3));
+			options.put("battery", new Integer(4));
+			options.put("conduction", new Integer(5));
+			phaseStyle = doc.readIntOption(args.get(arg),options,"flux phaseStyle");
+			arg++;
 		}
 		
 		if(theType==ADD_LOAD)
@@ -251,7 +271,9 @@ public class MPMParticleBCs
 				bcSettings.append(" function='"+function+"'");
 			else
 				bcSettings.append(" value='"+doc.formatDble(arg1)+"'");
-		}
+			if(phaseStyle!=1)
+				bcSettings.append(" phase='"+phaseStyle+"'");
+		}	
 		
 		// time arg
 		if(hasArg2) bcSettings.append(" time='"+doc.formatDble(arg2)+"'");

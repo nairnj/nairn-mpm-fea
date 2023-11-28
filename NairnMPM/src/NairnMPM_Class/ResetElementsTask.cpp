@@ -65,7 +65,7 @@ bool ResetElementsTask::Execute(int taskOption)
 				MPMBase *mptr = patches[pn]->GetFirstBlockPointer(block);
 				MPMBase *prevMptr = NULL;		// previous one of this type in current patch
 				while(mptr!=NULL)
-				{	int prevElem = mptr->ElemID();
+				{	
 					int status = ResetElement(mptr);
 					
 					if(status==LEFT_GRID)

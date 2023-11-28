@@ -51,7 +51,8 @@ BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
     char nline[200];
 	size_t nlsize=200;
 	
-	double rescale = 1./DiffusionTask::RescaleFlux();
+    // =1 for all except moisture in Legacy is 1e+3
+    double rescale = 1./DiffusionTask::RescaleFlux(phaseStyle);
     snprintf(nline,nlsize,"%7d %2d   %2d  %2d %15.7e %15.7e %3d",ptNum,direction,face,style,
 			rescale*GetBCValueOut(),GetBCFirstTimeOut(),phaseStyle);
     os << nline;
@@ -60,26 +61,27 @@ BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
 	// not allowed on rigid particles
 	MaterialBase *matref = theMaterials[mpm[ptNum-1]->MatID()];
 	if(matref->IsRigid())
-	{	throw CommonException("Cannot set solvent/pore pressure flux on rigid particles",
+	{	throw CommonException("Cannot set solvent/transport/pore pressure flux on rigid particles",
 							  "MatPtFluxBC::PrintBC");
 	}
 	
 	// for function input scale for Legacy units if needed
 	if(style==FUNCTION_VALUE)
-	{	scale = DiffusionTask::RescaleFlux();
+	{	scale = 1./rescale;
 	}
 	
     return (BoundaryCondition *)GetNextObject();
 }
 
-// increment external load on a particle
+// Add transport flux on a particle surface
 // input is analysis time in seconds
-// (only called when diffusion is active)
+// (called for diffusion, poroelasticity, ot other diffusion methods)
 MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 {
     // Moisture: condition value is g/(mm^2-sec), Divide by rho*csat to get potential flux in mm/sec
-	// Poroelasticity: condition value is Pa/sec = µN/(mm^2-sec) - does  not account for area (could if needed)
-	// find this flux and then add (times area) to get mm^3-potential/sec
+	// Poroelasticity: condition value is Pa/sec = µN/(mm^2-sec) - does not account for area (could if needed)
+    // Other transport:
+	//    find this flux and then add (times area) to get mm^3-potential/sec
 	MPMBase *mpmptr = mpm[ptNum-1];
     MaterialBase *matptr = theMaterials[mpmptr->MatID()];
 	
@@ -91,9 +93,15 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 	Vector fluxMag;
 	ZeroVector(&fluxMag);
     int bcDir=X_DIRECTION;
+    
+    // for extra diffusion
+    DiffusionTask *diffusionTask = DiffusionTask::FindDiffusionTask(phaseStyle);
+    if(diffusionTask==NULL) return (MatPtFluxBC *)GetNextObject();
+    int diffusionNumber = diffusionTask->GetNumber();
 	
 	if(style==SILENT)
-	{	TransportProperties t;
+	{   // for moisture and poroelasticity only
+        TransportProperties t;
 		matptr->GetTransportProps(mpmptr,fmobj->np,&t);
 		Tensor *D = &(t.diffusionTensor);
 		
@@ -112,7 +120,10 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
         bcDir = N_DIRECTION;
 	}
 	else if(direction==EXTERNAL_FLUX)
-	{	if(fmobj->HasDiffusion())
+    {   if(phaseStyle>POROELASTICITY_DIFFUSION)
+        {   fluxMag.x = BCValue(bctime)*mpmptr->GetVolume(DEFORMED_VOLUME);
+        }
+		else if(fmobj->HasDiffusion())
 		{	// provided value in M/(L^2-T), scale by current density to get L/T
 			fluxMag.x = BCValue(bctime)*mpmptr->GetVolume(DEFORMED_VOLUME)/mpmptr->mp;
 		}
@@ -124,9 +135,12 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 #endif
 	}
 	else
-    {
-		double cmcres = 0.;
-		if(fmobj->HasDiffusion())
+    {   double cmcres = 0.;
+        if(phaseStyle>POROELASTICITY_DIFFUSION)
+        {   // function of the current transport quantity
+            cmcres = mpmptr->pDiff[diffusionNumber]->prevConc;
+        }
+		else if(fmobj->HasDiffusion())
 		{	// moisture f(c-cres) (units potential) and function should give flux in M/(L^2-T)
 			// time variable (t) is replaced by c-cres, where c is the particle value and cres is reservoir
 			cmcres = mpmptr->pDiff[0]->prevConc-GetBCFirstTime();
@@ -150,20 +164,24 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 		// change direction to match sign of the difference
 		if(cmcres>0.) currentValue=-currentValue;
 		
-		if(fmobj->HasDiffusion())
-		{	// provided value in M/(L^2-T), scale by current density to get L/T
+        if(phaseStyle>POROELASTICITY_DIFFUSION)
+        {   // value should be flux for that quantity
+            fluxMag.x = currentValue;
+        }
+		else if(fmobj->HasDiffusion())
+		{	// provided value is M/(L^2-T), scale by current density to get L/T
 			fluxMag.x = currentValue*mpmptr->GetVolume(DEFORMED_VOLUME)/mpmptr->mp;
 		}
 #ifdef POROELASTICITY
 		else
-		{	// provided value in (dV/V)/(L^2-T), scale by V to get L/T
+		{	// provided value is (dV/V)/(L^2-T), scale by V to get L/T
 			fluxMag.x = currentValue*mpmptr->GetVolume(DEFORMED_VOLUME);
 		}
 #endif
 	}
 	
 	// get corners and radii from deformed material point (2 in 2D and 4 in 3D)
-	// Not that bcDir will be X_DIRECTION to scale fluxMag, but if silent, it will be N_DIRECTION
+	// Note that bcDir will be X_DIRECTION to scale fluxMag, but if silent, it will be N_DIRECTION
 	int cElem[4],numDnds;
 	Vector corners[4],radii[3];
 	double redge;
@@ -193,7 +211,7 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 			{	// wtNorm has direction and Area/2 (2D) or Area/4 (3D) to average the nodes
 				flux = DotVectors(&fluxMag,&wtNorm)*fn[i];
 			}
-			diffusion->AddFluxCondition(nd[nds[i]],flux,false);
+			diffusionTask->AddFluxCondition(nd[nds[i]],flux,false);
 		}
 	}
 	
@@ -202,9 +220,10 @@ MatPtLoadBC *MatPtFluxBC::AddMPFluxBC(double bctime)
 
 #pragma mark MatPtFluxBC:Accessors
 
-// set value (and scale legacy kg/(m^2-sec) to g/(mm^2-sec) for concentration or (dV/V)/sec to (dV/V)/sec for pore pressure)
+// set value (and scale legacy kg/(m^2-sec) to g/(mm^2-sec) for concentration
+// or (dV/V)/sec to (dV/V)/sec for pore pressure or 1 for all others
 void MatPtFluxBC::SetBCValue(double bcvalue)
-{	double rescale = DiffusionTask::RescaleFlux();
+{   double rescale = DiffusionTask::RescaleFlux(phaseStyle);
 	BoundaryCondition::SetBCValue(rescale*bcvalue);
 }
 

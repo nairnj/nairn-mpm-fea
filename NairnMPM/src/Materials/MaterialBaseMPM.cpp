@@ -1726,6 +1726,42 @@ bool MaterialBase::GetParticleDiffusionSource(DiffusionTask *task,MPMBase *mptr,
 {   return false;
 }
 
+#pragma mark Material Base:Phase Field Accessors
+
+//----------------------------------------------------------------------------------
+// These dummy methods are defined in MaterialBase, but any material
+//      that supports a phase field diffusion task must overide them all and return
+//      physical constants.
+// None are called unless SupportsPhaseField() precalled and returns true
+// phaseStyle only needed if material supports multiple phase field and return
+//      values for that style.
+
+// Does this material suport phase field diffusion of type phaseField?
+bool MaterialBase::SupportsPhaseField(int phaseStyle) const { return false; }
+
+// Get maximum phase field diffusivity for time step calculations
+double MaterialBase::MaximumPhaseDiffusivity(int phaseStyle) const { return 0.; }
+
+// Viscosity for phase field diffusion (warning do not call unless known to have value)
+double MaterialBase::GetPhaseFieldViscosity(int phaseStyle) const { return -1.; }
+
+// Diffusion constant for phase field tasks (materials override to return value)
+Tensor MaterialBase::GetPhaseFieldDTensor(int phaseStyle,MPMBase *mptr) const
+{   Tensor Dtensor;
+    ZeroTensor(&Dtensor);
+    return Dtensor;
+}
+
+// Source terms when add force for phase field diffusion
+void MaterialBase::AdjustPhaseFieldValue(DiffusionTask *,double pConc,double pPrevConc,
+                            double &value,double &rate,double &lumpedValue,double deltime) const { }
+
+// Store phase field value in history
+void MaterialBase::StorePhaseFieldValue(int phaseStyle,MPMBase *mptr,double newValue) const { }
+
+// Store phase field delta value in history
+void MaterialBase::StorePhaseFieldDelta(int phaseStyle,MPMBase *mptr,double newDelta) const { }
+
 //----------------------------------------------------------------------------------
 
 #pragma mark Material Base:Other Accessors

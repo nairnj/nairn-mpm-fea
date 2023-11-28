@@ -40,6 +40,7 @@ class DiffusionTask : public TransportTask
 		// mass and momentum
 		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double,short,int);
 		virtual double GetVpCTp(MPMBase *);
+        virtual void ImposeValueBCs(double,bool);
 		virtual void ZeroTransportGradients(MPMBase *);
 		virtual void AddTransportGradients(MPMBase *,Vector *,NodalPoint *,short);
 
@@ -74,9 +75,10 @@ class DiffusionTask : public TransportTask
 #endif
 		static bool HasFluidTransport(void);
 		static double RescalePotential(int);
-		static double RescaleFlux(void);
+		static double RescaleFlux(int);
 		static DiffusionTask *FindDiffusionTask(int);
 		static int FindDiffusionNumber(int);
+        static DiffusionTask *FindDiffusionTaskByOrder(int);
 		static void CountDiffusionTasks(void);
 		static double GetMinimumTimeStep(void);
 		static void SetDiffusionXPIC(bool);

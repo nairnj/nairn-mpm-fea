@@ -329,7 +329,7 @@ This use assumes <code>mylist</code> is a <a href="#list">list</a> object and th
 
 <h2><a name="basic"></a>Direct Scripting Commands</h2>
 
-<p>A direct scripting commmand is a command defined only when writing scripts. Furthermore, these command are stand alone, which means they do not need to specify a target object (those are <a href="#objects">object commands</a> defined below). All scripts must begin with the following command</p>
+<p>A direct scripting commmand is a command defined only when writing scripts. Furthermore, these commands are stand alone, which means they do not need to specify a target object (those are <a href="#objects">object commands</a> defined below). All scripts must begin with the following command</p>
 
 <ul>
 <li><code>Script</code><br>
@@ -405,11 +405,11 @@ Will display a dialog box where the user can enter one line of text. The <code>t
 <li><a name="get"></a><code>object.get ("#var" or objName),(attribute)</code></br>
 This command has multiple functions depending on the <code>object</code> and <code>(attribute)</code>:
 <ol>
-<li><code>object.get (objName),(attribute)</code>: this form sets object name in <code>(objName)</code> to the <a href="#properties">"to-one attribute" or "to-many attribute"</a> defined by name in the <code>(attribute)</code> argument. Note the "to-many attributes" will always set <code>(objName)</code> to a <a href="list">list</a>. It will be an empty list if no information is available. If a "to-one attribute" is not available, <code>(objName)</code> will be set to <a href="#none">None</a> type object. This results can be checked with <a href="commands.html#conditionals">ifDef or ifNDef</a> conditionals</a></li>
+<li><code>object.get (objName),(attribute)</code>: this form sets object name in <code>(objName)</code> to the <a href="#properties">"to-one attribute" or "to-many attribute"</a> defined by name in the <code>(attribute)</code> argument. Note the "to-many attributes" will always set <code>(objName)</code> to a <a href="list">list</a>. It will be an empty list if no information is available. If a "to-one attribute" is not available, <code>(objName)</code> will be set to <a href="#none">None</a> type object. This result can be checked with <a href="commands.html#conditionals">ifDef or ifNDef</a> conditionals</a></li>
 <li><code>object.get (objName)</code>: if <code>(attribute)</code> is missing, this command will set <code>(objName)</code> to the target object. This command is most useful with using a <a href="#list">list</a>. For example,
 <pre>    mylist.5.get myObj</pre>
 will set <code>myObj</code> to the object at index 5 in the <code>mylist</code> <a href="#list">list</a> object.</li>
-<li><code>mylist.#i.get "#var"</code>: if the <a href="#list">list</a> in <code>mylist</code> contains strings and number, this option will set <code>#var</code> to the selected string or number. Note that <code>#var</code> must be quoted and must begin in a number sign. Although this command works, a simpler way to extract a string or number from a <a href="#list">list</a> is with an "@" expression: <pre>    #var=@mylist.#i</pre></li>
+<li><code>mylist.#i.get "#var"</code>: if the <a href="#list">list</a> in <code>mylist</code> contains strings and numbers, this option will set <code>#var</code> to the selected string or number. Note that <code>#var</code> must be quoted and must begin in a number sign. Although this command works, a simpler way to extract a string or number from a <a href="#list">list</a> is with an "@" expression: <pre>    #var=@mylist.#i</pre></li>
 </ol>
 </li>
 </ul>

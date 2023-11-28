@@ -56,7 +56,7 @@ void CommonAnalysis::StartAnalysis(bool abort)
 	// prepare for computational mechanics
 	CMPreparations();
 	
-	// run the computational mechancis
+	// run the computational mechanics
 	CMAnalysis(abort);
 }
 

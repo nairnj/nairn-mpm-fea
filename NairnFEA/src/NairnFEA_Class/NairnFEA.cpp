@@ -30,7 +30,7 @@ int gelbnd(double **,int,int,double *,double *,int);
 // throws std::bad_alloc
 NairnFEA::NairnFEA()
 {
-	version=7;					// NairnFEA version number
+	version=8;					// NairnFEA version number
 	subversion=0;				// subversion number
 	buildnumber=0;				// build number
 	xax='x';					// default axis names

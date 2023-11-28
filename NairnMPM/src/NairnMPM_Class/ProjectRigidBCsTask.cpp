@@ -141,7 +141,7 @@ bool ProjectRigidBCsTask::Execute(int taskOption)
 		}
 	}
 	
-	// if any left over rigid BCs, delete them now
+ 	// if any left over rigid BCs, delete them now
 	RemoveRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,(BoundaryCondition **)&firstRigidVelocityBC);
 	RemoveRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,(BoundaryCondition **)&firstRigidTempBC);
 	RemoveRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,(BoundaryCondition **)&firstRigidConcBC);
@@ -227,9 +227,9 @@ void ProjectRigidBCsTask::SetRigidBCs(int mi,int matid0,int type,double value,do
  			if(*reuseRigidBC!=NULL)
 				newBC=(*reuseRigidBC)->SetRigidProperties(mi,type,CONSTANT_VALUE,value);
 			else
-            {   newBC=(BoundaryCondition *)(new NodalConcBC(mi,CONSTANT_VALUE,value,
-                                                            (double)0.,MOISTURE_DIFFUSION));
-            }
+			{	newBC=(BoundaryCondition *)(new NodalConcBC(mi,CONSTANT_VALUE,value,
+															(double)0.,MOISTURE_DIFFUSION));
+ 			}
 			break;
 			
 		default:

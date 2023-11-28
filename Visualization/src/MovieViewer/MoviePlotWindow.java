@@ -18,7 +18,8 @@ import javax.swing.*;
 
 import geditcom.JNFramework.*;
 
-public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWriteProgressListener
+public class MoviePlotWindow extends JPanel implements  Runnable,
+				IIOWriteProgressListener, JNNotificationListener, ActionListener
 {
 	private static final long serialVersionUID = 1L;
 
@@ -27,15 +28,14 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 
 	// variables
 	protected ResultsDocument resDoc;
+	protected DocViewer docView;
 	protected MeshPlotView plotView;
 	protected MovieControls movieControls;
 	protected int movieComponent;
 	protected boolean runFlag,imageStillWriting;
 	protected MeshPlotScroll plotScroll;
 	protected String frameFileRoot=null;
-	protected JMenu zoomMenu;
-	protected JCheckBoxMenuItem checkedZoomItem;
-	double currentScale;
+	double currentScale = 1.0;
 
 	// command file chooser
 	private JFileChooser chooser=new JFileChooser();
@@ -46,19 +46,11 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 
 	// initialize
 	public MoviePlotWindow(ResultsDocument gResDoc,DocViewer gDocView)
-	{	super(gDocView,gResDoc.name);
-		setChildType("movieFrame");
+	{	super(new BorderLayout());
 		resDoc=gResDoc;
-		setFramePrefs("Mesh Window Width",800,"Mesh Window Height",600);
+		docView=gDocView;
 		
-		// size and location
-		finishFrameworkWindow(false);
-		Dimension d=getPreferredSize();
-		
-		makeMenuBar();
-		
-		// add plot view (entire window for now)
-		Container content=getContentPane();
+		// add plot view (will be to center)
 		plotView=new MeshPlotView(resDoc);
 		
 		// listen to clicks in the plot view
@@ -98,7 +90,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		    		}
 		    	
 		    		// get new checked scale item
-		    		checkedZoomItem.setSelected(false);
+		    		docView.checkedZoomItem.setSelected(false);
 		    		if(currentScale<2.5)
 		    			newItem = (int)(2*currentScale-1.99);
 		    		else if(currentScale<6.)
@@ -107,8 +99,8 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		    			newItem = 6;
 		    		else
 		    			newItem = 7;
-		    		checkedZoomItem = (JCheckBoxMenuItem)zoomMenu.getMenuComponent(newItem);
-		    		checkedZoomItem.setSelected(true);
+		    		docView.checkedZoomItem = (JCheckBoxMenuItem)docView.zoomMenu.getMenuComponent(newItem);
+		    		docView.checkedZoomItem.setSelected(true);
 		    	
 		    		// change scale
 		    		plotScroll.setScale(currentScale,e.getPoint());
@@ -145,16 +137,15 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		
 		// scroll pane
 		plotScroll=new MeshPlotScroll(plotView);
-		content.add(plotScroll,BorderLayout.CENTER);
+		add(plotScroll,BorderLayout.CENTER);
 		
 		// add controls
-		movieControls=new MovieControls(d.width,resDoc,this,gDocView);
-		content.add(movieControls,BorderLayout.SOUTH);
+		movieControls=new MovieControls(500,resDoc,this,gDocView);
+		add(movieControls,BorderLayout.SOUTH);
 		
 		NFMVPrefs.setWorkspace(chooser);
 		
 		// notifications
-		JNNotificationCenter.getInstance().addNameAndObjectForTarget("TimeSliderChanged",gDocView,this);
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("PlotQuantityChanged",gDocView,this);
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("ParticleSizeChanged",gDocView,this);
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("MaxElongChanged",gDocView,this);
@@ -171,62 +162,6 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 			zoomNo = toolkit.createCustomCursor(cIcon.getImage(),new Point(8,8),"zoomNo");
 		}
 		
-		finishFrameworkWindow(false);
-	}
-	
-	// make menu bar on launch
-	protected void makeMenuBar()
-	{	//Create the menu bar
-		JMenuBar menuBar = new JMenuBar();
-		
-		// File menu
-		JMenu menu = new JMenu("File");
-		menuBar.add(menu);
-		JNDocument.makeMenuItem(menu,"Export Graphics...","ExportFrame",this,KeyEvent.VK_G,true);
-		JNDocument.makeMenuItem(menu,"Export Movie Frames...","ExportMovie",this,KeyEvent.VK_M,true);
-		menu.addSeparator();
-		JNDocument.makeMenuItem(menu,"Close","closeWindow",this,KeyEvent.VK_W);
-		
-		// Zoom menu
-		zoomMenu = new JMenu("Zoom");
-		menuBar.add(zoomMenu);
-		checkedZoomItem=makeCheckBoxMenuItem(zoomMenu,"100%","ZoomPlot",this,KeyEvent.VK_1);
-		makeCheckBoxMenuItem(zoomMenu,"150%","ZoomPlot",this,KeyEvent.VK_2);
-		makeCheckBoxMenuItem(zoomMenu,"200%","ZoomPlot",this,KeyEvent.VK_3);
-		makeCheckBoxMenuItem(zoomMenu,"300%","ZoomPlot",this,KeyEvent.VK_4);
-		makeCheckBoxMenuItem(zoomMenu,"400%","ZoomPlot",this,KeyEvent.VK_5);
-		makeCheckBoxMenuItem(zoomMenu,"500%","ZoomPlot",this,KeyEvent.VK_6);
-		makeCheckBoxMenuItem(zoomMenu,"700%","ZoomPlot",this,KeyEvent.VK_7);
-		makeCheckBoxMenuItem(zoomMenu,"1000%","ZoomPlot",this,KeyEvent.VK_8);
-		checkedZoomItem.setSelected(true);
-		currentScale = 1.0;
-		zoomMenu.addSeparator();
-		JNDocument.makeMenuItem(zoomMenu,"Previous Frame","ShowPrevious",this,KeyEvent.VK_LEFT);
-		JNDocument.makeMenuItem(zoomMenu,"Next Frame","ShowNext",this,KeyEvent.VK_RIGHT);
-		
-		// Window
-		menu = new JMenu("Window");
-		menuBar.add(menu);
-		if(JNApplication.isMacLNF())
-		{	menu.add(JNApplication.main.getOpenHelpAction());
-		}
-		JNDocument.makeMenuItem(menu,"Analysis Results","ShowResults",this,KeyEvent.VK_D);
-		menu.addSeparator();
-		setWindowMenu(menu);
-		
-		// add the menu
-		setJMenuBar(menuBar);
-	}
-	
-	// create check box item for the Zoom menu
-	protected JCheckBoxMenuItem makeCheckBoxMenuItem(JMenu menu,String menuTitle,String menuAction,ActionListener target,int mKey)
-	{	JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(menuTitle);
-		menuItem.setActionCommand(menuAction);
-		menuItem.addActionListener(target);
-		if(mKey!=0)
-			menuItem.setAccelerator(KeyStroke.getKeyStroke(mKey,JNApplication.menuKeyMask()));
-		menu.add(menuItem);
-		return menuItem;
 	}
 	
 	//----------------------------------------------------------------------------
@@ -241,21 +176,19 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		movieControls.setPlaying(true);
 		
 		try
-		{	while(movieControls.incrementArchiveIndex() && runFlag)
+		{	while(docView.controls.incrementArchiveIndex() && runFlag)
 			{	theTime=new Date();
 			
 				try
 				{	loadPlotData();
 				}
 				catch(Exception e)
-				{	dispose();
-					Toolkit.getDefaultToolkit().beep();
+				{	Toolkit.getDefaultToolkit().beep();
 					JNUtilities.showMessage(null,"Error loading plot data: "+e.getMessage());
 					break;
 				}
 				catch(OutOfMemoryError me)
-				{	dispose();
-					Toolkit.getDefaultToolkit().beep();
+				{	Toolkit.getDefaultToolkit().beep();
 					JNUtilities.showMessage(null,"Out of memory error: "+me.getMessage());
 					break;
 				}
@@ -271,7 +204,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 				
 				// on movie export, save the frame
 				if(frameFileRoot!=null)
-				{	File saveFile=new File(frameFileRoot+String.format("%04d.png",movieControls.getArchiveIndex()));
+				{	File saveFile=new File(frameFileRoot+String.format("%04d.png",docView.controls.getArchiveIndex()));
 					if(!exportPlotFrame(saveFile)) break;
 				}
 			}
@@ -284,6 +217,13 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		frameFileRoot=null;
 	}
 	
+	// stop movie if it is running
+	protected void stopMovie()
+	{	if(!runFlag) return;
+		runFlag=false;
+		movieControls.setPlaying(false);
+	}
+	
 	// change to new time unless in a movie
 	public void changeArchiveIndex(int newIndex)
 	{	if(runFlag) return;
@@ -292,13 +232,11 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 			plotView.repaint();
 		}
 		catch(Exception e)
-		{	dispose();
-			Toolkit.getDefaultToolkit().beep();
+		{	Toolkit.getDefaultToolkit().beep();
 			JNUtilities.showMessage(null,"Error loading plot data: "+e.getMessage());
 		}
 		catch(OutOfMemoryError me)
-		{	dispose();
-			Toolkit.getDefaultToolkit().beep();
+		{	Toolkit.getDefaultToolkit().beep();
 			JNUtilities.showMessage(null,"Out of memory error: "+me.getMessage());
 		}
 	}
@@ -306,13 +244,14 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 	// start plot over at new initial index and possibly new component and options
 	public void beginNewIndexNewComponent(int newIndex,int newComponent)
 	{	movieComponent=newComponent;
-		ControlPanel controls=resDoc.docCtrl.controls;
+		ControlPanel controls=docView.controls;
 		plotView.setOptions(controls.getOptions(),movieComponent,getPlotType(),controls.getParticleSize());
 		
-		boolean sameIndex=!movieControls.setArchiveIndex(newIndex);
+		boolean sameIndex=!controls.setArchiveIndex(newIndex);
 		if(sameIndex || resDoc.isFEAAnalysis())
 		{	// means the index is same OR an FEA plot
 			// This will load data and replot (same index reload needed in case other settings changed)
+			stopMovie();
 			changeArchiveIndex(newIndex);
 		}
 		else
@@ -338,6 +277,9 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 			{   runFlag=false;
 				movieControls.setPlaying(false);
 			}
+			else if(!docView.didInternalPlot)
+			{	Toolkit.getDefaultToolkit().beep();
+			}
 			else
 			{	// movie thread
 				runFlag=true;
@@ -347,19 +289,17 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		}
 		
 		else if(theCmd.equals("Rewind"))
-			movieControls.setArchiveIndex(0);
+			docView.controls.setArchiveIndex(0);
 			
-		else if(theCmd.equals("ShowResults"))
-		{	document.toFront();
-		}
-		
 		else if(theCmd.equals("ExportFrame"))
 		{	// get file if need it
 			int result = chooser.showSaveDialog(this);
 			if(result != JFileChooser.APPROVE_OPTION) return;
-			ArrayList<String> exts=new ArrayList<String>(1);
-			exts.add("png");
-			File saveFile=JNUtilities.CheckFileExtension(this,chooser.getSelectedFile(),exts,"Exported movie frame file");
+			File saveFile=chooser.getSelectedFile();
+			String ext = JNUtilities.getExtension(saveFile);
+			if(!ext.equalsIgnoreCase(".png"))
+				saveFile = new File(saveFile.getParent(),saveFile.getName()+".png");
+			saveFile = JNUtilities.CheckFileStatus(docView, saveFile);
 			if(saveFile==null) return;
 			
 			// save to png file
@@ -385,7 +325,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 			}
 			
 			// export current frame to start
-			File saveFile=new File(frameFileRoot+String.format("%04d.png",movieControls.getArchiveIndex()));
+			File saveFile=new File(frameFileRoot+String.format("%04d.png",docView.controls.getArchiveIndex()));
 			if(!exportPlotFrame(saveFile)) return;
 			
 			// movie thread
@@ -395,10 +335,10 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		}
 		
 		else if(theCmd.equals("ZoomPlot"))
-		{	checkedZoomItem.setSelected(false);
-			checkedZoomItem=(JCheckBoxMenuItem)(e.getSource());
-			checkedZoomItem.setSelected(true);
-			String theZoomCmd=checkedZoomItem.getText();
+		{	docView.checkedZoomItem.setSelected(false);
+			docView.checkedZoomItem=(JCheckBoxMenuItem)(e.getSource());
+			docView.checkedZoomItem.setSelected(true);
+			String theZoomCmd=docView.checkedZoomItem.getText();
 			if(theZoomCmd.equals("150%"))
 				currentScale=1.5;
 			else if(theZoomCmd.equals("200%"))
@@ -419,85 +359,100 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		}
 		
 		else if(theCmd.equals("ShowPrevious"))
-		{	if(!movieControls.decrementArchiveIndex())
+		{	if(!docView.controls.decrementArchiveIndex())
 				JNApplication.appBeep();
 		}
 		
 		else if(theCmd.equals("ShowNext"))
-		{	if(!movieControls.incrementArchiveIndex())
+		{	if(!docView.controls.incrementArchiveIndex())
 				JNApplication.appBeep();
 		}
-		
-		else
-			super.actionPerformed(e);
 	}
 	
 	public void receiveNotification(JNNotificationObject obj)
-	{	if(obj.getName().equals("TimeSliderChanged"))
-		{	JSlider select=(JSlider)obj.getUserInfo();
-			if(select==movieControls.selectTime.select)
-			{	// if slider in movie controller changes, load data and synch with doc view
-				changeArchiveIndex(select.getValue());
-				((DocViewer)document).controls.setArchiveIndex(select.getValue());
-			}
-			else
-			{	// if slider in doc view changed, change movie controller
-				// if it causes a changed, this will trigger notification to call again and
-				// load the data with above code
-				movieControls.setArchiveIndex(select.getValue());
-			}
-		}
-	
-		else if(obj.getName().equals("PlotQuantityChanged"))
-		{	// called when choose new quantity on component in a move plot window
+	{	if(obj.getName().equals("PlotQuantityChanged"))
+		{	// first two when choose new quantity or component in a movie plot window
 			JComboBox<?> qmenu = (JComboBox<?>)obj.getUserInfo();
 			if(qmenu==movieControls.pquant)
-			{	// changed in plot window, synch with results window
-				((DocViewer)document).controls.changePlotType(getPlotType());
-				int newIndex=movieControls.pquant.getSelectedIndex();
-				JComboBox<PlotMenuItem> plotQuant=((DocViewer)document).controls.getQuantityMenu();
+			{	// change control panel to match type and index
+				docView.controls.changePlotType(getPlotType());
+				int newIndex = qmenu.getSelectedIndex();
+				JComboBox<PlotMenuItem> plotQuant=docView.controls.getQuantityMenu();
 				if(plotQuant.getSelectedIndex()!=newIndex)
 					plotQuant.setSelectedIndex(newIndex);
+			
+				// adjust component menus without reploting
+				boolean oldDisable = movieControls.disableStartPlot;
+				movieControls.disableStartPlot = true;
+				movieControls.setComponentMenu();
+				movieControls.disableStartPlot = oldDisable;
+			
+				// plot if not disabled
 				if(!movieControls.disableStartPlot)
-					((DocViewer)document).startNewPlot(getPlotType());
+					docView.startNewPlot(getPlotType());
 			}
 			else if(qmenu==movieControls.pcmpnt)
 			{	// changed in plot window, synch with results window
-				((DocViewer)document).controls.changePlotType(getPlotType());
+				docView.controls.changePlotType(getPlotType());
 				int newIndex=movieControls.pcmpnt.getSelectedIndex();
-				JComboBox<String> plotCmpnt=((DocViewer)document).controls.getComponentMenu();
+				JComboBox<String> plotCmpnt=docView.controls.getComponentMenu();
 				if(plotCmpnt.getSelectedIndex()!=newIndex)
 					plotCmpnt.setSelectedIndex(newIndex);
 				if(!movieControls.disableStartPlot)
-					((DocViewer)document).startNewPlot(getPlotType());
+					docView.startNewPlot(getPlotType());
 			}
 			else
 			{	// changed in control panel - synch and replot (might never be used)
 				movieControls.syncPlotQuantityMenus();
-				((DocViewer)document).startNewPlot(getPlotType());
+				docView.startNewPlot(getPlotType());
 			}
 		}
 	
 		else if(obj.getName().equals("ParticleSizeChanged"))
 		{	if((JSlider)obj.getUserInfo()==movieControls.mpmParticleSize)
 			{	int newSize = movieControls.mpmParticleSize.getValue();
-				JSlider masterSize = ((DocViewer)document).controls.getParticleSizeSlider();
+				JSlider masterSize = docView.controls.getParticleSizeSlider();
 				masterSize.setValue(newSize);
 				if(!movieControls.disableStartPlot)
-					((DocViewer)document).startNewPlot(getPlotType());
+					docView.startNewPlot(getPlotType());
 			}
 			else
 			{	// changed in control panel - synch and replot (might never be used)
 				movieControls.syncPlotQuantityMenus();
-				((DocViewer)document).startNewPlot(getPlotType());
+				docView.startNewPlot(getPlotType());
 			}
 		}
 	
 		else if(obj.getName().equals("MaxElongChanged"))
 		{	if(!movieControls.disableStartPlot)
-				((DocViewer)document).startNewPlot(getPlotType());
+				docView.startNewPlot(getPlotType());
 		}
 	}
+	
+	// just picked new quantity in the menu the movie frame
+	protected void plotQuantityChanged(JComboBox<PlotMenuItem> qmenu)
+	{	System.out.println("new plot index="+qmenu.getSelectedIndex());
+	
+		// change control panel to match type and index
+		docView.controls.changePlotType(getPlotType());
+		int newIndex = qmenu.getSelectedIndex();
+		JComboBox<PlotMenuItem> plotQuant=docView.controls.getQuantityMenu();
+		if(plotQuant.getSelectedIndex()!=newIndex)
+			plotQuant.setSelectedIndex(newIndex);
+		
+		// adjust component menus without reploting
+		boolean oldDisable = movieControls.disableStartPlot;
+		movieControls.disableStartPlot = true;
+		movieControls.setComponentMenu();
+		movieControls.disableStartPlot = oldDisable;
+		
+		System.out.println("plot="+newIndex+", quant="+plotQuant.getSelectedIndex());
+		// plot if not disabled
+		if(!movieControls.disableStartPlot)
+			docView.startNewPlot(getPlotType());
+		
+	}
+	
 	// export current frame to saveFile and return true of false if done OK
 	public boolean exportPlotFrame(File saveFile)
 	{	try
@@ -521,7 +476,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		}
 		catch(Exception fe)
 		{	Toolkit.getDefaultToolkit().beep();
-			JNUtilities.showMessage(this,"Error exporting graphic image: " + fe);
+			JNUtilities.showMessage(docView,"Error exporting graphic image: " + fe);
 			return false;
 		}
 		return true;
@@ -538,17 +493,6 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 	public void thumbnailProgress(ImageWriter source, float percentageDone) {}
 	public void thumbnailStarted(ImageWriter source, int imageIndex, int thumbnailIndex) {}
 	public void writeAborted(ImageWriter source) {}
-	
-	//----------------------------------------------------------------------------
-	// Window events
-	//----------------------------------------------------------------------------
-	
-	public void windowOpened(WindowEvent e)
-	{	int newComponent=((DocViewer)document).controls.getPlotComponent(-1,false,null);
-		beginNewIndexNewComponent(((DocViewer)document).controls.getArchiveIndex(),newComponent);
-		plotView.setFirstLoad(true);
-		super.windowOpened(e);
-	}
 	
 	//----------------------------------------------------------------------------
 	// accessors

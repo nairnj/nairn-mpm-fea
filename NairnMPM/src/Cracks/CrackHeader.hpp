@@ -28,13 +28,7 @@
 //#define _CUBIC_INTERPOLATION_
 //#define _LINEAR_INTERPOLATION_
 
-// Debugging
-//#define CONTOUR_PARTS
-//#define PRINT_CROSS_STATUS
-//#define JTERM_SUMMARY
-#define JDEBUG_STEP 100
-
-// to do axisymmetric J by Broberg method (any other number used Bergkvist and Huong method)
+// to do axisymmetric J by Broberg method (any other number uses Bergkvist and Huong method)
 #define AXISYM_BROBERG_J 1
 
 class CrackSegment;
@@ -57,6 +51,9 @@ class CrackHeader : public LinkedObject
 		static double bezDer[4];
 		static int warnNodeOnCrack;
 		static int warnThreeCracks;
+		static int warn2ndTipInContour;
+        static int warn2ndTipInCell;
+        static int warnAdatedContourFailed;
 		
         // constructors and destructors
         CrackHeader();
@@ -87,13 +84,19 @@ class CrackHeader : public LinkedObject
         short CrackCrossOneSegment(CrackSegment *,Vector *,Vector *,Vector *,short) const;
 		short CrackCrossLeafOnce(CrackLeaf *,Vector *,Vector *,CrackSegment **) const;
 
+		// Crack crossing acceleration
+#ifdef PREHASH_CRACKS
+		virtual void UpdateElementCrackList(int);
+#endif
+
         // calculate J-integral (YJG)
         virtual void JIntegral(void);      	  // J-Integral calculation
-        void PrintContour(ContourPoint *,ContourPoint *,Vector &);
+        CrackSegment *FindRectExit(CrackSegment *,int,Rect *);
 		void GetCOD(CrackSegment *,Vector &,bool);
 		void CrackTipAndDirection(int,CrackSegment **,Vector &);
 		void InterpolatePosition(int,CrackSegment **,Vector &,bool);
-	
+        Vector JIntersectionCrack(ContourPoint *cpt);
+
 		// J countour crossing in 2D
 		CrackSegment *ContourCrossCrack(ContourPoint *,Vector *) const;
 		CrackSegment *ContourCrossLeaf(CrackLeaf *,double,double,double,double,Vector *,int) const;

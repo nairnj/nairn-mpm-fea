@@ -546,7 +546,8 @@ public class PlotQuantity extends PlotControl
 				}
 				
 				// import and plot
-				quant.addItem(new PlotMenuItem("Import...",IMPORTANDPLOTFILE));
+				if(selected==LoadArchive.TIME_PLOT || selected==LoadArchive.MESH2D_PLOT)
+					quant.addItem(new PlotMenuItem("Import...",IMPORTANDPLOTFILE));
 			}
 			
 			// FEA plot quantities
@@ -580,7 +581,8 @@ public class PlotQuantity extends PlotControl
 				quant.addItem(new PlotMenuItem("Expression...",PLOTEXPRESSION));
 				
 				// import and plot
-				quant.addItem(new PlotMenuItem("Import...",IMPORTANDPLOTFILE));
+				if(selected==LoadArchive.MESH2D_PLOT)
+					quant.addItem(new PlotMenuItem("Import...",IMPORTANDPLOTFILE));
 
 				preselect = feaMeshQuant;
 				preComp = feaMeshComp;

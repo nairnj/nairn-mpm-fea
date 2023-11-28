@@ -126,7 +126,6 @@ void MatPoint3D::MoveParticle(GridToParticleExtrap *gp)
 		delV = vel;
 		SubVector(&delV,&delXRate);
 		
-		// finish midpoint position update
 		// 2*del X = (V(n+1)+V(n))
         AddVector(&delXRate,&vel);
 		AddScaledVector(&pos,&delXRate,0.5*timestep);

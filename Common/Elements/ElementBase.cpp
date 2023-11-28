@@ -119,7 +119,7 @@ double ElementBase::GetDeltaX(void) const { return xmax-xmin; }
 double ElementBase::GetDeltaY(void) const { return ymax-ymin; }
 double ElementBase::GetDeltaZ(void) const { return GetThickness(); }
 bool ElementBase::IntersectsBox(Vector orig,double xlength,double ylength) const
-{	if(xmax<orig.x) return false;
+{   if(xmax<orig.x) return false;
 	if(xmin>orig.x+xlength) return false;
 	if(ymax<orig.y) return false;
 	if(ymin>orig.y+ylength) return false;
@@ -148,6 +148,29 @@ int ElementBase::NodeIndex(int i) { return nodes[i-1]-1; }
 
 // Return length of the shortest element side (because gridTolerance = TOLERANCE_RATIO*(shortest side)
 double ElementBase::GetMinimumCellSize(void) { return gridTolerance/TOLERANCE_RATIO; }
+
+#ifdef PREHASH_CRACKS
+// Add CrackNum to crack list on this element. If no
+// list yeat, create it and add this crack. If has last
+// make sure CrackNum is not same as previous one.
+// This method assumes cracks processed sequentially
+void ElementBase::PushCrackNumOnList(int CrackNum)
+{   if(SeesCrack == nullptr)
+    {   SeesCrack = new vector<int>;
+		SeesCrack->push_back(CrackNum);
+	}
+	else if(CrackNum != SeesCrack->back())
+        SeesCrack->push_back(CrackNum);
+}
+
+// For next time step, delete crack list if present
+void ElementBase::DeleteCrackList(void)
+{   if(SeesCrack != nullptr)
+    {   delete SeesCrack;
+		SeesCrack = nullptr;
+	}
+}
+#endif
 
 #ifdef MPM_CODE
 #define MAX_NODE_CONNECTIONS 10

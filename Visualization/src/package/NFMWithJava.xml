@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch4jConfig>
+  <dontWrapJar>false</dontWrapJar>
+  <headerType>gui</headerType>
+  <jar>C:\Users\John\Documents\Programming\OSParticulas\Visualization\src\lib\NairnFEAMPMViz.jar</jar>
+  <outfile>C:\Users\John\Documents\Programming\OSParticulas\Visualization\src\package\NairnFEAMPMViz.exe</outfile>
+  <errTitle></errTitle>
+  <cmdLine></cmdLine>
+  <chdir>.</chdir>
+  <priority>normal</priority>
+  <downloadUrl></downloadUrl>
+  <supportUrl></supportUrl>
+  <stayAlive>false</stayAlive>
+  <restartOnCrash>false</restartOnCrash>
+  <manifest></manifest>
+  <icon>C:\Users\John\Documents\Programming\OSParticulas\Visualization\src\info\NairnFEAMPMViz.ico</icon>
+  <jre>
+    <path>Resources\jre</path>
+    <requiresJdk>false</requiresJdk>
+    <requires64Bit>true</requires64Bit>
+    <minVersion>1.8.0</minVersion>
+    <maxVersion></maxVersion>
+    <initialHeapSize>1024</initialHeapSize>
+    <initialHeapPercent>50</initialHeapPercent>
+    <maxHeapSize>8192</maxHeapSize>
+    <maxHeapPercent>80</maxHeapPercent>
+  </jre>
+  <versionInfo>
+    <fileVersion>11.0.0.0</fileVersion>
+    <txtFileVersion>11.0</txtFileVersion>
+    <fileDescription>Running and visualizing NairnMPM and NairnFEA calculations.</fileDescription>
+    <copyright>1998-2023, John A. Nairn</copyright>
+    <productVersion>11.0.0.0</productVersion>
+    <txtProductVersion>11.0</txtProductVersion>
+    <productName>NairnFEAMPMViz</productName>
+    <companyName></companyName>
+    <internalName>NairnFEAMPMViz</internalName>
+    <originalFilename>NairnFEAMPMViz.exe</originalFilename>
+    <trademarks></trademarks>
+    <language>ENGLISH_US</language>
+  </versionInfo>
+</launch4jConfig>

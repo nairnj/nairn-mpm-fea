@@ -30,6 +30,9 @@ ElementBase::ElementBase(int eNum,int *eNode)
     for(i=0;i<MaxElNd;i++) nodes[i]=eNode[i];
 	neighbors=NULL;
     filled=0;
+#ifdef PREHASH_CRACKS
+	SeesCrack = nullptr;
+#endif
 }
 
 ElementBase::~ElementBase()
@@ -866,11 +869,28 @@ int ElementBase::NearestNode(double x,double y,int *secondChoice)
     Assumes nodes[NumberNodes()]=nodes[0]
     return 0 if gridNode not in this element
 */
-int ElementBase::NextNode(int gridNode)
+int ElementBase::NextNode(int gridNode) const
 {	int i;
     for(i=0;i<NumberNodes();i++)
     {	if(nodes[i]==gridNode)
             return nodes[i+1];
+    }
+    return 0;
+}
+
+/* find next node (in ccw direction) from specified node
+    Assumes nodes[NumberNodes()]=nodes[0]
+    return 0 if gridNode not in this element
+    return 0,1,2,3 if grid node to new node in +x,+y,-x,-y direction
+    warning - assumes 4 node elements normally used in MPM
+*/
+int ElementBase::NextNode(int gridNode,int *edgeDir) const
+{   int i;
+    for(i=0;i<NumberNodes();i++)
+    {   if(nodes[i]==gridNode)
+        {   *edgeDir = i;
+            return nodes[i+1];
+        }
     }
     return 0;
 }

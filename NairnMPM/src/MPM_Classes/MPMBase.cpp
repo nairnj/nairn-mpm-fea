@@ -77,6 +77,9 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 
     // CPDI and GIMP data (recalculated each time step)
     cpdi_or_gimp = NULL;
+    
+    // This is set when using flux BCs in GetCPDINodesAndWeights()
+    // But it not appear to be used by any code?
     faceArea = NULL;
 
 	// rotation matrix (when tracked)
@@ -169,7 +172,8 @@ bool MPMBase::AllocateCPDIorGIMPStructures(int gimpType,bool isThreeD)
 		}
     }
     
-    // save face areas (or lengths in 2D)
+    // save face areas (or lengths in 2D) if traction, heat flux,
+    // or any type of diffusion flux BC is being used
     if(firstTractionPt!=NULL || firstFluxPt!=NULL || firstHeatFluxPt!=NULL)
 		faceArea = new Vector;
 	
@@ -417,19 +421,6 @@ void MPMBase::SetHasLeftTheGridBefore(bool setting) { elementCrossings = setting
 double MPMBase::GetUnscaledVolume(void)
 {	return mp/GetRho();
 }
-
-#ifdef SUPPORT_MEMBRANES
-// Is this material point a membrane (e.g., MemPointXX etc.)
-bool MPMBase::isMembranePt(void) const { return false; }
-
-// Orientation used only by membrane points
-// Membrane materials call to set initial deformation gradient
-void MPMBase::GetOrientation(double *,double *,double *) const {}
-
-// Initial orientation is set in SetMembrane(), but material model might
-// change it (e.g., to add dither) (used only by membranes)
-void MPMBase::SetOrientation(double ang1,double ang2,double ang3) {}
-#endif // end SUPPORT_MEMBRANES
 
 // Get membrane particle size as fraction of cell size in each direction
 // Called to archive membrane geometry

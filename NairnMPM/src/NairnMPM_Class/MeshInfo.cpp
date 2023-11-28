@@ -1420,6 +1420,27 @@ int MeshInfo::GetPatchForElement(int iel)
 	return xpnum*prow + pcol;
 }
 
+// given zero based element number, find row, col, rank
+// row, col, and rank are zero based
+// Warning: assume structure grid (and not checked here)
+void MeshInfo::GetElementsRCR(int iel,int &row,int &col,int &rank)
+{
+    if(depth>0)
+    {    // 3D
+        int perSlice = horiz*vert;        // number in each slice
+        rank = iel/perSlice;            // zero based
+        int snum = iel % perSlice;        // number in slice (0 to horiz*vert-1)
+        col = snum % horiz;                // col 0 to horiz-1
+        row = snum/horiz;                // zero based
+        return;
+    }
+    
+    // 2D
+    col = iel % horiz;            // col 0 to horiz-1
+    row = iel/horiz;            // zero based
+    return;
+}
+
 // set grid style (zcell=0 if 2D grid)
 // Options:
 //	  style=NOT_CARTESIAN means not aligned with x,y,z axes

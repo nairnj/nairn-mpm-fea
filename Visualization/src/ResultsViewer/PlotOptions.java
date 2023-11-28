@@ -156,7 +156,8 @@ public class PlotOptions extends PlotControl
 	// enable or disable check boxes
 	public void setEnabled(int plotType)
 	{	if(plotType==LoadArchive.PARTICLE_PLOT)
-		{	showPts.setEnabled(true);
+		{	this.setVisible(true);
+			showPts.setEnabled(true);
 			showSquarePts.setEnabled(true);
 			showCrackPlanes.setEnabled(true);
 			showMesh.setEnabled(true);
@@ -172,7 +173,8 @@ public class PlotOptions extends PlotControl
 			mpmParticleSize.setEnabled(true);
 		}
 		else if(plotType==LoadArchive.MESH_PLOT)
-		{	showPts.setEnabled(false);
+		{	this.setVisible(true);
+			showPts.setEnabled(false);
 			showCrackPlanes.setEnabled(false);
 			showMesh.setEnabled(true);
 			showCrackSurf.setEnabled(false);
@@ -197,7 +199,8 @@ public class PlotOptions extends PlotControl
 			}
 		}
 		else
-		{	showPts.setEnabled(false);
+		{	/*
+			showPts.setEnabled(false);
 			showSquarePts.setEnabled(false);
 			showCrackPlanes.setEnabled(false);
 			showMesh.setEnabled(false);
@@ -211,6 +214,8 @@ public class PlotOptions extends PlotControl
 			transformPts.setEnabled(false);
 			clipParticles.setEnabled(false);
 			mpmParticleSize.setEnabled(false);
+			*/
+			this.setVisible(false);
 		}
 	}
 

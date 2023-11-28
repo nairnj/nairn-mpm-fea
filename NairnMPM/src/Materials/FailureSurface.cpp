@@ -16,6 +16,8 @@
 
 #define SQRTTWOMINUSONE 0.4142135623730950
 
+double sigmaIImin=1.e30;
+
 #pragma mark FailureSurface::Constructors and Destructors
 
 // Constructors
@@ -85,8 +87,12 @@ void FailureSurface::PrintInitiationProperties(void) const
 //     3D, find Euler angles in normal, change relStrength to
 //          (relStrength)/(failure_stress)
 //     for scaling when using smoothed stresses, and return failure mode
+// alpha is for future addition and strengths depending on other variables
+//      Current pressure dependence handled below and pressure is found here
+//      Hack for shear rate needs alpha->shearRate
 // If not failed, return 0
-int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,double &relStrength) const
+int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,
+                                          double &relStrength,GenADaMVariables *alpha) const
 {
 	// initialize
 	int failureMode = NO_FAILURE;
@@ -938,7 +944,7 @@ bool FailureSurface::IsPDModelConstant(double pressure,double dP,double &constan
 
 // scaled mode II strength; failure surfaces that depended on other properties should change relStrength
 double FailureSurface::sigmaII(double relStrength,double &sigmaIIAlpha,
-                                     Tensor &str,double dPe,double C11,double nuterm,double decxx,int np) const
+                                     Tensor &str,GenADaMVariables *alpha,double C11,double nuterm,double decxx,int np) const
 {
     // exit if no pressure dependecne
     if(pdModel==P_INDEPENDENT)
@@ -953,11 +959,11 @@ double FailureSurface::sigmaII(double relStrength,double &sigmaIIAlpha,
     // dP = -K(de-decxx) = dPe + K decxx
     double dP;
     if(np==PLANE_STRESS_MPM)
-        dP = dPe + C11*(1.+nuterm)*decxx/3.;
+        dP = alpha->dPe + C11*(1.+nuterm)*decxx/3.;
     else
-        dP = dPe + C11*(1.+2.*nuterm)*decxx/3.;
+        dP = alpha->dPe + C11*(1.+2.*nuterm)*decxx/3.;
     
-    // exit if strenth constant in this pressuure increment
+    // exit if strength constant in this pressuure increment
     double constantStrength;
     if(IsPDModelConstant(pressure,dP,constantStrength))
     {   sigmaIIAlpha = -1.;

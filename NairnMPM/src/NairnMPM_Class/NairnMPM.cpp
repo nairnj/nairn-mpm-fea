@@ -54,9 +54,7 @@
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Exceptions/CommonException.hpp"
-#ifdef TRANSPORT_FMPM
-   #include "NairnMPM_Class/XPICExtrapolationTaskTO.hpp"
-#endif
+#include "NairnMPM_Class/XPICExtrapolationTaskTO.hpp"
 #include "Exceptions/MPMWarnings.hpp"
 #include <time.h>
 
@@ -91,7 +89,7 @@ int maxElementIntersections=15;		// Maximum elements that particle can intersect
 // throws std::bad_alloc
 NairnMPM::NairnMPM()
 {
-    version=16;                      // main version
+    version=17;                      // main version
     subversion=0;                    // subversion (must be < 10)
     buildnumber=0;                   // build number
 
@@ -138,7 +136,7 @@ void NairnMPM::CMPreparations(void)
 	CreateTransportTasks();
 
 	// check grid settings
-	GridAndElementCalcs();
+ 	GridAndElementCalcs();
 
 	// Preliminary particle Calculations
 	PreliminaryParticleCalcs();
@@ -303,9 +301,6 @@ void NairnMPM::MPMStep(void)
 #ifdef LOG_PROGRESS
 		nextMPMTask->WriteLogFile();
 #endif
-#ifdef COUT_PROGRESS
-		cout << "# " << mstep << ": " << nextMPMTask->GetTaskName() << endl;
-#endif
 		double beginTime=fmobj->CPUTime();
 		double beginETime=fmobj->ElapsedTime();
 #ifdef RESTART_OPTION
@@ -333,9 +328,6 @@ void NairnMPM::MPMStep(void)
 		nextMPMTask=(MPMTask *)nextMPMTask->GetNextTask();
 #ifdef LOG_PROGRESS
 		archiver->WriteLogFile("           Done",NULL);
-#endif
-#ifdef COUT_PROGRESS
-		cout << "#            Done"  << endl;
 #endif
 	}
 }
@@ -381,7 +373,7 @@ void NairnMPM::CreateTransportTasks(void)
         lastDiffFluxBC[i] = NULL;
     }
     
-    // check nodal BCs
+    // check nodal BCs by type
     NodalConcBC *nextBC = firstConcBC;
     while(nextBC!=NULL)
     {   // get style and next one
@@ -403,11 +395,14 @@ void NairnMPM::CreateTransportTasks(void)
     }
     
     // check nodal flux BCs
+    // move to lists firstDiffFLuxBC[i] and lastDiffFluxBC[i]
+    // Note: after this move, firstFluxPt!=NULL is a flag that the simulation
+    //  has at least one diffusion flux BC. It may be of any type
     MatPtFluxBC *nextFluxBC = firstFluxPt;
     while(nextFluxBC!=NULL)
     {   // get style and next one
         int bcStyle = nextFluxBC->phaseStyle;
-        MatPtFluxBC *followingFluxBC = (MatPtFluxBC *)nextBC->GetNextObject();
+        MatPtFluxBC *followingFluxBC = (MatPtFluxBC *)nextFluxBC->GetNextObject();
         
         // start or attach to list
         if(firstDiffFluxBC[bcStyle]==NULL)
@@ -434,15 +429,6 @@ void NairnMPM::CreateTransportTasks(void)
         lastConcBC = lastDiffBC[POROELASTICITY_DIFFUSION];
     }
     
-    // reset firstFluxPt to moisture (or poroelasticity) only
-    if(firstDiffFluxBC[MOISTURE_DIFFUSION]!=NULL)
-    {   firstFluxPt = firstDiffFluxBC[MOISTURE_DIFFUSION];
-    }
-    else
-    {   // will be NULL if no diffusion task
-        firstFluxPt = firstDiffFluxBC[POROELASTICITY_DIFFUSION];
-    }
-    
     // DiffDebugging check
     /*
     cout << "---- Diffusion BC lists" << endl;
@@ -466,7 +452,8 @@ void NairnMPM::CreateTransportTasks(void)
 	}
 	else
 	{   // Disallow diffusion BCs unless diffusion is active
-		if(firstFluxPt!=NULL || firstConcBC!=NULL || RigidMaterial::someSetConcentration)
+		if(firstDiffFluxBC[MOISTURE_DIFFUSION]!=NULL || firstDiffFluxBC[POROELASTICITY_DIFFUSION] ||
+                    firstConcBC!=NULL || RigidMaterial::someSetConcentration)
 		{
 #ifdef POROELASTICITY
 			throw CommonException("Solvent/poroelasticity boundary conditions not allowed unless diffusion or poroelasticity is active",
@@ -825,6 +812,12 @@ void NairnMPM::CreateWarnings(void)
 	{	// crack warnings
 		CrackHeader::warnNodeOnCrack=warnings.CreateWarning("Unexpected crack side; possibly caused by node or particle on a crack",-1,5);
 		CrackHeader::warnThreeCracks=warnings.CreateWarning("Node with three or more cracks",-1,5);
+		if(firstCrack->GetNextObject()!=NULL)
+		{	// multiple crack warnings
+			CrackHeader::warn2ndTipInContour = warnings.CreateWarning("Two crack tips within the same J contour region",-1,0);
+            CrackHeader::warn2ndTipInCell = warnings.CreateWarning("Two crack tips within the same cell",-1,0);
+            CrackHeader::warnAdatedContourFailed = warnings.CreateWarning("Adapted contour still had the same crack tip",-1,0);
+		}
 	}
 
 	// LeaveLimit options: change 0 to 1% of particle, then >=1 is push back, <=-1 is delete
@@ -937,7 +930,7 @@ void NairnMPM::CreateTasks(void)
 			cout << endl;
 		}
 		
-		// hisoty on the particles
+		// history on the particles
 		if(CustomTask::numberCustomHistoryVariables>5)
 		{	throw CommonException("Custom tasks are currently limited to 5 custom history variable total",
 								  "NairnMPM::CreateTasks()");
@@ -1066,7 +1059,6 @@ void NairnMPM::CreateTasks(void)
 	{	XPICMechanicsTask = new XPICExtrapolationTask("XPIC Extrapolations");
 	}
 
- #ifdef TRANSPORT_FMPM
 	// XPIC extrapolations for transport is needed if activated
 	if(TransportTask::hasXPICOption)
 	{	nextMPMTask=(MPMTask *)new XPICExtrapolationTaskTO("XPIC Transport Extrapolations");
@@ -1074,8 +1066,7 @@ void NairnMPM::CreateTasks(void)
 		lastMPMTask=nextMPMTask;
 		XPICTransportTask=(XPICExtrapolationTaskTO *)nextMPMTask;
 	}
- #endif
-	
+    
 	// UPDATE PARTICLES
 	nextMPMTask=(MPMTask *)new UpdateParticlesTask("Update Particles");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
@@ -1151,7 +1142,8 @@ void NairnMPM::ReorderParticles(int firstRigidPt,int hasRigidContactParticles)
 				// fix particle based boundary conditions
 				ReorderPtBCs(firstLoadedPt,p,nmpmsNR);
 				ReorderPtBCs(firstTractionPt,p,nmpmsNR);
-				ReorderPtBCs(firstFluxPt,p,nmpmsNR);
+                for(int ii=0;ii<NUM_DUFFUSION_OPTIONS;ii++)
+                    ReorderPtBCs(firstDiffFluxBC[ii],p,nmpmsNR);
 				ReorderPtBCs(firstHeatFluxPt,p,nmpmsNR);
 				ReorderPtBCs(firstDamagedPt,p,nmpmsNR);
 				

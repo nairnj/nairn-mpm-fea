@@ -173,6 +173,7 @@ public class TimePlotOptions extends PlotControl
 		
 		if(plotType==LoadArchive.TIME_PLOT)
 		{	// Always MPM analysis
+			this.setVisible(true);
 			switch(plotComponent)
 			{	case PlotQuantity.MPMSTRENERGY:
 				case PlotQuantity.MPMKINENERGY:
@@ -213,7 +214,7 @@ public class TimePlotOptions extends PlotControl
 				case PlotQuantity.MPMDEBONDSCTOD:
 				case PlotQuantity.MPMGLOBALRESULTS:
 				case PlotQuantity.IMPORTANDPLOTFILE:
-					setEnabled(LoadArchive.NO_PLOT,0,resDoc);
+					this.setVisible(false);
 					break;
 				
 				default:
@@ -250,6 +251,7 @@ public class TimePlotOptions extends PlotControl
 		}
 		else if(plotType==LoadArchive.MESH2D_PLOT)
 		{	// FEA or MPM analysis
+			this.setVisible(true);
 			plotPoint.setEnabled(false);
 			plotAll.setEnabled(false);
 			averaged.setEnabled(false);
@@ -273,7 +275,9 @@ public class TimePlotOptions extends PlotControl
 				case PlotQuantity.MPMTRACTION8:
 				case PlotQuantity.MPMTRACTION9:
 				case PlotQuantity.MPMTRACTION10:
+				case PlotQuantity.IMPORTANDPLOTFILE:
 					// MPM analysis to plot crack data
+					this.setVisible(false);
 					popup=false;
 					break;
 				default:
@@ -302,6 +306,8 @@ public class TimePlotOptions extends PlotControl
 		}
 		else
 		{	// Not a 2D plot
+			this.setVisible(false);
+			/*
 			plotPoint.setEnabled(false);
 			plotAll.setEnabled(false);
 			averaged.setEnabled(false);
@@ -312,6 +318,7 @@ public class TimePlotOptions extends PlotControl
 			functionText.setEnabled(false);
 			plusMinus.setEnabled(false);
 			rangeText.setEnabled(false);
+			*/
 		}
 	}
 	

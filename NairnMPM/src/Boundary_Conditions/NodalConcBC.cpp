@@ -64,6 +64,14 @@ BoundaryCondition *NodalConcBC::PrintBC(ostream &os)
 	return (BoundaryCondition *)GetNextObject();
 }
 
+// when getting total diffusion flux, add qreaction to input double
+// if matchID==0 include it, otherwise include only if matchID equals bcID
+NodalConcBC *NodalConcBC::AddConcReaction(double *totalReaction,int matchID)
+{	if(bcID==matchID || matchID==0)
+		*totalReaction += qreaction;
+	return (NodalConcBC *)GetNextObject();
+}
+
 #pragma mark NodalConcBC: ACCESSORS
 
 // set value (and scale legacy MPa to Pa)
@@ -88,4 +96,21 @@ int NodalConcBC::GetSetDirection(void) const
         default:
             return CONC_DIRECTION;
     }
+}
+
+/**********************************************************
+	Sum all reaction diffusion forces for all grid BCs
+	If ID is not zero, only includes those with matching ID
+	Result is in transport content/sec
+*/
+double NodalConcBC::TotalConcReaction(int matchID,DiffusionTask *qdiff)
+{
+	double reactionTotal = 0.;
+	NodalConcBC *nextBC = (NodalConcBC *)qdiff->GetFirstBCPtr();
+	
+	// Add each value
+	while(nextBC!=NULL)
+		nextBC=nextBC->AddConcReaction(&reactionTotal,matchID);
+	
+	return reactionTotal;
 }

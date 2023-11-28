@@ -16,6 +16,7 @@
 #ifdef MPM_CODE
 	#include "NairnMPM_Class/NairnMPM.hpp"
 	#include "Materials/Viscoelastic.hpp"
+    #include "Materials/TIViscoelastic.hpp"
 	#include "Materials/HillPlastic.hpp"
 	#include "Materials/IsoPlasticity.hpp"
 	#include "Materials/Mooney.hpp"
@@ -43,6 +44,9 @@
 	#include "Materials/LiquidContact.hpp"
 	#include "Read_MPM/CrackController.hpp"
 	#include "Materials/IsoSoftening.hpp"
+    #include "Materials/IsoPhaseFieldSoftening.hpp"
+    #include "Materials/IsoDamageMech.hpp"
+
 
 #else // not MPM_CODE
 
@@ -112,6 +116,10 @@ int MaterialController::AddMaterial(int matID,char *matName)
 		case VISCOELASTIC:
 			newMaterial=new Viscoelastic(matName,matID);
 			break;
+        case TIVISCOELASTIC1:
+        case TIVISCOELASTIC2:
+            newMaterial=new TIViscoelastic(matName,matID);
+            break;
 		case MOONEYRIVLIN:
 			newMaterial=new Mooney(matName,matID);
 			break;
@@ -194,6 +202,12 @@ int MaterialController::AddMaterial(int matID,char *matName)
 		case ISOSOFTENING:
 			newMaterial=new IsoSoftening(matName,matID);
 			break;
+        case ISOPHASEFIELDSOFTENING:
+            newMaterial=new IsoPhaseFieldSoftening(matName,matID);
+            break;
+        case ISODAMAGEMECHANICS:
+            newMaterial=new IsoDamageMech(matName,matID);
+            break;
 			
 #else // not MPM_CODE
             

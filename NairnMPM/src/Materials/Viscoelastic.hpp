@@ -61,8 +61,9 @@ class Viscoelastic : public MaterialBase
     
         // class methods
         static double GetEffectiveIncrement(MPMBase *,ResidualStrains *,double,double,double,double,
-                                            double,double,double,double,double,double);
-	
+                                            double,double,double,double,double);
+		static double GetDtScale(double);
+
     private:
 		int pressureLaw;
 		double G0,K,aI;

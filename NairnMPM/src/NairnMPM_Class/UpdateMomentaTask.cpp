@@ -57,10 +57,8 @@ bool UpdateMomentaTask::Execute(int taskOption)
 	// contact and BCs
 	ContactAndMomentaBCs(UPDATE_MOMENTUM_CALL);
 	
-#ifdef TRANSPORT_FMPM
 	// impose transport BCs on the grid
 	TransportTask::TransportGridBCs(mtime,timestep,UPDATE_MOMENTUM_CALL);
-#endif
     
     return true;
 }

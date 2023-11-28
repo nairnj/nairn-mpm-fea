@@ -311,15 +311,6 @@ double ShapeController::particleCount(void) { return numParticles>0 ? (double)nu
 // reset nodeNum and return NULL (no errors except in other shapes)
 void ShapeController::resetParticleEnumerator(void) { particleNum=0; }
 
-#ifdef SUPPORT_MEMBRANES
-// Membrane shapes should override to loop over membrane particle locations
-bool ShapeController::StartMembraneLoop(void) { return true; }
-bool ShapeController::NextMembraneLocation(Vector *loc) { return false; }
-
-// Membrane shapes should override to store membrane initial geometry on the particle
-void ShapeController::SetMembraneProperties(MPMBase *mpt) {}
-#endif
-
 #endif
 
 #pragma mark ShapeController: accessors

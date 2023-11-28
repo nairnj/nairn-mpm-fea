@@ -583,7 +583,8 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		// check if has failed
 		Vector norm;
 		double relStrength = soft[RELATIVE_STRENGTH];
-		int failureMode = initiationLaw->ShouldInitiateFailure(&str,&norm,np,relStrength);
+        GenADaMVariables alpha;
+		int failureMode = initiationLaw->ShouldInitiateFailure(&str,&norm,np,relStrength,&alpha);
 		if(failureMode == NO_FAILURE)
 		{
 #ifdef POROELASTICITY
@@ -663,7 +664,7 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	*eplast = dR.RVoightRT(eplast,false,is2D);
 	
 	// finish up in separate code
-	DamageEvolution(mptr,np,soft,de,str,eres,ezzres,res,dR,Rtot,p,&ecrack,0.);
+	DamageEvolution(mptr,np,soft,de,str,eres,ezzres,res,dR,Rtot,p,&ecrack,0.,delTime);
 }
 
 // Finish damage evolution for isotropic materials
@@ -678,12 +679,12 @@ void IsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 // dispEnergy is dissipated energy before evolving damage (or zero if none)
 void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,Tensor &str,double eres,
 						double ezzres,ResidualStrains *res,Matrix3 &dR,Matrix3 &Rtot,ElasticProperties *p,
-						Tensor *ecrack,double dispEnergy) const
+						Tensor *ecrack,double dispEnergy,double delTime) const
 {
 	// set 2D flag
 	bool is2D = np == THREED_MPM ? false : true;
 	
-	// get effective strain increments (effective in plane strain)
+	// get effective total strain increments (effective in plane strain)
 	Tensor deres = MakeTensor(eres,eres,eres,0.,0.,0.);
 	Tensor deij = de;
 	SubTensor(&deij,&deres);
@@ -692,20 +693,21 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
     double Gshear = p->C[3][3];            // C44 in 3D and C66 in 2D are the same
 
     // den is increment normal strain in crack axis system
-    // dPe is increment in pressure for elastic material when cracking strain is zero
-    double den,dPe;
+    // alpha.dPe is increment in pressure for elastic material when cracking strain is zero
+    GenADaMVariables alpha;
+    double den;
     if(np==PLANE_STRAIN_MPM)
     {   den = deij.xx + nuterm*deij.yy;
-        dPe = -C11*( (1+nuterm)*(deij.xx + deij.yy)
+        alpha.dPe = -C11*( (1+nuterm)*(deij.xx + deij.yy)
                           + nuterm*(de.xx+de.yy-2.*ezzres) - ezzres )/3.;
     }
     else if(np==PLANE_STRESS_MPM)
     {   den = deij.xx + nuterm*deij.yy;
-        dPe = -C11*(1+nuterm)*(deij.xx + deij.yy)/3.;
+        alpha.dPe = -C11*(1+nuterm)*(deij.xx + deij.yy)/3.;
     }
     else
     {   den = deij.xx + nuterm*(deij.yy+deij.zz);
-        dPe = -C11*(1+2*nuterm)*(deij.xx + deij.yy + deij.zz)/3.;
+        alpha.dPe = -C11*(1+2*nuterm)*(deij.xx + deij.yy + deij.zz)/3.;
     }
     
 	// to calculate depending on current state
@@ -760,8 +762,12 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
 		// shear stress and strains (for variable toughness need to call softening law to get new relToughness values)
         double relShearStrength = relStrength;
 		double sigmaIIAlpha;
-		double sigmaII = initiationLaw->sigmaII(relShearStrength,sigmaIIAlpha,str,dPe,C11,nuterm,decxx,np);
+		double sigmaII = initiationLaw->sigmaII(relShearStrength,sigmaIIAlpha,str,&alpha,C11,nuterm,decxx,np);
 		double relShearToughness = relToughness;
+        
+        // scale values for softening law
+        // I think this will handle alpha dependent Gc by scaleII *= Gc(alpha)/Gc
+        //   and scaleIIAlpha *= Gc(alpha+dalpha)/Gc
 		double scaleII = relShearToughness*soft[GCSCALING]/sigmaII;
 		double scaleIIAlpha = sigmaIIAlpha>0. ? relShearToughness*soft[GCSCALING]/sigmaIIAlpha : -1.;
 		
@@ -810,7 +816,7 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
                             if(fabs(decxxPrevious-h.decxx)/deltaMax>pdOvoidTolerance)
                             {   // pressure dependence not converged yet
                                 decxxPrevious = h.decxx;
-                                sigmaII = initiationLaw->sigmaII(relShearStrength,sigmaIIAlpha,str,dPe,C11,nuterm,h.decxx,np);
+                                sigmaII = initiationLaw->sigmaII(relShearStrength,sigmaIIAlpha,str,&alpha,C11,nuterm,h.decxx,np);
                                 scaleII = relShearToughness*soft[GCSCALING]/sigmaII;
                                 scaleIIAlpha = sigmaIIAlpha>0. ? relShearToughness*soft[GCSCALING]/sigmaIIAlpha : -1.;
                                 
@@ -899,7 +905,7 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
                         if(fabs(decxxPrevious-h.decxx)/deltaMax>pdOvoidTolerance)
                         {   // pressure dependence not converged yet
                             decxxPrevious = h.decxx;
-                            sigmaII = initiationLaw->sigmaII(relShearStrength,sigmaIIAlpha,str,dPe,C11,nuterm,h.decxx,np);
+                            sigmaII = initiationLaw->sigmaII(relShearStrength,sigmaIIAlpha,str,&alpha,C11,nuterm,h.decxx,np);
                             scaleII = relShearToughness*soft[GCSCALING]/sigmaII;
                             scaleIIAlpha = sigmaIIAlpha>0. ? relShearToughness*soft[GCSCALING]/sigmaIIAlpha : -1.;
                             

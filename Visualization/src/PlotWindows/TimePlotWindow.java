@@ -8,6 +8,9 @@
 
 import geditcom.JNFramework.JNUtilities;
 import java.util.*;
+
+import javax.swing.SwingUtilities;
+
 import java.io.*;
 import java.nio.*;
 import java.awt.Toolkit;
@@ -59,8 +62,12 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 				plot2DView.readTable(globalTable);
 				plot2DView.setXTitle("Time ("+resDoc.units.timeUnits()+")");
 				plot2DView.setYTitle("Global Quantity");
-				setVisible(true);
-				toFront();
+				SwingUtilities.invokeLater(new Runnable()
+				{	public void run()
+					{	setVisible(true);
+						toFront();
+					}
+				});
 			}
 			catch (Exception e)
 			{	throw new Exception("Could not load global results file:\n   " + e.getMessage());
@@ -140,8 +147,12 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			plot2DView.setYTitle(PlotQuantity.plotLabel(component,resDoc));
 		}
 		controls.disableProgress();
-		setVisible(true);
-		toFront();
+		SwingUtilities.invokeLater(new Runnable()
+		{	public void run()
+			{	setVisible(true);
+				toFront();
+			}
+		});
 	}
 	
 	// plot particle data

@@ -125,8 +125,7 @@ void MatPoint2D::MoveParticle(GridToParticleExtrap *gp)
 		// find change in velocity
 		delV.x = vel.x - delXRate.x;
 		delV.y = vel.y - delXRate.y;
-		
-		// position update
+
 		// del X = 0.5*(V(n+1)+V(n))
         delXRate.x += vel.x;
         delXRate.y += vel.y;

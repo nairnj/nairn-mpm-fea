@@ -254,7 +254,7 @@ void CrackVelocityField::CreateStrainField(void)
     df->vx=0.;
     df->vy=0.;
 	
-	// if more than one material, track material tip to set crack tip material changes
+	// if more than one material, track material type to set crack tip material changes
 	if(numActiveMaterials>1)
 	{	df->matWeight = new double[numActiveMaterials];
 		int i;
@@ -280,11 +280,16 @@ void CrackVelocityField::DeleteStrainField(void)
 // This called when moving one side of the crack in velocity field for that
 //   side of the crack. Currently looks only at materials that see the cracks
 //   which is analgous to way it works for rigid material inside a crack
-// fieldMass: On input, *fieldMass = Sum(fi mi,v(s,1)) is mass screening, otherwise undefined
-//			On output, shape normalization of fi mi,v(s,1) is mass weighted of just fi if unweighted
+// On output, *fieldMass is fi*total mass to allow mass-weighted extrapolations
+//   Older code did not use mass weighted but that appeared less stable if a node
+//   had very low mass and inaccurate velocity
+// Older code optionally screened out low mass nodes, but that was dropped in favor of
+//   always doing mass weighted sums
 short CrackVelocityField::IncrementDelvTask8(double fi,Vector *delV,Vector *dela,double *fieldMass)
 {
 	// get CM momentum, force, and total mass this crack velocity field
+    // In multimaterial mode, it combines all materials on this side of the crack
+    // For single crack, just gets momentum, force, and mass of that field
 	double totalMass;
 	bool hasParticles;
 	Vector totalFtot;
@@ -296,7 +301,7 @@ short CrackVelocityField::IncrementDelvTask8(double fi,Vector *delV,Vector *dela
 	
 	// increment velocity extrapolation by Sip pi
 	AddScaledVector(delV,&totalPk,fi);
-	
+
 	// increment acceleration by Sip fi
 	AddScaledVector(dela,&totalFtot,fi);
 	

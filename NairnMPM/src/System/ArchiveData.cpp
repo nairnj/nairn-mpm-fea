@@ -1813,6 +1813,8 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 			case -1:
 				afile << "SCALARS ";
 				afile << quantityName[q];
+                if(strcmp(quantityName[q],"history")==0)
+                    afile << qparam[q];
 				afile << " double 1" << endl;
 				afile << "LOOKUP_TABLE default" << endl;
 				break;
@@ -1891,6 +1893,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
                 case VTK_EQUIVSTRESS:
                 case VTK_RELDELTAV:
                 case VTK_EQUIVSTRAIN:
+                case VTK_HISTORY_NUM:
 					if(vtk==NULL) break;
 					afile << vtkquant[offset] << endl;
 					break;
@@ -2024,6 +2027,8 @@ void ArchiveData::FileError(const char *msg,const char *filename,const char *met
 // empty the file
 void ArchiveData::ClearLogFile(void)
 {
+    if(fmobj->mstep<LOG_START_STEP) return;
+    
 	// append to global results file
 	ofstream logstream;
 	try
@@ -2046,6 +2051,8 @@ void ArchiveData::ClearLogFile(void)
 // empty the file
 void ArchiveData::WriteLogFile(const char *logLine,double *num)
 {
+    if(fmobj->mstep<LOG_START_STEP) return;
+    
 	// append to global results file
 	ofstream logstream;
 	try

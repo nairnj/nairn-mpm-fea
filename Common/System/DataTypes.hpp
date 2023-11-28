@@ -106,9 +106,7 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 	// variables for multimaterial conduction calculations
 	typedef struct {
 		double gTValue;		  // material transport value
-							  // remove next line if #ifdef USE_GTVALUEREL is removed
 		double gTValueRel;	  // to handle diffusion with variable csat (c/csat actual)
-		double gTRelValue;	  // to handle diffusion with variable csat (csat relative)
 		double gVCT;		  // transport capacity
 		double gQ;			  // transport velocity
 		double gTstar;		  // for XPIC
@@ -157,6 +155,13 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 		double *moment_y;
 		double *moment_xy;
 	} FiniteGIMPInfo;
+
+    // damage mechanics properties depending on other variables
+    typedef struct {
+        double dPe;         // pressure increment in elastic strains
+        double shearRate;       // shear strain rate
+        double prevShearRate;  // previous shear rate
+    } GenADaMVariables;
 
 #else
 	// tensor (2D and axisymmetric and plane strain)

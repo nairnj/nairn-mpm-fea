@@ -40,10 +40,10 @@ public class MeshPlotView extends JPanel
 	public boolean repainting=false;
 	private ResultsDocument resDoc;
 	private Graphics2D g2Loc;
-	public double dataMin,dataMax;
+	public double dataMin,dataMax,dataTime;
 	public boolean dataLimitsSet=false;
 	private int plotComponent,plotType;
-	private boolean firstLoad=false;
+	private boolean firstLoad=false;				// means the first load of data is done
 	
 	//----------------------------------------------------------------------------
 	// initialize
@@ -204,18 +204,32 @@ public class MeshPlotView extends JPanel
 		}
 		
 		// draw the key
+		double begin=BORDER;
 		FontRenderContext frc=g2Loc.getFontRenderContext();
+		g2Loc.setColor(textColor);
+		
+		// time for MPM
+		if(resDoc.isMPMAnalysis())
+		{	String theTime=JNUtilities.formatDouble(dataTime)+" "
+					+resDoc.units.timeUnits()+": ";
+			Rectangle2D tbnds=g2Loc.getFont().getStringBounds(theTime,frc);
+			g2Loc.drawString(theTime,BORDER,d.height-BORDER);
+			begin += tbnds.getWidth()+5.;
+		}
+
+		// minimum
 		String plotMin=JNUtilities.formatDouble(dataMin);
 		Rectangle2D bounds=g2Loc.getFont().getStringBounds(plotMin,frc);
-		g2Loc.setColor(textColor);
-		g2Loc.drawString(plotMin,BORDER,d.height-BORDER);
-		double begin=BORDER+bounds.getWidth()+5.;
+		g2Loc.drawString(plotMin,(float)begin,d.height-BORDER);
+		begin += bounds.getWidth()+5.;
 		
+		// maximum
 		String plotMax=JNUtilities.formatDouble(dataMax,false);
 		bounds=g2Loc.getFont().getStringBounds(plotMax,frc);
 		double end=(double)d.width-BORDER-bounds.getWidth()-5.;
 		g2Loc.drawString(plotMax,(float)(end+5.),(float)(d.height-BORDER));
 		
+		// key in remaining sapce
 		int num=ColorPicker.numberContours;
 		if(num<2 || num>30) num=30;
 		double segment=(end-begin)/(double)num;
@@ -402,5 +416,5 @@ public class MeshPlotView extends JPanel
 	public int getPlotComponent() { return plotComponent; }
 	public boolean inDisplaced() { return showDisplaced; }
 	public boolean getFirstLoad() { return firstLoad; }
-	public void setFirstLoad(boolean fload) { firstLoad=true; }
+	public void setFirstLoad(boolean fload) { firstLoad=fload; }
 }

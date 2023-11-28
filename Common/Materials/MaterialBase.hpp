@@ -151,6 +151,15 @@ class MaterialBase : public LinkedObject
 		virtual double GetMatDiffusionSource(int,MPMBase *,double,double,double,double,double,double) const;
 		virtual bool GetParticleDiffusionSource(DiffusionTask *,MPMBase *,double,double *) const;
     
+        // special phase field diffusion calls
+        virtual bool SupportsPhaseField(int) const;
+        virtual double MaximumPhaseDiffusivity(int) const;
+        virtual double GetPhaseFieldViscosity(int) const;
+        virtual Tensor GetPhaseFieldDTensor(int,MPMBase *) const;
+        virtual void AdjustPhaseFieldValue(DiffusionTask *,double,double,double &,double &,double &,double) const;
+        virtual void StorePhaseFieldValue(int,MPMBase *,double) const;
+        virtual void StorePhaseFieldDelta(int,MPMBase *,double) const;
+    
         virtual void IncrementHeatEnergy(MPMBase *,double,double) const;
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int,Tensor *) const;
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int) const;
@@ -253,14 +262,6 @@ class MaterialBase : public LinkedObject
 		virtual void UndrainedPressIncrement(MPMBase *,double,double,double) const;
 #endif
 	
-#ifdef SUPPORT_MEMBRANES
-		// membrane materials
-		virtual void MPMMembrane2DLaw(MPMBase *,double,double &,double &,double &,double &,bool &,double,int,void *,ResidualStrains *) const;
-		virtual void MPMMembrane3DLaw(MPMBase *,double,double,double &,double,double,
-								  double &,double &,double &,bool &,double,int,void *,ResidualStrains *) const;
-		static short GetMVFIsMembrane(int);
-#endif // end SUPPORT_MEMBRANES
-	
 #endif	// MPM_CODE
 	
 		// class methods
@@ -295,7 +296,7 @@ class MaterialBase : public LinkedObject
 		double alphaPE,Qalpha;			// Poroelasticity Biot coefficent
 		double Ku;						// Poroelasticity undrained bulk modulus
 #endif
-	
+
 #endif	// MPM_CODE
 	
 		// constants (changed in MPM time step)

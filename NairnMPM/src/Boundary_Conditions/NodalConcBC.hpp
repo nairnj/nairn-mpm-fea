@@ -28,10 +28,13 @@ class NodalConcBC: public NodalValueBC
 	
 		// methods
 		virtual BoundaryCondition *PrintBC(ostream &);
-	
+		virtual NodalConcBC *AddConcReaction(double *,int);
+
         // Accessors
 		virtual void SetBCValue(double bcvalue);
         virtual int GetSetDirection(void) const;
+		static double TotalConcReaction(int,DiffusionTask *);
+
 };
 
 // variables (changed in MPM time step)

@@ -21,16 +21,19 @@ class NodalValueBC: public BoundaryCondition
 {
     public:
         double valueNoBC;
+        double nodalActivity;
     
         // constructors and destructors
         NodalValueBC(int,int,double,double);
     
         // methods
         virtual NodalValueBC *CopyNodalValue(NodalPoint *,TransportField *);
+        virtual NodalValueBC *CopyNodalValue(NodalPoint *,TransportField *,bool);
 		virtual NodalValueBC *PasteNodalValue(NodalPoint *,TransportField *);
 	
 		// reaction flow calculation
 		void InitQReaction(void);
+        void InitQReaction(double scale);
 		void SuperposeQReaction(double);
 	
 	protected:

@@ -29,10 +29,10 @@ EndHeader
 ! ------------ Parameters ---------------
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", "Axisymmetric MPM", or "3D MPM"
-#analysis = "Plane Strain MPM"
+#analysis = "Plane Stress MPM"
 
 ! pick a method usually "lCPDI" or "uGIMP" or "Dirac" or "qCPDI" (2D only) or "B2Spline" or "B2GIMP" or "B2CDPI"
-#method = "B2GIMP"
+#method = "uGIMP"
 #nprocs = 8
 
 ! pick strain update method usually "USF" or "USAVG"
@@ -42,9 +42,9 @@ EndHeader
 ! bistable, hill (hilliso same as isoplastity properties), viscoelastic, MGviscoelastic,
 ! isoplasticsoftening, tivisc
 ! tivisciso (TIViscoleastic using isotropic properties - to compare to viscoelastic)
-#matID="hill"
+#matID="isotropic"
 #swapz=0			! For TIs >0 moves axial to y, for orthos 1 swaps x/z, >1 swaps y/z
-#angle=0			! 2D z rotation angle for anisotopic materials
+#angle=0			! 2D z rotation angle for anisotopic material properties
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2, JohnsonCook, Exponential (hill only)
@@ -126,7 +126,8 @@ if #loading="contact"
   if #strain>0
     Stop "'contact' mode only for compression (could try tension with imperfect interface contact)"
   endif
-  MultimaterialMode 0,1,"Specify",0
+  MultimaterialMode 0,1,"LogReg",100
+  !MultimaterialMode 0,1,"Specify",0
 
 else if #loading="thermal"
   ! Strain is dT and then get expected final thermal strain
@@ -485,8 +486,8 @@ if #matID="tivisc"
       
       en0 #fn1*#ne
       Pk (1-#fn1)*#ne
-	  tauk #taun1
-	  
+      tauk #taun1
+      
       ell0 2*#fKT1*#KTe*#vA0
       Pk #elle-2*#fKT1*#KTe*#vA0
       tauk #tauKT1
@@ -635,8 +636,8 @@ if #matID="hill"
       Khard #Ebase/(5*#iyld)
       nhard -.5
     else if #hardID="Exponential"
-	  Khard #Ebase/(5*#iyld)
-	  exphard 10
+      Khard #Ebase/(5*#iyld)
+      exphard 10
     endif
   Done
 endif
@@ -868,7 +869,6 @@ if #ramp="sigmoidal"
     #tpart="*(cosramp(1,t/"&#t1&")+cosramp(-1,(t-"&#t2&")/"&#tu&"))"
   else
     #tpart="*cosramp(1,t/"&#t1&")"
-    !#tpart="*cosramp(1,10*t/"&#t1&")"    ! 10X fast ramp, rest the same
   endif
 else
   if #unload>0

@@ -34,8 +34,9 @@ public class ControlPanel extends JPanel
 	private TimePlotOptions timeoptions;
 	private CrackSelector thecrack;
 	private LimitsSelector thelimits;
-	private PlotLaunch launch;
+	protected PlotLaunch launch;
 	private DocViewer docCtrl;
+	private int vStart;
 	
 	//----------------------------------------------------------------------------
 	// initialize
@@ -48,62 +49,59 @@ public class ControlPanel extends JPanel
 		setBackground(Color.gray);
 		docCtrl=dc;
 		
-		int[] colv=new int[4];
-		colv[0]=TOP_MARGIN;
-		
-		int[] colh=new int[4];
-		colh[0]=LEFT_MARGIN;
-		colh[1]=LEFT_MARGIN+WIDTH+COL_SPACING;
+		int vloc=TOP_MARGIN;
+		int hloc=LEFT_MARGIN;
 		
 		// load the archive
 		load=new LoadArchive(docCtrl);
-		load.setLocation(colh[0],colv[0]);
+		load.setLocation(hloc,vloc);
 		add(load);
-		colv[0]+=load.getHeight()+ROW_SPACING;
+		vloc += load.getHeight()+ROW_SPACING;
 		
 		// quantity selector
 		quantity=new PlotQuantity(docCtrl);
-		quantity.setLocation(colh[0],colv[0]);
+		quantity.setLocation(hloc,vloc);
 		add(quantity);
+		vloc += quantity.getHeight()+ROW_SPACING;
+		vStart = vloc;
 		
 		// time selector
 		selectTime=new TimeSelector(null,docCtrl);
-		selectTime.setLocation(colh[1],colv[0]);
+		selectTime.setLocation(hloc,vloc);
 		add(selectTime);
-		colv[0]+=Math.max(quantity.getHeight(),selectTime.getHeight()+8)+ROW_SPACING;
-		colv[1]=colv[0];
+		vloc += selectTime.getHeight()+ROW_SPACING;
 		
-		// movie options selector
+		// movie and time options at same vertical position
+		// they are never both active
 		options=new PlotOptions(docCtrl);
-		options.setLocation(colh[0],colv[0]);
+		options.setLocation(hloc,vloc);
 		add(options);
-		colv[0]+=options.getHeight()+ROW_SPACING;
 		
 		// time options selector
 		timeoptions=new TimePlotOptions(docCtrl);
-		timeoptions.setLocation(colh[1],colv[1]);
+		timeoptions.setLocation(hloc,vloc);
 		add(timeoptions);
-		colv[1]+=timeoptions.getHeight()+ROW_SPACING;
+		vloc += Math.max(options.getHeight(),timeoptions.getHeight())+ROW_SPACING;
 		
-		// crack selector
+		// crack selector and limts at same vertical location
+		// They are never used at the same time
 		thecrack=new CrackSelector(docCtrl);
-		thecrack.setLocation(colh[1],colv[1]);
+		thecrack.setLocation(hloc,vloc);
 		add(thecrack);
 		
 		// limits selector
 		thelimits=new LimitsSelector(docCtrl);
-		thelimits.setLocation(colh[0],colv[1]);
+		thelimits.setLocation(hloc,vloc);
 		add(thelimits);
-		colv[1]+=Math.max(thecrack.getHeight(),thelimits.getHeight())+ROW_SPACING;
+		vloc += Math.max(thecrack.getHeight(),thelimits.getHeight())+ROW_SPACING;
 		
 		// plot button selector
-		colv[0]=Math.max(colv[0],colv[1]);
 		launch=new PlotLaunch(docCtrl);
-		launch.setLocation(colh[1]-COL_SPACING/2-launch.getWidth()/2,colv[0]);
-		//launch.setLocation(colh[0],colv[1]-thecrack.getHeight()-ROW_SPACING);
+		launch.setLocation(hloc,vloc);
 		add(launch);
+		vloc += launch.getHeight()+20;
 		
-		setPreferredSize(new Dimension(colh[1]+WIDTH+LEFT_MARGIN, colv[0]+launch.getHeight()+20));
+		setPreferredSize(new Dimension(hloc+WIDTH+LEFT_MARGIN, vloc));
 	}
 
 	//----------------------------------------------------------------------------
@@ -112,7 +110,7 @@ public class ControlPanel extends JPanel
 
 	// draw frame
 	protected void paintComponent(Graphics g)
-	{
+	{	
 		Graphics2D g2=(Graphics2D)g;
 		
 		// fill background (and erase prior view)
@@ -121,40 +119,96 @@ public class ControlPanel extends JPanel
 		g2.fill(new Rectangle2D.Double(0.,0.,(double)d.width,(double)d.height));
 		
 		int selected=load.getSelected();
+		int hloc = LEFT_MARGIN;
+		int vloc = vStart;
 		
 		g2.setColor(new Color(1.0f,0.0f,0.0f));
 		g2.setStroke(new BasicStroke((float)3.));
+		PlotControl aboveLimits = options;
 		switch(selected)
 		{	case LoadArchive.PARTICLE_PLOT:
 			case LoadArchive.MESH_PLOT:
 				connectControls(load,quantity,g2);
 				if(docCtrl.resDoc.isMPMAnalysis())
 				{	connectControls(quantity,selectTime,g2);
+					vloc += selectTime.getHeight()+ROW_SPACING;
+					options.setLocation(hloc,vloc);
 					connectControls(selectTime,options,g2);
 				}
 				else
+				{	options.setLocation(hloc,vloc);
 					connectControls(quantity,options,g2);
-				connectControls(options,thelimits,g2);
+				}
+				vloc += options.getHeight()+ROW_SPACING;
+				thelimits.setLocation(hloc,vloc);
+				connectControls(aboveLimits,thelimits,g2);
+				vloc += thelimits.getHeight()+ROW_SPACING;
+				launch.setLocation(hloc,vloc);
 				connectControls(thelimits,launch,g2);
 				break;
 			
 			case LoadArchive.TIME_PLOT:
 				connectControls(load,quantity,g2);
-				connectControls(quantity,timeoptions,g2);
-				connectControls(timeoptions,thecrack,g2);
-				connectControls(thecrack,launch,g2);
+				if(timeoptions.isVisible())
+				{	timeoptions.setLocation(hloc,vloc);
+					connectControls(quantity,timeoptions,g2);
+					vloc += timeoptions.getHeight()+ROW_SPACING;
+					launch.setLocation(hloc,vloc);
+					connectControls(timeoptions,launch,g2);
+				}
+				else if(thecrack.isVisible())
+				{	// time plot of crack data
+					thecrack.setLocation(hloc,vloc);
+					connectControls(quantity,thecrack,g2);
+					vloc += thecrack.getHeight()+ROW_SPACING;
+					launch.setLocation(hloc,vloc);
+					connectControls(thecrack,launch,g2);
+				}
+				else
+				{	// global results
+					launch.setLocation(hloc,vloc);
+					connectControls(quantity,launch,g2);					
+				}
 				break;
 				
 			case LoadArchive.MESH2D_PLOT:
 				connectControls(load,quantity,g2);
 				if(docCtrl.resDoc.isMPMAnalysis())
-				{	connectControls(quantity,selectTime,g2);
-					connectControls(selectTime,timeoptions,g2);
+				{	if(timeoptions.isVisible())
+					{	selectTime.setVisible(true);
+						connectControls(quantity,selectTime,g2);
+						vloc += selectTime.getHeight()+ROW_SPACING;
+						timeoptions.setLocation(hloc,vloc);
+						connectControls(selectTime,timeoptions,g2);
+						vloc += timeoptions.getHeight()+ROW_SPACING;
+						launch.setLocation(hloc,vloc);
+						connectControls(timeoptions,launch,g2);
+					}
+					else if(thecrack.isVisible())
+					{	// time plot of crack data
+						selectTime.setVisible(true);
+						connectControls(quantity,selectTime,g2);
+						vloc += selectTime.getHeight()+ROW_SPACING;
+						thecrack.setLocation(hloc,vloc);
+						connectControls(selectTime,thecrack,g2);
+						vloc += thecrack.getHeight()+ROW_SPACING;
+						launch.setLocation(hloc,vloc);
+						connectControls(thecrack,launch,g2);
+					}
+					else
+					{	// must be import
+						selectTime.setVisible(false);
+						launch.setLocation(hloc,vloc);
+						connectControls(quantity,launch,g2);
+					}
 				}
 				else
+				{	timeoptions.setLocation(hloc,vloc);
 					connectControls(quantity,timeoptions,g2);
-				connectControls(timeoptions,thecrack,g2);
-				connectControls(thecrack,launch,g2);
+					vloc += timeoptions.getHeight()+ROW_SPACING;
+					launch.setLocation(hloc,vloc);
+					connectControls(timeoptions,launch,g2);
+				}
 				break;
 			
 			default:
@@ -229,6 +283,7 @@ public class ControlPanel extends JPanel
 	public void fileHasLoaded()
 	{	load.setEnabled();
 		hiliteControls();
+		selectTime.select.setValue(0);
 	}
 	
 	// call when select new plot option and may need to adjust controls
@@ -237,13 +292,17 @@ public class ControlPanel extends JPanel
 		// type of plot 0,1,2,3 (-1 is no plot)
 		int selected=load.getSelected();
 		
+		// quantity and time
 		quantity.setEnabled(selected);
-		selectTime.setEnabled(selected);
-		options.setEnabled(selected);
-		
 		int plotComponent=getPlotComponent(selected,false,null);
-		thelimits.setEnabled(selected,plotComponent);
+		selectTime.setEnabled(selected,plotComponent);
+		
+		// options or time options
+		options.setEnabled(selected);
 		timeoptions.setEnabled(selected,plotComponent,docCtrl.resDoc);
+		
+		// limits and crack
+		thelimits.setEnabled(selected,plotComponent);
 		thecrack.setEnabled(selected,plotComponent);
 		
 		plotOpened();
@@ -259,9 +318,11 @@ public class ControlPanel extends JPanel
 		int plotComponent=getPlotComponent(selected,false,null);
 		timeoptions.setEnabled(selected,plotComponent,docCtrl.resDoc);
 		thecrack.setEnabled(selected,plotComponent);
+		
 		/*
 		// include this to replot on each menu change in control panel, but user might
 		// prefer to change both before replotting and it activated plot window too
+		// note that getPlotType() no longer valid
 		if(docCtrl.movieFrame!=null)
 		{	if(getPlotType()==docCtrl.movieFrame.plotType)
 				JNNotificationCenter.getInstance().postNotification("PlotQuantityChanged",docCtrl,null);
@@ -322,6 +383,8 @@ public class ControlPanel extends JPanel
 	public int getArchiveIndex() { return selectTime.getArchiveIndex(); }
 	public boolean setArchiveIndex(int newIndex) { return selectTime.setArchiveIndex(newIndex); }
 	public void updateTimeDisplay() { selectTime.updateLabel(); }
+	public boolean incrementArchiveIndex() { return selectTime.incrementArchiveIndex(); }
+	public boolean decrementArchiveIndex() { return selectTime.decrementArchiveIndex(); }
 	
 	// get current plotting type
 	public int getPlotType() { return load.getSelected(); }

@@ -49,7 +49,7 @@ class FailureSurface
 		virtual void PrintInitiationProperties(void) const;
 	
 		// methods
-		virtual int ShouldInitiateFailure(Tensor *,Vector *,int,double &) const;
+		virtual int ShouldInitiateFailure(Tensor *,Vector *,int,double &,GenADaMVariables *) const;
 		virtual bool CloserToShear(Vector *,double,double,double) const;
 
         // pressure dependent methods
@@ -66,7 +66,7 @@ class FailureSurface
 		// accessors
 		virtual double sigmaI(void) const;
 		virtual double sigmaII(void) const;
-		virtual double sigmaII(double,double &,Tensor &,double,double,double,double,int) const;
+		virtual double sigmaII(double,double &,Tensor &,GenADaMVariables *,double,double,double,int) const;
 		virtual const char *GetInitiationLawName(void) const;
 		virtual void SetFailureSurface(int);
 

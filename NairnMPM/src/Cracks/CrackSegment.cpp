@@ -130,13 +130,13 @@ void CrackSegment::MovePositionToMidpoint(void)
 
 // Move crack plane position (2D) (in mm)
 // only used when contact.GetMoveOnlySurfaces() is FALSE and thus need to move crack plane
-void CrackSegment::MovePosition(Vector *velnp1,Vector *cacc,double dt,double shapeNorm)
+void CrackSegment::MovePosition(Vector *velnp1,Vector *cpAcc,double dt,double shapeNorm)
 {
-	// PIC position change is dX = dt*(1.5*svelnp1-surfAccc*dt-0.5*prevVel)
+	// XPIC(1) position change is dX = dt*(1.5*svelnp1-0.5*prevVel-cpAcc*dt)/shapeNorm
 	Vector delX = SetScaledVector(&cpVel,-0.5);
-	AddScaledVector(&delX,velnp1,1.5/shapeNorm);
-	AddScaledVector(&delX,cacc,-dt/shapeNorm);
-	ScaleVector(&delX,dt);
+	AddScaledVector(&delX,velnp1,1.5);
+	AddScaledVector(&delX,cpAcc,-dt);
+    ScaleVector(&delX,dt/shapeNorm);
 	
 	// add to current postion
 	AddVector(&cp,&delX);
@@ -154,12 +154,11 @@ bool CrackSegment::MoveSurfacePosition(short side,Vector *svelnp1,Vector *surfAc
 	short j=side-1;
 	bool movedOther=false;
 	
-	// if hasNodes
-	// new velocity is in svelnp1
+	// if hasNodes new velocity is in svelnp1, get increment
 	Vector delX;
 	if(hasNodes)
 	{
-		// position change is dX = dt*(1.5*svelnp1-0.5*prevVel-surfAccc*dt)
+        // position change is dX = dt*(1.5*svelnp1-0.5*prevVel-surfAcc*dt)
 		delX = SetScaledVector(&surfVel[j],-0.5);
 		AddScaledVector(&delX,svelnp1,1.5);
 		AddScaledVector(&delX,surfAcc,-dt);
@@ -183,7 +182,7 @@ bool CrackSegment::MoveSurfacePosition(short side,Vector *svelnp1,Vector *surfAc
 	{	// below crack is second
 		// ... if has nodes than get average movement or just this one if top did not move
 		//			also move top along if it had no nodes
-		// ... else if no nodes, move along with the top field (if it had one)
+		// ... else if no nodes, move bottom along with the top field (if it had one)
 		if(hasNodes)
 		{	AddVector(&surf[j],&delX);
 			surfVel[j] = *svelnp1;
@@ -195,13 +194,16 @@ bool CrackSegment::MoveSurfacePosition(short side,Vector *svelnp1,Vector *surfAc
 			}
 			else
 			{	dPlane = delX;
-				AddVector(&surf[ABOVE_CRACK-1],&dPlane);	// move above by (xpt,ypt) too
+				AddVector(&surf[ABOVE_CRACK-1],&dPlane);	// move above by delX from below
 				surfVel[ABOVE_CRACK-1] = SetScaledVector(&delX,1./dt);
-				movedOther = true;				// in case above moved elements now (this tells to check on return)
+                
+                // in case above moved elements now (this tells to check on return)
+				movedOther = true;
 			}
 		}
 		else if(hadAboveNodes)
-		{	AddVector(&surf[j],&dPlane);		// only had nodes above the crack, move both and the plane by dPlane
+		{   // only had nodes above the crack, move bottom by delX from above
+            AddVector(&surf[j],&dPlane);
 			surfVel[j] = SetScaledVector(&dPlane,1./dt);
 		}
 		else
@@ -362,12 +364,36 @@ void CrackSegment::UpdateTractions(CrackHeader *theCrack)
 	theLaw->CrackTractionLaw(this,nCod,tCod,&n,&t,area);
 }
 
+// get surface traction on this crack particle or zero (if no traction law)
+// return true if set traction, or false is closed
+bool CrackSegment::SurfaceTraction(CrackHeader *theCrack,Vector *ntract)
+{
+    // get normal and tangential unit vectors and length
+    Vector n,t;
+    double nCod,tCod;
+    double area = GetNormalAndTangent(theCrack,&n,&t,nCod,tCod);
+    
+    // false if closed *may prefer small minimum here?)
+    if(nCod<0.) return false;
+    
+    // zero if not using a traction law
+    if(MatID()<0)
+    {   ZeroVector(ntract);
+        return true;
+    }
+    
+    *ntract = tract;
+    ScaleVector(ntract,-1./area);
+    return true;
+}
+
+
 // Calculate energy in the traction law for this segment if in traction
 // fullEnergy true gets total energy at location of this segment or nearest traction law tip
 // fullEnergy false gets recoverable energy at the traction law tip
 // Only used in J integral calculations for released and bridged energy, so return energy in N/mm
 // If tipSegment is not NULL and this segment is not in the cohesive zone, it is set
-//    to the crack segment and the beginning of the cohesive zone (or to NULL if no cohesive zone),
+//    to the crack segment at the beginning of the cohesive zone (or to NULL if no cohesive zone),
 //    otherwise it is not changed
 double CrackSegment::TractionEnergy(Vector *crossPt,int crkTipIdx,bool fullEnergy,CrackSegment **tipSegment)
 {
@@ -411,7 +437,7 @@ double CrackSegment::TractionEnergy(Vector *crossPt,int crkTipIdx,bool fullEnerg
 	
 	// check other side of the cross point and interpolate if has energy too
 	CrackSegment *fartherSeg = (crkTipIdx==START_OF_CRACK) ? nextSeg : prevSeg;
-	if(fartherSeg!=NULL)
+	if(fartherSeg!=NULL && crossPt!=NULL)
 	{	if(fartherSeg->MatID()>=0)
 		{	double energy2=fartherSeg->SegmentTractionEnergy(fullEnergy);
 	
@@ -434,7 +460,7 @@ double CrackSegment::TractionEnergy(Vector *crossPt,int crkTipIdx,bool fullEnerg
 	return energy;
 }
 
-// Calculate potentialEnergy (is true) or dissipated energy (if false) for segment
+// Calculate potentialEnergy (if true) or dissipated energy (if false) for segment
 // If not at crack tip, scan to one at the crack tip
 // Used in J integral calculations so return energy in N/mm
 double CrackSegment::SegmentTractionEnergy(bool getPotentialEnergy)

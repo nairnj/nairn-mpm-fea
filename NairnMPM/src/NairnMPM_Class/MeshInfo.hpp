@@ -82,6 +82,7 @@ class MeshInfo
 	
 		// Accessors
 		int GetPatchForElement(int);
+        void GetElementsRCR(int iel,int &,int &,int &);
 		void SetCartesian(int,double,double,double);
 		void SetElements(int,int,int,double,double,double,double,double,double);
 		int GetCartesian(void);

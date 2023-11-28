@@ -231,6 +231,8 @@ IdealGas = $(src)/Materials/IdealGas
 InitialCondition = $(src)/Boundary_Conditions/InitialCondition
 InitializationTask = $(src)/NairnMPM_Class/InitializationTask
 InitVelocityFieldsTask = $(src)/NairnMPM_Class/InitVelocityFieldsTask
+IsoDamageMech = $(src)/Materials/IsoDamageMech
+IsoPhaseFieldSoftening = $(src)/Materials/IsoPhaseFieldSoftening
 IsoPlasticity = $(src)/Materials/IsoPlasticity
 IsoPlasticSoftening = $(src)/Materials/IsoPlasticSoftening
 IsoSoftening = $(src)/Materials/IsoSoftening
@@ -291,6 +293,7 @@ Orthotropic = $(com)/Materials/Orthotropic
 OvalController = $(com)/Read_XML/OvalController
 ParseController = $(com)/Read_XML/ParseController
 PeriodicXPIC = $(src)/Custom_Tasks/PeriodicXPIC
+PhaseFieldDiffusion = $(src)/Custom_Tasks/PhaseFieldDiffusion
 PointController = $(com)/Read_XML/PointController
 PolygonController = $(com)/Read_XML/PolygonController
 PolyhedronController = $(src)/Read_MPM/PolyhedronController
@@ -316,11 +319,13 @@ SLMaterial = $(src)/Materials/SLMaterial
 SmoothStep3 = $(src)/Materials/SmoothStep3
 SofteningLaw = $(src)/Materials/SofteningLaw
 SphereController = $(src)/Read_MPM/SphereController
+Spline2D = $(com)/System/Spline2D
 StartOutput = $(src)/NairnMPM_Class/StartOutput
 StrX = $(com)/Exceptions/StrX
 svninfo = $(com)/System/svninfo
 TaitLiquid = $(src)/Materials/TaitLiquid
 ThermalRamp = $(src)/Global_Quantities/ThermalRamp
+TIViscoelastic = $(src)/Materials/TIViscoelastic
 TorusController = $(src)/Read_MPM/TorusController
 TrackError = $(src)/Custom_Tasks/TrackError
 TractionLaw = $(src)/Materials/TractionLaw
@@ -387,6 +392,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # ExponentialSoftening.hpp : SofteningLaw.hpp
 # ExponentialTraction : MaterialBase.hpp TractionLaw.hpp CohesiveZone.hpp
 # ExtrapolateRigidBCsTask.hpp : MPMTask.hpp (CommonTask.hpp)
+# FluidSource.hpp : CustomTask.hpp
 # FourNodeIsoparam.hpp : Linear2D.hpp (ElementBase.hpp)
 # GridArchive.hpp : CustomTask.hpp
 # GridForcesTask.hpp : MPMTask.hpp (CommonTask.hpp)
@@ -399,6 +405,8 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # InitialCondition.hpp : MatPtLoadBC.hpp BoundaryCondition.hpp
 # InitializationTask : MPMTask.hpp (CommonTask.hpp)
 # InitVelocityFieldsTask : MPMTask.hpp (CommonTask.hpp)
+# IsoDamageMech.hpp : IsoSoftening.hpp (sotropicMat.hpp Elastic.hpp MaterialBase.hpp)
+# IsoPhaseFieldSoftening.hpp : IsotropicMat.hpp (Elastic.hpp MaterialBase.hpp)
 # IsoPlasticity : IsotropicMat.hpp (Elastic.hpp MaterialBase.hpp)
 # IsoPlasticSoftening.hpp : IsoSoftening.hpp (IsotropicMat.hpp Elastic.hpp MaterialBase.hpp)# IsotropicMat.hpp : Elastic.hpp (MaterialBase.hpp)
 # IsoSoftening.hpp : IsotropicMat.hpp (Elastic.hpp MaterialBase.hpp)
@@ -441,6 +449,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # Orthotropic.hpp : TransIsotropic.hpp (Elastic.hpp MaterialBase.hpp)
 # OvalController.hpp : ShapeController.hpp
 # PeriodicXPIC.hpp : CustomTask.hpp
+# PhaseFieldDiffusion.hpp : DiffusionTasks.hpp TransportTask.hpp
 # PointController.hpp : ShapeController.hpp
 # PolygonController.hpp : ShapeController.hpp
 # PostExtrapolationTask.hpp : MPMTask.hpp (CommonTask.hpp)
@@ -462,6 +471,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # SmoothStep3.hpp : SofteningLaw.hpp
 # SphereController.hpp : ShapeController.hpp
 # TaitLiquid.hpp : HyperElastic.hpp (MaterialBase.hpp)
+# TIViscoelastic.hpp : TransIsotropic.hpp (Elastic.hpp MaterialBase.hpp)
 # TorusController.hpp : ShapeController.hpp
 # TractionLaw.hpp : MaterialBase.hpp
 # TransIsotropic.hpp : Elastic.hpp (MaterialBase.hpp)
@@ -520,7 +530,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtilities.o CommonTask.o svninfo.o \
 		CommonException.o ElementBase.o Linear2D.o FourNodeIsoparam.o MaterialBase.o Matrix3.o Matrix4.o \
 		CommonReadHandler.o ParseController.o ElementsController.o NodesController.o TorusController.o \
-		LineController.o MaterialController.o IsotropicMat.o TransIsotropic.o BoxController.o Gauss.o  \
+		LineController.o MaterialController.o IsotropicMat.o TransIsotropic.o BoxController.o Gauss.o Spline2D.o  \
 		Orthotropic.o NodalPoint.o ArchiveData.o NairnMPM.o MPMTask.o MoveCracksTask.o ResetElementsTask.o \
 		InitializationTask.o MassAndMomentumTask.o UpdateStrainsFirstTask.o GridForcesTask.o UpdateMomentaTask.o SetRigidContactVelTask.o \
 		UpdateParticlesTask.o UpdateStrainsLastTask.o UpdateStrainsLastContactTask.o RunCustomTasksTask.o \
@@ -546,7 +556,8 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		ExponentialSoftening.o FailureSurface.o InitialCondition.o IsoSoftening.o LinearSoftening.o PeriodicXPIC.o \
 		SmoothStep3.o SofteningLaw.o XPICExtrapolationTask.o MixedModeTraction.o ExponentialTraction.o FluidSource.o \
 		XPICExtrapolationTaskTO.o IsoPlasticSoftening.o MachineLearning.o DeleteDamaged.o DbleExpSoftening.o \
-		LoadControl.o TrackError.o AreaOfInterest.o
+		LoadControl.o TrackError.o AreaOfInterest.o IsoPhaseFieldSoftening.o IsoDamageMech.o PhaseFieldDiffusion.o \
+		TIViscoelastic.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -580,11 +591,13 @@ UnitsController.o : $(UnitsController).cpp $(UnitsController).hpp $(CommonReadHa
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UnitsController).cpp
 Gauss.o : $(Gauss).cpp $(dprefix)
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Gauss).cpp
-	
+Spline2D.o : $(Spline2D).cpp $(dprefix)
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Spline2D).cpp
+
 # Common: Read_XML
 CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp $(MaterialController).hpp \
 			$(NodesController).hpp $(ElementsController).hpp $(StrX).hpp $(ElementBase).hpp $(NodalPoint).hpp \
-			$(CrackController).hpp
+			$(CrackController).hpp $(Expression).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonReadHandler).cpp
 XYFileImporter.o : $(XYFileImporter).cpp $(dprefix) $(XYFileImporter).hpp $(CommonReadHandler).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(XYFileImporter).cpp
@@ -632,7 +645,8 @@ MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialControlle
 		$(TrilinearTraction).hpp $(IdealGas).hpp $(CoupledSawTooth).hpp $(TaitLiquid).hpp \
 		$(HEIsotropic).hpp $(HEMGEOSMaterial).hpp $(Neohookean).hpp $(ClampedNeohookean).hpp $(ContactLaw).hpp \
 		$(CoulombFriction).hpp $(LinearInterface).hpp $(NonlinearInterface).hpp $(LiquidContact).hpp $(AdhesionFriction).hpp \
-		$(IsoSoftening).hpp $(MixedModeTraction).hpp $(ExponentialTraction).hpp $(IsoPlasticSoftening).hpp
+		$(IsoSoftening).hpp $(MixedModeTraction).hpp $(ExponentialTraction).hpp $(IsoPlasticSoftening).hpp \
+		$(IsoPhaseFieldSoftening).hpp $(IsoDamageMech).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
 
 Atomic.o : $(Atomic).cpp $(Atomic).hpp  $(Expression).hpp
@@ -837,7 +851,8 @@ MPMReadHandler.o : $(MPMReadHandler).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveDat
 			$(CrackHeader).hpp $(CrackSegment).hpp $(TransportTask).hpp $(MatPoint3D).hpp $(MatPtTractionBC).hpp  \
 			$(PolygonController).hpp $(ShapeController).hpp $(SphereController).hpp $(ShellController).hpp $(RigidMaterial).hpp \
 			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp $(PropagateTask).hpp $(PolyhedronController).hpp \
-			$(MatPtHeatFluxBC).hpp $(MatPointAS).hpp $(PressureLaw).hpp $(TaitLiquid).hpp $(ContactLaw).hpp $(InitialCondition).hpp
+			$(MatPtHeatFluxBC).hpp $(MatPointAS).hpp $(PressureLaw).hpp $(TaitLiquid).hpp $(ContactLaw).hpp $(InitialCondition).hpp \
+			$(PhaseFieldDiffusion).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MPMReadHandler).cpp
 Generators.o : $(Generators).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hpp $(CommonReadHandler).hpp $(MaterialBase).hpp \
 			$(MPMBase).hpp $(ElementBase).hpp $(MatPoint2D).hpp $(NodalConcBC).hpp $(NodalTempBC).hpp $(NodalVelBC).hpp $(NodalValueBC).hpp \
@@ -963,6 +978,9 @@ AnisoPlasticity.o : $(AnisoPlasticity).cpp $(dprefix) $(AnisoPlasticity).hpp $(O
 Viscoelastic.o : $(Viscoelastic).cpp $(dprefix) $(Viscoelastic).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ThermalRamp).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(TransportTask).hpp $(CommonException).hpp $(NairnMPM).hpp $(MPMWarnings).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Viscoelastic).cpp
+TIViscoelastic.o : $(TIViscoelastic).cpp $(dprefix) $(TIViscoelastic).hpp $(TransIsotropic).hpp $(MaterialBase).hpp $(Elastic).hpp \
+			$(MPMBase).hpp $(ConductionTask).hpp $(DiffusionTask).hpp $(TransportTask).hpp $(CommonException).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TIViscoelastic).cpp
 HyperElastic.o : $(HyperElastic).cpp $(dprefix) $(HyperElastic).hpp $(MaterialBase).hpp $(TransportTask).hpp \
 			$(ConductionTask).hpp $(DiffusionTask).hpp $(ThermalRamp).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HyperElastic).cpp
@@ -1008,6 +1026,16 @@ IsoPlasticSoftening.o : $(IsoPlasticSoftening).cpp $(dprefix) $(IsoPlasticSoften
 			$(Elastic).hpp $(MPMBase).hpp $(DiffusionTask).hpp $(TransportTask).hpp $(CommonException).hpp \
 			$(FailureSurface).hpp $(SofteningLaw).hpp $(LinearSoftening).hpp $(MaterialBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(IsoPlasticSoftening).cpp
+IsoPhaseFieldSoftening.o : $(IsoPhaseFieldSoftening).cpp $(dprefix) $(IsoPhaseFieldSoftening).hpp $(IsotropicMat).hpp $(Elastic).hpp \
+			$(MaterialBase).hpp $(MPMBase).hpp $(ThermalRamp).hpp $(PhaseFieldDiffusion).hpp $(DiffusionTask).hpp $(TransportTask).hpp \
+			$(CustomTask).hpp $(IsotropicMat).hpp $(Elastic).hpp $(MaterialBase).hpp \
+			$(InitialCondition).hpp $(MatPtLoadBC).hpp $(BoundaryCondition).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(IsoPhaseFieldSoftening).cpp
+IsoDamageMech.o : $(IsoDamageMech).cpp $(dprefix) $(IsoDamageMech).hpp $(IsoSoftening).hpp $(IsotropicMat).hpp $(Elastic).hpp \
+			$(MaterialBase).hpp $(MPMBase).hpp $(ConductionTask).hpp $(DiffusionTask).hpp $(TransportTask).hpp \
+			$(FailureSurface).hpp $(SofteningLaw).hpp $(ThermalRamp).hpp $(MatPtLoadBC).hpp $(BoundaryCondition).hpp \
+			$(InitialCondition).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(IsoDamageMech).cpp
 
 # MPM: Hardening Laws
 HardeningLawBase.o : $(HardeningLawBase).cpp $(dprefix) $(HardeningLawBase).hpp $(MaterialBase).hpp $(MPMBase).hpp $(CommonException).hpp
@@ -1204,6 +1232,9 @@ LoadControl.o : $(LoadControl).cpp $(dprefix) $(LoadControl).hpp $(PropagateTask
 TrackError.o : $(TrackError).cpp $(dprefix) $(TrackError).hpp $(CustomTask).hpp $(NairnMPM).hpp $(MPMBase).hpp \
 			$(CommonException).hpp $(MaterialBase).hpp $(Expression).hpp $(CommonArchiveData).hpp $(ArchiveData).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TrackError).cpp
+PhaseFieldDiffusion.o : $(PhaseFieldDiffusion).cpp $(dprefix) $(PhaseFieldDiffusion).hpp $(DiffusionTask).hpp $(NairnMPM).hpp \
+			$(MaterialBase).hpp $(MPMBase).hpp $(NodalPoint).hpp $(TransportTask).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PhaseFieldDiffusion).cpp
 
 # MPM: Elements
 MoreMPMElementBase.o : $(MoreMPMElementBase).cpp $(dprefix) $(ElementBase).hpp $(NodalPoint).hpp $(MPMBase).hpp $(NairnMPM).hpp \

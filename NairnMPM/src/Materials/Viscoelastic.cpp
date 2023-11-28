@@ -311,103 +311,105 @@ char *Viscoelastic::InputMaterialProperty(char *xName,int &input,double &gScalin
 // throws std::bad_alloc
 const char *Viscoelastic::VerifyAndLoadProperties(int np)
 {
-    if(pressureLaw!=LINEAR_PRESSURE && pressureLaw!=MGEOS_PRESSURE)
-        return "Invalid pressure law was selected";
-    
-    // Shear modulus - must specify ntaus even if it is zero
-    if(currentGk<ntaus || currentTauk<ntaus)
-        return "Insufficient Gk or tauk for expected number of G taus.";
-    if(ntaus<0)
-        return "Number of G taus was never entered.";
-    
-    // bulk modulus. Not entering ntauKs implies time independent bulk modulus
-    if(currentKk<ntausK || currentTauKk<ntausK)
-        return "Insufficient Kk or tauKk for expected number of K taus.";
-    if(ntausK>0)
-    {   if(pressureLaw!=LINEAR_PRESSURE)
-            return "Time-dependent bulk modulus requires linear pressure law";
-        pressureLaw = TIME_DEPENDENT_PRESSURE;
-    }
-    else
-        ntausK = 0;
-    
-    cout << "Pressure Law: " << pressureLaw << endl;
-    
-    // Needs non-zero bulk modulus
-    if(K<0)
-        return "Required bulk modulus must be positive.";
-    
-    // zero time shear modulus
-    Gered = G0;
-    TwoGkred = new double[ntaus];
-    for(int k=0;k<ntaus;k++)
-    {   Gered += Gk[k];
-        TwoGkred[k] = 2.*Gk[k]/rho;
-    }
-    
-    // Convert to specific moduli
-    Gered /= rho;
-
-    // bulk modulus
-    if(pressureLaw==LINEAR_PRESSURE)
-    {   Kered = K/rho;
-    }
-    
-    else if(pressureLaw==TIME_DEPENDENT_PRESSURE)
-    {   // zero time shear modulus
-        Kered = K;
-        Kkred = new double[ntausK];
-        for(int k=0;k<ntausK;k++)
-        {   Kered += Kk[k];
-            Kkred[k] = Kk[k]/rho;
-        }
-        
-        // Convert to specific moduli
-        Kered /= rho;
-    }
-    
-    else if(pressureLaw==MGEOS_PRESSURE)
-    {   // Use in place of C0^2. Units are L^2/sec^2 = F/L^2 L^3/mass
-        // Equal to reduced bulk modulus
-        Kered = C0squared = C0*C0;
-        
-        // Initial bulk modulus
-        K = rho*C0squared;
-        
-        // expansion coefficients - affect on pressure is handled by eos
-        // find for printing (and maybe future large deformation shear)
-        double effAlpha = (heatCapacity*gamma0)/C0squared;
-        CTE = effAlpha/3.;
-        
-        // this material not coupled to moisture expansion
-        betaI = 0.;
-        CME = 0.;
-        
-        // warning
-        if(warnExcessiveX<0)
-            warnExcessiveX = warnings.CreateWarning("Compressive strain has exceeded MGEOS law range in Viscoleastic material",-1,0);
-        Xmax = GetMGEOSXmax(gamma0,S1,S2,S3,Kmax);
-    }
-    
-    else
-        return "Invalid option for the pressure law";
-    
-    // to absolute CTE and CME
-    CTE = 1.e-6*aI;
-    CME = betaI*concSaturation;
-    
-    // for Cp-Cv (units nJ/(g-K^2))
-    Ka2sp = 9.*Kered*CTE*CTE;
-    
-    // WLF coefficients convert to ln aT
-    C1 = log(10.)*C1base10;
-    
-    // Moisture terms - convert to use ln am = - Cm1*(c-cref)/(Cm2+c) where c = m/mref
-    Cm1 = log(10.)*Cm1base10;
-    Cm2 = Cm2base10/concSaturation;
-    mref /= concSaturation;
-    if(mref>=0. && Cm2<=0.)
-        return "Cm2 must be greater than zero";
+	if(pressureLaw!=LINEAR_PRESSURE && pressureLaw!=MGEOS_PRESSURE)
+		return "Invalid pressure law was selected";
+	
+	// Shear modulus - must specify ntaus even if it is zero
+	if(currentGk<ntaus || currentTauk<ntaus)
+		return "Insufficient Gk or tauk for expected number of G taus.";
+	if(ntaus<0)
+		return "Number of G taus was never entered.";
+	
+	// bulk modulus. Not entering ntauKs implies time independent bulk modulus
+	if(currentKk<ntausK || currentTauKk<ntausK)
+		return "Insufficient Kk or tauKk for expected number of K taus.";
+	if(ntausK>0)
+	{   if(pressureLaw!=LINEAR_PRESSURE)
+		return "Time-dependent bulk modulus requires linear pressure law";
+		pressureLaw = TIME_DEPENDENT_PRESSURE;
+	}
+	else
+		ntausK = 0;
+	
+	cout << "Pressure Law: " << pressureLaw << endl;
+	
+	// Needs non-zero bulk modulus
+	if(K<0)
+		return "Required bulk modulus must be positive.";
+	
+	// zero time shear modulus
+	Gered = G0;
+	TwoGkred = new double[ntaus];
+	for(int k=0;k<ntaus;k++)
+	{   Gered += Gk[k];
+		TwoGkred[k] = 2.*Gk[k]/rho;
+	}
+	
+	// Convert to specific moduli
+	Gered /= rho;
+	
+	// bulk modulus
+	if(pressureLaw==LINEAR_PRESSURE)
+	{   Kered = K/rho;
+	}
+	
+	else if(pressureLaw==TIME_DEPENDENT_PRESSURE)
+	{   // zero time shear modulus
+		Kered = K;
+		Kkred = new double[ntausK];
+		for(int k=0;k<ntausK;k++)
+		{   Kered += Kk[k];
+			Kkred[k] = Kk[k]/rho;
+		}
+		
+		// Convert to specific moduli
+		Kered /= rho;
+	}
+	
+	else if(pressureLaw==MGEOS_PRESSURE)
+	{   // Use in place of C0^2. Units are L^2/sec^2 = F/L^2 L^3/mass
+		// Equal to reduced bulk modulus
+		Kered = C0squared = C0*C0;
+		
+		// Initial bulk modulus
+		K = rho*C0squared;
+		
+		// expansion coefficients - affect on pressure is handled by eos
+		// find for printing (and maybe future large deformation shear)
+		double effAlpha = (heatCapacity*gamma0)/C0squared;
+		CTE = effAlpha/3.;
+		
+		// this material not coupled to moisture expansion
+		betaI = 0.;
+		CME = 0.;
+		
+		// warning
+		if(warnExcessiveX<0)
+			warnExcessiveX = warnings.CreateWarning("Compressive strain has exceeded MGEOS law range in Viscoleastic material",-1,0);
+		Xmax = GetMGEOSXmax(gamma0,S1,S2,S3,Kmax);
+	}
+	
+	else
+		return "Invalid option for the pressure law";
+	
+	// to absolute CTE and CME
+	CTE = 1.e-6*aI;
+	CME = betaI*concSaturation;
+	
+	// for Cp-Cv (units nJ/(g-K^2))
+	Ka2sp = 9.*Kered*CTE*CTE;
+	
+	// WLF coefficients convert to ln aT
+	C1 = log(10.)*C1base10;
+	
+	// Moisture terms - convert to use ln am = - Cm1*(c-cref)/(Cm2+c) where c = m/csat and cref=mref/csat
+	Cm1 = log(10.)*Cm1base10;
+	Cm2 = Cm2base10/concSaturation;
+	mref /= concSaturation;
+	if(mref>=0. && Cm2<=0.)
+		return "Cm2 must be greater than zero";
+	if(mref>1.)
+		return "mref must less than or equal to csat";
 
     // call super class
     return MaterialBase::VerifyAndLoadProperties(np);
@@ -587,7 +589,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
     ScaleTensor(&dsig,bshift*Gered);
 
     // get effective time increment
-    double delEffTime = GetEffectiveIncrement(mptr,res,delTime,Tref,C1,C2,mref,Cm1,Cm2,0.,0.,0.);
+    double delEffTime = GetEffectiveIncrement(mptr,res,delTime,Tref,C1,C2,mref,Cm1,Cm2,0.,0.);
     
     // get internal variable increments, update them, add to incremental stress, and get dissipated energy
     // For plane stress, this gets initial deviatoric stress update only
@@ -1040,7 +1042,7 @@ double Viscoelastic::GetCpMinusCv(MPMBase *mptr) const
 // Get effective time increment for viscoelatic materials
 double Viscoelastic::GetEffectiveIncrement(MPMBase *mptr,ResidualStrains *res,double dRealTime,
                                            double T0,double cT1,double cT2,double m0,double cC1,
-                                           double cC2,double kmsEffect,double cMu1,double cMu2)
+                                           double cC2,double taums,double cMs)
 {
     // if reference properties not set, using actual time
     if(T0<0. && m0<0.) return dRealTime;
@@ -1050,8 +1052,7 @@ double Viscoelastic::GetEffectiveIncrement(MPMBase *mptr,ResidualStrains *res,do
     double lnR = 0.;
 
     // First check temperature
-    bool shifted = false;       // means lnR != 0
-    double mlogaold=0.;
+	double mlogaold=0.,mlogamold=0.;
     if(T0>=0.)
     {   // previous temperature
         double Tnew = mptr->pPreviousTemperature;
@@ -1063,7 +1064,6 @@ double Viscoelastic::GetEffectiveIncrement(MPMBase *mptr,ResidualStrains *res,do
         // only deviates from ln 1=0 when dT changes
         if(!DbleEqual(res->dT,0.))
         {   lnR = cT1*cT2*res->dT/((cT2+Tnew-T0)*(cT2+Told-T0));
-            shifted = true;
         }
         
         // will need this even if does not change (previous -ln aT)
@@ -1071,43 +1071,50 @@ double Viscoelastic::GetEffectiveIncrement(MPMBase *mptr,ResidualStrains *res,do
     }
     
     // Up to here
-    // lnR = ln aT(T)/(aT(T+dT)) and mlogaold = - ln aT(T) and shifted=true if lnR!=0
+    // lnR = ln aT(T)/(aT(T+dT)) and mlogaold = - ln aT(T)
 
-    // now check if moisture effects too (only if simulation has a concentration in pDiff[0])
+    // now check if moisture effect too (only if simulation has a concentration in pDiff[0])
     if(m0>=0. && diffusion!=NULL)
-    {   // concentrations from the grid
-        double cnew = mptr->pDiff[0]->prevConc;
-        double cold = cnew - res->dC;
-        
-        // only deviates from ln 1=0 and only change ln R when dC changes
-        if(!DbleEqual(res->dC,0.))
-        {   // add to temperature changes using (ln am(cold)-ln am(cnew))
-            // when done, lnR = ln aT(T)am(c)/(aT(T+dT)am(c+dc))
-            double del = cC1*(cC2+m0)*res->dC/((cC2+cnew)*(cC2+cold));
-            lnR += del;
-            shifted = true;
-        }
-        
-        // will need this even when dC=0 (previous -ln am); it adds to thermal shift
-        mlogaold += cC1*(cold-m0)/(cC2+cold);
+	{   // concentrations from the grid
+		double cnew = mptr->pDiff[0]->prevConc;
+		double cold = cnew - res->dC;
+		
+		// moisture shift (previous -ln am)
+		mlogamold = cC1*(cold-m0)/(cC2+cold);
+		
+		// only need more when dC changes)
+		if(!DbleEqual(res->dC,0.))
+		{   // add to temperature changes using (ln am(cold)-ln am(cnew))
+			// when done, lnR = ln aT(T)am(c)/(aT(T+dT)am(c+dc))
+			double del = cC1*(cC2+m0)*res->dC/((cC2+cnew)*(cC2+cold));
 
-    }
-    
+			// add to ln R from temperature
+			lnR += del;
+		}
+		
+		// combine temperature and moisture previous shift
+		mlogaold += mlogamold;
+	}
+	
     // When here
-    // lnR = ln aT(T)am(c)/(aT(T+dT)am(c+dc)) and mlogaold = -ln aT(T)am(c) and shifted=true if lnR!=0
+    // lnR = ln aT(T)am(c)/(aT(T+dT)am(c+dc)) and mlogaold = -ln aT(T)am(c)
     
-    // get increment in effective time (temperature, or temperature and moisture bytut dC=0)
-    double scale = 1.;
-    if(shifted)
-    {   double R = exp(lnR);
-        if(fabs(R-1.)<0.05)
-            scale = (9.+R*(19.-R*(5.-R)))/24.;
-        else
-            scale = (R-1.)/lnR;
-    }
+    // return the effective increment = dt*scale/(aT am)
+    return dRealTime*GetDtScale(lnR)*exp(mlogaold);
+}
 
-    // return the increment = dt*scale/(aT am)
-    return dRealTime*scale*exp(mlogaold);
+// get scale factor for effective time integration
+double Viscoelastic::GetDtScale(double lnR)
+{
+	double scale = 1.;
+	if(lnR!=0.)
+	{	double R = exp(lnR);
+		if(fabs(R-1.)<0.05)
+			scale = (9.+R*(19.-R*(5.-R)))/24.;
+		else
+			scale = (R-1.)/lnR;
+	}
+	return scale;
 }
 
 #pragma mark Viscoelastic::Accessors

@@ -11,16 +11,17 @@ For Windows
 3. Create a "Resources" folder in the NairnFEAMPMViz folder
 4. Copy the most recent "NairnFEAMPMViz.jar file to that folder
 5. Create a "bundle" folder in the "Resources" folder
-6. In the bundle folder copy all needed binaries and libraries including
+6. In the bundle folder copy all needed binaries, libraries, and DTD files:
      a. NairnFEA.exe and NairnMPM.exe
      b. NairnFEA.dtd and NairnMPM.dtd
      c. The xerces dll file
      d. The libraries msvcp140.dll, vcomp140.dll, and vcruntime140.dll
+     e. ExtractMPM.exe
 5. Copy NairnFEAMPMViz.ico to the bundle folder
 
 The NairnFEA.exe and NairnMPM.exe binaries are results of compiling them in Visual Studio. The xerces dll can be compiled or downloaded from the internet. The remaining libraries are available in Visual Studio installs. All these dll's are permissible for distribution. You may need different versions for future version of Windows.
 
-The NairnFEAMPMViz.ico can optionally be use create a short cut with a nice icon:
+The NairnFEAMPMViz.ico can optionally be used create a short cut with a nice icon:
 
 1. Right click on NairnFEAMPMLaunch.bat and choose to create a short cut from the menu
 2. Rename that shortcut to NairnFEAMPM

@@ -17,16 +17,14 @@
 
 // include this to write tasks to a .log file during the calculation
 // If a crash occurs, the log file can be consulted to see where it
-// crashed in the time step
-// For quicker check, activate COUT_PROGRESS in NairnMPM.cpp
+// crashed in the time step. You can change LOG_START_STEP to only
+// write to file after that time step number
 //#define LOG_PROGRESS
+#define LOG_START_STEP 0
 
 // Activate debugging messages that look for nan in results in seleted places
 // More could be added as needed
 //#define CHECK_NAN
-
-// Allow FMPM methods in transport anlaysis
-#define TRANSPORT_FMPM
 
 // Activate option for Poroelasticy calculations
 #define POROELASTICITY
@@ -55,6 +53,15 @@
 // For those interested in trying it our, uncomment this directive.
 // Warning: Only implemened for CoulombFriction and AdhesiveFriction contact laws
 //#define THREE_MAT_CONTACT
+
+// Uncomment to allow a method to increase the speed of multiple cracks
+// The changes are all in InitVelocityFieldsTask
+// 1. Create a list on each element of any cracks
+//      it sees using a one element buffer for GIMP and SPLINE. This could
+//      Break in CPDI if radius not used or is > 1.
+// 2. When checking material point to node crossings, skip any material points
+//      that are in elements that do not see a crack
+#define PREHASH_CRACKS
 
 // C includes
 #ifdef WINDOWS_EXE

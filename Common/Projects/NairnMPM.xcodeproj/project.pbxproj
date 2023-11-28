@@ -45,6 +45,18 @@
 		52CD7E3B205B45B60016FCEE /* MaterialContactNode.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52CD7E39205B45B60016FCEE /* MaterialContactNode.hpp */; };
 		52DB4D471DEDF6E200A0EC4C /* stdafx.h in Headers */ = {isa = PBXBuildFile; fileRef = 52DB4D461DEDF6E200A0EC4C /* stdafx.h */; };
 		52DB4D481DEDF6E200A0EC4C /* stdafx.h in Headers */ = {isa = PBXBuildFile; fileRef = 52DB4D461DEDF6E200A0EC4C /* stdafx.h */; };
+		52F81DA92B0BC6490086B029 /* IsoPhaseFieldSoftening.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52F81DA52B0BC6490086B029 /* IsoPhaseFieldSoftening.cpp */; };
+		52F81DAA2B0BC6490086B029 /* IsoDamageMech.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52F81DA62B0BC6490086B029 /* IsoDamageMech.hpp */; };
+		52F81DAB2B0BC6490086B029 /* IsoPhaseFieldSoftening.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52F81DA72B0BC6490086B029 /* IsoPhaseFieldSoftening.hpp */; };
+		52F81DAC2B0BC6490086B029 /* IsoDamageMech.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52F81DA82B0BC6490086B029 /* IsoDamageMech.cpp */; };
+		52F81DAF2B0BC8850086B029 /* PhaseFieldDiffusion.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52F81DAD2B0BC8850086B029 /* PhaseFieldDiffusion.cpp */; };
+		52F81DB02B0BC8850086B029 /* PhaseFieldDiffusion.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52F81DAE2B0BC8850086B029 /* PhaseFieldDiffusion.hpp */; };
+		52F81DB32B0BC9480086B029 /* TIViscoelastic.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52F81DB12B0BC9480086B029 /* TIViscoelastic.hpp */; };
+		52F81DB42B0BC9480086B029 /* TIViscoelastic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52F81DB22B0BC9480086B029 /* TIViscoelastic.cpp */; };
+		52F81DB72B0BE4D80086B029 /* Spline2D.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52F81DB52B0BE4D80086B029 /* Spline2D.hpp */; };
+		52F81DB82B0BE4D80086B029 /* Spline2D.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52F81DB52B0BE4D80086B029 /* Spline2D.hpp */; };
+		52F81DB92B0BE4D80086B029 /* Spline2D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52F81DB62B0BE4D80086B029 /* Spline2D.cpp */; };
+		52F81DBA2B0BE4D80086B029 /* Spline2D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52F81DB62B0BE4D80086B029 /* Spline2D.cpp */; };
 		52F9192C1E4CFDF600D87838 /* LiquidContact.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52F9192A1E4CFDF600D87838 /* LiquidContact.cpp */; };
 		52F9192D1E4CFDF600D87838 /* LiquidContact.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52F9192B1E4CFDF600D87838 /* LiquidContact.hpp */; };
 		6700560A163AFC3600FFE145 /* HistoryArchive.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67005609163AFC3600FFE145 /* HistoryArchive.hpp */; };
@@ -544,6 +556,16 @@
 		52CD7E38205B45B60016FCEE /* MaterialContactNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MaterialContactNode.cpp; sourceTree = "<group>"; };
 		52CD7E39205B45B60016FCEE /* MaterialContactNode.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MaterialContactNode.hpp; sourceTree = "<group>"; };
 		52DB4D461DEDF6E200A0EC4C /* stdafx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = stdafx.h; path = Headers/stdafx.h; sourceTree = "<group>"; };
+		52F81DA52B0BC6490086B029 /* IsoPhaseFieldSoftening.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IsoPhaseFieldSoftening.cpp; path = Materials/IsoPhaseFieldSoftening.cpp; sourceTree = "<group>"; };
+		52F81DA62B0BC6490086B029 /* IsoDamageMech.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = IsoDamageMech.hpp; path = Materials/IsoDamageMech.hpp; sourceTree = "<group>"; };
+		52F81DA72B0BC6490086B029 /* IsoPhaseFieldSoftening.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = IsoPhaseFieldSoftening.hpp; path = Materials/IsoPhaseFieldSoftening.hpp; sourceTree = "<group>"; };
+		52F81DA82B0BC6490086B029 /* IsoDamageMech.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IsoDamageMech.cpp; path = Materials/IsoDamageMech.cpp; sourceTree = "<group>"; };
+		52F81DAD2B0BC8850086B029 /* PhaseFieldDiffusion.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PhaseFieldDiffusion.cpp; sourceTree = "<group>"; };
+		52F81DAE2B0BC8850086B029 /* PhaseFieldDiffusion.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PhaseFieldDiffusion.hpp; sourceTree = "<group>"; };
+		52F81DB12B0BC9480086B029 /* TIViscoelastic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TIViscoelastic.hpp; sourceTree = "<group>"; };
+		52F81DB22B0BC9480086B029 /* TIViscoelastic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TIViscoelastic.cpp; sourceTree = "<group>"; };
+		52F81DB52B0BE4D80086B029 /* Spline2D.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Spline2D.hpp; sourceTree = "<group>"; };
+		52F81DB62B0BE4D80086B029 /* Spline2D.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Spline2D.cpp; sourceTree = "<group>"; };
 		52F9192A1E4CFDF600D87838 /* LiquidContact.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LiquidContact.cpp; path = Materials/LiquidContact.cpp; sourceTree = "<group>"; };
 		52F9192B1E4CFDF600D87838 /* LiquidContact.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = LiquidContact.hpp; path = Materials/LiquidContact.hpp; sourceTree = "<group>"; };
 		67005609163AFC3600FFE145 /* HistoryArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HistoryArchive.hpp; sourceTree = "<group>"; };
@@ -1055,6 +1077,8 @@
 				A7C954F8044717540063AF10 /* BistableIsotropic.cpp */,
 				A7CA395703F16F3A0063AF10 /* Viscoelastic.hpp */,
 				A7CA395603F16F3A0063AF10 /* Viscoelastic.cpp */,
+				52F81DB12B0BC9480086B029 /* TIViscoelastic.hpp */,
+				52F81DB22B0BC9480086B029 /* TIViscoelastic.cpp */,
 				A7D1E5800749581A00BC2956 /* RigidMaterial.hpp */,
 				A7D1E5810749581A00BC2956 /* RigidMaterial.cpp */,
 				A71FC00E0E377F1F001908F8 /* NewMaterial.hpp */,
@@ -1114,6 +1138,10 @@
 				67FF7B7B1B3D4DBE00661973 /* IsoSoftening.cpp */,
 				524FCF4A1F8C3560009F583B /* IsoPlasticSoftening.hpp */,
 				524FCF491F8C3560009F583B /* IsoPlasticSoftening.cpp */,
+				52F81DA62B0BC6490086B029 /* IsoDamageMech.hpp */,
+				52F81DA82B0BC6490086B029 /* IsoDamageMech.cpp */,
+				52F81DA72B0BC6490086B029 /* IsoPhaseFieldSoftening.hpp */,
+				52F81DA52B0BC6490086B029 /* IsoPhaseFieldSoftening.cpp */,
 				67FF7B741B3D491D00661973 /* FailureSurface.hpp */,
 				67FF7B731B3D491D00661973 /* FailureSurface.cpp */,
 				67FF7B781B3D4CAB00661973 /* SofteningLaw.hpp */,
@@ -1168,6 +1196,8 @@
 				6736CBEA1AB67E5E0009A663 /* UnitsController.hpp */,
 				6736CBE91AB67E5D0009A663 /* UnitsController.cpp */,
 				5292DD53293837890020A870 /* Gauss.cpp */,
+				52F81DB52B0BE4D80086B029 /* Spline2D.hpp */,
+				52F81DB62B0BE4D80086B029 /* Spline2D.cpp */,
 			);
 			path = System;
 			sourceTree = "<group>";
@@ -1312,6 +1342,8 @@
 				52884F68298AFFB700C821FC /* LoadControl.hpp */,
 				52884F63298AFFB700C821FC /* TrackError.cpp */,
 				52884F65298AFFB700C821FC /* TrackError.hpp */,
+				52F81DAE2B0BC8850086B029 /* PhaseFieldDiffusion.hpp */,
+				52F81DAD2B0BC8850086B029 /* PhaseFieldDiffusion.cpp */,
 			);
 			path = Custom_Tasks;
 			sourceTree = "<group>";
@@ -1800,6 +1832,7 @@
 				A766702805862EB600F56460 /* MatPoint2D.hpp in Headers */,
 				A766702905862EB600F56460 /* CommonException.hpp in Headers */,
 				A766702A05862EB600F56460 /* CrackHeader.hpp in Headers */,
+				52F81DAB2B0BC6490086B029 /* IsoPhaseFieldSoftening.hpp in Headers */,
 				A766702B05862EB600F56460 /* CrackSegment.hpp in Headers */,
 				A766702D05862EB600F56460 /* TransIsotropic.hpp in Headers */,
 				A766702E05862EB600F56460 /* Orthotropic.hpp in Headers */,
@@ -1813,6 +1846,7 @@
 				A766703905862EB600F56460 /* CustomTask.hpp in Headers */,
 				A766703A05862EB600F56460 /* PropagateTask.hpp in Headers */,
 				67BF08FD206C983C00D39CE1 /* Matrix4.hpp in Headers */,
+				52F81DB02B0BC8850086B029 /* PhaseFieldDiffusion.hpp in Headers */,
 				A766703B05862EB600F56460 /* ReverseLoad.hpp in Headers */,
 				A7731E2B05B44BDE00294E25 /* ArchiveData.hpp in Headers */,
 				52884FAB298B050C00C821FC /* XYTXTImporter.hpp in Headers */,
@@ -1836,6 +1870,7 @@
 				6773BE6C211ACF3300048879 /* Atomic.hpp in Headers */,
 				A7313F9B07CF77F90074510B /* CrackNode.hpp in Headers */,
 				52F9192D1E4CFDF600D87838 /* LiquidContact.hpp in Headers */,
+				52F81DAA2B0BC6490086B029 /* IsoDamageMech.hpp in Headers */,
 				A767E02B08B14BFA004540AB /* LinkedObject.hpp in Headers */,
 				A767E04308B14CAA004540AB /* CrackController.hpp in Headers */,
 				A767E04508B14CAA004540AB /* ElementsController.hpp in Headers */,
@@ -1843,6 +1878,7 @@
 				A767E04908B14CAA004540AB /* MaterialController.hpp in Headers */,
 				A767E04B08B14CAA004540AB /* MpsController.hpp in Headers */,
 				A767E04D08B14CAA004540AB /* NodesController.hpp in Headers */,
+				52F81DB72B0BE4D80086B029 /* Spline2D.hpp in Headers */,
 				529E52E01E8D806800E7C1B8 /* NonlinearInterface.hpp in Headers */,
 				A767E04F08B14CAA004540AB /* ParseController.hpp in Headers */,
 				52884F6B298AFFB700C821FC /* TrackError.hpp in Headers */,
@@ -1948,6 +1984,7 @@
 				674664851F5DBF2400F188A7 /* SmoothStep3.hpp in Headers */,
 				A7606A5D1AD4A75C00B04E07 /* UpdateStrainsLastContactTask.hpp in Headers */,
 				67FF7B761B3D491D00661973 /* FailureSurface.hpp in Headers */,
+				52F81DB32B0BC9480086B029 /* TIViscoelastic.hpp in Headers */,
 				67FF7B7A1B3D4CAB00661973 /* SofteningLaw.hpp in Headers */,
 				67FF7B7E1B3D4DBE00661973 /* IsoSoftening.hpp in Headers */,
 				67C58A841BDBD91A00EB036F /* ContactLaw.hpp in Headers */,
@@ -2027,6 +2064,7 @@
 				A77AF31E0D592F7000D5313A /* BMPLevel.hpp in Headers */,
 				67B213B811F90404007523EE /* CommonTask.hpp in Headers */,
 				A76DC50A1303428B00BFECBD /* Lagrange2D.hpp in Headers */,
+				52F81DB82B0BE4D80086B029 /* Spline2D.hpp in Headers */,
 				A76DC510130342EE00BFECBD /* Quad2D.hpp in Headers */,
 				671514D515465EAD005F33A9 /* OvalController.hpp in Headers */,
 				671514DB1547035D005F33A9 /* PolygonController.hpp in Headers */,
@@ -2193,6 +2231,7 @@
 				A766704005862EB600F56460 /* NairnMPM.cpp in Sources */,
 				A766704105862EB600F56460 /* MPMReadHandler.cpp in Sources */,
 				A766704305862EB600F56460 /* NodalPoint.cpp in Sources */,
+				52F81DAC2B0BC6490086B029 /* IsoDamageMech.cpp in Sources */,
 				A766704405862EB600F56460 /* ElementBase.cpp in Sources */,
 				A766704505862EB600F56460 /* Linear2D.cpp in Sources */,
 				A766704605862EB600F56460 /* FourNodeIsoparam.cpp in Sources */,
@@ -2215,6 +2254,7 @@
 				A766705705862EB600F56460 /* Mooney.cpp in Sources */,
 				A766705905862EB600F56460 /* MaterialBaseMPM.cpp in Sources */,
 				A766705A05862EB600F56460 /* NodalPointMPM.cpp in Sources */,
+				52F81DB92B0BE4D80086B029 /* Spline2D.cpp in Sources */,
 				A766705B05862EB600F56460 /* BistableIsotropic.cpp in Sources */,
 				A766705D05862EB600F56460 /* CalcJKTask.cpp in Sources */,
 				A766705E05862EB600F56460 /* CustomTask.cpp in Sources */,
@@ -2255,6 +2295,7 @@
 				A7C77A3009869EA6001BE128 /* CommonAnalysis.cpp in Sources */,
 				A7C77A3209869EA6001BE128 /* CommonArchiveData.cpp in Sources */,
 				A79E3D320A1A80BF00378F5C /* MeshInfo.cpp in Sources */,
+				52F81DAF2B0BC8850086B029 /* PhaseFieldDiffusion.cpp in Sources */,
 				A7E037250A6D4639006B5A4E /* TransportTask.cpp in Sources */,
 				A777F7200A704DBA00446CB5 /* EightNodeIsoparamBrick.cpp in Sources */,
 				52884F55298AEADF00C821FC /* Reservoir.cpp in Sources */,
@@ -2322,6 +2363,7 @@
 				67C733C016741ED100698D4F /* Matrix3.cpp in Sources */,
 				A778E0C816A8CBB1003D27FE /* HardeningLawBase.cpp in Sources */,
 				A778E0CC16A8D514003D27FE /* NonlinearHardening.cpp in Sources */,
+				52F81DB42B0BC9480086B029 /* TIViscoelastic.cpp in Sources */,
 				A778E0D016A8D7D9003D27FE /* LinearHardening.cpp in Sources */,
 				A778E0DA16AA07A2003D27FE /* SCGLHardening.cpp in Sources */,
 				67B916D416AE15E600632385 /* HEIsotropic.cpp in Sources */,
@@ -2354,6 +2396,7 @@
 				A7606A5C1AD4A75C00B04E07 /* UpdateStrainsLastContactTask.cpp in Sources */,
 				67FF7B751B3D491D00661973 /* FailureSurface.cpp in Sources */,
 				52884F6C298AFFB700C821FC /* FluidSource.cpp in Sources */,
+				52F81DA92B0BC6490086B029 /* IsoPhaseFieldSoftening.cpp in Sources */,
 				67FF7B791B3D4CAB00661973 /* SofteningLaw.cpp in Sources */,
 				67FF7B7D1B3D4DBE00661973 /* IsoSoftening.cpp in Sources */,
 				67C58A831BDBD91A00EB036F /* ContactLaw.cpp in Sources */,
@@ -2448,6 +2491,7 @@
 				A715F5A21542066800D53E52 /* MatRegionFEA.cpp in Sources */,
 				671514D215465E8B005F33A9 /* OvalController.cpp in Sources */,
 				523685CF1FE9C9EA00861D29 /* CSTriangle.cpp in Sources */,
+				52F81DBA2B0BE4D80086B029 /* Spline2D.cpp in Sources */,
 				671514D91547035D005F33A9 /* PolygonController.cpp in Sources */,
 				67A90CC1170F75C40028554A /* svninfo.cpp in Sources */,
 				6736CBEC1AB67E5E0009A663 /* UnitsController.cpp in Sources */,

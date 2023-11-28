@@ -9,8 +9,7 @@
    -------------------------
 	See TransportTask.cpp comments with
 		gTValue, gVCT, gQ in gDiff[]
-		(materials with csat depending on position extrapolate gTValueRel,
-			or gTRelValue and uses one of them in AddTransportGradients.
+		materials with csat depending on position extrapolate gTValueRel,
  
     Update Particles Task
         cut off particle potential to range 0 to 1
@@ -32,9 +31,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "System/UnitsController.hpp"
-#ifdef TRANSPORT_FMPM
-    #include "NairnMPM_Class/XPICExtrapolationTaskTO.hpp"
-#endif
+#include "NairnMPM_Class/XPICExtrapolationTaskTO.hpp"
 
 // globals
 DiffusionTask *diffusion=NULL;
@@ -49,10 +46,10 @@ DiffusionTask::DiffusionTask(double prop1,double prop2,int diffusionStyle) : Tra
 	reference = prop1;
 	viscosity = prop2;			// only for poroelasticity
     if(diffusionStyle==MOISTURE_DIFFUSION)
-    {   // moisture diffution onle
+    {   // moisture diffution only
         noLimit = prop2>0.5 ? true : false ;
     }
-	style = diffusionStyle;     // 1 for diffusion, 2 forporoelasticity, id for subclass PhaseFieldDiffusion
+	style = diffusionStyle;     // 1 for diffusion, 2 for poroelasticity, 3 for PhaseFieldDiffusion
 	number = 0;					// for diffusion, others will get a number when CountDiffusionTasks() called
 }
 
@@ -112,13 +109,8 @@ TransportTask *DiffusionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,
 		//   and it allows saturation to change with particle state
 		// if csatRelative<1, pConc may exceed 1
 		double csatRel = matref->GetCsatRelative(mptr);
-#ifdef USE_GTVALUEREL
 		gTrans->gTValueRel += VpValueShape/csatRel;
-#else
-		gTrans->gTRelValue += VpCTShape*csatRel;
-#endif
 	}
-
 	
 	Task1ContactExtrapolation(ndpt,vfld,matfld,VpValueShape,VpCTShape);
 	return nextTask;
@@ -135,16 +127,60 @@ void DiffusionTask::ZeroTransportGradients(MPMBase *mptr)
 {	mptr->AddConcentrationGradient(number);
 }
 
+// Task 1b - impose grid-based transport value BCs
+// special case here to trap set gTValueRel if needed
+//      (but only if copyFirst, for gradients, and if modeling activity)
+void DiffusionTask::ImposeValueBCs(double stepTime,bool copyFirst)
+{   // use parent if not needed
+    if(!copyFirst || !doCrelExtrapolation)
+    {   TransportTask::ImposeValueBCs(stepTime,copyFirst);
+        return;
+    }
+    
+    // exit if no BCs
+    NodalValueBC *nextBC = GetFirstBCPtr();
+    if(nextBC==NULL) return;
+    
+    // Copy no-BC transport value and activity coefficient
+    int i;
+    if(copyFirst)
+    {   while(nextBC!=NULL)
+        {   i = nextBC->GetNodeNum(stepTime);
+            if(i!=0) nextBC->CopyNodalValue(nd[i],GetTransportFieldPtr(nd[i]),true);
+            nextBC = (NodalValueBC *)nextBC->GetNextObject();
+        }
+        nextBC = GetFirstBCPtr();
+    }
+    
+    // Zero them all
+    while(nextBC!=NULL)
+    {   i = nextBC->GetNodeNum(stepTime);
+        if(i!=0)
+        {   TransportField *gTrans = GetTransportFieldPtr(nd[i]);
+            gTrans->gTValue = 0.;
+            gTrans->gTValueRel = 0.;
+        }
+        nextBC = (NodalValueBC *)nextBC->GetNextObject();
+    }
+    
+    // Now add all transport values to nodes with value BCs and add activity too
+    nextBC = GetFirstBCPtr();
+    while(nextBC!=NULL)
+    {   i = nextBC->GetNodeNum(stepTime);
+        if(i!=0)
+        {   TransportField *gTrans = GetTransportFieldPtr(nd[i]);
+            gTrans->gTValue += nextBC->BCValue(stepTime);
+            gTrans->gTValueRel += nextBC->nodalActivity*nextBC->BCValue(stepTime);
+        }
+        nextBC = (NodalValueBC *)nextBC->GetNextObject();
+    }
+}
+
 // Add gradients on the particles
 void DiffusionTask::AddTransportGradients(MPMBase *mptr,Vector *deriv,NodalPoint *ndptr,short vfld)
 {
-#ifdef USE_GTVALUEREL
 	double theValue = !doCrelExtrapolation ? ndptr->gDiff[number].gTValue :
 												ndptr->gDiff[number].gTValueRel ;
-#else
-	double theValue = !doCrelExtrapolation ? ndptr->gDiff[number].gTValue :
-						ndptr->gDiff[number].gTValue/ndptr->gDiff[number].gTRelValue;
-#endif
 	mptr->AddConcentrationGradient(number,ScaleVector(deriv,theValue));
 }
 
@@ -195,7 +231,7 @@ void DiffusionTask::AdjustRateAndValue(MPMBase *mptr,double &value,
         
         // check rate, unless pure FMPM
         if(!usingXPIC || usingFraction<1.)
-        {    // grab particle value
+        {	// grab particle value
             double pConc = GetParticleValue(mptr);
             
             // make sure rate does not jump negative (only needed for FLIP)
@@ -208,7 +244,7 @@ void DiffusionTask::AdjustRateAndValue(MPMBase *mptr,double &value,
     {   // new value must stay between 0 and csatRelative for both using XPIC or FLIP
         double csatRelative = 1.;
         if(doCrelExtrapolation)
-        {    MaterialBase *matref = theMaterials[mptr->MatID()];
+        {	MaterialBase *matref = theMaterials[mptr->MatID()];
             csatRelative = matref->GetCsatRelative(mptr);
         }
         value = fmax(fmin(csatRelative,value),0.);
@@ -218,20 +254,20 @@ void DiffusionTask::AdjustRateAndValue(MPMBase *mptr,double &value,
         
         // check rate, unless pure FMPM
         if(!usingXPIC || usingFraction<1.)
-        {    // grab particle value
+        {	// grab particle value
             double pConc = GetParticleValue(mptr);
             
             // make sure rate does not jump outside the range
             // minimum rate for FLIP is when pConc+mincdt*dt=0 or mincdt = -pConc/dt
             double mincdt = -pConc/deltime;
             if(rate<mincdt)
-            {    rate = mincdt;
+            {	rate = mincdt;
             }
             else
-            {    // maximum rate is when pConc+maxcdt*dt = csatRelative
+            {	// maximum rate is when pConc+maxcdt*dt = csatRelative
                 double maxcdt = csatRelative/deltime+mincdt;
                 if(rate>maxcdt)
-                {    rate = maxcdt;
+                {	rate = maxcdt;
                 }
             }
         }
@@ -239,7 +275,7 @@ void DiffusionTask::AdjustRateAndValue(MPMBase *mptr,double &value,
 }
 
 // After extrapolate, find dC value in super class method
-// Pororelasticity prevent prevConc from going below zere if if needed
+// Pororelasticity prevent prevConc from going below zero if if needed
 //		sets dC to match.
 void DiffusionTask::GetDeltaValue(MPMBase *mptr,double pValueExtrap,double *dC) const
 {	// get change in phase field from extrapolated values
@@ -263,7 +299,6 @@ TransportTask *DiffusionTask::MoveTransportValue(MPMBase *mptr,double deltime,do
 	// grab pointer to value
 	double *pConc = GetParticleValuePtr(mptr);
 	
-#ifdef TRANSPORT_FMPM
 	if(usingXPIC)
 	{	// FMPM update just replace the value or blend with FLIP
 		if(usingFraction<1.)
@@ -275,10 +310,7 @@ TransportTask *DiffusionTask::MoveTransportValue(MPMBase *mptr,double deltime,do
 	{	// FLIP update
 		*pConc += deltime*rate;
 	}
-#else
-	*pConc += deltime*rate;
-#endif
-	
+
 	return nextTask;
 }
 
@@ -366,12 +398,13 @@ double DiffusionTask::RescalePotential(int phaseStyle)
 
 // convert Legacy poroelasticity (dV/V)/time to (dV/V)/time (factor=1) and
 // convert concetration flux (kg/(m^2-sec) to Legacy (g/(mm^2 sec))
-double DiffusionTask::RescaleFlux(void)
-{	if(diffusion==NULL) return 1.;
-	return diffusion->style==MOISTURE_DIFFUSION ? UnitsController::Scaling(1.e-3) : 1. ;
+// other transport set to 1
+double DiffusionTask::RescaleFlux(int phaseStyle)
+{	if(phaseStyle>MOISTURE_DIFFUSION) return 1.;
+	return UnitsController::Scaling(1.e-3);
 }
 
-// find diffusion task for a style or NULL is none available
+// find diffusion task for a style or NULL if none available
 DiffusionTask *DiffusionTask::FindDiffusionTask(int findStyle)
 {
 	// just first one (and may be NULL)
@@ -405,6 +438,30 @@ int DiffusionTask::FindDiffusionNumber(int findStyle)
 		nextTask = (DiffusionTask *)nextTask->GetNextTransportTask();
 	}
 	return nextTask!=NULL ? nextTask->GetNumber() : -1 ;
+}
+
+// find number for diffusion by order in file where
+// 0 is concentratino or poroelasticity and return -1 if neither their
+// >0 is by order in otherDiffusion tasks
+DiffusionTask *DiffusionTask::FindDiffusionTaskByOrder(int findNum)
+{
+    // 0 is concentration of poroelasticity
+    if(findNum==0)
+		return diffusion;
+    
+    // step through other diffusions
+    DiffusionTask *nextTask = otherDiffusion;
+    while(nextTask!=NULL)
+    {   // if this one, return its number
+        if(findNum==1) return nextTask;
+        
+        // count down and on to the next
+        findNum--;
+        nextTask = (DiffusionTask *)nextTask->GetNextTransportTask();
+    }
+    
+    // here if no match found
+    return NULL;
 }
 
 // Count diffusion tasks. Done when SetConcentration called in MPMBase

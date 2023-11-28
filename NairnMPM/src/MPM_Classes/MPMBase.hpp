@@ -221,12 +221,6 @@ class MPMBase : public LinkedObject
 		virtual void GetFiniteGIMP_Integrals(void);
 		FiniteGIMPInfo *GetFiniteGIMPInfo(void);
 
-#ifdef SUPPORT_MEMBRANES
-		virtual void GetOrientation(double *,double *,double *) const;
-		virtual void SetOrientation(double ang1,double ang2,double ang3);
-		virtual bool isMembranePt(void) const;
-#endif
-	
 	protected:
 		// variables (changed in MPM time step)
 		Vector mpm_lp;				// Dimensionless size relative to current element (radius in -1 to 1 natural coordinates)

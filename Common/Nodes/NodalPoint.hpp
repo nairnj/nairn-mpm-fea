@@ -95,7 +95,8 @@ class NodalPoint : public LinkedObject
 		void UpdateMomentum(double);
 		void IncrementDelvaTask5(short,int,double,GridToParticleExtrap *) const;
 
-		bool IncrementDelvSideTask8(short,int,double,Vector *,Vector *,double *,CrackSegment *,double) const;
+		bool IncrementDelvSideTask8(short,int,double,Vector *,Vector *,double *,CrackSegment *) const;
+        bool IncrementDispField(short,int,double,DispField *,CrackSegment *) const;
 		bool GetCMVelocityTask8(Vector *,Vector *) const;
 		short GetFieldForSurfaceParticle(short,int,CrackSegment *,bool) const;
 		void SurfaceCrossesCracks(Vector *,Vector *,CrackField *) const;
@@ -106,7 +107,7 @@ class NodalPoint : public LinkedObject
 		// specific task methods
 		void PrepareForFields(void);
         void ZeroDisp(void);
-		int GetFieldForCrack(bool,bool,DispField **,int);
+		int GetFieldForCrack(bool,bool,DispField **,int,int &);
         void ZeroDisp(NodalPoint *);
         void CopyUGradientStressEnergy(NodalPoint *);
         void DeleteDisp(void);
@@ -129,7 +130,7 @@ class NodalPoint : public LinkedObject
 		void GridValueCalculation(int);
         short GetCMVelocity(Vector *);
         void CalcStrainField(void);
-		void Interpolate(NodalPoint *,NodalPoint *,double,int);
+		void Interpolate(NodalPoint *,NodalPoint *,double,int,int *);
 		int HasCrackContact(void);
 		void CrackContact(int,double,int);
 		void CrackContactThree(int,int,double);

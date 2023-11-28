@@ -25,6 +25,14 @@ ContourPoint::ContourPoint(NodalPoint *aNode)
     nextPoint=NULL;
     orient=ANGLED;
 	phantomNode = false;
+    
+    // other crack info
+    otherCrack = NULL;
+    startSeg = NULL;
+    crackSign = 0;
+    endSeg = NULL;
+    nextOther = NULL;
+    endingPt = NULL;
 }
 
 ContourPoint::~ContourPoint()
@@ -39,9 +47,8 @@ ContourPoint::~ContourPoint()
 	ContourPoint: Methods
 *******************************************************************/
 
-/* set next point and find orientation
-    return ANGLED (-1) if line not along x or y axis
-*/
+// set next point and find orientation
+// return ANGLED (-1) if line not along x or y axis
 int ContourPoint::SetNextPoint(ContourPoint *apt)
 {
     double dl;
@@ -90,4 +97,19 @@ double ContourPoint::Fraction(Vector &pt)
 
 // mark as a phantom node that was inserted at point where crack crosses the contour
 void ContourPoint::SetPhantomNode(bool phantom) { phantomNode = phantom; }
+
+// if phantom is crossing another crack, set that now
+// startSeg should be outside rect and crack path goes forward if csign=1 or
+// backward if csign=-1
+// endSeg is exit seg or NULL if tip is in the contour
+void ContourPoint::SetOtherCrack(CrackHeader *other,CrackSegment *foundSeg,int csign,
+                                 ContourPoint *prevOther,Rect *rect)
+{   otherCrack = other;
+    startSeg = foundSeg;
+    crackSign = csign;
+    if(prevOther!=NULL)
+        prevOther->nextOther = this;
+    // find where it exits
+    endSeg = otherCrack->FindRectExit(startSeg,csign,rect);
+}
 

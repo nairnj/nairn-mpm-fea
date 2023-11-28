@@ -31,6 +31,15 @@ NodalValueBC *NodalValueBC::CopyNodalValue(NodalPoint *nd,TransportField *gTrans
     return (NodalValueBC *)GetNextObject();
 }
 
+// save nodal concentration and zero it
+NodalValueBC *NodalValueBC::CopyNodalValue(NodalPoint *nd,TransportField *gTrans,bool getActivity)
+{
+    //cout << fmobj->mstep << ": copy node " << nd->num << " value " << gTrans->gTValue << endl;
+    valueNoBC = gTrans->gTValue;
+    nodalActivity = !DbleEqual(valueNoBC,0.) ? gTrans->gTValueRel/valueNoBC : 1. ;
+    return (NodalValueBC *)GetNextObject();
+}
+
 // restore nodal concentration and get initial force to cancel no-BC result
 NodalValueBC *NodalValueBC::PasteNodalValue(NodalPoint *nd,TransportField *gTrans)
 {
@@ -41,6 +50,9 @@ NodalValueBC *NodalValueBC::PasteNodalValue(NodalPoint *nd,TransportField *gTran
 
 // initialize reaction flow at constant temperature boundary conditions
 void NodalValueBC::InitQReaction(void) { qreaction = 0.; }
+
+// scale current value instead of setting to zero (for blended FLIP/FMPM blending)
+void NodalValueBC::InitQReaction(double scale) { qreaction *= scale; }
 
 // add flow required to bring global nodal temperature to the BC temperature
 void NodalValueBC::SuperposeQReaction(double qflow) { qreaction += qflow; }

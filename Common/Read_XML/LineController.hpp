@@ -38,21 +38,11 @@ class LineController : public ShapeController
 		// line only methods
 		void SetTolerance(double);
 
-#ifdef SUPPORT_MEMBRANES
-		virtual bool StartMembraneLoop(void);
-		virtual bool NextMembraneLocation(Vector *);
-		virtual void SetMembraneProperties(MPMBase *);
-#endif
-    
         // accessors
         virtual const char *GetShapeName();
 
 	protected:
 		double distanceSq,dtolerance,tolerance;
-#ifdef SUPPORT_MEMBRANES
-		double thickness,length,sineAngle;
-		double xLength,yLength;
-#endif
 	
 };
 

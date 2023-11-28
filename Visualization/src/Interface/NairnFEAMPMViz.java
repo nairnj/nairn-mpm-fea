@@ -16,12 +16,14 @@ import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import geditcom.JNFramework.*;
 
 public class NairnFEAMPMViz extends JNApplication
 {
-	public static String jarFolder = null;
+	public static String bundleFolder = null;
 	//----------------------------------------------------------------------------
 	// Initialize
 	//----------------------------------------------------------------------------
@@ -29,18 +31,42 @@ public class NairnFEAMPMViz extends JNApplication
 	public NairnFEAMPMViz()
 	{	//super("NairnFEAMPMViz-OSP","Version 10.0",
 		//		"Java application for running and visualizing OSParticulas and NairnFEA calculations.");
-		super("NairnFEAMPMViz","Version 10.0",
+		super("NairnFEAMPMViz","Version 11.0",
 				"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
 		NFMVPrefs.setWorkspace(chooser);
 		
 		// path to folder containing this jar file ending in slash
 		URL jarURL = getClass().getProtectionDomain().getCodeSource().getLocation();
 		File jarFile = new java.io.File(jarURL.getPath()).getAbsoluteFile();
-		jarFolder = jarFile.getPath();
-		int slash = jarFolder.lastIndexOf('/');
-		if(slash<0) slash = jarFolder.lastIndexOf('\\');
-		if(slash>=0) jarFolder = jarFolder.substring(0, slash+1);
-
+		bundleFolder = jarFile.getPath();
+		if(bundleFolder.indexOf("%20")>0)
+		{	// file checking does not seem to like %20
+			bundleFolder = bundleFolder.replaceAll("%20"," ");
+		}
+		int slash = bundleFolder.lastIndexOf('/');
+		if(slash<0) slash = bundleFolder.lastIndexOf('\\');
+		if(slash>=0) bundleFolder = bundleFolder.substring(0, slash+1);
+		
+		// now look for bundle folder
+		// if not found, use of $(bundle) will fail and
+		//   will be looking in folder with the jar file
+		String pathDelim = NairnFEAMPMViz.isWindowsOS() ? "\\" : "/";
+		String testPath = bundleFolder+"bundle";
+		//JOptionPane.showMessageDialog(null, testPath);
+		File f = new File(testPath);
+		if(f.exists() && f.isDirectory())
+		{	bundleFolder = testPath + pathDelim;
+		}
+		else
+		{	testPath = bundleFolder+"Resources"+pathDelim+"bundle";
+			//JOptionPane.showMessageDialog(null, testPath);
+			f = new File(testPath);
+			if(f.exists() && f.isDirectory())
+			{	bundleFolder = testPath+pathDelim;
+			}
+		}
+		//JOptionPane.showMessageDialog(null, bundleFolder);
+		
 		if(!finishLaunching(false))
 			new NFMVStartUp();
 	}
@@ -141,7 +167,7 @@ public class NairnFEAMPMViz extends JNApplication
 		if(docType.equals("FEACmd") || docType.equals("MPMCmd"))
 			return new CmdViewer(docType);
 		else if(docType.equals("DocViewer"))
-			return new DocViewer(false);
+			return new DocViewer();
 		else
 		{	// must be unknown, type to open the text
 			return new CmdViewer("MPMCmd");

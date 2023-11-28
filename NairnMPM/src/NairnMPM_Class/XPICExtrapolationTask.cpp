@@ -229,7 +229,10 @@ void XPICExtrapolationTask::XPICDoubleLoop(MPMBase *mpmptr,int matfld,int *nds,d
 {
 	// number of nodes
 	int numnds = nds[0];
-	
+    
+    // get particle spin matrix if needed
+    Matrix3 *Dpinv = NULL;
+
 	for(int i=1;i<=numnds;i++)
 	{	// get mass from real node
 		NodalPoint *ndptri = nd[nds[i]];
@@ -250,7 +253,7 @@ void XPICExtrapolationTask::XPICDoubleLoop(MPMBase *mpmptr,int matfld,int *nds,d
 
             // add to node i
 			double weight = mpmptr->mp*fn[i]*fn[j]/mass;
-			ndptri->AddVStarNext(vfldi,matfld,vStarPrevj,delXiMpPtr,delXjPtr,NULL,scale*weight,scaleContact*weight);
+			ndptri->AddVStarNext(vfldi,matfld,vStarPrevj,delXiMpPtr,delXjPtr,Dpinv,scale*weight,scaleContact*weight);
 		}
 	}
 }

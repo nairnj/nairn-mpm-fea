@@ -9,10 +9,6 @@
 #include "stdafx.h"
 #include "Elements/ElementBase.hpp"
 #include "Read_XML/LineController.hpp"
-#ifdef SUPPORT_MEMBRANES
-	#include "MPM_Classes/MemPoint2D.hpp"
-	#include "MPM_Classes/MemPointAS.hpp"
-#endif
 
 #pragma mark LineController: Constructors and Destructor
 
@@ -20,10 +16,6 @@
 LineController::LineController(int block,bool is2D) : ShapeController(block)
 {
 	tolerance = 0.;
-#ifdef SUPPORT_MEMBRANES
-	thickness = -1;
-	length = -1.;
-#endif
 	twoDShape = is2D;
 }
 
@@ -108,72 +100,9 @@ void LineController::SetProperty(const char *aName,char *value,CommonReadHandler
 			tolerance*=distScaling;
 		}
 	}
-#ifdef SUPPORT_MEMBRANES
-	else if(strcmp(aName,"thickness")==0)
-	{	// membrane thickness
-		sscanf(value,"%lf",&thickness);
-		thickness*=distScaling;
-	}
-	else if(strcmp(aName,"length")==0)
-	{	// membrane length
-		sscanf(value,"%lf",&length);
-		length*=distScaling;
-	}
-#endif
 	else
 		ShapeController::SetProperty(aName,value,reader);
 }
-
-#ifdef SUPPORT_MEMBRANES
-
-#pragma mark LineController: Membrane methods
-
-// prepare to return particle locations for a membrane
-bool LineController::StartMembraneLoop(void)
-{
-	// false if membrane propertties not enetered
-	if(length<=0. || thickness<=0. || distanceSq==0.) return false;
-	
-	// get length per particle
-	double lineLength = sqrt(distanceSq);
-	numParticles = int(lineLength/length+.5);
-	if(numParticles<1) numParticles = 1;
-	length = lineLength/(double)numParticles;
-	
-	// start enuerator
-	particleNum = 0;
-	xLength = (xmax-xmin)/(double)numParticles;
-	yLength = (ymax-ymin)/(double)numParticles;
-	
-	// sine of CW rotation angle of x axis, but between -90 (to +y) and 90 (to -y)
-	// Rotation matrix = {{cos(angle), sineAngle},{-sineAngle,cos(angle)}
-	if(xLength>0)
-		sineAngle = (ymin-ymax)/lineLength;
-	else
-		sineAngle = (ymax-ymin)/lineLength;
-	
-	return true;
-}
-
-// return next particle location
-bool LineController::NextMembraneLocation(Vector *loc)
-{
-	if(particleNum>=numParticles) return false;
-	loc->x = xmin + particleNum*xLength + xLength/2.;
-	loc->y = ymin + particleNum*yLength + yLength/2.;
-	particleNum++;
-	return true;
-}
-
-// set properties on each material point
-// length, thickness, and sine(cw angle)
-void LineController::SetMembraneProperties(MPMBase *mpt)
-{
-	// this will call MemPointAS if needed
-	((MemPoint2D *)mpt)->SetMembrane(thickness,length,sineAngle);
-}
-
-#endif // end SUPPORT_MEMBRANES
 
 #pragma mark LineController: Accessors
 

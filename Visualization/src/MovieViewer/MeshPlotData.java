@@ -17,12 +17,12 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener, J
 {
 	static final long serialVersionUID=8L;
 	
-	public JLabel xlabel=new JLabel("x:");
-	public JLabel ylabel=new JLabel("y:");
-	public JLabel zlabel=new JLabel("z:");
-	public JLabel nodelabel=new JLabel("nd:");
-	public JLabel elemlabel=new JLabel("el:");
-	public JLabel mplabel=new JLabel("mp:");
+	public JLabel xlabel=new JLabel("x: ---");
+	public JLabel ylabel=new JLabel("y: ---");
+	public JLabel zlabel=new JLabel("z: ---");
+	public JLabel nodelabel=new JLabel("nd: ---");
+	public JLabel elemlabel=new JLabel("el: ---");
+	public JLabel mplabel=new JLabel("mp: ---");
 	public String zunits="";
 	
 	private MeshPlotView plotView;
@@ -162,6 +162,7 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener, J
 	public void receiveNotification(JNNotificationObject obj)
 	{	if(obj.getName().equals("PlotUnitsChanged"))
 		{	setZunits();
+			clearPosition();
 		}
 	}
 	
@@ -171,5 +172,11 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener, J
 			zunits = new String(" "+newUnits);
 		else
 			zunits = "";
+	}
+	
+	// clear coordinates
+	public void clearPosition()
+	{	xlabel.setText("x: ---");
+		ylabel.setText("y: ---");
 	}
 }

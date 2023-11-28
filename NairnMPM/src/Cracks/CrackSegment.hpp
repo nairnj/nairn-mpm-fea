@@ -63,6 +63,7 @@ class CrackSegment
 		void FindCrackTipMaterial(int);
 		virtual void UpdateTractions(CrackHeader *);
 		virtual double GetNormalAndTangent(CrackHeader *,Vector *,Vector *,double &,double &) const;
+        virtual bool SurfaceTraction(CrackHeader *,Vector *);
 		double TractionEnergy(Vector *,int,bool,CrackSegment **);
 		double SegmentTractionEnergy(bool);
 		virtual Vector FTract(double);
@@ -74,8 +75,7 @@ class CrackSegment
         void SetCrackHeader(CrackHeader *);
 	
 	protected:
-		Vector cFtract;				// traction law force
-		Vector dPlane;			// crack plane movement
+		Vector dPlane;			    // crack plane movement
 		bool hadAboveNodes;
 		bool planeMove;
 		int matnum;						// 1-based material ID for traction law

@@ -146,7 +146,7 @@ CustomTask *CalcJKTask::StepCalculation(void)
 				continue;
 			}
 
-            // find shape functions and derviatives
+            // find shape functions
             const ElementBase *elref = theElements[mpnt->ElemID()];
 			int *nds = ndsArray;
 			elref->GetShapeFunctions(fn,&nds,mpnt);
@@ -213,7 +213,7 @@ CustomTask *CalcJKTask::StepCalculation(void)
     for(int i=1;i<=nnodes;i++)
         nd[i]->CalcStrainField();
     
-    // No Do the J Integral calculations
+    // Now Do the J Integral calculations
     
 	int inMat;
     Vector d,C;

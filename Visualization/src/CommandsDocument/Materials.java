@@ -449,7 +449,7 @@ public class Materials
 			// 0 or 1
 			int value = doc.readIntArg(args.get(1));
 			if(value<0 || value>1)
-				throw new Exception("Rigid 'temperature' property must be integer 0 or 1:\n"+args);
+				throw new Exception("Rigid 'SetTemperature' property must be integer 0 or 1:\n"+args);
 			if(value>0)
 				xmldata.append("    <"+prop+"/>\n");
 			return;
@@ -784,8 +784,17 @@ public class Materials
 		}
 		
 		// now add it (if not done already)
-		double mprop = doc.readDoubleArg(args.get(1));
-		xmldata.append("    <"+prop+">"+doc.formatDble(mprop)+"</"+prop+">\n");
+		// revised 3/27/2023 to allow strings to pass through as well
+		Object obj = doc.readStringOrDoubleArg(args.get(1));
+		if(obj.getClass().equals(String.class))
+		{	// string pass one
+			xmldata.append("    <"+prop+">"+obj+"</"+prop+">\n");
+		}
+		else
+		{	// format the double
+			double mprop = ((Double)obj).doubleValue();
+			xmldata.append("    <"+prop+">"+doc.formatDble(mprop)+"</"+prop+">\n");
+		}
 	}
 	
 	//----------------------------------------------------------------------------

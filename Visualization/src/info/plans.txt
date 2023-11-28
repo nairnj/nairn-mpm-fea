@@ -1,15 +1,49 @@
 -------------------------------------------------------------------
-Run Remote on Windows
+Changes in Version 11.0
 -------------------------------------------------------------------
 
-Needs to support the follow
-ssh connection
-sftp channel for file transfers, folder creating, etc.
-exec channel for following commands
-    cd (parent);(code launch)
-    cd (parent);cd ..;rm -f (parent).zip;zip -r (parent).zip (parent)
-    rm -r (detinationFolder)
-    
+* Redid control panel for single column and only show those needed
+* Unified window UI for particle and mesh plots (2D plots still spawn windows)
+* Blocks closing of windows in active calculations
+* Removed time selector in plot area (had failure to open file, but went away)
+* Changed mod(x,y) to work with non-integers
+* Cleanup interface issues
+
+-------------------------------------------------------------------
+Interface Options or other Tasks
+-------------------------------------------------------------------
+
+* Remote execution
+** Background submits (use submit commands instead of run, and no download)
+*** Background submit template to allow qsub
+*** Add exception until it is implemented
+** Trap error returns and show error stream in window
+** Download progress bar?
+
+* Control click plot for pop-up menu of plot options
+** Including export graphics (is preference needed for export format?)
+
+* Preferences
+** Spectra inversion and brightness
+** Temp and Conc BC colors
+
+* X11 run in Linux does bring window to front (windows menu)
+
+* Can run in background mode in Windows?
+
+* Plot angle - add slider in the movie window before PS slider
+** Tensor values need to look for angle and rotate
+
+* When clip to particles in mesh plot and zoom, it draws outside the view port
+
+* FEA Crack Closure Calculations
+
+* Language
+** Maintain library of subroutines to load
+** Entity - Look for other commands to support its use
+** Maintain library of material definitions
+** See if NairnFEAMPM (for Mac) can allow same commands and assignments in materials
+
 -------------------------------------------------------------------
 New Script Options - update to match some in NFM for Mac
 -------------------------------------------------------------------
@@ -39,34 +73,16 @@ Next Steps
 	keysSortedByStringValues
 
 -------------------------------------------------------------------
-Interface Options
+Run Remote on Remote Windows as Server
 -------------------------------------------------------------------
-* Can Windows exe run in background mode?
 
-* Plot angle - add slider in the movie window before PS slider
-** Tensor values need to look for angle and rotate
-
-* Control click plot for pop-up menu of plot options
-** Including export graphics (is preference needed for export format?)
-
-* Preferences
-** Spectra inversion and brightness
-** Temp and Conc BC colors
-
-* Remote execution
-** Background submits (use submit commands instead of run, and no download) add exception until it is implemented
-** Trap error returns and show error stream in window
-** Download progress bar?
-
-* When clip to particles in mesh plot and zoom, it draws outside the view port
-
-* FEA Crack Closure Calculations
-
-* Language
-** Maintain library of subroutines to load
-** Entity - Look for other commands to support its use
-** Maintain library of material definitions
-** See if NairnFEAMPM (for Mac) can allow same commands and assignments in materials
+Needs to support the following
+ssh connection
+sftp channel for file transfers, folder creating, etc.
+exec channel for following commands
+    cd (parent);(code launch)
+    cd (parent);cd ..;rm -f (parent).zip;zip -r (parent).zip (parent)
+    rm -r (detinationFolder)
 
 -------------------------------------------------------------------
 Development Notes

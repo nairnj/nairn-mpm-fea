@@ -192,7 +192,8 @@ void CrackVelocityFieldSingle::AddKineticEnergyAndMass(double &kineticEnergy,dou
 
 // get center of mass momentum for all material fields in this crack velocity field
 // if totalFtot!=NULL, set it to nodal fi = mi ai
-Vector CrackVelocityFieldSingle::GetCMatMomentum(bool &hasParticles,double *fieldMass,Vector *totalFtot,bool useVelocity) const
+Vector CrackVelocityFieldSingle::GetCMatMomentum(bool &hasParticles,double *fieldMass,
+                                                 Vector *totalFtot,bool useVelocity) const
 {	hasParticles = mvf[0]->numberPoints>0 ;
 	*fieldMass = mvf[0]->mass;
 	if(totalFtot!=NULL) *totalFtot=mvf[0]->GetFtot();

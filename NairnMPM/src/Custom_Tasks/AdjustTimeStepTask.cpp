@@ -171,6 +171,7 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
        // material id
        short matid=mpm[p]->MatID();
 
+#ifndef TRANSPORT_ONLY
        // check time step using convergence condition (wave speed of material)
        double crot = theMaterials[matid]->CurrentWaveSpeed(fmobj->IsThreeD(),mpm[p],0);
        
@@ -205,6 +206,7 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
                newPropTime = tst;
            }
        }
+#endif
        
        // transport time steps (if it can change during calculations)
        if(checkTransportTimeStep!=0)
@@ -269,6 +271,7 @@ void AdjustTimeStepTask::ChangeTimestep(double newTimestep,double newPropTime,bo
     timestep = newTimestep;
     propTime = newPropTime;
 
+#ifndef TRANSPORT_ONLY
     // verify time step and make smaller if needed
     if(fmobj->mpmApproach==USAVG_METHOD)
     {   strainTimestepFirst = fractionUSF*timestep;
@@ -281,6 +284,7 @@ void AdjustTimeStepTask::ChangeTimestep(double newTimestep,double newPropTime,bo
     
     // propagation time step (no less than timestep)
     if(propTime<timestep) propTime = timestep;
+#endif
     
     // tell task that outside code made a change
     if(!inAdjustTask && adjustTimeStepTask!=NULL)

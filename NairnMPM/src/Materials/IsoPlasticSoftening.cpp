@@ -455,7 +455,7 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 	{	// check if has failed
 		Vector norm;
 		double relStrength = soft[RELATIVE_STRENGTH];
-		int failureMode = initiationLaw->ShouldInitiateFailure(&str,&norm,np,relStrength);
+		int failureMode = initiationLaw->ShouldInitiateFailure(&str,&norm,np,relStrength,NULL);
 		//failureMode = NO_FAILURE;    // Hack to verify plasticity part matches IsoPlasticity material
 		if(failureMode == NO_FAILURE)
 		{	// Not failed yet, so finish elastic-plastic update
@@ -554,7 +554,8 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 	Tensor ecrack = MakeTensor(ipsoft[ECXX_DAMAGE],0.,0.,0.,ipsoft[GCXZ_DAMAGE],ipsoft[GCXY_DAMAGE]);
     
 	// finish up in separate code
-    DamageEvolution(mptr,np,soft,de,str,eres,ezzres,res,dR,Rtot,(ElasticProperties *)(p->elasticProps),&ecrack,dispEnergy);
+    DamageEvolution(mptr,np,soft,de,str,eres,ezzres,res,dR,Rtot,(ElasticProperties *)(p->elasticProps),
+                    &ecrack,dispEnergy,delTime);
 }
 
 // This material stores cracking strain in history variable

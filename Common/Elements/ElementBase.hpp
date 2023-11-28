@@ -124,7 +124,8 @@ class ElementBase : public LinkedObject
 #ifdef MPM_CODE
 		virtual bool OnTheEdge(void);
 		virtual void GetListOfNeighbors(int *) const;
-		virtual int NextNode(int);
+		virtual int NextNode(int) const;
+        virtual int NextNode(int,int *) const;
         virtual int FindEdge(int,int);
         virtual int Neighbor(int);
 		virtual void AllocateNeighborsArray(void);
@@ -145,6 +146,12 @@ class ElementBase : public LinkedObject
 		virtual void GetNodes(int *,int *) const;
 
 		virtual void FiniteGimpShapeFunction(int *,double *,double *,double *,double *,MPMBase *)  const;
+    
+#ifdef PREHASH_CRACKS
+		vector<int> *SeesCrack;
+		void PushCrackNumOnList(int);
+		void DeleteCrackList(void);
+#endif
     
 #else
 		virtual bool HasNode(int);

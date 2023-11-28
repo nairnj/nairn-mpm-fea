@@ -194,7 +194,18 @@ void NairnMPM::CMStartResultsOutput(void)
 		// Only used to partition J or to implement COD-based criteria
 		CrackHeader::SetCodLocation(2.);
 		cout << "Crack COD found (when needed) " << 2 << " segments from crack tip" << endl;
-
+		
+#ifdef PREHASH_CRACKS
+        // Turn off prehashing if CPDI and rcrit>1/sqrt(2) or cause error if in 3D
+        double checkRadius = ElementBase::rcrit;
+        if(checkRadius>=1/sqrt(2.) && ElementBase::UsingCPDIMethod())
+        {   if(fmobj->IsThreeD())
+                throw CommonException("Cracks in 3D with CPDI require CPDIrcrit<1/sqrt(2)","NairnMPM::CMStartResultsOutput");
+            InitVelocityFieldsTask::prehashed = false;
+        }
+        if(InitVelocityFieldsTask::prehashed)
+            cout << "Crack prehashing used for efficiency" << endl;
+#endif
         // crack details
         cout << "Number of cracks = " << numberOfCracks << endl;
         CrackHeader *nextCrack=firstCrack;
@@ -225,7 +236,7 @@ void NairnMPM::CMStartResultsOutput(void)
     {   PrintSection("NODAL POINTS WITH FIXED DISPLACEMENTS");
         archiver->ArchiveVelocityBCs(firstVelocityBC);
     }
-    
+
 }
 
 // output boundary conditions (called in PreliminaryParticleCalcs())
@@ -306,18 +317,18 @@ void NairnMPM::OutputBCMassAndGrid(void)
         {
 #ifdef POROELASTICITY
             if(fmobj->HasPoroelasticity())
-            {   PrintSection("NODAL POINTS WITH PORE PRESSURE FLUX");
+            {   PrintSection("MATERIAL POINTS WITH PORE PRESSURE OR OTHER FLUX");
                 cout << " Point  DOF Face Sty Flux (v_F/(" << UnitsController::Label(CULENGTH_UNITS) << "^2-"
                         << UnitsController::Label(TIME_UNITS)<< ")) Arg ("
                         << UnitsController::Label(BCARG_UNITS) << ") ID Function";
             }
             else
-            {   PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
+            {   PrintSection("MATERIAL POINTS WITH CONCENTRATION OR OTHER FLUX");
                 cout << " Point  DOF Face Sty Flux (" << UnitsController::Label(BCCONCFLUX_UNITS) << ") Arg ("
                         << UnitsController::Label(BCARG_UNITS) << ") ID Function";
             }
 #else
-            PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
+            PrintSection("MATERIAL POINTS WITH CONCENTRATION OR OTHER FLUX");
             cout << " Point  DOF Face Sty Flux (" << UnitsController::Label(BCCONCFLUX_UNITS) << ") Arg ("
                     << UnitsController::Label(BCARG_UNITS) << ") ID Function";
 #endif
@@ -382,7 +393,7 @@ void NairnMPM::OutputBCMassAndGrid(void)
 	size_t fsize=200;
 	snprintf(fline,fsize,"Number of Material Points: %d",nmpms);
 	cout << fline << endl;
-	
+
 	// background grid info
 	mpmgrid.Output(IsAxisymmetric());
 	
@@ -397,6 +408,9 @@ void NairnMPM::OutputBCMassAndGrid(void)
 		}
 	}
 	
+    cout << "Nonrigid:" << nmpmsNR;
+    cout << " Rigid contact:" << (nmpmsRC-nmpmsNR);
+    cout << " Rigid BC:" << (nmpms-nmpmsRC) << endl;
 	if(mpmReservoir!=NULL)
 		mpmReservoir->output();
 	else

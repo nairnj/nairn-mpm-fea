@@ -276,13 +276,6 @@ void CrackVelocityFieldMulti::XPICSupport(int xpicCalculation,int xpicOption,Nod
 	}
 }
 
-#ifdef SUPPORT_MEMBRANES
- // How to handle membranes when see 3 or more materials
- // This mode ignores contact if one of 3 or more materials in membrane
- // Another option would be to use com for the membrane materials
- #define MEMBRANE3_IGNORED
-#endif
-
 #pragma mark MATERIAL CONTACT
 
 /* Called in multimaterial mode to check contact at nodes with multiple materials
@@ -392,17 +385,6 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 		double voli = mvfi->GetContactVolume();
 		double volj = GetContactVolumeNonrigid(false) - voli;
 
-#ifdef SUPPORT_MEMBRANES
- #ifdef MEMBRANE3_IGNORED
-		// skip membrane if node has more than two materials
-		// Expectation is that pinching state hard to evaluate and
-		// natural velocity is probably better
-		if(numMats>2)
-		{	if(MaterialBase::GetMVFIsMembrane(i)) continue;
-		}
- #endif
-#endif // end SUPPORT_MEMBRANES
-		
 		// Contact law from other material with most volume (uses mvf->volume)
 		int j = -1;
 		
@@ -1090,7 +1072,7 @@ Vector CrackVelocityFieldMulti::GetNormalVector(MaterialContactNode *mcn,int i,i
 }
 
 // This method allows the code to return a custom normal for contact between non-rigid materials.
-// Typically a custom normal will be selected using a developer flag (in dflag[]).
+// Typically a custom normal will be selected using a developer flag (in dFlag[]).
 // If not custom, return false
 bool CrackVelocityFieldMulti::NonRigidCustomNormal(NodalPoint *ndptr,int i,int j,Vector &norm)
 {
@@ -1099,7 +1081,7 @@ bool CrackVelocityFieldMulti::NonRigidCustomNormal(NodalPoint *ndptr,int i,int j
 }
 
 // This method allows the code to return a custom normal for contact with rigid materials.
-// Typically a custom normal will be selected using a developer flag (in dflag[]).
+// Typically a custom normal will be selected using a developer flag (in dFlag[]).
 // If not custom, return false
 bool CrackVelocityFieldMulti::RigidCustomNormal(NodalPoint *ndptr,int i,int rigidFld,Vector &norm)
 {
