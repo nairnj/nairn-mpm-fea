@@ -124,6 +124,7 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\HistoryArchive.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\LoadControl.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PeriodicXPIC.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PhaseFieldDiffusion.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PropagateTask.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ReverseLoad.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TrackError.hpp" />
@@ -155,6 +156,8 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HillPlastic.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\HyperElastic.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IdealGas.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoDamageMech.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPhaseFieldSoftening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticity.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticSoftening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoSoftening.hpp" />
@@ -177,6 +180,7 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SmoothStep3.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TaitLiquid.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TIViscoelastic.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TractionLaw.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Viscoelastic.hpp" />
@@ -264,6 +268,7 @@
     <ClInclude Include="..\..\..\..\System\LinkedObject.hpp" />
     <ClInclude Include="..\..\..\..\System\Matrix3.hpp" />
     <ClInclude Include="..\..\..\..\System\Matrix4.hpp" />
+    <ClInclude Include="..\..\..\..\System\Spline2D.hpp" />
     <ClInclude Include="..\..\..\..\System\UnitsController.hpp" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
@@ -299,6 +304,7 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\HistoryArchive.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\LoadControl.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PeriodicXPIC.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PhaseFieldDiffusion.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PropagateTask.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\ReverseLoad.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TrackError.cpp" />
@@ -332,6 +338,8 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HillPlastic.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\HyperElastic.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IdealGas.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoDamageMech.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPhaseFieldSoftening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticity.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticSoftening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoSoftening.cpp" />
@@ -356,6 +364,7 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SmoothStep3.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TaitLiquid.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TIViscoelastic.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TractionLaw.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Viscoelastic.cpp" />
@@ -449,6 +458,7 @@
     <ClCompile Include="..\..\..\..\System\main.cpp" />
     <ClCompile Include="..\..\..\..\System\Matrix3.cpp" />
     <ClCompile Include="..\..\..\..\System\Matrix4.cpp" />
+    <ClCompile Include="..\..\..\..\System\Spline2D.cpp" />
     <ClCompile Include="..\..\..\..\System\svninfo.cpp" />
     <ClCompile Include="..\..\..\..\System\UnitsController.cpp" />
     <ClCompile Include="stdafx.cpp">

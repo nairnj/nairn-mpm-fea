@@ -611,6 +611,21 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\AreaOfInterest.hpp">
       <Filter>NairnMPM_src\Read_MPM</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\System\Spline2D.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TIViscoelastic.hpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoDamageMech.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPhaseFieldSoftening.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PhaseFieldDiffusion.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -1164,6 +1179,21 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\AreaOfInterest.cpp">
       <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\Spline2D.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TIViscoelastic.cpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoDamageMech.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPhaseFieldSoftening.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PhaseFieldDiffusion.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

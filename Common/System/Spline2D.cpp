@@ -27,6 +27,7 @@
     Copyright (c) 2023 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#include "stdafx.h"
 #include "Spline2D.hpp"
 
 #pragma mark Spline2D:Constructors and Destructor

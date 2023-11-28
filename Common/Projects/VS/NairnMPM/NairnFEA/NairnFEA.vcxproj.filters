@@ -250,6 +250,9 @@
     <ClInclude Include="..\..\..\..\Read_XML\XYTXTImporter.hpp">
       <Filter>Common\Read_XML</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\System\Spline2D.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -473,6 +476,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\Read_XML\XYTXTImporter.cpp">
       <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\Spline2D.cpp">
+      <Filter>Common\System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

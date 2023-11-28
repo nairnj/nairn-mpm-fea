@@ -156,6 +156,7 @@
     <ClInclude Include="..\..\..\..\System\CommonTask.hpp" />
     <ClInclude Include="..\..\..\..\System\DataTypes.hpp" />
     <ClInclude Include="..\..\..\..\System\LinkedObject.hpp" />
+    <ClInclude Include="..\..\..\..\System\Spline2D.hpp" />
     <ClInclude Include="..\..\..\..\System\UnitsController.hpp" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
@@ -231,6 +232,7 @@
     <ClCompile Include="..\..\..\..\System\Gauss.cpp" />
     <ClCompile Include="..\..\..\..\System\LinkedObject.cpp" />
     <ClCompile Include="..\..\..\..\System\main.cpp" />
+    <ClCompile Include="..\..\..\..\System\Spline2D.cpp" />
     <ClCompile Include="..\..\..\..\System\svninfo.cpp" />
     <ClCompile Include="..\..\..\..\System\UnitsController.cpp" />
     <ClCompile Include="stdafx.cpp">
