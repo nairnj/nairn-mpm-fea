@@ -32,7 +32,7 @@ public class NairnFEAMPMViz extends JNApplication
 	{	//super("NairnFEAMPMViz-OSP","Version 10.0",
 		//		"Java application for running and visualizing OSParticulas and NairnFEA calculations.");
 		super("NairnFEAMPMViz","Version 11.0",
-				"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
+				"Running and visualizing NairnMPM, NairnFEA, and OSParticulas calculations.");
 		NFMVPrefs.setWorkspace(chooser);
 		
 		// path to folder containing this jar file ending in slash
