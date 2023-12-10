@@ -276,14 +276,18 @@ CustomTask * TrackError::StepCalculation(void)
 				if(Cumulative[i]==0)
 					total_error[i] = error[i]/Np;
 				else
-					total_error[i] = rescaleNs*total_error[i] + error[i]/(Np*nextNs);
+                {   // cummulative = (total_error*prevNs + error/Np)/nextNS
+                    total_error[i] = rescaleNs*total_error[i] + error[i]/(Np*nextNs);
+                }
 				break;
 			case 0:
 				// RMS
 				if(Cumulative[i]==0)
 					total_error[i] = sqrt(error[i]/Np);
 				else
-					total_error[i] = rescaleNs*total_error[i] + (sqrt(error[i]/Np))/nextNs;
+                {   // cummulative = (total_error*prevNs + sqrt(error/Np) )/nextNS
+                    total_error[i] = rescaleNs*total_error[i] + (sqrt(error[i]/Np))/nextNs;
+                }
 				break;
 			default:
 			{	// p norm
@@ -291,8 +295,10 @@ CustomTask * TrackError::StepCalculation(void)
 				if(Cumulative[i]==0)
 					total_error[i] = pow(error[i],lpower)/Np;
 				else
-				{	double lpsum = pow(prevNs*Np*total_error[i],(double)lp_norm_p[i]) + error[i];
-					total_error[i] = pow(lpsum,lpower)/(nextNs*Np);
+                {   // cummulative = (total_error*prevNs + sqrt(error/Np) )/nextNS
+                    total_error[i] = rescaleNs*total_error[i] + pow(error[i],lpower)/(Np*nextNs);
+ 					//double lpsum = pow(prevNs*Np*total_error[i],(double)lp_norm_p[i]) + error[i];
+					//total_error[i] = pow(lpsum,lpower)/(nextNs*Np);
 				}
 				break;
 			}
