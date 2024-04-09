@@ -4,10 +4,13 @@
 # cd to directory with this 'makefile'
 # give the command 'make SYSTEM=system' where the lower case system is where
 #    you are compiling. Supported systems are:
-#       mac - MacOS X using gcc
-#       mac-clang - MacOS X using clang-mp 11
-#       mac-clang9 - MacOS X using clang-mp 9.0
-#       mac-clang7 - MacOS X using clang-mp 7.0
+#       mac -  use Apple's compiler assuming you have install libomp.dylib
+#		mac-clang - this is changed in step 1 to your preferred clang version among
+#                   (can also specify version to override the default)
+#         mac-clang17 - MacOS X using clang-mp 17
+#		  mac-clang11 - MacOS X using clang-mp 11
+#         mac-clang9 - MacOS X using clang-mp 9.0
+#         mac-clang7 - MacOS X using clang-mp 7.0
 #       carbon - OSU cluster with installed gcc7 (the default)
 #       mpm - OSU machine
 #       zia - A Debian linux machine
@@ -20,7 +23,8 @@
 #
 # 1. $(xercesSo) is path to directory with the compiled Xerces library
 # 2. $(headersPath) topath to directory with Xerces include files
-# 3. $(CC) is the gcc compiler, $(RM) is the rm command, $(CP) is copy for install
+# 3. $(CC) is the gcc compiler and $(CCLINK) is linker,
+#	 $(RM) is the rm command, $(CP) is copy for install,
 # 4. $(CFLAGS) is the c++ compiler options
 #    $(LFLAGS) is the c++ linking options
 # 5. $(output) is path to save executable
@@ -28,24 +32,19 @@
 # 6. $(ioutput) is path to install executable
 # 7. $(src) and $(com) are paths to parts of the source code
 #
-# Each of these can changed by editing or can be overriden at make time with syntax such as
+# Each of these can changed by editing or can be overriden at make time
 # and are documented more in the numbered section below
 #
 # -------------------------------------------------------------------------
 # 1. Path and/or command to link to xerces library
 #    The default is standard Linux dynamic library install
-SYSTEM=carbon
-xercesSo= /usr/local/lib/libxerces-c.so
-ifeq ($(SYSTEM),mac)
-    xercesSo = /usr/local/lib/libxerces-c.dylib
-endif
+SYSTEM ?= carbon
+# You can pick a preferred clang-mp when user uses mac-clang without a number
 ifeq ($(SYSTEM),mac-clang)
-    xercesSo = /usr/local/lib/libxerces-c.dylib
+    override SYSTEM=mac-clang17
 endif
-ifeq ($(SYSTEM),mac-clang9)
-    xercesSo = /usr/local/lib/libxerces-c.dylib
-endif
-ifeq ($(SYSTEM),mac-clang7)
+xercesSo= /usr/local/lib/libxerces-c.so
+ifeq ($(findstring mac-clang,$(SYSTEM)),mac-clang)
     xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
 ifeq ($(SYSTEM),carbon)
@@ -57,8 +56,13 @@ endif
 ifeq ($(SYSTEM),zia)
 	xercesSo = /usr/lib/libxerces-c.so
 endif
+ifeq ($(SYSTEM),mac)
+    xercesSo = /usr/local/lib/libxerces-c.dylib
+endif
 
-# 2. Path to xerces headers (if not at default /usr/local/include) 
+$(info *** Compiling for system <$(SYSTEM)> using xercesSo <$(xercesSo)>)
+
+# 2. Path to xerces headers (if not at default /usr/local/include)
 headersPath= /usr/local/include
 ifeq ($(SYSTEM),carbon)
 	headersPath = /usr/local/xerces3/include
@@ -70,29 +74,43 @@ ifeq ($(SYSTEM),zia)
 	headersPath = /usr/include/xercesc
 endif
 
+$(info *** Path to xerces headers is <$(headersPath)>)
+
 # 3. Define compiler to use and other commands
-#     CC is path to the c++ compiler, must support OpenMP is used
+#     CC is path to the c++ compiler, must support OpenMP
+#     CCLINK is path to c++ linker
 #     RM is path/options to the file remove command (used only in make clean)
 #     CP is path/options to copy command (used only in make install
-# Possible option for carbon is /usr/local/gcc7/bin/g++, but libraries might be there?
 CC= g++
+CCLINK= g++
 ifeq ($(SYSTEM),carbon)
     CC= /usr/bin/g++
+    CCLINK= /usr/bin/g++
 endif
 ifeq ($(SYSTEM),mac)
-    CC= /opt/local/bin/g++-mp-4.9
+    CC= clang
+    CCLINK= clang++
 endif
-ifeq ($(SYSTEM),mac-clang)
+ifeq ($(SYSTEM),mac-clang17)
+    CC= /opt/local/bin/clang-mp-17
+    CCLINK= /opt/local/bin/clang++-mp-17
+endif
+ifeq ($(SYSTEM),mac-clang11)
     CC= /opt/local/bin/clang-mp-11
+    CCLINK= /opt/local/bin/clang++-mp-11
 endif
 ifeq ($(SYSTEM),mac-clang9)
     CC= /opt/local/bin/clang-mp-9.0
+    CCLINK= /opt/local/bin/clang++-mp-9.0
 endif
 ifeq ($(SYSTEM),mac-clang7)
     CC= /opt/local/bin/clang-mp-7.0
+    CCLINK= /opt/local/bin/clang++-mp-7.0
 endif
 RM= rm
 CP= cp
+
+$(info *** Comiler is <$(CC)> and linker is <$(CCLINK)>)
 
 # 4. Compiler options -c=compile only is required, others are optional
 #     CFLAGS are flags passed to compile each source file. If must contain -c and
@@ -106,24 +124,28 @@ CP= cp
 #            -fopenmp = enable OpenMP link (compile too)
 #            -arch i386 = link architecture (MacOS X only, other archs are x86_64, ppc, and ppc64)
 #            -pg = profiling
+#			 -Wl,-rpath,<path_to_libraries> = add path to libraries and this appears needed
+#                   in clang-14 or newer (or maybe caused by MacOS Sonoma command line tools)
 #     If using -fopenmp, -arch, or -pg, must have in both CFLAGS and LFLAGS. For MacOS X, the specified arch
 #       must match the xerces library used for linking
 CFLAGS= -c -O3 -fopenmp -std=c++11
 LFLAGS= -fopenmp
-ifeq ($(SYSTEM),mac-clang)
-    LFLAGS= -fopenmp -lc++
+ifeq ($(SYSTEM),mac-clang17)
+    LFLAGS= -fopenmp -lc++ -Wl,-rpath,/opt/local/libexec/llvm-17/lib
+else
+    ifeq ($(findstring mac-clang,$(SYSTEM)),mac-clang)
+		LFLAGS= -fopenmp -lc++
+	endif
 endif
-ifeq ($(SYSTEM),mac-clang9)
-    LFLAGS= -fopenmp -lc++
+ifeq ($(SYSTEM),mac)
+    CFLAGS= -x c++ -c -O3 -Xclang -fopenmp -std=c++11
+    LFLAGS= -lomp
 endif
-ifeq ($(SYSTEM),mac-clang7)
-    LFLAGS= -fopenmp -lc++
-endif
-
 ifeq ($(SYSTEM),carbon)
-# LFLAGS = -fopenmp -Wl,-rpath=/tools/local/gcc48/lib64 -L/tools/local/gcc48/lib64
     LFLAGS = -fopenmp -Wl,-rpath=/usr/lib64 -L/usr/lib64
 endif
+
+$(info *** Linking with flags <$(LFLAGS)>)
 
 # 5. Define executable destination
 #     output = relative or full path to save executable or to find it for a subsequent make install
@@ -131,8 +153,7 @@ endif
 output = ../input/NairnMPM
 dtdpath = ../input/NairnMPM.dtd
 
-# 6. Define paths to all files (relative to 'makefile')
-#     These are usually not changed unless you reorganize the code
+# 6. Provide relative of full path to install location, only used during make install
 ioutput = ~/bin
 
 # 7. Define paths to all files (relative to 'makefile')
@@ -140,16 +161,9 @@ ioutput = ~/bin
 src = ../src
 com = ../../Common
 std = ../../Common/Headers
-#com = ../Common
 
 headers = -I$(src) -I$(std) -I$(com) -I$(headersPath)
-ifeq ($(SYSTEM),mac-clang)
-    headers = -I$(src) -I$(std) -I$(com) -I$(headersPath) -I/opt/local/include/libomp
-endif
-ifeq ($(SYSTEM),mac-clang9)
-    headers = -I$(src) -I$(std) -I$(com) -I$(headersPath) -I/opt/local/include/libomp
-endif
-ifeq ($(SYSTEM),mac-clang7)
+ifeq ($(findstring mac-clang,$(SYSTEM)),mac-clang)
     headers = -I$(src) -I$(std) -I$(com) -I$(headersPath) -I/opt/local/include/libomp
 endif
 
@@ -562,7 +576,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 # -------------------------------------------------------------------------
 # Link all objects
 NairnMPM : $(objects)
-	$(CC) $(LFLAGS) -o $(output) $(objects) $(xercesSo)
+	$(CCLINK) $(LFLAGS) -o $(output) $(objects) $(xercesSo)
 
 # -------------------------------------------------------------------------
 # Common: System
