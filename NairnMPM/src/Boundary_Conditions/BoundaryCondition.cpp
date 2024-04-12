@@ -5,8 +5,10 @@
     Created by John Nairn on Mon Mar 29 2004.
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#ifdef _MSWIN_
 #include "stdafx.h"
+#endif 
+
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "System/UnitsController.hpp"
