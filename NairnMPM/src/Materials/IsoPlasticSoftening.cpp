@@ -53,8 +53,8 @@ const char *IsoPlasticSoftening::VerifyAndLoadProperties(int np)
 	const char *ptr = plasticLaw->VerifyAndLoadProperties(np);
 	if(ptr != NULL) return ptr;
 	
-	if(np==PLANE_STRESS_MPM)
-		return "IsoPlasticSoftening materials cannot yet be used in plane stress calculations";
+	//if(np==PLANE_STRESS_MPM)
+	//	return "IsoPlasticSoftening materials cannot yet be used in plane stress calculations";
 	
 #ifdef POROELASTICITY
 	if(DiffusionTask::HasPoroelasticity())
@@ -68,7 +68,10 @@ const char *IsoPlasticSoftening::VerifyAndLoadProperties(int np)
 	// Cannot be used with plastic law that changes shear modulus
 	Gred = C66/rho;
 	Kred = C33/rho - 4.*Gred/3.;							// from C33 = lambda + 2G = K + 4G/3
-	kappa = (1.-2.*nu)/(1.-nu);
+    
+    // only needed for plane stress
+	kappa = (1.-2.*nu)/(1.-nu);                             // psRed is materials.tex notes
+    psKred = kappa*Kred;
 	
 	return ptr;
 }
@@ -125,7 +128,18 @@ char *IsoPlasticSoftening::InitHistoryData(char *pchr,MPMBase *mptr)
     // do plastic law now, but stored in the beginning
 	plasticLaw->InitPlasticHistoryData(p);
 	return (char *)p;
- }
+}
+
+// reset history data
+void IsoPlasticSoftening::ResetHistoryData(char *pchr,MPMBase *mptr)
+{	double *p = (double *)pchr;
+	double relStrength = p[softHistoryOffset+RELATIVE_STRENGTH];
+	double relToughness = p[softHistoryOffset+RELATIVE_TOUGHNESS];
+	ZeroDoubles(pchr,NumberOfHistoryDoubles());
+	p[softHistoryOffset+RELATIVE_STRENGTH] = relStrength;
+	p[softHistoryOffset+RELATIVE_TOUGHNESS] = relToughness;
+	p[softHistoryOffset+SOFT_DAMAGE_STATE] = 0.1;
+}
 
 // Number of history variables - plastic law plus softening
 int IsoPlasticSoftening::NumberOfHistoryDoubles(void) const
@@ -135,10 +149,6 @@ int IsoPlasticSoftening::NumberOfHistoryDoubles(void) const
 #pragma mark IsoPlasticSoftening::Methods
 
 // Constitutive Law and it is always in large rotation mode
-// Tasks Remaining:
-//	1. Check plastic work tracking and dTq0
-//  2. Verify plain strain in detail (but probably OK)
-//	3. Can it do plane stress (check if softening plane stress is done too - see FINISH UP)
 void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,
 											 ResidualStrains *res,int historyOffset,Tensor *gStress) const
 {
@@ -152,8 +162,8 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
     Matrix3 deT = LRGetStrainIncrement(INITIAL_CONFIGURATION,mptr,du,&dR,NULL,&Rnm1,&Rtot);
 	
 	// residual strain (thermal and moisture)
-	// Not that ezzres uses unreduced properties  while eres is reduced in plain strain
-	// For 3D and axisymetric, eres=ezzres
+	// Not that ezzres uses unreduced properties while eres is reduced in plain strain
+	// For plane stress, 3D, and axisymetric, eres=ezzres
 	double eres = CTE1*res->dT;
 	double ezzres = CTE3*res->dT;
 	if(DiffusionTask::HasFluidTransport())
@@ -196,8 +206,15 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 		// get cracking strain increments for an elastic update
 		// by using ezzres, this works in plane strain (where deT(2,2)=0), 3D, and axisymmetric
 		// plane stress is different here, but not yet supported elsewhere
-		double nuterm = np==PLANE_STRESS_MPM ? nu : nu/(1.-nu) ; ;
-		double den = deT(0,0)-ezzres + nuterm*(deT(1,1)+deT(2,2)-2.*ezzres) ;
+		double den;
+		if(np==PLANE_STRESS_MPM)
+		{	den = deT(0,0)-ezzres + nu*(deT(1,1)-ezzres) ;
+		}
+		else
+		{	double nuterm = nu/(1.-nu) ;
+			den = deT(0,0)-ezzres + nuterm*(deT(1,1)+deT(2,2)-2.*ezzres) ;
+		}
+		
 		// ... and make sure increment does not create negative normal strain
 		double decxx = fmax(soft[DAMAGENORMAL]*den,-ipsoft[ECXX_DAMAGE]);
 		double dxz = tractionFailureSurface == CUBOID_SURFACE && !is2D ? soft[DAMAGESHEAR2] : soft[DAMAGESHEAR];
@@ -215,17 +232,34 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 	// for plasticity phase de(trial)eff = de - ezzres*I
 	
 	// get deviatoric stress increment (in absence of cracking strain increments and residual strains)
-	double delV = de.xx+de.yy+de.zz;
-	double thirdDelV = delV/3.;					// without residual strains to find deviatoric
-	delV -= 3.*ezzres;							// Needs unreduced here, use ezzres in case plane strain
-	
-	// deviatoric stress and pressure increments
-	Tensor dels = is2D ?
-		MakeTensor2D(2.*Gred*(de.xx-thirdDelV), 2.*Gred*(de.yy-thirdDelV), 2.*Gred*(de.zz-thirdDelV), Gred*de.xy) :
-		MakeTensor(2.*Gred*(de.xx-thirdDelV), 2.*Gred*(de.yy-thirdDelV), 2.*Gred*(de.zz-thirdDelV),
-			   					Gred*de.yz, Gred*de.xz, Gred*de.xy);
-	double delP = -Kred*delV;
-	
+    double delV,delP,dTq0;
+    Tensor dels;
+    if(np==PLANE_STRESS_MPM)
+    {	// see plane stress platicity notes in materials.pdf
+		delV = kappa*(de.xx+de.yy-2.*eres);
+        double thirdDelV = delV/3.;
+        dTq0 = -gamma0*mptr->pPreviousTemperature*(delV+3.*eres);
+
+        // deviatoric stress and pressure increments
+		// nets to -(E/(1-nu))(dexxeff+deyyeff)/3
+        delP = -Kred*delV;
+        dels = MakeTensor2D(2.*Gred*(de.xx-eres-thirdDelV), 2.*Gred*(de.yy-eres-thirdDelV), delP, Gred*de.xy);
+    }
+    else
+    {	// see plane strain platicity notes in materials.pdf
+		delV = de.xx+de.yy+de.zz;
+        dTq0 = -gamma0*mptr->pPreviousTemperature*delV;
+        double thirdDelV = delV/3.;				// with residual strains to find deviatoric stresses
+        delV -= 3.*ezzres;						// to get pressure (Needs unreduced here, use ezzres in case plane strain)
+        
+        // deviatoric stress and pressure increments
+        dels = is2D ?
+            MakeTensor2D(2.*Gred*(de.xx-thirdDelV), 2.*Gred*(de.yy-thirdDelV), 2.*Gred*(de.zz-thirdDelV), Gred*de.xy) :
+            MakeTensor(2.*Gred*(de.xx-thirdDelV), 2.*Gred*(de.yy-thirdDelV), 2.*Gred*(de.zz-thirdDelV),
+                                       Gred*de.yz, Gred*de.xz, Gred*de.xy);
+        delP = -Kred*delV;
+    }
+    
 	// dels is deviatoric stress increment in crack axis system (which will be initial
 	// axes if not damaged). We need to add to deviatoric stress in the same axis system
 	
@@ -233,14 +267,15 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 	Tensor *sp = mptr->GetStressTensor();
 	Tensor st0 = Rnm1.RTVoightR(sp,true,is2D);
 	
-	// trial deviatoric stress in crack axis system = st0 + P*I + dels
+	// trial deviatoric stress in crack axis system = st0 + P0*I + dels
 	double initialP = -(st0.xx+st0.yy+st0.zz)/3.;
 	Tensor str = is2D ?
 		MakeTensor2D(st0.xx+initialP+dels.xx,st0.yy+initialP+dels.yy,st0.zz+initialP+dels.zz,st0.xy+dels.xy) :
 		MakeTensor(st0.xx+initialP+dels.xx,st0.yy+initialP+dels.yy,st0.zz+initialP+dels.zz,
                    		st0.yz+dels.yz,st0.xz+dels.xz,st0.xy+dels.xy);
 	double trialP = initialP+delP;
-	
+	double trialP0 = trialP;
+
 	// Task 3: Get plastic potential with trial str stress in initial (undamaged) or crack axis (if damaged) system
 	//-------------------------------------------------------------------------------------------------------------
 	// Calculate plastic potential f = ||s|| - sqrt(2/3)*sy(alpha,rate,...)
@@ -262,7 +297,7 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 		str.xx -= trialP;
 		str.yy -= trialP;
 		str.zz -= trialP;
-		
+
 		// add back cracking strain to get de(elastic) = de(total) = de(trial)+dec (inclusive of residual strains)
 		AddTensor(&de,&dec);
 		
@@ -273,44 +308,95 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 	else
 	{	// Task 4b: Plasticity - Use Radial Return to find lambdak
 		//---------------------------------------------------------
-		double lambdak = plasticLaw->SolveForLambdaBracketed(mptr,np,alpha.strialmag,&str,Gred,Kred,trialP,delTime,&alpha,p->hardProps,0);
-		
+		double lambdak = plasticLaw->SolveForLambdaBracketed(mptr,np,alpha.strialmag,&str,
+                                                             Gred,psKred,trialP,delTime,&alpha,p->hardProps,0);
+
 		// Task 4c: plastic strain increment in crack axis system
-		// -----------------------------------------------
-		// dep = lambdak*(strial/||strial||)
-		Tensor dep;
-		double pscale = lambdak/alpha.strialmag;
-		dep.xx = pscale*str.xx;
-		dep.yy = pscale*str.yy;
-		dep.zz = pscale*str.zz;
-		dep.xy = 2.*pscale*str.xy;     // 2 for engineering plastic shear strain
-		if(is2D)
-		{	dep.xz = 0.;
-			dep.yz = 0.;
-		}
-		else
-		{	dep.xz = 2.*pscale*str.xz;
-			dep.yz = 2.*pscale*str.yz;
-		}
-		
-		// Task 4d: Get decrease in stress caused by plastic strain
-		//-------------------------------------------------------
-		strPlastic.xx = 2.*Gred*dep.xx;
-		strPlastic.yy = 2.*Gred*dep.yy;
-		strPlastic.zz = 2.*Gred*dep.zz;
-		strPlastic.xy = Gred*dep.xy;
-		if(is2D)
-		{	strPlastic.xz = 0.;
-			strPlastic.yz = 0.;
-		}
-		else
-		{	strPlastic.xz = Gred*dep.xz;
-			strPlastic.yz = Gred*dep.yz;
-		}
+        //--------------------------------------
+        Tensor dep;
+        if(np==PLANE_STRESS_MPM)
+        {    // Note this plane stress codes assumes J2 plasticity, should generalize when write a subclass
+            double d1 = (1. + psKred*lambdak);
+            double d2 = (1.+2.*Gred*lambdak);
+            double n1 = (str.xx+str.yy-2.*trialP)/d1;
+            double n2 = (-str.xx+str.yy)/d2;
+            double sxx = (n1-n2)/2.;
+            double syy = (n1+n2)/2.;
+            double txy = str.xy/d2;
+            
+			// get final direction (it is not constant in plane stress)
+            Tensor dfds;
+            dfds.xx = (2.*sxx-syy)/3.;
+            dfds.yy = (2.*syy-sxx)/3.;
+            dfds.zz = -(dfds.xx+dfds.yy);
+            dfds.xy = txy;                // tensorial shear strain
+            
+            // now the pressure has changed from trialP to new value
+            trialP = -n1/3.;                    // final P in plane stress calculations
+            
+            // -----------------------------------------------
+            // dep = lambdak*n
+            dep.xx = lambdak*dfds.xx;
+            dep.yy = lambdak*dfds.yy;
+            dep.zz = lambdak*dfds.zz;
+            dep.xy = 2.*lambdak*dfds.xy;     // 2 for engineering plastic shear strain
+            dep.xz = 0.;
+            dep.yz = 0.;
+
+            // get dezz required to give zero stress in z direction
+            // separate out just the dezzp term. Later code will add elastic change
+            //  based on de-dep in x and y directions
+            mptr->IncrementDeformationGradientZZ(dep.zz);
+ 
+            // Add plastic part to isotropic temperature increment here
+            dTq0 -= gamma0*mptr->pPreviousTemperature*dep.zz;
+
+            // Task 4d: Get decrease in deviatoric stress caused by plastic strain
+            //    which is equal to ds = strial - s(final) and s(final) = sigma+P
+            //-------------------------------------------------------
+            strPlastic.xx = str.xx - (sxx + trialP);
+            strPlastic.yy = str.yy - (syy + trialP);
+            strPlastic.zz = str.zz - trialP;				// = trialP0 - trialP
+            strPlastic.xy = str.xy - txy;
+            strPlastic.xz = 0.;
+            strPlastic.yz = 0.;
+        }
+        else
+        {   // -----------------------------------------------
+            // dep = lambdak*(strial/||strial||)
+            double pscale = lambdak/alpha.strialmag;
+            dep.xx = pscale*str.xx;
+            dep.yy = pscale*str.yy;
+            dep.zz = pscale*str.zz;
+            dep.xy = 2.*pscale*str.xy;     // 2 for engineering plastic shear strain
+            if(is2D)
+            {   dep.xz = 0.;
+                dep.yz = 0.;
+            }
+            else
+            {   dep.xz = 2.*pscale*str.xz;
+                dep.yz = 2.*pscale*str.yz;
+            }
+            
+            // Task 4d: Get decrease in stress caused by plastic strain
+            //-------------------------------------------------------
+            strPlastic.xx = 2.*Gred*dep.xx;
+            strPlastic.yy = 2.*Gred*dep.yy;
+            strPlastic.zz = 2.*Gred*dep.zz;
+            strPlastic.xy = Gred*dep.xy;
+            if(is2D)
+            {   strPlastic.xz = 0.;
+                strPlastic.yz = 0.;
+            }
+            else
+            {   strPlastic.xz = Gred*dep.xz;
+                strPlastic.yz = Gred*dep.yz;
+            }
+        }
 		
 		// Task 4e: Increment all energies
 		//--------------------------------
-		// get increment in deviatoric stress str = str - strPlatic
+		// get final deviatoric stress str = str - strPlastic
 		// get plastic work from deviatoric stress increment and plastic strains
 		SubTensor(&str,&strPlastic);
 		double plastEnergy = str.xx*dep.xx + str.yy*dep.yy + str.zz*dep.zz + str.xy*dep.xy;
@@ -323,16 +409,22 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 		
 		// The cumulative dissipated energy is tracked in plastic energy
 		
-		// Total work energy is sigma.de and softening phase will add only digma.(de-dep)
-		//     To compenstate, we add sigma.dep here (note that using trial elastic-plastic stress
-		//     rather than final elastic-plastic-softening stress)
+		// Total work energy is sigma.de and remaining code will add only sigma.(de-dep)
+		//     To compenstate, we add sigma.dep here. First get total stress
 		str.xx -= trialP;
 		str.yy -= trialP;
-		str.zz -= trialP;
-		// FINISH UP: I think correct to add non-zero dep.zz here even in plane strain
+		str.zz -= trialP;                   // will be zero in plane stress
+
+		// correct plastic stress change if in plane stress
+		if(np==PLANE_STRESS_MPM)
+		{	double deltaP = trialP - trialP0;
+			strPlastic.xx += deltaP;
+			strPlastic.yy += deltaP;
+			strPlastic.zz = 0.;
+		}
+
 		double partialWorkEnergy = str.xx*dep.xx + str.yy*dep.yy + str.xy*dep.xy + str.zz*dep.zz;
-		if(!is2D)
-			partialWorkEnergy += str.yz*dep.yz + str.xz*dep.xz;
+		if(!is2D) partialWorkEnergy += str.yz*dep.yz + str.xz*dep.xz;
 		mptr->AddWorkEnergy(partialWorkEnergy);
 		
 		// get elastic strain increment (de(elastic) = de(total)-dep = de(trial)+dec-dep) in crack axis system
@@ -351,10 +443,11 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 #pragma mark ... Code for Previously Undamaged Material
 	// Task 5: Begin damage mechanics phase
 	//-------------------------------------
-	// These values are in initial (undamaged) or crack axis (damage) system
-	// 1. The trial stress after plasticity Tensor str
+	// These values are in initial (undamaged) or crack axis (damaged) system
+	// 1. The trial total stress after plasticity Tensor str
 	// 2. The decrease in trial stresses caused by plasticity in strPlastic
 	// 3. Total elastic strain increment Tensor de(elastic) = de(total)-dep
+    //          (de.zz=0 in plane stress (set below), -dezzp in plane strain, axisymmetric or 3D)
 
 	// Before cracking, do normal istropic update. If not cracked
 	// then done, otherwise initiate the damage
@@ -362,11 +455,11 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 	{	// check if has failed
 		Vector norm;
 		double relStrength = soft[RELATIVE_STRENGTH];
-		int failureMode = initiationLaw->ShouldInitiateFailure(&str,&norm,np,relStrength);
+		int failureMode = initiationLaw->ShouldInitiateFailure(&str,&norm,np,relStrength,NULL);
 		//failureMode = NO_FAILURE;    // Hack to verify plasticity part matches IsoPlasticity material
 		if(failureMode == NO_FAILURE)
 		{	// Not failed yet, so finish elastic-plastic update
-			
+
 			// rotate to current axes and update stress
 			if(np==THREED_MPM)
 			{	*sp = Rtot.RVoightRT(&str,true,false);
@@ -378,7 +471,8 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 			}
 			
 			else
-			{	Tensor stnp1 = Rtot.RVoightRT(&str,true,true);
+			{   // rotate str to current configuration (but keep str in analysis frame)
+                Tensor stnp1 = Rtot.RVoightRT(&str,true,true);
 				sp->xx = stnp1.xx;
 				sp->yy = stnp1.yy;
 				sp->xy = stnp1.xy;
@@ -387,21 +481,22 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 				// work and residual strain energy increments (in initial axes)
 				double workEnergy = str.xx*de.xx + str.yy*de.yy + str.xy*de.xy;
 				double resEnergy = (str.xx + str.yy)*ezzres;
-				if(np==PLANE_STRAIN_MPM)
+ 				if(np==PLANE_STRAIN_MPM)
 				{	// extra residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
 					resEnergy += sp->zz*ezzres;
 				}
-				else
+				else if(np==PLANE_STRESS_MPM)
+                {   // add elastic part in de.zz (because exiting now), plastic part done above
+                    de.zz = -(nu/(1.-nu))*(de.xx + de.yy - 2.*eres) + eres;       // elastic ezz part only
+                    mptr->IncrementDeformationGradientZZ(de.zz);
+                }
+                else
 				{	// extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
 					workEnergy += sp->zz*de.zz;
 					resEnergy += sp->zz*eres;
 				}
 				mptr->AddWorkEnergyAndResidualEnergy(workEnergy, resEnergy);
 			}
-			
-			// Isoentropic temperature rise = -(K 3 alpha T)/(rho Cv) (dV/V) = - gamma0 T (dV/V)
-			double delV = de.xx+de.yy+de.zz;
-			double dTq0 = -gamma0*mptr->pPreviousTemperature*delV;
 			
 			// track heat energy
 			IncrementHeatEnergy(mptr,dTq0,dispEnergy);
@@ -410,7 +505,7 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 			// plastic strain was rotated above and stored on particle
 			return;
 		}
-
+        
 		// initiate failure - initiate state depends on initiation law
 		soft[SOFT_DAMAGE_STATE] = 0.01*failureMode ;
 		soft[NORMALDIR1] = norm.x;										// cos(theta) (2D) or Euler alpha (3D) to normal
@@ -428,7 +523,7 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 		// Rotate elastic strain increment from initial to crack axis system
 		de = RToCrack.RTVoightR(&de,false,is2D);
 		
-		// Rotate plastic stress change from initial to crack axis system (should verify)
+		// Rotate plastic stress change from initial to crack axis system
 		strPlastic = RToCrack.RTVoightR(&strPlastic,false,is2D);
 		
 		// include rotation in total rotation matrices
@@ -440,10 +535,11 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 	// A crack is present
 	
 	// Elastic strain increment in crack axis system is in de = de(total)-dep
-	
+    if(np==PLANE_STRESS_MPM) de.zz=0.;          // Code below assumes plain stress starts at zero
+
 	// Trial elastic-plastic stress in crack axis system after plasticity update is in str
 	str = Rnm1.RTVoightR(sp,true,is2D);
-	
+    
 	if(fk>0.)
 	{	// subtract plastic stress from current stress in crack axis system
 		SubTensor(&str,&strPlastic);
@@ -458,7 +554,8 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 	Tensor ecrack = MakeTensor(ipsoft[ECXX_DAMAGE],0.,0.,0.,ipsoft[GCXZ_DAMAGE],ipsoft[GCXY_DAMAGE]);
     
 	// finish up in separate code
-    DamageEvolution(mptr,np,soft,de,str,eres,ezzres,res,dR,Rtot,(ElasticProperties *)(p->elasticProps),&ecrack,dispEnergy);
+    DamageEvolution(mptr,np,soft,de,str,eres,ezzres,res,dR,Rtot,(ElasticProperties *)(p->elasticProps),
+                    &ecrack,dispEnergy,delTime);
 }
 
 // This material stores cracking strain in history variable
@@ -560,11 +657,3 @@ double *IsoPlasticSoftening::GetSoftHistoryPtr(MPMBase *mptr) const
 {	double *history =  (double *)(mptr->GetHistoryPtr(0));
 	return history+softHistoryOffset;
 }
-
-#ifdef SMOOTHED_STRESS
-// remove after update this subclass to use nonlocal stress
-double IsoPlasticSoftening::GetNonLocalRadius(void) const { return -1.; }
-#endif
-
-
-

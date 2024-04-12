@@ -6,6 +6,7 @@
 	Copyright 2007 RSAC Software. All rights reserved.
 *******************************************************************/
 
+import geditcom.JNFramework.JNVector;
 import java.nio.*;
 import java.util.*;
 import java.awt.*;
@@ -41,6 +42,7 @@ public class MaterialPoint
 	public double[] dnorm;
 	public double[] Lp;
 	public double[] wp;
+	public Point2D.Double xiEta;
 	
 	private double plotValue;
 	public Color plotColor;
@@ -60,6 +62,24 @@ public class MaterialPoint
 		Lp=new double[3];
 		wp=new double[3];
 		history = new ArrayList<Double>(19);
+		
+		// values always zero in 2D (but not set below when reading archive
+		origz=0.;
+		z=0.;
+		velz=0.;
+		dcdz=0.;
+		angleY=0.;
+		angleZ=0.;
+		sigma[XZID]=0.;
+		sigma[YZID]=0.;
+		eps[XZID]=0.;
+		eps[YZID]=0.;
+		eplast[XZID]=0.;
+		eplast[YZID]=0.;
+		erot[1]=0.;
+		erot[2]=0.;
+		dcdz=0.;
+		xiEta=null;
 	}
 	
 	//---------------------------------------------------------------------
@@ -86,43 +106,56 @@ public class MaterialPoint
 		Vector3 pradius = getParticleRadius(resDoc);
 		double radiix = 0.01*mpDiam*pradius.x*scale;
 		double radiiy = 0.01*mpDiam*pradius.y*scale;
+		
+		// -1 means do not transform, 0 means no limt, 1 or high limits F components
 		double maxElong = NFMVPrefs.prefs.getDouble(NFMVPrefs.maxElongKey,
 													NFMVPrefs.maxElongDef);
 		
 		if(showSquarePts)
-		{	if(transformPts)
+		{	if(transformPts && maxElong>=0.)
 			{	// This works in Java 1.5
 				Matrix3 F = getDeformationGradient(resDoc);
 				
-				double r1x,r1y,r2x,r2y;
-				if(maxElong<1.)
-				{	// transformed (radiix,0)
-					r1x = radiix*F.get(0,0);
-					r1y = -radiix*F.get(1,0);
-					// transformed (0,radiiy)
-					r2x = radiiy*F.get(0,1);
-					r2y = -radiiy*F.get(1,1);
-				}
-				else
-				{	// transformed (radiix,0)
+				double r1x = F.get(0,0);
+				double r1y = F.get(1,0);
+				double r2x = F.get(0,1);
+				double r2y = F.get(1,1);
+				double maxF = Math.max(Math.max(Math.abs(r1x),Math.abs(r1y)),
+									Math.max(Math.abs(r2x),Math.abs(r2y)));
+				if(maxElong>=1. && maxF>maxElong)
+				{	// transformed (1,0)
 					double fc = F.get(0,0);
-					r1x = fc>0. ? radiix*Math.min(fc, maxElong) : radiix*Math.max(fc, -maxElong);
+					double r1xp = fc>0. ? Math.min(fc, maxElong) : Math.max(fc, -maxElong);
 					fc = F.get(1,0);
-					r1y = fc>0. ? -radiix*Math.min(fc, maxElong) : -radiix*Math.max(fc, -maxElong);
-					// transformed (0,radiiy)
+					double r1yp = fc>0. ? -Math.min(fc, maxElong) : -Math.max(fc, -maxElong);
+					// transformed (0,1)
 					fc = F.get(0,1);
-					r2x = fc>0. ? radiiy*Math.min(fc, maxElong) : radiiy*Math.max(fc, -maxElong);
+					double r2xp = fc>0. ? Math.min(fc, maxElong) : Math.max(fc, -maxElong);
 					fc = F.get(1,1);
-					r2y = fc>0. ? -radiiy*Math.min(fc, maxElong) : -radiiy*Math.max(fc, -maxElong);
+					double r2yp = fc>0. ? -Math.min(fc, maxElong) : -Math.max(fc, -maxElong);
+					
+					// match areas if too large (set scale to 1 to return to prior method)
+					double detJ = Math.abs(r1x*r2y - r1y*r2x);
+					double detJp = Math.abs(r1xp*r2yp - r1yp*r2xp);
+					double pscale = detJp>detJ ? Math.sqrt(detJ/detJp) : 1. ;
+					r1x = pscale*r1xp;
+					r1y = pscale*r1yp;
+					r2x = pscale*r2xp;
+					r2y = pscale*r2yp;
 				}
+				// change y sign because using pixels here inverted in y
+				r1x *= radiix;
+				r1y *= -radiix;
+				r2x *= radiiy;
+				r2y *= -radiiy;
 				
 				// make the path
 				GeneralPath quad=new GeneralPath();
 				Point2D.Float pathPt0=new Point2D.Float((float)(xpt+r1x+r2x),(float)(ypt+r1y+r2y));
 				quad.moveTo(pathPt0.x,pathPt0.y);
-				quad.lineTo((float)(xpt-r1x+r2x),(float)(ypt-r1y+r2y));
-				quad.lineTo((float)(xpt-r1x-r2x),(float)(ypt-r1y-r2y));
 				quad.lineTo((float)(xpt+r1x-r2x),(float)(ypt+r1y-r2y));
+				quad.lineTo((float)(xpt-r1x-r2x),(float)(ypt-r1y-r2y));
+				quad.lineTo((float)(xpt-r1x+r2x),(float)(ypt-r1y+r2y));
 				quad.lineTo(pathPt0.x,pathPt0.y);
 				/*
 				// This requires Java 1.6
@@ -439,6 +472,14 @@ public class MaterialPoint
 			if((history & 0x04) !=0) setHistory(17,bb.getDouble());
 			if((history & 0x08) !=0) setHistory(18,bb.getDouble());
 			if((history & 0x10) !=0) setHistory(19,bb.getDouble());
+		}
+		
+		// get spin momentum
+		if(mpmOrder[ReadArchive.ARCH_Size]=='Y')
+		{	// read, but not stored. Could store and use in visualization
+			bb.getDouble();
+			bb.getDouble();
+			if(has3D) bb.getDouble();
 		}
 	}
 	
@@ -879,28 +920,39 @@ public class MaterialPoint
 				theValue=(double)material;
 				break;
 			
-			case PlotQuantity.MPMANGLEZ:
-				theValue=angleZ;
-				break;
-			case PlotQuantity.MPMANGLEY:
-				theValue=angleY;
-				break;
-			case PlotQuantity.MPMANGLEX:
-				theValue=angleX;
-				break;
-			
 			case PlotQuantity.MPMPOSX:
 				theValue=x;
 				break;
-			
 			case PlotQuantity.MPMPOSY:
 				theValue=y;
 				break;
-			
 			case PlotQuantity.MPMPOSZ:
 				theValue=z;
 				break;
 			
+			case PlotQuantity.MPMORIGPOSX:
+				theValue=origx;
+				break;
+			case PlotQuantity.MPMORIGPOSY:
+				theValue=origy;
+				break;
+			case PlotQuantity.MPMORIGPOSZ:
+				theValue=origz;
+				break;
+			
+			case PlotQuantity.MPMPOSDISTANCE:
+			case PlotQuantity.MPMPOSANGLE:
+				theValue=Math.sqrt(x*x+y*y);
+				if(component==PlotQuantity.MPMPOSANGLE)
+				{	if(theValue!=0)
+					{	if(x>=0.)
+							theValue=Math.asin(y/theValue);
+						else
+							theValue=Math.PI-Math.asin(y/theValue);
+					}
+				}
+				break;
+				
 			// concentration and pore pressure
 			case PlotQuantity.MPMCONCENTRATION:
 				theValue=concentration;
@@ -915,6 +967,23 @@ public class MaterialPoint
 				theValue=dcdz;
 				break;
 			
+		    // rotational strains
+			case PlotQuantity.MPMANGLEZ:
+	        case PlotQuantity.MPMWXY:
+	            // wxy (eng) = 200*PI*(erot[0]-matAngleVec[0])/180 = dv/dx-du/dy (in %)
+	        	theValue = Math.PI*(erot[0]-angleZ)/0.9;
+	            break;
+			case PlotQuantity.MPMANGLEY:
+	        case PlotQuantity.MPMWXZ:
+	            // wxz (eng) = 200*PI*(erot[1]+matAngleVec[1])/180 = dw/dx-du/dz (in %)
+	        	theValue = Math.PI*(erot[1]+angleY)/0.9;
+	            break;
+			case PlotQuantity.MPMANGLEX:
+	        case PlotQuantity.MPMWYZ:
+	            // wyz (eng) = 200*PI*(erot[2]-matAngleVec[2])/180 = dw/dy-dv/dz (in %)
+	        	theValue = Math.PI*(erot[2]-angleX)/0.9;
+	            break;
+	            
 			// history variables (assume constants in order
 			case PlotQuantity.MPMHISTORY1:
 			case PlotQuantity.MPMHISTORY2:
@@ -942,7 +1011,7 @@ public class MaterialPoint
 				theValue=getHistory(component-PlotQuantity.MPMHISTORY5+4);
 				break;
 				
-			case PlotQuantity.MPMMASS:
+			case PlotQuantity.MPMDENSITY:
 			{	MaterialBase matl=doc.materials.get(materialIndex());
 				if(matl.isRigid())
 					theValue = 0.;
@@ -977,6 +1046,10 @@ public class MaterialPoint
 			case PlotQuantity.MPMSPINMOMENTUMZ:
 				theValue=Lp[2];
 				break;
+			
+			case PlotQuantity.PLOTEXPRESSION:
+				theValue=doc.docCtrl.controls.evaluateExpressionMP(this,angle,doc);
+				break;
 				
 			// Unknown
 			default:
@@ -1004,6 +1077,7 @@ public class MaterialPoint
 		dmax=mp.getPlotValue();
 		for(i=1;i<doc.mpmPoints.size();i++)
 		{	mp=doc.mpmPoints.get(i);
+			if(mp.inReservoir()) continue;
 			mp.loadForPlot(component,angle,doc);
 			dmin=Math.min(dmin,mp.getPlotValue());
 			dmax=Math.max(dmax,mp.getPlotValue());
@@ -1021,7 +1095,7 @@ public class MaterialPoint
 		dmax=limits.y;
 		
 		// set the spectum
-		setSpectrum(dmin,dmax,doc);
+		setSpectrum(dmin,dmax,doc,component==PlotQuantity.MPMPOS);
 		
 		// tell plot view its range
 		MoviePlotWindow movieFrame=doc.docCtrl.getMovieFrame();
@@ -1033,7 +1107,7 @@ public class MaterialPoint
 	// set color spectrum current range by changing colors
 	//  of all material points or element subelements. No need
 	//  to reload all the data.
-	public static void setSpectrum(double dmin,double dmax,ResultsDocument doc)
+	public static void setSpectrum(double dmin,double dmax,ResultsDocument doc,boolean isMatPlot)
 	{
 		// adjust for no range
 		if(Math.abs(dmax-dmin)<1.e-15)
@@ -1047,7 +1121,14 @@ public class MaterialPoint
 		MaterialPoint mp;
 		for(i=0;i<doc.mpmPoints.size();i++)
 		{	mp=doc.mpmPoints.get(i);
-			mp.setPlotColor(dmin,scale);
+			if(mp.inReservoir()) continue;
+			if(isMatPlot)
+			{	mp.plotColor = doc.materials.get(mp.materialIndex()).matClr;
+				if(mp.plotColor==null)
+					mp.setPlotColor(dmin,scale);
+			}
+			else
+				mp.setPlotColor(dmin,scale);
 		}
 	}
 	
@@ -1064,8 +1145,10 @@ public class MaterialPoint
 	public double getPlotValue() { return plotValue; }
 	
 	// get position as a point
-	public Point2D.Double getPosition() { return new Point2D.Double(x,y); }
-	public Point2D.Double getOrigPosition() { return new Point2D.Double(origx,origy); }
+	public Point2D.Double getPosition2D() { return new Point2D.Double(x,y); }
+	public JNVector getPosition() { return new JNVector(x,y,z); }
+	public Point2D.Double getOrigPosition2D() { return new Point2D.Double(origx,origy); }
+	public JNVector getOrigPosition() { return new JNVector(origx,origy,origz); }
 	
 	// index to material type (zero based)
 	public int materialIndex() { return material-1; }
@@ -1073,9 +1156,26 @@ public class MaterialPoint
 	// number
 	public void setNum(int ptNum) { num = ptNum; }
 	
+	// in reservoir
+	public boolean inReservoir() { return inElem==0; }
+	
 	// get particle radius from document
 	public Vector3 getParticleRadius(ResultsDocument doc)
-	{	return doc.pointDims.get(num-1);		
+	{	ArrayList<Vector3> psize =  doc.pointDims.get(num-1);
+		if(psize.size()<2)
+			return psize.get(0);
+		
+		// dumb search for current size. Relies on expectation that no
+		// particle will have many size changes
+		int sizeOffset = 1;
+		while(sizeOffset<psize.size())
+		{	int changeStep = (int)(psize.get(sizeOffset).x+.1);
+			if(changeStep>doc.currentStep) break;
+			sizeOffset += 2;
+		}
+		
+		// accept size before sizeOffset
+		return psize.get(sizeOffset-1);
 	}
 	
 	// Get deformed volume

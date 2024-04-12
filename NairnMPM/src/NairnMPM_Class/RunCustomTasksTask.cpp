@@ -80,8 +80,9 @@ bool RunCustomTasksTask::Execute(int taskOption)
         // particle loop or nonrigid, rigid block, and rigid contact particles
         for(int p=0;p<nmpmsRC;p++)
 		{	MPMBase *mpmptr = mpm[p];
+			if(mpmptr->InReservoir()) continue;
 			
-           // Load element coordinates
+			// Load element coordinates
 			matID=theMaterials[mpmptr->MatID()];
 			isRigid=matID->IsRigid();					// if TRUE, will be rigid contact particle
 			matfld=matID->GetField();
@@ -115,7 +116,15 @@ bool RunCustomTasksTask::Execute(int taskOption)
     // Step 3: Do the custom task calculations
     nextTask=theTasks;
     while(nextTask!=NULL)
+	{
+#ifdef LOG_PROGRESS
+		char logLine[200];
+        size_t logSize=200;
+		snprintf(logLine,logSize,"  ...run: %s",nextTask->TaskName());
+		archiver->WriteLogFile(logLine,NULL);
+#endif
         nextTask=nextTask->StepCalculation();
+	}
 	
     // Step 4: Call tasks in case any need to clean up
     CustomTask *thisTask=theTasks;

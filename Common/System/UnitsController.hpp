@@ -32,15 +32,20 @@ class UnitsController
 		static double UnitsAttribute(char *,int);
 		static bool SetConsistentUnits(char *,char *,char *);
 		static void GetPrefix(int,const char *,char *);
-	
+        static double GetGasConstant(double);
+        static double GetOneAtmosphere(void);
+
 	private:
 		static int unitsType;
 	
 		static char length[3],mass[3],timeu[3];
 		static int lengthExp,massExp,timeExp;
 		static char velocity[10],force[10],pressure[10],energy[10],density[10];
+        const static size_t forceSize=10,pressureSize=10,energySize=10;
 		static char errRate[15],tractionSlope[15],viscosity[15],heatFusion[18];
+        const static size_t viscositySize=15;
 		static char heatCapacity[18],power[15],conductivity[20],convection[20];
+        const static size_t powerSize=15;
 		static char heatFlux[15],stressIntensity[20],bcarg[10],concFlux[20];
 		static char diffusionTens[20];
 };

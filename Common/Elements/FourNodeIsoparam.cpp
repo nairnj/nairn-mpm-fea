@@ -13,7 +13,8 @@
 	#include "NairnMPM_Class/MeshInfo.hpp"
     #include "NairnMPM_Class/NairnMPM.hpp"
 	#include "MPM_Classes/MPMBase.hpp"
-	#include <map>
+    #include "Exceptions/CommonException.hpp"
+    #include <map>
 	#include <vector>
 #endif
 
@@ -433,7 +434,7 @@ void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int *nds,int getDeriv,double
 	int i;
 	double xp,yp,Svpx,Svpy,dSvpx,dSvpy,xsign,ysign,argx=0.,argy=0.;
 	
-	// L is the cell spacing, 2*lpi is the current particle size (dimensionless range -1 to 1).
+	// L is the cell spacing, 2*lpi is the current particle size (in dimensionless units ranging -1 to 1).
 	// The deformation of the particle is not considered yet.
     double q1x = 2.-lp.x, q2x = 2.+lp.x;
     double q1y = 2.-lp.y, q2y = 2.+lp.y;
@@ -516,6 +517,77 @@ void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int *nds,int getDeriv,double
 	// number of nodes (better be less than space available in nds[])
 	nds[0] = i;
 }
+
+// get GIMP shape functions when using a tartan and optionally derivatives wrt x and y
+// assumed to be properly numbered regular array
+// input *xi position in element coordinate
+// output number of nodes in nds[0] and nodes in nds[1] to nds[nds[0]
+void FourNodeIsoparam::TartanGimpShapeFunction(Vector *xi,int *nds,int getDeriv,double *sfxn,
+                                         double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
+{
+    double Svpx,Svpy,dSvpx,dSvpy;
+    
+	// get element ratios along each axis
+    int ebelow,eabove;
+    mpmgrid.GetCorners2D(num,ebelow,eabove);
+    
+    // x direction ratios
+    double d1x = GetDeltaX();
+    double d0x = 2.*theElements[ebelow]->GetDeltaX()/d1x;
+    double d2x = 2.*theElements[eabove]->GetDeltaX()/d1x;
+    
+    // y direction ratios
+    double d1y = GetDeltaY();
+    double d0y = 2.*theElements[ebelow]->GetDeltaY()/d1y;
+    double d2y = 2.*theElements[eabove]->GetDeltaY()/d1y;
+    
+    // if locally equal sizes, can use normal GIMP
+    if(DbleEqual(d0x,1.) && DbleEqual(d2x,1.) && DbleEqual(d0y,1.) && DbleEqual(d2y,1.))
+    {   GimpShapeFunction(xi,nds,getDeriv,sfxn,xDeriv,yDeriv,zDeriv,lp);
+        return;
+    }
+    
+    // error is too small
+    if(lp.x>1. || lp.x>0.5*d0x || lp.x > 0.5*d2x || lp.y>1. || lp.y>0.5*d0y || lp.y > 0.5*d2y)
+    {   // particle too large for Tartan GIMP code
+        throw CommonException("Particle too large for Tartan GIMP shape functions was found", "FourNodeIsoparam::TartanGimpShapeFunction");
+    }
+
+    int i=0;
+    for(int id=0;id<16;id++)
+    {   // x direction
+        double *dS = getDeriv ? &dSvpx : NULL;
+        if(!Tartan1D(gxii[id],xi->x,lp.x,d0x,d2x,&Svpx,dS)) continue;
+        
+        // y direction
+        dS = getDeriv ? &dSvpy : NULL;
+        if(!Tartan1D(geti[id],xi->y,lp.y,d0y,d2y,&Svpy,dS)) continue;
+        
+        // shape function
+        sfxn[i] = Svpx*Svpy;
+        
+        // the gradient shape functions
+        if(getDeriv)
+        {   xDeriv[i] = dSvpx*Svpy/d1x;
+            yDeriv[i] = Svpx*dSvpy/d1y;
+        }
+
+        // assign node
+        i++;
+//#define MAXID_CHECK
+#ifdef MAXID_CHECK
+        if(i>9)
+        {   // particle too large for Tartan GIMP code
+            throw CommonException("Too many nodes fron for Tartan GIMP shape functions", "FourNodeIsoparam::TartanGimpShapeFunction");
+        }
+#endif
+        nds[i] = nodes[0] + xoff[id]*mpmgrid.xplane + yoff[id]*mpmgrid.yplane;
+    }
+    
+    // number of nodes (better be less than space available in nds[])
+    nds[0] = i;
+}
+
 
 // get GIMP shape functions and optionally derivatives wrt x and y
 // assumed to be properly numbered regular array
@@ -1076,6 +1148,107 @@ void FourNodeIsoparam::GridTractionFunction(Vector *xi1,Vector *xi2,bool isAxisy
 										 + xii[i]*eti[i]*(xi2->x*xi2->y - xi1->x*xi1->y) );
 		}
 	}
+}
+
+// get Finite GIMP shape functions and optionally derivatives wrt x and y
+void FourNodeIsoparam::FiniteGimpShapeFunction(int *nds,double *fn,double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr)  const
+{
+	// Experiment
+	//double F[3][3];
+	//mpmptr->GetDeformationGradient(F);
+	//
+	FiniteGIMPInfo *fgimp = mpmptr->GetFiniteGIMPInfo();
+	int numElements = fgimp->InTheseElements[0];
+	
+	// just calculate shape functions
+	if(xDeriv == NULL)
+	{	map<int,double> NodesAndShapeFunctions;
+		std::map<int,double>::iterator iter;
+		for(int i=0;i<numElements;i++)
+		{	// Get moments
+			double moment_0 = fgimp->moment_0[i];
+			double moment_x = fgimp->moment_x[i];
+			double moment_y = fgimp->moment_y[i];
+			double moment_xy = fgimp->moment_xy[i];
+			for(int j = 0;j<4;j++)
+			{	int node = (theElements[fgimp->InTheseElements[i+1]])->nodes[j];
+				double shape = moment_0+xii[j]*moment_x+eti[j]*moment_y+xii[j]*eti[j]*moment_xy;  // calculuate shape function
+				iter = NodesAndShapeFunctions.find(node); // see if node is already in list
+				if(iter==NodesAndShapeFunctions.end())
+				{	NodesAndShapeFunctions.insert(pair<int,double>(node,shape));
+				}
+				else
+				{	// if it is already here, increment
+					iter->second += shape;
+				}
+			}
+		}
+		// now copy over to arrays
+		int index=0;
+		//cout<<"#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<endl;
+		for(iter=NodesAndShapeFunctions.begin(); iter!=NodesAndShapeFunctions.end(); ++iter)
+		{	// if greater than zero relative to 1.0, then copy over
+			if(iter->second > 1e-17)
+			{	index++;
+				nds[index] = iter->first;
+				fn[index] = iter->second;
+				//cout<<"# S["<<nds[index]<<"] = "<< fn[index]<<endl;
+			}
+		}
+		//cout<<"#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<endl;
+		nds[0]=index; // store size
+	}
+	else
+	{	// need derivatives as well
+		// use Vector struct because I need a 3 element struct; z component for the shape function
+		map<int,Vector> NodesShapesGradients;
+		std::map<int,Vector>::iterator iter;
+		Vector store_shape_grad; //
+		for(int i=0;i<numElements;i++)
+		{	// Get moments
+			double moment_0 = fgimp->moment_0[i];
+			double moment_x = fgimp->moment_x[i];
+			double moment_y = fgimp->moment_y[i];
+			double moment_xy = fgimp->moment_xy[i];
+			for(int j = 0;j<4;j++)
+			{	int node = (theElements[fgimp->InTheseElements[i+1]])->nodes[j];
+				store_shape_grad.x = xii[j]*moment_0+xii[j]*eti[j]*moment_y;  // calculuate gradient in x
+				store_shape_grad.y = eti[j]*moment_0+xii[j]*eti[j]*moment_x;  // calculuate gradient in y
+				store_shape_grad.z = moment_0+xii[j]*moment_x+eti[j]*moment_y+xii[j]*eti[j]*moment_xy;  // calculuate shape function
+				iter = NodesShapesGradients.find(node); // see if node is already in list
+				if(iter==NodesShapesGradients.end())
+				{	NodesShapesGradients.insert(pair<int,Vector>(node,store_shape_grad));
+				}
+				else
+				{	//if it is already here, increment
+					iter->second.x += store_shape_grad.x;
+					iter->second.y += store_shape_grad.y;
+					iter->second.z += store_shape_grad.z;
+				}
+			}
+		}
+		
+		// now copy over to arrays
+		int index=0;
+		for(iter=NodesShapesGradients.begin(); iter!=NodesShapesGradients.end(); ++iter)
+		{	// make sure shape functions are greater than zero relative to 1.0
+			//if(iter->second.z > 1e-17 || fabs(iter->second.x) > 1.e-17 || fabs(iter->second.y) > 1.e-17)
+			if(iter->second.z > 1e-17)
+			{	index++;
+				nds[index] = iter->first;
+				fn[index] = iter->second.z;
+				// experiment
+				//double xg = iter->second.x*2.0/GetDeltaX();
+				//dFindElementCoordinatesFromPointouble yg = iter->second.y*2.0/GetDeltaY();
+				xDeriv[index] = iter->second.x*2.0/GetDeltaX();
+				yDeriv[index] = iter->second.y*2.0/GetDeltaY();
+			}
+		}
+		nds[0]=index; // store size
+	}
+	
+	// JN: Note: sum of fn[i] should be 1 and sum xDeriv[i] and yDeriv[i] should be zero
+	// I wrote code to sum them for i from 1 to nds[0] and in many runs they are always correct
 }
 
 #endif		// MPM_CODE

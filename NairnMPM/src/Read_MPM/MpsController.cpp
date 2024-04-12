@@ -24,7 +24,7 @@ MpsController *mpCtrl=NULL;
 void MpsController::AddMaterialPoint(MPMBase *newMpt,double conc,double temp)
 {
 	AddObject(newMpt);
-	newMpt->SetConcentration(conc,DiffusionTask::reference);
+	newMpt->SetConcentration(conc,false);
 	newMpt->SetTemperature(temp,thermal.reference);
 }
 

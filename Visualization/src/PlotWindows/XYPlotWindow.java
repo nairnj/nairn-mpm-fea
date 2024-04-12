@@ -7,8 +7,10 @@
 *******************************************************************/
 
 import geditcom.JNFramework.*;
-import javax.swing.*;
 import java.util.*;
+
+import javax.swing.SwingUtilities;
+
 import java.awt.Toolkit;
 import java.awt.geom.*;
 //import com.primalworld.math.*;
@@ -22,10 +24,8 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 	static final int YorZContour=1;
 	static final int DContour=2;
 	static final int TContour=3;
-	static final int XorRParticleContour=4;
-	static final int YorZParticleContour=5;
-	static final int X0orR0ParticleContour=6;
-	static final int Y0orZ0ParticleContour=7;
+	static final int PPtAndDirectionLine=4;
+	static final int P0PtAndDirectionLine=5;
 	static final int CRACK_CONTOUR=10;
 	static final int contourPoints=200;
 	static final int AVGQUAD=10;
@@ -44,11 +44,13 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 	private double contourRange;
 	private int pmpts;
 	private int functionType;
-	private double constantContour;
+	private JNVector x0 = new JNVector(0.,0.,0.);
+	private JNVector dir = new JNVector(0.,0.,0.);
 	
 	// for plot thread calculations
 	private int component;
 	private ControlPanel controls;
+	private ISDictType settings;
 
 	// initialize
 	public XYPlotWindow(DocViewer parent)
@@ -57,20 +59,31 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 	}
 	
 	// add another plot
-	public void addPlot(ControlPanel plotControls) throws Exception
+	public void addPlot(ControlPanel plotControls,ISDictType plotSettings) throws Exception
 	{
 		// the component to plot
+		settings=plotSettings;
+		if(settings!=null)
+			settings.gcis_setObjectforKey("xyplot","plottype");
 		controls=plotControls;
-		component=controls.adjustComponent(controls.getPlotComponent(LoadArchive.MESH2D_PLOT));
+		component=controls.getPlotComponent(LoadArchive.MESH2D_PLOT,true,settings);
+		if(component<0)
+			throw new Exception("The result to be plotted was not recognized");
+		component=controls.adjustComponent(component,settings);
 		
 		// plot file of global results
 		if(component==PlotQuantity.IMPORTANDPLOTFILE)
 		{	importAndPlotFile();			
 			return;
 		}
+		
 		// detach thread to gather plot information
 		Thread plot2DThread=new Thread(this);
 		plot2DThread.start();
+	}
+	
+	public boolean isPlotting()
+	{	return controls.isPlotting();
 	}
 	
 	//----------------------------------------------------------------------------
@@ -84,7 +97,8 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 		String contourFxn=null;
 		
 		try
-		{	switch(component)
+		{	
+			switch(component)
 			{	case PlotQuantity.MPMNORMALCTOD:
 				case PlotQuantity.MPMSHEARCTOD:
 				case PlotQuantity.MPMCRACKPROFILE:
@@ -106,26 +120,80 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 					break;
 				
 				default:
-					functionType=controls.getContour();
-					contourFxn=controls.getContourFunction();
+					functionType=controls.getContour(settings);
+					contourFxn=controls.getContourFunction(settings);
 					
-					if(contourFxn.length()==0)
+					if(contourFxn.length()==0 || functionType<0)
 						throw new Exception("The contour function cannot be empty");
-					
-					if(functionType>=XorRParticleContour && functionType<=Y0orZ0ParticleContour)
-					{	// contourFxn must be a number only
-						contourExpr = new JNExpression(contourFxn,null);
-						variables = new HashMap<String,String>(2);
-						try
-						{	contourExpr.evaluateWith(variables);
-							constantContour = contourExpr.getNumericValue();
+
+					if(functionType==PPtAndDirectionLine || functionType==P0PtAndDirectionLine)
+					{	// 2D needs 1, 2, or 4 comma separated values
+						// 3D needs 1, 2, 3, or 6
+						ResultsDocument resDoc=((DocViewer)document).resDoc;
+						double[] args = new double[6];
+						int numArgs = 0;
+						int maxArgs = resDoc.is3D() ? 6 : 4 ;
+						Scanner argScan=new Scanner(contourFxn);
+						argScan.useDelimiter(",");
+						while(argScan.hasNextDouble())
+						{	// get full arguments and trim whitespace
+							if(numArgs>=maxArgs)
+							{	argScan.close();
+								throw new Exception("More than "+maxArgs+"command-separated values not allowed");
+							}
+							args[numArgs] = argScan.nextDouble();
+							numArgs++;
 						}
-						catch(Exception e)
-						{	throw new Exception("Particle plots must specify only a number value for the contour function");
-						}
+						argScan.close();
 						
+						if(resDoc.is3D())
+						{	if(numArgs==4)
+							{	// plot along direction in item 4
+								x0.Set(args[0],args[1],args[2]);
+								dir.Set(0.,0.,0.);
+								int axis = (int)(args[3]+.1)-1;
+								if(axis<0 || axis>2)
+									throw new Exception("Axis argument #4 must be 1, 2, or 3");
+								dir.v[axis]=1.;
+								if(axis==0)
+									x0.v[0]=resDoc.xmin;
+								else if(axis==1)
+									x0.v[1]=resDoc.ymin;
+								else
+									x0.v[2]=resDoc.zmin;
+							}
+							else if(numArgs==6)
+							{	// point and direction
+								x0.Set(args[0],args[1],args[2]);;
+								dir.Set(args[3],args[4],args[5]);
+								double dirLength = dir.getLength();
+								dir.Scale(1./dirLength);
+							}
+							else
+								throw new Exception("3D particle plots need 4 or 6 comma-separated values");
+						}
+						else if(numArgs==1)
+						{	// 2D plot for x a constant
+							x0.Set(args[0],resDoc.ymin,0.);
+							dir.Set(0.,1.,0.);
+						}
+						else if(numArgs==2)
+						{	// 2D plot for y a constant
+							x0.Set(resDoc.xmin,args[1],0.);
+							dir.Set(1.,0.,0.);
+						}
+						else if(numArgs==4)
+						{	// point and direction
+							x0.Set(args[0],args[1],0.);
+							dir.Set(args[2],args[3],0.);
+							double dirLength = dir.getLength();
+							dir.Scale(1./dirLength);
+						}
+						else
+							throw new Exception("2D particle plots need 1, 2, or 4 comma-separated values");
+							
 						// get extra range
-						contourRange=controls.getPlusMinus();
+						contourRange=controls.getPlusMinus(settings);
 					}
 					
 					else
@@ -159,7 +227,7 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 						}
 							
 						// get range
-						contourRange=controls.getPlusMinus();
+						contourRange=controls.getPlusMinus(settings);
 						if(ElementBase.DbleEqual(contourRange,0.))
 							pmpts=1;
 						else
@@ -171,11 +239,16 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 			// load the archive
 			ResultsDocument resDoc=((DocViewer)document).resDoc;
 			if(resDoc.isMPMAnalysis())
-			{	resDoc.readSelectedArchive(controls.getArchiveIndex());
+			{	int selArchive;
+				if(settings!=null)
+					selArchive = settings.gcis_integerForKey("archive")-1;
+				else
+					selArchive = controls.getArchiveIndex();
+				resDoc.readSelectedArchive(selArchive);
 			}
 			
 			// load element plot values
-			if(functionType>=XorRParticleContour && functionType<=Y0orZ0ParticleContour)
+			if(functionType==PPtAndDirectionLine || functionType==P0PtAndDirectionLine)
 				plotParticleResults();
 			else if(functionType!=CRACK_CONTOUR)
 			{	ElementBase.load2DPlotData(component,resDoc);
@@ -186,16 +259,20 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 		}
 		catch(Exception pe)
 		{	Toolkit.getDefaultToolkit().beep();
-			JOptionPane.showMessageDialog(this,"X-Y plot error: "+pe.getMessage());
+			JNUtilities.showMessage(this,"X-Y plot error: "+pe.getMessage());
 			if(plot2DView.getNumberOfPlots()==0) dispose();
 			controls.disableProgress();
 			return;
 		}
 		
-		// finish up
-		controls.disableProgress();
-		setVisible(true);
-		toFront();
+		// finish up on EDT
+		SwingUtilities.invokeLater(new Runnable()
+		{	public void run()
+			{	controls.disableProgress();
+				setVisible(true);
+				toFront();
+			}
+		});
 	}
 	
 	// evaluate expression at tval
@@ -224,7 +301,6 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 		
 		//---------------------------------------------------------
 		// begin plot array
-		
 		ResultsDocument resDoc=((DocViewer)document).resDoc;
 		Rectangle2D.Double mpmMeshBounds=resDoc.getMeshBounds(false);
 		switch(functionType)
@@ -343,7 +419,7 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 			prevX=mptX;
 			prevY=mptY;
 		}
-		
+
 		//---------------------------------------------------------
 		// Finish plot
 		if(x.size()==0)
@@ -375,33 +451,37 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 		for(int i=0;i<resDoc.mpmPoints.size();i++)
 		{	mpm=resDoc.mpmPoints.get(i);
 
-			// partile plots should not include rigid particles
+			// particle plots should not include rigid or reservoirparticles
 			MaterialBase matl=resDoc.materials.get(mpm.materialIndex());
-			if(matl.isRigid()) continue;
+			if(matl.isRigid() || mpm.inReservoir()) continue;
 			
 			// check point
-	        Point2D.Double pt;
-	        if(functionType==XorRParticleContour || functionType==YorZParticleContour)
+	        JNVector pt;
+	        if(functionType==PPtAndDirectionLine)
 	            pt = mpm.getPosition();
 	        else
 	            pt = mpm.getOrigPosition();
 			Vector3 radius = mpm.getParticleRadius(resDoc);
+			
+			// find distance to the line
 
-			if(functionType==XorRParticleContour || functionType==X0orR0ParticleContour)
-			{	if((constantContour <= pt.x+Math.max(radius.x,contourRange)) &&
-						(constantContour > pt.x-Math.max(radius.x,contourRange)))
-				{	// add this point
-					double plotValue = mpm.getForPlot(component,0.,resDoc);
-					pdata.add(new PointData(pt.y,plotValue));
-				}
-			}
-			else
-			{	if((constantContour <= pt.y+Math.max(radius.y,contourRange)) &&
-						(constantContour > pt.y-Math.max(radius.y,contourRange)))
-				{	// add this point
-					double plotValue = mpm.getForPlot(component,0.,resDoc);
-					pdata.add(new PointData(pt.x,plotValue));
-				}
+			// vector from x0 to point
+			JNVector pmx = pt.Subtract(x0);
+			
+			// projection onto line (when dir normalized it is distance to intersection point
+			double proj = pmx.Dot(dir);
+			
+			// intersection point
+			JNVector cross = new JNVector(x0.v[0] + proj*dir.v[0],x0.v[1]+proj*dir.v[1],x0.v[2]+proj*dir.v[2]);
+			
+			// distance point to the line
+			double dist = pt.getDistanceTo(cross);
+			
+			// is it close enough?
+			if(dist<=Math.max(radius.x,contourRange))
+			{	// add this point
+				double plotValue = mpm.getForPlot(component,0.,resDoc);
+				pdata.add(new PointData(proj,plotValue));
 			}
 		}
 		
@@ -426,14 +506,17 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 		Hashtable<String,String> props = new Hashtable<String,String>();
 		props.put("object.color",plot2DView.selectPlotColor());
 		String ptitle = PlotQuantity.plotName(component,resDoc) + " (";
-		if(functionType==XorRParticleContour)
-			ptitle = ptitle + "xp=" + constantContour;
-		else if(functionType==YorZParticleContour)
-			ptitle = ptitle + "yp=" + constantContour;
-		else if(functionType==X0orR0ParticleContour)
-			ptitle = ptitle + "xp0=" + constantContour;
+		if(functionType==PPtAndDirectionLine)
+			ptitle = ptitle + "p=";
 		else
-			ptitle = ptitle + "yp0=" + constantContour;
+			ptitle = ptitle + "p0=";
+		if(resDoc.is3D())
+			ptitle = ptitle + x0.toString() + "+d"+ dir.toString();
+		else
+		{	JNVector x02D = new JNVector(x0.v[0],x0.v[1]);
+			JNVector dir2D = new JNVector(dir.v[0],dir.v[1]);
+			ptitle = ptitle + x02D.toString() + "+d"+ dir2D.toString();
+		}
 		if(contourRange>0.)
 			ptitle = ptitle + ", +/- " + contourRange + ")";
 		else
@@ -453,7 +536,7 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 	{
 		// does crack exist?
 		ResultsDocument resDoc=((DocViewer)document).resDoc;
-		int crackNum=controls.getCrackNumber();
+		int crackNum=controls.getCrackNumber(settings);
 		if(crackNum>resDoc.mpmCracks.size())
 			throw new Exception("The selected crack number does not exist.");
 		CrackHeader header=resDoc.mpmCracks.get(crackNum-1);
@@ -636,8 +719,12 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 	{
 		try
 		{	plot2DView.readTable(plotTable);
-			setVisible(true);
-			toFront();
+			SwingUtilities.invokeLater(new Runnable()
+			{	public void run()
+				{	setVisible(true);
+					toFront();
+				}
+			});
 		}
 		catch (Exception e)
 		{	throw new Exception("Could not plot table of data:\n   " + e.getMessage());

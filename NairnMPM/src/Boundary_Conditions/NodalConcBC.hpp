@@ -14,24 +14,27 @@
 #define _NODALCONCBC_
 
 #include "Boundary_Conditions/NodalValueBC.hpp"
+#include "Materials/MaterialBase.hpp"
 
 class NodalPoint;
 
 class NodalConcBC: public NodalValueBC
 {
     public:
+		int phaseStyle;
     
         // constructors and destructors
-        NodalConcBC(int,int,double,double);
+        NodalConcBC(int,int,double,double,int);
 	
 		// methods
 		virtual BoundaryCondition *PrintBC(ostream &);
-	
+		virtual NodalConcBC *AddConcReaction(double *,int);
+
         // Accessors
 		virtual void SetBCValue(double bcvalue);
         virtual int GetSetDirection(void) const;
-        virtual TransportField *GetTransportFieldPtr(NodalPoint *) const;
- 
+		static double TotalConcReaction(int,DiffusionTask *);
+
 };
 
 // variables (changed in MPM time step)
@@ -39,6 +42,7 @@ extern NodalConcBC *firstConcBC;
 extern NodalConcBC *lastConcBC;
 extern NodalConcBC *firstRigidConcBC;
 extern NodalConcBC *reuseRigidConcBC;
+extern NodalConcBC *firstDiffBC[NUM_DUFFUSION_OPTIONS];
 
 #endif
 

@@ -50,9 +50,6 @@
     <Filter Include="NairnFEA_src\Boundary_Conditions">
       <UniqueIdentifier>{6374d2a6-06b4-4359-b6ec-f1670efa1e6c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="NairnFEA_src\Numerical">
-      <UniqueIdentifier>{e5248656-ecb2-4a2b-8a2a-b709273b46f1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="info">
       <UniqueIdentifier>{1a0d714a-f931-4000-a295-ab3f089ab39c}</UniqueIdentifier>
     </Filter>
@@ -249,6 +246,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\Elements\CSTriangle.hpp">
       <Filter>Common\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\XYTXTImporter.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\Spline2D.hpp">
+      <Filter>Common\System</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -459,9 +462,6 @@
     <ClCompile Include="..\..\..\..\..\NairnFEA\src\Boundary_Conditions\NodalLoad.cpp">
       <Filter>NairnFEA_src\Boundary_Conditions</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Numerical\Gauss.cpp">
-      <Filter>NairnFEA_src\Numerical</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\Read_XML\Atomic.cpp">
       <Filter>Common\Read_XML</Filter>
     </ClCompile>
@@ -470,6 +470,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\Elements\CSTriangle.cpp">
       <Filter>Common\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\Gauss.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\XYTXTImporter.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\Spline2D.cpp">
+      <Filter>Common\System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

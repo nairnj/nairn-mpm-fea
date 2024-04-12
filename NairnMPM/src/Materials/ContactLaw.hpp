@@ -49,6 +49,12 @@ class ContactLaw : public MaterialBase
 												double,Vector *,NodalPoint *) const;
 		virtual void GetInterfaceForces(Vector *,Vector *,double *,double,Vector *,double,double,Vector *,double,double,double) const;
 		virtual double GetSslideAcDt(double,double,double,double,bool &,double) const;
+#ifdef THREE_MAT_CONTACT
+		virtual bool CanHandleTwoPairContact(void) const;
+		virtual void BracketSSlide(double &,double &,double,double);
+		virtual double GetDSslideAcDt(double) const;
+		virtual bool ProvisionalInContact(Vector *,Vector *,double,double,double,double) const;
+#endif // end THREE_MAT_CONTACT
 		virtual double GetTerms(double d,double m,double &sineTerm,double &sincosTerm) const;
 	
 		// accessors

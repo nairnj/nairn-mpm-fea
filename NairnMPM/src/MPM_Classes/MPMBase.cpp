@@ -26,7 +26,7 @@
 // globals
 MPMBase **mpm;		// list of material points
 int nmpmsNR=0;		// number for last non-rigid material point
-// nmpmsRB will always equal nmpmsNR
+// MODEL_RIGID_BODIES: when not defined, nmpmsRB will always equal to nmpmsNR
 int nmpmsRB=0;		// number for last rigid block material
 int nmpmsRC=0;		// number for last rigid contact material
 int nmpms=0;		// number of material points
@@ -41,8 +41,6 @@ MPMBase::MPMBase()
 // throws std::bad_alloc
 MPMBase::MPMBase(int elem,int theMatl,double angin)
 {
-    int i;
-    
     inElem=elem;
 	mp=-1.;						// calculated in PreliminaryParticleCalcs, unless set in input file
     matnum=theMatl;
@@ -53,15 +51,57 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	// space to hold velocity fields
 	// these only change if there are cracks
 	vfld = new char[maxShapeNodes];
-    for(i=1;i<maxShapeNodes;i++)
-        vfld[i]=NO_CRACK;
 	
-    // zero stresses and strains
+	// for J integral (on non-rigid only)
+	// allocated by CalcJKTask if activated
+	velGrad=NULL;
+	
+	// material history data (as needed by material class)
+	matData=NULL;
+	
+	// custom taks history
+	customMatData=NULL;
+	
+	// diffusion gradients (c units/mm) (if needed and zeroed each time step)
+	// solvent or poroelasticity task always uses pDiff[0], extra tasks will vary
+	pDiff=NULL;
+	
+	// concentration (c units)
+	SetConcentration(0.,false);
+    
+	// temperature (degrees)
+	SetTemperature(0.,0.);
+	
+	// temperature gradient (degrees/mm) (if needed and zeroed each time step)
+	pTemp=NULL;
+
+    // CPDI and GIMP data (recalculated each time step)
+    cpdi_or_gimp = NULL;
+    
+    // This is set when using flux BCs in GetCPDINodesAndWeights()
+    // But it not appear to be used by any code?
+    faceArea = NULL;
+
+	// rotation matrix (when tracked)
+	Rtot = NULL;
+	
+	// set all to zero
+	ResetMaterialPoint();
+}
+
+// Reset material point when deleted
+// or initialize when created
+void MPMBase::ResetMaterialPoint(void)
+{
+	for(int i=1;i<maxShapeNodes;i++)
+		vfld[i]=NO_CRACK;
+	
+	// zero stresses and strains (including deformation gradient)
 	ZeroTensor(&sp);
-    pressure = 0.;
+	pressure = 0.;
 	ZeroTensor(&ep);
-	ZeroTensor(&eplast);
 	ZeroTensorAntisym(&wrot);
+	ZeroTensor(&eplast);
 	ZeroVector(&acc);
 	
 	// zero increment initial residual strains
@@ -69,43 +109,21 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	dTrans.dC = 0.;
 	dTrans.doopse = 0.;		// for generalized plane stress or strain
 	oopIncrement = 0.;		// out-of-plane increment (stress or strain)
-    
-    // zero energies
-    plastEnergy=0.;
+	
+	// zero energies and buffers
+	plastEnergy=0.;
 	prev_dTad=0.;
-    buffer_dTad=0.;
-    workEnergy=0.;
-    resEnergy=0.;
-    heatEnergy=0.;
-    entropy=0;
-	
-	// for J integral if needed (on non-rigid only)
-	velGrad=NULL;
-	
-	// material data is needed
-	matData=NULL;
-	
-	// concentration (c units) and gradient (c units/mm)
-	SetConcentration(0.,0.);
-	pDiffusion=NULL;
-	buffer_dpud=0.;
-    
-	// temperature (degrees) and gradient (degrees/mm)
-	SetTemperature(0.,0.);
-	pTemp=NULL;
+	buffer_dTad=0.;
+	workEnergy=0.;
+	resEnergy=0.;
+	heatEnergy=0.;
+	entropy=0;
 
-    // CPDI and GIMP data
-    cpdi_or_gimp = NULL;
-    faceArea = NULL;
-
-    // PS - when point created, velocity and position and ext force should be set too
+	// PS - when point created, velocity and position and ext force should be set too
 	ZeroVector(&vel);
 	
 	// counts crossing and sign is whether or not left the grid
 	elementCrossings=0;
-	
-	// rotation matrix (when tracked)
-	Rtot = NULL;
 }
 
 // allocation velGrad tensor data if need in this calculations (non rigid only)
@@ -125,6 +143,8 @@ bool MPMBase::AllocateCPDIorGIMPStructures(int gimpType,bool isThreeD)
         cpdiSize = isThreeD ? 8 : 4 ;
     else if(gimpType==QUADRATIC_CPDI)
         cpdiSize = 9;
+	else if(gimpType==FINITE_GIMP)
+		return AllocateFiniteGIMPStructures(isThreeD);
 	else
 		return true;
 	
@@ -152,7 +172,8 @@ bool MPMBase::AllocateCPDIorGIMPStructures(int gimpType,bool isThreeD)
 		}
     }
     
-    // save face areas (or lengths in 2D)
+    // save face areas (or lengths in 2D) if traction, heat flux,
+    // or any type of diffusion flux BC is being used
     if(firstTractionPt!=NULL || firstFluxPt!=NULL || firstHeatFluxPt!=NULL)
 		faceArea = new Vector;
 	
@@ -197,45 +218,63 @@ void MPMBase::StopParticle(void)
 // Subclass must override to support exact tractions
 void MPMBase::GetExactTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds) const {}
 
+#pragma mark FINITE GIMP SUPPORT
+
+// allocate structures when needed for finite GIMP calculations
+// throws std::bad_alloc
+bool MPMBase::AllocateFiniteGIMPStructures(bool isThreeD)
+{
+    // create memory for cpdiSize pointers
+    FiniteGIMPInfo *finfo = new FiniteGIMPInfo;
+    if(finfo == NULL) return false;
+    
+    // save for intersected element
+    //        InTheseElements: [0] for total number, [1] to [maxElementIntersections] for elements
+    //        Rest: [0] to [maxElementIntersections-1] for element data
+    // this is not final number of nodes with non-zero shape function, but number of
+    // elements that might intersect a particle
+    finfo->InTheseElements =  new int [maxElementIntersections+1];
+    finfo->moment_0 =  new double [maxElementIntersections];
+    finfo->moment_x =  new double [maxElementIntersections];
+    finfo->moment_y =  new double [maxElementIntersections];
+    finfo->moment_xy =  new double [maxElementIntersections];
+
+    // load to generic variable
+    cpdi_or_gimp = (char *)finfo;
+    
+    return true;
+}
+
+// Subclass must override to support finite GIMP
+void MPMBase::GetFiniteGIMP_Integrals(void) {}
+
+// Get finite gimp info accessor
+FiniteGIMPInfo *MPMBase::GetFiniteGIMPInfo(void) { return (FiniteGIMPInfo *)cpdi_or_gimp; }
+
+#pragma mark SPIN MOMENTUM FEATURES
+
+// Get spatial velocity gradient on the particles
+// For future version that might track velocity gradients on particles
+Matrix3 MPMBase::GetParticleGradVp(bool spatial)
+{
+	// this creates zerod matrix in contructor
+	Matrix3 spatialGradVp;
+	
+	// return the matrix
+	return spatialGradVp;
+}
+
+// Get angular momentum on the particles
+#ifndef OSPARTICULAS
+// For future version that might track velocity gradients on particles
+#endif
+Vector MPMBase::GetParticleAngMomentum(void)
+{
+	Vector partLp = MakeVector(0.,0.,0.);
+	return partLp;
+}
+
 #pragma mark MPMBase::Accessors
-
-// Delete particle by moving it to store and zeroing out properties
-void MPMBase::DeleteParticle(Vector *store)
-{
-    // move it to store
-    SetOrigin(store);
-    SetPosition(store);
-    
-    // zero the velocity
-    vel.x=0.;
-    vel.y=0.;
-    vel.z=0.;
-
-    // zero the deformation
-    Matrix3 Identity33 = Matrix3::Identity();
-    SetDeformationGradientMatrix(Identity33);
-    
-    // zero the stress
-    Tensor *sp=GetStressTensor();
-    ZeroTensor(sp);
-    
-    // Rigid particles turn of setting functions
-    MaterialBase *matID = theMaterials[MatID()];
-    if(matID->IsRigid())
-    {   ((RigidMaterial *)matID)->ClearFunctions();
-    }
-    
-    // more options - temperature, concentration, particle spin, plastic strain, history?
-}
-
-// check if in deletion store house
-bool MPMBase::IsDeleted(Vector *store) const
-{
-    Vector dist = *store;
-    SubVector(&dist,&origpos);
-    if(DbleEqual(DotVectors(&dist,&dist),0.)) return true;
-    return false;
-}
 
 // scale residual strains for current update method
 // secondPass implies in USAVG_METHOD mode, therefore simply set to dTrans unless using USAVG+/-
@@ -282,10 +321,46 @@ void MPMBase::SetVelocityGradient(double dvxx,double dvyy,double dvxy,double dvy
     }
 }
 
-// set concentration (only, and for all particles, during initialization)
-void MPMBase::SetConcentration(double pConc,double pRefConc)
-{	pConcentration = pConc;
-	pPreviousConcentration= fmax(pRefConc,0.);
+// Set concentration on the particle. This is called
+//  1. When material point is created (with pConc=0). This call will count diffusion
+//      tasks (once) and create the pDiff list for paticle data.
+//  2. When material point added to the MpsController. Now has initial concentration
+//      which might differ from zero. Sets pDiff[0] only
+//  3. When particle deleted, reservoir will reset to provided concentration and
+//      set all other diffusion to zero (will need to change this if ever
+//      have other diffusion tasks that needs non-zero reset)
+void MPMBase::SetConcentration(double pConc,bool fromReservoir)
+{	// Make sure diffusion counted, then exit if none
+	DiffusionTask::CountDiffusionTasks();
+	if(numDiffusion<=0) return;
+	
+	// create all pDiff if needed on the material point
+	if(pDiff==NULL)
+	{	pDiff = new DiffusionInfo *[numDiffusion];
+		for(int i=0;i<numDiffusion;i++)
+		{	pDiff[i] = new DiffusionInfo;
+			pDiff[i]->grad = MakeVector(0.,0.,0.);
+			pDiff[i]->bufferSource = 0.;
+		}
+	}
+	
+	// we only set moisture values now (always in [0] if there)
+	// or it might
+    int diffNum = 0;
+	if(diffusion!=NULL)
+	{	pDiff[0]->conc = pConc;
+		pDiff[0]->prevConc = fmax(diffusion->reference,0.);
+        diffNum = 1;
+		
+	}
+    
+    // particle deletion should zero the rest too (only when called by reservoir)
+    if(numDiffusion>diffNum && fromReservoir)
+    {   for(int i=diffNum;i<numDiffusion;i++)
+        {   pDiff[i]->conc = 0.;
+            pDiff[i]->prevConc = 0.;
+        }
+    }
 }
 
 // set temperature (only and for all particles, during initialization)
@@ -302,10 +377,10 @@ void MPMBase::AddTemperatureGradient(int offset)
 }
 
 // zero the concentration gradient
-void MPMBase::AddConcentrationGradient(void)
-{	pDiffusion[gGRADx]=0.;
-    pDiffusion[gGRADy]=0.;
-    pDiffusion[gGRADz]=0.;
+void MPMBase::AddConcentrationGradient(int dnum)
+{	pDiff[dnum]->grad.x=0.;
+    pDiff[dnum]->grad.y=0.;
+    pDiff[dnum]->grad.z=0.;
 }
 
 // material ID (convert to zero based)
@@ -313,7 +388,8 @@ int MPMBase::MatID(void) const { return matnum-1; }			// zero based material arr
 int MPMBase::ArchiveMatID(void) const { return matnum; }		// one based for archiving
 
 // element ID (convert to zero based)
-int MPMBase::ElemID(void) const { return inElem-1; }					// zero based element array in data storage
+bool MPMBase::InReservoir(void) const { return inElem==1; }
+int MPMBase::ElemID(void) const { return inElem-1; }				 // zero based element array in data storage
 void MPMBase::ChangeElemID(int newElem,bool adjust)
 {	// adjust dimensionless size if needed
 	if(adjust)
@@ -321,7 +397,7 @@ void MPMBase::ChangeElemID(int newElem,bool adjust)
 		Vector next = theElements[newElem]->GetDeltaBox();
 		mpm_lp.x *= prev.x/next.x;
 		mpm_lp.y *= prev.y/next.y;
-		mpm_lp.z *= prev.z/next.z;
+		mpm_lp.z *= prev.z/next.z;			// always 1 in 2D
 	}
 	
 	// reset element
@@ -359,7 +435,10 @@ void MPMBase::SetDimensionlessSize(Vector *lp)
 void MPMBase::SetDimensionlessByPts(int pointsPerSide)
 {	// linear number of points
 	double lp = 1./(double)pointsPerSide;
-	mpm_lp = MakeVector(lp,lp,lp);
+	if(fmobj->IsThreeD())
+		mpm_lp = MakeVector(lp,lp,lp);
+	else
+		mpm_lp = MakeVector(lp,lp,1.);
 	mpmgrid.TrackMinParticleSize(GetParticleSize());
 }
 
@@ -368,6 +447,7 @@ void MPMBase::SetDimensionlessByPts(int pointsPerSide)
 void MPMBase::GetDimensionlessSize(Vector &lp) const { lp = mpm_lp; }
 
 // Particle semi-size in actual units (3D overrides to add z component)
+// note that in 2D, part.z will be 1
 Vector MPMBase::GetParticleSize(void) const
 {	Vector part = theElements[inElem-1]->GetDeltaBox();
 	part.x *= 0.5*mpm_lp.x;
@@ -507,7 +587,7 @@ Matrix3 MPMBase::GetInitialRotation(void)
 {	return Matrix3(1.,0.,0.,1.,1.);
 }
 
-// energies
+// energies per unit mass
 double MPMBase::GetPlastEnergy(void) { return plastEnergy; }
 void MPMBase::AddPlastEnergy(double energyInc) { plastEnergy+=energyInc; }
 
@@ -522,14 +602,17 @@ double MPMBase::GetClear_dTad(void)
 // a material should never call this directly
 void MPMBase::Add_dTad(double dTInc) { buffer_dTad+=dTInc; }
 
-// buffer poroelasticity "undrained" pressure change
-void MPMBase::Add_dpud(double dpud) { buffer_dpud+=dpud; }
+// buffer diffusion source term (meaning depends on the task)
+void MPMBase::AddParticleDiffusionSource(int diffNumber,double dpud)
+{	pDiff[diffNumber]->bufferSource+=dpud;
+}
 
-// return buffer_dpud and clear it too
-double MPMBase::GetClear_dpud(void)
-{	double dpud = buffer_dpud;
-	buffer_dpud = 0.;
-	return dpud;
+// return diffusion buffer source and clear it too
+// Nver called in transport only mode
+bool MPMBase::GetClearParticleDiffusionSource(int diffNumber,double &dpud)
+{	dpud = pDiff[diffNumber]->bufferSource;
+	pDiff[diffNumber]->bufferSource = 0.;
+	return dpud!=0.;
 }
 
 double MPMBase::GetWorkEnergy(void) { return workEnergy; }
@@ -553,9 +636,15 @@ void MPMBase::AddHeatEnergy(double energyInc) { heatEnergy += energyInc; }
 
 void MPMBase::SetEntropy(double entropyTot) { entropy = entropyTot; }
 double MPMBase::GetEntropy(void) { return entropy; }
+// isothermal entropy change due to heat dq and constant temperature
 void MPMBase::AddEntropy(double dq,double Tgp)
-{   entropy += dq/Tgp;
+{	entropy += dq/Tgp;
 }
+// adiabatic entropy change from T1 to T2 at constant heat capacity Cv
+void MPMBase::AddEntropy(double Cv,double T1,double T2)
+{	entropy += Cv*log(T2/T1);
+}
+
 
 double MPMBase::GetInternalEnergy(void) { return workEnergy + heatEnergy; }
 
@@ -598,15 +687,34 @@ void MPMBase::SetHistoryPtr(char *createMatData)
 }
 double MPMBase::GetHistoryDble(int index,int offset)
 {	// assumes matData is array of doubles and gets one at index (0 based)
-	// offset allows relocatable history and only used my materials with child materials
+	// offset allows relocatable history and only used by materials with child materials
 	double *h=(double *)(matData+offset);
 	return h[index];
 }
 void MPMBase::SetHistoryDble(int index,double history,int offset)
 {	// assumes matData is array of doubles and sets one at index (0 based)
-	// offset allows relocatable history and only used my materials with child materials
+	// offset allows relocatable history and only used by materials with child materials
 	double *h=(double *)(matData+offset);
 	h[index]=history;
+}
+
+// custom history data
+char *MPMBase::GetCustomHistoryPtr(void) { return customMatData; }
+void MPMBase::SetCustomHistoryPtr(char *createMatData)
+{	if(customMatData!=NULL) delete [] customMatData;
+	customMatData=createMatData;
+}
+double MPMBase::GetCustomHistoryDble(int index)
+{	// assumes customMatData is array of doubles and gets one at index (0 based)
+	// call responsible to make sure valid index
+	double *h=(double *)(customMatData+index);
+	return *h;
+}
+void MPMBase::SetCustomHistoryDble(int index,double history)
+{	// assumes customMatData is array of doubles and sets one at index (0 based)
+	// caller responsible to make sure valid index
+	double *h=(double *)(customMatData+index);
+	*h=history;
 }
 
 // get density from the material
@@ -614,17 +722,12 @@ double MPMBase::GetRho(void)
 {	return theMaterials[matnum-1]->GetRho(this);
 }
 
-// get density from the material
-double MPMBase::GetConcSaturation(void)
+// get saturation concentration from the material
+double MPMBase::GetConcSaturation()
 {	return theMaterials[matnum-1]->GetMaterialConcentrationSaturation(this);
 }
 
-// get diffusion CT (1 moisture or 1/Q poroelasticity)
-double MPMBase::GetDiffusionCT(void)
-{	return theMaterials[matnum-1]->GetDiffusionCT();
-}
-
-// set relativee toughness
+// set relative toughness
 void MPMBase::SetRelativeStrength(double rel)
 {   theMaterials[matnum-1]->SetRelativeStrength(this,rel);
 }
@@ -649,8 +752,9 @@ void MPMBase::Describe(void)
     cout << " P(calc)=" << (-(sp.xx+sp.yy+sp.zz)*rho/3.) << " " << UnitsController::Label(PRESSURE_UNITS) << endl;
     cout << "# sigmaii=(" << sp.xx*rho << "," << sp.yy*rho << "," << sp.zz*rho << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
     cout << "#   tauij=(" << sp.xy*rho << "," << sp.xz*rho << "," << sp.yz*rho << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
-	cout << "#       T= " << pTemperature << " prev T=" << pPreviousTemperature;
-	cout << " c= " << pConcentration << " prev c=" << pPreviousConcentration << endl;
+	cout << "#       T= " << pTemperature << " prev T=" << pPreviousTemperature << endl;
+    for(int i=0;i<numDiffusion;i++)
+		cout << "  D[" << i << "] c= " << pDiff[i]->conc << " prev c=" << pDiff[i]->prevConc << endl;
     
     // nonzero history data
     char *hist = GetHistoryPtr(0);

@@ -28,7 +28,8 @@ enum { ARCH_Velocity=2,ARCH_Stress,ARCH_Strain,ARCH_PlasticStrain,
             ARCH_ver2Empty, ARCH_ShearComponents, ARCH_StrainEnergy,
             ARCH_History, ARCH_Concentration,ARCH_HeatEnergy,ARCH_ElementCrossings,
             ARCH_RotStrain, ARCH_DamageNormal,ARCH_SpinMomentum,ARCH_SpinVelocity,
-			ARCH_History59, ARCH_History1014, ARCH_History1519, ARCH_MAXMPMITEMS};
+			ARCH_History59, ARCH_History1014, ARCH_History1519,
+			ARCH_Size, ARCH_MAXMPMITEMS};
 
 // Archiving options for crack segments
 enum { ARCH_JIntegral=2,ARCH_StressIntensity,ARCH_CZMDISP,
@@ -39,7 +40,7 @@ enum { VTK_MASS=0, VTK_VELOCITY, VTK_STRESS, VTK_STRAIN, VTK_DISPLACEMENT, VTK_P
 		VTK_TEMPERATURE, VTK_CONCENTRATION, VTK_WORKENERGY, VTK_PLASTICENERGY,VTK_MATERIAL,
 		VTK_RIGIDCONTACTFORCES, VTK_TOTALSTRAIN, VTK_PRESSURE, VTK_EQUIVSTRESS, VTK_RELDELTAV,
         VTK_EQUIVSTRAIN, VTK_HEATENERGY, VTK_BCFORCES, VTK_VOLUMEGRADIENT, VTK_NUMBERPOINTS,
-		VTK_DEFGRAD };
+		VTK_DEFGRAD,VTK_HISTORY_NUM };
 
 #define HEADER_LENGTH 64
 
@@ -56,7 +57,7 @@ class ArchiveData : public CommonArchiveData
 		void ArchivePointDimensions(void);
 		bool MakeArchiveFolder(void);
 		bool BeginArchives(bool,int);
-		void ArchiveResults(double);
+		void ArchiveResults(double,bool);
 		void ArchiveVTKFile(double,vector< int >,vector< int >,vector< char * >,vector< int >,double **,int);
 		void ArchiveHistoryFile(double,vector< int >);
 		void FileError(const char *,const char *,const char *);
@@ -84,7 +85,6 @@ class ArchiveData : public CommonArchiveData
 		void SetDoingArchiveContact(bool);
 		bool GetDoingArchiveContact(void);
 		int GetArchiveContactStepInterval(void);
-		bool PassedLastArchived(int,double);
 		void IncrementPropagationCounter(void);
 		void SetMaxiumPropagations(int);
 		double *GetArchTimePtr(void);
@@ -92,7 +92,8 @@ class ArchiveData : public CommonArchiveData
 		double *GetGlobalTimePtr(void);
 		Vector *GetLastContactForcePtr(void);
 		double GetLastArchived(int);
-		void Decohesion(double,MPMBase *,double,double,double,double,double,double,double);
+        int GetLastArchivedStep(void);
+        void Decohesion(double,MPMBase *,double,double,double,double,double,double,double);
 
 	private:
 		int archBlock;
@@ -112,17 +113,20 @@ class ArchiveData : public CommonArchiveData
 		float *timeStamp;						// pointer to header location for time
 		Vector *contactForce;					// array of contact forces with rigid materials
 		vector<double> lastArchived;			// store last global quantitites save to global archive
+        int lastArchivedStep;
 #ifdef LOG_PROGRESS
 		char *logFile;							// file for tracking progress
 		double logStartTime;
 #endif
 		char *decohesionFile;					// decohesion file
+		char *ptDimsFile;						// file with point dimensions and resizings
 		int decohesionModes[11];				// initial modes (0 teminated) - softening materials max of 10
 	
 		// methods
 		void CalcArchiveSize(void);
 		void SetArchiveHeader(void);
 		void GlobalArchive(double);
+		void ArchiveResizings(double,int);
 		void CreateGlobalFile(void);
         int CountHistoryBits(char);
 

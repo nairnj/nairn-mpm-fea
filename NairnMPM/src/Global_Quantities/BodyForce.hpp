@@ -31,10 +31,9 @@ class BodyForce
 {
     public:
 		double damping;				// external damping
-		bool useDamping;            // true when grid damping (alpha, feedback, or forceAlpha)
+		bool useDamping;            // true when grid damping (alpha, feedback)
 		double dampingCoefficient;	// 1/Q in Nose-Hoover feedback damping
 		bool useFeedback;           // true when grid feedback damping is on (useDamping true too)
-    
         double pdamping;            // same for particle damping
         bool usePDamping;           // true when constant particle or particle feedback damping is on
         double pdampingCoefficient; // 1/Q in Nose-Hoover feedback damping
@@ -77,11 +76,10 @@ class BodyForce
 		double alpha,maxAlpha;
 		Expression *function;
 		Expression *gridfunction;
-	
 		double palpha,maxPAlpha;
 		Expression *pgridfunction;
 		Expression *pfunction;
-		int XPICOrder;				// XPIC oder (1=normal PIC or 2 or higher for extended PIC, always 1 in NairnMPM)
+		int XPICOrder;				// XPIC oder (0 FLIP, 1 or higher for FMPM(k))
 		int isUsingVstar;			// if current time step uses vstar (0=0, 1=no contact, 2=when contact)
 		int xpicVectors;			// 3 or 1 as needed
 		bool usingFMPM;				// True if FMPM (otherwise XPIC or FLIP)

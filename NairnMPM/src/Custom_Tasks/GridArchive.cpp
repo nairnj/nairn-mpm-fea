@@ -15,7 +15,7 @@
 #pragma mark Constructors and Destructors
 
 // Constructors
-GridArchive::GridArchive()
+GridArchive::GridArchive() : CustomTask()
 {
 	customArchiveTime = -1.;          // input in ms, stored in sec
 	nextCustomArchiveTime = -1.;      // input in ms, stored in sec

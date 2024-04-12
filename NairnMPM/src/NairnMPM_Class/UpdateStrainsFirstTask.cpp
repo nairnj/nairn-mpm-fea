@@ -107,9 +107,9 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 	if(xpicUsed>1)
 	{	// FMPM(k>1) only here - do XPIC calculations if needed
 		if(!postUpdate || !fmobj->skipPostExtrapolation)
-		{	// !postUpdate means USF, USAVG-, or USAVG+ - always do calcualtions
+		{	// !postUpdate means USF, USAVG-, or USAVG+ - always do calculations
 			// postUpdate with !skipPostExtrapolation  means USAVG+ or USL+ - needs new calculations
-			// postUpdate with skipPostExtrapolation  means USAVG- or USL- - use stored results
+			// postUpdate with skipPostExtrapolation  means USAVG- or USL- - use stored results, this code skippedq
 			XPICMechanicsTask->Execute(0);
 			// velocity BCs
 			if(bodyFrc.GridBCOption()!=GRIDBC_LUMPED_ONLY)
@@ -130,6 +130,7 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 	for(int p=0;p<nmpmsNR;p++)
     {   // next particle
         MPMBase *mptr = mpm[p];
+		if(mptr->InReservoir()) continue;
 		
         // this particle's material
         const MaterialBase *matRef = theMaterials[mptr->MatID()];
@@ -140,7 +141,7 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 			void *properties = matRef->GetCopyOfMechanicalProps(mptr,np,matBuffer[tn],altBuffer[tn],0);
 			
 			// finish on the particle
-			mptr->UpdateStrain(strainTime,secondPass,np,properties,matRef->GetField());
+			mptr->UpdateStrain(strainTime,secondPass,np,properties,matRef->GetField(),postUpdate);
 		}
 		catch(CommonException& err)
 		{	if(usfErr==NULL)
@@ -148,21 +149,21 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 #pragma omp critical (error)
 				usfErr = new CommonException(err);
 			}
-		}
+ 		}
 		catch(std::bad_alloc&)
 		{	if(usfErr==NULL)
 			{
 #pragma omp critical (error)
 				usfErr = new CommonException("Memory error","UpdateStrainsFirstTask::FullStrainUpdat");
 			}
-		}
+ 		}
 		catch(...)
 		{	if(usfErr==NULL)
 			{
 #pragma omp critical (error)
 				usfErr = new CommonException("Unexpected error","UpdateStrainsFirstTask::FullStrainUpdat");
 			}
-		}
+ 		}
     }
 	
 	// throw error if it occurred

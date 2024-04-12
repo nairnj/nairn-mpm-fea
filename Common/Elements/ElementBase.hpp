@@ -92,6 +92,8 @@ class ElementBase : public LinkedObject
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) const = 0;
 		virtual void SplineShapeFunction(int *,Vector *,int,double *,double *,double *,double *) const = 0;
 		virtual void GimpShapeFunction(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
+        virtual void TartanGimpShapeFunction(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
+        virtual bool Tartan1D(double,double,double,double,double,double *,double *) const;
 		virtual void GimpShapeFunctionAS(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
 		virtual void BGimpShapeFunction(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
 		virtual void BGimpShapeFunctionAS(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
@@ -111,6 +113,7 @@ class ElementBase : public LinkedObject
 		// const methods
 		virtual Vector GetDeltaBox(void) const;
 		virtual double GetCenterX(void) const;
+        virtual double GetCenterY(void) const;
 		virtual double GetDeltaX(void) const;
 		virtual double GetDeltaY(void) const;
 		virtual double GetDeltaZ(void) const;
@@ -120,14 +123,15 @@ class ElementBase : public LinkedObject
 
 #ifdef MPM_CODE
 		virtual bool OnTheEdge(void);
-		virtual void GetListOfNeighbors(int *);
-		virtual int NextNode(int);
+		virtual void GetListOfNeighbors(int *) const;
+		virtual int NextNode(int) const;
+        virtual int NextNode(int,int *) const;
         virtual int FindEdge(int,int);
         virtual int Neighbor(int);
 		virtual void AllocateNeighborsArray(void);
 		virtual int Orthogonal(double *,double *,double *);
         virtual int NearestNode(double,double,int *);
-        virtual void MPMPoints(int,Vector *) const;
+        virtual void MPMPoints(int,Vector *,int &,Vector **,Vector *) const;
 		virtual void GetPosition(Vector *,Vector *);
 		virtual void Describe(void) const;
 	
@@ -139,7 +143,16 @@ class ElementBase : public LinkedObject
 		virtual void GetShapeFunctionsForTractions(double *,int *,Vector *) const;
 		virtual void GetXiPos(const Vector *,Vector *) const;
 		virtual int GetCPDIFunctions(int *,double *,double *,double *,double *,MPMBase *) const;
-		
+		virtual void GetNodes(int *,int *) const;
+
+		virtual void FiniteGimpShapeFunction(int *,double *,double *,double *,double *,MPMBase *)  const;
+    
+#ifdef PREHASH_CRACKS
+		vector<int> *SeesCrack;
+		void PushCrackNumOnList(int);
+		void DeleteCrackList(void);
+#endif
+    
 #else
 		virtual bool HasNode(int);
 		virtual void DecrementNodeNums(int);
@@ -168,10 +181,12 @@ class ElementBase : public LinkedObject
 		static void AllocateNeighbors(void);
         static void InitializeCPDI(bool);
 		static int GetShapeFunctionOrder(void);
+        static bool UsingCPDIMethod(void);
 #else
 		static void MoveCrackTipNodes(int);
 #endif
 		static double GetMinimumCellSize(void);
+		static char *ReverseMapNodes(int,int **,int **);
 
 	protected:
 #ifdef MPM_CODE
@@ -184,7 +199,6 @@ class ElementBase : public LinkedObject
 #ifdef MPM_CODE
         virtual void GetCentroid(Vector *) const;
         virtual void GetCoordinates(Vector *,int,int *) const;
-		virtual void GetNodes(int *,int *) const;
 #endif
 
 };

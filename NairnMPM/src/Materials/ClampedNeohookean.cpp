@@ -120,6 +120,14 @@ char *ClampedNeohookean::InitHistoryData(char *pchr,MPMBase *mptr)
 	return (char *)p;
 }
 
+// reset history data
+void ClampedNeohookean::ResetHistoryData(char *pchr,MPMBase *mptr)
+{	double *p = (double *)pchr;
+	p[J_History] = 1.;
+	p[J_History+1] = 1.;
+	p[JP_HISTORY] = 1.;
+}
+
 // Number of history variables
 int ClampedNeohookean::NumberOfHistoryDoubles(void) const { return 3; }
 
@@ -220,8 +228,9 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
     }
 
 	// account for residual stresses
-	double dJres = GetIncrementalResJ(mptr,res);
-	double Jres = dJres*mptr->GetHistoryDble(J_History+1,historyOffset);
+    double Jres = mptr->GetHistoryDble(J_History+1,historyOffset);
+    double dJres = GetIncrementalResJ(mptr,res,Jres);
+    Jres *= dJres;
 	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
 	double resStretch = pow(Jres,1./3.);
 	double Jres23 = resStretch*resStretch;

@@ -14,7 +14,7 @@
 
 #include "Custom_Tasks/CustomTask.hpp"
 
-#define MAX_INTEGER_ARGUMENTS 10
+#define MAX_INTEGER_ARGUMENTS 30
 
 class GridArchive : public CustomTask
 {

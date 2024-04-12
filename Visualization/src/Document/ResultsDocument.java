@@ -39,13 +39,12 @@ public class ResultsDocument extends AbstractTableModel
 	public ArrayList<GridDispBC> gridBCs;
 	public ArrayList<ParticleBC> particleBCs;
 	public ArrayList<ElementBase> elements;
-	public ArrayList<File> archives;
 	public File globalArchive;
-	public ArrayList<Double> archiveTimes;
+	public ArrayList<MPMArchive> mpmArchives;
 	public ArrayList<MaterialPoint> mpmPoints;
 	public ArrayList<CrackHeader> mpmCracks;
 	public ArrayList<MaterialBase> materials;
-	public ArrayList<Vector3> pointDims;
+	public ArrayList<ArrayList<Vector3>> pointDims;
 	public String archFormat,crackFormat;
 	public char[] feaArchFormat = {'N','N','N','N','N','N' };
 	public double xmin,xmax,ymin,ymax,zmin,zmax;			// mesh bounds
@@ -62,6 +61,7 @@ public class ResultsDocument extends AbstractTableModel
 	public JNUnits units = new JNUnits();
 	
 	private int currentArchive;
+	public int currentStep;
 	
 	//---------------------------------------------------------
 	// Initialize
@@ -77,11 +77,11 @@ public class ResultsDocument extends AbstractTableModel
 		particleBCs=new ArrayList<ParticleBC>(200);
 		mpmPoints=new ArrayList<MaterialPoint>(20000);
 		mpmCracks=new ArrayList<CrackHeader>(10);
-		archives=new ArrayList<File>(100);
-		archiveTimes=new ArrayList<Double>(100);
+		mpmArchives=new ArrayList<MPMArchive>(100);
 		materials=new ArrayList<MaterialBase>(10);
 		pointDims=null;
 		currentArchive=-1;
+		currentStep=-1;
 	}
 	
 	//-----------------------------------------------------------------
@@ -414,7 +414,7 @@ public class ResultsDocument extends AbstractTableModel
 			sline.close();
 			sline = null;
 			
-			// decode material properteis
+			// decode material properties
 			matl.decodeData(s);
 			materials.add(matl);
 		}
@@ -424,6 +424,10 @@ public class ResultsDocument extends AbstractTableModel
 		//----------------------------------------------------------
 		// mesh boundary conditions
 		String bcs=section("NODAL POINTS WITH FIXED DISPLACEMENTS");
+		// set up calculation might end in line with *****
+		int stopStars = bcs.indexOf("*****");
+		if(stopStars>0)
+			bcs = bcs.substring(0,stopStars).trim();
 		lineStart=findNextLine(bcs,"-----");
 		if(lineStart>0 && lineStart<bcs.length())
 		{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
@@ -850,8 +854,8 @@ public class ResultsDocument extends AbstractTableModel
 		//----------------------------------------------------------
 		// read archive list
 		if(isMPMAnalysis())
-		{	String archives=section("ARCHIVED ANALYSIS RESULTS");
-			s=new Scanner(archives);
+		{	String archiveSec=section("ARCHIVED ANALYSIS RESULTS");
+			s=new Scanner(archiveSec);
 			s.useDelimiter("\\r\\n|\\n|\\r");
 			s.useLocale(Locale.US);
 			s.next();
@@ -925,8 +929,9 @@ public class ResultsDocument extends AbstractTableModel
 				
 				// errors might be non-comment text
 				try
-				{	Double atime=new Double(words[1]);
-					addArchiveFile(atime.doubleValue()*units.altTimeScale(),words[2]);
+				{	Integer stepNum = new Integer(words[0]);
+					Double atime=new Double(words[1]);
+					addArchiveFile(stepNum.intValue(),atime.doubleValue()*units.altTimeScale(),words[2]);
 				}
 				catch (Exception e)
 				{	System.out.println("Invalid line with archived files:\n   "+line);
@@ -936,11 +941,11 @@ public class ResultsDocument extends AbstractTableModel
 			s=null;
 			
 			// error in no files were found
-			if(archiveTimes.size()<1)
+			if(mpmArchives.size()<1)
 				throw new Exception("None of the archived results files could be found.");
 			
 			// look for point dimensions (new code)
-			pointDims = new ArrayList<Vector3>(numMps);
+			pointDims = new ArrayList<ArrayList<Vector3>>(numMps);
 			File dimFile = new File(file.getParentFile(),dimPath);
 			if(dimFile.exists())
 			{	// read the file
@@ -959,19 +964,55 @@ public class ResultsDocument extends AbstractTableModel
 					s.next();
 					
 					double lscale = 0.5*units.lengthScale();		// 0.5 to get radius
-					double sx,sy,sz;
+					double sx=0.,sy=0.,sz;
+					int ptNum=0;
 					
 					while(s.hasNext())
 					{	Scanner pline=new Scanner(s.next());
 						pline.useLocale(Locale.US);
-						pline.nextInt();
+						ptNum = pline.nextInt();
 						// store point number, and x-y-z sizes
 						sx = lscale*pline.nextDouble();
 						sy = lscale*pline.nextDouble();
 						sz = lscale*pline.nextDouble();
-						pointDims.add(new Vector3(sx,sy,sz));
+						if(ptNum<0) break;
+						ArrayList<Vector3> psize = new ArrayList<Vector3>();
+						psize.add(new Vector3(sx,sy,sz));
+						pointDims.add(psize);
 						pline.close();
 					}
+					
+					// if ptNum<0 and still remaining items, read them now
+					if(ptNum<0)
+					{	int stepNumber = -ptNum;
+						//double mtime = sx/lscale;
+						//int numThisStep = (int)(sy/lscale+.1);
+						
+						while(s.hasNext())
+						{	Scanner pline=new Scanner(s.next());
+							pline.useLocale(Locale.US);
+							ptNum = pline.nextInt();
+							// store point number, and x-y-z sizes
+							sx = lscale*pline.nextDouble();
+							sy = lscale*pline.nextDouble();
+							sz = lscale*pline.nextDouble();
+							
+							// negative means new block of changes
+							if(ptNum<0)
+							{	stepNumber = -ptNum;
+								//mtime = sx/lscale;
+								//numThisStep = (int)(sy/lscale+.1);
+							}
+							else
+							{	if(ptNum<=pointDims.size())
+								{	// add step number and the new size
+									pointDims.get(ptNum-1).add(new Vector3(stepNumber,0.,0.));
+									pointDims.get(ptNum-1).add(new Vector3(sx,sy,sz));
+								}
+							}
+						}
+					}
+					
 					s.close();
 					s=null;
 				}
@@ -988,7 +1029,10 @@ public class ResultsDocument extends AbstractTableModel
 					msz *= zscale;
 				}
 				for(int p=0;p<numMps;p++)
-					pointDims.add(new Vector3(msx,msy,msz));
+				{	ArrayList<Vector3> psize = new ArrayList<Vector3>();
+					psize.add(new Vector3(msx,msy,msz));
+					pointDims.add(psize);
+				}
 
 				// look for file for membrane particles
 				File ptsFile = new File(file.getParentFile(),ptsPath);
@@ -1017,7 +1061,7 @@ public class ResultsDocument extends AbstractTableModel
 							sx = 2.*msx*pline.nextDouble();
 							sy = 2.*msy*pline.nextDouble();
 							sz = 2.*msz*pline.nextDouble();
-							pointDims.set(pnum-1, new Vector3(sx,sy,sz));
+							pointDims.get(pnum-1).set(0,new Vector3(sx,sy,sz));
 							pline.close();
 						}
 						s.close();
@@ -1213,13 +1257,14 @@ public class ResultsDocument extends AbstractTableModel
 		
 		// read archive file
 		currentArchive=newArchive;
-		ReadArchive.load(this,archives.get(currentArchive));
-		
+		String name = mpmArchives.get(currentArchive).getName();
+	    currentStep = Integer.valueOf(name.substring(name.lastIndexOf(".") + 1));
+		ReadArchive.load(this,mpmArchives.get(currentArchive).getFile());
 	}
 	
 	// open archive by index and return its byte buffer
 	public ByteBuffer openSelectedArchive(int newArchve) throws Exception
-	{	return ReadArchive.openBuffer(this,archives.get(newArchve));
+	{	return ReadArchive.openBuffer(this,mpmArchives.get(newArchve).getFile());
 	}
 	
 	//-----------------------------------------------------------------
@@ -1239,8 +1284,7 @@ public class ResultsDocument extends AbstractTableModel
 		gridBCs.clear();
 		particleBCs.clear();
 		mpmPoints.clear();
-		archives.clear();
-		archiveTimes.clear();
+		mpmArchives.clear();
 		currentArchive=-1;
 	}
 	
@@ -1376,12 +1420,12 @@ public class ResultsDocument extends AbstractTableModel
 	}
 	
 	// add archive file if it exists
-	public void addArchiveFile(double time,String name)
+	public void addArchiveFile(int stepNum,double time,String name)
 	{   // do not add unless the file exists
 	    File archive=new File(path,name);
 		if(!archive.exists()) return;
-		archives.add(archive);
-	    archiveTimes.add(new Double(time));
+		MPMArchive arch = new MPMArchive(stepNum,time,archive);
+		mpmArchives.add(arch);
 	}
 	
 	//-----------------------------------------------------------------
@@ -1441,6 +1485,7 @@ public class ResultsDocument extends AbstractTableModel
 	
 	// set root path to archive files, parent is directory of mpm file
 	public void setPath(File parent,String archDir) { path=new File(parent,archDir); }
+	public String getArchiveRoot() { return path.getPath(); }
 	
 	// set path to global file, but only if it exists
 	public void setGlobalPath(File parent,String globalPath)
@@ -1475,193 +1520,129 @@ public class ResultsDocument extends AbstractTableModel
 	public boolean isMPMAnalysis() { return np>=BEGIN_MPM_TYPES; }
 	public boolean isAxisymmetric() { return (np==AXI_SYM) || (np==AXI_SYM_MPM) ; }
 	public boolean is3D() { return np==THREED_MPM; }
-	public double currentTime() { return currentArchive>=0 ? archiveTimes.get(currentArchive) : 0.; }
+	public double currentTime() { return currentArchive>=0 ? mpmArchives.get(currentArchive).getTime() : 0.; }
 	
 	// set controller
 	public void setDocController(DocViewer dc) { docCtrl=dc; }
 	public DocViewer getDocController() { return docCtrl; }
 	
 	// gather time plot data as a scripting object call
-	// Expression starts @obj.timeplot.component.
-	//    for crack plots add crackNum.tipNum, except length and debond length add only crackNum
-	public String collectTimePlotData(String[] atoms,HashMap<String, String> variablesStrs) throws Exception
+	// called from timeplot command with ISDictType settings
+	public void collectTimePlotData(ISDictType settings,ISListType plotOutput) throws Exception
 	{
-		// get component
-		if(atoms.length<3) throw new Exception("timeplot property has too few parameters");
+		// get global quantity
+		String quant = (String)settings.gcis_objectForKey("quantity");
+		if(quant==null)
+			throw new Exception("timeplot settings missing global 'quantity' to plot");
 		
-		// get plot component from quote string, string, or string variable
-		atoms[2] = CmdViewer.atomString(atoms[2],variablesStrs);
-		
-		// trap global data plot
-		if(atoms[2].equals("global"))
-		{	if(atoms.length<4) throw new Exception("timeplot property missing global quantity");
-			String quant = CmdViewer.atomString(atoms[3],variablesStrs);
-			int dataLines=0;
-			String setName=null;
-			ArrayList<String> table=new ArrayList<String>(100);
-			try
-			{	FileReader fr=new FileReader(globalArchive);
-				char [] buffer=new char [(int)globalArchive.length()];
-				fr.read(buffer);
-				fr.close();
-				
-				// scanner for lines
-				Scanner s=new Scanner(new String(buffer));
-				s.useDelimiter("[\\n\\r]");
-				while(s.hasNext())
-				{	String line=s.next();
-					if(line.charAt(0)!='#')
-					{	dataLines++;
-						table.add(line);
-					}
-					else if(line.length()>7)
-					{	String tcmd = line.substring(0,8);
-						if(tcmd.equals("#setName")) setName=line;
-					}
-				}
-				s.close();
-			}
-			catch (Exception e)
-			{	throw new Exception("Could not load global results file:\n   " + e.getMessage());
-			}
+		// read entire global results file first
+		int dataLines=0;
+		String setName=null;
+		ArrayList<String> table=new ArrayList<String>(100);
+		try
+		{	FileReader fr=new FileReader(globalArchive);
+			char [] buffer=new char [(int)globalArchive.length()];
+			fr.read(buffer);
+			fr.close();
 			
-			// check table header
-			if(setName==null || dataLines==0)
-				throw new Exception("global file column labels not found or file has no data lines");
-			
-			// find column to read
-			int column=-1,col=0;
-			Scanner s=new Scanner(setName);
-			s.useDelimiter("\t");
+			// scanner for lines
+			String bstr = new String(buffer);
+			Scanner s=new Scanner(bstr);
+			s.useDelimiter("[\\n\\r]");
 			while(s.hasNext())
-			{	String colVal = s.next();
-				// remove quotes
-				int clen = colVal.length();
-				if(clen>1)
-				{	if(colVal.charAt(0)=='"' && colVal.charAt(clen-1)=='"')
-						colVal = colVal.substring(1,clen-1);
+			{	String line=s.next();
+				// Note that CR-LF termination will return blank lines
+				if(line.length()==0) continue;
+				if(line.charAt(0)!='#')
+				{	dataLines++;
+					table.add(line);
 				}
-				if(quant.equals(colVal))
-				{	column = col;
-					break;
+				else if(line.length()>7)
+				{	String tcmd = line.substring(0,8);
+					if(tcmd.equals("#setName")) setName=line;
 				}
-				col++;
 			}
 			s.close();
-			if(column<0)
-				throw new Exception("The quantity '"+quant+"' not found in global results");
-			
-			// collect
-			StringBuffer gdata = new StringBuffer();
-			int row;
-			for(row=0;row<table.size();row++)
-			{	String dataRow=table.get(row);
-				Scanner r=new Scanner(dataRow);
-				r.useDelimiter("\t");
-				
-				// get x value
-				if(!r.hasNext())
-				{	r.close();
-					continue;
-				}
-				double xg = r.nextDouble();
-				
-				// skip intervening columns
-				int j=column;
-				while(j>1)
-				{	if(r.hasNext()) r.next();
-					j--;
-				}
-				
-				// get x value
-				if(!r.hasNext())
-				{	r.close();
-					continue;
-				}
-				double yg = r.nextDouble();
-				
-				// append data
-				gdata.append(xg+" "+yg+"\n");
-				
-				r.close();
-				
+		}
+		catch (Exception e)
+		{	//System.out.println("got an error:"+e.getMessage());
+			throw new Exception("Could not load global results file:\n   " + e.getMessage());
+		}
+		
+		// check table header
+		if(setName==null || dataLines==0)
+			throw new Exception("global file column labels not found or file has no data lines");
+		
+		// find column to read
+		int column=-1,col=0;
+		Scanner s=new Scanner(setName);
+		s.useDelimiter("\t");
+		while(s.hasNext())
+		{	String colVal = s.next();
+			// remove quotes
+			int clen = colVal.length();
+			if(clen>1)
+			{	if(colVal.charAt(0)=='"' && colVal.charAt(clen-1)=='"')
+					colVal = colVal.substring(1,clen-1);
 			}
-
-			return gdata.toString();
+			if(quant.equals(colVal))
+			{	column = col;
+				break;
+			}
+			col++;
 		}
+		s.close();
+		if(column<0)
+			throw new Exception("The quantity '"+quant+"' not found in global results");
 		
-		// other plot components
-		int cmpnt = -1;
-		if(atoms[2].equals("J1"))
-			cmpnt = PlotQuantity.MPMJ1;
-		else if(atoms[2].equals("J2"))
-			cmpnt = PlotQuantity.MPMJ2;
-		else if(atoms[2].equals("KI"))
-			cmpnt = PlotQuantity.MPMKI;
-		else if(atoms[2].equals("KII"))
-			cmpnt = PlotQuantity.MPMKII;
-		else if(atoms[2].equals("CZMGI"))
-			cmpnt = PlotQuantity.MPMMODEIFB;
-		else if(atoms[2].equals("CZMGII"))
-			cmpnt = PlotQuantity.MPMMODEIIFB;
-		else if(atoms[2].equals("CZDamageLength"))
-			cmpnt = PlotQuantity.MPMCZLENGTH;
-		else if(atoms[2].equals("Length"))
-			cmpnt = PlotQuantity.MPMLENGTH;
-		else if(atoms[2].equals("DebondLength"))
-			cmpnt = PlotQuantity.MPMDEBONDLENGTH;
-		else if(atoms[2].equals("TipNCOD"))
-			cmpnt = PlotQuantity.MPMNORMALCTOD;
-		else if(atoms[2].equals("TipSCOD"))
-			cmpnt = PlotQuantity.MPMSHEARCTOD;
-		else if(atoms[2].equals("DebondNCOD"))
-			cmpnt = PlotQuantity.MPMDEBONDNCTOD;
-		else if(atoms[2].equals("DebondSCOD"))
-			cmpnt = PlotQuantity.MPMDEBONDSCTOD;
-		
-		// array for results
-		ArrayList<Double> x=new ArrayList<Double>(archives.size());
-		ArrayList<Double> y=new ArrayList<Double>(archives.size());
-		StringBuffer pdata = new StringBuffer();
-		int i,crackNum,tipNum;
-		switch(cmpnt)
-		{	case PlotQuantity.MPMJ1:
-			case PlotQuantity.MPMJ2:
-			case PlotQuantity.MPMKI:
-			case PlotQuantity.MPMKII:
-			case PlotQuantity.MPMMODEIFB:
-			case PlotQuantity.MPMMODEIIFB:
-			case PlotQuantity.MPMNORMALCTOD:
-			case PlotQuantity.MPMSHEARCTOD:
-			case PlotQuantity.MPMDEBONDNCTOD:
-			case PlotQuantity.MPMDEBONDSCTOD:
-			case PlotQuantity.MPMCZLENGTH:
-				// get crack number and tip number
-				if(atoms.length<5) throw new Exception("timeplot property has too few parameters");
-				crackNum = CmdViewer.atomInt(atoms[3],variablesStrs);
-				tipNum = CmdViewer.atomInt(atoms[4],variablesStrs);
-				if(tipNum<0 || tipNum>1)
-					throw new Exception("timeplot crack tip number must be 0 (start) or 1 (end)");
-				getTimeCrackData(null,cmpnt,crackNum,tipNum,x,y);
-				for(i=0;i<x.size();i++)
-					pdata.append(x.get(i)+" "+y.get(i)+"\n");
-				break;
-				
-			case PlotQuantity.MPMLENGTH:
-			case PlotQuantity.MPMDEBONDLENGTH:
-				// these crack values don't need tip number
-				if(atoms.length<4) throw new Exception("timeplot property has too few parameters");
-				crackNum = CmdViewer.atomInt(atoms[3],variablesStrs);
-				getTimeCrackData(null,cmpnt,crackNum,0,x,y);
-				for(i=0;i<x.size();i++)
-					pdata.append(x.get(i)+" "+y.get(i)+"\n");
-				break;
+		// collect into two list
+		ISListType xdata = new ISListType(null,false);
+		ISListType ydata = new ISListType(null,false);
+		int row;
+		for(row=0;row<table.size();row++)
+		{	String dataRow=table.get(row);
+			Scanner r=new Scanner(dataRow);
+			r.useDelimiter("\t");
 			
-			default:
-				throw new Exception(atoms[2]+" is an unsupported timeplot quantity");
+			// get x value
+			if(!r.hasNext())
+			{	r.close();
+				continue;
+			}
+			double xg = r.nextDouble();
+			
+			// skip intervening columns
+			int j=column;
+			while(j>1)
+			{	if(r.hasNext()) r.next();
+				j--;
+			}
+			
+			// get x value
+			if(!r.hasNext())
+			{	r.close();
+				continue;
+			}
+			
+			// if error (usually a nan) then output "nan"
+			xdata.gcis_addObject(new Double(xg));
+			try
+			{	double yg = r.nextDouble();
+			
+				// append data
+				ydata.gcis_addObject(new Double(yg));
+			}
+			catch(Exception e)
+			{	// append nan, scripts will know, but must check
+				ydata.gcis_addObject("nan");
+			}
+			
+			r.close();
 		}
 		
-		return pdata.toString();
+		// if found data put into output
+		plotOutput.gcis_addObject(xdata);
+		plotOutput.gcis_addObject(ydata);
 	}
 	
 	// Get crack data for a time plot
@@ -1672,7 +1653,7 @@ public class ResultsDocument extends AbstractTableModel
 				ArrayList<Double> x,ArrayList<Double> y) throws Exception
 	{
 		// settings
-		int i,npts=archives.size();
+		int i,npts=mpmArchives.size();
 		ArrayList<Integer> crackEnds=new ArrayList<Integer>(20);
 
 		// variables while decoding
@@ -1745,7 +1726,7 @@ public class ResultsDocument extends AbstractTableModel
 			
 			// read segment
 			bb.position(offset);
-			seg.readRecord(bb,crackOrder,units);
+			seg.readRecord(bb,crackOrder,units,is3D());
 			
 			// crack tip properties
 			switch(crkCmpnt)
@@ -1774,7 +1755,7 @@ public class ResultsDocument extends AbstractTableModel
 					{   offset+=recSize;
 						if(offset>lastoffset) break;
 						bb.position(offset);
-						seg.readRecord(bb,crackOrder,units);
+						seg.readRecord(bb,crackOrder,units,is3D());
 						if(seg.startFlag==-1) break;
 						pt=seg.getMedianPosition();
 						double segLength=Math.sqrt((pt.x-lastPt.x)*(pt.x-lastPt.x) +
@@ -1796,7 +1777,7 @@ public class ResultsDocument extends AbstractTableModel
 					{   offset+=recSize;
 						if(offset>lastoffset) break;
 						bb.position(offset);
-						seg.readRecord(bb,crackOrder,units);
+						seg.readRecord(bb,crackOrder,units,is3D());
 						if(seg.startFlag==-1) break;
 						pt=seg.getMedianPosition();
 						
@@ -1831,7 +1812,7 @@ public class ResultsDocument extends AbstractTableModel
 						offset+=recSize;
 						if(offset>lastoffset) break;
 						bb.position(offset);
-						seg.readRecord(bb,crackOrder,units);
+						seg.readRecord(bb,crackOrder,units,is3D());
 						if(seg.startFlag==-1) break;
 						
 						// get segment length
@@ -1882,7 +1863,7 @@ public class ResultsDocument extends AbstractTableModel
 							}
 						}
 						bb.position(tipOffset);
-						seg.readRecord(bb,crackOrder,units);
+						seg.readRecord(bb,crackOrder,units,is3D());
 					}
 					
 					// not found in the crack (entire crack is traction law)
@@ -1915,7 +1896,7 @@ public class ResultsDocument extends AbstractTableModel
 					// read previous segment
 					offset = tipNum==CrackSelector.CRACK_START ? offset+recSize : offset-recSize;
 					bb.position(offset);
-					seg.readRecord(bb,crackOrder,units);
+					seg.readRecord(bb,crackOrder,units,is3D());
 					lastPt=seg.getMedianPosition();
 					double dx=pt.x-lastPt.x;
 					double dy=pt.y-lastPt.y;
@@ -1933,7 +1914,7 @@ public class ResultsDocument extends AbstractTableModel
 			}
 			
 			// add crack value to the  plot
-			x.add(new Double(archiveTimes.get(i)));
+			x.add(new Double(mpmArchives.get(i).getTime()));
 			y.add(new Double(yvalue));
 		}
 		

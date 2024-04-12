@@ -12,8 +12,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JOptionPane;
-
 import com.jcraft.jsch.JSchException;
 
 
@@ -23,6 +21,7 @@ public class NFMAnalysis  implements Runnable
 	protected String cmds;
 	protected ConsolePane soutConsole;
 	protected boolean running=false;
+	protected boolean wasStopped=false;
 	
 	private ProcessBuilder builder = null;
 	private Thread runThread;
@@ -44,9 +43,8 @@ public class NFMAnalysis  implements Runnable
 	public static final int SCRIPT_ONLY=3;
 	
 	public static final int MAC_UNIX=0;
-	public static final int WINDOWS_CYGWIN=1;
 	public static final int WINDOWS_EXE=2;
-
+	
 	//----------------------------------------------------------------------------
 	// Initialize
 	//----------------------------------------------------------------------------
@@ -83,15 +81,11 @@ public class NFMAnalysis  implements Runnable
 		String exe = "";
 		String bashPath = NFMVPrefs.prefs.get(NFMVPrefs.ShellKey,NFMVPrefs.ShellDef);
 		if(NairnFEAMPMViz.isWindowsOS())
-		{	if(bashPath.indexOf("$(windows)")<0)
-				commandStyle = WINDOWS_CYGWIN;
-			else
-			{	commandStyle = WINDOWS_EXE;
-				commandSep = " &";
-				pathDelim = "\\";
-				bracket = "\"";
-				exe = ".exe";
-			}
+		{	commandStyle = WINDOWS_EXE;
+			commandSep = " &";
+			pathDelim = "\\";
+			bracket = "\"";
+			exe = ".exe";
 		}
 		
 		// trap background run in windows
@@ -99,7 +93,7 @@ public class NFMAnalysis  implements Runnable
 		{	String msg = "Windows command line binary cannot yet be run in background.\n";
 			msg = msg+"Use 'Run FEA/MPM Analysis' menu command instead.";
 			JNApplication.appBeep();
-			JOptionPane.showMessageDialog(doc,msg);
+			JNUtilities.showMessage(doc,msg);
 			return;
 		}
 
@@ -110,6 +104,7 @@ public class NFMAnalysis  implements Runnable
 		boolean mpmAnalysis=isMPMAnalysis();
 		boolean doValidate;
 		String myCmd,myDTD;
+		ArrayList<String> serverInfo = null;
 		if(!NFMVPrefs.getRemoteMode())
 		{	// LOCAL_EXECUTION ----------------------
 			if(mpmAnalysis)
@@ -118,9 +113,9 @@ public class NFMAnalysis  implements Runnable
 				myDTD=NFMVPrefs.prefs.get(NFMVPrefs.NairnMPMDTDKey,NFMVPrefs.NairnMPMDTDDef);
 				doValidate=NFMVPrefs.prefs.getBoolean(NFMVPrefs.NairnMPMValidateKey,NFMVPrefs.NairnMPMValidateDef);
 				if(myCmd.indexOf("$(bundle)")>=0)
-					myCmd=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnMPM"+exe;
+					myCmd=NairnFEAMPMViz.bundleFolder+"NairnMPM"+exe;
 				if(myDTD.indexOf("$(bundle)")>=0)
-					myDTD=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnMPM.dtd";
+					myDTD=NairnFEAMPMViz.bundleFolder+"NairnMPM.dtd";
 			}
 			else
 			{	// get path to NairnFEA and NairnMPM
@@ -128,31 +123,40 @@ public class NFMAnalysis  implements Runnable
 				myDTD=NFMVPrefs.prefs.get(NFMVPrefs.NairnFEADTDKey,NFMVPrefs.NairnFEADTDDef);
 				doValidate=NFMVPrefs.prefs.getBoolean(NFMVPrefs.NairnFEAValidateKey,NFMVPrefs.NairnFEAValidateDef);
 				if(myCmd.indexOf("$(bundle)")>=0)
-					myCmd=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnFEA"+exe;
+					myCmd=NairnFEAMPMViz.bundleFolder+"NairnFEA"+exe;
 				if(myDTD.indexOf("$(bundle)")>=0)
-					myDTD=NairnFEAMPMViz.jarFolder+"bundle"+pathDelim+"NairnFEA.dtd";
+					myDTD=NairnFEAMPMViz.bundleFolder+"NairnFEA.dtd";
 			}
 		}
 		else
 		{	// REMOTE_ACCESS ---------------------
 			// find variables and also check for entered user name and password
+			serverInfo = NFMVPrefs.getServerInfo();
+			if(serverInfo==null)
+			{	String msg = "No server is configured for remote calculations.\n";
+				msg = msg+"Set up servers using the preferences window.";
+				JNApplication.appBeep();
+				JNUtilities.showMessage(doc,msg);
+				return;
+			}
 			if(mpmAnalysis) 
-			{	myCmd = NFMVPrefs.prefs.get(NFMVPrefs.RemoteMPMPathKey,NFMVPrefs.RemoteMPMPathDef);
-				myDTD = NFMVPrefs.prefs.get(NFMVPrefs.RemoteMPMDTDKey,NFMVPrefs.RemoteMPMDTDDef);
+			{	myCmd = serverInfo.get(NFMVPrefs.ServerMPM);
+				myDTD = serverInfo.get(NFMVPrefs.ServerMPMDTD);
 				doValidate = NFMVPrefs.prefs.getBoolean(NFMVPrefs.NairnMPMValidateKey,NFMVPrefs.NairnMPMValidateDef);
 			} 
 			else
-			{	myCmd = NFMVPrefs.prefs.get(NFMVPrefs.RemoteFEAPathKey,NFMVPrefs.RemoteFEAPathDef);
-				myDTD = NFMVPrefs.prefs.get(NFMVPrefs.RemoteFEADTDKey,NFMVPrefs.RemoteFEADTDDef);
+			{	myCmd = serverInfo.get(NFMVPrefs.ServerFEA);
+				myDTD = serverInfo.get(NFMVPrefs.ServerFEADTD);
 				doValidate = NFMVPrefs.prefs.getBoolean(NFMVPrefs.NairnFEAValidateKey,NFMVPrefs.NairnFEAValidateDef);
 			}
 			
 			// make sure user name and server have been entered
-			String remoteUser = NFMVPrefs.prefs.get(NFMVPrefs.RemoteUserKey,NFMVPrefs.RemoteUserDef);
-			String remoteServer = NFMVPrefs.prefs.get(NFMVPrefs.RemoteServerKey,NFMVPrefs.RemoteServerDef);
+			String remoteUser = serverInfo.get(NFMVPrefs.ServerUser);
+			String remoteServer = serverInfo.get(NFMVPrefs.ServerIP);
 			if(remoteUser.length()==0 || remoteServer.length()==0)
 			{	JNApplication.appBeep();
-				JOptionPane.showMessageDialog(null,"You must enter server and user names in application preferences to be able to run in remote mode.");
+				String emsg = "You must enter server and user names in application preferences to be able to run in remote mode.";
+				JNUtilities.showMessage(null,emsg);
 				return;
 			}
 		}
@@ -161,7 +165,8 @@ public class NFMAnalysis  implements Runnable
 		if(doValidate)
 		{	if(!insertDTD(myDTD,commandStyle))
 			{	JNApplication.appBeep();
-				JOptionPane.showMessageDialog(doc,"The XML input commands do not start with the required <?xml ...?> element.");
+				JNUtilities.showMessage(doc,
+						"The XML input commands do not start with\nthe required <?xml ...?> element.");
 				return;
 			}
 		}
@@ -271,8 +276,9 @@ public class NFMAnalysis  implements Runnable
 				outputFolder = NFMVPrefs.prefs.get(NFMVPrefs.WorkSpaceKey,NFMVPrefs.WorkSpaceKey);
 			
 			// Run dialog to get items listed after the dialo
-			LaunchRemoteCalc lrc = new LaunchRemoteCalc(doc,remotePath,soutConsole.uniqueOutput,
-										outputFolder,soutConsole.downloadResults,soutConsole.clearPriorContents);
+			LaunchRemoteCalc lrc = new LaunchRemoteCalc(doc,serverInfo.get(NFMVPrefs.ServerIP),remotePath,
+					soutConsole.uniqueOutput,outputFolder,soutConsole.downloadResults,
+					soutConsole.clearPriorContents);
 			if(lrc.getClickedButton()==JNDialog.CANCEL_BUTTON) return;
 			
 			// --------- Remote folder and name. These were separated in the dialog.
@@ -315,10 +321,10 @@ public class NFMAnalysis  implements Runnable
 		///System.out.println("...tmp commands: "+tmpFile.getPath());
 			
 		// set commands and options
-		// bashcmds - list of commands to launch bash shell for cygwin or mac in background
+		// bashcmds - list of commands to launch bash shell for Mac in background
 		ArrayList<String> bashcmds=new ArrayList<String>(20);
 		
-		// start login bash shell (only used in cygwin or Mac when in backgorund)
+		// start login bash shell (only used for Mac/Linux when in background)
 		if(commandStyle!=WINDOWS_EXE)
 		{	bashcmds.add(NFMVPrefs.prefs.get(NFMVPrefs.ShellKey,NFMVPrefs.ShellDef));
 			bashcmds.add("--login");
@@ -327,9 +333,7 @@ public class NFMAnalysis  implements Runnable
 		
 		// build shell command which will be
 		// Windows: C: & CD "(parent folder DOS path)" & "app.exe" (options) "(input file)"
-		// Cygwin : cd '(parent folder cygwin path)' ; 'app' (options) '(input file)'
-		// Mac    : cd '(parent folder path)' ; 'app' (options) '(input file)'
-		// cd (parent folder); (executable)
+		// Mac/Linux: cd '(parent folder path)' ; 'app' (options) '(input file)'
 		StringBuffer shell=new StringBuffer();
 		
 		// Get command to go to the parent folder directory
@@ -344,9 +348,7 @@ public class NFMAnalysis  implements Runnable
 				
 			}
 			else
-			{	if(commandStyle==WINDOWS_CYGWIN)
-					shellCD = PathToCygwin(shellCD);
-				shell.append("cd ");
+			{	shell.append("cd ");
 			}
 			if(shellCD.indexOf(' ') >= 0)
 				shell.append(bracket + shellCD + bracket);
@@ -355,24 +357,22 @@ public class NFMAnalysis  implements Runnable
 			shell.append(commandSep+" ");
 		}
 
-		// Executable (Mac and Exe to process builder, all to shell)
-		// pbcmds will be [(app),[options],(input file)] (but not for cygwin)
+		// Executable (Mac and Exe to process builder, all to shell for background)
+		// pbcmds will be [(app),[options],(input file)]
 		ArrayList<String> pbcmds=new ArrayList<String>(20);
 				
-		// shell will add path to the app in myCmd
-		if(commandStyle==WINDOWS_CYGWIN)
-		{	myCmd=PathToCygwin(myCmd);
+		// ad (app)
+		pbcmds.add(myCmd);
+		
+		//add options
+		if(runType==RUN_CHECK_MESH) pbcmds.add("-a");
+		if(doValidate) pbcmds.add("-v");
+		if(processors>1)
+		{	pbcmds.add("-np");
+			pbcmds.add(""+processors);
 		}
-		else
-		{	// as direct process builder command
-			pbcmds.add(myCmd);
-			if(runType==RUN_CHECK_MESH) pbcmds.add("-a");
-			if(doValidate) pbcmds.add("-v");
-			if(processors>1)
-			{	pbcmds.add("-np");
-				pbcmds.add(""+processors);
-			}
-		}
+		
+		// shell (app)
 		if(myCmd.indexOf(' ')>=0)
 			shell.append(bracket+myCmd+bracket);
 		else
@@ -390,9 +390,8 @@ public class NFMAnalysis  implements Runnable
 		else
 			shell.append(" "+inName);
 		
-		// and input file command to pbcmds
-		if(commandStyle!=WINDOWS_CYGWIN)
-			pbcmds.add(inName);
+		// add input file command to pbcmds
+		pbcmds.add(inName);
 		
 		// Finish building commands then launch thread (see run() method)
 		openMesh=runType;
@@ -413,6 +412,7 @@ public class NFMAnalysis  implements Runnable
 			builder = null;
 			runThread=new Thread(this);
 			running=true;
+			wasStopped=false;
 			runThread.start();
 		}
 		
@@ -436,7 +436,7 @@ public class NFMAnalysis  implements Runnable
 			bashcmds.add(shell.toString());
 			
 			// create the process and set working directory
-			if(commandStyle!=WINDOWS_CYGWIN && !doBackground)
+			if(!doBackground)
 			{	builder = new ProcessBuilder(pbcmds);
 				builder.directory(outFile.getParentFile());
 				displayCommands(pbcmds);
@@ -449,6 +449,7 @@ public class NFMAnalysis  implements Runnable
 			
 			runThread=new Thread(this);
 			running=true;
+			wasStopped=false;
 			wasSubmitted=doBackground;
 			runThread.start();
 		}		
@@ -501,10 +502,6 @@ public class NFMAnalysis  implements Runnable
 			}
 		}
 		
-		// REMOTE_ACCESS - convert if not in root
-		if(!NFMVPrefs.getRemoteMode() && commandStyle==WINDOWS_CYGWIN)
-			dtdPath=PathToCygwin(dtdPath);
-		
 		if(offset>0)
 		{	// insert path if needed
 			String oldDTD=cmds.substring(offset,endOffset);
@@ -529,20 +526,6 @@ public class NFMAnalysis  implements Runnable
 		}
 		
 		return true;
-	}
-
-	// convert Windows path to cygwin
-	private String PathToCygwin(String path)
-	{	if(JNApplication.isWindowsOS())
-		{	path=path.replace('\\','/');
-			// Replace C: by /cygdrive/c (if needed)
-			if(path.charAt(1)==':')
-			{	char drive=path.charAt(0);
-				if(drive<'a') drive+=32;
-				path="/cygdrive/"+drive+path.substring(2);
-			}
-		}
-		return path;
 	}
 
 	// save commands and return saved file (or null)
@@ -570,7 +553,7 @@ public class NFMAnalysis  implements Runnable
 		}
 		catch (Exception fe)
 		{	JNApplication.appBeep();
-			JOptionPane.showMessageDialog(doc,"Error writing XML input commands to temporary file: " + fe);
+			JNUtilities.showMessage(doc,"Error writing XML input commands to temporary file: " + fe);
 			return null;
 		}
 		
@@ -600,12 +583,12 @@ public class NFMAnalysis  implements Runnable
 					System.out.println("Revised path:"+myCmd);
 					
 					// if in bundle correct that path too
-					if(NairnFEAMPMViz.jarFolder.indexOf("%20")>0)
-						NairnFEAMPMViz.jarFolder = NairnFEAMPMViz.jarFolder.replaceAll("%20", " ");
+					if(NairnFEAMPMViz.bundleFolder.indexOf("%20")>0)
+						NairnFEAMPMViz.bundleFolder = NairnFEAMPMViz.bundleFolder.replaceAll("%20", " ");
 				}
 				else
 				{	JNApplication.appBeep();
-					JOptionPane.showMessageDialog(doc,tpe.getLocalizedMessage());
+					JNUtilities.showMessage(doc,tpe.getLocalizedMessage());
 					running = false;
 					return;
 				}
@@ -635,6 +618,9 @@ public class NFMAnalysis  implements Runnable
 					if(!running) break;
 				}
 				
+				// running==true means pipe is done, false means stop requested
+				System.out.println("run() thread: stdout stopped. running="+running);
+				
 				// if still running, check for error message
 				if(running)
 				{	while((line = ebr.readLine()) != null)
@@ -655,23 +641,29 @@ public class NFMAnalysis  implements Runnable
 					{	errMsg = e.getLocalizedMessage();
 						result = 1;
 					}
+					System.out.println("run() thread: exit code="+result);
 				}
 				
 				// save and open for visualization
 				if(wasSubmitted)
-				{	JOptionPane.showMessageDialog(doc,"FEA or MPM job submitted"+soutConsole.processID());
+				{	JNUtilities.showMessage(doc,"FEA or MPM job submitted"+soutConsole.processID());
 				}
 				else if(soutConsole.saveOutput(doc))
-				{	if(result==0)
+				{	// result==0 means good exit value or was forces to quit
+					if(result==0)
 					{	DocViewer newResults = doc.linkToResults();
 						if(newResults!=null && openMesh==RUN_CHECK_MESH && !newResults.resDoc.is3D())
-						{	newResults.checkMeshNow();
+						{	newResults.startCheckMesh = true;
 						}
 					}
 					else
-					{	if(errMsg=="") errMsg = "Unknown error (perhaps Windows exe not found - check path in preferences)";
+					{	if(errMsg=="")
+						{	errMsg = "Code stopped for an unknown reason";
+							if(NairnFEAMPMViz.isWindowsOS() && soutConsole.console.getText().length()==0)
+								errMsg = errMsg + "\n   (in Windows, the exe may be missing a required dll)";
+						}
 						JNApplication.appBeep();
-						JOptionPane.showMessageDialog(doc,"Error: "+errMsg);
+						JNUtilities.showMessage(doc,"Error: "+errMsg);
 					}
 				}
 				
@@ -681,7 +673,7 @@ public class NFMAnalysis  implements Runnable
 			}
 			catch(Exception tpe)
 			{	JNApplication.appBeep();
-				JOptionPane.showMessageDialog(doc,tpe.getLocalizedMessage());
+				JNUtilities.showMessage(doc,"NFMAnalysis run error: "+tpe.getLocalizedMessage());
 			}
 			
 			// destroy process if needed
@@ -690,7 +682,7 @@ public class NFMAnalysis  implements Runnable
 				process = null;
 			}
 			
-			System.out.println("Analysis thread done");
+			System.out.println("run() thread: done");
 		}
 		
 		else
@@ -700,15 +692,16 @@ public class NFMAnalysis  implements Runnable
 			RemoteConnection remoteConn = null;
 			try
 			{
-				// this were verified as entered earlier
-				String remoteUser = NFMVPrefs.prefs.get(NFMVPrefs.RemoteUserKey,NFMVPrefs.RemoteUserDef);
-				String remoteServer = NFMVPrefs.prefs.get(NFMVPrefs.RemoteServerKey,NFMVPrefs.RemoteServerDef);
+				// these were verified as entered earlier
+				ArrayList<String> server = NFMVPrefs.getServerInfo();
+				String remoteUser = server.get(NFMVPrefs.ServerUser);
+				String remoteServer =server.get(NFMVPrefs.ServerIP);
 				
 				// create session
 				soutConsole.clear();
 				try
 				{	soutConsole.appendLine("Connecting to "+remoteServer);
-					String userPass = NFMVPrefs.prefs.get(NFMVPrefs.RemoteUserPassKey,NFMVPrefs.RemoteUserPassDef);
+					String userPass = server.get(NFMVPrefs.ServerPWD);
 					remoteConn = new RemoteConnection(remoteUser,userPass,remoteServer,22,soutConsole);
 					remoteConn.setStrictHostKeyChecking(false);
 				}
@@ -864,7 +857,7 @@ public class NFMAnalysis  implements Runnable
 					
 					// if check mesh, show mesh
 					if(newResults!=null && openMesh==RUN_CHECK_MESH && !newResults.resDoc.is3D())
-					{	newResults.checkMeshNow();
+					{	newResults.startCheckMesh = true;
 					}			
 				}
 				
@@ -876,7 +869,7 @@ public class NFMAnalysis  implements Runnable
 					soutConsole.appendLine("Remote execution cancelled");
 				else
 				{	JNApplication.appBeep();
-					JOptionPane.showMessageDialog(doc,msg);
+					JNUtilities.showMessage(doc,msg);
 				}
 			}
 		}
@@ -892,7 +885,8 @@ public class NFMAnalysis  implements Runnable
 			}
 			catch (Exception fe)
 			{	JNApplication.appBeep();
-				JOptionPane.showMessageDialog(doc,"Error deleting the temporary XML file: " + fe.getLocalizedMessage());
+				JNUtilities.showMessage(doc,
+						"Error deleting the temporary XML file: " + fe.getLocalizedMessage());
 			}
 			tmpFile = null;
 		}
@@ -906,11 +900,13 @@ public class NFMAnalysis  implements Runnable
 	//----------------------------------------------------------------------------
 	
 	public boolean isRunning() { return running; }
+	public boolean wasAborted() { return wasStopped; }
 	
 	public void stopRunning()
 	{	if(runThread.isAlive())
 		{	System.out.println("Analysis thread stop requested");
 			running=false;
+			wasStopped=true;
 			if(process!=null)
 			{	// must set null before destroying process
 				Process holdProcess = process;

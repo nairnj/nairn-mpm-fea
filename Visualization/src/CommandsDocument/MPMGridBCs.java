@@ -385,7 +385,8 @@ public class MPMGridBCs
 		bcSettings.append("/>\n");
 	}
 
-	// add velocity condition
+	// add temperature or concentration (solvent, pressure, or phase style)
+	// style, value, <time> , <phase>
 	public void AddTempConc(ArrayList<String> args, int theType) throws Exception
 	{	// MPM only
 		doc.requiresMPM(args);
@@ -410,14 +411,15 @@ public class MPMGridBCs
 		options.put("cosine", new Integer(4));
 		options.put("function", new Integer(6));
 		int style = doc.readIntOption(args.get(1), options,
-				"Temperature, concentration, or porepressure style");
+				"Temperature, concentration, porepressure, or phase style");
 
-		// read arg1 and arg2
+		// read arg1 and arg2 and phase style
 		double arg1 = 0., arg2 = 0.;
 		String function = null;
+		int phaseStyle = -1;
 		boolean hasArg2 = false;
 
-		// arg1
+		// arg1 = value
 		if (args.size() > 2)
 		{	if (style == 6)
 				function = doc.readStringArg(args.get(2));
@@ -425,12 +427,25 @@ public class MPMGridBCs
 				arg1 = doc.readDoubleArg(args.get(2));
 		}
 
-		// arg2
+		// arg2 =  time
 		if (args.size() > 3)
 		{	hasArg2 = true;
 			arg2 = doc.readDoubleArg(args.get(3));
 		}
 
+		// arg4 =  phaseStyle
+		if (args.size() > 4)
+		{	options = new HashMap<String, Integer>(6);
+			options.put("solvent", new Integer(1));
+			options.put("moisture", new Integer(1));
+			options.put("pressure", new Integer(2));
+			options.put("fracture", new Integer(3));
+			options.put("battery", new Integer(4));
+			options.put("conduction", new Integer(6));
+			phaseStyle = doc.readIntOption(args.get(4), options,
+								"Phase type for this BC");
+		}
+		
 		// add to xml
 		if (theType == ADD_TEMPERATURE)
 			bcSettings.append("      <TempBC");
@@ -443,7 +458,12 @@ public class MPMGridBCs
 			bcSettings.append(" value='" + doc.formatDble(arg1) + "'");
 		if (hasArg2)
 			bcSettings.append(" time='" + doc.formatDble(arg2) + "'");
+		if (phaseStyle>2)
+			bcSettings.append(" phase='" + phaseStyle + "'");
 
+		// BC ID
+		if(boundaryID!=0)
+			bcSettings.append(" id='" + boundaryID + "'");
 		bcSettings.append("/>\n");
 	}
 

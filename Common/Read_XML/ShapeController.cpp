@@ -272,13 +272,14 @@ void ShapeController::AddCutoutShape(ShapeController *cutout)
 #pragma mark ShapeController: MPM only methods
 
 #ifdef MPM_CODE
-// return next node for this shape or -1 if no more
+// return next particle number for this shape or -1 if no more
+// Used for BCs, because reservoir is skipped, they never get a BC
 int ShapeController::nextParticle(void)
 {
 	if(particleNum>=nmpms) return -1;
-	int i;
-	for(i=particleNum;i<nmpms;i++)
-    {   Vector nv = MakeVector(mpm[i]->pos.x,mpm[i]->pos.y,mpm[i]->pos.z);
+	for(int i=particleNum;i<nmpms;i++)
+	{	if(mpm[i]->InReservoir()) continue;
+		Vector nv = MakeVector(mpm[i]->pos.x,mpm[i]->pos.y,mpm[i]->pos.z);
 	    if(ShapeContainsPoint(nv))
 		{	particleNum=i+1;
 			return i;

@@ -30,7 +30,7 @@ int gelbnd(double **,int,int,double *,double *,int);
 // throws std::bad_alloc
 NairnFEA::NairnFEA()
 {
-	version=6;					// NairnFEA version number
+	version=8;					// NairnFEA version number
 	subversion=0;				// subversion number
 	buildnumber=0;				// build number
 	xax='x';					// default axis names
@@ -60,6 +60,7 @@ void NairnFEA::CMAnalysis(bool abort)
 	}
 
 	char nline[200];
+    size_t nlsize=200;
     int result;
     int i;
     NodalDispBC *nextBC;
@@ -81,7 +82,7 @@ void NairnFEA::CMAnalysis(bool abort)
     
     // Stiffness matrix info
     PrintSection("TOTAL STIFFNESS MATRIX");
-    sprintf(nline,"Initial number of equations:%6d     Initial bandwidth:%6d",nsize,nband);
+    snprintf(nline,nlsize,"Initial number of equations:%6d     Initial bandwidth:%6d",nsize,nband);
     cout << nline << endl << endl;
 
 #pragma mark --- TASK 1: ALLOCATE R VECTOR
@@ -360,11 +361,12 @@ void NairnFEA::DisplacementResults(void)
 {
     int i,ind=0,maxi,ii;
     char fline[200];
+    size_t fsize=200;
     
     if(outFlags[DISPLACEMENT_OUT]=='N') return;
     
     // heading
-	sprintf(fline,"NODAL DISPLACEMENTS (in %s)",UnitsController::Label(CULENGTH_UNITS));
+	snprintf(fline,fsize,"NODAL DISPLACEMENTS (in %s)",UnitsController::Label(CULENGTH_UNITS));
     PrintSection(fline);
     if(np==AXI_SYM)
 	cout << " Node        u               w               v" << endl;
@@ -384,11 +386,11 @@ void NairnFEA::DisplacementResults(void)
     
     	// 2D output
         if(nfree==2)
-            sprintf(fline,"%5d %15.7e %15.7e",i,rm[ind-1],rm[ind]);
+            snprintf(fline,fsize,"%5d %15.7e %15.7e",i,rm[ind-1],rm[ind]);
         
         // 3D output
         else if(nfree==3)
-           sprintf(fline,"%5d %15.7e %15.7e %15.7e",i,rm[ind-2],rm[ind-1],rm[ind]);
+            snprintf(fline,fsize,"%5d %15.7e %15.7e %15.7e",i,rm[ind-2],rm[ind-1],rm[ind]);
         
         cout << fline << endl;
     }
@@ -402,9 +404,10 @@ void NairnFEA::ForceStressEnergyResults(void)
     int i,j,iel,ind,kftemp=0,kstemp=0,numnds;
     int nodeNum;
     char gline[16],fline[200];
+    size_t gsize=16,fsize=200;
 	
     if(outFlags[FORCE_OUT]!='N' || outFlags[ELEMSTRESS_OUT]!='N')
-	{	sprintf(fline,"NODAL FORCES (in %s) AND STRESSES (in %s) IN EACH ELEMENT",
+	{	snprintf(fline,fsize,"NODAL FORCES (in %s) AND STRESSES (in %s) IN EACH ELEMENT",
 						UnitsController::Label(FEAFORCE_UNITS),UnitsController::Label(PRESSURE_UNITS));
         PrintSection(fline);
 	}
@@ -422,7 +425,7 @@ void NairnFEA::ForceStressEnergyResults(void)
         numnds=theElements[iel]->NumberNodes();
     
         // Print forces at nodes
-        sprintf(gline,"%5d",iel+1);
+        snprintf(gline,gsize,"%5d",iel+1);
         if(theElements[iel]->WantElement(outFlags[FORCE_OUT],selectedNodes))
         {   kftemp=1;
             cout << "--------------------------------------------------------------------------" << endl;
@@ -440,7 +443,7 @@ void NairnFEA::ForceStressEnergyResults(void)
 
             // print force
             if(kftemp==1)
-            {	sprintf(fline,"%5s   %5d     %15.7e     %15.7e",gline,
+            {	snprintf(fline,fsize,"%5s   %5d     %15.7e     %15.7e",gline,
                                 nodeNum,-se[ind][7],-se[ind+1][7]);
                 cout << fline << endl;
                 strcpy(gline,"     ");
@@ -474,7 +477,7 @@ void NairnFEA::ForceStressEnergyResults(void)
         {   nodeNum=theElements[iel]->nodes[j-1];
         
             if(kstemp==1)
-            {   sprintf(fline,"%5s   %5d     %15.7e     %15.7e     %15.7e",
+            {   snprintf(fline,fsize,"%5s   %5d     %15.7e     %15.7e     %15.7e",
                             gline,nodeNum,se[j][1],se[j][2],se[j][3]);
                 cout << fline << endl;
                 strcpy(gline,"     ");
@@ -501,7 +504,7 @@ void NairnFEA::ForceStressEnergyResults(void)
             for(j=1;j<=numnds;j++)
             {   nodeNum=theElements[iel]->nodes[j-1];
                 if(kstemp==1)
-                {	sprintf(fline,"%5s   %5d     %15.7e     %15.7e     %15.7e",
+                {	snprintf(fline,fsize,"%5s   %5d     %15.7e     %15.7e     %15.7e",
                                     gline,nodeNum,se[j][4],(double)0.0,(double)0.0);
                     cout << fline << endl;
                 }
@@ -528,7 +531,8 @@ void NairnFEA::AvgNodalStresses(void)
     
     // heading
 	char fline[200];
-	sprintf(fline,"AVERAGE NODAL STRESSES (in %s)",UnitsController::Label(PRESSURE_UNITS));
+    size_t fsize=200;
+	snprintf(fline,fsize,"AVERAGE NODAL STRESSES (in %s)",UnitsController::Label(PRESSURE_UNITS));
 	PrintSection(fline);
     cout << " Node       sig(" << xax << ")           sig(" << yax << ")           sig(" 
             << zax << ")          sig(" << xax << yax << ")" << endl;
@@ -551,7 +555,8 @@ void NairnFEA::ReactionResults(void)
     if(outFlags[REACT_OUT]=='N') return;
     
 	char fline[200];
-	sprintf(fline,"REACTIVITIES AT FIXED NODES (in %s)",UnitsController::Label(FEAFORCE_UNITS));
+    size_t fsize=200;
+	snprintf(fline,fsize,"REACTIVITIES AT FIXED NODES (in %s)",UnitsController::Label(FEAFORCE_UNITS));
 	PrintSection(fline);
     cout << " Node           F" << xax << "                  F" << yax
             << "                  F" << zax << endl;
@@ -571,11 +576,12 @@ void NairnFEA::EnergyResults(void)
     double temp;
     int incolm,i,ind;
     char fline[200];
+    size_t fsize=200;
     
     if(outFlags[ENERGY_OUT]=='N') return;
     
     // heading
-	sprintf(fline,"STRAIN ENERGIES IN ELEMENTS (in %s)",UnitsController::Label(FEAWORK_UNITS));
+	snprintf(fline,fsize,"STRAIN ENERGIES IN ELEMENTS (in %s)",UnitsController::Label(FEAWORK_UNITS));
 	PrintSection(fline);
     cout << " Elem      Strain Energy                 Elem      Strain Energy" << endl;
     cout << "------------------------------------------------------------------" << endl;
@@ -589,17 +595,17 @@ void NairnFEA::EnergyResults(void)
     for(i=1;i<=incolm;i++)
     {	ind=i+incolm;
         if(ind<=nelems)
-        {   sprintf(fline,"%5d     %15.7e               %5d     %15.7e",
+        {   snprintf(fline,fsize,"%5d     %15.7e               %5d     %15.7e",
                     i,escale*theElements[i-1]->strainEnergy,ind,escale*theElements[ind-1]->strainEnergy);
             temp+=theElements[ind-1]->strainEnergy;
         }
         else
-            sprintf(fline,"%5d     %15.7e",i,escale*theElements[i-1]->strainEnergy);
+            snprintf(fline,fsize,"%5d     %15.7e",i,escale*theElements[i-1]->strainEnergy);
         temp+=theElements[i-1]->strainEnergy;
         cout << fline << endl;
     }
     cout << "------------------------------------------------------------------" << endl;
-    sprintf(fline,"Total     %15.7e",escale*temp);
+    snprintf(fline,fsize,"Total     %15.7e",escale*temp);
     cout << fline << endl << endl;
 }
 

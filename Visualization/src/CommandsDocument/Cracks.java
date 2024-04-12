@@ -8,6 +8,8 @@
 
 import java.util.*;
 
+import geditcom.JNFramework.JNUtilities;
+
 public class Cracks
 {
 	private CmdViewer doc;
@@ -26,6 +28,14 @@ public class Cracks
 	private String altPropagate;
 	private String propagate;
 	private String propLength;
+	
+	// for 3D cracks
+	private ArrayList<Double> coords = new ArrayList<Double>(30);
+	private Hashtable<String,Integer> ptIDs = new Hashtable<String,Integer>();
+	private ArrayList<Integer> facetKeys = new ArrayList<Integer>(30);
+	private ArrayList<Double> facetLengths = new ArrayList<Double>(30);
+	private ArrayList<Integer> facetTraction = new ArrayList<Integer>(30);
+	boolean currentPlane;
 	
 	//----------------------------------------------------------------------------
 	// Initialize
@@ -97,6 +107,7 @@ public class Cracks
 	// #3 = material (tip=), exterior (tip=-2), or fixed (type='fixed'), or free (no tip)
 	// #4 = friction setting (friction=) or "traction"
 	// #5 - traction material (mat=)
+	// For 3D is is #1,#2,#3,#4 for x,y,z of first point and label (all required)
 	public void StartCrack(ArrayList<String> args) throws Exception
 	{	// MPM Only
 		doc.requiresMPM(args);
@@ -110,6 +121,46 @@ public class Cracks
 		crackFriction = null;
 		crackThickness = null;
 		crackTractProp = null;
+		currentPlane = false;
+		
+		// 3D cracks simpler
+		if(doc.isMPM3D())
+		{	if(args.size()<5)
+				throw new Exception("'NewCrack' has too few parameters:\n"+args);
+			double ptx = doc.readDoubleArg(args.get(1));
+			double pty = doc.readDoubleArg(args.get(2));
+			double ptz = doc.readDoubleArg(args.get(3));
+			String key1 = doc.readStringArg(args.get(4));
+			
+			// optional contact law
+			if(args.size()>5)
+			{	String law = doc.readStringArg(args.get(5));
+				int lawMat = doc.mats.getMatID(law);
+				if(lawMat>0)
+					crackFriction=" law='"+lawMat+"'";
+				else
+				{	throw new Exception("'NewCrack' has invalid contact law material:\n"+args);
+				}
+			}
+			
+			// start coordinates list
+			coords.clear();
+			coords.add(new Double(ptx));
+			coords.add(new Double(pty));
+			coords.add(new Double(ptz));
+			
+			// list of key points labels
+			ptIDs.clear();
+			ptIDs.put(key1,new Integer(1));
+			
+			// clear facets
+			facetKeys.clear();
+			facetLengths.clear();
+			facetTraction.clear();
+			
+			// all done
+			return;
+		}
 		
 		// read analysis type
 		if(args.size()<3)
@@ -182,6 +233,93 @@ public class Cracks
 		cy = pty;
 	}
 	
+	// Add keypoint to a 3D crack
+	public void AddCrackKeypoint(ArrayList<String> args) throws Exception
+	{
+		// check analysis type and verify unneste
+		if(currentCrack==null)
+		{	throw new Exception("'CrackKeypoint' commands must come after a 'NewCrack' command:\n"+args);
+		}
+		if(!doc.isMPM3D())
+		{	throw new Exception("'CrackKeypoint' command only alowed for 3D cracks:\n"+args);
+		}
+
+		// read x,y,z, label in #1 to #2 (required)
+		if(args.size()<5)
+			throw new Exception("'CrackKeypoint' has too few parameters:\n"+args);
+		double ptx = doc.readDoubleArg(args.get(1));
+		double pty = doc.readDoubleArg(args.get(2));
+		double ptz = doc.readDoubleArg(args.get(3));
+		String keyn = doc.readStringArg(args.get(4));
+		
+		// add three coordinates
+		coords.add(new Double(ptx));
+		coords.add(new Double(pty));
+		coords.add(new Double(ptz));
+		
+		// add a number
+		int ptnum = coords.size()/3;
+		ptIDs.put(keyn,new Integer(ptnum));
+	}
+
+	
+	// For 3D crack facet is #1,#2,#3,<#4>,<#5> for ptIDs and maxLength and traction law
+	public void AddCrackFacet(ArrayList<String> args,boolean isPlane) throws Exception
+	{
+		String cmd = isPlane ? "CrackPlane" : "CrackFacet" ;
+		
+		// check analysis type and verify unneste
+		if(currentCrack==null)
+		{	throw new Exception("'"+cmd+"' commands must come after a 'NewCrack' command:\n"+args);
+		}
+		if(!doc.isMPM3D())
+		{	throw new Exception("'"+cmd+"' command only alowed for 3D cracks:\n"+args);
+		}
+		
+		// a plane must be the only element
+		if(isPlane && facetKeys.size()>0)
+		{	throw new Exception("'CrackPlane' command must be only facet for the crack:\n"+args);
+		}
+		currentPlane = isPlane;
+		
+		// read three labels (required)
+		// read x,y,z, label in #1 to #2 (required)
+		if(args.size()<4)
+			throw new Exception("'"+cmd+"' has too few parameters:\n"+args);
+		String nd1 = doc.readStringArg(args.get(1));
+		Integer kp1 = ptIDs.get(nd1);
+		String nd2 = doc.readStringArg(args.get(2));
+		Integer kp2 = ptIDs.get(nd2);
+		String nd3 = doc.readStringArg(args.get(3));
+		Integer kp3 = ptIDs.get(nd3);
+		if(kp1==null || kp2==null ||kp3==null)
+			throw new Exception("'"+cmd+"' command has an invalid keypoint IDs:\n"+args);
+			
+		// optional length
+		double maxLength = -1.;
+		if(args.size()>4)
+			maxLength = doc.readDoubleArg(args.get(4));
+		
+		// look for traction law material
+		int mat = -1;
+		if(args.size()>5)
+		{	mat = doc.mats.getMatID(doc.readStringArg(args.get(5)));
+			if(mat==-1)
+				throw new Exception("'"+cmd+"' has unknown traction law material:\n"+args);
+		}
+		
+		// keypoints
+		facetKeys.add(kp1);
+		facetKeys.add(kp2);
+		facetKeys.add(kp3);
+		
+		// length
+		facetLengths.add(new Double(maxLength));
+		
+		// traction law
+		facetTraction.add(new Integer(mat));
+	}
+
 	// 0: GrowCrack x,y,<tip>,<mat>
 	// 1: GrowCrackLine x,y,segs,<tip>,<mat>
 	// 2: GrowCrackArc x1,y1,x2,y2,segs,ang1,ang2,<tip>,<mat>
@@ -434,14 +572,103 @@ public class Cracks
 		if(currentCrack==null) return;
 		
 		crackList.append("  <CrackList");
-		if(crackFixed) crackList.append(" type='fixed'");
 		if(crackFriction!=null) crackList.append(crackFriction);
-		if(crackTractProp!=null) crackList.append(crackTractProp);
 		
-		// finish up
-		crackList.append(">\n"+currentCrack.toString());
-		if(crackThickness!=null) crackList.append(crackThickness);
-		crackList.append("  </CrackList>\n\n");
+		if(!doc.isMPM3D())
+		{	// 2D cracks
+			if(crackFixed) crackList.append(" type='fixed'");
+			if(crackTractProp!=null) crackList.append(crackTractProp);
+		
+			// finish up
+			crackList.append(">\n"+currentCrack.toString());
+			if(crackThickness!=null) crackList.append(crackThickness);
+			crackList.append("  </CrackList>\n\n");
+		}
+		else if(currentPlane)
+		{	// a single plane element for a 3D crack
+			crackList.append(">\n     <Plane");
+			
+			System.out.println(ptIDs);
+			System.out.println(coords);
+			System.out.println(facetKeys);
+			
+			for(int p=0;p<3;p++)
+			{	int pt1 = facetKeys.get(p).intValue();
+				int index = 3*(pt1-1);
+				System.out.println(p+","+pt1+","+facetKeys.get(p)+","+index);
+				double ptX = coords.get(index).doubleValue();
+				double ptY = coords.get(index+1).doubleValue();
+				double ptZ = coords.get(index+2).doubleValue();
+				crackList.append(" V"+p+"x='"+JNUtilities.formatDouble(ptX)+"'");
+				crackList.append(" V"+p+"y='"+JNUtilities.formatDouble(ptY)+"'");
+				crackList.append(" V"+p+"z='"+JNUtilities.formatDouble(ptZ)+"'");
+			}
+			
+			// length
+			double length = facetLengths.get(0).doubleValue();
+			if(length>0.)
+				crackList.append(" length='"+JNUtilities.formatDouble(length)+"'");
+			
+			// traction law
+			int tnum = facetTraction.get(0).intValue();
+			if(tnum>0)
+				crackList.append(" mat='"+tnum+"'");
+			
+			// finish up
+			crackList.append("/>\n");
+			crackList.append("  </CrackList>\n\n");
+		}
+		else
+		{	// 3D crack with keypoints and facets
+			crackList.append("  <CrackList>\n    <Mesh>\n");
+			
+			// Node list
+			crackList.append("      <NodeList>\n");
+			int j = 0;
+			double ptX,ptY,ptZ;
+			while(j<coords.size())
+			{	ptX=coords.get(j).doubleValue();
+				ptY=coords.get(j+1).doubleValue();
+				ptZ=coords.get(j+2).doubleValue();
+				j+=3;
+				crackList.append("        <pt");
+				crackList.append(" x='"+JNUtilities.formatDouble(ptX)+"'");
+				crackList.append(" y='"+JNUtilities.formatDouble(ptY)+"'");
+				crackList.append(" z='"+JNUtilities.formatDouble(ptZ)+"'");
+				crackList.append("/>\n");
+			}
+			crackList.append("      </NodeList>\n");
+			
+			// elements in blocks of 4 in facets, traction in tractions
+			crackList.append("      <ElementList>\n");
+			int jt = 0;
+			j = 0;
+			int pt1,pt2,pt3,tnum;
+			double length;
+			while(j<facetKeys.size())
+			{	pt1 = facetKeys.get(j).intValue();
+				pt2 = facetKeys.get(j+1).intValue();
+				pt3 = facetKeys.get(j+2).intValue();
+				j += 3;
+				
+				length = facetLengths.get(jt).doubleValue();
+				tnum = facetTraction.get(jt).intValue();
+				jt++;
+				
+				crackList.append("        <elem type='1'");
+				if(length>0)
+					crackList.append(" length='"+JNUtilities.formatDouble(length)+"'");
+				if(tnum>0)
+					crackList.append(" czm='"+tnum+"'");
+				crackList.append(">"+pt1+","+pt2+","+pt3+"</elem>\n");
+			}
+			crackList.append("      </ElementList>\n");
+			
+			// finish up
+			crackList.append("    </Mesh>\n");
+			crackList.append("  </CrackList>\n\n");
+		}
+
 	}
 
 	// when done or start new crack, append current one

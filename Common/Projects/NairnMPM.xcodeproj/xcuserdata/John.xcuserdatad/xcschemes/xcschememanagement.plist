@@ -7,40 +7,22 @@
 		<key>CompareGlobal.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>3</integer>
-		</dict>
-		<key>ExtractMPM.xcscheme</key>
-		<dict>
-			<key>orderHint</key>
 			<integer>2</integer>
 		</dict>
-		<key>NairnFEA.xcscheme</key>
+		<key>ExtractMPM.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
+		<key>NairnFEA.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
-		<key>NairnMPM.xcscheme</key>
+		<key>NairnMPM.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
-		</dict>
-	</dict>
-	<key>SuppressBuildableAutocreation</key>
-	<dict>
-		<key>A72A90C80CD2ADA5001DCFA8</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>A766701A05862EB600F56460</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>A766739C05863A1700F56460</key>
-		<dict>
-			<key>primary</key>
-			<true/>
 		</dict>
 	</dict>
 </dict>

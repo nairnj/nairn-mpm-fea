@@ -22,10 +22,11 @@ class ReverseLoad : public CustomTask
 {
     public:
         int crackNum,style;
-        double finalLength,holdTime;
+        double finalLength,holdTime,minValue;
         int reversed;
 		int quantity,subcode,whichMat;
 		char quant[64];
+        const static size_t quantSize=64;
         int debondLength;
         
         // constructors and destructors
@@ -40,6 +41,8 @@ class ReverseLoad : public CustomTask
 
     private:
         double finalTime,endHoldTime;
+        double maxValue;
+        bool waitForDrop,passedMinValue;
 };
 
 #endif

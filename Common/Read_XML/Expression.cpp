@@ -58,9 +58,10 @@ double erfcc(double x);
 Expression *exfxn[12]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 
 // All variables in faster calls (no use of unordered map)
+// Most used for MPM functions need while running (for speed)
 // In this mode, only use first letter on variable, must be unique, rest ingnored
-// Supported variables are:
-// t:1, 2:x, 3:y, 4:z, 5:dt 6:q 7:r 8:R 9:Z 10:D 11:T h:12
+// Supported variables are (not hard to add more when needed):
+// t:1, 2:x, 3:y, 4:z, 5:dt 6:q
 // Create vars[7], set needed values, set var[0] last index+0.5
 //                     A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,[,\,],^,_,`,
 static short vmap[58]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -553,10 +554,8 @@ void Expression::DoFunction(Atomic *atom) const
 			fxnValue = exp(arg1);
 			break;
 		case RAND_FXN:
-		{   double rdble = rand()%32767;
-			fxnValue = arg1*rdble/32766.;
+			fxnValue = arg1*Random();		// i.e., (0,arg1) +/- halfRandomBoxSize
 			break;
-		}
 		case ERF_FXN:
 			fxnValue = 1.-erfcc(arg1);
 			break;
@@ -599,6 +598,13 @@ void Expression::DoFunction(Atomic *atom) const
 				fxnValue = arg1*sin(PI_CONSTANT*arg2);
 			break;
 		}
+        case MOD_FXN:
+        {    // function = mod(arg1,arg2)
+            double arg2 = 1.;
+            arg = GetFunctionArg(atom,arg,arg2);
+            fxnValue = fmod(arg1,arg2);
+            break;
+        }
 		case SGN_FXN:
 			if(arg1<0.)
 				fxnValue = -1.;
@@ -881,37 +887,24 @@ void Expression::ValidateCodeOrder(int prevCode,int nextCode) const
 	}
 }
 
-// Evaluate function at specific values of x,y,z, and time
+// Evaluate function at specific values of x,y,z, and time (see Expression vmap)
 double Expression::XYZTValue(Vector *vec,double etime) const
 {
-#ifdef USE_ASCII_MAP
 	double vars[5];
 	vars[0] = 4.5;
 	vars[1] = etime;		//t
 	vars[2] = vec->x;		//x
 	vars[3] = vec->y;		//y
 	vars[4] = vec->z;		//z
-#else
-	unordered_map<string,double> vars;
-	vars["t"] = etime;
-	vars["x"] = vec->x;
-	vars["y"] = vec->y;
-	vars["z"] = vec->z;
-#endif
 	return EvaluateFunction(vars);
 }
 
-// Evaluate function at specific values time
+// Evaluate function at specific values time (see Expression vmap)
 double Expression::TValue(double etime) const
 {
-#ifdef USE_ASCII_MAP
 	double vars[2];
 	vars[0] = 1.5;
 	vars[1] = etime;		//t
-#else
-	unordered_map<string,double> vars;
-	vars["t"] = etime;
-#endif
 	return EvaluateFunction(vars);
 }
 

@@ -220,7 +220,7 @@ public class TwoDPlotWindow extends JNChildWindow
 			}
 			catch (Exception fe)
 			{	JNApplication.appBeep();
-				JOptionPane.showMessageDialog(null, "Error writing plot file document: " + fe);
+				JNUtilities.showMessage(null, "Error writing plot file document: " + fe);
 			}
 			
 		}
@@ -261,7 +261,7 @@ public class TwoDPlotWindow extends JNChildWindow
 			file.close();
 		}
 		catch(IOException fe)
-		{	JOptionPane.showMessageDialog(this,"Error writing PDF plot data: " + fe);
+		{	JNUtilities.showMessage(this,"Error writing PDF plot data: " + fe);
 		}
 		
 	}
@@ -282,12 +282,36 @@ public class TwoDPlotWindow extends JNChildWindow
 			fr.close();
 			String plotData = new String(buffer);
 			plot2DView.readTable(plotData);
-			setVisible(true);
-			toFront();
+			SwingUtilities.invokeLater(new Runnable()
+			{	public void run()
+				{	setVisible(true);
+					toFront();
+				}
+			});
 		}
 		catch (Exception e)
 		{	throw new Exception("Could not load plot data file:\n   " + e.getMessage());
 		}
 	}
+	
+	// get plot info
+	public int getNumberOfPlots()
+	{	return plot2DView.getNumberOfPlots();
+	}
+	
+	// return x-y date in ISListType for last plot
+	public ISListType getLastPlot()
+	{	// get the last plot
+		JNPlotArray lastPlot = plot2DView.getLastPlot();
+		ISListType xData = new ISListType(lastPlot.getXData());
+		ISListType yData = new ISListType(lastPlot.getYData());
+		ISListType plotResults = new ISListType(null);
+		plotResults.gcis_addObject(xData);
+		plotResults.gcis_addObject(yData);
+		return plotResults;
+	}
+
+	
+
 
 }

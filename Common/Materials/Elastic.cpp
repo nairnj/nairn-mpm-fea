@@ -130,10 +130,10 @@ void Elastic::FillUnrotatedElasticProperties(ElasticProperties *p,int np)
         p->C[2][2]*=rrho;
         p->C[3][3]*=rrho;
 		if(np==PLANE_STRAIN_MPM || np==AXISYMMETRIC_MPM)
-		{	p->C[4][1]*=rrho;
-			p->C[4][2]*=rrho;
-			p->C[4][3]*=rrho;
-			p->C[4][4]*=rrho;
+		{	p->C[4][1]*=rrho;		// C13
+			p->C[4][2]*=rrho;		// C23
+			p->C[4][3]*=rrho;		// 0
+			p->C[4][4]*=rrho;		// C33
 			// for generalized plane strain in MPM
 			p->C[5][1] = S13/S33;			// = -vzx
 			p->C[5][2] = S23/S33;			// = -vzy

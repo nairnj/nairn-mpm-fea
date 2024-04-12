@@ -42,6 +42,7 @@ class HEIsotropic : public HyperElastic
 		virtual int SizeOfHistoryData(void) const;
    		virtual int NumberOfHistoryDoubles(void) const;
 		virtual char *InitHistoryData(char *,MPMBase *);
+		virtual void ResetHistoryData(char *,MPMBase *);
 	
 		// const methods
         virtual void ValidateForUse(int) const;
@@ -58,7 +59,7 @@ class HEIsotropic : public HyperElastic
         Tensor GetTrialDevStressTensor(Tensor *,double,int,double) const;
         virtual double GetMagnitudeS(Tensor *st,int) const;
         Tensor GetNormalTensor(Tensor *,double,int) const;
-    
+	
 		// accessors
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
         virtual Tensor GetStress(Tensor *,double,MPMBase *) const;

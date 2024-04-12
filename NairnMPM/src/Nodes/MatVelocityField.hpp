@@ -49,7 +49,7 @@ class MatVelocityField
 		Vector pk;					// momentum
 		Vector *vk;					// vk in [0], extra entries for XPIC and to copy pk
 		ContactTerms *contactInfo;	// extrapolations for contact
-	
+
 		static int pkCopy;			// which vk vector to store pk
 	
 		// constants (not changed in MPM time step)
@@ -70,7 +70,7 @@ class MatVelocityField
 		void ChangeMatMomentum(Vector *,int,double);
 		void AddContactForce(Vector *);
 		void GridValueCalculation(int);
-		void AddGravityAndBodyForceTask3(Vector *,double,double);
+		void AddGravityAndBodyForceTask3(Vector *);
 #ifdef RESTART_OPTION
         bool IsTravelTooMuch(double,double) const;
 #endif
@@ -106,7 +106,6 @@ class MatVelocityField
 		bool IsRigidField(void) const;
 		void SetRigidField(bool);
 		bool IsFixedRigidField(void) const;
-		bool IsRigidBlockField(void) const;
 		int GetFlags(void) const;
 		bool IgnoresCracks(void) const;
 	

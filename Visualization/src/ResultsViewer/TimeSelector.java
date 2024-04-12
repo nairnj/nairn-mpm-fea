@@ -52,16 +52,16 @@ public class TimeSelector extends PlotControl
 		
 		// initialize
 		if(movieCtrl!=null)
-		{	setEnabled(LoadArchive.PARTICLE_PLOT);
+		{	setEnabled(LoadArchive.PARTICLE_PLOT,0);
 			setBorder(BorderFactory.createEmptyBorder());		// of the PlotControl JPanel
 			setBackground(Color.lightGray);
 			select.setBackground(Color.lightGray);
 			timeSelected.setFont(new Font("sanserif",Font.PLAIN,10));
-			timeSelected.setText(dc.resDoc.archiveTimes.get(0) + " "+dc.resDoc.units.timeUnits());
+			timeSelected.setText(dc.resDoc.mpmArchives.get(0).getTime() + " "+dc.resDoc.units.timeUnits());
 			prefix="";
 		}
 		else
-		{	setEnabled(LoadArchive.NO_PLOT);
+		{	setEnabled(LoadArchive.NO_PLOT,0);
 			timeSelected.setText("Time: 0.0 "+dc.resDoc.units.timeUnits());
 			prefix="Time: ";
 		}
@@ -71,12 +71,12 @@ public class TimeSelector extends PlotControl
 		select.addChangeListener(new ChangeListener()
 		{   public void stateChanged(ChangeEvent e)
 			{	ResultsDocument resDoc=TimeSelector.this.docCtrl.resDoc;
-				String theTime=JNUtilities.formatDouble(resDoc.archiveTimes.get(select.getValue()).doubleValue());
-				timeSelected.setText(prefix + theTime + " "+resDoc.units.timeUnits()); 
+				String theTime=JNUtilities.formatDouble(resDoc.mpmArchives.get(select.getValue()).getTime());
+				timeSelected.setText(prefix + theTime + " "+resDoc.units.timeUnits());
 				if(!select.getValueIsAdjusting())
 				{	if(value!=select.getValue())
 					{	value=select.getValue();
-						JNNotificationCenter.getInstance().postNotification("TimeSliderChanged",docCtrl,select);
+						docCtrl.getMovieFrame().changeArchiveIndex(value);
 					}
 				}
 			}
@@ -90,25 +90,34 @@ public class TimeSelector extends PlotControl
 	// update label on rescaling
 	public void updateLabel()
 	{	ResultsDocument resDoc=TimeSelector.this.docCtrl.resDoc;
-		String theTime=JNUtilities.formatDouble(resDoc.archiveTimes.get(select.getValue()).doubleValue());
+		String theTime=JNUtilities.formatDouble(resDoc.mpmArchives.get(select.getValue()).getTime());
 		timeSelected.setText(prefix + theTime + " "+resDoc.units.timeUnits());
 	}
 	
 	// called when new file loaded
-	public void setEnabled(int selected)
-	{	boolean opened = (selected!=LoadArchive.TIME_PLOT) && (selected!=LoadArchive.NO_PLOT) && (docCtrl.resDoc.isMPMAnalysis());
+	public void setEnabled(int selected,int plotComponent)
+	{	// only used for MPM plots, except for time plots
+		boolean opened = (selected!=LoadArchive.TIME_PLOT) && 
+					(selected!=LoadArchive.NO_PLOT) && (docCtrl.resDoc.isMPMAnalysis());
 	    if(opened)
-		{	select.setEnabled(true);
-			select.setMaximum(docCtrl.resDoc.archiveTimes.size()-1);
-			int ticks=(docCtrl.resDoc.archiveTimes.size()-1)/10;
-			if(ticks<1) ticks=1;
-			select.setMajorTickSpacing(ticks);
-			//select.setValue(0);
-			timeSelected.setEnabled(true);
+		{	if(plotComponent!=PlotQuantity.IMPORTANDPLOTFILE)
+			{	select.setValueIsAdjusting(true);
+		    	setVisible(true);
+		    	select.setEnabled(true);
+				select.setMaximum(docCtrl.resDoc.mpmArchives.size()-1);
+				int ticks=(docCtrl.resDoc.mpmArchives.size()-1)/10;
+				if(ticks<1) ticks=1;
+				select.setMajorTickSpacing(ticks);
+				//select.setValue(0);
+				timeSelected.setEnabled(true);
+			}
+			else
+				setVisible(false);
 		}
 		else
-		{   select.setEnabled(false);
-			timeSelected.setEnabled(false);
+		{   setVisible(false);
+			//select.setEnabled(false);
+			//timeSelected.setEnabled(false);
 		}
 	}
 	
@@ -125,7 +134,7 @@ public class TimeSelector extends PlotControl
 		else if(value<0)
 		{	// only here on first call, so post notification to get it read if in movie controller
 			value=select.getValue();
-			JNNotificationCenter.getInstance().postNotification("TimeSliderChanged",docCtrl,select);
+			docCtrl.getMovieFrame().changeArchiveIndex(value);
 			return true;
 		}
 		return false;

@@ -43,7 +43,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 	
 		virtual void AddFtotSpreadTask3(Vector *);
 		virtual void CopyGridForces(NodalPoint *);
-		virtual void AddGravityAndBodyForceTask3(Vector *,double,double);
+		virtual void AddGravityAndBodyForceTask3(Vector *);
 #ifdef RESTART_OPTION
         virtual bool IsTravelTooMuch(double,double) const;
 #endif
@@ -108,6 +108,15 @@ class CrackVelocityFieldMulti : public CrackVelocityField
         virtual Vector LogisticRegressionNormal(MaterialContactNode *,int,int,int,bool &,Vector *);
         virtual void FindSepFromNormalAndPointCloud(Vector *,MaterialContactNode *,int,int,int,Vector *);
     
+#ifdef THREE_MAT_CONTACT
+		static void CreateThreeMatWarnings(void);
+		bool DisplayThreeMatWarnings(int);
+		int MaterialContactThree(MaterialContactNode *,double,int,int *,int);
+		Vector GetStickCondition(Vector *,Vector *,double &,double &);
+		void OrganizePartners(void *,Vector *,void *,Vector *,
+							  MatVelocityField **,MatVelocityField **,MatVelocityField **,Vector *,Vector *) const;
+#endif // end THREE_MAT_CONTACT
+
 	private:
 		// variables (changed in MPM time step)
 		int numberMaterials;		// number of materials in this crack velocity field

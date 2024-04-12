@@ -17,6 +17,9 @@
 #include "System/UnitsController.hpp"
 #include "Exceptions/CommonException.hpp"
 
+// save base tranport time step
+double AdjustTimeStepTask::transportBaseTimeStep = 1.e30;
+
 // class globals
 AdjustTimeStepTask *adjustTimeStepTask=NULL;
 
@@ -25,7 +28,7 @@ double minTimeStep=1.e15,maxTimeStep=-1.;
 #pragma mark Constructors and Destructors
 
 // Constructors
-AdjustTimeStepTask::AdjustTimeStepTask()
+AdjustTimeStepTask::AdjustTimeStepTask() : CustomTask()
 {
 	customAdjustTime = -1.;
 	nextCustomAdjustTime = -1.;
@@ -34,6 +37,7 @@ AdjustTimeStepTask::AdjustTimeStepTask()
 	velocityCFL = -1.;
     reportRatio = 0.;
     maxIncrease = -1.;
+    checkTransportTimeStep = 0;   // normally not needed
 }
 
 // Return name of this task
@@ -61,6 +65,11 @@ char *AdjustTimeStepTask::InputParam(char *pName,int &input,double &gScaling)
     else if(strcmp(pName,"maxIncrease")==0)
     {   input=DOUBLE_NUM;
         return (char *)&maxIncrease;
+    }
+    
+    else if(strcmp(pName,"checkTransportTimeStep")==0)
+    {   input=INT_NUM;
+        return (char *)&checkTransportTimeStep;
     }
     
 	// check remaining commands
@@ -155,47 +164,65 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     double newTimestep = 1.e15;
     double newPropTime = 1.e15;
 	
-     // loop over nonrigid material points
+    // loop over nonrigid material points
 #pragma omp for
-    for(int p=0;p<nmpmsNR;p++)
-	{	// material id
-		short matid=mpm[p]->MatID();
-        
-        // check time step using convergence condition (wave speed of material)
-        double crot = theMaterials[matid]->CurrentWaveSpeed(fmobj->IsThreeD(),mpm[p],0);
-		
-		// check to see if particle speed is above critical speed
-		double crot1 = fabs(mpm[p]->vel.x)+fabs(mpm[p]->vel.y);
-		if(fmobj->IsThreeD()) crot1 += fabs(mpm[p]->vel.z);
-		crot1 /= velocityCFL;
-		
-		// Pick highest speed
-		if(crot1>crot)
-		{	crot=crot1;
+   for(int p=0;p<nmpmsNR;p++)
+   {   if(mpm[p]->InReservoir()) continue;
+       // material id
+       short matid=mpm[p]->MatID();
+
+#ifndef TRANSPORT_ONLY
+       // check time step using convergence condition (wave speed of material)
+       double crot = theMaterials[matid]->CurrentWaveSpeed(fmobj->IsThreeD(),mpm[p],0);
+       
+       // check to see if particle speed is above critical speed
+       double crot1 = fabs(mpm[p]->vel.x)+fabs(mpm[p]->vel.y);
+       if(fmobj->IsThreeD()) crot1 += fabs(mpm[p]->vel.z);
+       crot1 /= velocityCFL;
+       
+       // Pick highest speed
+       if(crot1>crot)
+       {   crot=crot1;
 #pragma omp atomic
-			Max_Velocity_Condition++;
-		}
-		
-		// test time step
-		double tst = fmin(fmobj->GetCFLCondition()*dcell/crot,maxTimeStep);
-        if(tst<newTimestep)
-		{
+           Max_Velocity_Condition++;
+       }
+       
+       // test time step
+       double tst = fmin(fmobj->GetCFLCondition()*dcell/crot,maxTimeStep);
+       if(tst<newTimestep)
+       {
 #pragma omp critical (adjustimestep)
-			{
-				newTimestep = tst;
-			}
-		}
-        
-        // propagation time (in sec)
-        tst = fmin(fmobj->GetPropagationCFLCondition()*dcell/crot,maxPropTime);
-        if(tst<newPropTime)
-		{
+           {
+               newTimestep = tst;
+           }
+       }
+       
+       // propagation time (in sec)
+       tst = fmin(fmobj->GetPropagationCFLCondition()*dcell/crot,maxPropTime);
+       if(tst<newPropTime)
+       {
 #pragma omp critical (adjustimestep)
-			{
-				newPropTime = tst;
-			}
-		}
-	}
+           {
+               newPropTime = tst;
+           }
+       }
+#endif
+       
+       // transport time steps (if it can change during calculations)
+       if(checkTransportTimeStep!=0)
+       {    // future code to check transport time steps
+       }
+    }
+    
+    // in case no particles checked for time step
+    if(newTimestep>1.e14) return nextTask;
+    
+    // If each particle not checked above for transport, make duer
+    // does not exceed the base transport time steo found in Preliminary calcs
+    if(checkTransportTimeStep==0)
+    {   if(transportBaseTimeStep<newTimestep)
+            newTimestep = transportBaseTimeStep;
+    }
     
     // change to new values
     ChangeTimestep(newTimestep,newPropTime,true);
@@ -204,14 +231,14 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     if(verbose!=0)
     {   double ratio = timestep/lastReportedTimeStep;
         if(ratio>reportRatio || ratio<1./reportRatio)
-		{	cout << "# Step: " << fmobj->mstep << ": time step changed " << ratio << "X to "
-            		<< timestep*UnitsController::Scaling(1.e3) << " "
-            		<< UnitsController::Label(ALTTIME_UNITS);
-			if(Max_Velocity_Condition>0)
-				cout << " (some velocities exceed wave speed)";
-			cout << endl;
+        {    cout << "# Step: " << fmobj->mstep << ": time step changed " << ratio << "X to "
+                    << timestep*UnitsController::Scaling(1.e3) << " "
+                    << UnitsController::Label(ALTTIME_UNITS);
+            if(Max_Velocity_Condition>0)
+                cout << " (some velocities exceed wave speed)";
+            cout << endl;
             SetLastReportedTimeStep(timestep);
-		}
+        }
     }
 
     return nextTask;
@@ -243,7 +270,8 @@ void AdjustTimeStepTask::ChangeTimestep(double newTimestep,double newPropTime,bo
     // change time steps
     timestep = newTimestep;
     propTime = newPropTime;
-    
+
+#ifndef TRANSPORT_ONLY
     // verify time step and make smaller if needed
     if(fmobj->mpmApproach==USAVG_METHOD)
     {   strainTimestepFirst = fractionUSF*timestep;
@@ -256,6 +284,7 @@ void AdjustTimeStepTask::ChangeTimestep(double newTimestep,double newPropTime,bo
     
     // propagation time step (no less than timestep)
     if(propTime<timestep) propTime = timestep;
+#endif
     
     // tell task that outside code made a change
     if(!inAdjustTask && adjustTimeStepTask!=NULL)

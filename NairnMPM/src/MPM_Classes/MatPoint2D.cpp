@@ -33,7 +33,8 @@ MatPoint2D::MatPoint2D(int inElemNum,int theMatl,double angin,double thickin) : 
 // Update Strains for this particle
 // Velocities for all fields are present on the nodes
 // matRef is the material and properties have been loaded, matFld is the material field
-void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
+// postUpdate true means called after updating particle position
+void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld,bool postUpdate)
 {
 #ifdef CONST_ARRAYS
 	int ndsArray[MAX_SHAPE_NODES];
@@ -47,6 +48,8 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	Tensor *gStressPtr=NULL;
 
 	// don't need to zero zDeriv for 2D planar because never used in this function
+    // Note that both plane strain and plain stress will get dv(2,2)=0. In plane stress,
+    //    constitutive law should calculate ezz strain.
     
 	// find shape functions and derviatives
 	const ElementBase *elemRef = theElements[ElemID()];
@@ -60,7 +63,7 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	{	vel = nd[nds[i]]->GetVelocity((short)vfld[i],matFld);
         dv += Matrix3(vel.x*xDeriv[i],vel.x*yDeriv[i],vel.y*xDeriv[i],vel.y*yDeriv[i],0.);
     }
-	    
+
     // save velocity gradient (if needed for J integral calculation)
     SetVelocityGradient(dv(0,0),dv(1,1),dv(0,1),dv(1,0),secondPass);
 
@@ -122,18 +125,10 @@ void MatPoint2D::MoveParticle(GridToParticleExtrap *gp)
 		// find change in velocity
 		delV.x = vel.x - delXRate.x;
 		delV.y = vel.y - delXRate.y;
-		
-		// position update
-		if(gp->m>1 || fmobj->dflag[11]==0)
-		{	// del X = 0.5*(V(n+1)+V(n))
-			delXRate.x += vel.x;
-			delXRate.y += vel.y;
-		}
-		else
-		{	// Use PIC based on FLIP position update
-			delXRate.x = vel.x;
-			delXRate.y = vel.y;
-		}
+
+		// del X = 0.5*(V(n+1)+V(n))
+        delXRate.x += vel.x;
+        delXRate.y += vel.y;
 		pos.x += 0.5*delXRate.x*timestep;
 		pos.y += 0.5*delXRate.y*timestep;
 	}
@@ -179,7 +174,16 @@ void MatPoint2D::MoveParticle(GridToParticleExtrap *gp)
 	
 	// J Integral needs effective particle acceleration
 	acc = MakeVector(delV.x/timestep,delV.y/timestep,0.);
-	
+		
+#ifdef CHECK_NAN
+	if(pos.x!=pos.x || pos.y!=pos.y || pos.z!=pos.z || vel.x!=vel.x || vel.y!=vel.y || vel.z!=vel.z)
+	{
+#pragma omp critical (output)
+		{	cout << "\n# MatPoint2D::MoveParticle: bad pos or vel" << endl;
+			Describe();
+		}
+	}
+#endif
 }
 
 // Move rigid particle by new current velocity
@@ -231,6 +235,21 @@ void MatPoint2D::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double 
 	theFrc->x = -mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv) + fni*pFext.x;
 	theFrc->y = -mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv) + fni*pFext.y;
 	theFrc->z = 0.0;
+	
+#ifdef CHECK_NAN
+	if(theFrc->x!=theFrc->x || theFrc->y!=theFrc->y)
+	{
+#pragma omp critical (output)
+		{	cout << "\n# MatPoint2D::GetFintPlusFext: bad nodal fint+fext";
+			PrintVector(" = ",theFrc);
+			cout << endl;
+			cout << "# sp = (" << sp.xx << "," << sp.yy << "," << sp.xy << ") P = " << pressure << endl;
+			PrintVector("# pFext = ",&pFext);
+			cout << endl;
+			cout << "# Sip = " << fni << " Gip = (" << xDeriv << "," << yDeriv << "," << zDeriv << ")" << endl;
+		}
+	}
+#endif
 }
 
 // add to the temperature gradient (non-rigid particles only)
@@ -250,18 +269,19 @@ double MatPoint2D::FCond(int offset,double dshdx,double dshdy,double dshdz,Trans
 }
 
 // add to the concentration gradient (1/mm) (non-rigid particles only)
-void MatPoint2D::AddConcentrationGradient(Vector *grad)
-{	pDiffusion[gGRADx]+=grad->x;
-    pDiffusion[gGRADy]+=grad->y;
+void MatPoint2D::AddConcentrationGradient(int dnum,Vector *grad)
+{	pDiff[dnum]->grad.x += grad->x;
+	pDiff[dnum]->grad.y += grad->y;
 }
 
 // return diffusion force = - V [D] Grad C . Grad S in (mm^3) (mm^2/sec) (1/mm) (1/mm) = mm^3/sec
 // (non-rigid particles only)
-double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz,TransportProperties *t)
+double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz,TransportProperties *t,int number)
 {
 	Tensor *Dten = &(t->diffusionTensor);
-	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pDiffusion[gGRADx] + Dten->xy*pDiffusion[gGRADy])*dshdx
-						+ (Dten->xy*pDiffusion[gGRADx] + Dten->yy*pDiffusion[gGRADy])*dshdy);
+    Vector pgrad = pDiff[number]->grad;
+	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pgrad.x + Dten->xy*pgrad.y)*dshdx
+                                      + (Dten->xy*pgrad.x + Dten->yy*pgrad.y)*dshdy);
 }
 
 // return kinetic energy (g mm^2/sec^2) = nanoJ
@@ -620,7 +640,8 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 	}
     catch(CommonException& err)
     {   char msg[200];
-        sprintf(msg,"A CPDI particle domain node has left the grid: %s",err.Message());
+		size_t msgSize=200;
+        snprintf(msg,msgSize,"A CPDI particle domain node has left the grid: %s",err.Message());
         throw CommonException(msg,"MatPoint2D::GetCPDINodesAndWeights");
     }
     
@@ -629,6 +650,274 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
     {   faceArea->x = sqrt(r1.x*r1.x+r1.y*r1.y)*mpmgrid.GetThickness();			// edges 1 and 3
         faceArea->y = sqrt(r2.x*r2.x+r2.y*r2.y)*mpmgrid.GetThickness();			// edges 2 and 4
     }
+}
+
+// Called once per time step in the initialization task by GetShapeFunctionData()
+// throws CommonException() if particle corner has left the grid
+void MatPoint2D::GetFiniteGIMP_Integrals(void)
+{
+	// get polygon vectors - these are from particle to edge
+	//      and generalize semi width lp in 1D GIMP
+	Vector r1,r2,minc,maxc;
+	GetSemiSideVectors(&r1,&r2,NULL);
+	Vector particle[4];  // particle corners
+	
+	try
+	{	FiniteGIMPInfo *fgimp = GetFiniteGIMPInfo();
+		
+		// nodes at four corners in ccw direction
+		double rx = fabs(r1.x)+fabs(r2.x);
+		double ry = fabs(r1.y)+fabs(r2.y);
+		minc.x = pos.x-rx;
+		maxc.x = pos.x+rx;
+		minc.y = pos.y-ry;
+		maxc.y = pos.y+ry;		
+		
+		// zero-based coordinates to extreme elements
+		int lx,ly,lz,ux,uy,uz;
+		mpmgrid.FindElementCoordinatesFromPoint(&minc,lx,ly,lz);
+		mpmgrid.FindElementCoordinatesFromPoint(&maxc,ux,uy,uz);
+				
+		/*if(check to see if we have enough nodes){
+			char msg[200];
+            size_t msgSize=200;
+			snprintf(msg,msgSize,"Found more nodes than maximum allowed. Might need to change maximum: %s",err.Message());
+			throw CommonException(msg,"MatPoint2D::GetFiniteGIMP_Integrals");
+		}*/ 
+		
+		// Find the corners of the particle 
+		particle[0].x = pos.x-r1.x-r2.x;  
+		particle[0].y = pos.y-r1.y-r2.y;  // corner1
+		particle[1].x = pos.x+r1.x-r2.x;
+		particle[1].y = pos.y+r1.y-r2.y;  //corner 2
+		particle[2].x = pos.x+r1.x+r2.x;
+		particle[2].y = pos.y+r1.y+r2.y;  //corner 3 
+		particle[3].x = pos.x-r1.x+r2.x; 
+		particle[3].y = pos.y-r1.y+r2.y;  //corner 4
+		
+		// r1.x*r2.y - r1.y*r2.x = Ap/4 (Ap is parallelgram area). Get 1./(4*Ap)
+		double DivideByVolume = 1./(16.*fabs(r1.x*r2.y - r1.y*r2.x));
+
+		// lower right at (row,col)=(lx,ly) and upper right at (row,col)=(ux,uy)
+		// Search all elements in the window for intersection the paterial point
+		int foundElement = 0;
+		int i_1;
+        double interp;
+		for(int col=lx;col<=ux;col++)
+		{	
+			for(int row=ly;row<=uy;row++)
+			{	
+				// zero based element number
+				int iel = row*(mpmgrid.yplane-1) + col;
+				Vector Polygon[12];    // polygon for intersection
+				Vector Polygon2[12];    // polygon for intersection
+				ElementBase *elem = theElements[iel];	
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				// first clip on right side
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
+				bool previous_vertex_inside = (particle[3].x <= elem->xmax);
+				bool current_vertex_inside=false;
+				int nSides = 0; // number of corners in Polygon
+				for(int i=0;i<4;i++){
+					current_vertex_inside = (particle[i].x <= elem->xmax);
+					if(current_vertex_inside && previous_vertex_inside){
+						Polygon[nSides].x = particle[i].x;
+						Polygon[nSides].y = particle[i].y;
+						nSides++;  // add this point to the list
+					}else if(!current_vertex_inside && previous_vertex_inside){
+						// do intersection add this point to list
+						i_1 = (i==0)?3:i-1;  // because c++ modulus doesn't work on negative numbers
+						interp = ((elem->xmax-particle[i].x)/(particle[i_1].x-particle[i].x));
+						
+						Polygon[nSides].y = interp*particle[i_1].y+(1.0-interp)*particle[i].y;
+						Polygon[nSides].x = elem->xmax;
+						nSides++;  // add this point to the list
+					}else if(current_vertex_inside && !previous_vertex_inside){
+						// do intersection and add this point to list
+						i_1 = (i==0)?3:i-1; // because c++ modulus doesn't work on negative numbers
+						interp = ((elem->xmax-particle[i].x)/(particle[i_1].x-particle[i].x));
+						
+						Polygon[nSides].y = interp*particle[i_1].y+(1.0-interp)*particle[i].y;
+						Polygon[nSides].x = elem->xmax;
+						nSides++;  // add this point to the list
+						
+						Polygon[nSides].x = particle[i].x;
+						Polygon[nSides].y = particle[i].y;
+						nSides++;  // add this point to the list
+					}
+					previous_vertex_inside = current_vertex_inside;
+				}
+				if(nSides<3) continue; // no overlap, skip this  element
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				// now clip on left side
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
+				previous_vertex_inside = (Polygon[nSides-1].x >= elem->xmin);
+				current_vertex_inside=false;
+				int nSides2 =0; // number of corners in Polygon2
+				for(int i=0;i<nSides;i++){
+					current_vertex_inside = (Polygon[i].x >= elem->xmin);
+					if(current_vertex_inside && previous_vertex_inside){
+						Polygon2[nSides2].x = Polygon[i].x;
+						Polygon2[nSides2].y = Polygon[i].y;
+						nSides2++;  // add this point to the list
+					}else if(!current_vertex_inside && previous_vertex_inside){
+						// do intersection and add this point to list
+						i_1 = (i==0)?(nSides-1):i-1;  // because c++ modulus doesn't work on negative numbers
+						interp = ((elem->xmin-Polygon[i].x)/(Polygon[i_1].x-Polygon[i].x));
+						
+						Polygon2[nSides2].y = interp*Polygon[i_1].y+(1.0-interp)*Polygon[i].y;
+						Polygon2[nSides2].x = elem->xmin;
+						nSides2++;  // add this point to the list
+					}else if(current_vertex_inside && !previous_vertex_inside){
+						// do intersection and add this point to list
+						i_1 = (i==0)?(nSides-1):i-1;  // because c++ modulus doesn't work on negative numbers
+						interp = ((elem->xmin-Polygon[i].x)/(Polygon[i_1].x-Polygon[i].x));
+						
+						Polygon2[nSides2].y = interp*Polygon[i_1].y+(1.0-interp)*Polygon[i].y;
+						Polygon2[nSides2].x = elem->xmin;
+						nSides2++;  // add this point to the list
+						
+						Polygon2[nSides2].x = Polygon[i].x;
+						Polygon2[nSides2].y = Polygon[i].y;
+						nSides2++;  // add this point to the list
+					}
+					previous_vertex_inside = current_vertex_inside;
+				}
+				if(nSides2<3) continue; // no overlap, skip this  element
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				// now clip on bottom
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
+				previous_vertex_inside = (Polygon2[nSides2-1].y >= elem->ymin);
+				current_vertex_inside=false;
+				nSides =0;
+				for(int i=0;i<nSides2;i++){
+					current_vertex_inside = (Polygon2[i].y >= elem->ymin);
+					if(current_vertex_inside && previous_vertex_inside){
+						Polygon[nSides].x = Polygon2[i].x;
+						Polygon[nSides].y = Polygon2[i].y;
+						nSides++;  // add this point to the list
+					}else if(!current_vertex_inside && previous_vertex_inside){
+						// do intersection and add this point to list
+						i_1 = (i==0)?(nSides2-1):i-1;  // because c++ modulus doesn't work on negative numbers
+						interp = ((elem->ymin-Polygon2[i].y)/(Polygon2[i_1].y-Polygon2[i].y));
+						
+						Polygon[nSides].x = interp*Polygon2[i_1].x+(1.0-interp)*Polygon2[i].x;
+						Polygon[nSides].y = elem->ymin;
+						nSides++;  // add this point to the list
+					}else if(current_vertex_inside && !previous_vertex_inside){
+						// do intersection and add this point to list
+						i_1 = (i==0)?(nSides2-1):i-1;  // because c++ modulus doesn't work on negative numbers
+						interp = ((elem->ymin-Polygon2[i].y)/(Polygon2[i_1].y-Polygon2[i].y));
+						
+						Polygon[nSides].x = interp*Polygon2[i_1].x+(1.0-interp)*Polygon2[i].x;
+						Polygon[nSides].y = elem->ymin;
+						nSides++;  // add this point to the list
+						
+						// also current point to list
+						Polygon[nSides].x = Polygon2[i].x;
+						Polygon[nSides].y = Polygon2[i].y;
+						nSides++;  // add this point to the list
+					}
+					previous_vertex_inside = current_vertex_inside;
+				}
+				if(nSides<3) continue; // no overlap, skip this element
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				// finally clip on the top
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
+				previous_vertex_inside = (Polygon[nSides-1].y <= elem->ymax);
+				current_vertex_inside=false;
+				nSides2 = 0;
+				for(int i=0;i<nSides;i++){
+					current_vertex_inside = (Polygon[i].y <= elem->ymax);
+					if(current_vertex_inside && previous_vertex_inside){
+						Polygon2[nSides2].x = Polygon[i].x;
+						Polygon2[nSides2].y = Polygon[i].y;
+						nSides2++;  // add this point to the list
+					}else if(!current_vertex_inside && previous_vertex_inside){
+						// do intersection and add this point to list
+						i_1 = (i==0)?(nSides-1):i-1;  // because c++ modulus doesn't work on negative numbers
+						interp = ((elem->ymax-Polygon[i].y)/(Polygon[i_1].y-Polygon[i].y));
+						
+						Polygon2[nSides2].x = interp*Polygon[i_1].x+(1.0-interp)*Polygon[i].x;
+						Polygon2[nSides2].y = elem->ymax;
+						nSides2++;  // add this point to the list
+					}else if(current_vertex_inside && !previous_vertex_inside){
+						// do intersection and add this point to list
+						i_1 = (i==0)?(nSides-1):i-1;  // because c++ modulus doesn't work on negative numbers
+						interp = ((elem->ymax-Polygon[i].y)/(Polygon[i_1].y-Polygon[i].y));
+						
+						Polygon2[nSides2].x = interp*Polygon[i_1].x+(1.0-interp)*Polygon[i].x;
+						Polygon2[nSides2].y = elem->ymax;
+						nSides2++;  // add this point to the list
+						
+						// also add current point to list
+						Polygon2[nSides2].x = Polygon[i].x;
+						Polygon2[nSides2].y = Polygon[i].y;
+						nSides2++;  // add this point to the list
+					}
+					previous_vertex_inside = current_vertex_inside;
+				}
+				
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				// If we found enough corners, calculate moments
+				// Here Polygon2 of nSides2 is intersection of element with the material point
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				nSides=nSides2; // for my sanity
+				if(nSides>2){
+					
+					for(int i=0;i<nSides;i++){
+						elem->GetXiPos(&Polygon2[i],&Polygon[i]);// transform to element coordinate system
+					}
+
+					// Find Moments or integral over area of (1, x, y, xy)
+					double moment_0 = 0.;
+					double moment_x = 0.;
+					double moment_y = 0.;
+					double moment_xy = 0.;
+					for(int i=0;i<nSides;i++){
+						int k = (i+1)%nSides;
+						double cross_product = Polygon[i].x*Polygon[k].y-Polygon[k].x*Polygon[i].y;
+						moment_0 += cross_product;
+						moment_x += cross_product*(Polygon[i].x+Polygon[k].x);
+						moment_y += cross_product*(Polygon[i].y+Polygon[k].y);
+						moment_xy += cross_product*(2.0*(Polygon[i].x*Polygon[i].y+Polygon[k].x*Polygon[k].y)+ Polygon[i].x*Polygon[k].y+Polygon[k].x*Polygon[i].y);
+					}
+					
+					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+					// Output stuff
+					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+					if(moment_0>1.0e-16){	//	if the area is zero relative to 1, then didn't find an element	
+						if(foundElement >= maxElementIntersections){
+							char msg[200];
+							size_t msgSize=200;
+							snprintf(msg,msgSize,"Found more elements than allocated. Might need to change maximum number of intersected elements");
+							throw CommonException(msg,"MatPoint2D::GetFiniteGIMP_Integrals");
+						}
+					
+						// scale by (det J)/Ap = (dx*dy/4)/Ap = (dx*dy) * (1/(4*Ap)) (latter from above)
+						//double Scale4Grid = elem->GetDeltaX()*elem->GetDeltaY()*DivideByVolume;
+						double Scale4Grid = elem->GetDeltaX()*elem->GetDeltaY()*DivideByVolume;
+						fgimp->InTheseElements[foundElement+1] = iel;
+						fgimp->moment_0[foundElement] = Scale4Grid*moment_0/8.0;  // divide by 2 for moment, by 4 for shape function
+						fgimp->moment_x[foundElement] = Scale4Grid*moment_x/24.0;  // divide by 6 for moment, by 4 for shape function
+						fgimp->moment_y[foundElement] = Scale4Grid*moment_y/24.0;  // divide by 6 for moment, by 4 for shape function
+						fgimp->moment_xy[foundElement] = Scale4Grid*moment_xy/96.0;   // divide by 24 for moment, by 2 for shape function
+						foundElement++; // found another element
+					}
+				}
+			}
+		}
+		// we found this many elements
+		fgimp->InTheseElements[0] = foundElement;
+	}
+	
+	catch(CommonException& err)
+	{   char msg[200];
+		size_t msgSize=200;
+		snprintf(msg,msgSize,"A particle corner node has left the grid: %s",err.Message());
+		throw CommonException(msg,"MatPoint2D::GetFiniteGIMP_Integrals");
+	}
+	
 }
 
 // To support exact tractions get a list of elements containining the edge, the coordinates
@@ -690,7 +979,8 @@ void MatPoint2D::GetExactTractionInfo(int face,int dof,int *cElem,Vector *corner
 	}
 	catch(CommonException& err)
 	{   char msg[200];
-		sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
+		size_t msgSize=200;
+		snprintf(msg,msgSize,"A Traction edge node has left the grid: %s",err.Message());
 		throw CommonException(msg,"MatPoint2D::GetExactTractionInfo");
 	}
 	
@@ -804,7 +1094,8 @@ void MatPoint2D::GetExactTractionInfo(int face,int dof,int *cElem,Vector *corner
 			// Is there room?
 			if(foundElement>=maxFoundElements)
 			{   char msg[200];
-				sprintf(msg,"A Traction edge intersects more than %d elements",maxFoundElements);
+				size_t msgSize=200;
+				snprintf(msg,msgSize,"A Traction edge intersects more than %d elements",maxFoundElements);
 				throw CommonException(msg,"MatPoint2D::GetExactTractionInfo");
 			}
 			
@@ -845,35 +1136,26 @@ Vector MatPoint2D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Ve
 	GetSemiSideVectors(&r1,&r2,NULL);
 	double uGIMPsize = -1.;
 #ifndef TRACTION_ALWAYS_DEFORMED
-	switch(ElementBase::useGimp)
-	{	case UNIFORM_GIMP:
-		case UNIFORM_GIMP_AS:
-		case BSPLINE_GIMP:
-		case BSPLINE_GIMP_AS:
-		case BSPLINE:
-		case POINT_GIMP:
-		{	double rx,ry;
-			switch(face)
-			{	case 1:
-				case 3:
-					uGIMPsize = sqrt(DotVectors(&r1,&r1));
-					break;
-					
-				case 2:
-				default:
-					uGIMPsize = sqrt(DotVectors(&r2,&r2));
-					break;
-			}
-			GetUndeformedSemiSides(&rx,&ry,NULL);
-			ZeroVector(&r1);
-			ZeroVector(&r2);
-			r1.x = rx;
-			r2.y = ry;
-			break;
-		}
-		default:
-			break;
-	}
+    // this option uses undeformed edge for all GIMP except finite GIMP
+    if(!ElementBase::UsingCPDIMethod() && ElementBase::useGimp!=FINITE_GIMP)
+    {	double rx,ry;
+        switch(face)
+        {	case 1:
+            case 3:
+                uGIMPsize = sqrt(DotVectors(&r1,&r1));
+                break;
+                
+            case 2:
+            default:
+                uGIMPsize = sqrt(DotVectors(&r2,&r2));
+                break;
+        }
+        GetUndeformedSemiSides(&rx,&ry,NULL);
+        ZeroVector(&r1);
+        ZeroVector(&r2);
+        r1.x = rx;
+        r2.y = ry;
+    }
 #endif
 	
 	// handle axisymmetric
@@ -948,7 +1230,8 @@ Vector MatPoint2D::GetSurfaceInfo(int face,int dof,int *cElem,Vector *corners,Ve
 	}
 	catch(CommonException& err)
 	{   char msg[200];
-		sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
+		size_t msgSize=200;
+		snprintf(msg,msgSize,"A Traction edge node has left the grid: %s",err.Message());
 		throw CommonException(msg,"MatPoint2D::GetSurfaceInfo");
 	}
 		

@@ -38,6 +38,7 @@ public class ConsolePane extends JNConsolePane
 	
 		if(theFont!=null)
 			console.setFont(theFont);
+		console.setTabSize(14);
 		
 		// set file filter
 		JNFileFilter filter=new JNFileFilter();
@@ -76,7 +77,7 @@ public class ConsolePane extends JNConsolePane
 			{	String msg = "The Java file chooser failed to launch.\n";
 				msg = msg+e.getLocalizedMessage();
 				JNApplication.appBeep();
-				JOptionPane.showMessageDialog(null,msg);
+				JNUtilities.showMessage(null,msg);
 				return false;
 			}
 		}
@@ -121,7 +122,7 @@ public class ConsolePane extends JNConsolePane
 		}
 		catch (Exception fe)
 		{	Toolkit.getDefaultToolkit().beep();
-			JOptionPane.showMessageDialog(fileWindow,"Error writing analysis results: " + fe);
+			JNUtilities.showMessage(fileWindow,"Error writing analysis results: " + fe);
 			return false;
 		}
 

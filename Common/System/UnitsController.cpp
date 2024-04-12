@@ -150,6 +150,8 @@ const char *UnitsController::Label(int type)
 					return heatFusion;
 				case CONDUCTIVITY_UNITS:
 					return conductivity;
+                case DIFFUSION_UNITS:
+                    return diffusionTens;
 				case CONVECTION_UNITS:
 					return convection;
 				case BCHEATFLUX_UNITS:
@@ -266,7 +268,7 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 		if(strlen(force)==0)
 		{	GetPrefix(fexp+5,"dyne",force);
 			if(strlen(force)==0)
-				sprintf(force,"10^%dN",fexp);
+				snprintf(force,forceSize,"10^%dN",fexp);
 		}
 	}
 	
@@ -279,7 +281,7 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 		if(strlen(pressure)==0)
 		{	GetPrefix(pexp+1,"Ba",pressure);
 			if(strlen(pressure)==0)
-				sprintf(pressure,"10^%dPa",pexp);
+				snprintf(pressure,pressureSize,"10^%dPa",pexp);
 		}
 	}
 	
@@ -292,7 +294,7 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 		if(strlen(energy)==0)
 		{	GetPrefix(enerexp+7,"erg",energy);
 			if(strlen(energy)==0)
-				sprintf(energy,"10^%dJ",enerexp);
+				snprintf(energy,energySize,"10^%dJ",enerexp);
 		}
 	}
 	
@@ -322,7 +324,7 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 		if(strlen(viscosity)==0)
 		{	GetPrefix(vexp+1,"P",viscosity);
 			if(strlen(viscosity)==0)
-				sprintf(viscosity,"10^%dPa-s",vexp);
+				snprintf(viscosity,viscositySize,"10^%dPa-s",vexp);
 		}
 	}
 	
@@ -346,7 +348,7 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 		if(strlen(power)==0)
 		{	GetPrefix(powerexp+7,"(erg/s)",power);
 			if(strlen(power)==0)
-				sprintf(power,"10^%dW",powerexp);
+				snprintf(power,powerSize,"10^%dW",powerexp);
 		}
 	}
 	
@@ -508,3 +510,19 @@ double UnitsController::UnitsAttribute(char *value,int type)
 
 	return attrScale;
 }
+
+// Get gas constant (R 8.3145 J/(mol-K)*(1/mw)) in current units
+// mw is current mass units per mole or pass 1 to leave in per mole bases
+double UnitsController::GetGasConstant(double mw)
+{   // Energy = M-L^2/T_2
+    double rexp = unitsType==LEGACY_UNITS ? -9 : massExp+2*lengthExp-2*timeExp;
+    return 8.31446261815324*pow(10.,-rexp)/mw;
+}
+
+// Get one atmosphere = 101325 Pa (M/(L-T^2)
+double UnitsController::GetOneAtmosphere(void)
+{   if(unitsType==LEGACY_UNITS) return 101325.;
+    double rexp = massExp-lengthExp-2*timeExp;
+    return 101325.*pow(10.,-rexp);
+}
+

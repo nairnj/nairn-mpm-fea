@@ -56,7 +56,8 @@ BoundaryCondition *NodalVelGradBC::PrintBC(ostream &os)
 {
 	// print full details, even though not used here
 	char nline[200];
-	sprintf(nline,"%7d %3d %2d %15.7e %15.7e %7.2lf %7.2lf",nodeNum,ConvertToInputDof(),style,
+    size_t nlsize=200;
+    snprintf(nline,nlsize,"%7d %3d %2d %15.7e %15.7e %7.2lf %7.2lf",nodeNum,ConvertToInputDof(),style,
 			GetBCValueOut(),GetBCFirstTimeOut(),angle1,angle2);
 	os << nline;
 	
@@ -140,8 +141,14 @@ NodalVelGradBC *NodalVelGradBC::ZeroVelocityBC(double bctime,int passType)
 			break;
 		}
 		
-		// next node
+		// next node, but nodes beyond the limit are inactive or don't exist
 		bcNode += nodeStep;
+		if(side<0)
+		{	if(bcNode<lastNode) break;
+		}
+		else
+		{	if(bcNode>lastNode) break;
+		}
 	}
 	
 	return (NodalVelGradBC *)GetNextObject();
@@ -185,8 +192,14 @@ NodalVelGradBC *NodalVelGradBC::AddVelocityBC(double bctime,int passType)
 			break;
 		}
 		
-		// next node
+		// next node, but nodes beyond the limit are inactive or don't exist
 		bcNode += nodeStep;
+		if(side<0)
+		{	if(bcNode<lastNode) break;
+		}
+		else
+		{	if(bcNode>lastNode) break;
+		}
 	}
 	
 	return (NodalVelGradBC *)GetNextObject();
@@ -246,6 +259,7 @@ void NodalVelGradBC::BCPosition(double stepTime,int ni)
 		if(firstNode<0)
 		{	nodeStep=1;
 			firstNode = mpmgrid.FindShiftedNodeFromNode(ni,position,dir,side,nodeStep,depth);
+			lastNode = mpmgrid.FindLastNode(firstNode,dir,side);
 		}
 		return;
 	}
@@ -253,20 +267,17 @@ void NodalVelGradBC::BCPosition(double stepTime,int ni)
 	// evaluate function (note that position here is of the initial node)
 	// Legacy units: function initial node positions in mm, time in ms, function should return mm
 	double bsStart = GetBCFirstTime();
-#ifdef USE_ASCII_MAP
+    // (see Expression vmap)
 	double vars[7];
 	vars[0] = 6.5;
 	vars[1] = UnitsController::Scaling(1.e3)*(stepTime-bsStart);		// t-tstart
-#else
-	unordered_map<string, double> vars;
-	vars["t"] = UnitsController::Scaling(1.e3)*(stepTime-bsStart);		// t-tstart
-#endif
 	GetPositionVars(vars);
 	position += dispFunction->EvaluateFunction(vars);
 	
 	// find involved nodes
 	nodeStep=1;
 	firstNode = mpmgrid.FindShiftedNodeFromNode(ni,position,dir,side,nodeStep,depth);
+	lastNode = mpmgrid.FindLastNode(firstNode,dir,side);
 }
 
 // evaluate function to get boundary condition value
@@ -278,31 +289,18 @@ void NodalVelGradBC::BCGradValue(double stepTime,int ni,int bcType)
 	{	// function is current position along dir (in mm) and other positions for initial node
 		// time is in ms. Evaulated results should be in 1/sec
 		double bsStart = GetBCFirstTime();
-#ifdef USE_ASCII_MAP
+        // (see Expression vmap)
 		double vars[7];
 		vars[0] = 6.5;
 		vars[1] = UnitsController::Scaling(1.e3)*(stepTime-bsStart);		// t-tstart
-#else
-		unordered_map<string, double> vars;
-		vars["t"] = UnitsController::Scaling(1.e3)*(stepTime-bsStart);		// t-tstart
-#endif
 		GetPositionVars(vars);
-		// Change moving direction to current position
-#ifdef USE_ASCII_MAP
+		// Change moving direction to current position (see Expression vmap)
 		if(dir&X_DIRECTION)
 			vars[2] = position;
 		else if(dir&Y_DIRECTION)
 			vars[3] = position;
 		else
 			vars[4] = position;
-#else
-		if(dir&X_DIRECTION)
-			vars["x"] = position;
-		else if(dir&Y_DIRECTION)
-			vars["y"] = position;
-		else
-			vars["z"] = position;
-#endif
 		gradValue = gradFunction->EvaluateFunction(vars);
 		return;
 	}

@@ -21,6 +21,8 @@ NodalVelBC *lastVelocityBC=NULL;
 NodalVelBC *firstRigidVelocityBC=NULL;
 NodalVelBC *reuseRigidVelocityBC=NULL;
 
+bool NodalVelBC::holdAllVelocityBCs = false;
+
 #pragma mark NodalVelBC::Constructors and Destructors
 
 // MPM Constructors
@@ -128,6 +130,8 @@ void NodalVelBC::SetNormalVector(void)
     }
  }
 
+// return pointer to the BC's normal vector
+Vector *NodalVelBC::GetNormalVector(void) { return &norm; }
 
 // convert dir bits to input dof
 // only used with printing velocity BCs to output stream
@@ -158,7 +162,8 @@ int NodalVelBC::ConvertToInputDof(void)
 BoundaryCondition *NodalVelBC::PrintBC(ostream &os)
 {
     char nline[200];
-	sprintf(nline,"%7d %3d %2d %15.7e %15.7e %7.2lf %7.2lf",nodeNum,ConvertToInputDof(),style,
+    size_t nlsize=200;
+	snprintf(nline,nlsize,"%7d %3d %2d %15.7e %15.7e %7.2lf %7.2lf",nodeNum,ConvertToInputDof(),style,
 							GetBCValueOut(),GetBCFirstTimeOut(),angle1,angle2);
     os << nline;
 	PrintFunction(os);
@@ -229,7 +234,7 @@ NodalVelBC *NodalVelBC::SetMirroredVelBC(double bctime)
                         
                         // found node to reflect
                         reflectedNode = mirror;
-						reflectRatio = 1.;
+						reflectRatio = mpmgrid.GetCellRatio(nd[neighbor],dir,mirrorSpacing);
                     }
                 }
             }
@@ -260,7 +265,6 @@ void NodalVelBC::SetMirrorSpacing(int mirrored)
 {
 	mirrorSpacing = 0;
 	if(mirrored==0) return;
-	if(!mpmgrid.IsStructuredEqualElementsGrid()) return;
 	
 	switch(dir)
     {   case X_DIRECTION:
@@ -310,7 +314,7 @@ void NodalVelBC::GridVelocityBCValues(void)
 	UPDATE_STRAINS_LAST_CALL: prior to USL+ or USAVG+ use lumped mass
 		matrix method to change pk
 	UPDATE_GRID_STRAINS_CALL: For FMPM(k>1) impose velocity BCs in vk[0]
- Be sure to precheck simulations wants this calculation BEFORE calling
+ Be sure to precheck simulation wants this calculation BEFORE calling
 */
 void NodalVelBC::GridVelocityConditions(int passType)
 {
@@ -379,6 +383,9 @@ void NodalVelBC::VelocityBCLoop(int passType)
 	NodalVelBC *nextBC=firstVelocityBC;
 	while(nextBC!=NULL)
 		nextBC = nextBC->ZeroVelocityBC(mtime,passType);
+	
+	// on hold, exit
+	if(holdAllVelocityBCs) return;
 	
 	// Now add all velocities to nodes with velocity BCs
 	nextBC=firstVelocityBC;

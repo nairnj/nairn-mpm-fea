@@ -43,20 +43,21 @@ class IsoSoftening : public IsotropicMat
 		// initialize
 		virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual bool AcceptInitiationLaw(FailureSurface *,int);
-		virtual bool AcceptSofteningLaw(SofteningLaw *,int,int);
+		virtual bool AcceptSofteningLaw(SofteningLaw *,int);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintMechanicalProperties(void) const;
 	
 		// history data
 		virtual char *InitHistoryData(char *,MPMBase *);
+		virtual void ResetHistoryData(char *,MPMBase *);
    		virtual int NumberOfHistoryDoubles(void) const;
-        virtual void SetInitialConditions(InitialCondition *,MPMBase *,bool);
+        virtual void SetInitialConditions(InitialCondition *,int,bool);
 		virtual Vector GetDamageNormal(MPMBase *,bool) const;
 	
 		// methods
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *,int,Tensor *) const;
 		virtual void DamageEvolution(MPMBase *,int,double *,Tensor &,Tensor &,double,double,ResidualStrains *,
-								  			Matrix3 &,Matrix3 &,ElasticProperties *,Tensor *,double) const;
+								  			Matrix3 &,Matrix3 &,ElasticProperties *,Tensor *,double,double) const;
 		virtual bool GetRToCrack(Matrix3 *,double *,bool,int) const;
 	
 		// isotropic elasticity methods
@@ -65,6 +66,9 @@ class IsoSoftening : public IsotropicMat
 		virtual bool OvoidSoftening(MPMBase *,bool,double,double,double,DamageState *,
                                     Tensor &,double,double,double,double,double,
 									double,double,double,double &,double &,bool &) const;
+		virtual bool CoupledCuboidSoftening(MPMBase *,bool,double,double,double,DamageState *,
+									Tensor &,double,double,double,double,double,
+											double,double,double,double &,double &,bool &) const;
 		virtual Tensor GetStressIncrement(Tensor &,int,void *) const;
 		virtual void AcceptTrialStress(MPMBase *,Tensor &,Tensor *,int,Matrix3 *,void *,Tensor &,double,double) const;
 	
@@ -84,8 +88,9 @@ class IsoSoftening : public IsotropicMat
 		SofteningLaw *softeningModeII;
 		double en0,gs0;
 		int tractionFailureSurface;
-		double softenCV;
-        int softenCVMode;
+		double softenCV,wAlpha,wV0,wGam1A;
+        int softenStatsMode;
+		int distributionMode;
 		double frictionCoeff;
         double pdOvoidTolerance;
         int maxOvoidPasses;

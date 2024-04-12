@@ -94,16 +94,9 @@ Done</blockquote>
 </tr>
 
 <tr>
-<td><a href="#trans1"><code>Transverse 1</code></a></td>
+<td><a href="#trans1"><code>Transverse</code></a></td>
 <td>2</td>
 <td>Linear elastic, transversely isotropic with unique axis perpendicular to plane of the 2D analysis.</td>
-<td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
-</tr>
-
-<tr>
-<td><a href="#trans2"><code>Transverse 2</code></a></td>
-<td>3</td>
-<td width="50%">Linear elastic, transversely isotropic with unique axis in plane of 2D analysis. Unless rotated by &quot;angle&quot; options, the unique material axis is parallel to the <code>y</code> axis for 2D analyses (or <code>Z</code> axis for axisymmetric analyses).</td>
 <td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
@@ -148,7 +141,7 @@ and rubber elastic materials as special cases.</td>
 <tr>
 <td><a href="#idealgas"><code>IdealGas</code></a></td>
 <td>22</td>
-<td width="50%">Ideal Gas, as a hyperelastic material</td>
+<td width="50%">Ideal  or non-ideal van der Waals gas, as a hyperelastic material</td>
 <td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
@@ -211,21 +204,14 @@ and rubber elastic materials as special cases.</td>
 <td><a href="#isoplastsoft"><code>IsoPlasticSoftening</code></a></td>
 <td>53</td>
 <td width="50%">Small-strain isotropic, plastic material with anisotropic damage mechanics using mode I and mode I softening laws.</td>
-<td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
-<td><a href="#transisosoft"><code>TransIsoSoftening 1</code></a></td>
+<td><a href="#transisosoft"><code>TransIsoSoftening</code></a></td>
 <td>51</td>
 <td width="50%">Small-strain transversely material with anisotropic damage mechanics using four softening laws. Unrotated axial direction along the z axis.</td>
-<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
-</tr>
-
-<tr>
-<td><a href="#transisosoft"><code>TransIsoSoftening 2</code></a></td>
-<td>52</td>
-<td width="50%">Small-strain transversely material with anisotropic damage mechanics using four softening laws. Unrotated axial direction along the y axis.</td>
-<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+<td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
@@ -240,6 +226,20 @@ and rubber elastic materials as special cases.</td>
 <td>56</td>
 <td width="50%">Small-strain orthotropic material with anisotropic damage mechanics, plasticity, and softening.</td>
 <td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
+	<td><a href="#isophasefield"><code>IsoPhaseFieldSoftening</code></a></td>
+	<td>57</td>
+	<td width="50%">Small-strain isotropic material that use phase field methods to mode cracks by variational fracture mechanics.</td>
+	<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
+	<td><a href="#isodamagemech"><code>IsoDamageMechanics</code></a></td>
+	<td>58</td>
+	<td width="50%">Small-strain isotropic material that evolves damage using isotropic damage mechanics methods.</td>
+	<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 </table>
@@ -291,17 +291,10 @@ and rubber elastic materials as special cases.</td>
 </tr>
 
 <tr>
-<td><a href="#tivisc"><code>TIViscoelastic 1</code></a></td>
+<td><a href="#tivisc"><code>TIViscoelastic</code></a></td>
 <td>5</td>
 <td>Viscoelastic, transversely isotropic with unrotated axial direction in the <code>z</code> (or <code>θ</code> if axisymmetric) direction or <code>x-y</code> (or <code>r-z</code> if axisymmetric) plane of 2D analyses is the material's isotropic plane.</td>
-<td></td><td align="center">X X X</td><td align="center">X</td>
-</tr>
-
-<tr>
-<td><a href="#tivisc"><code>TIViscoelastic 2</code></a></td>
-<td>6</td>
-<td width="50%">Viscoelastic, transversely isotropic with unrotated axial direction in the <code>y</code> (or <code>z</code> if axisymmetric) direction or <code>x-z</code> (or <code>r-θ</code> if axisymmetric) plane of 2D analyses is the material's isotropic plane.</td>
-<td></td><td align="center">X X X</td><td></td>
+<td></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 </table>
@@ -332,7 +325,7 @@ and rubber elastic materials as special cases.</td>
 
 <h3><a name="tracionlaws"></a>Traction Law Materials</h3>
 
-<p>Note that mode documentation on traction laws can be found in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Traction_Laws">OSUPDocs wiki</a> including important information on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Traction_Laws#Cohesive_Zone_Debonding">calculating mode I and mode II energy release rates</a> when modeling crack growth using cohesive zones.</p>
+<p>Note that more documentation on traction laws can be found in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Traction_Laws">OSUPDocs wiki</a> including important information on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Traction_Laws#Cohesive_Zone_Debonding">calculating mode I and mode II energy release rates</a> when modeling crack growth using cohesive zones.</p>
 
 
 <table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">
@@ -499,9 +492,9 @@ and rubber elastic materials as special cases.</td>
 </tr>
 
 <tr>
-<td><a href="#maxPS"><code>MaxPrinciple</code></a></td>
+<td><a href="#maxPS"><code>IsoFailue</code></a></td>
 <td>1</td>
-<td>Maximum principle stress or maximum shear stress</td>
+<td>Failure based on normal and shear stress in isotropic material based on principal stress calculations</td>
 </tr>
 
 <tr>
@@ -509,6 +502,13 @@ and rubber elastic materials as special cases.</td>
 <td>1</td>
 <td>Damage initiation law specfic for various failure modes in transverely isotropic materials.</td>
 </tr>
+
+<tr>
+<td><a href="#orthoFailure"><code>OrthoFailure</code></a></td>
+<td>1</td>
+<td>Damage initiates when axial stress or shear stress in each of three material symmetry planes exceed the material strength in that direction.</td>
+</tr>
+
 
 </table>
 
@@ -538,6 +538,11 @@ and rubber elastic materials as special cases.</td>
 <td>Cubic step function softening law</td>
 </tr>
 
+<tr>
+<td><a href="#doubleexp"><code>DoubleExponential</code></a></td>
+<td>4</td>
+<td>Two-exponential softening law</td>
+</tr>
 </table>
 
 <!-- Material  Section -->
@@ -557,9 +562,9 @@ and rubber elastic materials as special cases.</td>
     
 <!-- Material  Section -->
 
-<h2><a name="trans1"></a>Linear Elastic, Transversely Isotropic 1 (Type=2)</h2>
+<h2><a name="trans1"></a>Linear Elastic, Transversely Isotropic (Type=2)</h2>
 
-<p>This material is small-strain, transversely isotropic with the isotropic plane in the <code>x-y</code> plane. The properties are:</p>
+<p>This material has the axial direction along the <code>z</code> axis and is isotropic in the <code>x-y</code> plane. Any other orientation is achieved by rotating from these initial orientations. Use the <code>swapz</code> property to move the axial direction into the 2D analysis plane. For more details see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Transversely_Isotropic_Material">OSUPDocs wiki</a>. The properties are:</p>
 
 <ul>
 <li>EA or ET - axial or transverse modulus (in <a href="commands.html#units">pressure units</a>)</li>
@@ -569,19 +574,12 @@ and rubber elastic materials as special cases.</td>
 <li>betaA or betaT - axial or transverse concentration expansion coefficient (in strain/wt fraction) (MPM only)</li>
 <li>DA or DT - axial or transverse diffusion constant (in <a href="commands.html#units">diffusion units</a>) (MPM only)</li>
 <li>kCondA or kCondT - axial or transverse thermal conductivity (in <a href="commands.html#units">conductivity units</a>) (MPM only)</li>
+<li><code>swapz</code> - set to &gt;0 to move axial direction from <code>z</code> axis to the <code>y</code> axis (or from &theta; axis to <code>Z</code> axis in axisymmetric calculations). This property is only needed for 2D simulations that want axial direction in the analysis plane (it is not allowed in 3D MPM simulations).</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
   
-<!-- Material  Section -->
-
-<a name="trans2"></a><h2>Linear Elastic, Transversely Isotropic 2 (Type=3)</h2>
-
-<p>This material is small-strain, transversely isotropic with the axial direction of the material in the <code>y</code> direction of the <code>x-y</code> plane analysis. This direction can be rotated by using input <code>angle</code> attributes when assigning material properties to material points or to FEA elements. The input properties are identical to the previous <a href="#trans1">transversely isotropic material</a>.</p>
-
-<p>|<a href="#tables">Material Tables</a>|</p>
-
 <!-- Material  Section -->
 
 <a name="ortho"></a><h2>Linear Elastic, Orthotropic (Type=4)</h2>
@@ -649,9 +647,9 @@ K<sub>ntausK</sub>exp(-t/tau<sub>n</sub>), where ntausK is the number of bulk mo
 
 <!-- New Material Section -->
 
-<h2><a name="tivisc"></a>Transversely Isotropic Viscoelastic Material 1 and 2</h2>
+<h2><a name="tivisc"></a>Transversely Isotropic Viscoelastic Material</h2>
 
-<p>This material is a small-strain, linear viscoelastic material with five time-dependent moduli each given by a sum of relaxation times. Option #1 starts with the axial direction in the <i>z</i> direction while option #2 starts with axial direction in the <i>y</i> direction. Option #2 is only allowed in 2D modeling. The input properties are:</p>
+<p>This material is a small-strain, linear viscoelastic material with five time-dependent moduli each given by a sum of relaxation times.The axial direction is along the <code>z</code> axis and the material is isotropic in the <code>x-y</code> plane. Any other orientation is achieved by rotating from these initial orientations. Use the <code>swapz</code> property to move the axial direction into the 2D analysis plane. The input properties are:</p>
 
 <ul>
 
@@ -668,6 +666,8 @@ K<sub>ntausK</sub>exp(-t/tau<sub>n</sub>), where ntausK is the number of bulk mo
 <li><code>Pk</code> for the next modulus (in <a href="commands.html#units">pressure units</a>) in series for the current property.</li>
 
 <li><code>tauk</code> for the next relaxation time (in <a href="commands.html#units">time units</a>) in series for the current property.</li>
+
+<li><code>swapz</code> - set to &gt;0 to move axial direction from <code>z</code> axis to the <code>y</code> axis (or from &theta; axis to <code>Z</code> axis in axisymmetric calculations). This property is only needed for 2D simulations that want axial direction in the analysis plane (it is not allowed in 3D MPM simulations).</li>
 
 <li><a href="#trans1">TI Properties</a>: enter other transversely properties for thermal expansion and moisture expansion properties.</li>
 
@@ -858,13 +858,15 @@ You must enter K and G, E and nu, or Lame and G  (moduli in <a href="commands.ht
 <li>khard - hardening term (see below)</li>
 <li>nhard - exponent on cumulative plastic strain in hardening term (see below)</li>
 <li>exphard - coefficient in exponential hardening law (see below).</li>
+<li>alphaMax - optional &alpha; where exponential hardening converts to linear hardening.</li>
+<li>HillStyle - use 1 for square-root yield criterion or 2 for squared yield criterion (default is 2). See the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Anisotropic,_Elastic-Plastic_Material">OSUPDocs wiki</a> for why two options are available.</li>
 <li>(other) - see <a href="#ortho">Linear Elastic, Orthotropic</a> material for all other properties.</li>
 </ul>
 
 <p>The τ<sub>yz</sub> and τ<sub>xz</sub> terms and their yield stresses are not needed for 2D analyses.</p>
 
 <p>If nhard&gt;0, the hardning law is H(&alpha;) = 1 + Khard*&alpha;<sup>nhard</sup>, but if nhard&lt;0, the hardening law is changed to H(&alpha;) = (1 + Khard*&alpha;)<sup>nhard</sup>. If exphard is provided instead, the hardening law is exponential or 
-H(&alpha;) = 1 + (Khard/exphard)*(1-exp(-exphard*&alpha;)). If both nhard and exphard are provided, the last one provided will determine the hardening law.</p>
+H(&alpha;) = 1 + (Khard/exphard)*(1-exp(-exphard*&alpha;)). If both nhard and exphard are provided, the last one provided will determine the hardening law. If <code>alphaMax</code> is provided exponential hardening converts to linear softening using the final slope of the exponential hardening law (this parameter is used to prevent exponential hardening from decaying to elastic-plastic response).</p>
 
 <p>For more details see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Anisotropic,_Elastic-Plastic_Material">OSUPDocs wiki</a>.
 </p>
@@ -938,15 +940,7 @@ H(&alpha;) = 1 + (Khard/exphard)*(1-exp(-exphard*&alpha;)). If both nhard and ex
 
 <h2><a name="idealgas"></a>Ideal Gas, as a Hyperelastic Material (Type=22)</h2>
 
-<p>The material type is an ideal gas, implemented as a large-deformation, isotropic, hyperelastic material. The possible input properties are:</p>
-
-<ul>
-<li>P0 - the reference pressure (in <a href="commands.html#units">pressure units</a>) at reference temperature and reference density.</li>
-<li>T0 - the reference temperature (in K)</li>
-<li>rho - the reference density (in <a href="commands.html#units">density units</a>) at reference temperature.</li>
-<li>Cv - if heat capacity is omitted or is less than or equal 1, C<sub>V</sub> is set to (3/2)R for a monotonic gas. If the entered value is greater than 1, C<sub>V</sub> is set to (5/2)R for a diatomic gas.</li>
-<li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
-</ul>
+<p>The material type is an ideal gas or a non-ideal van der Waals gas, implemented as a large-deformation, isotropic, hyperelastic material at finite deformations. The detailed documentation is currently only available on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Ideal_Gas_Material">OSUPDocs wiki</a>.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
@@ -1011,10 +1005,13 @@ where h is height of liquid above the position (x, y, z).</li>
 <li>Initiation - this property selects the <a href="#initiation">damage initiation law</a>. It should be followed by entering all properties required by the damage initiation law within the material's definition block. The default is <a href="#maxPS"><code>MaxPrinciple</code></a>.</li>
 <li>SofteningI - this property selects the mode I <a href="#softening">softening law</a>. It should be followed by entering all properties required by the softening law within the material's definition block. Each property should be prefaced with "I-". For example, to enter mode I law toughness for "Gc", enter it ias "I-Gc". The default is <a href="#linearSoft">linear softening law</a>.</li>
 <li>SofteningII - this property is same as "SofteningI" except it selects the mode II <a href="#softening">softening law</a> and properties for this law should be prefaced with "II-".</li>
-<li>tractionFailureSurface - select traction failure surface assumed that determines coupling between anisotropic damage mechanics parameters. The options are 0 = cuboid, 1 = cylindrical, and 2 = ovoid. For cuboid, the three damage parameters evolve indpendently. For cylindrical, the two shear parameters are coupled but tension and shear are independent. For ovoid, all three damage parameters are coupled. (default is 0).</li>
-<li>coefVariation - assigns a coefficient of variation to failure properties. The property that is affected is determined by the <code>coefVariationMode</code> parameter.</li>
-<li>coefVariationMode - the options are 1 = vary only strength, 2 = vary only toughness, and 3 = vary strength and toughness.</li>
+<li>tractionFailureSurface - select traction failure surface assumed that determines coupling between anisotropic damage mechanics parameters. The options are 0 = cuboid, 1 = cylindrical, 2 = ovoid. 3 = coupled cuboid. For cuboid, the three damage parameters evolve independently. For cylindrical, the two shear parameters are coupled but tension and shear are independent. For ovoid, all three damage parameters are coupled. Coupled cuboid couples the three damage parameters in cuboid to one damage parameter (default is 0).</li>
+<li>coefVariation - sets a coefficient and assigns relative properties to particles using a normal distribution. The property that is affected is determined by the <code>statsDistibutionMode</code> parameter.</li>
+<li>wShape, wV0 - set shape and reference volume when assigning relative failure properties using a <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Isotropic_Softening_Material#Weibull_Distibution">Weibull distribution</a>. The property that is affected is determined by the <code>statsDistibutionMode</code> parameter.</li>
+<li>statsDistibutionMode - the options are 1 = vary only strength, 2 = vary only toughness, and 3 = vary strength and toughness. Note: if both normal and Weibull distribution parameters are entered, the one entered last will be used.</li>
 <li>coeff - coefficient of friction for post-decohesion contact (default is 0 or frictionless) (experimental implementation in development)</li>
+<li>PDTol - tolerance to detect convergence in loop to model pressure dependen shear strength (default of 1e<sup>-9</sup> is usually acceptable).</li>
+<li>PDPasses -  maximum number of iterations allowed without convergence in the loop to model Pressure pressure dependen shear strength (default of 10 is usually acceptable).</li>
 <li>(other) - see <a href="#iso">Isotropic</a> material for all properties of the underlying small-strain, isotropic material, except this softening material requires use of <a href="#cmn1"><code>largeRotation</code> property</a> set to 1.</li>
 </ul>
 
@@ -1069,21 +1066,63 @@ where h is height of liquid above the position (x, y, z).</li>
 
 <!-- Material  Section -->
 
-<h2><a name="transisosoft"></a>Transversely isotropic, Small-Strain Material with Anisotropic Damage 1 and 2 (Types=51 and 52)</h2>
+<h2><a name="transisosoft"></a>Transversely isotropic, Small-Strain Material with Anisotropic Damage (Types=51)</h2>
 
-<p>These materials are transversely-isotropic elastic materials that can also develop aniostropic damage. The detailed documentation is currently only available on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Transversely_Isotropic_Softening_Material">OSUPDocs wiki</a>.</p>
+<p>This materials is a transversely-isotropic elastic material that can also develop aniostropic damage. The detailed documentation is currently only available on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Transversely_Isotropic_Softening_Material">OSUPDocs wiki</a>.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
 <h2><a name="orthosoft"></a>Orthotropic, Small-Strain Material with Anisotropic Damage (Type=54)</h2>
 
-<p>This material is an orthotropic, elastic material that can also develop aniostropic damage. The detailed documentation is currently only available on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Orthotropic_Softening_Material">OSUPDocs wiki</a>.</p>
+<p>This material is an orthotropic, elastic material that can also develop aniostropic damage. The detailed documentation is currently only available on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Orthotropic_Softening_Material">OSUPDocs wiki</a>.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
 <h2><a name="orthoplastsoft"></a>Orthotropic, Small-Strain Material with Anisotropic Damage and Plasticity (Type=56)</h2>
 
-<p>This material is an orthotropic, elastic material that can also develop aniostropic damage. The detailed documentation is currently only available on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Orthotropic_Plastic_Softening_Material">OSUPDocs wiki</a>.</p>
+<p>This material is an orthotropic, elastic material that can also develop aniostropic damage. The detailed documentation is currently only available on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Orthotropic_Plastic_Softening_Material">OSUPDocs wiki</a>.</p>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<h2><a name="isophasefield"></a>Isotropic, Small-Strain Material using Phase Field Fracture</h2>
+
+<p>This material is an isotropic material that evolves damage using phase field methods. It requires being run along with <a href="commands.html#conc">Diffusion command</a> with option "fracture" for phase field calculations. Detailed documentation is available on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Isotropic_Phase_Field_Softening_Material">OSUPDocs wiki</a>. In brief, the properties are:</p>
+
+<ul>
+<li>JIc - total energy release rate to cause fracture in <a href="commands.html#units">energy release units</a>.</li>
+<li>ell - length scale parameter used in variational fracture mechanics in <a href="commands.html#units">length units</a>.</li>
+<li>viscosity - viscosity to use when solving coupled phase field evolution in a diffusion tasks in <a href="commands.html#units">viscosity units</a></li>
+<li>partition - choose the  method used to partition energy into energy that causes fracture and energy that does not cause fracture. The options are 0 = using eigenstrain analysis and 1 = divide into pressure and deviatoric strains</li>
+<li>gd - softening law with options 0 = quadratic, 1 = exponential, 2 = linear softening</li>
+<li>garg - an optional argument for use within the softening law. If not provided, default values depend on <tt>gd</tt> and are 1, 3, and 4, for <tt>gd</tt> = 0, 1, or 2, respectively</li>
+<li>stability -  stability factor thought to stabilize post-failure analysis</li>
+<li>(other) - see <a href="#isotropic">Isotropic</a> material for all properties of the underlying small-strain, isotropic material, except this softening material requires use of <a href="#cmn1"><code>largeRotation</code> property</a> set to 1.</li>
+</ul>
+
+<h3>History Data for Isotropic, Plastic, Small-Strain Materials with Anisotropic Damage</h3>
+
+<ol>
+<li>Maximum energy history term that provides source terms for phase field evolution</li>
+<li>Particle failure state equal to 0 if not failed and 1 if failed (''i.e.'', phase value has reached 1)</li>
+<li>Current phase field value</li>
+<li>Change in phase field since the last time step. It is used in constitutive law modeled and is scaled by 0.5 when using USAVG method.</li>
+</ol>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<h2><a name="isodamagemech"></a>Isotropic, Small-Strain Material with Isotropic Damage</h2>
+
+<p>This material is an isotropic material that evolves damage using isotropic damage mechanics. Detailed documentation is available on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Isotropic_Damage_Mechanics">OSUPDocs wiki</a>. In brief, the properties are:</p>
+
+<ul>
+<li>metric - choose the effective strain used in damage evolution with options 0 = Principal stress energy, 1 = Tensile stress energy, and 2 = mixed mode failure surface.</li>
+<li>SofteningI - this property selects the mode I <a href="#softening">softening law</a>. It should be followed by entering all properties required by the softening law within the material's definition block. Each property should be prefaced with "I-". For example, to enter mode I law toughness for "Gc", enter it ias "I-Gc". The default is <a href="#linearSoft">linear softening law</a>.</li>
+<li>SofteningII - this property is same as "SofteningI" except it selects the mode II <a href="#softening">softening law</a> and properties for this law should be prefaced with "II-". It is only used when metric=2</li>
+<li>coefVariation, wShape, wV0, statsDistibutionMode - See the corresponding properties defined for an <a href="#isosoft">Isotropic softening material</a>.</li>
+<li>(other) - see <a href="#isotropic">Isotropic</a> material for all properties of the underlying small-strain, isotropic material, except this softening material requires use of <a href="#cmn1"><code>largeRotation</code> property</a> set to 1.</li>
+</ul>
+
+<p>An alternative to randomly varying strength or toughness using coefVariation and coefVariationMode properties is to set the relative values using a PropertyRamp Custom Task. For example, a BMP image of a Gaussian random field could assign relative strengths or toughness with random variations that include spatial correlations.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
@@ -1254,8 +1293,8 @@ The stress can be entered in one of two ways:
 
 <li>stress - enter constant normal stress; use negative stress for a pressure loaded crack (in <a href="commands.html#units">pressure units</a>).</li>
 <li>function - Alternatively, the stress can be entered as a <a href="commands.html#function">user-defined function</a> of time (in <a href="commands.html#units">pressure units</a>).</li>
-<li>minCOD - specify a minimum, normal, crack opening displacement below which no pressure is applied (in <a href="commands.html#units">length units</a>).
-It is ignored if it is negative (default is -1)</li>
+<li>minCOD - specify a minimum, normal, crack opening displacement (COD) below which no pressure is applied (in <a href="commands.html#units">length units</a>).
+If negative (or omitted), the pressure is applied for all CODs (default -1).</li>
 </ul>
 
 <p>This material tracks no history variabeles.</p>
@@ -1605,14 +1644,19 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <!-- Material  Section -->
 
-<h2><a name="maxPS"></a>Maximum Principle Stress (number=1)</h2>
+<h2><a name="maxPS"></a>Isotrotropic Failure by Principle Stress (number=1)</h2>
 
-<p>The damage initiates when either the maximum principle stress exceeds the tensile strength or the maximum shear stress exceeds the shear strength. The input properties are:</p>
+<p>The damage initiates when either the maximum principle stress exceeds the tensile strength or the maximum shear stress exceeds the shear strength. This law couples failure when needed and allows pressure dependent shear strength. For more details see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Isotropic_Material_Failure_Surface">OSUPDocs Wiki</a>. The input properties are:</p>
 
 <ul>
 
 <li>sigmac - the tensile strength (in <a href="commands.html#units">pressure units</a>). The default is very large number which means the material will not fail in tension.</li>
 <li>tauc - the shear strength (in <a href="commands.html#units">pressure units</a>). The default is very large number which means the material will not fail in shear.</li>
+<li>PressureModel - pick a model (0 to 4) to model <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Isotropic_Material_Failure_Surface#Pressure Dependent Shear Strength">pressure dependent shear strength</a> (default is zero for pressure independent).</li>
+<li>tauh - hydrostatic tension that causes shear strength to drop to zero for pressure model 1 or maximum shear strength for pressure models 2, 3, and 4 (in <a href="commands.html#units">pressure units</a>). The default is infinite.</li>
+<li>P1, P2  - break points for shear strength in pressure models 2, 3, and 4 in <a href="commands.html#units">pressure units</a>). The default is 0 for P1. </li>
+<li>maxPressure - the maximum pressure expected in a simulations. It is used to verify damage mechanics stability at the start of the simulation. |in <a href="commands.html#units">pressure units</a>). The default is 0.</li>
+
 </ul>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
@@ -1637,6 +1681,14 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <!-- Material  Section -->
 
+<h2><a name="orthoFailure"></a>Orthotropic Failure Initiation (number=3)</h2>
+
+<p>This law is currently in development. See the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Orthotropic_Failure_Surface">OSUPdocs Wiki</a> for details and all its properties.</p>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- Material  Section -->
+
 <h2><a name="linearSoft"></a>Linear Softening (number=1)</h2>
 
 <p>The linear softening law is f(&delta;) = 1 - &delta;/&delta;<sub>max</sub>. The input property is:</p>
@@ -1654,11 +1706,12 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <h2><a name="expSoft"></a>Exponential Softening (number=2)</h2>
 
-<p>The exponential softening law is f(&delta;) = exp(-k&delta;). The input property is:</p>
+<p>The exponential softening law is f(&delta;) = exp(-k&delta;). The input properties are:</p>
 
 <ul>
 
 <li>Gc - the toughness of the material is this law's failure mode (in <a href="commands.html#units">energy release units</a>). The default is very large number which means the material will not soften after initiation of damage.</li>
+<li>min - minimum fraction of remaining strength before particle is marked as failed (default: 0.01)</li>
 </ul>
 
 <p>Note that you do not enter <i>k</i>. It is determined at run time because it is affected by particle volume, initiation stress, and crack orientation.</p>
@@ -1669,16 +1722,34 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <h2><a name="cubicStep"></a>Cubic Step Function Softening (number=3)</h2>
 
-<p>The cubic step function softening law is f(&delta;) = 1 + (&delta;/&delta;<sub>max</sub>)<sup>2</sup>(2(&delta;/&delta;<sub>max</sub>)-3.). The input property is:</p>
+<p>This softening law is a cubic function that changes slope after initiation and then decays to failure. If the initial slope after failure is zero, it is a cubic step function given by f(&delta;) = 1 + (&delta;/&delta;<sub>max</sub>)<sup>2</sup>(2(&delta;/&delta;<sub>max</sub>)-3.). Other forms are explained on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Cubic_Step_Function_Softening">OSUPDocs Wiki</a>. The input properties are:</p>
 
 <ul>
 
 <li>Gc - the toughness of the material is this law's failure mode (in <a href="commands.html#units">energy release units</a>). The default is very large number which means the material will not soften after initiation of damage.</li>
+    <li>k -  initial slope after initiation (dimensionless and must be &gt;0) (default: 0)</li>
 </ul>
 
 <p>Note that you do not enter &delta;<sub>max</sub>. It is determined at run time because it is affected by particle volume, initiation stress, and crack orientation.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- Material  Section -->
+
+<h2><a name="doubleexp"></a>Two-Exponential Softening Law (number=4)</h2>
+
+<p>This two-exponential softening law can model a peak and decay after initiation or just double exponential decay. Details of the function are explained on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Double_Exponential_Softening">OSUPDocs Wiki</a>. The input properties are:</p>
+
+<ul>
+    
+<li>Gc - the toughness of the material is this law's failure mode (in <a href="commands.html#units">energy release units</a>). The default is very large number which means the material will not soften after initiation of damage.</li>
+<li>alpha - relative decay rate of the second exponential (must be greater than 1)</li>
+<li>beta - relative magnitude of the the second exponential (must be less than 1)
+<li>min - minimum fraction of remaining strength before particle is marked as failed (default: 0.01)</li>
+</ul>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
 <!-- Material  Section -->
 
 <h2><a name="common"></a>Material Properties Common For All Material Types</h2>

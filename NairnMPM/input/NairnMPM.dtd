@@ -1,5 +1,5 @@
 <!-- ==============================================
-		OSParticulas/NairnMPM Input File
+		NairnMPM Input File
 ================================================-->
 
 <!ELEMENT	JANFEAInput 
@@ -24,7 +24,7 @@
             | PDamping | PFeedbackDamping | TimeStep | TimeFactor | MaxTime | ArchiveTime | FirstArchiveTime
 			| GlobalArchiveTime | ExtrapolateRigid | SkipPostExtrapolation | TransTimeFactor | NeedsMechanics
 			| TrackParticleSpin | XPIC | ExactTractions | Poroelasticity | TransportOnly | TrackGradV
-            | DeleteLimit | RestartScaling )*>
+            | DeleteLimit | RestartScaling | PatchGrid )*>
 
 <!ELEMENT	Cracks
 			( Friction | Propagate | AltPropagate | JContour | MovePlane | ContactPosition | PropagateLength
@@ -40,6 +40,13 @@
 			RigidBias CDATA #IMPLIED
 			Polar CDATA #IMPLIED
 			Azimuth CDATA #IMPLIED>
+
+<!ELEMENT	PatchGrid
+			( Xpatches?, Ypatches?, Zpatches? )*>
+<!ATTLIST	PatchGrid
+			x CDATA #IMPLIED
+			y CDATA #IMPLIED
+			z CDATA #IMPLIED>
 
 <!-- Define the mesh -->
 
@@ -77,7 +84,7 @@
 <!-- Define the material points -->
 
 <!ELEMENT	MaterialPoints
-			( PointList | Body | Hole | BMP )+>
+			( PointList | Body | Hole | BMP | Fill )+>
 
 <!ELEMENT	PointList
 			( mp+ )>
@@ -168,7 +175,7 @@
 <!--- Add optional cracks -->
 
 <!ELEMENT	CrackList
-			( pt | Line | Circle | Thickness | Mesh)*>
+			( pt | Line | Circle | Thickness | Mesh | Plane )*>
 <!ATTLIST	CrackList
 			type (fixed|free) #IMPLIED
 			law CDATA #IMPLIED
@@ -187,11 +194,11 @@
 			( rho | E | nu | G | alpha | yield | yieldMin | beta | yieldMax
 				| EA | ET | GA | nuA | nuT | alphaA | alphaT | betaA | betaT | Ep
 				| Ex | ER | Ey | EZ | Ez | Gxy | Gyx | GRZ | GZR | Gxz | Gzx
-				| GRT | GTR | Gyz | Gzy | GZT | GTZ
+				| GRT | GTR | Gyz | Gzy | GZT | GTZ | swapz
 				| nuxy | nuyx | nuRZ | nuZR | nuxz | nuzx | nuRT | nuTR | nuyz | nuzy | nuZT | nuTZ
 				| alphax | alphay | alphaz | alphaR | alphaZ | largeRotation | Dn | Dnt | Dnc | Dt | coeff | coeffStatic
 				| betax | betay | betaz | betaR | betaZ | CritComp | CritTens | xihard | Elastic | displacementOnly | Dc
-				| K | G0 | ntaus | Gk | tauk | Kk | tauKk | ntausK | xGrow | yGrow | Lame | shareMatField | alpha | model | Tref
+				| K | G0 | ntaus | Gk | tauk | Kk | tauKk | ntausK | xGrow | yGrow | Lame | shareMatField | model | Tref
 				| G1 | G2 | speed | maxLength | Propagate | AltPropagate | initTime | alphaI | alphaII
 				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset | stress | function | minCOD
 				| reversible | irreversible | beta0 | betad | sigmaI | sigmaII | kIe | kIIe | nmix | NewtonsMethod
@@ -199,19 +206,20 @@
 				| sigmaI2 | sigmaII2 | delpkI2 | delpkII2 | ValueFunction | viscosity | InitialPressure
 				| D | DA | DT | Dx | Dy | Dz | DR | DZ | D0 | Dd | csat | constantTip | logshearrate
 				| SettingFunction | SettingFunction2 | SettingFunction3 | IdealRubber | shearFailureSurface
-				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration | mirrored
-				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0 | Kmax
-                | kCondR | kCondZ | Hardening | C1SL | C2SL | UJOption | ArtificialVisc | avA1 | avA2
+				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration | mirrored | HillStyle
+				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0 | Kmax | vdwa | vdwb
+                | kCondR | kCondZ | Hardening | C1SL | C2SL | UJOption | ArtificialVisc | avA1 | avA2 | mu0 | Smu
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | exphard | color | betahard
 				| Bjc | njc | Cjc | ep0jc | Djc | n2jc | C0 | S1 | S2 | S3 | GPpG0 | GTpG0 | gamma0 | pressureLaw
-				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2 | LiquidPhase
+				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2 | LiquidPhase | alphaMax
                 | tayM | rhoW | rhoC | fo | flim | fsto | sto | m | n | alp | burg | K1 | alpstar
                 | betastar | k0 | Atd | Btd | tempDepend | MMG | PDamping | order | Sa | Na | kmu | vhalf
 				| allowsCracks| Tmelt | Tsigma| DeltaT | Hfusion | SolidPhase | sigmac | tauc | I-min | II-min
-				| I-Gc | II-Gc | Initiation | SofteningI | SofteningII | tractionFailureSurface | coefVariation | coefVariationMode
+				| I-Gc | II-Gc | Initiation | SofteningI | SofteningII | tractionFailureSurface
+				| coefVariation | coefVariationMode | statDistributionMode | wShape | wV0
 				| sigmacA | taucA | taucT | tauh | SofteningAI | SofteningTII | SofteningAII | nonLocalRadius
-				| AI-Gc | TII-Gc | AII-Gc | AI-min | TII-min | AII-min | maxPressure
-                | taumax | P1 | P2 | PressureModel | Phalf | PDTol | PDPasses | Pmid
+				| AI-Gc | TII-Gc | AII-Gc | AI-min | TII-min | AII-min | maxPressure | nonLocalMode
+                | P1 | P2 | PressureModel | PDTol | PDPasses
 				| sigmaXXc | sigmaYYc | sigmaZZc | tauXY-Xc | tauXY-Yc | tauXZ-Xc | tauXZ-Zc | tauYZ-Yc | tauYZ-Zc
 				| SofteningXX | SofteningYY | SofteningZZ | SofteningXYX | SofteningXYY | SofteningYZY | SofteningYZZ
 				| SofteningXZX | SofteningXZZ | XX-Gc | YY-Gc | ZZ-Gc | XYX-Gc | XYY-Gc | XZX-Gc | XZZ-Gc | YZY-Gc
@@ -219,7 +227,14 @@
 				| alphaPE | alphaAPE | alphaTPE | alphaxPE | alphayPE | alphazPE | alphaRPE | alphaZPE | Darcy | DarcyA | DarcyT | Darcyx
 				| Darcyy | Darcyz | DarcyR | DarcyZ | Ku | viscosityPE | Eactivation | maxTemp | PeakShape | PeakArg
 				| time0 | nm | Ajwl | Bjwl | Cjwl | R1 | R2 | Omega | Dv | StartX | StartY | StartZ | NormX | NormY | NormZ
-				| Dw | DeleteDist | GT0 | GA0 | KT0 | en0 | ell0 | Pk | mref | Cm1 | Cm2 | kMS | Cms1 | Cms2 )* >
+				| Dw | DeleteDist | GT0 | GA0 | KT0 | en0 | ell0 | Pk | mref | Cm1 | Cm2 | tauMS | Cms1 | Cms2
+				| I-k | II-k | AI-k | TII-k | AII-k | XX-k | YY-k | ZZ-k | XYX-k | XYY-k | XZX-k | XZZ-k | YZY-k | YZZ-k
+				| I-alpha | II-alpha | AI-alpha | TII-alpha | AII-alpha | XX-alpha | YY-alpha | ZZ-alpha | XYX-alpha
+				| XYY-alpha | XZX-alpha | XZZ-alpha | YZY-alpha | YZZ-alpha
+				| I-beta | II-beta | AI-beta | TII-beta | AII-beta | XX-beta | YY-beta | ZZ-beta | XYX-beta
+				| XYY-beta | XZX-beta | XZZ-beta | YZY-beta | YZZ-beta | ell | metric
+				| stability | gd | garg | partition
+				| springDir | kstiff | pos0 | dampRatio )* >
 <!ATTLIST	Material
 			Type CDATA #REQUIRED
 			Name CDATA #REQUIRED>
@@ -324,6 +339,14 @@
 			mass (kg|g|mg|ug|M) #IMPLIED
 			time (s|sec|ms|msec|us|T) #IMPLIED>
 <!ELEMENT	MatlPtsPerElement (#PCDATA)>
+<!ELEMENT	Fill EMPTY>
+<!ATTLIST	Fill
+			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED
+			num CDATA #IMPLIED
+			lx CDATA #IMPLIED
+			ly CDATA #IMPLIED
+			lz CDATA #IMPLIED>
 <!ELEMENT	Friction (#PCDATA)>
 <!ATTLIST	Friction
 			law CDATA #IMPLIED
@@ -433,7 +456,9 @@
 			type (Dirac|uGIMP|lCPDI|qCPDI|Finite|B2GIMP|B2SPLINE|B2CPDI) #IMPLIED>
 <!ELEMENT	Diffusion EMPTY>
 <!ATTLIST	Diffusion
-			reference CDATA #IMPLIED>
+			reference CDATA #IMPLIED
+            style CDATA #IMPLIED
+            nolimit CDATA #IMPLIED>
 <!ELEMENT	Conduction EMPTY>
 <!ELEMENT	CrackTipHeating EMPTY>
 <!ELEMENT	CrackContactHeating EMPTY>
@@ -458,6 +483,8 @@
 <!ELEMENT	Khard (#PCDATA)>
 <!ELEMENT	nhard (#PCDATA)>
 <!ELEMENT   exphard (#PCDATA)>
+<!ELEMENT   alphaMax (#PCDATA)>
+<!ELEMENT   HillStyle (#PCDATA)>
 <!ELEMENT	Ajc (#PCDATA)>
 <!ELEMENT	Bjc (#PCDATA)>
 <!ELEMENT	njc (#PCDATA)>
@@ -546,7 +573,6 @@
 <!ELEMENT	delpkII2 (#PCDATA)>
 <!ELEMENT	delIc (#PCDATA)>
 <!ELEMENT	delIIc (#PCDATA)>
-<!ELEMENT   alpha (#PCDATA)>
 <!ELEMENT   alphaI (#PCDATA)>
 <!ELEMENT   alphaII (#PCDATA)>
 <!ELEMENT	constantTip (#PCDATA)>
@@ -578,6 +604,10 @@
 <!ELEMENT	kCondZ (#PCDATA)>
 <!ELEMENT	P0 (#PCDATA)>
 <!ELEMENT	T0 (#PCDATA)>
+<!ELEMENT   vdwa (#PCDATA)>
+<!ELEMENT   vdwb (#PCDATA)>
+<!ELEMENT   mu0 (#PCDATA)>
+<!ELEMENT   Smu (#PCDATA)>
 <!ELEMENT	Cp (#PCDATA)>
 <!ELEMENT	Cv (#PCDATA)>
 <!ELEMENT	viscosity (#PCDATA)>
@@ -590,6 +620,7 @@
 <!ELEMENT	K (#PCDATA)>
 <!ELEMENT	Lame (#PCDATA)>
 <!ELEMENT	largeRotation (#PCDATA)>
+<!ELEMENT   swapz (#PCDATA)>
 <!ELEMENT	Dn (#PCDATA)>
 <!ELEMENT	Dnt (#PCDATA)>
 <!ELEMENT	Dnc (#PCDATA)>
@@ -613,7 +644,7 @@
 <!ELEMENT   Cm1 (#PCDATA)>
 <!ELEMENT   Cm2 (#PCDATA)>
 <!ELEMENT   mref (#PCDATA)>
-<!ELEMENT   kMS (#PCDATA)>
+<!ELEMENT   tauMS (#PCDATA)>
 <!ELEMENT   Cms1 (#PCDATA)>
 <!ELEMENT   Cms2 (#PCDATA)>
 <!ELEMENT   GT0 (#PCDATA)>
@@ -624,7 +655,7 @@
 <!ELEMENT   Pk (#PCDATA)>
 <!ELEMENT	G1 (#PCDATA)>
 <!ELEMENT	G2 (#PCDATA)>
-<!ELEMENT	IdealRubber EMPTY>
+<!ELEMENT	IdealRubber (#PCDATA)>
 <!ELEMENT	UJOption (#PCDATA)>
 <!ELEMENT	ArtificialVisc EMPTY>
 <!ELEMENT	avA1 (#PCDATA)>
@@ -693,12 +724,21 @@
 <!ELEMENT	tractionFailureSurface (#PCDATA)>
 <!ELEMENT	coefVariation (#PCDATA)>
 <!ELEMENT	coefVariationMode (#PCDATA)>
+<!ELEMENT	statDistributionMode (#PCDATA)>
+<!ELEMENT	wShape (#PCDATA)>
+<!ELEMENT	wV0 (#PCDATA)>
 <!ELEMENT	sigmac (#PCDATA)>
 <!ELEMENT	tauc (#PCDATA)>
 <!ELEMENT	I-Gc (#PCDATA)>
 <!ELEMENT	II-Gc (#PCDATA)>
 <!ELEMENT	I-min (#PCDATA)>
 <!ELEMENT	II-min (#PCDATA)>
+<!ELEMENT	I-k (#PCDATA)>
+<!ELEMENT	II-k (#PCDATA)>
+<!ELEMENT	I-alpha (#PCDATA)>
+<!ELEMENT	II-alpha (#PCDATA)>
+<!ELEMENT	I-beta (#PCDATA)>
+<!ELEMENT	II-beta (#PCDATA)>
 
 <!ELEMENT	pt EMPTY>
 <!ATTLIST	pt
@@ -749,12 +789,29 @@
 			mat CDATA #IMPLIED
 			matname CDATA #IMPLIED>
 
+<!ELEMENT	Plane EMPTY>
+<!ATTLIST	Plane
+			V0x CDATA #REQUIRED
+			V0y CDATA #REQUIRED
+			V0z CDATA #REQUIRED
+			V1x CDATA #REQUIRED
+			V1y CDATA #REQUIRED
+			V1z CDATA #REQUIRED
+			V2x CDATA #REQUIRED
+			V2y CDATA #REQUIRED
+            V2z CDATA #REQUIRED
+			N1 CDATA #IMPLIED
+			N2 CDATA #IMPLIED
+			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED
+			length CDATA #IMPLIED>
+
 <!ELEMENT	elem (#PCDATA)>
 <!ATTLIST	elem
 			type (1|2|7) "2"
-			matl CDATA "1"
-			angle CDATA "0.0"
-			thick CDATA "1">
+			length CDATA #IMPLIED
+			czm CDATA #IMPLIED
+			czmname CDATA #IMPLIED>
 
 <!ELEMENT	Horiz EMPTY>
 <!ATTLIST	Horiz
@@ -930,7 +987,9 @@
 			value CDATA #IMPLIED
 			style (1|2|3|4|6) "1"
 			time CDATA #IMPLIED
-			function CDATA #IMPLIED>
+			function CDATA #IMPLIED
+            phase (1|2|3|4|5) #IMPLIED
+            id CDATA #IMPLIED>
 
 <!ELEMENT	ConcFluxBC EMPTY>
 <!ATTLIST	ConcFluxBC
@@ -940,7 +999,8 @@
 			time CDATA #IMPLIED
 			bath CDATA #IMPLIED
 			face CDATA #IMPLIED
-			function CDATA #IMPLIED>
+			function CDATA #IMPLIED
+            phase (1|2|3|4|5) #IMPLIED>
 
 <!ELEMENT	HeatFluxBC EMPTY>
 <!ATTLIST	HeatFluxBC
@@ -956,7 +1016,8 @@
 			value CDATA #IMPLIED
 			style (1|2|3|4|6) "1"
 			time CDATA #IMPLIED
-			function CDATA #IMPLIED>
+			function CDATA #IMPLIED
+            id CDATA #IMPLIED>
 
 <!ELEMENT	net EMPTY>
 <!ELEMENT	perParticle EMPTY>
@@ -1024,6 +1085,10 @@
 
 <!ELEMENT	NeedsMechanics EMPTY>
 
+<!ELEMENT	Xpatches (#PCDATA)>
+<!ELEMENT	Ypatches (#PCDATA)>
+<!ELEMENT	Zpatches (#PCDATA)>
+
 <!-- ==============================================
 		OSParticulas only ELEMENTS (with no children)
 ================================================-->
@@ -1073,11 +1138,8 @@
 
 <!ELEMENT	allowsCracks (#PCDATA)>
 <!ELEMENT	tauh (#PCDATA)>
-<!ELEMENT   taumax (#PCDATA)>
 <!ELEMENT   P1 (#PCDATA)>
 <!ELEMENT   P2 (#PCDATA)>
-<!ELEMENT   Phalf (#PCDATA)>
-<!ELEMENT   Pmid (#PCDATA)>
 <!ELEMENT   PressureModel (#PCDATA)>
 <!ELEMENT	maxPressure (#PCDATA)>
 <!ELEMENT   PDTol (#PCDATA)>
@@ -1091,6 +1153,15 @@
 <!ELEMENT	AI-min (#PCDATA)>
 <!ELEMENT	TII-min (#PCDATA)>
 <!ELEMENT	AII-min (#PCDATA)>
+<!ELEMENT	AI-k (#PCDATA)>
+<!ELEMENT	TII-k (#PCDATA)>
+<!ELEMENT	AII-k (#PCDATA)>
+<!ELEMENT	AI-alpha (#PCDATA)>
+<!ELEMENT	TII-alpha (#PCDATA)>
+<!ELEMENT	AII-alpha (#PCDATA)>
+<!ELEMENT	AI-beta (#PCDATA)>
+<!ELEMENT	TII-beta (#PCDATA)>
+<!ELEMENT	AII-beta (#PCDATA)>
 <!ELEMENT	sigmaXXc (#PCDATA)>
 <!ELEMENT	sigmaYYc (#PCDATA)>
 <!ELEMENT	sigmaZZc (#PCDATA)>
@@ -1130,7 +1201,35 @@
 <!ELEMENT	XZZ-min (#PCDATA)>
 <!ELEMENT	YZY-min (#PCDATA)>
 <!ELEMENT	YZZ-min (#PCDATA)>
+<!ELEMENT	XX-k (#PCDATA)>
+<!ELEMENT	YY-k (#PCDATA)>
+<!ELEMENT	ZZ-k (#PCDATA)>
+<!ELEMENT	XYX-k (#PCDATA)>
+<!ELEMENT	XYY-k (#PCDATA)>
+<!ELEMENT	XZX-k (#PCDATA)>
+<!ELEMENT	XZZ-k (#PCDATA)>
+<!ELEMENT	YZY-k (#PCDATA)>
+<!ELEMENT	YZZ-k (#PCDATA)>
+<!ELEMENT	XX-alpha (#PCDATA)>
+<!ELEMENT	YY-alpha (#PCDATA)>
+<!ELEMENT	ZZ-alpha (#PCDATA)>
+<!ELEMENT	XYX-alpha (#PCDATA)>
+<!ELEMENT	XYY-alpha (#PCDATA)>
+<!ELEMENT	XZX-alpha (#PCDATA)>
+<!ELEMENT	XZZ-alpha (#PCDATA)>
+<!ELEMENT	YZY-alpha (#PCDATA)>
+<!ELEMENT	YZZ-alpha (#PCDATA)>
+<!ELEMENT	XX-beta (#PCDATA)>
+<!ELEMENT	YY-beta (#PCDATA)>
+<!ELEMENT	ZZ-beta (#PCDATA)>
+<!ELEMENT	XYX-beta (#PCDATA)>
+<!ELEMENT	XYY-beta (#PCDATA)>
+<!ELEMENT	XZX-beta (#PCDATA)>
+<!ELEMENT	XZZ-beta (#PCDATA)>
+<!ELEMENT	YZY-beta (#PCDATA)>
+<!ELEMENT	YZZ-beta (#PCDATA)>
 <!ELEMENT	nonLocalRadius (#PCDATA)>
+<!ELEMENT   nonLocalMode (#PCDATA)>
 <!ELEMENT	SolidPhase (#PCDATA)>
 <!ELEMENT	Tmelt (#PCDATA)>
 <!ELEMENT	Tsigma (#PCDATA)>
@@ -1159,6 +1258,17 @@
 <!ELEMENT	PeakShape (#PCDATA)>
 <!ELEMENT	PeakArg (#PCDATA)>
 <!ELEMENT	time0 (#PCDATA)>
+<!ELEMENT	ell (#PCDATA)>
+<!ELEMENT	metric (#PCDATA)>
+<!ELEMENT	stability (#PCDATA)>
+<!ELEMENT	gd (#PCDATA)>
+<!ELEMENT	garg (#PCDATA)>
+<!ELEMENT	partition (#PCDATA)>
+
+<!ELEMENT	springDir (#PCDATA)>
+<!ELEMENT	kstiff (#PCDATA)>
+<!ELEMENT	pos0 (#PCDATA)>
+<!ELEMENT	dampRatio (#PCDATA)>
 
 <!ELEMENT	nm (#PCDATA)>
 <!ELEMENT	Ajwl (#PCDATA)>
@@ -1183,13 +1293,14 @@
 
 <!ELEMENT	Damage EMPTY>
 <!ATTLIST	Damage
-            nx CDATA #REQUIRED
-            ny CDATA #REQUIRED
+            nx CDATA #IMPLIED
+            ny CDATA #IMPLIED
             nz CDATA #IMPLIED
             dn CDATA #IMPLIED
             dxy CDATA #IMPLIED
             dxz CDATA #IMPLIED
-			mode CDATA #IMPLIED>
+			mode CDATA #IMPLIED
+			phi CDATA #IMPLIED>
 
 <!-- ==============================================
 		DEPRECATED ELEMENTS (with no children)

@@ -11,6 +11,7 @@
 
 // globals
 CustomTask *theTasks=NULL;
+int CustomTask::numberCustomHistoryVariables = 0;
 
 #pragma mark INITIALIZE
 
@@ -51,6 +52,10 @@ CustomTask *CustomTask::Initialize(void)
     return nextTask;
 }
 
+// Increment history by number this task needs
+// Also store which ones this task will be using
+void CustomTask::ClaimHistoryVariables() {}
+
 // called when MPM step is getting ready to do custom tasks
 // return nextTask when done
 CustomTask *CustomTask::PrepareForStep(bool &doNodalExtraps)
@@ -58,6 +63,9 @@ CustomTask *CustomTask::PrepareForStep(bool &doNodalExtraps)
 
 // do custom calculation
 CustomTask *CustomTask::StepCalculation(void) { return nextTask; }
+
+// do custom calculations before the first time step
+CustomTask *CustomTask::Step0Calculation(void) { return nextTask; }
 
 // Called when custom tasks are all done on a step
 CustomTask *CustomTask::FinishForStep(bool &removeMe) { return nextTask; }

@@ -28,10 +28,10 @@ public class MovieControls extends JPanel
 
 	private JButton rewindMov=new JButton();
 	private JButton playMov=new JButton();
-	public TimeSelector selectTime=null;
 	public JComboBox<PlotMenuItem> pquant=new JComboBox<PlotMenuItem>();
 	public JComboBox<String> pcmpnt=new JComboBox<String>();
 	public boolean disableStartPlot=false;
+	protected MeshPlotData meshData;
 	
 	// particle size
 	private JLabel sizeSelected=new JLabel("PS: 100",JLabel.LEFT);
@@ -39,7 +39,7 @@ public class MovieControls extends JPanel
 	int particleSize=100;
 	
 	private JLabel elongSelected=new JLabel("Max F: 20",JLabel.LEFT);
-	public JSlider maxElongSlider=new JSlider(JSlider.HORIZONTAL,0,20,1);
+	public JSlider maxElongSlider=new JSlider(JSlider.HORIZONTAL,-1,10,1);
 
 	// axes
 	private String xchar="x";
@@ -57,6 +57,7 @@ public class MovieControls extends JPanel
 	MovieControls(int width,ResultsDocument gResDoc,MoviePlotWindow movieCtrl,DocViewer gDocView)
 	{   super();
 		setLayout(null);
+		// it seems like width is not needed, but height setting is
 		setPreferredSize(new Dimension(width,HEIGHT));
 		setBackground(Color.lightGray);
 		resDoc=gResDoc;
@@ -92,14 +93,8 @@ public class MovieControls extends JPanel
 				}
 			}
 
-			// time selector
-			selectTime=new TimeSelector(movieCtrl,gResDoc.docCtrl);
-			selectTime.setSize(new Dimension(140,HEIGHT));
-			hpos+=playMov.getWidth()+12;
-			selectTime.setLocation(hpos,0);
-			add(selectTime);
-			
-			hpos+=selectTime.getWidth()+20;
+			// shift position
+			hpos+=playMov.getWidth()+22;
 		}
 		
 		if(resDoc.isAxisymmetric())
@@ -109,7 +104,7 @@ public class MovieControls extends JPanel
 		}
 		
 		// data panel
-		MeshPlotData meshData=new MeshPlotData(movieCtrl.getPlotView(),gResDoc);
+		meshData=new MeshPlotData(movieCtrl.getPlotView(),gResDoc);
 		meshData.setSize(new Dimension(225,HEIGHT));
 		meshData.setLocation(hpos,0);
 		meshData.setBackground(Color.lightGray);
@@ -118,23 +113,17 @@ public class MovieControls extends JPanel
 		hpos+=meshData.getWidth()+3;
 		
 		// quantity menu
-		JComboBox<PlotMenuItem> quant=gResDoc.docCtrl.controls.getQuantityMenu();
-		int n=quant.getItemCount();
-		int i;
-		for(i=0;i<n;i++)
-		{	pquant.addItem(quant.getItemAt(i));
-		}
+		JComboBox<PlotMenuItem> quant = fillPlotQuantity();
+		// if none, put in one with dummy length to get right size
+		if(quant.getItemCount()==0)
+			pquant.addItem(new PlotMenuItem("Max Principal Stress",PlotQuantity.MPMMAXSTRESS));
 		pquant.setSize(pquant.getPreferredSize());
 		pquant.setLocation(hpos,(HEIGHT-pquant.getHeight())/2);
 		add(pquant);
 		hpos+=pquant.getWidth()+3;
 		
 		// component menu
-		JComboBox<String> cmpnt=gResDoc.docCtrl.controls.getComponentMenu();
-		n=cmpnt.getItemCount();
-		for(i=0;i<n;i++)
-		{	pcmpnt.addItem(cmpnt.getItemAt(i));
-		}
+		JComboBox<String> cmpnt = fillPlotComponent();
 		pcmpnt.setSize(new Dimension(100,pquant.getHeight()));
 		pcmpnt.setLocation(hpos,(HEIGHT-pquant.getHeight())/2);
 		add(pcmpnt);
@@ -148,16 +137,17 @@ public class MovieControls extends JPanel
 		// when quantity changes, update component menu, update parent controls, redraw plot
 		pquant.addItemListener(new ItemListener()
 		{	public void itemStateChanged(ItemEvent e)
-			{	setComponentMenu();
-				if(e.getStateChange()==ItemEvent.SELECTED)
-					JNNotificationCenter.getInstance().postNotification("PlotQuantityChanged",resDoc.docCtrl,pquant);
+			{	if(e.getStateChange()==ItemEvent.SELECTED)
+				{	JNNotificationCenter.getInstance().postNotification("PlotQuantityChanged",resDoc.docCtrl,pquant);
+				}
 			}
 		});
 		
 		pcmpnt.addItemListener(new ItemListener()
 		{	public void itemStateChanged(ItemEvent e)
 			{	if(e.getStateChange()==ItemEvent.SELECTED)
-					JNNotificationCenter.getInstance().postNotification("PlotQuantityChanged",resDoc.docCtrl,pcmpnt);
+				{	JNNotificationCenter.getInstance().postNotification("PlotQuantityChanged",resDoc.docCtrl,pcmpnt);
+				}
 			}
 		});
 		
@@ -214,10 +204,9 @@ public class MovieControls extends JPanel
 					NFMVPrefs.maxElongDef);
 			maxElongSlider.setValue((int)(maxElong+0.5));
 			elongSelected.setText("Max F: "+(int)(maxElong+0.5));
-			maxElongSlider.setToolTipText("Set maximum elongation plot (=0 to for no limit)");
+			maxElongSlider.setToolTipText("Set maximum elongation plot (=0 for no limit, -1 for no transform)");
 			
 		}
-
 	}
 	
 	//----------------------------------------------------------------------------
@@ -229,13 +218,6 @@ public class MovieControls extends JPanel
 	{	URL btnImage=NairnFEAMPMViz.class.getResource("Resources/"+icon);
 		theBtn.setIcon(new ImageIcon(btnImage));
 	}
-	
-	// reset selected  index in mesh view when about to replot and true or false if changed
-	public boolean setArchiveIndex(int newIndex) { return selectTime!=null ? selectTime.setArchiveIndex(newIndex) : false; }
-	
-	public int getArchiveIndex() { return selectTime!=null ? selectTime.getArchiveIndex() : 0; }
-	public boolean incrementArchiveIndex() { return selectTime!=null ? selectTime.incrementArchiveIndex() : false; }
-	public boolean decrementArchiveIndex() { return selectTime!=null ? selectTime.decrementArchiveIndex() : false; }
 	
 	// called when movie started or stopped
 	public void setPlaying(boolean playing)
@@ -292,6 +274,7 @@ public class MovieControls extends JPanel
 				pcmpnt.setEnabled(true);
 				break;
 			
+			case PlotQuantity.MPMANGLEZ:
 			case PlotQuantity.MPMSPINVELOCITYX:
 			case PlotQuantity.MPMSPINMOMENTUMX:
 				if(resDoc.is3D())
@@ -322,6 +305,15 @@ public class MovieControls extends JPanel
 					{	pcmpnt.addItem("dc/d"+xchar);
 						pcmpnt.addItem("dc/d"+ychar);
 					}
+				}
+				pcmpnt.setEnabled(true);
+				break;
+				
+			case PlotQuantity.MESHDVDX:
+				if(numItems!=2 || !pcmpnt.getItemAt(0).equals("dv/d"+xchar))
+				{	pcmpnt.removeAllItems();
+					pcmpnt.addItem("dv/d"+xchar);
+					pcmpnt.addItem("du/d"+ychar);
 				}
 				pcmpnt.setEnabled(true);
 				break;
@@ -399,10 +391,10 @@ public class MovieControls extends JPanel
 	// synch quantity and component menu when replot
 	public void syncPlotQuantityMenus()
 	{	disableStartPlot=true;
-		JComboBox<PlotMenuItem> plotQuant=resDoc.docCtrl.controls.getQuantityMenu();
+		JComboBox<PlotMenuItem> plotQuant = fillPlotQuantity();
 		if(plotQuant.getSelectedIndex()!=pquant.getSelectedIndex())
 			pquant.setSelectedIndex(plotQuant.getSelectedIndex());
-		JComboBox<String> plotCmpnt=resDoc.docCtrl.controls.getComponentMenu();
+		JComboBox<String> plotCmpnt = fillPlotComponent();
 		if(plotCmpnt.getSelectedIndex()!=pcmpnt.getSelectedIndex())
 			pcmpnt.setSelectedIndex(plotCmpnt.getSelectedIndex());
 		JSlider partSize=resDoc.docCtrl.controls.getParticleSizeSlider();
@@ -410,5 +402,30 @@ public class MovieControls extends JPanel
 			mpmParticleSize.setValue(partSize.getValue());
 		disableStartPlot=false;
 	}
-
+	
+	// fill quantity menu when needed
+	// Normally only when movie controls created, but called other times just in case
+	protected JComboBox<PlotMenuItem> fillPlotQuantity()
+	{	JComboBox<PlotMenuItem> quant=resDoc.docCtrl.controls.getQuantityMenu();
+		int n=quant.getItemCount();
+		if(n==pquant.getItemCount()) return quant;
+		pquant.removeAllItems();
+		for(int i=0;i<n;i++)
+		{	pquant.addItem(quant.getItemAt(i));
+		}
+		return quant;
+	}
+	
+	// fill quantity menu when needed
+	// Normally only when movie controls created, but called other times just in case
+	protected JComboBox<String> fillPlotComponent()
+	{	JComboBox<String> cmpnt=resDoc.docCtrl.controls.getComponentMenu();
+		int n=cmpnt.getItemCount();
+		if(n==pcmpnt.getItemCount()) return cmpnt;
+		pcmpnt.removeAllItems();
+		for(int i=0;i<n;i++)
+		{	pcmpnt.addItem(cmpnt.getItemAt(i));
+		}
+		return cmpnt;
+	}
 }

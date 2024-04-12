@@ -44,11 +44,11 @@ class NairnMPM : public CommonAnalysis
 		double timeStepMinMechanics;	// time step for  mechanics
 		bool exactTractions;			// implement exact tractions
 #ifdef RESTART_OPTION
-        double restartScaling;          // if >0, restart time step if acceleration too high with scaled time step
+        double restartScaling;          // if >0, restart time step if acceleration to0 high with scaled time step
         double restartCFL;              // fraction of cell size travel to trigger a restart
         int warnRestartTimeStep;        // warn the first time time step is restarted
 #endif
-	
+
         //  Constructors and Destructor
 		NairnMPM();
 		

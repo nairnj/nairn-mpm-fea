@@ -124,32 +124,46 @@ const char *Area::MeshElements(void)
 	
 	// must be connected
 	if(edges[numPaths-1]->LastKeypoint()!=edges[0]->FirstKeypoint())
-		return "Area does not define enclosed area.";
+		return AreaError("Area does not define enclosed area");
 	
 	// is element provided
 	if(theElems->CurrentElemID()<0)
-		return "No element type defined for area.";
+		return AreaError("No element type defined for area");
 	
 	// Check intervals
 	if(!CheckIntervals())
-		return "Number of intervals on sides of the area are not valid";
+        return AreaError("Number of intervals on sides of the area are not valid");
 	
 	// Check path usage
 	if(!PathsAvailable())
-		return "Paths cannot be meshed into more than 2 areas";
+		return AreaError("Paths cannot be meshed into more than 2 areas");
 	
 	// Check ccw
 	if(SignedArea()<0.)
-		return "The paths must circumnavigate the area in a counter-clockwise direction";
+		return AreaError("The paths must circumnavigate the area in a counter-clockwise direction");
 
 	// create function if being used
 	if(angleExpr!=NULL)
 	{	if(!Expression::CreateFunction(angleExpr,1))
-			return "The expression for material angle is not a valid function";
+			return AreaError("The expression for material angle is not a valid function");
 	}
 	
 	// mesh the error
 	return MeshArea();
+}
+
+// package error message with info about the Area (paths and intervals)
+const char *Area::AreaError(const char *reason)
+{
+    char *msg = new char[500];
+    strcpy(msg,reason);
+    strcat(msg," for paths ");
+    char pathdata[200];
+    snprintf(pathdata,200,"%s(%d), %s(%d), %s(%d), %s(%d)",edges[0]->pathID,edges[0]->intervals,
+             edges[1]->pathID,edges[1]->intervals,edges[2]->pathID,edges[2]->intervals,
+             edges[3]->pathID,edges[3]->intervals);
+    strcat(msg,pathdata);
+    return msg;
 }
 
 // mesh two overlapping paths into interface elements

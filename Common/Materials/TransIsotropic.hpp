@@ -5,8 +5,8 @@
     Created by John Nairn on Tues Jan 28 2003.
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 
-	Dependencies
-		Elastic.hpp
+	Dependencies(
+        Elastic.hpp (MaterialBase.hpp)
 ********************************************************************************/
 
 #ifndef TRANSISO1
@@ -80,6 +80,7 @@ class TransIsotropic : public Elastic
 		double lastMatAngle;
 		int hasMatProps;
 #endif
+        int axialCode;
 };
 
 #endif

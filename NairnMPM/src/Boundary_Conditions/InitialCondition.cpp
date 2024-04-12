@@ -22,6 +22,8 @@ InitialCondition::InitialCondition(int cType,int num) : MatPtLoadBC(num,1,1)
     icType = cType;
     dnorm = MakeVector(1.,0.,0.);
     dvals = MakeVector(0.,0.,0.);
+	phaseField = -1.;
+    style = FUNCTION_VALUE;
 }
 
 #pragma mark InitialCondition: Methods
@@ -37,7 +39,7 @@ InitialCondition *InitialCondition::AssignInitialConditions(bool is3D)
         throw CommonException("Damaged material point with non-solid material","InitialCondition::AssignInitialConditions");
     
     // initial conditions on this particle
-    theMaterials[matid]->SetInitialConditions(this,mpm[ptNum-1],is3D);
+    theMaterials[matid]->SetInitialConditions(this,ptNum,is3D);
    
     return (InitialCondition *)GetNextObject();
 }
@@ -67,5 +69,13 @@ Vector InitialCondition::GetDamageParams(double &mode)
 {	mode = dmode;
 	return dvals;
 };
+
+// set phase field set and get
+void InitialCondition::SetInitialPhaseField(char *pf)
+{	SetFunction(pf);
+}
+double InitialCondition::GetPhaseField(void)
+{   return BCValue(0.);
+}
 
 

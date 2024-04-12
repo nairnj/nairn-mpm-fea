@@ -40,7 +40,8 @@ class IsoPlasticSoftening : public IsoSoftening
 	
     	// history data
     	virtual char *InitHistoryData(char *,MPMBase *);
-   		virtual int NumberOfHistoryDoubles(void) const;
+		virtual void ResetHistoryData(char *,MPMBase *);
+		virtual int NumberOfHistoryDoubles(void) const;
     
 		// methods
 		virtual int SizeOfMechanicalProperties(int &) const;
@@ -54,14 +55,11 @@ class IsoPlasticSoftening : public IsoSoftening
 		virtual bool GetCrackingStrain(MPMBase *,Tensor *,bool,Matrix3 *) const;
 		virtual Vector GetCrackingCOD(MPMBase *,bool) const;
 		virtual double *GetSoftHistoryPtr(MPMBase *) const;
-#ifdef SMOOTHED_STRESS
-		virtual double GetNonLocalRadius(void) const;
-#endif
 	
 	protected:
 		HardeningLawBase *plasticLaw;
     	int softHistoryOffset;
-		double Kred,Gred,kappa;
+		double Kred,Gred,kappa,psKred;
 };
 
 #endif

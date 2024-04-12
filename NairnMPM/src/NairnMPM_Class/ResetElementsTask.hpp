@@ -22,8 +22,6 @@ class MPMBase;
 class ResetElementsTask : public MPMTask
 {
 	public:
-        static Vector storeDeleted;      // location to store deleted particles
-	
 		// constructor
 		ResetElementsTask(const char *);
 	

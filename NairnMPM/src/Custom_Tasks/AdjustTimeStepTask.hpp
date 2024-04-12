@@ -18,6 +18,8 @@
 class AdjustTimeStepTask : public CustomTask
 {
     public:
+        static double transportBaseTimeStep;
+    
         // constructors and destructors
         AdjustTimeStepTask();
     
@@ -40,6 +42,7 @@ class AdjustTimeStepTask : public CustomTask
         double customAdjustTime,nextCustomAdjustTime;
         bool doAdjust;			// flag to adjust time step this step
         int verbose;            // 0 or 1 to report changes
+        int checkTransportTimeStep;   // 0 or 1 to check transport time step too
         double lastReportedTimeStep;
 		double velocityCFL;
     	double reportRatio;

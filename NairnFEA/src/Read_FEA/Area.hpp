@@ -9,9 +9,9 @@
 		none
 ********************************************************************************/
 
-#ifndef _AREA_
+#ifndef _JAN_AREA_
 
-#define _AREA_
+#define _JAN_AREA_
 
 class Path;
 class EightNodeIsoparam;
@@ -31,6 +31,7 @@ class Area
 		int AddPath(char *);
 		const char *MeshElements(void);
 		const char *MeshArea(void);
+        const char *AreaError(const char *);
 		const char *MeshInterface(void);
 		int CheckIntervals(void);
 		int PathsAvailable(void);

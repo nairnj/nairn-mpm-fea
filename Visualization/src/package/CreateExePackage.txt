@@ -1,0 +1,55 @@
+Introduction
+------------
+These notes explain how to create a complete package that can be downloaded to a Windows PC. The visualization tool (NairnFEAMPMViz.exe) is provided as a Windows executable. All associated files needed to run calculations are stored in a "Resources" folder that must bve in the same folder as the executable.
+
+NairnFEAMPMViz.exe is Java application bundled into an executable and therefore requires Java available on the Windows PC. Java has to either be already installed on the PC or it can be provided in this package. The only drawback of including Java to the package is that it adds about 40 MB to the downloadable zip file size.
+
+For Macs, uses should download the NairnFEAMPM Mac app instead and follow instruction in that app for setting up the system. The Mac app has more features than the NairnFEAMPMViz java app and I have not found a way to create a standalone package for Mac like the one possible for Windows PCs.
+
+The NairnFEAMPMViz Package Folder
+---------------------------------
+This folder contains the NairnFEAMPMViz.exe executable file and all other files needed to run calculations. The folder can be put any pace on a PC. A good choice is to put it in the "Program Files" folder and then create a short cut to NairnFEAMPMViz.exe on the desktop.
+
+Prepare Package with Embedded Java JRE
+--------------------------------------
+
+1. Export a runnable jar file NairnFEAMPMViz.jar
+
+2. Run launch4j using the NFMWithJava.xml configuration file. Verify full paths (which might depend on computer in use) are correct to find the jar file from step 1 and the icon file in the "info" folder. Also make sure the exe file is saved in this "package" folder. When verified, build the executable.
+
+3. Copy this entire "package" folder (now with the new executable) to a different location and change its name to NairnFEAMPMViz.
+
+4. Delete all files at the root level except NairnFEAMPMViz.exe, ReadMe.txt, and the "Resources" folder. Update the ReadMe.txt file if needed
+
+5. Copy all binaries, libraries, and DTD files to the Resources\bundle folder. The needed files are:
+     a. NairnFEA.exe and NairnMPM.exe compiled code engines
+     b. NairnFEA.dtd and NairnMPM.dtd XML format definition files
+     c. ExtractMPM.exe compiled tool (used by one NairnFEAMPMViz feature)
+     d. xerces-c_###.dll
+     e. vcruntime###.dll
+     f. vcomp###.dll
+     g. msvcp###.dll
+where "###" indicates a version number such as "3_1" for xerces or "140" for dlls from Visual Studio 14. Note that the required (and redistributable) dlls are in the folder: Microsoft Visual Studio ##\VC\redist\x64.
+
+6. To include Java in the package, copy bin and lib folders in the jre folder of your Java installation to the Resources\jre folder. If you omit this step, the NairnFEAMPMViz.exe should still work if run on computers that have an acceptable version of Java installed (requires 1.8.0 and probably newer).
+
+7. Include PublishPlotJ.exe as well for re-editing of saved plot files.
+
+8. Compress to zip file for the downloadable package.
+
+Launch4j recommends signing the jar file. I am not sure how and even if signed, the binaries are not signed and neither is the zip file.
+
+Verification Test
+-----------------
+
+1. Make sure all NairnFEAMPMViz preferences are $(bundle)
+2. Choose File->Example->Colliding Objects
+3. Save the file to a folder using any name with extension .fmcmd
+4. Choose Run Analysis menu command or click the arrow icon
+
+Calculations should run and open in a results document for viewing.
+
+Installation Instructions
+-------------------------
+
+See the ReadMe.txt file.

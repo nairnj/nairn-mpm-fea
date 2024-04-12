@@ -32,6 +32,11 @@ class Expression;
 #define ZSYMMETRYPLANE_DIRECTION 128
 #define ANYSYMMETRYPLANE_DIRECTION 224
 
+// phase file, etc.
+#define FRACTURE_PHASE_DIRECTION 256
+#define BATTERY_PHASE_DIRECTION 512
+#define POISSON_DIFF_DIRECTION 1024
+
 // non-bit based
 
 // for input only
@@ -73,11 +78,7 @@ class BoundaryCondition : public LinkedObject
 		int GetNodeNum(double);
 		int GetNodeNum(void);
 		virtual void SetFunction(char *);
-#ifdef USE_ASCII_MAP
 		virtual void GetPositionVars(double *);
-#else
-		virtual void GetPositionVars(unordered_map<string,double>);
-#endif
 		virtual void PrintFunction(ostream &);
 		int GetID(void);
 		void SetID(int);
@@ -93,6 +94,9 @@ class BoundaryCondition : public LinkedObject
 		void SetBCOffset(double);
 		double GetBCOffset(void);
 		int GetBCStyle();
+
+		// class methods
+		static BoundaryCondition *DeleteBC(BoundaryCondition *,BoundaryCondition **);
 	
 	protected:
 		Expression *function;

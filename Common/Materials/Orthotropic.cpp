@@ -38,24 +38,27 @@ Orthotropic::Orthotropic(char *matName,int matID) : TransIsotropic(matName,matID
 // print mechanical properties to output window
 void Orthotropic::PrintMechanicalProperties(void) const
 {	
-    PrintProperty("E1",Ex*UnitsController::Scaling(1.e-6),"");
-	PrintProperty("E2",Ey*UnitsController::Scaling(1.e-6),"");
-	PrintProperty("E3",Ez*UnitsController::Scaling(1.e-6),"");
-	PrintProperty("v12",nuxy,"");
+    PrintProperty("Exx",Ex*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("Eyy",Ey*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("Ezz",Ez*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("vxy",nuxy,"");
     cout << endl;
     
-	PrintProperty("v13",nuxz,"");
-	PrintProperty("v23",nuyz,"");
-    PrintProperty("G12",Gxy*UnitsController::Scaling(1.e-6),"");
-	PrintProperty("G13",Gxz*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("vxz",nuxz,"");
+	PrintProperty("vyz",nuyz,"");
+    PrintProperty("Gxy",Gxy*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("Gxz",Gxz*UnitsController::Scaling(1.e-6),"");
     cout << endl;
     
-	PrintProperty("G23",Gyz*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("Gyz",Gyz*UnitsController::Scaling(1.e-6),"");
+    PrintProperty("vyx",nuyx,"");
+    PrintProperty("vzx",nuzx,"");
+    PrintProperty("vzy",nuzy,"");
     cout << endl;
 	
-    PrintProperty("a1",ax,"");
-	PrintProperty("a2",ay,"");
-	PrintProperty("a3",az,"");
+    PrintProperty("ax",ax,"");
+	PrintProperty("ay",ay,"");
+	PrintProperty("az",az,"");
     cout << endl;
 }
     
@@ -63,17 +66,18 @@ void Orthotropic::PrintMechanicalProperties(void) const
 void Orthotropic::PrintTransportProperties(void) const
 {
     char mline[200];
+	size_t msize=200;
 	
 	// Diffusion constants
 	if(DiffusionTask::HasFluidTransport())
-	{   sprintf(mline,"D1 =%12.3g   D2 =%12.3g   D3 =%12.3g mm^2/sec  csat = %9.5lf",diffT,diffA,Dz,concSaturation);
+	{   snprintf(mline,msize,"Dx =%12.3g   Dy =%12.3g   Dz =%12.3g mm^2/sec  csat = %9.5lf",diffT,diffA,Dz,concSaturation);
 		cout << mline << endl;
-	    sprintf(mline,"b1 =%12.6g   b2 =%12.6g   b3 =%12.6g 1/wt fr",betax,betay,betaz);
+		snprintf(mline,msize,"bx =%12.6g   by =%12.6g   bz =%12.6g 1/wt fr",betax,betay,betaz);
 		cout << mline << endl;
 	}
 	// Conductivity constants
 	if(ConductionTask::active)
-	{   sprintf(mline,"k1 =%12.3g   k2 =%12.3g   k3 =%12.3g %s\nC   =%12.3g %s",
+	{   snprintf(mline,msize,"kx =%12.3g   ky =%12.3g   kz =%12.3g %s\nC   =%12.3g %s",
                     rho*kCondT*UnitsController::Scaling(1.e-6),
 					rho*kCondA*UnitsController::Scaling(1.e-6),
 					rho*kCondz*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS),
@@ -86,24 +90,27 @@ void Orthotropic::PrintTransportProperties(void) const
 // print mechanical properties to output window
 void Orthotropic::PrintMechanicalProperties(void) const
 {
-    PrintProperty("E1",Ex,"");
-	PrintProperty("E2",Ey,"");
-	PrintProperty("E3",Ez,"");
-	PrintProperty("v12",nuxy,"");
+    PrintProperty("Exx",Ex,"");
+	PrintProperty("Eyy",Ey,"");
+	PrintProperty("Ezz",Ez,"");
+	PrintProperty("vxy",nuxy,"");
     cout << endl;
     
-	PrintProperty("v13",nuxz,"");
-	PrintProperty("v23",nuyz,"");
-    PrintProperty("G12",Gxy,"");
-	PrintProperty("G13",Gxz,"");
+	PrintProperty("vxz",nuxz,"");
+	PrintProperty("vyz",nuyz,"");
+    PrintProperty("Gxy",Gxy,"");
+	PrintProperty("Gxz",Gxz,"");
     cout << endl;
     
-	PrintProperty("G23",Gyz,"");
+	PrintProperty("Gyz",Gyz,"");
+    PrintProperty("vyx",nuyx,"");
+    PrintProperty("vzx",nuzx,"");
+    PrintProperty("vzy",nuzy,"");
     cout << endl;
 	
-    PrintProperty("a1",ax,"");
-	PrintProperty("a2",ay,"");
-	PrintProperty("a3",az,"");
+    PrintProperty("ax",ax,"");
+	PrintProperty("ay",ay,"");
+	PrintProperty("az",az,"");
     cout << endl;
 }
 
@@ -269,6 +276,8 @@ char *Orthotropic::InputMaterialProperty(char *xName,int &input,double &gScaling
     else if(strcmp(xName,"kCondz")==0 || strcmp(xName,"kCondT")==0)
 		return UnitsController::ScaledPtr((char *)&kCondz,gScaling,1.e6);
 #endif
+    
+    // Transversely isotropic options skipped, so any used will be errors
 		
 	return(Elastic::InputMaterialProperty(xName,input,gScaling));
 }
@@ -315,11 +324,39 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
     {	if(!read[i])
 			return "A required material property is missing";
     }
+    
+    // reorder all terms if needed
+    if(swapz==1)
+    {   // swap x amd z
+        SwapProperties(Ex,Ez,Gyz,Gxy);
+        SwapProperties(nuxz,nuzx,nuxy,nuzy);
+        SwapProperties(nuyz,nuyx,ax,az);
+#ifdef MPM_CODE
+        SwapProperties(betax,betaz,diffT,Dz);
+        SwapProperties(kCondT,kCondz);
+#ifdef POROELASTICITY
+        SwapProperties(alphaTPE,alphazPE,DarcyT,Darcyz);
+#endif
+#endif
+    }
+    else if(swapz>1)
+    {   // swap y and z
+        SwapProperties(Ey,Ez,Gxz,Gxy);
+        SwapProperties(nuxz,nuxy,nuzx,nuyx);
+        SwapProperties(nuyz,nuzy,ay,az);
+#ifdef MPM_CODE
+        SwapProperties(betay,betaz,diffA,Dz);
+        SwapProperties(kCondA,kCondz);
+#ifdef POROELASTICITY
+        SwapProperties(alphaAPE,alphazPE,DarcyA,Darcyz);
+#endif
+#endif
+    }
 
 #ifdef MPM_CODE
     // make conductivty specific (N mm^3/(sec-K-g))
-	kCondA /= rho;
 	kCondT /= rho;
+    kCondA /= rho;
     kCondz /= rho;
 	
 #ifdef POROELASTICITY
@@ -327,7 +364,7 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
 	if(DiffusionTask::HasPoroelasticity())
 	{	// requires large rotation mode because not option to rotate pp expansion
 		if(useLargeRotation==0) useLargeRotation = 1;
-		
+        
 		// TI bulk modulus and Biot coefficient
 		double Kbulk = 1./((1.-nuxy-nuxz)/Ex + (1.-nuyx-nuyz)/Ey + (1.-nuzx-nuzy)/Ez);
 		if(Kbulk > Ku)
@@ -352,9 +389,9 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
 		Qalphaz = alphazPE/diffusionCT;
 			
 		// diffusion tensor changed using global viscosity
-		diffT = DarcyT/DiffusionTask::viscosity;
-		diffA = DarcyA/DiffusionTask::viscosity;
-		Dz = Darcyz/DiffusionTask::viscosity;
+		diffT = DarcyT/diffusion->viscosity;
+		diffA = DarcyA/diffusion->viscosity;
+		Dz = Darcyz/diffusion->viscosity;
 	}
 	else
 	{	// diffusion CT is 1
@@ -382,7 +419,7 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
 #pragma mark Orthotropic::Accessors
 
 // return material type
-const char *Orthotropic::MaterialType(void) const { return "Orthotropic (3 axis normal to x-y plane)"; }
+const char *Orthotropic::MaterialType(void) const { return "Orthotropic"; }
 
 #ifdef MPM_CODE
 

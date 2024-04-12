@@ -16,8 +16,6 @@
 #include "Custom_Tasks/CustomTask.hpp"
 #include "Custom_Tasks/GridArchive.hpp"
 
-#define MAX_INTEGER_ARGUMENTS 10
-
 class VTKArchive : public GridArchive
 {
     public:

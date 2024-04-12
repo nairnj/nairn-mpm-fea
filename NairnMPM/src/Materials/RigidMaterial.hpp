@@ -37,6 +37,7 @@ class RigidMaterial : public MaterialBase
 		bool setTemperature;
 		bool setConcentration;
 		static bool someSetTemperature;
+		static bool someSetConcentration;
 		int mirrored;
 	
         // constructors and destructors
@@ -57,7 +58,6 @@ class RigidMaterial : public MaterialBase
 		void SetSettingFunction(char *,int);
         void ClearFunctions(void);
 		void SetControlVelocity(double,int);
-		void SetControlVelocity(Vector * Velocity);
 	
 		// Rigid methods subclassed might override
 		virtual bool IsConstantVelocity(void) const;

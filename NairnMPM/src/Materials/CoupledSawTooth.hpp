@@ -31,7 +31,7 @@ class CoupledSawTooth : public CohesiveZone
         virtual void PrintMechanicalProperties(void) const;
 
 		// history data
-		virtual char *InitHistoryData(char *);
+		virtual char *InitHistoryData(char *,MPMBase *);
 	
         // the traction law
         virtual void CrackTractionLaw(CrackSegment *,double,double,Vector *,Vector *,double);

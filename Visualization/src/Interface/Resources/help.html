@@ -79,7 +79,7 @@ pre { margin-left: 24pt;
 
 <li><a href="#remote">Running Remote Calculations</a>
 <ul>
-<li><a href="#setserver">Setup Remove Server</a></li>
+<li><a href="#setserver">Setup Remove Servers</a></li>
 <li><a href="#runserver">Remote Calculations</a></li>
 </ul>
 </li>
@@ -90,6 +90,7 @@ pre { margin-left: 24pt;
 <li><a href="#opening">Opening Results Files</a></li>
 <li><a href="#plotting">Plotting Results</a></li>
 <li><a href="#movies">Particle Plot Movies</a></li>
+<li><a href="#export">Exporting Particle Plot Data</a></li>
 <li><a href="#timeplot">MPM Time Plots</a></li>
 <li><a href="#meshplots">Mesh Plots of MPM or FEA Results</a></li>
 <li><a href="#mesh2Dplots">Plots Along Mesh Contours</a></li>
@@ -102,20 +103,22 @@ pre { margin-left: 24pt;
 
 <h1><a name="intro"></a>Introduction</h1>
 
-<p><b>NairnFEAMPMViz</b> is a graphical interface and front end to running and
+<p><b>NairnFEAMPMViz</b> is a graphical interface and front end for running and
 visualizing finite element calculations (FEA) and material point method calculations
-(MPM) in the <code>nairn-mpm-fea</code> computational mechanics package. The calculations are done by the package's code engines called <code>NairnFEA</code> (for FEA) and <code>NairnMPM</code> (for MPM). In brief, this Java application does the following tasks:</p>
+(MPM) in the <code>nairn-mpm-fea</code> computational mechanics package. The calculations are done by the package's code engines called <code>NairnFEA</code> (for FEA), <code>NairnMPM</code> (for MPM), and <code>OSParticulas</code> (for MPM). For MPM calculations, <code>NairnMPM</code> is the public version available by download while <code>OSParticulas</code> is research version with new features in development. This graphical interface can run either MPM code engine. Some features in this documentation, however, are only available in <code>OSParticulas</code> and therefore only work when you have that code engine.</p>
+
+<p>In brief, this application does the following tasks:</p>
 
 <ul>
-<li>Interprets <a href="#opencmds">input command files</a> that are usually scripts to define a calculation. The result of the interpretation will be <code>XML</code> command to input to the code engines.</li>
+<li>Interprets <a href="#opencmds">input command files</a> to define a calculation. The result of the interpretation will be <code>XML</code> commands to input to the code engines.</li>
 <li>Launches tasks using the code engines to <a href="#running">run calculations</a> based on the interpreted <code>XML</code> commands.</li>
-<li>When done, the output of the calculations are opened to  to <a href="#viz">visualize</a> the results.</li>
+<li>When done, the output of the calculations are opened to <a href="#viz">visualize</a> the results.</li>
 <li>If desired, the above steps can be automated by <a href="#script">application-level scripting</a>. For example, an application can automate running multiple calculations and compiling of results.</li>
 </ul>
 
-<p>Another use of this application is just to interpret a script and save the resulting <code>XML</code> commands to a file. This file can be copied to a server to run long calculations remotely. Once done, the remove calculations can be opened in this application for <a href="#viz">visualization</a>. The task of running on a remote server (<i>i.e.</i>, copy <code>XML</code> commands to a server, launching a calculation, and then opening (or copying and opening) the remote results in this application)can be  automated using <a href="#runserver">remote calculation</a> options.</p> 
+<p>Another use of this application is just to interpret input commands and save the resulting <code>XML</code> commands to a file. This file can be copied to a server to run long calculations remotely. Once done, the remote calculations can be opened in this application for <a href="#viz">visualization</a>. The task of running on a remote server (<i>i.e.</i>, copy <code>XML</code> commands to a server, launching a calculation, and then opening (or copying and opening) the remote results in this application) can be automated using <a href="#runserver">remote calculation</a> options. Alternatively, this entire Java application can be run remotely on a server using an X11 connection. It can be used on that server remotely, much like using it locally.</p> 
 
-<p>This documentation is very brief. More complete documentation of the <code>nairn-mpm-fea</code> package is given on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a> (which can also be accessed using the "internet" icon in this help window's tool bar.</p>
+<p>This documentation is kept brief. More complete documentation of the <code>nairn-mpm-fea</code> code engines is given on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a> (which can also be accessed using the "internet" icon in this help window's tool bar).</p>
 
 <p>| <a href="#index">index</a> |</p>
 
@@ -138,7 +141,7 @@ will open a new file with a template of commands for that type of calculation. T
 Before you run calculations using new commands, they must be saved to disk. Use the &quot;Save&quot; or &quot;Save As...&quot; menu commands (or the &quot;Save&quot; icon) to save to any location.
 </p>
 
-<p>To see various sample command files, choose any item in the "Examples" submenu. The selected samples will open as a new document and must be saved to disk before <a href="#start">running calculations</a>. See comments in the files for information on its calculations and options for alterning the calculations.</p>
+<p>To see various sample command files, choose any item in the "Examples" submenu. The selected samples will open as a new document and must be saved to disk before <a href="#start">running calculations</a>. See comments in the files for information on its calculations and options for altering the calculations.</p>
 
 <p>| <a href="#index">index</a> |</p>
 
@@ -167,13 +170,28 @@ the results will automatically open for visualization.
 
 <h2><a name="setup"></a>Setting up the System<hr></h2>
 
-<p>Before you can run any calculations in <b>NairnFEAMPMViz</b>, you have to download
-and compile the <code>NairnFEA</code> and <code>NairnMPM</code> code engines.
-These code engines can be installed on any platform. The details are not given is this
-help. Instead refer to the <code>nairn-mpm-fea</code> wiki page (see <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a> or using "internet" icon in tool bar). The wiki has complete instructions for getting the package and compiling the code engines.
-</p>
+<p>Before you can run any calculations in <b>NairnFEAMPMViz</b>, you need access to compiled <code>NairnFEA</code> and <code>NairnMPM</code> code engines.</p>
 
-<h3>Setting Code and DTD File Locations</h3>
+<h3>Using Bundled Code Engines</h3>
+
+<p>If you downloaded a complete package, you should already have the compiled code engines. The code engine files can be in one of three locations:</p>
+
+<ol>
+<li>A "bundle" folder - a folder named "bundle" in the same folder as the NairnFEAMPMViz.jar java application (or the NairnFEAMPMViz.exe Windows executable).</li>
+<li>A "Resources/bundle" folder - similar to the first option, but the "bundle" folder can be inside a "Resources" folder.</li>
+<li>Current folder - if the first two fail, calculations will look for code engines in the same folder as the NairnFEAMPMViz.jar (or .exe) file.</li>
+</ol>
+
+<p>To use bundled code engines, open the "Code" tab in the "Preferences" window (which is opened by menu command or clicking the
+&quot;Prefs&quot; icon) and click the "Use Bundle" button to make sure all file path name are set to "$(bundle)" (it is the default setting). When this specific text is entered, all required files will be
+expected to be in one of the three locations described above. Furthermore, the bundle folder will need to include the xerces library and all needed c++ libraries. If you downloaded a Windows package, all those libraries (as dll files) should be in the bundle folder. Bundling libraries for MacOS is more difficult. For a downloaded package to work on a Mac, you will need to manually install xerces and the clang-mp compiler (see <a href="https://osupdocs.forestry.oregonstate.edu/index.php/Compiling_in_MacOS_X">OSUPDocs wiki</a> for details on these installations and clang-mp is just needed to have access to its libraries).</p>
+
+<h3>Using Separately Compiled Code Engines</h3>
+
+<p>If you want to run with potentially more recent versions of the code engines or if you want to extend the source code with your own customizations, you have to download, optionally edit,
+and compile the <code>NairnFEA</code> and <code>NairnMPM</code> code engines.
+These code engines can be installed on any platform. The details are on the <code>nairn-mpm-fea</code> wiki page (see <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a> or use "internet" icon in tool bar). The wiki has complete instructions for getting the package and compiling the code engines.
+</p>
 
 <p>Once the code engines are compiled, you have to configure <b>NairnFEAMPMViz</b> to
 know the location of the compiled binaries and (optionally) their <code>DTD</code> files.
@@ -181,10 +199,8 @@ The process is:
 </p>
 
 <ol>
-<li>Choose the &quot;Preferences...&quot; menu command (or click the
+<li>Open the "Code" tab of the &quot;Preferences&quot; window (which is opened by menu command or clicking the
 &quot;Prefs&quot; icon).</li>
-
-<li>Select the &quot;Code&quot; tab</li>
 
 <li>Click the &quot;Change...&quot; button for the  &quot;MPM Code Path&quot; and select
 the <code>NairnMPM</code> (or <code>NairnMPM.exe</code> in Windows) compiled object.</li>
@@ -204,12 +220,6 @@ check the &quot;Validate&quot; option (recommended); uncheck it to skip validati
 
 </ol>
 
-<p>Another option is to click the "Use Bundle" button, which will change all file names
-to "$(bundle)". When this specific text is entered, the corresponding file will be
-expected to be in a folder called "bundle" that is in the same folder as the
-<b>NairnFEAMPMViz</b> jar file. If that folder also has xerces library and dll libraries
-needed in Windows, the folder contain the jar file and the bundle folder can be copied
-to another computer and run as a stand-alone system.</p>
 
 <h3><a name="native"></a>Setting the Shell Command Path</h3>
 
@@ -217,15 +227,11 @@ to another computer and run as a stand-alone system.</p>
 
 <dl>
 <dt>Windows Native</dt>
-<dd>This option means the <code>.exe</code> files that were created using Visual Studio and can be run using a Windows command line. When using this option, the "Shell Command" should be set to "$(windows)". Click the "Change..." button and enter file name as "$(windows)". When using this option, you must also compile xerces in Visual Studio and place the resulting xerces dll file in the same folder as the compiled <code>.exe</code> files.</dd>
+<dd>This option means the <code>.exe</code> files that were created using Visual Studio and can be run using a Windows command line. When using this option, the "Shell Command" is not used and is permanently set to "$(windows)". Any <code>dll</code> files needed by the code engines should in the same folders as the excutables.</dd>
 
 <dt>Mac, Unix, or Linux</dt>
 <dd>The "Shell Command" is only used when running background jobs. To allow that option, click the &quot;Change...&quot; button for the &quot;Shell Command&quot;
-and select the <code>bash</code> file (which is usually at <code>/bin/bash</code>).</dd>
-
-<dt>Windows using Cygwin</dt>
-<dd>Before "Windows Native" was available, code could be compiled using cygwin. This option is still supported (but not recommended because compiled code is slower). To use it, click the &quot;Change...&quot; button for the &quot;Shell Command&quot;
-and select the <code>bash.exe</code>. It is normally in the <code>/bin</code> folder that is located within the <code>cygwin</code> folder.</dd>
+and select shell file (<i>e.g.</i>, <code>/bin/bash</code>).</dd>
 
 </dl>
 
@@ -233,7 +239,7 @@ and select the <code>bash.exe</code>. It is normally in the <code>/bin</code> fo
 
 <p>You can optionally define a work space folder using the &quot;Change...&quot; button
 in the &quot;Work Space Directory&quot; section. Select any folder and that folder
-will be the default folder when opening and saving files. Any change made to the
+will be the default folder when opening and saving files. Any changes made to the
 work space will only affect new windows.
 </p>
 
@@ -279,7 +285,7 @@ can choose the font to use for "Output" text in the "Fonts" tab of the preferenc
 If any results were finished, you can click the &quot;Image&quot; icon
 to open the partial results for <a href="#viz">visualization</a>.
 <b>Note</b>: there may be a slight delay after selecting &quot;Stop&quot; before the task terminates
-and the file is saved and ready for visualization. <b>Note</b>: because of a bug in Java, the "Stop" command does not work when using the <a href="#native">Windows in Cygwin</a> mode.
+and the file is saved and ready for visualization.
 </ol>
 
 <h3>Background Jobs</h3>
@@ -322,13 +328,13 @@ This command is most useful when using scripting commands and you want to verify
 
 <h1><a name="remote"></a>Running Remote Calculations</h1>
 
-<p>A powerful feature of this application is that it can run calculations remotely. With this feature you can run calculations even if you current computer does not have any of the required binaries for calculations. This section explains the process.</p>
+<p>A advanced feature of this application is that it can run calculations remotely. With this feature you can run calculations even if your current computer does not have any of the required binaries for calculations. This section explains the process.</p>
 
 <p>| <a href="#index">index</a> |</p>
 
-<h2><a name="setserver"></a>Setup Remove Server<hr></h2>
+<h2><a name="setserver"></a>Setup Remove Servers<hr></h2>
 
-<p>To run remote calculations, you need access to an account on a server that has NairnMPM and NairnFEA installed. If that is available, you set up the server as follows:</p>
+<p>To run remote calculations, you need access to an account on a server that has NairnMPM and NairnFEA installed. If that is available, you can set up any number of servers as follows:</p>
 
 <ol>
 <li>Choose the &quot;Preferences...&quot; menu command (or click the
@@ -336,13 +342,25 @@ This command is most useful when using scripting commands and you want to verify
 
 <li>Select the &quot;Remote&quot; tab</li>
 
-<li>Enter the server name (<i>i.e.</i>, server IP address or name) in the "Remote Server" field.</li>
+<li>Use the "Server" pop-up menu to select a server to edit or to add a new server. First, you should test connecting to the server using:
+<pre>ssh (username)@(servername)
+</pre>
+and enter your <code>(password)</code> to connect. If needed, agree to have the server added to your list of known hosts. Once you can connect, the server should work. Enter the connection details as follows:
 
-<li>Enter your user name and password in the two fields. The password will not display, but it will be saved unencrypted in the application preferences. You can omit the password, but will then have to enter a password before each remote calculation.</li>
+<ul>
+
+<li>Enter the <code>(servername)</code> to connect in the "Server Name" field.</li>
+
+<li>Enter the <code>(username)</code> and <code>(password)</code> to connect in the two fields. The password will not display, but it will be saved unencrypted in an application preferences file. You can omit the password, but will then have to enter a password before each remote calculation.</li>
 
 <li>In the next four fields, enter full paths to MPM and FEA binaries and DTD files on the server. If the files are in your home directory, you can use home directory short cut in the code paths (<i>e.g.</i>, <code>~/bin/NairnMPM</code>), but the DTD files must always use the complete full path to the files.</li>
+</ul>
+</li>
+
+<li>To delete a server, first select it from the "Server" menu and then choose the "Delete Server" command from that menu.</li>
 
 <li>Finally, use the radio buttons to select "local" (to run with local copies of binaries listed in the "Code" preferences) or "remote" (to run calculations remotely on the specified server and using the binaries on the server).</li>
+
 
 </ol>
 
@@ -351,7 +369,7 @@ This command is most useful when using scripting commands and you want to verify
 
 <h2><a name="runserver"></a>Remote Calculations<hr></h2>
 
-<p>You start remote calculations (assuming you have <a href="#setserver">set up the server</a> and selected the "Remote" option) the same way you <a href="#start">start local calculations</a>. The difference is that instead of choosing an output file, a dialog box appears where you choose remote calculation options. The options are:</p>
+<p>To run remote calculations, select the server to use from the "Server" popup menu and select the "Remote" option. Both of these settings are done in the "Remote" pane of of the preferences window (note: if you do not select a server, the calculations will use the first server in the popup menu list of servers). Once <a href="#setserver">servers are configured</a>, remote calculations are started the same way you <a href="#start">start local calculations</a>. The difference is that instead of choosing an output file, a dialog box appears where you choose remote calculation options. The options are:</p>
 
 <ul>
 <li><code><a name="remoutput"></a>Remote Output</code><br>
@@ -360,14 +378,10 @@ Enter a relative file path from your home directory on the server to the desired
 <li><code><a name="remoptions"></a>Remote Output Options</code><br>
 The radio buttons under the remote output field provide three options for the remote files:
 <ol>
-<li><code>Overwrite</code>: the default option is to overwrite files with the same names in the provided destination folder.
+<li><code>Overwrite</code>: the default option is to overwrite files with the same names in the provided server parent folder.
 If you do not want to overwrite prior calculations, you should provide at least one non-existing folder in the "Remote Output" path.</li>
-<li>Create Unique (<code>Unique</code>): with this option, the output will create a unique subfolder in the parent folder
-of the "Remote Output" file named "<code>out#</code>" where "<code>#</code>" is a number selected to provide a unique
-name for a new folder. Running lots of remote calculations in this mode will eventually fill up server disk space.</li>
-<li>Clear Parent (<code>Clear</code>): with this option, the entire contents of the parent folder to the "Remote Output" file
-will be deleted before the calculations begin. This option is useful when running and downloading
-different types of calculations with output to the same folder on the server
+<li>Create Unique (<code>Unique</code>): with this option, the output will create a unique subfolder in the server parent folder. The new folder will be named "<code>out#</code>" where "<code>#</code>" is a number selected as needed to provide a unique name and output will be sent to that new folder. Running lots of remote calculations in this mode could eventually fill up server disk space.</li>
+<li>Clear Parent (<code>Clear</code>): with this option, the entire contents of the parent folder to the "Remote Output" file will be deleted before the calculations begin. This option is useful when running and downloading different types of calculations with output to the same folder on the server
 (see <a href="#dlnotes">below</a>), but be careful not to delete files you need
 (<i>e.g.</i>, if the parent folder corresponds to an existing folder in your home directory with files you want to keep).</li>
 </ol>
@@ -377,14 +391,16 @@ different types of calculations with output to the same folder on the server
 When remote calculations are done, they can be automatically downloaded to a local folder on your computer to allow this application to open and visualize results. This field has the full path of any folder on your local disk or any mounted disk. Click the "Change..." button to select a different folder. The three options for this local folder, which are selected with the menu below the field, are:
 <ol>
 <li>Download to this Folder (<code>Download</code>): When calculations are done, the entire parent folder to the "Remote Output" file is zipped to an archive file, downloaded to the local folder, and unzipped to a folder with the same name as the parent folder (see notes <a href="#dlnotes">below</a> on downloading). If a folder of that name already exists in the local folder, the downloaded files will replace those files with the same name, but leave files with different names in place.</li>
-<li>Do not Download (<code>NoDownload</code>): This option will not download the files and therefore the results will not be opened for visualization. The calculations will remain on the server for you to access manually at a later time.</li>
-<li>Home Directory on Server (<code>Home</code>): This option specifies that the provided local folder is your home directory on the server running the remote calculations (in other words, you have mounted the server and can access your home folder with the "Change..." button). Because the server is mounted, there is no need to download the calculation results. Instead, this application will just open the file using the "Remote Output" relative path from the provided home directory. This mode is the fastest method if you are able to mount your home directory on the server with high-speed access.
+<li>Do not Download (<code>NoDownload</code>): This option will not download the files and therefore the results will not be opened for visualization. The calculations will remain on the server for you to access manually at a later time. Once the remote calculations are launched, the connection is terminated and you can start other calculations (local or remote) while they are running.</li>
+<li>Home Directory on Server (<code>Home</code>): This option specifies that the provided local folder is your home directory on the server running the remote calculations (in other words, you have mounted the server and can select your home folder with the "Change..." button). Because the server is mounted, there is no need to download the calculation results. Instead, this application will just open the file using the "Remote Output" relative path from the provided home directory. This mode is the fastest method if you are able to mount your home directory on the server with high-speed access.
 </ol>
 </li>
 
 </ul>
 
-<p><a name="dlnotes"></a><b>Notes on Downloading</b>: when using the <code>Download</code> option, the download will have the entire contents of the parent folder to the "Remote Output" file, which will include all other files that were in that folder before the remote calculations were run. For example, if you run two different calculations that create different file names to the same remote output folder, the second one will download the results of both calculations. To avoid this download of unnecessary files (which may dramatically slow downloads), you can use either the <code>Unique</code> or <code>Clear</code> options as described <a href="#remoptions">above</a>. The <code>Unique</code> option is best when running a series of calculations and you want to save all results. The <code>Clear</code> is best when running calculations for visualizing a few results and do not need to archive the output files and later analysis (but be careful that use of this option will not delete prior files you want to keep).</p>
+<p><b>Troubleshooting</b>: if remote calculations fail to launch, the most likely problem is connection to the server. As explained in help for <a href="#setserver">setting up servers</a>, make should you can connect to the server by <code>ssh</code> using provided server settings and that nothing, such as firewalls or host verification, interferes with that connection.</p>
+
+<p><a name="dlnotes"></a><b>Notes on Downloading</b>: when using the <code>Download</code> option, the download will have the entire contents of the parent folder to the "Remote Output" file, which will include all other files that were in that folder before the remote calculations were run. For example, if you run two different calculations that create different file names in the same remote output folder, the second one will download the results of both calculations. To avoid this download of unnecessary files (which may dramatically slow downloads), you can use either the <code>Unique</code> or <code>Clear</code> options as described <a href="#remoptions">above</a>. The <code>Unique</code> option is best when running a series of calculations and you want to save all results. The <code>Clear</code> is best when running calculations but do not need to archive the output files for later analysis (but be careful that use of this option will not delete prior files you want to keep).</p>
 
 
 <p>| <a href="#index">index</a> |</p>
@@ -399,21 +415,28 @@ or even on another computer using different software.</p>
 
 <h2><a name="newcalcs"></a>Visualization Completed Calculations<hr></h2>
 
-<p>If you <a href="#start">run calculations</a> within <b>NairnFEAMPMViz</b>, the results
-will automatically open ready for visualization. You 
-can choose the font to use for "Results" text in the "Fonts" tab of the preferences window. While viewing the results, you can click
-the &quot;Editer&quot; icon to switch back to the commands window. From the commands window,
-you can switch back to the result window by clicking the &quot;Image&quot; icon. Even if
-the result window has been closed, the &quot;Image&quot; icon will reopen the
-most-recently completed calculations for those commands during the current
-use of <b>NairnFEAMPMViz</b>.
+<p>When calculations run in <b>NairnFEAMPMViz</b> are done, the the results
+will automatically open ready in a "Results" window for visualization. The top half of the window will have text output from the calculations:</p>
+
+<ul>
+<li>Each section of results will be listed on the top-left. Click on any section to see it.</li>
+
+<li>The text from the selected section will appear on the top-right.</li>
+
+<li>You can choose the font to use for these text results in the "Fonts" tab of the preferences window.</li>
+
+</ul>
+
+<p>The bottom half of a results window is for <a href="#plotting">plotting calculation results</a>.</p>
+
+<p>If the results window can from a just <a href="#start">run calculations</a> within <b>NairnFEAMPMViz</b>, you can switch back and forth between the commands window and the results window. When viewing results, click the &quot;Editor&quot; icon (or menu command "Show Commands") to switch back to the commands window. From the commands window, click the &quot;Image&quot; icon (or menu command "Show Results") to return to the results window. This connection stops if either window is closed.
 </p>
 
 <p>| <a href="#index">index</a> |</p>
 
-<h2><a name="opening"></a>Opening a File<hr></h2>
+<h2><a name="opening"></a>Opening Prior Results<hr></h2>
 
-<p>To open an output results file from previous calculations, choose
+<p>To open results from previous calculations, choose
 the &quot;Open...&quot; menu command
 (or click the&quot; Open...&quot; icon) and select the file from the file choosing
 dialog box or choose a file from the &quot;Open Recent&quot; submenu.
@@ -424,23 +447,11 @@ you can try selecting &quot;All Files&quot; from the menu instead.
 You should select only the main text output files from <code>NairnFEA</code> or
 <code>NairnMPM</code> and not any associated text or binary file.</p>
 
-<p>Once a file is selected, it will open and the results will be loaded into a window:
-</p>
-
-<ul>
-<li>Each section of results will be listed on the top-left. Click on any section to see it.</li>
-
-<li>The text from the selected section will appear on the top-right.</li>
-
-<li>The bottom of the window will be a control panel for selecting all plotting options.</li>
-
-</ul>
-
 <p>| <a href="#index">index</a> |</p>
 
 <h2><a name="plotting"></a>Plotting Results<hr></h2>
 
-<p>To visualize results:</p>
+<p>The botton-left panel of a results window has a "control panel" for selecting the calculation results you want to plot. The plot options are:</p>
 
 <ol>
 <li>Select the desired type of plot:
@@ -456,13 +467,12 @@ extrapolated to the mesh and plotted as movies <i>vs.</i> time. FEA plots are fu
 <a href="#mesh2Dplots">Plots along mesh contours</a> of MPM or FEA results.
 </li>
 
-<li>Once the plot type is selected, follow the blue line to select all plotting options for
-that type of plot. See information on that plot type for details.
+<li>Once the plot type is selected, the subsequent controls will rearrange for setting all options relevant to that type of plot. See information on each plot type for more details.
 </li>
 
 <li>When all options are selected, click the &quot;Plot&quot; button
-(or use the "Plot Results" menu command or click the &quot;Image&quot;icon)
-to plot the results. The plot will appear in a new window.
+(or use the "Plot Results" menu command or click the &quot;Image&quot; icon)
+to plot the results. <a href="#movies">Particle plots</a> and <a href="#meshplots">mesh plots</a> will appear in the bottom-right of the results window. <a href="#timeplot">Time plots</a> and <a href="#mesh2Dplots">mesh contour plots<a> will appear in new windows.
 </li>
 
 <li>To <a href="#pcolors">customize plot colors</a>, use the "Colors" tab of the Preferences window.</li>
@@ -474,8 +484,10 @@ and if the previous plot window is still open) or use the plotting menu command 
 
 <li>The &quot;Scale Results...&quot; menu command can scale length and time units. It only
 affects the mesh, particle locations, velocities, and concentration gradients. Stresses remain in
-MPa, strains in %, and energies in J. When you select new units, all current plot window
+MPa, strains in %, and energies in J. When you select new units, all current plots
 will close and have to be reopened to see the new units.</li>
+
+<li>For plot options not available in <b>NairnFEAMPMViz</b>, you can <a href="#export">export particle data to vtk files</a>.</li>
 
 </ol>
 
@@ -489,15 +501,15 @@ will close and have to be reopened to see the new units.</li>
 <li>The first pop-up menu selects the calculation result to plot.
 The menu will display all options available in the opened file.
 For some results, you can select a component of that quantity
-(<i>e.g.</i> the <i>xx</i> component of the stress tensor).</li>
+(<i>e.g.</i> the <i>xx</i> component of the stress tensor). Use "Expression.." to <a href="#pexpr">plot any function of calculation results</a>.</li>
 
 <li>The slider selects the initial time to plot for MPM results.
 </li>
 
 <li>The check boxes select various options for the plot; check the desired options.
 The slider along with the check boxes sets the size of the particles in the plot relative
-to the cell size in the background mesh. The default is 50%. A larger size can fill space better while
-a smaller size can help to visualize individual material points.</li>
+to the cell size in the background mesh. The default is 100%. A larger size can fill space better while
+a smaller size can help to visualize individual material points. All settings made for the next plot are saved in preferences and will be used in subsequent plots.</li>
 
 <li><a name="limits"></a>The limits box has three options.
 <ul>
@@ -509,39 +521,32 @@ be the limits of all data sets.</li>
 
 <li>Fixed Limits: Enter desired minimum and maximum in the provided fields.</li>
 
-<li> Note: you can change limits options for the current plot. The new limits will take effect when you plot a new frame or if you click the &quot;Replot&quot; button.</li>
+<li> Note: if you change limits options while a plot is visible, the new option will take effect when you plot a new frame or if you click the &quot;Replot&quot; button.</li>
 </ul>
 </ul>
 
 <p>Once all options are selected, click the &quot;Plot&quot; button
 (or use the "Plot Results" menu command or click the &quot;Image&quot; icon)
-and the plot will appear in a new window. A key to the plot colors will appear
-at the bottom of the plot area.
-You can resize the window to scale the plot size to the new window size.
+and the plot will appear in the bottom-right of the results window. A key to the plot colors will appear
+at the bottom of the plot area. You can resize the results window or its panes to scale the plot size.
 </p>
 
-<p>You can use slider at the bottom of the window to plot results at
+<p>You can use time slider in the control panel to plot
 different times or use the &quot;Play,&quot;
-&quot;Rewind,&quot; and &quot;Pause&quot; buttons to run a movie of MPM results.</p>
+&quot;Rewind,&quot; and &quot;Pause&quot; buttons to run a movie of MPM results (a movie cannot be started until after the first plot appears).</p>
 
-<p>You can use the quantity and component menus to plot a new
-simulation result or new component of the current simulation result. To change other plot features, go back
-to the &quot;Analysis Results&quot; window, select new options, and plot again.</p>
+<h3><a name="poptions"></a>More Particle and Mesh Plot Options</h3>
 
-<p>The particle size slider (labeled "PS") can be used to adjust the particle
-size in the plot as a percent of the cell size.</p>
+<p>You can change the plot immediately by using the quantity and component menus or the particle size slider (labeled "PS") at the bottom of the plot pane (called "plot pane controls"). Changing these same values in the control panel will not take effect until clicking the "Replot" button/ Note: in large calculations picking settings in the control panel and then clicking "Replot" can be more efficient than changing the plot in the plot pane controls. The control panel also has more plot options than available in the plot pane controls.</p>
 
-<p>The maximum elongation slider (labeled "Max F") can be used to adjust maximum elongation plotted
-for transformed particles (and "0" means no maximum). This setting is most useful when plotting fluids
-that transform to needles after much cumulative strain. Limiting the maximum (<i>e.g.</i>, to "5") can give
-more useful plots.</p>
+<p>For particle plots, the maximum elongation slider (labeled "Max F") can be used to adjust maximum elongation plotted for transformed particles (and "0" means no maximum). This setting is most useful when plotting fluids that transform to needles after much cumulative strain. Limiting the maximum (<i>e.g.</i>, to "5") can give more useful plots.</p>
 
 <p>To zoom in or out on the current plot, choose a scale setting from the &quot;Zoom&quot;
-menu; the window will zoom around its current center location. To zoom in on point, right click
-on the location (or click with Mac Command key down). To zoom out at a point, right click
-on the location with the Alt key down (or click with Mac Option and Command keys down).
-The zoom level is relative to the current window size and will remain so as the window is resized.
-Choose &quot;100%&quot; to see the entire plot.
+menu; the window will zoom around its current center location. Choose &quot;100%&quot; to see the entire plot. The zoom level is relative to the current plot pane size and will remain so as the pane is resized.
+</p>
+
+<p>
+To zoom in or out around a specific point, right click on the location (or click with Mac Command key down). To zoom out at a point, right click on the location with the Alt key down (or click with Mac Option and Command keys down). On a Mac, the cursor will change to "+" or "-" icon when Command or Command and Option keys are down and the mouse moves.
 </p>
 
 <p>You can move the mouse over the plot area. As it moves, the control bar will
@@ -562,39 +567,62 @@ that can convert the frames to a movie.</p>
 
 <p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>
 
+<h2><a name="export"></a>Exporting Particle Data for Visualization Eslewhere<hr></h2>
+
+<p>The "Export Particle VTKs" command runs the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/ExtractMPM">ExtractMPM</a> tool to export particle data in the simulation results to <code>VTK</code> files (or optionally to other file formats). These files can then be opened in third-party visualization tools to provide more visualization options (<i>e.g.</i>, <a href="https://www.paraview.org">Paraview</a> or <a href="https://wci.llnl.gov/simulation/computer-codes/visit">VisIt</a>). The export process is as follows:
+
+<ol>
+<li>Choose the "Export Particle VTKs" menu command and a dialog box appears</li>
+<li>Enter a root name into the editing field. The exported files will be in the same folder as the simulation's archive files and their names will append underscore, step number, and extension "vtk" to your entered root name (<i>e.g.</i>, "RootName_34.vtk"). If a file of that name already exists, it will be overwritten. Most third-party visualization tools will recognize such a set of files as a group of vtk files to be opened together and ordered by step number.</li>
+<li>Use the "Insert..." pop-up menu to select any number of particle quantities to include in the exported files. The menu will list all data that is both available in the current simulation and is supported by the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/ExtractMPM">ExtractMPM</a> tool.</li>
+<li>Alternatively, you can type quantities into the editing field on the right. Type one quantity per line. The quantities are case sensitive and must match a <code>-q</code> option documented for the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/ExtractMPM">ExtractMPM</a> tool.</li>
+<li>Alternatively, click the "Default Set" to replace all currently entered export options with the most-commonly exported quantities that are available in the current data. After getting these default quantities, you can delete any not needed or add more by typing or by using the "Insert..." pop-up enu.</li>
+<li>When done entering all quantities, click "Save" to export all results to a series of <code>VTK</code> files.
+</ol>
+
+<p>The export process is handled using the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/ExtractMPM">ExtractMPM</a> tool and its executable must be in the same folder used for the NairnMPM binary when you <a href="setup">setup the system</a>. The output will be streamed to the text area in the box. If the export is taking too long, you can abort the process using the "Cancel" button. If an error occurs, an alert window will explain the problem and you can try again. After an export finishes, the "Reset" button will be enabled to reset the export commands in case you want to alter the export options and try again.</p>
+
+<h3>ExtractMPM Options</h3>
+
+<p>The above process handles most needs, but you can also make use of other features in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/ExtractMPM">ExtractMPM</a> tool. Any line in the editing field on the right that does not begin in a dash (-) is assumed to be a quantity for exporting (it is passed to ExtractMPM using a -q command). Any line starting in a dash is assumed to be valid command and is passed to ExtractMPM when run. You can use any <a href="http://osupdocs.forestry.oregonstate.edu/index.php/ExtractMPM">valid ExtractMPM command</a>. The most commonly used options are:</p>
+
+<ul>
+<li><code>-T</code>: export to tab-delimited text files. This command is best used in conjunction with <code>-h</code> that includes a header with information about what is in each column of the files.</li>
+<li><code>-M #</code>: include material number specified by "#" in the export. If no <code>-M</code> commands are used, all materials are exported. If any are used, only the specified materials are exported.</li>
+<li><code>-m #</code>: omit material with number specified by "#" from the export. If a material is both included and omitted, the omission take precedence.</code>
+</li>
+</ul>
+
+<p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>
+
 <h2><a name="timeplot"></a>MPM Time Plots<hr></h2>
 
 <p>First select the plotting options</p>
 
 <ul>
-<li>The first pop-up menu selects the calculation result to plot.
+<li>The pop-up menu in the first box selects the calculation result to plot.
 The menu will display all options available in the opened file.
 For some results, you can select a component of that quantity
-(<i>e.g.</i> the <i>xx</i> component of the stress tensor). The "Import Plot Data..." will import and plot tab-delimited data from a file; a file chooser to select the file will appear when you add the plot.</li>
-<li>For most plot quantities, you can select a material point number.
-The plot will be results for that particle as a function of time.
-(<b>Hint</b>: to  find a particle number, open an <a href="#movies">MPM movie plot</a>
-and move the mouse of the particles. The nearest particle number will appear
-in the control bar next to &quot;mp:&quot;).
-</li>
-
-<li>For some plot quantities (<i>e.g.</i>, energies), you can plot the results
-for one particle, the sum
-over all particles, or the sum for all particles of one material type. To select a material type,
-enter the material number. (<b>Hint</b>: to  find a material number,
+(<i>e.g.</i> the <i>xx</i> component of the stress tensor). Use "Expression.." to <a href="#pexpr">plot any function of calculation results</a>. The "Import..." option will import and plot tab-delimited data from a file; a file chooser to select the file will appear when you add the plot.</li>
+<li>For particle quantities, the next box has the following options:
+<ul>
+<li>Point Number: plot results for a single particle by number (<b>Hint</b>: to  find a particle number, open an <a href="#movies">MPM movie plot</a> and move the mouse of the particles. The nearest particle number will appear in the control bar next to &quot;mp:&quot;)</li>
+<li>All Points: plot results for all material points. Use the "Averaged" check box to get average over all points (typical for intensive properties such as stress) on uncheck to sum all points (typical for extensive properties like energy).</li>
+<li>One Material: plot results for all material points for one material type (use "Averaged" check box to plot an average or a sum of all results) (<b>Hint</b>: to  find a material number,
 open an <a href="#movies">MPM movie plot</a> and select to plot &quot;Material&quot;.
 As you move the mouse over the plot the &quot; z:&quot; value in the control bar will
-be the material number).
+be the material number).</li>
+</ul>
 </li>
-
 <li>For crack results (<i>e.g.</i>, &quot;Crack Length&quot;) select the crack number.
 Cracks are numbered starting from 1. For crack tip parameters (<i>e.g.</i>, &quot;KI&quot;) select
 the desired crack tip.
 </li>
+<li>When plotting "Global Results" or using "Import..." to plot results for a file, those results are plotted and no other options are available.</li>
 </ul>
 
 <p>Once all options are selected, click the &quot;Plot&quot; button
-(or use the "Plot Results" menu command or click the &quot;Image&quot;icon)
+(or use the "Plot Results" menu command or click the &quot;Image&quot; icon)
 and the plot will appear in a new window. You can plot additional quantities
 on the same plot by selecting
 new options (while the previous plot window is still open) and then clicking
@@ -628,9 +656,7 @@ export a <code>pdf</code> file of the plot.
 plot data. The table can be read by any spread-sheet software.
 </li>
 
-<li>The &quot;Import...&quot; command in the &quot;File&quot; menu can import any tab-delimited
-text file and plot the results. The time data must be in column one and any number of other plots
-can be in additional columns. For example, any exported plot can be imported later.
+<li>The &quot;Import...&quot; command in the &quot;File&quot; menu can import any tab-delimited text file and plot the results. The time data must be in column one and any number of other plots can be in additional columns. For example, any exported plot can be imported later.
 </li>
 
 <li>The &quot;Close...&quot; command in the &quot;File&quot; menu will close the current plot.
@@ -653,6 +679,12 @@ of plot labels).</li>
 <li>The &quot;Arrange&quot; submenu in the &quot;Edit&quot; menu lets you rearrange the
 order of plots and plot annotations (but note that plot symbols always plot in their own
 layer a top of all other objects.</li>
+
+<li>The &quot;Inspector&quot; command in the &quot;Edit&quot; opens a plot inspector window where you can customize many features of the plot.</li>
+
+<li>The &quot;Add Data Set...&quot; command in the &quot;Edit&quot; adds a new plot with two random points. You can use the next command to change the plot values.</li>
+
+<li>The &quot;Edit Data Set...&quot; command in the &quot;Edit&quot; opens a window where you view and change the plot values for the currently selected plot.</li>
 
 <li>If you use copy command when no plot is selected, it will copy all data.
 The copied data can be pasted into another time plot window or into any
@@ -688,7 +720,7 @@ scale as the window is resized. The size of the plot will show in the tool bar. 
 <li>The first pop-up menu selects the calculation result to plot. The menu will display all
 options available in the opened file.
 For some results, you can select a component of that quantity
-(<i>e.g.</i> the <i>xx</i> component of the stress tensor).  The "Import Plot Data..." will import and plot tab-delimited data from a file; a file chooser to select the file will appear when you add the plot.
+(<i>e.g.</i> the <i>xx</i> component of the stress tensor).  Use "Expression.." to <a href="#pexpr">plot any function of calculation results</a>.
 </li>
 
 <li>For MPM results, the slider selects the initial time to plot.
@@ -713,31 +745,12 @@ A key to the plot colors will appear at the bottom of the plot area. You can res
 the window to scale the plot size to the new window size.
 </p>
 
-<p>For MPM results, you can use the slider at the bottom of the window to plot results
-at different times or use the &quot;Play,&quot;
-&quot;Rewind,&quot; and &quot;Pause&quot; buttons to run a movie of the MPM results.
+<p>For MPM results, You can use time slider in the control panel to plot different times or use the &quot;Play,&quot;
+&quot;Rewind,&quot; and &quot;Pause&quot; buttons to run a movie of MPM results (a movie cannot be started until after the first plot appears).
 FEA results plot the mesh results, but
 the movie controls will be inactive (since FEA results are static)</p>
 
-<p>You can use the quantity and component menus to plot a new
-simulation result or new component of the current simulation result. To change other plot features, go back
-to the &quot;Analysis Results&quot; window, select new options, and plot again.</p>
-
-<p>The particle size slider (labeled "PS", but for MPM calculations only) can be used to adjust the particle
-size in the plot as a percent of the cell size. The setting only matters when the plot is clipping to particles.</p>
-
-<p>You can use the &quot;Zoom&quot; menu to zoom in on the plot. The zoom level is relative to the
-current window size and will remain so as the window is resized.
-Choose &quot;100%&quot; to see the entire plot.
-</p>
-
-<p>You can move the mouse over the plot area. As it moves, the control bar will
-display the coordinates of the mouse location (x and y), that location's plot value (z),
-the nearest element (el), and the nearest node (nd).
-</p>
-
-<p>You can use <a href="#exportpng">menu commands to export</a> the frame to a graphics file
-or to export a series of frames (for MPM results only).
+<p>See <a href="#poptions">above</a> for more options for working with mesh plots.</p>
 
 <p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>
 
@@ -749,7 +762,7 @@ or to export a series of frames (for MPM results only).
 <li>The first pop-up menu selects the calculation result to plot. The menu will display
 all options available in the opened file.
 For some results, you can select a component of that quantity (<i>e.g.</i> the <i>xx</i>
-component of the stress tensor).</li>
+component of the stress tensor). Use "Expression.." to <a href="#pexpr">plot any function of calculation results</a>. The "Import..." option will import and plot tab-delimited data from a file; a file chooser to select the file will appear when you add the plot.</li>
 
 <li>For MPM results, the plot will be generated from results at one specific time.
 Use the time slider to selected the desired time results to plot.
@@ -758,7 +771,7 @@ Use the time slider to selected the desired time results to plot.
 <li>The plot will be along a selected path through the mesh as determined by a pop-up menu:
 <br>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<i>For FEA and MPM</i>: the first four options can select &quot;<code>x=</code>&quot;
+<i>For FEA and 2D MPM</i>: the first four options can select &quot;<code>x=</code>&quot;
 to give <code>x</code> as a
 function of <code>y</code>, &quot;<code>y=</code>&quot; to give <code>y</code> as
 a function of <code>x</code>, &quot;<code>D=</code>&quot; to give distance from
@@ -770,15 +783,15 @@ be a vertical line. A constant <code>y=</code> contour will be a horizontal line
 A constant <code>D=</code> contour will be a circle with the entered radius.
 A constant <code>T=</code> contour will be a line from the origin at that polar angle T.
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;<i>For MPM only</i>: the next four options will create plots of particle values
-based on <code>xp=</code> or <code>yp=</code> for current particle <code>x</code> or <code>y</code> position or on particle <code>xp0=</code> or <code>yp0=</code> for original particle <code>x</code> or <code>y</code> position. For each option, enter a numeric value in the text field and not an expression. For <code>xp=</code> and <code>xp0=</code>, the contour will
-be a vertical line at that value. For <code>yp=</code> and <code>yp0=</code>, the contour will
-be a horizontal line at that value. The resulting plot will be particle values of any particle whose corrent or original position is within its radius from the selected contour.
+&nbsp;&nbsp;&nbsp;&nbsp;<i>For MPM only</i>: The <code>p:x+dt=</code> and  <code>p0:x+dt</code>
+options will plot data from particles that fall near a line defined by x + d*t where x is any point and t is a vector in the direction of the line. The "p" option finds particles based on their current position; the "p0" option finds them based on their initial position.<br />
+&nbsp;&nbsp;a. For 2D MPM, enter 1, 2, or 4 comma-separated numbers. For 1, the plot is a contour for constant x as function of distance for left edge of the grid. For 2, the plot is a function of constant y in the second number as function of distance from the bottom of the grid (the first number is ignored). For 4, the first two points give a point x and the second two give a direction t. The plot is a function of the distance from the defined point x.<br />
+&nbsp;&nbsp;b. For 3D MPM, enter 4 or 6 comma-separated numbers. For 4, the plot is contour parallel to the i<sup>th</sup> axis where i is 1, 2, or 3 for x, y or z and is entered in the 4<sup>th</sup> number. The line is for the other two axes held constant at values entered in the first three number (the i<sup>th</sup> number is ignored). The plot is as a function of distance from the minimum edge of the grid along the i<sup>th</sup> axis. For 6, the first three points give a point x and the second three give a direction t. The plot is a function of the distance from the defined point x. 
 </li>
 
 <li>The &quot;+/-&quot; field can enter a range for calculating an average plot quantity.
 If it is not zero, the selected quantity will be averaged over that distance on
-both sides of the path and normal to the path. But for MPM particle plots (<code>xp=</code>, <i>etc</i>.), a non-zero will instead extend the plot to include any particle whose position is within its radius or this value (whichever is larger) of the selected contour.</li>
+both sides of the path and normal to the path. But for MPM particle plots (<code>p:x+dt==</code> and <code>p0:x+dt==</code>), a non-zero will instead extend the plot to include any particle whose position is within its radius or this value (whichever is larger) of the selected contour.</li>
 
 <li>For crack results (<i>e.g.</i>, &quot;Crack Profile&quot;) select the crack number.
 Cracks are numbered starting from 1. For crack plots, the plot will be along the crack
@@ -798,6 +811,47 @@ new options (while the previous plot window is still open) and then clicking the
 <p>Once a mesh contour plot is open, there are numerous options
 (see <a href="#2Doptions">above</a> for details).
 </p>
+
+<p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>
+
+<h2><a name="pexpr"></a>Plotting Expression<hr></h2>
+
+<p>Whenever "Expression..." is selected for "Plot:" quantity, you will be asked to provide some function of calculation results (when the plot is started) in a dialog box. Any any standard function in the text field or select a built-in expression in the menu. The functions can depend on the following variables. All variables are MPM only unless noted and all begin in the "#" sign:</p>
+
+<ul>
+<li><code>#sxx (or #sRR), #syy (or #sZZ), #szz (or #sTT), #sxy (or #sRZ), #sxz, #syz</code> - particle or node stress components (both MPM and FEA)</li>
+<li><code>#esxx (or #esRR), #esyy (or #esZZ), #eszz (or #esTT), #esxy (or #esRZ), #esxz, #esyz</code> - element stress components (FEA only)</li>
+<li><code>#exx (or #eRR), #eyy (or #eZZ), #ezz (or #eTT), #exy (or #eRZ), #exz, #eyz</code> - total strain components; shear are engineering shear strain (both MPM and FEA)</li>
+<li><code>#exxe (or #eRRe), #eyye (or #eZZe), #ezze (or #eTTe), #exye (or #eRZe), #exze, #eyze</code> - elastic strain components; shear are engineering shear strain</li>
+<li><code>#exxp (or #eRRp), #eyyp (or #eZZp), #ezzp (or #eTTp), #exyp (or #eRZp), #exzp, #eyzp</code> - plastic strain components; shear are engineering shear strain</li>
+<li><code>#wxy, #wxz, #wyz</code> - engineering rotational strain components)</li>
+<li><code>#dudy, #dvdx</code> - shear strain components (FEA only</li>
+<li><code>#dispx (or #dispR), #vely (or #velZ), #velz</code> - displacement components (both MPM and FEA)</li>
+<li><code>#velx (or #velR), #dispy (or #dispZ), #dispz</code> - displacement components</li>
+<li><code>#fx, #fy</code> - nodal force (FEA only)</li>
+<li><code>#x (or #R), #y (or #Z), #z</code> - current particle or node position (both MPM and FEA)</li>
+<li><code>#x0, #y0, #z0</code> - initial particle position</li>
+<li><code>#D</code> - distance from origin to particle of node (2D only) (both MPM and FEA)</li>
+<li><code>#T</code> - angle of vector from origin to the particle or node (2D only) (both MPM and FEA)</li>
+<li><code>#rho</code> - density</li>
+<li><code>#m</code> - mass</li>
+<li><code>#mat</code> - material (by number in the results)</li>
+<li><code>#ener</code> - energy (both MPM and FEA)</li>
+<li><code>#kine</code> - kinetic energy</li>
+<li><code>#wrke</code> - work energy</li>
+<li><code>#heate</code> - heat energy</li>
+<li><code>#stre</code> - strain energy</li>
+<li><code>#plaste</code> - plastic energy</li>
+<li><code>#h1</code> to <code>#h19</code> - history variable 1 to 19</li>
+<li><code>#temp</code> - temperatuyre</li>
+<li><code>#c, #dcdx, #dcdy, #dcdz</code> - concentration and concentration gradient components</li>
+<li><code>#pp, #dpdx, #dpdy, #dpdz</code> - pore pressure and pore pressure gradient components</li>
+<li><code>#wpx, #wpy, #wpz</code> - particle spin velocity components</li>
+<li><code>#t</code> - time</li>
+<li><code>#xing</code> - element crossing</li>
+</ul>
+
+<p>Upper case "R" and "Z" and for convenience only when analyzing axisymmetric calculations. They are synonyms for "x" and "y".</p>
 
 <p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>
 
@@ -829,11 +883,14 @@ resulting in smooth transitions in the plot with many colors.</li>
 <p>You can <a href="#start">run 3D calculations</a> using this tool or run 3D calculations on
 a standard command line and even open the results in this Java application, but the visualization options
 are very limited. You can only look at text output
-and plot results <i>vs.</i> time. Furthermore, with the exception of plotting global results, the time plots
-will be very slow for large calculations.</p>
+and plot results <i>vs.</i> time. Two ways to visualize 3D results are:</p>
 
-<p>For other options on visualizing 3D results, you can consult the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page#Visualization">OSUPDOcs wiki</a>. The other options use a Mac or use other software (such as MatLab and ParaView) along with VTK legacy file output.</p>
+<ol>
+<li>To plot mesh results, use the <a href="https://osupdocs.forestry.oregonstate.edu/index.php/VTKArchive_Custom_Task">VTKArchive Custom Task</a> to write results to a structured grid in <code>VTK</code> files.</li>
+<li>To plot particle data, <a href="#export">export particle data</a> to point-based <code>VTK</code> files.</li>
+</ol>
 
+<p>These two styles of <code>VTK</code> files can be opened in thrid-party visualization tools (such as <a href="https://www.paraview.org">Paraview</a> or <a href="https://wci.llnl.gov/simulation/computer-codes/visit">VisIt</a>). For more information on visualizing 3D results, see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page#Visualization">OSUPDOcs wiki</a>.</p>
 
 <p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>
 

@@ -57,6 +57,7 @@ class ShapeController
 		double particleCount(void);
 		virtual void resetParticleEnumerator(void);
 		virtual int nextParticle(void);
+
 #endif
     
         // accessors

@@ -42,7 +42,7 @@ char *HyperElastic::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&UofJOption);
     }
     
-    return(MaterialBase::InputMaterialProperty(xName,input,gScaling));
+    return MaterialBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 #pragma mark HyperElastic::Initialize
@@ -81,13 +81,17 @@ const char *HyperElastic::VerifyAndLoadProperties(int np)
 
 #pragma mark HyperElastic::Methods
 
-// get incremental residual volume change
-double HyperElastic::GetIncrementalResJ(MPMBase *mptr,ResidualStrains *res) const
+// Get incremental residual volume change
+// Jres is there in case want to scale residual stress terms, which would result
+//   in thermal or moisture expansion when alpha and beta depend on volume
+//   This can be done by dividing dV by Jres. Without dividing it is material
+//   where expansion coefficients are constant.
+double HyperElastic::GetIncrementalResJ(MPMBase *mptr,ResidualStrains *res,double Jres) const
 {	// account for residual stresses
-	double dJres = CTE1*res->dT;
+	double dVres = 3.*CTE1*res->dT;
 	if(DiffusionTask::HasFluidTransport())
-		dJres += CME1*res->dC;
-    return exp(3.*dJres);
+        dVres += 3.*CME1*res->dC;
+    return exp(dVres);
 }
 
 /*  Given matrix of incremental deformation dF = exp(dt*grad v), increment particle strain,
@@ -144,8 +148,8 @@ double HyperElastic::GetResidualStretch(MPMBase *mptr,double &dresStretch,Residu
 	double dTemp=mptr->pPreviousTemperature-thermal.reference;
 	double resStretch = CTE1*dTemp;
 	dresStretch = CTE1*res->dT;
-	if(DiffusionTask::HasFluidTransport())
-	{	double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
+	if(DiffusionTask::HasDiffusion())
+	{	double dConc = diffusion->GetDeltaConcentration(mptr);
 		resStretch += CME1*dConc;
 		dresStretch += CME1*res->dC;
 	}

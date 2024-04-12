@@ -42,7 +42,7 @@ class NodalVelGradBC : public NodalVelBC
 		Expression *dispFunction;
 		double gradValue;				// scalars only controlled axis
 		double position;
-		int firstNode,nodeStep;
+		int firstNode,nodeStep,lastNode;
 		bool extractGrad;			// true when grad function is mirror
 
 };

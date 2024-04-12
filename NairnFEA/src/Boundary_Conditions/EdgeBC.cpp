@@ -30,21 +30,22 @@ EdgeBC *EdgeBC::PrintEdgeLoad(void)
 {
 	char loadType[10];
     char nline[200];
+    size_t nlsize=200;
 	
 	if(direction==1)
 		strcpy(loadType,"Normal");
 	else
 		strcpy(loadType,"Shear1");
 	
-	sprintf(nline,"%5d  %2d  %6s",element,face,loadType);
+	snprintf(nline,nlsize,"%5d  %2d  %6s",element,face,loadType);
     cout << nline;
 	
 	switch(facenodes)
 	{   case 2:
-			sprintf(nline,"  %15.7e  %15.7e",stress[0],stress[1]);
+            snprintf(nline,nlsize,"  %15.7e  %15.7e",stress[0],stress[1]);
 			break;
 		case 3:
-			sprintf(nline,"  %15.7e  %15.7e  %15.7e",stress[0],stress[1],stress[2]);
+            snprintf(nline,nlsize,"  %15.7e  %15.7e  %15.7e",stress[0],stress[1],stress[2]);
 			break;
 		default:
 			break;

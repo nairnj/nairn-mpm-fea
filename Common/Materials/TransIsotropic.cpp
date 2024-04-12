@@ -49,6 +49,9 @@ TransIsotropic::TransIsotropic(char *matName,int matID) : Elastic(matName,matID)
 #endif
 	betaA=0.;
 	betaT=0.;
+    
+    // Only TI materials change it
+    axialCode = AXIAL_Z;
 }
 
 #pragma mark TransIsotropic::Initialization
@@ -57,18 +60,20 @@ TransIsotropic::TransIsotropic(char *matName,int matID) : Elastic(matName,matID)
 // print mechanical properties to output window
 void TransIsotropic::PrintMechanicalProperties(void) const
 {
-	PrintProperty("Ea",EA*UnitsController::Scaling(1.e-6),"");
-	PrintProperty("Et",ET*UnitsController::Scaling(1.e-6),"");
-	PrintProperty("va",nuA,"");
-	PrintProperty("vt",nuT,"");
+	PrintProperty("EA",EA*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("ET",ET*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("vA",nuA,"");
+	PrintProperty("vT",nuT,"");
 	cout << endl;
 	
-	PrintProperty("Gt",GT*UnitsController::Scaling(1.e-6),"");
-	PrintProperty("Ga",GA*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("GT",GT*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("GA",GA*UnitsController::Scaling(1.e-6),"");
+    PrintProperty("vA'",nuAp,"");
+    PrintProperty("KT",KT*UnitsController::Scaling(1.e-6),"");
 	cout << endl;
 	
-	PrintProperty("aa",aA,"");
-	PrintProperty("at",aT,"");
+	PrintProperty("aA",aA,"");
+	PrintProperty("aT",aT,"");
 	cout << endl;
 }
 
@@ -77,19 +82,19 @@ void TransIsotropic::PrintTransportProperties(void) const
 {
 	// Diffusion constants
 	if(DiffusionTask::HasFluidTransport())
-	{	PrintProperty("Da",diffA,"mm^2/s");
-		PrintProperty("Dt",diffT,"mm^2/s");
+	{	PrintProperty("DA",diffA,"mm^2/s");
+		PrintProperty("DT",diffT,"mm^2/s");
 		PrintProperty("csat",concSaturation,"");
 		cout << endl;
 		
-		PrintProperty("ba",betaA,"1/wt fr");
-		PrintProperty("bt",betaT,"1/wt fr");
+		PrintProperty("bA",betaA,"1/wt fr");
+		PrintProperty("bT",betaT,"1/wt fr");
 		cout << endl;
 	}
 	// Conductivity constants
 	if(ConductionTask::active)
-	{	PrintProperty("ka",rho*kCondA*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS));
-		PrintProperty("kt",rho*kCondT*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS));
+	{	PrintProperty("kA",rho*kCondA*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS));
+		PrintProperty("kT",rho*kCondT*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS));
 		PrintProperty("C",heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
 		cout << endl;
 	}
@@ -99,18 +104,20 @@ void TransIsotropic::PrintTransportProperties(void) const
 // print mechanical properties to output window
 void TransIsotropic::PrintMechanicalProperties(void) const
 {
-	PrintProperty("Ea",EA,"");
-	PrintProperty("Et",ET,"");
-	PrintProperty("va",nuA,"");
-	PrintProperty("vt",nuT,"");
+	PrintProperty("EA",EA,"");
+	PrintProperty("ET",ET,"");
+	PrintProperty("vA",nuA,"");
+	PrintProperty("vT",nuT,"");
 	cout << endl;
 	
-	PrintProperty("Gt",GT,"");
-	PrintProperty("Ga",GA,"");
+	PrintProperty("GT",GT,"");
+	PrintProperty("GA",GA,"");
+    PrintProperty("vA'",nuAp,"");
+    PrintProperty("KT",KT,"");
 	cout << endl;
 	
-	PrintProperty("aa",aA,"");
-	PrintProperty("at",aT,"");
+	PrintProperty("aA",aA,"");
+	PrintProperty("aT",aT,"");
 	cout << endl;
 }
 
@@ -216,7 +223,23 @@ char *TransIsotropic::InputMaterialProperty(char *xName,int &input,double &gScal
 
 // calculate properties used in analyses
 const char *TransIsotropic::VerifyAndLoadProperties(int np)
-{	
+{
+    // 3D requires axial z, 2D can be z or y
+    if(np==THREED_MPM)
+    {   // in 3D, require TRANSISO1 and cannot swap
+        if(materialID==TRANSISO2)
+            return "3D simulations cannot use Transverse 2 material";
+        if(swapz>0)
+            return "3D simulations cannot swap axial direction, use rotation methods instead";
+    }
+    else if(materialID==TRANSISO2)
+    {   if(swapz>0)
+            return "Cannot swap axial direction of Transverse 2 material";
+        axialCode = AXIAL_Y;
+    }
+    else if(swapz>0)
+        axialCode = AXIAL_Y;
+
     // finish input and verify all there
     if(!read[GT_PROP])
     {	GT=ET/(2.*(1.+nuT));
@@ -240,7 +263,7 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
     }
     KT=0.5/((1.-nuT)/ET - 2.*nuA*nuA/EA);
 	nuAp = ET*nuA/EA;
-
+    
 #ifdef MPM_CODE
 #ifdef POROELASTICITY
 	// poroelasticity conversions
@@ -271,15 +294,15 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 			Qalphay = Qalphax;
 			Qalphaz = alphaAPE/diffusionCT;
 		}
-		else
-		{	Qalphax = alphaTPE/diffusionCT;
-			Qalphay = alphaAPE/diffusionCT;
-			Qalphaz = Qalphax;
-		}
+        else
+        {   Qalphax = alphaTPE/diffusionCT;
+            Qalphay = alphaAPE/diffusionCT;
+            Qalphaz = Qalphax;
+        }
 		
 		// diffusion tensor changed using global viscosity
-		diffA = DarcyA/DiffusionTask::viscosity;
-		diffT = DarcyT/DiffusionTask::viscosity;
+		diffA = DarcyA/diffusion->viscosity;
+		diffT = DarcyT/diffusion->viscosity;
 	}
 	else
 	{	// diffusion CT is 1
@@ -370,7 +393,7 @@ void TransIsotropic::UndrainedPressIncrement(MPMBase *mptr,double dexx,double de
 {	// exit if not active
 	if(!DiffusionTask::HasPoroelasticity()) return;
 	double dpud = -Qalphax*dexx - Qalphay*deyy - Qalphaz*dezz;
-	mptr->Add_dpud(dpud);
+	mptr->AddParticleDiffusionSource(0,dpud);
 }
 #endif
 
@@ -542,7 +565,6 @@ void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecif
 		p->alpha[2]=s2*CTE1+c2*CTE2;
 		p->alpha[3]=2.*cssn*(CTE1-CTE2);
 		p->alpha[4]=CTE3;
-		
     }
     
     else
@@ -647,12 +669,12 @@ void TransIsotropic::FillTransportProperties(TransportProperties *t)
 		t->kCondTensor.xx = kCondT;
 		t->kCondTensor.yy = kCondT;
 	}
-	else
-	{	t->diffusionTensor.xx=diffT;
-		t->diffusionTensor.yy=diffA;
-		t->kCondTensor.xx = kCondT;
-		t->kCondTensor.yy = kCondA;
-	}
+    else
+    {   t->diffusionTensor.xx=diffT;
+        t->diffusionTensor.yy=diffA;
+        t->kCondTensor.xx = kCondT;
+        t->kCondTensor.yy = kCondA;
+    }
 	t->diffusionTensor.zz = GetDiffZ();
 	t->kCondTensor.zz = GetKcondZ();
 	t->diffusionTensor.xy = 0.;
@@ -729,7 +751,7 @@ void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties 
 #pragma mark TransIsotropic::Accessors
 
 // Return base axial direction
-int TransIsotropic::AxialDirection(void) const { return materialID==TRANSISO1 ? AXIAL_Z : AXIAL_Y; }
+int TransIsotropic::AxialDirection(void) const { return axialCode; }
 
 // return material type
 const char *TransIsotropic::MaterialType(void) const
@@ -742,9 +764,9 @@ const char *TransIsotropic::MaterialType(void) const
 #ifdef MPM_CODE
 
 /* Calculate maximum wave speed in mm/sec (moduli in MPa, rho in g/mm^3)
-	TRANSISO1
+	AXIAL_Z and in 2D
 		wave speeds are GT/rho and (KT+GT)/rho - return larger one
-	TRANSISO2
+	All others
 		wave speeds are GT/rho, GA/rho, (KT+GT)/rho, and (EA + 4KT nuA^2)/rho
 		return largest (assumes shear ones are not largest)
 */

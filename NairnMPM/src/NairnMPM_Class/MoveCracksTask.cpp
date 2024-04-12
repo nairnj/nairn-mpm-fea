@@ -39,7 +39,7 @@ bool MoveCracksTask::Execute(int taskOption)
     
     // uncomment this line to prevent parallelization of this task
     //numCracksPerProc = 0;
-
+    
 	// update crack tractions
 	if(fmobj->hasTractionCracks)
 	{	// evaluate time dependent functions outside the parallel loop
@@ -59,12 +59,14 @@ bool MoveCracksTask::Execute(int taskOption)
 		{   try
 			{	if(!crackList[cn]->MoveCrack(ABOVE_CRACK))
 				{	char errMsg[100];
-					sprintf(errMsg,"Crack No. %d surface (above) has left the grid.",cn+1);
+					size_t errSize=100;
+					snprintf(errMsg,errSize,"Crack No. %d surface (above) has left the grid.",cn+1);
 					throw CommonException(errMsg,"MoveCracksTask::Execute");
 				}
 				if(!crackList[cn]->MoveCrack(BELOW_CRACK))
 				{	char errMsg[100];
-					sprintf(errMsg,"Crack No. %d surface (below) has left the grid.",cn+1);
+					size_t errSize=100;
+					snprintf(errMsg,errSize,"Crack No. %d surface (below) has left the grid.",cn+1);
 					throw CommonException(errMsg,"MoveCracksTask::Execute");
 				}
 			}
@@ -115,7 +117,8 @@ bool MoveCracksTask::Execute(int taskOption)
 		{   try
 			{   if(!crackList[cn]->MoveCrack())
 				{	char errMsg[100];
-					sprintf(errMsg,"Crack No. %d position or surface has left the grid.",cn+1);
+					size_t errSize=100;
+					snprintf(errMsg,errSize,"Crack No. %d position or surface has left the grid.",cn+1);
 					throw CommonException(errMsg,"MoveCracksTask::Execute");
 				}
 				
@@ -146,9 +149,10 @@ bool MoveCracksTask::Execute(int taskOption)
 		}
 	}
 
-	// throw any errors
+    // throw any errors
 	if(mcErr!=NULL) throw *mcErr;
 	
+
     return true;
 }
 	

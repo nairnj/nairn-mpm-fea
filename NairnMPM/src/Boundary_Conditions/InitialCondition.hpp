@@ -16,7 +16,7 @@
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 
 // loading boundary conditions
-enum {	UNKNOWN_CONDITION=0,INITIAL_DAMAGE };
+enum {	UNKNOWN_CONDITION=0,INITIAL_DAMAGE,INITIAL_PHASEFIELD };
 
 class InitialCondition : public MatPtLoadBC
 {
@@ -30,13 +30,16 @@ class InitialCondition : public MatPtLoadBC
 
         // accessors
         virtual void SetInitialDamage(Vector *,Vector *,double);
-        Vector GetDamageNormal(void);
         Vector GetDamageParams(double &);
-    
+		Vector GetDamageNormal(void);
+		virtual void SetInitialPhaseField(char *);
+		double GetPhaseField(void);
+	
     protected:
         int icType;     // future use
         Vector dnorm,dvals;
 		double dmode;
+		double phaseField;
 	
 };
 

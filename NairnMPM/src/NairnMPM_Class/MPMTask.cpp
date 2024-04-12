@@ -24,17 +24,24 @@ MPMTask::MPMTask(const char *name) : CommonTask(name) {}
 
 // for debugging
 void MPMTask::WriteLogFile(void)
-{	// task number
+{
+    if(fmobj->mstep<LOG_START_STEP) return;
+    
+    // task number
 	char logLine[200];
-	sprintf(logLine,"  Task #%d: %s",taskNumber,GetTaskName());
+    size_t logSize=200;
+	snprintf(logLine,logSize,"  Task #%d: %s",taskNumber,GetTaskName());
 	archiver->WriteLogFile(logLine,NULL);
 }
 
 // for debugging comment within a task
 void MPMTask::WriteLogFile(const char *comment)
-{	// task number
-	char logLine[200];
-	sprintf(logLine,"... %s",comment);
+{
+    if(fmobj->mstep<LOG_START_STEP) return;
+
+    char logLine[200];
+    size_t logSize=200;
+	snprintf(logLine,logSize,"... %s",comment);
 	archiver->WriteLogFile(logLine,NULL);
 }
 

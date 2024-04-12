@@ -14,6 +14,7 @@
 #include "Global_Quantities/BodyForce.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "NairnMPM_Class/Reservoir.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
@@ -31,6 +32,7 @@
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "Boundary_Conditions/InitialCondition.hpp"
+#include "NairnMPM_Class/InitVelocityFieldsTask.hpp"
 
 /*********************************************************************
     Print setup information
@@ -75,16 +77,18 @@ void NairnMPM::PrintAnalysisMethod(void)
 			break;
 		case UNIFORM_GIMP:
 		case UNIFORM_GIMP_AS:
+        case UNIFORM_GIMP_TARTAN:
             cout << " / GIMP";
             break;
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
             cout << " / Linear CPDI";
-			if(ElementBase::rcrit>0.) cout << " / rcrit = " << ElementBase::rcrit;
             break;
+		case FINITE_GIMP:
+			cout << " / FiniteGIMP";
+			break;
        case QUADRATIC_CPDI:
             cout << " / Quadratric CPDI";
-			if(ElementBase::rcrit>0.) cout << " / rcrit = " << ElementBase::rcrit;
             break;
 		case BSPLINE_GIMP:
 		case BSPLINE_GIMP_AS:
@@ -92,7 +96,6 @@ void NairnMPM::PrintAnalysisMethod(void)
 			break;
 		case BSPLINE_CPDI:
 			cout << " / B2CPDI";
-			if(ElementBase::rcrit>0.) cout << " / rcrit = " << ElementBase::rcrit;
 			break;
 		case BSPLINE:
 			cout << " / B2SPLINE";
@@ -100,7 +103,14 @@ void NairnMPM::PrintAnalysisMethod(void)
 		default:
 			cout << " / (unknown shape function method)";
     }
-	cout << endl;
+    
+    // CDPI critical radius option
+    if(ElementBase::UsingCPDIMethod())
+    {
+        if(ElementBase::rcrit>0.)
+            cout << " / rcrit = " << ElementBase::rcrit;
+    }
+    cout << endl;
 
 	// incremental F terms
 	if(MaterialBase::incrementalDefGradTerms<0)
@@ -111,8 +121,10 @@ void NairnMPM::PrintAnalysisMethod(void)
 	
 	// time step and max time
     cout << "Time step: min(" << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << ", "
-		<< fmobj->GetCFLCondition() << " time for wave to cross one cell)\n";
-    cout << "Maximum time: " << maxtime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << "\n\n";
+		<< fmobj->GetCFLCondition() << "*(wave speed time), "
+		<< fmobj->GetTransCFLCondition() << "*(transport time))\n";
+    cout << "Maximum time: " << maxtime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << "\n";
+	cout << endl;
 }
 
 // rest of MPM information
@@ -183,14 +195,25 @@ void NairnMPM::CMStartResultsOutput(void)
 		CrackHeader::SetCodLocation(2.);
 		cout << "Crack COD found (when needed) " << 2 << " segments from crack tip" << endl;
 		
-		// crack details
-		cout << "Number of cracks = " << numberOfCracks << endl;
-		CrackHeader *nextCrack=firstCrack;
-		while(nextCrack!=NULL)
-		{	nextCrack->Output();
-			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
-		}
-		cout << endl;
+#ifdef PREHASH_CRACKS
+        // Turn off prehashing if CPDI and rcrit>1/sqrt(2) or cause error if in 3D
+        double checkRadius = ElementBase::rcrit;
+        if(checkRadius>=1/sqrt(2.) && ElementBase::UsingCPDIMethod())
+        {   if(fmobj->IsThreeD())
+                throw CommonException("Cracks in 3D with CPDI require CPDIrcrit<1/sqrt(2)","NairnMPM::CMStartResultsOutput");
+            InitVelocityFieldsTask::prehashed = false;
+        }
+        if(InitVelocityFieldsTask::prehashed)
+            cout << "Crack prehashing used for efficiency" << endl;
+#endif
+        // crack details
+        cout << "Number of cracks = " << numberOfCracks << endl;
+        CrackHeader *nextCrack=firstCrack;
+        while(nextCrack!=NULL)
+        {    nextCrack->Output();
+            nextCrack=(CrackHeader *)nextCrack->GetNextObject();
+        }
+        cout << endl;
     }
 	else
 	{	// turn off request for position extrapolation
@@ -213,7 +236,7 @@ void NairnMPM::CMStartResultsOutput(void)
     {   PrintSection("NODAL POINTS WITH FIXED DISPLACEMENTS");
         archiver->ArchiveVelocityBCs(firstVelocityBC);
     }
-    
+
 }
 
 // output boundary conditions (called in PreliminaryParticleCalcs())
@@ -251,53 +274,80 @@ void NairnMPM::OutputBCMassAndGrid(void)
 	
 	//---------------------------------------------------
 	// Diffusion boundary conditions
-	if(fmobj->HasFluidTransport() && firstConcBC!=NULL)
-	{	if(fmobj->HasDiffusion())
-		{	PrintSection("NODAL POINTS WITH FIXED CONCENTRATIONS");
-			cout << "  Node  ID    Conc (/csat)   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Function";
-		}
+    bool hasHeader = false;
+    for(int dt=1;dt<NUM_DUFFUSION_OPTIONS;dt++)
+    {   if(firstDiffBC[dt]==NULL) continue;
+        
+        // header out once
+        if(!hasHeader)
+        {
 #ifdef POROELASTICITY
-		else
-		{	PrintSection("NODAL POINTS WITH FIXED PORE PRESSURE");
-			cout << "  Node  ID    Press. (" << UnitsController::Label(PRESSURE_UNITS) << ")    Arg ("
-					<< UnitsController::Label(BCARG_UNITS) << ")  Function";
-		}
+            if(fmobj->HasPoroelasticity())
+            {   PrintSection("NODAL POINTS WITH FIXED PORE PRESSURE");
+                cout << "  Node  Sty   Press. (" << UnitsController::Label(PRESSURE_UNITS) << ")    Arg ("
+                        << UnitsController::Label(BCARG_UNITS) << ") ID Function";
+            }
+            else
+            {   PrintSection("NODAL POINTS WITH FIXED CONCENTRATIONS");
+                cout << "  Node  Sty   Conc (/csat)   Arg (" << UnitsController::Label(BCARG_UNITS) << ") ID Function";
+            }
+#else
+            PrintSection("NODAL POINTS WITH FIXED CONCENTRATIONS");
+            cout << "  Node  Sty   Conc (/csat)   Arg (" << UnitsController::Label(BCARG_UNITS) << ") ID Function";
 #endif
-		cout << "\n------------------------------------------------------\n";
-		nextBC=firstConcBC;
-		while(nextBC!=NULL)
-			nextBC=nextBC->PrintBC(cout);
-		cout << endl;
-	}
-	
+            cout << "\n-----------------------------------------------------------" << endl;
+            hasHeader = true;
+        }
+        
+        // print each one
+        nextBC = firstDiffBC[dt];
+        while(nextBC!=NULL)
+            nextBC=nextBC->PrintBC(cout);
+    }
+    if(hasHeader) cout << endl;
+    
 	//---------------------------------------------------
 	// Concentration Flux Material Points
-	if(fmobj->HasFluidTransport() && firstFluxPt!=NULL)
-	{	if(fmobj->HasDiffusion())
-		{	PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
-			cout << " Point  DOF Face ID Flux (" << UnitsController::Label(BCCONCFLUX_UNITS) << ") Arg ("
-					<< UnitsController::Label(BCARG_UNITS) << ")  Function";
-		}
+    hasHeader = false;
+    for(int dt=1;dt<NUM_DUFFUSION_OPTIONS;dt++)
+    {   if(firstDiffFluxBC[dt]==NULL) continue;
+        
+        // header out once
+        if(!hasHeader)
+        {
 #ifdef POROELASTICITY
-		else
-		{	PrintSection("NODAL POINTS WITH PORE PRESSURE FLUX");
-			cout << " Point  DOF Face ID Flux(v_F/(" << UnitsController::Label(CULENGTH_UNITS) << "^2-"
-					<< UnitsController::Label(TIME_UNITS)<< ")) Arg ("
-					<< UnitsController::Label(BCARG_UNITS) << ") Function";
-		}
+            if(fmobj->HasPoroelasticity())
+            {   PrintSection("MATERIAL POINTS WITH PORE PRESSURE OR OTHER FLUX");
+                cout << " Point  DOF Face Sty Flux (v_F/(" << UnitsController::Label(CULENGTH_UNITS) << "^2-"
+                        << UnitsController::Label(TIME_UNITS)<< ")) Arg ("
+                        << UnitsController::Label(BCARG_UNITS) << ") ID Function";
+            }
+            else
+            {   PrintSection("MATERIAL POINTS WITH CONCENTRATION OR OTHER FLUX");
+                cout << " Point  DOF Face Sty Flux (" << UnitsController::Label(BCCONCFLUX_UNITS) << ") Arg ("
+                        << UnitsController::Label(BCARG_UNITS) << ") ID Function";
+            }
+#else
+            PrintSection("MATERIAL POINTS WITH CONCENTRATION OR OTHER FLUX");
+            cout << " Point  DOF Face Sty Flux (" << UnitsController::Label(BCCONCFLUX_UNITS) << ") Arg ("
+                    << UnitsController::Label(BCARG_UNITS) << ") ID Function";
 #endif
-		cout << "\n---------------------------------------------------------------\n";
-		nextBC=(BoundaryCondition *)firstFluxPt;
-		while(nextBC!=NULL)
-			nextBC=nextBC->PrintBC(cout);
-		cout << endl;
-	}
+            cout << "\n-----------------------------------------------------------" << endl;
+            hasHeader = true;
+        }
+        
+        // print each one
+        nextBC = firstDiffFluxBC[dt];
+        while(nextBC!=NULL)
+            nextBC=nextBC->PrintBC(cout);
+    }
+    if(hasHeader) cout << endl;
 	
 	//---------------------------------------------------
 	// Conduction boundary conditions
 	if(ConductionTask::active && firstTempBC!=NULL)
 	{   PrintSection("NODAL POINTS WITH FIXED TEMPERATURES");
-		cout << " Node   ID   Temp (-----)   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Function\n"
+		cout << " Node   Sty  Temp (-----)   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Function\n"
 				<< "------------------------------------------------------\n";
 		nextBC=firstTempBC;
 		while(nextBC!=NULL)
@@ -309,7 +359,7 @@ void NairnMPM::OutputBCMassAndGrid(void)
 	// Heat Flux Material Points
 	if(ConductionTask::active && firstHeatFluxPt!=NULL)
 	{	PrintSection("MATERIAL POINTS WITH HEAT FLUX");
-		cout << " Point  DOF Face ID   Flux (" << UnitsController::Label(BCHEATFLUX_UNITS) << ")    Arg ("
+		cout << " Point  DOF Face Sty  Flux (" << UnitsController::Label(BCHEATFLUX_UNITS) << ")    Arg ("
 				<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
 				<< "---------------------------------------------------------------\n";
 		nextBC=(BoundaryCondition *)firstHeatFluxPt;
@@ -322,8 +372,9 @@ void NairnMPM::OutputBCMassAndGrid(void)
 	// Damaged Material Points
 	if(firstDamagedPt!=NULL)
 	{   PrintSection("MATERIAL POINTS HAVE INITIAL DAMAGE");
-		cout << "Plot history #1 to see initially damage particles" << endl;
-		cout << "Those fully failed have history #1 = 3" << endl;
+		cout << "Plot damage state to see initially damage particles" << endl;
+		cout << "Those fully failed have damage state = 3" << endl;
+		cout << "Plot phase field history to see their initial values" << endl;
 		cout << endl;
 		
 		// assign initial conditions and then delete
@@ -334,27 +385,36 @@ void NairnMPM::OutputBCMassAndGrid(void)
 			delete prevIC;
 		}
 	}
-	
+
 	// Print particle information and other preliminary calc results
 	PrintSection("FULL MASS MATRIX");
 	
 	char fline[200];
-	sprintf(fline,"Number of Material Points: %d",nmpms);
+	size_t fsize=200;
+	snprintf(fline,fsize,"Number of Material Points: %d",nmpms);
 	cout << fline << endl;
-	
+
 	// background grid info
 	mpmgrid.Output(IsAxisymmetric());
 	
-	sprintf(fline,"Adjusted time step (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),timestep*UnitsController::Scaling(1.e3));
+	snprintf(fline,fsize,"Adjusted time step (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),timestep*UnitsController::Scaling(1.e3));
 	cout << fline << endl;
 	
 	// propagation time step and other settings when has cracks
 	if(firstCrack!=NULL)
 	{	if(propagate[0])
-		{   sprintf(fline,"Propagation time step (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),propTime*UnitsController::Scaling(1.e3));
+		{   snprintf(fline,fsize,"Propagation time step (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),propTime*UnitsController::Scaling(1.e3));
 			cout << fline << endl;
 		}
 	}
+	
+    cout << "Nonrigid:" << nmpmsNR;
+    cout << " Rigid contact:" << (nmpmsRC-nmpmsNR);
+    cout << " Rigid BC:" << (nmpms-nmpmsRC) << endl;
+	if(mpmReservoir!=NULL)
+		mpmReservoir->output();
+	else
+		cout << "No reservoir available for unstructured grid" << endl;
 	
 	// blank line
 	cout << endl;
@@ -365,11 +425,7 @@ void NairnMPM::OutputBCMassAndGrid(void)
 // return name
 const char *NairnMPM::CodeName(void) const
 {
-#ifdef OSPARTICULAS
-	return "OSParticulas";
-#else
 	return "NairnMPM";
-#endif
 }
 
 // MPM analysis type
@@ -405,33 +461,8 @@ void NairnMPM::GetAnalysisType(int np,char *fline)
 // string about MPM additions (when printing out analysis type
 const char *NairnMPM::MPMAugmentation(void)
 {
-#ifdef IMPLICIT_STEP
-	if (exactTractions) {
-		if (implicit_step) {
-			return " ET Implicit";
-		}
-		else {
-			if (implicit_step)
-				return " Implicit";
-		}
-	}
-#endif
-	
-#ifdef ADD_PARTICLE_SPIN
-	// With exact tracitons
-	// options are none, +PS, +TGV +ET +PS+ET +TGV+ET
-	if(plusParticleSpin)
-	{	if(exactTractions)
-			return " +PS(Bp) +ET";
-		else
-			return " +PS(Bp)";
-	}
-	else if(exactTractions)
-		return " +ET";
-#else
 	if(exactTractions)
 		return " +ET";
-#endif
 	
 	// no features
 	return "";

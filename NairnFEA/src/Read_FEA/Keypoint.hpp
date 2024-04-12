@@ -9,9 +9,9 @@
 		none
 ********************************************************************************/
 
-#ifndef _KEYPOINT_
+#ifndef _JAN_KEYPOINT_
 
-#define _KEYPOINT_
+#define _JAN_KEYPOINT_
 
 class Keypoint : public LinkedObject
 {

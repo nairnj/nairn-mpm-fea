@@ -153,6 +153,8 @@ bool PostExtrapolationTask::Execute(int taskOption)
 	NodalVelBC::GridVelocityBCValues();
 	
 	// contact and grid velocity conditions
+    //if(MaterialContactNode::materialContactNodes.size()==0)
+    //    cout << "# no contact nodes were identified" << endl;
 	UpdateMomentaTask::ContactAndMomentaBCs(MASS_MOMENTUM_CALL);
 
 	// Impose transport BCs and extrapolate gradients to the particles

@@ -11,6 +11,7 @@
 #include "Nodes/NodalPoint.hpp"
 #ifdef MPM_CODE
 	#include "NairnMPM_Class/MeshInfo.hpp"
+    #include "Exceptions/CommonException.hpp"
 #endif
 
 // Local globals
@@ -393,6 +394,81 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int *nds,int getDeriv,
 	
 	// number of nodes (better be less than space available in nds[])
 	nds[0] = i;
+}
+
+// get GIMP shape functions and optionally derivatives wrt x and y
+// assumed to be properly numbered regular 3D array
+// input *xi position in element coordinate
+// output number of nodes in nds[0] and node numbers in nds[1] to nds[nds[0]]
+void EightNodeIsoparamBrick::TartanGimpShapeFunction(Vector *xi,int *nds,int getDeriv,double *sfxn,
+                                               double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
+{
+    double Svpx,Svpy,Svpz,dSvpx,dSvpy,dSvpz;
+    
+    // get element ratios along each axis
+    int ebelow,eabove;
+    mpmgrid.GetCorners3D(num,ebelow,eabove);
+    
+    // x direction ratios
+    double d1x = GetDeltaX();
+    double d0x = 2.*theElements[ebelow]->GetDeltaX()/d1x;
+    double d2x = 2.*theElements[eabove]->GetDeltaX()/d1x;
+    
+    // y direction ratios
+    double d1y = GetDeltaY();
+    double d0y = 2.*theElements[ebelow]->GetDeltaY()/d1y;
+    double d2y = 2.*theElements[eabove]->GetDeltaY()/d1y;
+    
+    // z direction ratios
+    double d1z = GetDeltaZ();
+    double d0z = 2.*theElements[ebelow]->GetDeltaZ()/d1z;
+    double d2z = 2.*theElements[eabove]->GetDeltaZ()/d1z;
+
+    // if locally equal sizes, can use normal GIMP
+    if(DbleEqual(d0x,1.) && DbleEqual(d2x,1.) && DbleEqual(d0y,1.) && DbleEqual(d2y,1.)
+                    && DbleEqual(d0z,1.) && DbleEqual(d2z,1.))
+    {   GimpShapeFunction(xi,nds,getDeriv,sfxn,xDeriv,yDeriv,zDeriv,lp);
+        return;
+    }
+    
+    // error is too small
+    if(lp.x>1. || lp.x>0.5*d0x || lp.x > 0.5*d2x || lp.y>1. || lp.y>0.5*d0y || lp.y > 0.5*d2y
+                    || lp.z>1. || lp.z>0.5*d0z || lp.z > 0.5*d2z)
+    {   // particle too large for Tartan GIMP code
+        throw CommonException("Particle too large for Tartan GIMP shape functions was found", "FourNodeIsoparam::TartanGimpShapeFunction");
+    }
+
+    int i=0;
+    for(int id=0;id<64;id++)
+    {   // x direction
+        double *dS = getDeriv ? &dSvpx : NULL;
+        if(!Tartan1D(g3xii[id],xi->x,lp.x,d0x,d2x,&Svpx,dS)) continue;
+        
+        // y direction
+        dS = getDeriv ? &dSvpy : NULL;
+        if(!Tartan1D(g3eti[id],xi->y,lp.y,d0y,d2y,&Svpy,dS)) continue;
+        
+        // z direction
+        dS = getDeriv ? &dSvpz : NULL;
+        if(!Tartan1D(g3zti[id],xi->z,lp.z,d0z,d2z,&Svpz,dS)) continue;
+
+        // shape function
+        sfxn[i] = Svpx*Svpy*Svpz;
+        
+        // the gradient shape functions
+        if(getDeriv)
+        {   xDeriv[i] = dSvpx*Svpy*Svpz/d1x;
+            yDeriv[i] = Svpx*dSvpy*Svpz/d1y;
+            zDeriv[i] = Svpx*Svpy*dSvpz/d1y;
+        }
+
+        // assign node
+        i++;
+        nds[i] = nodes[0] + x3off[id]*mpmgrid.xplane + y3off[id]*mpmgrid.yplane + z3off[id]*mpmgrid.zplane;
+    }
+    
+    // number of nodes (better be less than space available in nds[])
+    nds[0] = i;
 }
 
 // get GIMP shape functions and optionally derivatives wrt x and y

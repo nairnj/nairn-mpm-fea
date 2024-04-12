@@ -151,6 +151,14 @@ char *HEIsotropic::InitHistoryData(char *pchr,MPMBase *mptr)
 	return (char *)p;
 }
 
+// reset history data
+void HEIsotropic::ResetHistoryData(char *pchr,MPMBase *mptr)
+{	double *p = (double *)pchr;
+	plasticLaw->InitPlasticHistoryData(p);
+	p[J_History]=1.;					// J
+	p[J_History+1]=1.;					// Jres
+}
+
 // Number of history variables - plastic plus 2
 int HEIsotropic::NumberOfHistoryDoubles(void) const { return J_History+2; }
 
@@ -205,8 +213,9 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	mptr->SetHistoryDble(J_History,J,historyOffset);						// Stocking J
     
     // J is determinant of F (or sqrt root of determinant of B), Jeff is normalized to residual stretch
-	double dJres = GetIncrementalResJ(mptr,res);
-	double Jres = dJres * mptr->GetHistoryDble(J_History+1,historyOffset);
+    double Jres = mptr->GetHistoryDble(J_History+1,historyOffset);
+    double dJres = GetIncrementalResJ(mptr,res,Jres);
+    Jres *= dJres;
 	mptr->SetHistoryDble(J_History+1,Jres,historyOffset);
     double Jeff = J/Jres;
 	
@@ -271,7 +280,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
                                        + (st0.xz+sp->xz)*(du(2,0)+du(0,2)));
         }
         mptr->AddWorkEnergy(workEnergy);
-		
+
 		// residual energy or sigma.deres - it is zero here for isotropic material
 		// because deviatoric stress is traceless and deres has zero shear terms
 		// residual energy due to pressure was added in the pressure update
@@ -343,7 +352,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     
     // total work
     mptr->AddWorkEnergy(workEnergy);
-    
+
     // residual energy or sigma.deres - it is zero here for isotropic material
     // because deviatoric stress is traceless and deres has zero shear terms
     // residual energy due to pressure was added in the pressure update

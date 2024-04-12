@@ -24,4 +24,6 @@ public class PlotMenuItem
 	public String toString( ) { return item; }
 	
 	public int getTag( ) { return tag; }
+	
+	public void setString(String newItem) { item = newItem; }
 }

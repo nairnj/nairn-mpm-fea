@@ -224,8 +224,9 @@ int Atomic::FindFunctionCode(char *fxn) const
 	if(strcmp(fxn,"box")==0) return BOX_FXN;
 	if(strcmp(fxn,"sinbox")==0) return SINBOX_FXN;
 	if(strcmp(fxn,"sgn")==0) return SGN_FXN;
-	if (strcmp(fxn, "tri") == 0) return TRI_FXN;
-    if (strcmp(fxn, "cdfinv") == 0) return NORMALCDFINVERSE_FXN;
+	if(strcmp(fxn,"tri") == 0) return TRI_FXN;
+    if(strcmp(fxn,"cdfinv") == 0) return NORMALCDFINVERSE_FXN;
+    if(strcmp(fxn,"mod")==0) return MOD_FXN;
 
 	return -1;
 }

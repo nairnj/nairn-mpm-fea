@@ -30,6 +30,7 @@
 #include "Materials/LinearSoftening.hpp"
 #include "Materials/ExponentialSoftening.hpp"
 #include "Materials/SmoothStep3.hpp"
+#include "Materials/DbleExpSoftening.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "Materials/FailureSurface.hpp"
 #include <vector>
@@ -190,6 +191,11 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
 		return UnitsController::ScaledPtr((char *)&kCond,gScaling,1.e6);
 	}
     
+    else if(strcmp(xName,"swapz")==0)
+    {   input=INT_NUM;
+        return((char *)&swapz);
+    }
+    
 	// check properties only for some materials
 	if(SupportsArtificialViscosity())
 	{	if(strcmp(xName,"ArtificialVisc")==0)
@@ -343,9 +349,9 @@ void MaterialBase::PrintCommonProperties(void) const
 	// rigid only allow cracks option
 	if(IsRigid())
 	{	if(AllowsCracks())
-		cout << "Sees cracks" << endl;
-	else
-		cout << "Ignores cracks" << endl;
+			cout << "Sees cracks" << endl;
+		else
+			cout << "Ignores cracks" << endl;
 		return;
 	}
 	
@@ -384,13 +390,14 @@ void MaterialBase::PrintCommonProperties(void) const
 	
 	// particle damping
 	if(matUsePDamping)
-	{	cout << "Particle damping: " << matPdamping << " /sec" << endl;
+	{	cout << "Particle damping: " << matPdamping << " /" << UnitsController::Label(TIME_UNITS) << endl;
 	}
 	
 	// optional color
 	if(red>=0.)
 	{	char mline[200];
-		sprintf(mline,"color= %g, %g, %g, %g",red,green,blue,alpha);
+		size_t msize=200;
+		snprintf(mline,msize,"color= %g, %g, %g, %g",red,green,blue,alpha);
 		cout << mline << endl;
 	}
 }
@@ -399,6 +406,7 @@ void MaterialBase::PrintCommonProperties(void) const
 void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 {
 	char mline[200];
+	size_t msize=200;
 	
 	switch(thisCriterion)
 	{   case NO_PROPAGATION:
@@ -433,7 +441,7 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 				cout << endl;
 			}
 			if(constantDirection && thisDirection==DEFAULT_DIRECTION)
-			{	sprintf(mline,"direction = (%9.5f,%9.5f)",growDir.x,growDir.y);
+			{	snprintf(mline,msize,"direction = (%9.5f,%9.5f)",growDir.x,growDir.y);
 				cout << mline << endl;
 			}
 			break;
@@ -446,7 +454,7 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 			
 		case EMPIRICALCRITERION:
 			cout << "Empirical criterion" << PreferredDirection(thisDirection) << endl;
-			sprintf(mline,"KIc=%12.3f %s  KIIc=%12.3f %s KIexp=%12.3f KIIexp=%12.3f",
+			snprintf(mline,msize,"KIc=%12.3f %s  KIIc=%12.3f %s KIexp=%12.3f KIIexp=%12.3f",
 					KIc*UnitsController::Scaling(31.62277660168379e-9),UnitsController::Label(STRESSINTENSITY_UNITS),
 					KIIc*UnitsController::Scaling(31.62277660168379e-9),UnitsController::Label(STRESSINTENSITY_UNITS),
 					KIexp,KIIexp);
@@ -494,10 +502,10 @@ void MaterialBase::PrintTransportProperties(void) const
 	// Diffusion constants
 	if(fmobj->HasDiffusion())
 	{	PrintProperty("D",diffusionCon,UnitsController::Label(DIFFUSION_UNITS));
-		PrintProperty("csat",concSaturation,"");
-		cout << endl;
-		PrintProperty("b",betaI,"1/wt fr");
-		cout << endl;
+        PrintProperty("csat",concSaturation,"");
+        cout << endl;
+        PrintProperty("b",betaI,"1/wt fr");
+        cout << endl;
 	}
 	
 #ifdef POROELASTICITY
@@ -784,9 +792,13 @@ int MaterialBase::GetContactLawNum(int readID)
 //  creating space for super class history variables too. There is
 //  no mechanism now for calling super classes to prepend or
 //  append the data.
-// First is material points and second is for traction laws
+// The mptr is not commonly used
 char *MaterialBase::InitHistoryData(char *pchr,MPMBase *mptr) { return NULL; }
-char *MaterialBase::InitHistoryData(char *pchr) { return NULL; }
+
+// clear history data (default clears those return by number of history doubles
+void MaterialBase::ResetHistoryData(char *pchr,MPMBase *mptr)
+{	ZeroDoubles(pchr,NumberOfHistoryDoubles());
+}
 
 // Number of history variables (used by some materials when creating array of doubles)
 int MaterialBase::NumberOfHistoryDoubles(void) const { return 0; }
@@ -825,12 +837,25 @@ double *MaterialBase::CreateAndZeroDoubles(char *pchr,int numDoubles) const
 	double *p = (double *)pchr;
 	
 	// set all to zero
-	int i;
-	for(i=0;i<numDoubles;i++) p[i] = 0.0;
+	for(int i=0;i<numDoubles;i++) p[i] = 0.0;
 	
 	// return pointer
 	return p;
 }
+
+// Zero a collection of history doubles
+void MaterialBase::ZeroDoubles(char *pchr,int numDoubles) const
+{
+	// create buffer (if needed)
+	if(pchr==NULL || numDoubles<=0) return;
+	
+	// cast to double *
+	double *p = (double *)pchr;
+	
+	// set all to zero
+	for(int i=0;i<numDoubles;i++) p[i] = 0.0;
+}
+
 
 #pragma mark MaterialBase::Methods
 
@@ -866,7 +891,7 @@ Matrix3 MaterialBase::LRGetStrainIncrement(int axes,MPMBase *mptr,Matrix3 du,Mat
     mptr->SetDeformationGradientMatrix(pF);
     
     // decompose to get previous Rn and Rn-1
-    Matrix3 Rnm1,Rn;
+    Matrix3 Rnm1,Rn,Vn;
     Matrix3 *Rnm1Ptr = (Rnm1out==NULL) ? &Rnm1 : Rnm1out ;
     Matrix3 *RnPtr = (Rnout==NULL) ? &Rn : Rnout ;
     
@@ -900,7 +925,7 @@ Matrix3 MaterialBase::LRGetStrainIncrement(int axes,MPMBase *mptr,Matrix3 du,Mat
 }
 
 // get incremental residual voluje change (needed for phase change materials
-double MaterialBase::GetIncrementalResJ(MPMBase *mptr,ResidualStrains *res) const { return 0.; }
+double MaterialBase::GetIncrementalResJ(MPMBase *mptr,ResidualStrains *res,double Jres) const { return 0.; }
 
 // buffer size for mechanical properties
 int MaterialBase::SizeOfMechanicalProperties(int &altBufferSize) const
@@ -915,6 +940,8 @@ void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffe
 
 // Get transport property tensors (if change with particle state)
 // only called when there are transport tasks
+// Note: any material that overrides this method must scale by csatRelative, but
+//			can skip if csatRelative is always 1.
 void MaterialBase::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t) const
 {	*t = tr;
 }
@@ -924,19 +951,25 @@ void MaterialBase::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t
 // Legacy Units nJ/(g-K)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) const
 {
-    return heatCapacity;
+	return heatCapacity;
 }
 
-// For Cp heat capacity in nJ/(g-K)
-double MaterialBase::GetCpHeatCapacity(MPMBase *mptr) const { return GetHeatCapacity(mptr)+GetCpMinusCv(mptr); }
+// For Cp heat capacity in nJ/(g-K) (never used, and if needed, will need to pass offset for phase transitions)
+//double MaterialBase::GetCpHeatCapacity(MPMBase *mptr) const { return GetHeatCapacity(mptr)+GetCpMinusCv(mptr); }
 
 // A material can override to set Cp-Cv in nJ/(g-K)
 // From thermodyanamics Cp-Cv = (3K CTE ^2T/rho) where CTE is linear CTE
-// (if mptr==NULL, can use stress free temperature instead)
+// (currently only called with NULL to print reference Cp value)
 double MaterialBase::GetCpMinusCv(MPMBase *mptr) const { return 0; }
 
 // For eta/Q in poroelasticity, otherwise it is 1
 double MaterialBase::GetDiffusionCT(void) const { return diffusionCT; }
+
+// return true if this material might change CsatRelative from 1
+bool MaterialBase::NeedsCrelExtrap(void) const { return false; }
+
+// For relative csat = csat(state)/csat(material)
+double MaterialBase::GetCsatRelative(MPMBase *mptr) const { return 1.; }
 
 // Increment heat energy - call whenever dTq0 or dPhi changes
 // dTq0 is temperature rise due to material mechanisms if the process was adiabatic and reversible
@@ -951,13 +984,12 @@ void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dTq0,double dPhi) co
     // Adiabatic temperature change dT_{ad} = dTq0+dPhi/Cv
     if(ConductionTask::adiabatic)
     {   // temperature increased to buffered dT_{ad}
-		double dTad = dTq0+dPhi/Cv;
+		double dTphi = dPhi/Cv;
+		double dTad = dTq0+dTphi;
         mptr->Add_dTad(dTad);
 		
-        // no heat here because adiabatic
-        
-        // entropy
-		mptr->AddEntropy(dPhi,mptr->pPreviousTemperature);
+        // entropy due to dPhi only
+		mptr->AddEntropy(Cv,mptr->pPreviousTemperature,mptr->pPreviousTemperature+dTphi);
     }
     else
     {   // no temperature change because isothermal
@@ -966,7 +998,7 @@ void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dTq0,double dPhi) co
         double baseHeat = -Cv*dTq0;
         mptr->AddHeatEnergy(baseHeat-dPhi);
         
-        // for entropy dS = -Cv dTad/T + dPhi/T = - Cv dTq0/T
+        // for entropy dS = -Cv dTad/T + dPhi/T = - Cv dTq0/T at constant temperature
         mptr->AddEntropy(baseHeat,mptr->pPreviousTemperature);
     }
 }
@@ -1021,22 +1053,22 @@ Vector MaterialBase::GetDamageNormal(MPMBase *mptr,bool threeD) const
 
 #ifdef POROELASTICITY
 // To support poroelasticity, a material does the following:
-// 1. Convert poroelasticity properties into diffusion propertie in VerifyAndLoadProperties
+// 1. Convert poroelasticity properties into diffusion properties in VerifyAndLoadProperties
 // 2. Find and store Qalpha (a tensor in general, but scalar for isotropic)
-// 3. Call one of theses method in constitutive law
+// 3. Call one of these method in constitutive law
 // These assume isotropic materials; anisotropic materials must override
 void MaterialBase::UndrainedPressIncrement(MPMBase *mptr,double dVoverV) const
 {	// exit if not active
 	if(!DiffusionTask::HasPoroelasticity()) return;
 	double dpud = -Qalpha*dVoverV;
-	mptr->Add_dpud(dpud);
+	mptr->AddParticleDiffusionSource(0,dpud);
 }
 
 void MaterialBase::UndrainedPressIncrement(MPMBase *mptr,double dexx,double deyy,double dezz) const
 {	// exit if not active
 	if(!DiffusionTask::HasPoroelasticity()) return;
 	double dpud = -Qalpha*(dexx+deyy+dezz);
-	mptr->Add_dpud(dpud);
+	mptr->AddParticleDiffusionSource(0,dpud);
 }
 #endif
 
@@ -1663,7 +1695,9 @@ Vector MaterialBase::GetCrackingCOD(MPMBase *mptr,bool is2D) const
 }
 
 // concentration saturation (mptr cannot be NULL)
-double MaterialBase::GetMaterialConcentrationSaturation(MPMBase *mptr) const { return concSaturation; }
+double MaterialBase::GetMaterialConcentrationSaturation(MPMBase *mptr) const
+{	return concSaturation;
+}
 
 // density (NULL is allowed as long as material not using child materials)
 // in MPM use a MPMBase *, in FEA always use NULL
@@ -1672,6 +1706,63 @@ double MaterialBase::GetRho(MPMBase *mptr) const { return rho; }
 // damage mechanics can set relative strength and toughness if override
 void MaterialBase::SetRelativeStrength(MPMBase *,double) {}
 void MaterialBase::SetRelativeToughness(MPMBase *,double) {}
+
+// Source terms when add force for diffusion that depends on material type
+//      (-Vp*sh*source and optional those depending on gradients)
+double MaterialBase::GetMatDiffusionSource(int phaseStyle,MPMBase *mptr,double pConc,
+            double Vp,double sh,double dshdx,double dshdy,double dshdz) const
+{   return 0.;
+}
+
+// Get diffusion source caused by current state of particle. It is added in particle
+//    update rather then being pushed to the grid (as done by GetMatDiffusionSource())
+// It finds total particle *psource=Qp*dt/CT (if transport equation has a capacity term on the left)
+// Mechanics mode: materials that support this term must call it in their constitutive law(s) for
+//      any relevant transport tasks. If any return true, call mptr->AddParticleDiffusionSource()
+//      to buffer it on the particle until the next particle updates
+// Transport Only mode: this is called automatically in the particle updates for all transport
+//      tasks. If has a value, set *psource and return true
+bool MaterialBase::GetParticleDiffusionSource(DiffusionTask *task,MPMBase *mptr,double delTime,double *psource) const
+{   return false;
+}
+
+#pragma mark Material Base:Phase Field Accessors
+
+//----------------------------------------------------------------------------------
+// These dummy methods are defined in MaterialBase, but any material
+//      that supports a phase field diffusion task must overide them all and return
+//      physical constants.
+// None are called unless SupportsPhaseField() precalled and returns true
+// phaseStyle only needed if material supports multiple phase field and return
+//      values for that style.
+
+// Does this material suport phase field diffusion of type phaseField?
+bool MaterialBase::SupportsPhaseField(int phaseStyle) const { return false; }
+
+// Get maximum phase field diffusivity for time step calculations
+double MaterialBase::MaximumPhaseDiffusivity(int phaseStyle) const { return 0.; }
+
+// Viscosity for phase field diffusion (warning do not call unless known to have value)
+double MaterialBase::GetPhaseFieldViscosity(int phaseStyle) const { return -1.; }
+
+// Diffusion constant for phase field tasks (materials override to return value)
+Tensor MaterialBase::GetPhaseFieldDTensor(int phaseStyle,MPMBase *mptr) const
+{   Tensor Dtensor;
+    ZeroTensor(&Dtensor);
+    return Dtensor;
+}
+
+// Source terms when add force for phase field diffusion
+void MaterialBase::AdjustPhaseFieldValue(DiffusionTask *,double pConc,double pPrevConc,
+                            double &value,double &rate,double &lumpedValue,double deltime) const { }
+
+// Store phase field value in history
+void MaterialBase::StorePhaseFieldValue(int phaseStyle,MPMBase *mptr,double newValue) const { }
+
+// Store phase field delta value in history
+void MaterialBase::StorePhaseFieldDelta(int phaseStyle,MPMBase *mptr,double newDelta) const { }
+
+//----------------------------------------------------------------------------------
 
 #pragma mark Material Base:Other Accessors
 
@@ -1686,6 +1777,9 @@ bool MaterialBase::IsRigidContact(void) const { return false; }
 
 // return true is rigid black particle
 bool MaterialBase::IsRigidBlock(void) const { return false; }
+
+// return true is rigid black particle
+bool MaterialBase::IsRigidSpringBlock(void) const { return false; }
 
 // check if membrane material
 int MaterialBase::MaterialStyle(void) const { return SOLID_MAT; }
@@ -1713,6 +1807,10 @@ int MaterialBase::GetMVFFlags(int matfld)
 // convert field number (zero based) to material ID for that field (zero based)
 // When materials share a field, it is material ID for the base field
 int MaterialBase::GetFieldMatID(int matfld) { return fieldMatIDs[matfld]; }
+
+// convert field number (zero based) to material ID for that field (zero based)
+// When materials share a field, it is material ID for the base field
+MaterialBase *MaterialBase::GetFieldMaterial(int matfld) { return theMaterials[fieldMatIDs[matfld]]; }
 
 // convert active material number (zero based) to material ID for that field (zero based)
 // These are no rigid only
@@ -1798,7 +1896,8 @@ double MaterialBase::BracketContactLawShearRate(double gmaxdot,double k,double &
 }
 
 // for initial conditions (usually in history data)
-void MaterialBase::SetInitialConditions(InitialCondition *ic,MPMBase *mptr,bool is3D) {}
+// Currently used for initial damage state or initial phase field value
+void MaterialBase::SetInitialConditions(InitialCondition *ic,int ptNum,bool is3D) {}
 
 // Material that allow damage initiaion laws must accept
 // the final call and use if supported
@@ -1814,7 +1913,7 @@ void MaterialBase::SetInitiationLaw(char *lawName)
 	{   iLaw = new FailureSurface(this);
 		lawID = MAXPRINCIPALSTRESS;
 	}
-	
+
 	// was it found
 	if(iLaw==NULL)
 	{	ThrowSAXException("The damage initiation law '%s' is not valid",lawName);
@@ -1842,20 +1941,19 @@ bool MaterialBase::AcceptInitiationLaw(FailureSurface *iLaw,int lawID) { return 
 void MaterialBase::SetSofteningLaw(char *lawName,int mode)
 {
 	SofteningLaw *sLaw = NULL;
-	int lawID = 0;
 	
 	// this section is list of supported softening laws
 	if(strcmp(lawName,"Linear")==0 || strcmp(lawName,"1")==0)
 	{   sLaw = new LinearSoftening();
-		lawID = 1;
 	}
 	else if(strcmp(lawName,"Exponential")==0 || strcmp(lawName,"2")==0)
 	{   sLaw = new ExponentialSoftening();
-		lawID = 2;
 	}
 	else if(strcmp(lawName,"CubicStep")==0 || strcmp(lawName,"3")==0)
 	{   sLaw = new SmoothStep3();
-		lawID = 2;
+	}
+	else if(strcmp(lawName,"DoubleExponential")==0 || strcmp(lawName,"4")==0)
+	{   sLaw = new DbleExpSoftening();
 	}
 	
 	// was it found
@@ -1865,7 +1963,7 @@ void MaterialBase::SetSofteningLaw(char *lawName,int mode)
 	}
 	
 	// pass on to the material
-	if(!AcceptSofteningLaw(sLaw,lawID,mode))
+	if(!AcceptSofteningLaw(sLaw,mode))
 	{	delete sLaw;
 		ThrowSAXException("The softening law '%s' is not allowed by material",lawName);
 		return;
@@ -1874,7 +1972,7 @@ void MaterialBase::SetSofteningLaw(char *lawName,int mode)
 
 // A Material that allows damage initiaion laws should accept this one or it can
 // veto the choice by returning false
-bool MaterialBase::AcceptSofteningLaw(SofteningLaw *sLaw,int lawID,int mode) { return false; }
+bool MaterialBase::AcceptSofteningLaw(SofteningLaw *sLaw,int mode) { return false; }
 
 // zero-offset to damage mechanics history data - all damage mechanics materials must override
 // if material returns NULL, it is not a damage mechanics material

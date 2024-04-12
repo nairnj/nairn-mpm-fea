@@ -308,9 +308,6 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticity.hpp">
       <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\WoodMaterial.hpp">
-      <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\ClampedNeohookean.hpp">
       <Filter>NairnMPM_src\Hyperelastic_Plastic</Filter>
     </ClInclude>
@@ -593,6 +590,42 @@
     <ClInclude Include="..\..\..\..\System\Matrix4.hpp">
       <Filter>Common\System</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\FluidSource.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\LoadControl.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TrackError.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\DbleExpSoftening.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Read_XML\XYTXTImporter.hpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\Reservoir.hpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Read_MPM\AreaOfInterest.hpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\System\Spline2D.hpp">
+      <Filter>Common\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TIViscoelastic.hpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoDamageMech.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPhaseFieldSoftening.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PhaseFieldDiffusion.hpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -833,9 +866,6 @@
       <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPlasticity.cpp">
-      <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\WoodMaterial.cpp">
       <Filter>NairnMPM_src\Hypoplastic_Plastic</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\ClampedNeohookean.cpp">
@@ -1128,6 +1158,42 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\System\Matrix4.cpp">
       <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\FluidSource.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\LoadControl.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\TrackError.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\DbleExpSoftening.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Read_XML\XYTXTImporter.cpp">
+      <Filter>Common\Read_XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\NairnMPM_Class\Reservoir.cpp">
+      <Filter>NairnMPM_src\NairnMPM_Class</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Read_MPM\AreaOfInterest.cpp">
+      <Filter>NairnMPM_src\Read_MPM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\System\Spline2D.cpp">
+      <Filter>Common\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TIViscoelastic.cpp">
+      <Filter>NairnMPM_src\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoDamageMech.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\IsoPhaseFieldSoftening.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PhaseFieldDiffusion.cpp">
+      <Filter>NairnMPM_src\Custom_Tasks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

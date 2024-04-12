@@ -23,12 +23,17 @@ class ElementBase;
 class CrackController : public ParseController
 {
     public:
+		// contructor
+		CrackController();
 	
 		// methods
-		void AddCrack(CrackHeader *);
+		void AddCrack(CrackHeader *,bool);
 		int AddSegment(CrackSegment *,bool);
 		bool FinishCrack(void);
         int SetCracksArray(void);
+    
+    protected:
+
 };
 
 extern CrackController *crackCtrl;

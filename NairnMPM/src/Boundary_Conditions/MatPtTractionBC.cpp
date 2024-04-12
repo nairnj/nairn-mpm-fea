@@ -40,8 +40,9 @@ MatPtTractionBC::MatPtTractionBC(int num,int dof,int edge,int sty)
 BoundaryCondition *MatPtTractionBC::PrintBC(ostream &os)
 {
     char nline[200];
-    
-    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,
+	size_t nlsize=200;
+	
+	snprintf(nline,nlsize,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,
 			UnitsController::Scaling(1.e-6)*GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
 	PrintFunction(os);

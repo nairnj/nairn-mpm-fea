@@ -61,6 +61,23 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 {
 	int q=-1,thisBuffer=0,pindex=-1;
     
+    // check for alternate name
+    int i=0,nameOffset=-1;
+    while(pName[i]!=0)
+    {   if(pName[i]==':')
+        {   nameOffset=i+1;
+            pName[i]=0;
+            // replace spaces
+            i++;
+            while(pName[i]!=0)
+            {   if(pName[i]==' ') pName[i]='_';
+                i++;
+            }
+            break;
+        }
+        i++;
+    }
+    
     // default return value
     char *retPtr = (char *)&dummyArg;
 	
@@ -189,6 +206,18 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 		thisBuffer=1;
     }
     
+    else if(strcmp(pName,"history")==0)
+    {   q=VTK_HISTORY_NUM;
+        if(intIndex>=MAX_INTEGER_ARGUMENTS)
+        {   cout << "Too many parameter arguments in VTKArchive options" << endl;
+            return NULL;
+        }
+        retPtr = (char *)&intArgs[intIndex];
+        pindex = intIndex;
+        intIndex++;
+        thisBuffer=1;
+    }
+    
 	// if found one, add to arrays
 	if(q>=0)
 	{	quantity.push_back(q);
@@ -196,8 +225,16 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
         qparam.push_back(pindex);                       // index to argument array while reading (if>=0) (set to arguments when done)
 		//if(thisBuffer<0) thisBuffer=-thisBuffer;
 		if(thisBuffer>0) bufferSize+=thisBuffer;
-		char *qname=new char[strlen(pName)+1];
-		strcpy(qname,pName);
+        char *qname;
+        if(nameOffset<0)
+        {   qname = new char[strlen(pName)+1];
+            strcpy(qname,pName);
+        }
+        else
+        {   char *qptr = &pName[nameOffset];
+            qname = new char[strlen(qptr)+1];
+            strcpy(qname,qptr);
+        }
 		quantityName.push_back(qname);
 		input=INT_NUM;
         return retPtr;
@@ -243,6 +280,20 @@ CustomTask *VTKArchive::Initialize(void)
                 throw CommonException("VTKArchive volumegradient must be for an available material","VTKArchive::Initialize");
             }
             qparam[q] = matnum;
+        }
+        else if(quantity[q]==VTK_HISTORY_NUM)
+        {   if(qparam[q]<0 )
+            {   cout << endl;
+                throw CommonException("VTKArchive history must provide a history number","VTKArchive::Initialize");
+            }
+            int hnum = intArgs[qparam[q]];
+            if(strcmp(name,"history")==0) cout << " " << hnum;
+            len+=3;
+            if(hnum<1 || hnum>19)
+            {   cout << endl;
+                throw CommonException("VTKArchive history number must be 1 to 19","VTKArchive::Initialize");
+            }
+            qparam[q] = hnum;
         }
 		if(q<quantity.size()-1) cout << ", ";
 		len+=(int)strlen(name)+2;
@@ -509,10 +560,14 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
                 
             case VTK_CONCENTRATION:
 				if(fmobj->HasDiffusion())
-                	theWt=wt*mpnt->GetConcSaturation();
+					theWt=wt*mpnt->GetConcSaturation()*mpnt->pDiff[0]->conc;
+#ifdef POROELASTICITY
+				else if(fmobj->HasPoroelasticity())
+					theWt=wt*UnitsController::Scaling(1.e-6)*mpnt->pDiff[0]->conc;
+#endif
 				else
-					theWt=wt*UnitsController::Scaling(1.e-6);
-                *vtkquant+=theWt*mpnt->pConcentration;
+					theWt=0.;
+                *vtkquant+=theWt;
                 vtkquant++;
                 break;
                 
@@ -536,7 +591,12 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
                 vtkquant++;
                 break;
             
-            default:
+            case VTK_HISTORY_NUM:
+                *vtkquant += wt*mpnt->GetHistoryDble(qparam[q],0);
+                vtkquant++;
+                break;
+                
+           default:
                 // skip those not extrapolated
                 break;
         }

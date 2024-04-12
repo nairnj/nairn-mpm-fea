@@ -14,6 +14,8 @@
 #include "Read_XML/BMPLevel.hpp"
 #include "Read_XML/MaterialController.hpp"
 #include "Read_XML/XYBMPImporter.hpp"
+#include "Read_XML/XYTXTImporter.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #ifdef MPM_CODE
 extern char rotationAxes[4];
@@ -276,7 +278,7 @@ void CommonReadHandler::TranslateBMPFiles(void)
 // set index into the BMP file, but make sure within bounds 0 to indexMax-1
 int CommonReadHandler::BMPIndex(double value,int indexMax)
 {
-	int index=(int)floor(value);
+	int index=(int)value;
 	if(index<0)
 		index=0;
 	else if(index>=indexMax)
@@ -288,18 +290,28 @@ int CommonReadHandler::BMPIndex(double value,int indexMax)
 // Subroutine to read BMP file
 // throws std::bad_alloc, SAXException()
 //-----------------------------------------------------------
-void *CommonReadHandler::ReadXYFile(char *bmpFullPath,XYInfoHeader &info,int dataType,bool isReadingXML)
+void *CommonReadHandler::ReadXYFile(char *bmpFullPath,XYInfoHeader &info,bool requireBytes,bool isReadingXML)
 {
 	// get file extension
 	char ext[11];
+	int dataType = BYTE_DATA;
 	GetFileExtension(bmpFullPath,ext,10);
 	
 	// get file type from extension (case insensitive)
 	XYFileImporter *xyFile = NULL;
 	if(CIstrcmp(ext,"bmp")==0)
-		xyFile = (XYFileImporter *)new XYBMPImporter(bmpFullPath,isReadingXML);
+		xyFile = (XYFileImporter *)new XYBMPImporter(bmpFullPath,isReadingXML,dataType);
+	else if(CIstrcmp(ext,"txt")==0 && !requireBytes)
+	{	dataType = TEXT_DELIMITED;
+		xyFile = (XYFileImporter *)new XYTXTImporter(bmpFullPath,isReadingXML,dataType);
+	}
 	else
-		throw SAXException(XYFileError("The bit mapped file type is not recognized.",bmpFullPath));
+	{	char *errMsg = XYFileError("The bit mapped file type is not recognized.",bmpFullPath);
+		if(isReadingXML)
+			throw SAXException(errMsg);
+		else
+			throw CommonException(errMsg,"CommonReadHandler::ReadXYFile");
+	}
 	
 	// Read the file header
 	xyFile->GetXYFileHeader(info);
@@ -308,15 +320,12 @@ void *CommonReadHandler::ReadXYFile(char *bmpFullPath,XYInfoHeader &info,int dat
 	if(dataType==BYTE_DATA)
 	{	unsigned char **rows=new (nothrow) unsigned char *[info.height];
 		if(rows==NULL)
-		{	delete xyFile;
-			throw SAXException(XYFileError("Out of memory reading bit mapped file file.",bmpFullPath));
-		}
+			xyFile->XYFileImportError("Out of memory reading bit mapped file.");
+
 		for(int row=0;row<info.height;row++)
 		{	rows[row]=new (nothrow) unsigned char[info.width];
 			if(rows[row]==NULL)
-			{	delete xyFile;
-				throw SAXException(XYFileError("Out of memory reading bit mapped file file.",bmpFullPath));
-			}
+				xyFile->XYFileImportError("Out of memory reading bit mapped file.");
 		}
 		
 		// read the data
@@ -330,9 +339,28 @@ void *CommonReadHandler::ReadXYFile(char *bmpFullPath,XYInfoHeader &info,int dat
 	}
 	
 	else
-	{	delete xyFile;
-		throw SAXException(XYFileError("Unable to read requested type of data.",bmpFullPath));
+	{	// read to floats (to save space)
+		float **rows = new (nothrow) float *[info.height];
+		if(rows==NULL)
+			xyFile->XYFileImportError("Out of memory reading text file.");
+
+		for(int row=0;row<info.height;row++)
+		{	rows[row]=new (nothrow) float[info.width];
+			if(rows[row]==NULL)
+				xyFile->XYFileImportError("Out of memory reading bit text file.");
+		}
+		
+		// read the data
+		xyFile->ReadXYFileData((unsigned char **)rows,info);
+	
+		// close the file
+		delete xyFile;
+	
+		// return the data pointer
+		return rows;
 	}
+	
+	return NULL;
 }
 
 // create error message with bmp file name
@@ -351,7 +379,7 @@ char *CommonReadHandler::XYFileError(const char *msg,const char *fileName)
 }
 
 // Give input width, height, zlevel and file info, decode into final image width, height, and zlevel and
-// x and y length per pixel (note - dimensiones are not scaled from mm)
+// x and y length per pixel (note - dimensions are not scaled from mm)
 // If error, return string
 const char *CommonReadHandler::DecodeBMPWidthAndHeight(XYInfoHeader info,double &width,double &height,double &zlevel,Vector &pw,bool is3D)
 {
@@ -369,7 +397,8 @@ const char *CommonReadHandler::DecodeBMPWidthAndHeight(XYInfoHeader info,double 
 		pw.y = info.ycell;
 	}
 	else
-	{	// here means one or both was provided
+	{	// here means one or both was provided, but may be negative
+        // if negative give -(length unts per pixel) (or data cell in text files)
 		if(height<0. && height>-1.e8)
 		{	pw.y = -height;
 			height = pw.y*(double)info.height;
@@ -485,7 +514,8 @@ bool CommonReadHandler::MapDomainToImage(XYInfoHeader info,Vector spot,Vector or
 }
 
 // Find the most prominent level withing a domain on top of and bmp grid
-BMPLevel *CommonReadHandler::FindBMPLevel(BMPLevel *startLevel,DomainMap map,unsigned char **rows)
+BMPLevel *CommonReadHandler::FindBMPLevel(BMPLevel *startLevel,DomainMap map,
+                                          unsigned char **rows,int dataType)
 {
 	// clear level weights
 	BMPLevel *nextLevel = startLevel;
@@ -512,10 +542,16 @@ BMPLevel *CommonReadHandler::FindBMPLevel(BMPLevel *startLevel,DomainMap map,uns
 				
 			// find ID (i.e., material) at this level
 			// (note: last level with ID=0 catches empty space when doing materials)
-			nextLevel=startLevel;
+ 			nextLevel=startLevel;
 			while(nextLevel!=NULL)
-			{	int levID=nextLevel->Material(rows[row][col],weight);
-				if(levID>=0) break;
+            {   int levID;
+                if(dataType==BYTE_DATA)
+                    levID=nextLevel->Material(rows[row][col],weight);
+                else
+                {   unsigned char rowChar = (unsigned char)(((float **)rows)[row][col]);
+                    levID=nextLevel->Material(rowChar,weight);
+                }
+ 				if(levID>=0) break;
 				nextLevel=(BMPLevel *)nextLevel->GetNextObject();
 			}
 		}
@@ -532,7 +568,7 @@ BMPLevel *CommonReadHandler::FindBMPLevel(BMPLevel *startLevel,DomainMap map,uns
 
 // Search domain and find weight average of pixel values in the domain
 // If find any value calculate average and return true, otherwise return false
-double CommonReadHandler::FindAverageValue(DomainMap map,unsigned char **rows)
+double CommonReadHandler::FindAverageValue(DomainMap map,unsigned char **rows,int dataType,bool &hasWeight)
 {
 	// initialize
 	double totalIntensity=0.;
@@ -559,13 +595,19 @@ double CommonReadHandler::FindAverageValue(DomainMap map,unsigned char **rows)
 				weight=rweight;
 			
 			// add pixel value
-			totalIntensity += weight*rows[row][col];
+			if(dataType==BYTE_DATA)
+				totalIntensity += weight*rows[row][col];
+			else
+				totalIntensity += weight*((float **)rows)[row][col];
 			totalWeight += weight;
 		}
 	}
 	
 	// get weight average value
-	if(totalWeight>0.) totalIntensity /= totalWeight;
+	if(totalWeight>0.)
+	{	hasWeight = true;
+		totalIntensity /= totalWeight;
+	}
 	return totalIntensity;
 }
 

@@ -99,20 +99,13 @@ void BodyForce::GetGridBodyForce(Vector *theFrc,Vector *fpos,double utime)
 	// exit if no grid functions
 	if(!hasGridBodyForce) return;
 
-#ifdef USE_ASCII_MAP
+    // set variables (see Expression vmap)
 	double vars[5];
 	vars[0] = 4.5;
 	vars[1] = utime*UnitsController::Scaling(1.e3);		//t
 	vars[2] = fpos->x;		//x
 	vars[3] = fpos->y;		//y
 	vars[4] = fpos->z;		//z
-#else
-	unordered_map<string,double> vars;
-	vars["t"] = utime*UnitsController::Scaling(1000.);
-	vars["x"] = fpos->x;
-	vars["y"] = fpos->y;
-	vars["z"] = fpos->z;
-#endif
 	
 	// body force functions
 	if(gridBodyForceFunction[0]!=NULL)
@@ -164,7 +157,7 @@ void BodyForce::SetGridBodyForceFunction(char *bcFunction,int input)
 // Return true if need to add any forces in the post forces task
 bool BodyForce::HasGridDampingForces()
 {
-	// True is body forces (gravity or functions)
+	// True if body forces (gravity or functions)
 	if(gravity || bodyFrc.hasGridBodyForce) return true;
 	
 	// nothing needed to change forces
@@ -215,10 +208,11 @@ double BodyForce::GetParticleDamping(double utime)
 void BodyForce::Output(void)
 {
 	char hline[200];
+	size_t hsize=200;
 	
     // Gravity
 	if(gravity)
-	{	sprintf(hline,"Body force per %s: (%g,%g,%g) %s/%s^2",UnitsController::Label(CUMASS_UNITS),
+	{	snprintf(hline,hsize,"Body force per %s: (%g,%g,%g) %s/%s^2",UnitsController::Label(CUMASS_UNITS),
 				gforce.x,gforce.y,gforce.z,UnitsController::Label(CULENGTH_UNITS),UnitsController::Label(TIME_UNITS));
 		cout << hline << endl;
 	}
@@ -246,17 +240,17 @@ void BodyForce::Output(void)
 		cout << "Grid damping = " << expr << " /" << UnitsController::Label(TIME_UNITS) << endl;
 	}
 	else if(damping!=0.)
-	{	sprintf(hline,"Grid damping: %g /%s",damping,UnitsController::Label(TIME_UNITS));
+	{	snprintf(hline,hsize,"Grid damping: %g /%s",damping,UnitsController::Label(TIME_UNITS));
 		cout << hline << endl;
 	}
     else if(!useFeedback)
     {   // turn off if nothing above and no feedback too
         useDamping = false;
     }
-    
+
     // Grid feedback damping
 	if(useFeedback)
-	{	sprintf(hline,"Grid feedback damping with coefficient: %g /%s^2",dampingCoefficient,UnitsController::Label(CULENGTH_UNITS));
+	{	snprintf(hline,hsize,"Grid feedback damping with coefficient: %g /%s^2",dampingCoefficient,UnitsController::Label(CULENGTH_UNITS));
 		cout << hline << endl;
 		if(function!=NULL)
 		{	const char *expr = function->GetString();
@@ -265,7 +259,7 @@ void BodyForce::Output(void)
         else
             cout << "   Target kinetic energy = 0" << endl;
         if(maxAlpha>0.)
-        {	sprintf(hline,"   Maximum grid damping alpha: %g /%s",maxAlpha,UnitsController::Label(TIME_UNITS));
+        {	snprintf(hline,hsize,"   Maximum grid damping alpha: %g /%s",maxAlpha,UnitsController::Label(TIME_UNITS));
             cout << hline << endl;
         }
 	}
@@ -276,7 +270,7 @@ void BodyForce::Output(void)
 		cout << "Particle damping = " << expr << " /" << UnitsController::Label(TIME_UNITS) << endl;
 	}
 	else if(pdamping!=0.)
-	{	sprintf(hline,"Particle damping: %g /%s",pdamping,UnitsController::Label(TIME_UNITS));
+	{	snprintf(hline,hsize,"Particle damping: %g /%s",pdamping,UnitsController::Label(TIME_UNITS));
 		cout << hline << endl;
 	}
     else if(!usePFeedback)
@@ -286,7 +280,7 @@ void BodyForce::Output(void)
     
     // Particle feedback damping
 	if(usePFeedback)
-	{	sprintf(hline,"Particle feedback damping with coefficient: %g /%s^2",pdampingCoefficient,UnitsController::Label(CULENGTH_UNITS));
+	{	snprintf(hline,hsize,"Particle feedback damping with coefficient: %g /%s^2",pdampingCoefficient,UnitsController::Label(CULENGTH_UNITS));
 		cout << hline << endl;
 		if(pfunction!=NULL)
 		{	const char *expr = pfunction->GetString();
@@ -295,7 +289,7 @@ void BodyForce::Output(void)
         else
             cout << "   Target kinetic energy = 0" << endl;
         if(maxPAlpha>0.)
-        {	sprintf(hline,"   Maximum particle damping alpha: %g /%s",maxPAlpha,UnitsController::Label(TIME_UNITS));
+        {	snprintf(hline,hsize,"   Maximum particle damping alpha: %g /%s",maxPAlpha,UnitsController::Label(TIME_UNITS));
             cout << hline << endl;
         }
 	}
@@ -319,7 +313,8 @@ void BodyForce::UpdateAlpha(double delTime,double utime)
 	else
 	{	int p;
 		for(p=1;p<nmpmsNR;p++)
-		{	kineticEnergy += mpm[p]->KineticEnergy();
+		{	if(mpm[p]->InReservoir()) continue;		// don't add those in resevoir
+			kineticEnergy += mpm[p]->KineticEnergy();
 			totalMass += mpm[p]->mp;
 		}
 	}

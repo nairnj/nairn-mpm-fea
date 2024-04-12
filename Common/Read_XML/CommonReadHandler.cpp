@@ -15,6 +15,7 @@
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Exceptions/StrX.hpp"
+#include "Read_XML/Expression.hpp"
 
 #pragma mark CommonReadHandler: Constructors and Destructor
 
@@ -133,10 +134,6 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 			meshType=EXPLICIT_MESH;
 			if(theNodes==NULL) theNodes=new NodesController();
 		}
-		else if(block==CRACKMESHBLOCK)
-		{	// will add to current crack in crckCtrl
-			block=CRACKNODELIST;
-		}
 		else
 			throw SAXException("<NodeList> must be within a <Mesh> element.");
     }
@@ -149,10 +146,6 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 				throw SAXException("<ElementList> cannot be used with a generated mesh.");
 			block=ELEMENTLIST;
 			if(theElems==NULL) theElems=new ElementsController();
-		}
-		else if(block==CRACKMESHBLOCK)
-		{	// will add to current crack in crckCtrl
-			block=CRACKELEMENTLIST;
 		}
 		else
 			throw SAXException("<ElementList> must be within a <Mesh> element.");
@@ -295,18 +288,17 @@ void CommonReadHandler::endElement(const XMLCh *const uri,const XMLCh *const loc
 			theElems = NULL;
 		}
 		
-		// return to parent block (CRACKLIST is for MPM)
-		block = block==MESHBLOCK ? NO_BLOCK : CRACKLIST ;
+		block = NO_BLOCK;
 	}
 	
 	else if(strcmp(xName,"NodeList")==0)
 	{	// return to parent block
-		block = block==NODELIST ? MESHBLOCK : CRACKMESHBLOCK;
+		block = MESHBLOCK;
 	}
 	
 	else if(strcmp(xName,"ElementList")==0)
 	{	// return to parent block
-		block = block==ELEMENTLIST ? MESHBLOCK : CRACKMESHBLOCK;
+		block = MESHBLOCK;
 	}
 	
 	else if(strcmp(xName,"DisplacementBCs")==0)
@@ -356,6 +348,19 @@ void CommonReadHandler::characters(const XMLCh* const chars,const XMLSize_t leng
 			*((double *)inputPtr)*=gScaling;
 			gScaling=1.;
             break;
+        
+        case EXPRESSION_STR:
+            // if needed, cannot be NULL, empty, or a duplicate
+            if(strlen(xData)==0)
+            {   ThrowSAXException("A material expression with zero-length string");
+                return;
+            }
+            if(*((Expression **)inputPtr)!=NULL)
+            {    ThrowSAXException("Duplicate expression found for the same material property");
+                return;
+            }
+            *((Expression **)inputPtr) =  Expression::CreateExpression(xData,"Material expression is not a valid function");
+            break;
 		
 		case ANALYSIS_NUM:
 		{	CommonAnalysis *obj = GetCommonAnalysis();
@@ -364,6 +369,7 @@ void CommonReadHandler::characters(const XMLCh* const chars,const XMLSize_t leng
 				throw SAXException("Unknown <Analysis> type in the <Header>.");
 			break;
 		}
+
 		case NOT_NUM:
 			break;
 		
@@ -686,7 +692,7 @@ bool CommonReadHandler::GetFreeFormatNumbers(char *nData,vector<double> &values,
 	if(numOffset)
 	{	numstr[numOffset]=0;
 		sscanf(numstr,"%lf",&dval);
-		values.push_back(dval);
+		values.push_back(dval*scaling);
 	}
 	
 	return true;

@@ -141,13 +141,13 @@ void GhostNode::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *dummy
 	ghost->XPICSupport(xpicCalculation,xpicOption,real,timestep,m,k,vsign);
 }
 
-// zero gTnext on ghost nodes (only used in TRANSPORT_ONLY mode)
+// zero gTnext on ghost nodes
 void GhostNode::InitializeForXPICTransport(TransportTask *nextTransport,int xpicOption)
 {	if(ghost!=NULL)
 		nextTransport->InitializeForXPIC(ghost,-1.,xpicOption);
 }
 
-// XPIC reduction (only used in TRANSPORT_ONLY mode)
+// XPIC reduction
 void GhostNode::XPICReductionTransport(int k,TransportTask *nextTransport)
 {	if(ghost!=NULL)
 	{	// add from ghost to real
@@ -215,4 +215,3 @@ NodalPoint *GhostNode::GetNodePointer(void)
 // return private variables as is
 NodalPoint *GhostNode::GetGhostNodePointer(void) { return ghost; }
 NodalPoint *GhostNode::GetRealNodePointer(void) { return real; }
-

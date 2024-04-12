@@ -33,6 +33,7 @@ class EightNodeIsoparamBrick : public ElementBase3D
 		virtual double GetThickness(void) const;
 	
 		virtual void GimpShapeFunction(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
+        virtual void TartanGimpShapeFunction(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
 		virtual void BGimpShapeFunction(Vector *,int *,int,double *,double *,double *,double *,Vector &) const;
 		virtual void GetXiPos(const Vector *,Vector *) const;
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,

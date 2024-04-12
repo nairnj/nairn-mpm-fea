@@ -15,14 +15,13 @@
 #include <fstream>
 #include "Read_XML/CommonReadHandler.hpp"
 
-
 class XYFileImporter
 {
 	public:
 	
 		// constructors and destructors
 		XYFileImporter();
-		XYFileImporter(char *,bool);
+		XYFileImporter(char *,bool,int);
 		virtual ~XYFileImporter();
 		
 		// virtual methods

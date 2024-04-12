@@ -34,7 +34,7 @@ class BoxController : public ShapeController
     
 		// methods
 		virtual bool ContainsPoint(Vector &);
-    
+
         // accessors
         virtual bool Is2DShape(void);
         virtual const char *GetShapeName();

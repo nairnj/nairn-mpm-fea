@@ -150,11 +150,13 @@
     <ClInclude Include="..\..\..\..\Read_XML\ShapeController.hpp" />
     <ClInclude Include="..\..\..\..\Read_XML\XYBMPImporter.hpp" />
     <ClInclude Include="..\..\..\..\Read_XML\XYFileImporter.hpp" />
+    <ClInclude Include="..\..\..\..\Read_XML\XYTXTImporter.hpp" />
     <ClInclude Include="..\..\..\..\System\CommonAnalysis.hpp" />
     <ClInclude Include="..\..\..\..\System\CommonArchiveData.hpp" />
     <ClInclude Include="..\..\..\..\System\CommonTask.hpp" />
     <ClInclude Include="..\..\..\..\System\DataTypes.hpp" />
     <ClInclude Include="..\..\..\..\System\LinkedObject.hpp" />
+    <ClInclude Include="..\..\..\..\System\Spline2D.hpp" />
     <ClInclude Include="..\..\..\..\System\UnitsController.hpp" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
@@ -175,7 +177,6 @@
     <ClCompile Include="..\..\..\..\..\NairnFEA\src\NairnFEA_Class\FEAStartResults.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnFEA\src\NairnFEA_Class\NairnFEA.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnFEA\src\Nodes\MoreNodalPoint.cpp" />
-    <ClCompile Include="..\..\..\..\..\NairnFEA\src\Numerical\Gauss.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\Area.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\BitMapFilesFEA.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnFEA\src\Read_FEA\ConstraintController.cpp" />
@@ -223,12 +224,15 @@
     <ClCompile Include="..\..\..\..\Read_XML\ShapeController.cpp" />
     <ClCompile Include="..\..\..\..\Read_XML\XYBMPImporter.cpp" />
     <ClCompile Include="..\..\..\..\Read_XML\XYFileImporter.cpp" />
+    <ClCompile Include="..\..\..\..\Read_XML\XYTXTImporter.cpp" />
     <ClCompile Include="..\..\..\..\System\CommonAnalysis.cpp" />
     <ClCompile Include="..\..\..\..\System\CommonArchiveData.cpp" />
     <ClCompile Include="..\..\..\..\System\CommonTask.cpp" />
     <ClCompile Include="..\..\..\..\System\CommonUtilities.cpp" />
+    <ClCompile Include="..\..\..\..\System\Gauss.cpp" />
     <ClCompile Include="..\..\..\..\System\LinkedObject.cpp" />
     <ClCompile Include="..\..\..\..\System\main.cpp" />
+    <ClCompile Include="..\..\..\..\System\Spline2D.cpp" />
     <ClCompile Include="..\..\..\..\System\svninfo.cpp" />
     <ClCompile Include="..\..\..\..\System\UnitsController.cpp" />
     <ClCompile Include="stdafx.cpp">

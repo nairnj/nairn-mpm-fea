@@ -9,6 +9,8 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.util.ArrayList;
+
 import javax.swing.*;
 
 import geditcom.JNFramework.*;
@@ -59,22 +61,19 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	// REMOTE_ACCESS
 	// remote server
 	public static String RemoteServerKey = "Remote Server";
-	public static String RemoteServerDef = "";
 	public static String RemoteUserKey = "Remote Username";
-	public static String RemoteUserDef = "";
 	public static String RemoteUserPassKey = "Remote Password";
-	public static String RemoteUserPassDef = "";
 	// code exec location (local or remote)
+	public static String RemoteMPMPathKey = "Remote Path to MPM Code";
+	public static String RemoteMPMDTDKey = "Remote Path to MPM DTD";
+	public static String RemoteFEAPathKey = "Remote Path to FEA Code";
+	public static String RemoteFEADTDKey = "Remote Path to FEA DTD";
+	
+	// Multiple Remove Servers
+	public static String RemoteServerListKey = "Remote Server List";
+	public static String RemoteServerListDef = "";
 	public static String CodeExecLocationKey = "Code Exec Location";
 	public static String CodeExecLocationDef = "local";
-	public static String RemoteMPMPathKey = "Remote Path to MPM Code";
-	public static String RemoteMPMPathDef = "/usr/local/bin/NairnMPM";
-	public static String RemoteMPMDTDKey = "Remote Path to MPM DTD";
-	public static String RemoteMPMDTDDef = "/usr/local/bin/NairnMPM.dtd";
-	public static String RemoteFEAPathKey = "Remote Path to FEA Code";
-	public static String RemoteFEAPathDef = "/usr/local/bin/NairnFEA";
-	public static String RemoteFEADTDKey = "Remote Path to FEA DTD";
-	public static String RemoteFEADTDDef = "/usr/local/bin/NairnFEA.dtd";
 
 	// plot spectrum
 	public static String SpectrumKey = "PlotSpectrum";
@@ -124,8 +123,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	public static String dispMeshLineColorKey = "Displaced Mesh Line Color";
 	public static Color dispMeshLineColorDef = new Color(191, 191, 191); // 0.75f,0.75f,0.75f
 
-	
-	// plot colors not yed editable
+	// plot colors not yet editable
 	public static String tempBCColorKey = "Temperature BC Color";
 	public static Color tempBCColorDef = Color.red;
 	public static String concBCColorKey = "Temperature BC Color";
@@ -135,6 +133,12 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	public static String maxElongKey = "Max Elongation Plotted";
 	public static double maxElongDef = 5.0;									// <1 for no limit
 
+	// plot options
+	public static String PlotOptionsFlagsKey = "PlotOptionsFlags";
+	public static int PlotOptionsFlagsDef = 0x007F;
+	public static String ParticleSizeKey = "ParticleSize";
+	public static int ParticleSizeDef = 100;
+	
 	private JTextField mpmCodePath = new JTextField();
 	private JTextField mpmDTDPath = new JTextField();
 	private JTextField feaCodePath = new JTextField();
@@ -152,6 +156,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	private JCheckBox validateFEA = new JCheckBox("Validate",NairnFEAValidateDef);
 
 	// REMOTE_ACCESS
+	private JComboBox<PlotMenuItem> remoteList=new JComboBox<PlotMenuItem>();
 	private JTextField remoteServerAddr = new JTextField();
 	private JTextField remoteUsername = new JTextField();
 	private JPasswordField remoteUserpass = new JPasswordField();
@@ -162,7 +167,20 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	private JRadioButton rdbtnExecLocal = new JRadioButton("Local");
 	private JRadioButton rdbtnExecRemote = new JRadioButton("Remote");
 	
+	private ArrayList<String> servers;
+	private ArrayList<String> currentServer = new ArrayList<String>(7);
+	public int currentServerIndex;
+	public static String serverDelim = ",";
+	
 	private static boolean currentRemoteMode = false;
+	
+	public static final int ServerIP = 0;
+	public static final int ServerUser = 1;
+	public static final int ServerPWD = 2;
+	public static final int ServerMPM = 3;
+	public static final int ServerMPMDTD = 4;
+	public static final int ServerFEA = 5;
+	public static final int ServerFEADTD = 6;
 
 	// ----------------------------------------------------------------------------
 	// constructor
@@ -197,7 +215,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 	}
 	
-	// create code prferences panel
+	// create code preferences panel
 	public JPanel codePanel()
 	{	JPanel panel1 = new JPanel(new GridLayout(6,1));
 
@@ -231,16 +249,125 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		c.insets=new Insets(3,6,3,6);
 		c.weighty = 0.;
 
-		// Remove server line -------------------------------------------
-		String toolTip = "Enter server address (e.g. 'mpm.fsl.orst.edu')";
-		remoteLine(panel3,gridbag,c,"Remote Server:",remoteServerAddr,
-				prefs.get(RemoteServerKey, RemoteServerDef),RemoteServerKey,toolTip);
-		
-		// User name and password line -------------------------
+		// Remote server list -------------------------------------------
 		c.gridx=0;
 		c.weightx = 0.;
 		c.gridwidth = 1;
-		JLabel label = new JLabel("Username:");
+		JLabel label = new JLabel("Servers:");
+		label.setHorizontalAlignment(JLabel.RIGHT);
+		gridbag.setConstraints(label,c);
+		panel3.add(label);
+		
+		c.gridx=1;
+		c.weightx = 3.0;
+		c.gridwidth = 3;
+		remoteList.removeAllItems();
+		remoteList.addItem(new PlotMenuItem("Pick a server..."));
+		servers = getPrefList(RemoteServerListKey,RemoteServerListDef,serverDelim);
+		if(servers.size()==1)
+		{	// delete it if empty
+			if(servers.get(0).length()==0)
+				servers.clear();
+		}
+		
+		// loop through servers and add valid ones to the menu
+		int i=0;
+		while(i<servers.size())
+		{	String serverName = servers.get(i);
+			ArrayList<String> config = getPrefList(serverName,"",serverDelim);
+			if(config.size()<7)
+			{	// not valid
+				servers.remove(i);
+			}
+			else
+			{	remoteList.addItem(new PlotMenuItem(serverName));
+				i++;
+			}
+		}
+		currentServer.clear();
+		currentServerIndex = 0;			// item in menu (1 to # of servers)
+		
+		// finish menu and add to panel
+		remoteList.addItem(new PlotMenuItem("Add server..."));
+		remoteList.addItem(new PlotMenuItem("Delete current server..."));
+		remoteList.setToolTipText("Pick existing server or create a new one");
+		gridbag.setConstraints(remoteList,c);
+		panel3.add(remoteList);
+		
+		// when use menu, insert the expression
+		remoteList.addItemListener(new ItemListener()
+		{	public void itemStateChanged(ItemEvent e)
+			{	int numItems = remoteList.getItemCount();
+				int newIndex = remoteList.getSelectedIndex();
+				if(e.getStateChange()==ItemEvent.SELECTED)
+				{	if(newIndex==numItems-2)
+					{	// add a server (not added to refs until name is changed
+						String addName = "server.ip.or.name";
+						int extra = 1;
+						while(!uniqueServer(addName))
+						{	addName = "server.ip.or.name"+"."+extra;
+							extra++;
+						}
+						currentServer.clear();
+						currentServer.add(addName);
+						currentServer.add("username");
+						currentServer.add("password");
+						currentServer.add("/usr/local/bin/NairnMPM");
+						currentServer.add("/usr/local/bin/NairnMPM.dtd");
+						currentServer.add("/usr/local/bin/NairnFEA");
+						currentServer.add("/usr/local/bin/NairnFEA.dtd");
+						
+						// save in preferences (change list of servers and key for that server)
+						servers.add(addName);
+						setPrefList(RemoteServerListKey,servers,serverDelim);
+						setPrefList(addName,currentServer,serverDelim);
+						
+						// select it (which will get it inserted)
+						remoteList.insertItemAt(new PlotMenuItem(addName),numItems-2);
+						remoteList.setSelectedIndex(numItems-2);
+					}
+					else if(newIndex==numItems-1)
+					{	// delete serve data and from server list
+						if(currentServerIndex>0)
+						{	String delServer = currentServer.get(ServerIP);
+							prefs.remove(delServer);
+							servers.remove(currentServerIndex-1);
+							setPrefList(RemoteServerListKey,servers,serverDelim);
+							remoteList.removeItemAt(currentServerIndex);
+							currentServerIndex = -1;
+							currentServer.clear();
+							remoteList.setSelectedIndex(0);
+						}
+					}
+					else if(newIndex==0)
+					{	// pick zero item
+						currentServerIndex = -1;
+						currentServer.clear();
+						insertServer();
+					}
+					else if(newIndex!=currentServerIndex)
+					{	// switch to an existing server
+						PlotMenuItem pm=(PlotMenuItem)remoteList.getSelectedItem();
+						String serverName = pm.toString();
+						if(newIndex!=currentServerIndex);
+						{	currentServer = getPrefList(serverName,"",serverDelim);
+							currentServerIndex = newIndex;
+							insertServer();
+						}
+					}
+				}
+			}
+		});
+
+		// Server name --------------------------
+		String toolTip = "Enter server address (e.g. 'mpm.fsl.orst.edu')";
+		remoteLine(panel3,gridbag,c,"Server Name:",remoteServerAddr,RemoteServerKey,toolTip);
+		
+		// User name and password line (empty for now) -------------------------
+		c.gridx=0;
+		c.weightx = 0.;
+		c.gridwidth = 1;
+		label = new JLabel("Username:");
 		label.setHorizontalAlignment(JLabel.RIGHT);
 		gridbag.setConstraints(label,c);
 		panel3.add(label);
@@ -248,8 +375,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		c.gridx=1;
 		c.weightx = 1.5;
 		c.gridwidth = 1;
-		remoteUsername.setText(prefs.get(RemoteUserKey, RemoteUserDef));
-		remoteUsername.setActionCommand("Username:");
+		remoteUsername.setActionCommand(RemoteUserKey);
 		remoteUsername.addActionListener(this);
 		remoteUsername.addFocusListener(new PrefFocusListener(RemoteUserKey));
 		remoteUsername.setToolTipText("Enter user name for server '"+remoteServerAddr.getText()+"'");
@@ -267,8 +393,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		c.gridx=3;
 		c.weightx = 1.5;
 		c.gridwidth = 1;
-		remoteUserpass.setText(prefs.get(RemoteUserPassKey, RemoteUserPassDef));
-		remoteUserpass.setActionCommand("Password:");
+		remoteUserpass.setActionCommand(RemoteUserPassKey);
 		remoteUserpass.addActionListener(this);
 		remoteUserpass.addFocusListener(new PrefFocusListener(RemoteUserPassKey));
 		remoteUserpass.setToolTipText("Enter password for user '"+remoteUsername.getText()+"' on server '"+remoteServerAddr.getText()+"'");
@@ -277,19 +402,15 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		
 		// MPM Code -------------------------------------------
 		toolTip = "Enter full path to MPM executeable (can use '~' to indicate home directory)";
-		remoteLine(panel3,gridbag,c,"MPM Code Path:",mpmCodePathFld,
-				prefs.get(RemoteMPMPathKey, RemoteMPMPathDef),RemoteMPMPathKey,toolTip);
+		remoteLine(panel3,gridbag,c,"MPM Code Path:",mpmCodePathFld,RemoteMPMPathKey,toolTip);
 		toolTip = "Enter full path to MPM dtd file (cannot use '~' to indicate home directory)";
-		remoteLine(panel3,gridbag,c,"MPM DTD Path:",mpmDTDPathFld,
-				prefs.get(RemoteMPMDTDKey, RemoteMPMDTDDef),RemoteMPMDTDKey,toolTip);
+		remoteLine(panel3,gridbag,c,"MPM DTD Path:",mpmDTDPathFld,RemoteMPMDTDKey,toolTip);
 		
 		// FEA Code -------------------------------------------
 		toolTip = "Enter full path to FEA executeable (can use '~' to indicate home directory)";
-		remoteLine(panel3,gridbag,c,"FEA Code Path:",feaCodePathFld,
-				prefs.get(RemoteFEAPathKey, RemoteFEAPathDef),RemoteFEAPathKey,toolTip);
+		remoteLine(panel3,gridbag,c,"FEA Code Path:",feaCodePathFld,RemoteFEAPathKey,toolTip);
 		toolTip = "Enter full path to FEA dtd file (cannot use '~' to indicate home directory)";
-		remoteLine(panel3,gridbag,c,"FEA DTD Path:",feaDTDPathFld,
-				prefs.get(RemoteFEADTDKey, RemoteFEADTDDef),RemoteFEADTDKey,toolTip);
+		remoteLine(panel3,gridbag,c,"FEA DTD Path:",feaDTDPathFld,RemoteFEADTDKey,toolTip);
 		
 		// Remove/local buttons
 		ButtonGroup execLocation = new ButtonGroup();
@@ -698,9 +819,10 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 
 		return fSizes;
 	}
+	
 	// line on remote panel with label and text field
 	public void remoteLine(JPanel panel3,GridBagLayout gridbag,GridBagConstraints c,String tlab,
-			JTextField theFld,String theValue,String aPrefKey,String toolTip)
+			JTextField theFld,String aPrefKey,String toolTip)
 	{
 		c.gridx=0;
 		c.weightx = 0.;
@@ -713,13 +835,41 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		c.gridx=1;
 		c.weightx = 3.0;
 		c.gridwidth = 3;
-		theFld.setText(theValue);
-		theFld.setActionCommand(tlab);
+		theFld.setActionCommand(aPrefKey);
 		theFld.addActionListener(this);
 		theFld.addFocusListener(new PrefFocusListener(aPrefKey));
 		theFld.setToolTipText(toolTip);
 		gridbag.setConstraints(theFld,c);
 		panel3.add(theFld);
+	}
+	
+	// file remote fields with current server
+	public void insertServer()
+	{	if(currentServer.size()>=7)
+		{	remoteServerAddr.setText(currentServer.get(ServerIP));
+			remoteUsername.setText(currentServer.get(ServerUser));
+			remoteUserpass.setText(currentServer.get(ServerPWD));
+			mpmCodePathFld.setText(currentServer.get(ServerMPM));
+			mpmDTDPathFld.setText(currentServer.get(ServerMPMDTD));
+			feaCodePathFld.setText(currentServer.get(ServerFEA));
+			feaDTDPathFld.setText(currentServer.get(ServerFEADTD));
+		}
+		else
+		{	remoteServerAddr.setText("");
+			remoteUsername.setText("");
+			remoteUserpass.setText("");
+			mpmCodePathFld.setText("");
+			mpmDTDPathFld.setText("");
+			feaCodePathFld.setText("");
+			feaDTDPathFld.setText("");
+		}
+	}
+	
+	// check if new name is unique
+	public boolean uniqueServer(String addr)
+	{	for(int i=0;i<servers.size();i++)
+			if(addr.equals(servers.get(i))) return false;
+		return true;
 	}
 
 	// Create panel for file path entry
@@ -768,9 +918,15 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		c.gridx++;
 		c.insets = new Insets(0, 0, 0, 6); // tlbr
 		JButton change = new JButton("Change...");
-		change.setActionCommand(pathName);
-		change.addActionListener(this);
-		change.setToolTipText("Click to change the " + pathName + " path");
+		if(NairnFEAMPMViz.isWindowsOS() && pathName.contentEquals("Shell Command"))
+		{	change.setEnabled(false);
+			change.setToolTipText("Shell command not used in Windows");
+		}
+		else
+		{	change.setActionCommand(pathName);
+			change.addActionListener(this);
+			change.setToolTipText("Click to change the " + pathName + " path");
+		}
 		change.setFocusable(false);
 		gridbag.setConstraints(change, c);
 		filePanel.add(change);
@@ -957,35 +1113,6 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 			}
 		}
 
-		// REMOTE_ACCESS
-		else if (theCmd.equalsIgnoreCase("Username:"))
-		{	prefs.put(RemoteUserKey, remoteUsername.getText());
-		}
-
-		else if (theCmd.equalsIgnoreCase("Remote Server:"))
-		{	prefs.put(RemoteServerKey, this.remoteServerAddr.getText());
-		}
-
-		else if (theCmd.equalsIgnoreCase("Password:"))
-		{	prefs.put(RemoteUserPassKey, new String(remoteUserpass.getPassword()));
-		}
-
-		else if (theCmd.equalsIgnoreCase("MPM Code Path:"))
-		{	prefs.put(RemoteMPMPathKey, mpmCodePathFld.getText());
-		}
-
-		else if (theCmd.equalsIgnoreCase("MPM DTD Path:"))
-		{	prefs.put(RemoteMPMDTDKey, mpmDTDPathFld.getText());
-		}
-
-		else if (theCmd.equalsIgnoreCase("FEA Code Path:"))
-		{	prefs.put(RemoteFEAPathKey, feaCodePathFld.getText());
-		}
-
-		else if (theCmd.equalsIgnoreCase("FEA DTD Path:"))
-		{	prefs.put(RemoteFEADTDKey, feaDTDPathFld.getText());
-		}
-
 		else if (theCmd.equalsIgnoreCase("code exec location"))
 		{	if (this.rdbtnExecLocal.isSelected())
 			{	prefs.put(CodeExecLocationKey, "local");
@@ -1024,18 +1151,92 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		}
 		
 		else
-		{	JComboBox<?> cb = (JComboBox<?>) e.getSource();
-			if(cb == spectrumBox)
-			{	int oldType = ColorPicker.getSpectrumType();
-				int newType = cb.getSelectedIndex();
-				if(newType != oldType)
-				{	prefs.putInt(SpectrumKey, newType);
-					ColorPicker.setSpectrumType();
+		{	// the rest. Check remote first
+			boolean valid = changeRemoteOption(theCmd);
+			
+			if(!valid)
+			{	JComboBox<?> cb = (JComboBox<?>) e.getSource();
+				if(cb == spectrumBox)
+				{	int oldType = ColorPicker.getSpectrumType();
+					int newType = cb.getSelectedIndex();
+					if(newType != oldType)
+					{	prefs.putInt(SpectrumKey, newType);
+						ColorPicker.setSpectrumType();
+					}
 				}
+				else
+					System.out.println("Unrecognized preferences commane: "+theCmd);
 			}
-			else
-				System.out.println("Unrecognized preferences commane: "+theCmd);
 		}
+	}
+	
+	// action or focus change for remote field
+	public boolean changeRemoteOption(String theCmd)
+	{
+		if (theCmd.equals(RemoteServerKey))
+		{	if(currentServerIndex<1) return true;
+		
+			// if name not changed, do nothing
+			String newName = remoteServerAddr.getText();
+			if(newName.equals(currentServer.get(ServerIP))) return true;
+			
+			// make sure unique name
+			if(!uniqueServer(newName))
+			{	remoteServerAddr.setText(currentServer.get(ServerIP));
+				JNUtilities.showMessage(this, "The new server name is not valid. It matches an existing server.");
+				return true;
+			}
+			
+			// remove old key (new one set below)
+			prefs.remove(currentServer.get(ServerIP));
+			
+			// change name and menu item (committed below)
+			currentServer.set(ServerIP,newName);	
+			PlotMenuItem pm=(PlotMenuItem)remoteList.getItemAt(currentServerIndex);
+			pm.setString(newName);
+			remoteList.repaint();
+			
+			// update servers list
+			servers.set(currentServerIndex-1, newName);
+			setPrefList(RemoteServerListKey,servers,serverDelim);
+		}
+
+		if(theCmd.equals(RemoteUserKey))
+		{	if(currentServerIndex<1) return true;
+			currentServer.set(ServerUser, remoteUsername.getText());	
+		}
+
+		else if (theCmd.equals(RemoteUserPassKey))
+		{	if(currentServerIndex<1) return true;
+			currentServer.set(ServerPWD,new String(remoteUserpass.getPassword()));
+		}
+
+		else if (theCmd.equals(RemoteMPMPathKey))
+		{	if(currentServerIndex<1) return true;
+			currentServer.set(ServerMPM,mpmCodePathFld.getText());
+		}
+
+		else if (theCmd.equals(RemoteMPMDTDKey))
+		{	if(currentServerIndex<1) return true;
+			currentServer.set(ServerMPMDTD,mpmDTDPathFld.getText());
+		}
+
+		else if (theCmd.equals(RemoteFEAPathKey))
+		{	if(currentServerIndex<1) return true;
+			currentServer.set(ServerFEA,feaCodePathFld.getText());
+		}
+
+		else if (theCmd.equals(RemoteFEADTDKey))
+		{	if(currentServerIndex<1) return true;
+			currentServer.set(ServerFEADTD,feaDTDPathFld.getText());
+		}
+		
+		else
+			return false;
+		
+		// update now
+		setPrefList(currentServer.get(0),currentServer,serverDelim);
+		return true;
 	}
 
 	// ----------------------------------------------------------------------------
@@ -1082,6 +1283,24 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 			currentRemoteMode = false;
 		return currentRemoteMode;
 	}
+	public static ArrayList<String> getServerInfo()
+	{	NFMVPrefs prefWindow = (NFMVPrefs)NFMVPrefs.appPreferencesWindow();
+		if(prefWindow!=null)
+		{	if(prefWindow.currentServerIndex>0)
+				return prefWindow.currentServer;
+		}
+		
+		// use the first one
+		ArrayList<String> availableServers = getPrefList(RemoteServerListKey,RemoteServerListDef,serverDelim);
+		if(availableServers.size()<1) return null;
+		
+		// look up the first one
+		String firstServer = availableServers.get(0);
+		ArrayList<String> useServer = getPrefList(firstServer,"",serverDelim);
+		if(useServer.size()<7) return null;
+
+		return useServer;
+	}
 	
 	// listenere for fields tied to string preferences
 	public class PrefFocusListener implements FocusListener
@@ -1093,8 +1312,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		}
 		
 		public void focusLost(FocusEvent e)
-		{	String newValue;
-			if(prefKey.equals(NumContoursKey))
+		{	if(prefKey.equals(NumContoursKey))
 			{	try
 				{	int newContours=Integer.valueOf(numContours.getText());
 					if(newContours<1) newContours=1;
@@ -1123,11 +1341,8 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 				}
 			}
 			else
-			{	if(prefKey.equals(RemoteUserPassKey))
-					newValue = new String(((JPasswordField)e.getComponent()).getPassword());
-				else
-					newValue = ((JTextField)e.getComponent()).getText();
-				prefs.put(prefKey, newValue);
+			{	if(currentServerIndex>0)
+					changeRemoteOption(prefKey);
 			}
 		}
 		

@@ -64,7 +64,7 @@ BoundaryCondition *BoundaryCondition::UnsetDirection(void)
 BoundaryCondition *BoundaryCondition::PrintBC(ostream &os)
 {
     char nline[200];
-    sprintf(nline,"%7d %2d %15.7e %15.7e",nodeNum,style,GetBCValueOut(),GetBCFirstTimeOut());
+    snprintf(nline,200,"%7d %2d %15.7e %15.7e",nodeNum,style,GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
     PrintFunction(os);
     return (BoundaryCondition *)GetNextObject();
@@ -91,20 +91,17 @@ double BoundaryCondition::BCValue(double stepTime)
 		case FUNCTION_VALUE:
 			if(stepTime>=ftime)
 			{
-#ifdef USE_ASCII_MAP
+                // (see Expression vmap)
 				double vars[7];
 				vars[0] = 6.5;
 				vars[1] = UnitsController::Scaling(1.e3)*(stepTime-ftime);		//t
-#else
-				unordered_map<string, double> vars;
-				vars["t"] = UnitsController::Scaling(1.e3)*(stepTime-ftime);
-#endif
 				GetPositionVars(vars);
 				currentValue = scale*function->EvaluateFunction(vars);
 			}
         default:
             break;
     }
+ 
     return currentValue;
 }
 
@@ -134,7 +131,7 @@ int BoundaryCondition::GetNodeNum(double bctime)
         default:
             break;
     }
-	return nodeNum;
+    return nd[nodeNum]->NodeHasParticles() ? nodeNum : 0L ;
 }
 
 // just return the nodeNum
@@ -167,8 +164,7 @@ void BoundaryCondition::SetFunction(char *bcFunction)
 	// value=1.;
 }
 
-#ifdef USE_ASCII_MAP
-// put x,y,z,q into fixed places in array
+// put x,y,z,q into fixed places in array (see Expression vmap)
 void BoundaryCondition::GetPositionVars(double *vars)
 {	int i=GetNodeNum();
 	vars[2] = nd[i]->x;		//x
@@ -176,16 +172,6 @@ void BoundaryCondition::GetPositionVars(double *vars)
 	vars[4] = nd[i]->z;		//z
 	vars[6] = 0.;			//q
 }
-#else
-// put x,y,z,q into unordered map
-void BoundaryCondition::GetPositionVars(unordered_map<string,double> vars)
-{	int i=GetNodeNum();
-	vars["x"] = nd[i]->x;
-	vars["y"] = nd[i]->y;
-	vars["z"] = nd[i]->z;
-	vars["q"] = 0.;
-}
-#endif
 
 // Boundary condition ID may be used for some purpose by certain conditions
 // Be sure to set it whenever create or reuse a boundary conditions
@@ -233,4 +219,3 @@ double BoundaryCondition::GetBCFirstTimeOut(void)
 void BoundaryCondition::SetBCOffset(double bcoffset) { offset = bcoffset; }
 double BoundaryCondition::GetBCOffset(void) { return offset; }
 int BoundaryCondition::GetBCStyle(void) { return style; }
-

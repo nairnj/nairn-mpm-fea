@@ -4,13 +4,11 @@
     
     Created by John Nairn on 5/16/06.
     Copyright (c) 2006, All rights reserved.
-	
-	Dependencies
-		none
-*********************************************************************/
+********************************************************************/
 
 #include "stdafx.h"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "NairnMPM_Class/Reservoir.hpp"
 #include "Patches/GridPatch.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
@@ -21,6 +19,7 @@
 #include "Materials/MaterialBase.hpp"
 #include "Materials/ContactLaw.hpp"
 #include "Exceptions/MPMWarnings.hpp"
+#include "Read_XML/CommonReadHandler.hpp"
 #include <algorithm>
 
 // global class for grid information
@@ -34,10 +33,12 @@ MeshInfo::MeshInfo(void)
 	cartesian=UNKNOWN_GRID;
 	horiz=0;                        // also flag that used <Grid> command (i.e. structured grid)
 	cellMinSize=-1.;				// calculated when needed
+	xpnum=-1;						// default patching
+	tartanPatches=false;
 	minParticleSize = MakeVector(1.e50,1.e50,1.e50);
 	
 	// for contact
-	materialNormalMethod=LOGISTIC_REGRESSION;       		// method to find normals in multimaterial contact
+	materialNormalMethod=LOGISTIC_REGRESSION;		// method to find normals in multimaterial contact
 	hasImperfectInterface = false;							// flag for any imperfect interfaces
 	materialContactLawID = -1;
 	rigidGradientBias=1.;						// Use rigid gradient unless material volume gradient is this much higher (only normal method 2)
@@ -54,6 +55,7 @@ MeshInfo::MeshInfo(void)
 void MeshInfo::Output(bool isAxisym)
 {
     char fline[200];
+	size_t fsize=200;
 
 	if(cartesian>0)
 	{	if(horiz>0)
@@ -67,44 +69,68 @@ void MeshInfo::Output(bool isAxisym)
         
         else
         {   if(isAxisym)
-                sprintf(fline," orthogonal grid with dR: %g dZ: %g",grid.x,grid.y);
+				snprintf(fline,fsize," orthogonal grid with dR: %g dZ: %g",grid.x,grid.y);
             else
-                sprintf(fline," orthogonal grid with dx: %g dy: %g",grid.x,grid.y);
+				snprintf(fline,fsize," orthogonal grid with dx: %g dy: %g",grid.x,grid.y);
             cout << fline;
-            if(!DbleEqual(grid.z,0.))
-            {	sprintf(fline," dz: %g",grid.z);
+            if(fmobj->IsThreeD())
+            {	snprintf(fline,fsize," dz: %g",grid.z);
                 cout << fline;
             }
             cout << endl;
             
             if(isAxisym)
-                sprintf(fline,"Origin at R: %g Z: %g",xmin,ymin);
+				snprintf(fline,fsize,"Origin at R: %g Z: %g",xmin,ymin);
             else
-                sprintf(fline,"Origin at x: %g y: %g",xmin,ymin);
+				snprintf(fline,fsize,"Origin at x: %g y: %g",xmin,ymin);
             cout << fline;
-            if(!DbleEqual(grid.z,0.))
-            {	sprintf(fline," z: %g",zmin);
+            if(fmobj->IsThreeD())
+            {	snprintf(fline,fsize," z: %g",zmin);
                 cout << fline;
             }
             cout << endl;
         }
 		
 		if(!fmobj->IsThreeD() && !isAxisym)
-		{	sprintf(fline,"Thickness: %g",zmin);
+		{	snprintf(fline,fsize,"Thickness: %g",zmin);
 			cout << fline << endl;
 		}
 
 #ifdef _OPENMP
 		if(isAxisym)
-			sprintf(fline,"Patch Grid R: %d Z: %d",xpnum,ypnum);
+			snprintf(fline,fsize,"Patch Grid R: %d Z: %d",xpnum,ypnum);
 		else
-			sprintf(fline,"Patch Grid x: %d y: %d",xpnum,ypnum);
+			snprintf(fline,fsize,"Patch Grid x: %d y: %d",xpnum,ypnum);
 		cout << fline;
-		if(!DbleEqual(grid.z,0.))
-		{	sprintf(fline," z: %d",zpnum);
+		if(fmobj->IsThreeD())
+		{	snprintf(fline,fsize," z: %d",zpnum);
 			cout << fline;
 		}
-		cout << endl;
+		if(tartanPatches)
+		{	cout << " with tartan spacings:" << endl;
+			if(isAxisym)
+				cout << "  R:";
+			else
+				cout << "  X:";
+			for(int i=0;i<xsizes.size();i++)
+				cout << " " << xsizes[i];
+			cout << endl;
+			if(isAxisym)
+				cout << "  Z:";
+			else
+				cout << "  Y:";
+			for(int i=0;i<ysizes.size();i++)
+				cout << " " << ysizes[i];
+			cout << endl;
+			if(fmobj->IsThreeD())
+			{	cout << "  Z:";
+				for(int i=0;i<zsizes.size();i++)
+					cout << " " << zsizes[i];
+				cout << endl;
+			}
+		}
+		else
+			cout << endl;
 #endif
 	}
 	else
@@ -187,6 +213,7 @@ bool MeshInfo::EdgeNode(int num,char dir)
 
 // If have a structured grid, get the eight 2D neighbor elements. The 1-based
 // element numbers are returned and the list is terminated by 0
+// unless on the edge, it will return 8 (3 below, left, right, 3 above)
 // neighbor needs to be size [9]
 void MeshInfo::ListOfNeighbors2D(int num,int *neighbor)
 {
@@ -255,6 +282,17 @@ void MeshInfo::ListOfNeighbors2D(int num,int *neighbor)
 	
 	// mark the end
 	neighbor[i]=0;
+}
+
+// If have a structured, orthogonal grid, get elements -1 in all direction in ebelow
+// and +1 in all direction in eabove (used by Tartan grid shape functions)
+// Returns 0-based numbers to point to element list
+// Warning: does not check and below>=0 and above<umber of elements
+void MeshInfo::GetCorners2D(int num,int &ebelow,int &eabove)
+{
+    // element num = (row-1)*Nhoriz + col;        // 1 based
+    ebelow = num-2-horiz;
+    eabove = num+horiz;
 }
 
 // If have a structured grid, get the 26 (3D) neighbor elements. The 1-based
@@ -342,7 +380,19 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 	neighbor[i]=0;
 }
 
-// For structured, find node for input to moving velocity boundary conditions. It will find the closest
+// If have a structured, orthogonal grid, get elements -1 in all direction in ebelow
+// and +1 in all direction in eabove (used by Tartan grid shape functions)
+// Returns 0-based numbers to point to element list
+// Warning: does not check and below>=0 and above<umber of elements
+void MeshInfo::GetCorners3D(int num,int &ebelow,int &eabove)
+{
+    // element num = (slice-1)*Nhoriz*Nvert + (row-1)*Nhoriz + col;  // if all 1 based
+    int yzshift = horiz + horiz*vert;
+    ebelow = num-2-yzshift;
+    eabove = num+yzshift;
+}
+
+// For structured grid, find node for input to moving velocity boundary conditions. It will find the closest
 // 		node to n0 but inside the object (higher number for side=-1 or lower for side=1). If
 // 		position is on a node move -side nodes away.
 // Also returns the gap between nodes in the input direction in dir to step through
@@ -375,7 +425,8 @@ int MeshInfo::FindShiftedNodeFromNode(int n0,double position,int dir,int side,in
 	// Exception if left the grid
 	if(leftGrid)
 	{   char msg[100];
-		sprintf(msg,"Moving condition starting on node %d has left the grid",n0);
+		size_t msgSize=100;
+		snprintf(msg,msgSize,"Moving condition starting on node %d has left the grid",n0);
 		throw CommonException(msg,"");
 	}
 
@@ -401,16 +452,21 @@ int MeshInfo::FindShiftedNodeFromNode(int n0,double position,int dir,int side,in
 						firstNode += xplane;
 				}
 				else
-				{	firstNode -= xplane;
-					while(nd[firstNode]->x>position)
+				{	while(nd[firstNode-xplane]->x>position)
 						firstNode -= xplane;
 				}
 				// Now nd[firstNode-xplane]->x <= position < nd[firstNode]->x
-				// For side=1 shift to previous interval
+				double dfirst,dcell;
 				if(side==1)
-				{	while(nd[firstNode]->x>=position)
-						firstNode -= xplane;
+				{	// For side=1 shift to get
+					//    nd[firstNode]->x < position <= nd[firstNode+xplane]->x
+					firstNode -= xplane;
+					if(nd[firstNode]->x == position) firstNode -= xplane;
 				}
+				// check depth using cell width for cell more interior than one with position
+				dfirst = position-nd[firstNode-side*xplane]->x;
+				dcell = nd[firstNode]->x-nd[firstNode-side*xplane]->x;
+				if(dfirst/dcell<depth) firstNode -= side*xplane;
 			}
 			break;
 		
@@ -429,16 +485,21 @@ int MeshInfo::FindShiftedNodeFromNode(int n0,double position,int dir,int side,in
 						firstNode += yplane;
 				}
 				else
-				{	firstNode -= yplane;
-					while(nd[firstNode]->y>position)
+				{	while(nd[firstNode]->y>position)
 						firstNode -= yplane;
 				}
 				// Now nd[firstNode-yplane]->y <= position < nd[firstNode]->y
-				// For side=1 shift to previous interval
+				double dfirst,dcell;
 				if(side==1)
-				{	while(nd[firstNode]->y>=position)
-						firstNode -= yplane;
+				{	// For side=1 shift to get
+					//    nd[firstNode]->y < position <= nd[firstNode+yplane]->y
+					firstNode -= yplane;
+					if(nd[firstNode]->y == position) firstNode -= yplane;
 				}
+				// check depth using cell width for cell more interior than one with position
+				dfirst = position-nd[firstNode-side*yplane]->y;
+				dcell = nd[firstNode]->y-nd[firstNode-side*yplane]->y;
+				if(dfirst/dcell<depth) firstNode -= side*yplane;
 			}
 			break;
 		
@@ -457,16 +518,21 @@ int MeshInfo::FindShiftedNodeFromNode(int n0,double position,int dir,int side,in
 						firstNode += zplane;
 				}
 				else
-				{	firstNode -= zplane;
-					while(nd[firstNode]->z>position)
+				{	while(nd[firstNode]->z>position)
 						firstNode -= zplane;
 				}
 				// Now nd[firstNode-zplane]->z <= position < nd[firstNode]->z
-				// For side=1 shift to previous interval
+				double dfirst,dcell;
 				if(side==1)
-				{	while(nd[firstNode]->z>=position)
-						firstNode -= zplane;
+				{	// For side=1 shift to get
+					//    nd[firstNode]->z < position <= nd[firstNode+zplane]->z
+					firstNode -= zplane;
+					if(nd[firstNode]->z == position) firstNode -= zplane;
 				}
+				// check depth using cell width for cell more interior than one with position
+				dfirst = position-nd[firstNode-side*zplane]->z;
+				dcell = nd[firstNode]->z-nd[firstNode-side*zplane]->z;
+				if(dfirst/dcell<depth) firstNode -= side*zplane;
 			}
 			break;
 	}
@@ -474,9 +540,51 @@ int MeshInfo::FindShiftedNodeFromNode(int n0,double position,int dir,int side,in
 	return firstNode;
 }
 
+// For structured grid, last possible node for velocity gradient BC with
+//		n0 as the firstNode
+// dir is only X_DIRECTION, Y_DIRECTION, or Z_DIRECTION, side is -1 or +1
+int MeshInfo::FindLastNode(int n0,int dir,int side)
+{
+	// in the rank (=0 if 2D)
+	// n0 = rank*zplane + row*yplane + col + 1		// 1 based
+	// where col, row, and rank are zero based
+	int col = (n0-1) % yplane ;		// column for the node
+	int rowStart = n0-1-col;		// node-1 at start of row containing n0 = rank*zplane + row*yplane
+	int lastNode;
+	if(Is3DGrid())
+	{	// 3D grid
+		int rank;
+		switch(dir)
+		{	case X_DIRECTION:
+				lastNode = side<0 ? rowStart+1 : rowStart+yplane ;
+				break;
+			case Y_DIRECTION:
+				rank = n0 % zplane;
+				lastNode = side<0 ? rank*zplane+col+1 : (rank+1)*zplane-yplane+col+1 ;
+			default:
+				rank = n0 % zplane;
+				rowStart -= rank*zplane;		// rowStart in rank 0
+				lastNode = side<0 ? rowStart+col+1 : nnodes-zplane+rowStart+col+1;
+				break;
+		}
+	}
+	else
+	{	// 2D gris
+		switch(dir)
+		{	case X_DIRECTION:
+				lastNode = side<0 ? rowStart+1 : rowStart+yplane ;
+				break;
+			default:
+				lastNode = side<0 ? col+1 : zplane-yplane+col+1 ;
+				break;
+		}
+	}
+	
+	return lastNode;
+}
+
 // For structured, find element from location and return result (1-based element number)
 // Calling code must be sure it is structured grid
-// NairnMPM requires equal element sizes, but OSParticulas allows unequal (in Tartan grid)
 // throws CommonException()
 int MeshInfo::FindElementFromPoint(const Vector *pt,MPMBase *mptr)
 {
@@ -638,7 +746,8 @@ void MeshInfo::FindElementCoordinatesFromPoint(Vector *pt,int &col,int &row,int 
 				col = horiz-1;
 			else
 			{   char msg[100];
-				sprintf(msg,"column for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
+				size_t msgSize=100;
+				snprintf(msg,msgSize,"column for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
 				throw CommonException(msg,"");
 			}
 		}
@@ -649,7 +758,8 @@ void MeshInfo::FindElementCoordinatesFromPoint(Vector *pt,int &col,int &row,int 
 				row = vert-1;
 			else
 			{	char msg[100];
-				sprintf(msg,"row for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
+				size_t msgSize=100;
+				snprintf(msg,msgSize,"row for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
 				throw CommonException(msg,"");
 			}
 		}
@@ -662,7 +772,8 @@ void MeshInfo::FindElementCoordinatesFromPoint(Vector *pt,int &col,int &row,int 
 					zrow = depth-1;
 				else
 				{   char msg[100];
-					sprintf(msg,"rank for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
+					size_t msgSize=100;
+					snprintf(msg,msgSize,"rank for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
 					throw CommonException(msg,"");
 				}
 			}
@@ -671,6 +782,80 @@ void MeshInfo::FindElementCoordinatesFromPoint(Vector *pt,int &col,int &row,int 
 	
 	else
 		throw CommonException("Invalid attempt to find coordinates from point in grid with unequal element sizes","");
+}
+
+// Set custom patch grid.
+// These will not be used unless xpnum*ypum*zpnum = number of processors
+// zpnum is set to 1 in 2D regardless of setting here
+void MeshInfo::SetCustomPatching(int xnum,int ynum,int znum)
+{	xpnum = xnum;
+	ypnum = ynum;
+	zpnum = znum;
+}
+
+// Swt the size that is about to be set
+// These will not be used unless xpnum*ypum*zpnum = number of processors
+// zpnum is set to 1 in 2D regardless of setting here
+void MeshInfo::SetSizeDirection(int dir)
+{	sizeDir = dir;
+}
+
+// Valid and then set up one patch size direction
+void MeshInfo::SetUpPatchSizes(vector<double> &psizes,int pnum)
+{
+	if(psizes.size()>0)
+	{	// must have pnum-1 (and add last one)
+		if(psizes.size()!=pnum-1)
+		{	throw CommonException("Patch sizes do not match number of patches in a direction",
+								  "MeshInfo::SetUpPatchSizes");
+		}
+		// must be ordered and less than 1
+		for(int i=0;i<pnum-1;i++)
+		{	if(psizes[i]<=0. || psizes[i]>=1.)
+			{	throw CommonException("Patch sizes must be between 0 and 1",
+									  "MeshInfo::SetUpPatchSizes");
+			}
+			if(i>0)
+			{	if(psizes[i]<=psizes[i-1])
+				{	throw CommonException("Patch sizes must montonically increase",
+										  "MeshInfo::SetUpPatchSizes");
+				}
+			}
+		}
+	}
+	else
+	{	for(int i=1;i<pnum;i++)
+			psizes.push_back(i/(double)pnum);
+	}
+	psizes.push_back(1.0);
+
+}
+
+
+// set from  arbitrary string data
+// not thread safe due to push_back()
+// throws std::bad_alloc, SAXException()
+void MeshInfo::SetPatchSizes(char *bData)
+{	switch(sizeDir)
+	{	case 1:
+			if(xsizes.size()>0)
+				throw SAXException("X patch sizes set more than once.");
+			if(!CommonReadHandler::GetFreeFormatNumbers(bData,xsizes,1.0))
+				throw SAXException("Invalid X patch sizes block - bad number formatting");
+			break;
+		case 2:
+			if(ysizes.size()>0)
+				throw SAXException("Y patch sizes set more than once.");
+			if(!CommonReadHandler::GetFreeFormatNumbers(bData,ysizes,1.0))
+				throw SAXException("Invalid X patch sizes block - bad number formatting");
+			break;
+		default:
+			if(zsizes.size()>0)
+				throw SAXException("Z patch sizes set more than once.");
+			if(!CommonReadHandler::GetFreeFormatNumbers(bData,zsizes,1.0))
+				throw SAXException("Invalid Z patch sizes block - bad number formatting");
+			break;
+	}
 }
 
 // Create the patches for the grid
@@ -684,21 +869,18 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 	{	return CreateOnePatch(np);
 	}
     
-    // custom patching
+    // try to use custom patching (if it was set)
 	unsigned ndim = np==THREED_MPM ? 3 : 2 ;
-    if(fmobj->dflag[3]>0)
-    {   // decode from flag as xxyyzz
-        xpnum = fmobj->dflag[3]/10000;
-        ypnum = (fmobj->dflag[3]-xpnum*10000)/100;
-		if(ndim==3)
-			zpnum = (fmobj->dflag[3]-xpnum*10000-ypnum*100);
-		else
-			zpnum = 1;
-        if(xpnum*ypnum*zpnum != numProcs) xpnum = -1;
-    }
-    else
-        xpnum = -1;
+	if(xpnum>0)
+	{	if(ndim!=3) zpnum = 1;
+		if(xpnum*ypnum*zpnum != numProcs)
+		{	throw CommonException("Custom patching does not match number of processors",
+								  "MeshInfo::CreatePatches");
+		}
+	}
 	
+	// If not custom, arrange by prime factors
+	// If unequal numbers, put more in longer directions
     if(xpnum<0)
 	{	// get prime factors in ascending order
 		vector<int> factors;
@@ -773,7 +955,7 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
         }
     }
 	
-    // get patch sizes
+    // get patch sizes (used only when regularly spaced)
 	xPatchSize = max(int(horiz/xpnum+.5),1);
 	yPatchSize = max(int(vert/ypnum+.5),1);
     if(ndim==2)
@@ -785,47 +967,118 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
     int totalPatches = xpnum*ypnum*zpnum;
 	GridPatch **patch = new (nothrow) GridPatch *[totalPatches];
     if(patch==NULL) return NULL;
-	
+
 	// create the patches
-    int pnum=0;
-	int i,j,k;
-	int x1,x2,y1,y2,z1=1,z2;
-	for(k=1;k<=zpnum;k++)
-	{	z2 = k==zpnum ? depth : z1+zPatchSize-1;		// for 2D z1=1 and z2=depth=0
-		y1 = 1;
-		for(j=1;j<=ypnum;j++)
-		{	y2 = j==ypnum ? vert : y1+yPatchSize-1;
-			x1 = 1;
-			for(i=1;i<=xpnum;i++)
-			{	x2 = i==xpnum ? horiz : x1+xPatchSize-1;
-				
-				// patch x1 to x2 and y1 to y2 (1 based)
-				//cout << "\n- Patch " << pnum << ":" << i << "-" << j << "-" << k << ":";
-                patch[pnum] = new GridPatch(x1,x2,y1,y2,z1,z2);
-				if(!patch[pnum]->CreateGhostNodes())
-				{	delete [] patch;
-					return NULL;
-				}
-                pnum++;
-				
-				x1 = x2+1;
-			}
-			y1 = y2+1;
+	int pnum=0;
+	
+	// optionally use tartan-style patch grid (if any direction was set)
+	if(xsizes.size()>0 || ysizes.size()>0 || (ndim==3 && zsizes.size()>0))
+	{	// tartan patches are requested
+		tartanPatches = true;
+		
+		// validate and/or create sizes
+		SetUpPatchSizes(xsizes,xpnum);
+		SetUpPatchSizes(ysizes,ypnum);
+		if(ndim==3)
+			SetUpPatchSizes(zsizes,zpnum);
+		else
+		{	zsizes.clear();
+			zsizes.push_back(1.0);
 		}
-		z1 = z2+1;
 	}
 	
-	// fill patches with particles
+	// Create tartan patches if requested
+	if(tartanPatches)
+	{	// allocate pointers
+		xtp = (int *)malloc(sizeof(int)*xpnum);
+		ytp = (int *)malloc(sizeof(int)*ypnum);
+		ztp = (int *)malloc(sizeof(int)*zpnum);
+		
+		// set break points and create patches
+		int x1,x2,y1,y2,z1=1,z2;
+		for(int k=0;k<zpnum;k++)
+		{	z2 = int(depth*zsizes[k]+0.001);		// for 2D z1=1 and z2=depth=0
+			ztp[k] = z2;
+			if(z2<=z1 && ndim==3)
+			{	throw CommonException("A Z patch block has zero elements",
+									  "MeshInfo::CreatePatches");
+			}
+			y1 = 1;
+			for(int j=0;j<ypnum;j++)
+			{	y2 = int(vert*ysizes[j]+.001);
+				ytp[j] = y2;
+				if(y2<=y1)
+				{	throw CommonException("A Y patch block has zero elements",
+										  "MeshInfo::CreatePatches");
+				}
+				x1 = 1;
+				for(int i=0;i<xpnum;i++)
+				{	x2 = int(horiz*xsizes[i]+.001);
+					xtp[i] = x2;
+					if(x2<=x1)
+					{	throw CommonException("An X patch block has zero elements",
+											  "MeshInfo::CreatePatches");
+					}
+
+					// patch x1 to x2 and y1 to y2 (1 based)
+					patch[pnum] = new GridPatch(x1,x2,y1,y2,z1,z2);
+					if(!patch[pnum]->CreateGhostNodes())
+					{	delete [] patch;
+						return NULL;
+					}
+					pnum++;
+					
+					x1 = x2+1;
+				}
+				y1 = y2+1;
+			}
+			z1 = z2+1;
+		}
+	}
+	
+	// If tartan patch grid not set, create reqgular patch grid now
+	if(pnum==0)
+	{	int x1,x2,y1,y2,z1=1,z2;
+		for(int k=1;k<=zpnum;k++)
+		{	z2 = k==zpnum ? depth : z1+zPatchSize-1;		// for 2D z1=1 and z2=depth=0
+			y1 = 1;
+			for(int j=1;j<=ypnum;j++)
+			{	y2 = j==ypnum ? vert : y1+yPatchSize-1;
+				x1 = 1;
+				for(int i=1;i<=xpnum;i++)
+				{	x2 = i==xpnum ? horiz : x1+xPatchSize-1;
+					
+					// patch x1 to x2 and y1 to y2 (1 based)
+					patch[pnum] = new GridPatch(x1,x2,y1,y2,z1,z2);
+					if(!patch[pnum]->CreateGhostNodes())
+					{	delete [] patch;
+						return NULL;
+					}
+					pnum++;
+					
+					x1 = x2+1;
+				}
+				y1 = y2+1;
+			}
+			z1 = z2+1;
+		}
+	}
+	
+	// fill patches with particles, but put reservoir particles in the reservoir
 	int pn;
 	for(int p=0;p<nmpms;p++)
-	{	pn = GetPatchForElement(mpm[p]->ElemID());
-		if(pn<0 || pn>=totalPatches)
-		{	delete [] patch;
-			return NULL;
+	{	if(mpm[p]->InReservoir() && mpmReservoir!=NULL)
+			mpmReservoir->AddParticle(mpm[p]);
+	   	else
+		{	pn = GetPatchForElement(mpm[p]->ElemID());
+			if(pn<0 || pn>=totalPatches)
+			{	delete [] patch;
+				return NULL;
+			}
+			patch[pn]->AddParticle(mpm[p]);
 		}
-		patch[pn]->AddParticle(mpm[p]);
 	}
-	
+
     // return array of patches
     return patch;
 }
@@ -850,8 +1103,13 @@ GridPatch **MeshInfo::CreateOnePatch(int np)
 	// one patch but no ghost nodes
 	patch[0] = new GridPatch(1,xPatchSize,1,yPatchSize,1,np==THREED_MPM ? depth : 0);
 	
-	// fill patch with all particles
-	for(int p=0;p<nmpms;p++) patch[0]->AddParticle(mpm[p]);
+	// fill patch with all particles, except put reservoir particles in the reservoir
+	for(int p=0;p<nmpms;p++)
+	{	if(mpm[p]->InReservoir() && mpmReservoir!=NULL)
+			mpmReservoir->AddParticle(mpm[p]);
+		else
+			patch[0]->AddParticle(mpm[p]);
+	}
     
     // return array with the one patch
     return patch;
@@ -902,7 +1160,8 @@ void MeshInfo::MaterialOutput(void)
 			break;
 		case LINEAR_REGRESSION:
 			cout <<                     "Use linear regression";
-			if(rigidGradientBias>=10. && (nmpmsRC>nmpmsNR))
+			//if(rigidGradientBias>=10. && (nmpmsRC>nmpmsNR))
+			if(rigidGradientBias>=10.)
 				cout << " but switch to rigid material gradient for contact with rigid materials";
 			else
 			{	rigidGradientBias = 1.;
@@ -912,7 +1171,8 @@ void MeshInfo::MaterialOutput(void)
 			break;
 		case LOGISTIC_REGRESSION:
 			cout <<                     "Use logistic regression";
-			if(rigidGradientBias>=10. && (nmpmsRC>nmpmsNR))
+			//if(rigidGradientBias>=10. && (nmpmsRC>nmpmsNR))
+			if(rigidGradientBias>=10.)
 				cout << " but switch to rigid material gradient for contact with rigid materials";
 			else
 			{	rigidGradientBias = 1.;
@@ -930,7 +1190,13 @@ void MeshInfo::MaterialOutput(void)
 	// lumping method
 	cout << "3+ Material Contact Nodes: ";
 	switch(lumpingMethod)
-	{   case LUMP_OTHER_MATERIALS:
+	{
+#ifdef THREE_MAT_CONTACT
+		case EXPLICIT_PAIRS:
+			cout << "Explicitly handle one or two pairs in contact";
+			break;
+#endif // end THREE_MAT_CONTACT
+		case LUMP_OTHER_MATERIALS:
 		default:
 			lumpingMethod = LUMP_OTHER_MATERIALS;
 			cout << "Lump other materials into a virtual material";
@@ -1119,21 +1385,60 @@ int MeshInfo::GetPatchForElement(int iel)
 	{	// 3D
 		int perSlice = horiz*vert;		// number in each slice
 		rank = iel/perSlice;			// zero based
-		int snum = iel % perSlice;		// number in slice (0 to horz*vert-1)
+		int snum = iel % perSlice;		// number in slice (0 to horiz*vert-1)
 		col = snum % horiz;				// col 0 to horiz-1
 		row = snum/horiz;				// zero based
-		pcol = min(col/xPatchSize,xpnum-1);
-		prow = min(row/yPatchSize,ypnum-1);
-		prank = min(rank/zPatchSize,zpnum-1);
+		if(tartanPatches)
+		{	pcol = 0;
+			while(col>=xtp[pcol]) pcol++;
+			prow = 0;
+			while(row>=ytp[prow]) prow++;
+			prank = 0;
+			while(rank>=ztp[prank]) prank++;
+		}
+		else
+		{	pcol = min(col/xPatchSize,xpnum-1);
+			prow = min(row/yPatchSize,ypnum-1);
+			prank = min(rank/zPatchSize,zpnum-1);
+		}
 		return xpnum*(ypnum*prank + prow) + pcol;
 	}
 	
 	// 2D
 	col = iel % horiz;			// col 0 to horiz-1
 	row = iel/horiz;			// zero based
-	pcol = min(col/xPatchSize,xpnum-1);
-	prow = min(row/yPatchSize,ypnum-1);
+	if(tartanPatches)
+	{	pcol = 0;
+		while(col>=xtp[pcol]) pcol++;
+		prow = 0;
+		while(row>=ytp[prow]) prow++;
+	}
+	else
+	{	pcol = min(col/xPatchSize,xpnum-1);
+		prow = min(row/yPatchSize,ypnum-1);
+	}
 	return xpnum*prow + pcol;
+}
+
+// given zero based element number, find row, col, rank
+// row, col, and rank are zero based
+// Warning: assume structure grid (and not checked here)
+void MeshInfo::GetElementsRCR(int iel,int &row,int &col,int &rank)
+{
+    if(depth>0)
+    {    // 3D
+        int perSlice = horiz*vert;        // number in each slice
+        rank = iel/perSlice;            // zero based
+        int snum = iel % perSlice;        // number in slice (0 to horiz*vert-1)
+        col = snum % horiz;                // col 0 to horiz-1
+        row = snum/horiz;                // zero based
+        return;
+    }
+    
+    // 2D
+    col = iel % horiz;            // col 0 to horiz-1
+    row = iel/horiz;            // zero based
+    return;
 }
 
 // set grid style (zcell=0 if 2D grid)
@@ -1143,7 +1448,7 @@ int MeshInfo::GetPatchForElement(int iel)
 //    style=VARIABLE_ORTHOGONAL_GRID
 //	  style=VARIABLE_RECTANGULAR_GRID
 //      3D or 2D grid with unequal element sizes, set equalElementSizes to false
-//		grid.x=grid.y=0 and grid.z=
+//		grid.x=grid.y=0 and grid.z=0
 //    style=SQUARE_GRID on input means all elements the same size as subsets, but adjust as follows
 //      SQUARE_GRID = 2D and dx = dy
 //      CUBIC_GRID = 3D and dx = dy = dz
@@ -1233,7 +1538,7 @@ int MeshInfo::GetCartesian(void) { return cartesian; }
 // see if 3D grid
 bool MeshInfo::Is3DGrid(void) { return cartesian > BEGIN_3D_GRIDS; }
 
-// find element number in l ower left hand corner of a structure
+// find element number in lower left hand corner of a structure
 // grid, but not one on the edge
 int MeshInfo::GetCornerNonEdgeElementNumber(void)
 {   return Is3DGrid() ? 2+horiz+horiz*vert : 2+horiz ;
@@ -1335,7 +1640,47 @@ void MeshInfo::GetGridPoints(int *ptx,int *pty,int *ptz)
 // Feature that calls this method must require the problem to have a structured <Grid>
 double MeshInfo::GetCellVolume(NodalPoint *ndptr)
 {
-	return cellVolume;
+	// structured grid with equal element sizes
+	if(equalElementSizes) return cellVolume;
+	
+	// structured grid (assumed) with variable element sizes
+	double dx1,dx2,dy1,dy2,dz1,dz2;
+	GetLocalCellSizes(ndptr,dx1,dx2,dy1,dy2,dz1,dz2);
+	return 0.125*(dx1+dx2)*(dy1+dy2)*(dz1+dz2) ;
+}
+
+// get element lengths around 1 node in variable element cell.
+// if on edge, one direction will be zero.
+void MeshInfo::GetLocalCellSizes(NodalPoint *ndptr,double &dx1,double &dx2,double &dy1,double &dy2,double &dz1,double &dz2)
+{	// 1 base node number, which is how they are stored in nd[]
+	int num = ndptr->num;
+	
+	// x axis
+	double x = ndptr->x;
+	dx1 = num<2 ? 0. : x - nd[num-1]->x;
+	if(dx1<0.) dx1 = 0.;
+	dx2 = num>=nnodes ? 0. : nd[num+1]->x - x;
+	if(dx2<0.) dx2 = 0.;
+	
+	// y axis
+	double y = ndptr->y;
+	dy1 = num-yplane<1 ? 0 : y - nd[num-yplane]->y;
+	if(dy1<0.) dy1 = 0.;
+	dy2 = num+yplane>nnodes ? 0 : nd[num+yplane]->y - y;
+	if(dy2<0.) dy2 = 0.;
+	
+	// z axis
+	if(depth>0)
+	{	double z = ndptr->z;
+		dz1 = num-zplane<1 ? 0 : z - nd[num-zplane]->z;
+		if(dz1<0.) dz1 = 0.;
+		dz2 = num+zplane>nnodes ? 0 : nd[num+zplane]->z - z;
+		if(dz2<0.) dz2 = 0.;
+	}
+	else
+	{	dz1 = zmin;
+		dz2 = zmin;
+	}
 }
 
 // Get ratio of element size to the right to element size to the left
@@ -1343,14 +1688,49 @@ double MeshInfo::GetCellVolume(NodalPoint *ndptr)
 // Used by rigid particle mirrored BCs and must be an interior node
 double MeshInfo::GetCellRatio(NodalPoint *ndptr,int dir,int mirrorSpacing)
 {
-    return 1;
+	// easy if regular grid
+	if(equalElementSizes) return 1.;
+	
+	// rest for Tartan grid
+	int num = ndptr->num;
+	double dx1,dx2;
+	if(dir==X_DIRECTION)
+	{	// x axis
+		double x = ndptr->x;
+		dx1 = x - nd[num-1]->x;
+		dx2 = nd[num+1]->x - x;
+	}
+	
+	else if(dir==Y_DIRECTION)
+	{	// y axis
+		double y = ndptr->y;
+		dx1 = y - nd[num-yplane]->y;
+		dx2 = nd[num+yplane]->y - y;
+	}
+	
+	else
+	{	// z axis
+		double z = ndptr->z;
+		dx1 = z - nd[num-zplane]->z;
+		dx2 = nd[num+zplane]->z - z;
+	}
+	
+	return mirrorSpacing>0 ? dx1/dx2 : dx2/dx1 ;
 }
 
 // cell size in mm
 // Feature that calls this method must require the problem to have a structured <Grid>
 double MeshInfo::GetAverageCellSize(MPMBase *mptr)
 {
-    return avgCellSize;
+	// precalculated for equal element sizes
+	if(equalElementSizes) return avgCellSize;
+	
+	// any other grid get from the element
+	Vector box = theElements[mptr->ElemID()]->GetDeltaBox();
+	if(Is3DGrid())
+		return (box.x+box.y+box.z)/3.;
+	else
+		return 0.5*(box.x+box.y);
 }
 
 // grid thickness. For 3D returns z extent but not used in 3D
@@ -1359,7 +1739,7 @@ double MeshInfo::GetThickness(void)
 {	return depth>0 ? zmax-zmin : zmin;
 }
 
-// get thickness or 1.0 if not a structure grid
+// get thickness or 1.0 if not a structured grid
 double MeshInfo::GetDefaultThickness()
 {	double gthick=GetThickness();
 	return gthick>0. ? gthick : 1.0 ;
@@ -1379,7 +1759,55 @@ Vector MeshInfo::GetPerpendicularDistance(Vector *norm,NodalPoint *ndptr)
     //    whole block gets skipped
     // See JANOSU-6-60 and JANOSU-6-74 and method #1 in paper
     if(Is3DGrid())
-	{	if(cartesian!=CUBIC_GRID)
+	{
+		if(!IsStructuredEqualElementsGrid())
+		{	// Tartan 3D Grid
+			
+			// get element sizes
+			double dx1,dx2,dy1,dy2,dz1,dz2;
+			GetLocalCellSizes(ndptr,dx1,dx2,dy1,dy2,dz1,dz2);
+			
+			// get two tangents
+			Vector t1,t2;
+			if(norm->z>norm->x && norm->z>norm->y)
+			{	// z is largest
+				t1 = MakeVector(0.,-norm->z,norm->y);
+			}
+			else
+			{	// x  or yis largest)
+				t1 = MakeVector(-norm->y,norm->x,0.);
+			}
+			
+			// second tangent from t1 X norm
+			t2.x = norm->y*t1.z - norm->z*t1.y;
+			t2.y = norm->z*t1.x - norm->x*t1.z;
+			t2.z = norm->x*t1.y - norm->y*t1.x;
+			
+			// first tangent
+			double a1,a2,b1,b2,c1,c2;
+			ScaleTangent(t1.x,dx1,dx2,a1,a2);
+			ScaleTangent(t1.y,dy1,dy2,b1,b2);
+			ScaleTangent(t1.z,dz1,dz2,c1,c2);
+			double h11 = 1./sqrt(a1*a1 + b1*b1 +c1*c1);
+			double h12 = 1./sqrt(a2*a2 + b2*b2 + c2*c2);
+			
+			ScaleTangent(t2.x,dx1,dx2,a1,a2);
+			ScaleTangent(t2.y,dy1,dy2,b1,b2);
+			ScaleTangent(t2.z,dz1,dz2,c1,c2);
+			double h21 = 1./sqrt(a1*a1 + b1*b1 + c1*c1);
+			double h22 = 1./sqrt(a2*a2 + b2*b2 + c2*c2);
+			
+			dist.x = 0.5*(dx1+dx2)*(dy1+dy2)*(dz1+dz2)/((h11+h12)*(h21+h22));
+
+			// partition two sides of the node
+			ScaleTangent(norm->x,dx1,dx2,a1,a2);
+			ScaleTangent(norm->y,dy1,dy2,b1,b2);
+			ScaleTangent(norm->z,dz1,dz2,c1,c2);
+			double rn = sqrt((a1*a1 + b1*b1 + c1*c1)/(a2*a2 + b2*b2 + c2*c2));
+			dist.y = 0.5*(1.+rn);				// hperp/h1
+			dist.z = dist.y/rn;					// hperp/h2
+		}
+        else if(cartesian!=CUBIC_GRID)
 		{	// get two tangents
 			Vector t1,t2;
 			if(norm->z>norm->x && norm->z>norm->y)
@@ -1405,6 +1833,40 @@ Vector MeshInfo::GetPerpendicularDistance(Vector *norm,NodalPoint *ndptr)
 			dist.x = grid.x*grid.y*grid.z*sqrt((a1*a1 + b1*b1 + c1*c1)*(a2*a2 + b2*b2 + c2*c2));
         }
     }
+	else if(!IsStructuredEqualElementsGrid())
+	{	// Tartan 2D grid
+		
+		// get element sizes
+		double dx1,dx2,dy1,dy2,dz1,dz2;
+		GetLocalCellSizes(ndptr,dx1,dx2,dy1,dy2,dz1,dz2);
+		
+		// if locally regular
+		if(DbleEqual(dx1,dx2) && DbleEqual(dy1,dy2))
+		{   double a=0.5*(dx1+dx2)*norm->x;
+			double b=0.5*(dy1+dy2)*norm->y;
+			dist.x = sqrt(a*a + b*b);
+		}
+		
+		else
+		{	// tangent Vector
+			Vector t1 = MakeVector(-norm->y, norm->x, 0.);
+		
+			// get size to ellipse in tangential direction
+			double a1,a2,b1,b2;
+			ScaleTangent(t1.x,dx1,dx2,a1,a2);
+			ScaleTangent(t1.y,dy1,dy2,b1,b2);
+			double h1 = 1./sqrt(a1*a1 + b1*b1);
+			double h2 = 1./sqrt(a2*a2 + b2*b2);
+			dist.x = 0.5*(dx1+dx2)*(dy1+dy2)/(h1+h2);
+			
+			// partition two sides of the node
+			ScaleTangent(norm->x,dx1,dx2,a1,a2);
+			ScaleTangent(norm->y,dy1,dy2,b1,b2);
+			double rn = sqrt((a1*a1 + b1*b1)/(a2*a2 + b2*b2));
+			dist.y = 0.5*(1.+rn);				// hperp/h1
+			dist.z = dist.y/rn;					// hperp/h2
+		}
+	}
     else if(cartesian!=SQUARE_GRID)
     {   double a=grid.x*norm->x;
         double b=grid.y*norm->y;

@@ -22,6 +22,11 @@ class MatPtLoadBC;
 
 enum { CONTACT_EQUILIBRATED=0, CONTACT_CONVECTED };
 
+// One for conduction, one for diffusion (or poroelastity), and
+// one for each other task available in code (currently phase field diffusion)
+#define MAX_TRANSPORT_TASKS 3
+#define MAX_DIFFUSION_TASKS 2
+
 class TransportTask
 {
     public:
@@ -31,6 +36,8 @@ class TransportTask
 		static int XPICOrder;
 		static bool hasXPICOption;
 		bool usingXPIC;
+		double usingFraction;
+		bool doCrelExtrapolation;
        
         // constructors and destructors
         TransportTask();
@@ -50,13 +57,9 @@ class TransportTask
 		virtual TransportTask *GetTransportNodalValue(NodalPoint *);
 		virtual void GetContactNodalValue(NodalPoint *);
 		virtual void ImposeValueBCs(double,bool);
-#ifdef TRANSPORT_FMPM
 		virtual TransportTask *RestoreValueBCs(void);
 		virtual TransportTask *ImposeValueGridBCs(double,double,int);
 		virtual TransportTask *SetTransportFluxBCs(void);
-#else
-		virtual TransportTask *SetTransportForceAndFluxBCs(double);
-#endif
 		virtual TransportTask *GetGradients(double);
 		virtual void ZeroTransportGradients(MPMBase *) = 0;
 		virtual void AddTransportGradients(MPMBase *,Vector *,NodalPoint *,short) = 0;
@@ -73,15 +76,17 @@ class TransportTask
 		// update momentum task and contact flow
 		virtual TransportTask *UpdateTransport(NodalPoint *,double);
 		virtual void TransportContactRates(NodalPoint *,double);
-		
+
 		// update particles task
 		virtual TransportTask *InitializeForXPIC(NodalPoint *,double,int) const;
 		virtual double IncrementTransportRate(NodalPoint *,double,short,int) const;
 		virtual TransportTask *MoveTransportValue(MPMBase *,double,double,double) const;
-	
+		virtual void AdjustRateAndValue(MPMBase *,double &,double &,double &,double) const;
+
 		// update particle strains
 		virtual double IncrementValueExtrap(NodalPoint *,double,short,int) const;
-		virtual double GetDeltaValue(MPMBase *,double) const;
+		virtual double IncrementLumpedValueExtrap(NodalPoint *,double,short,int) const;
+		virtual void GetDeltaValue(MPMBase *,double,double *) const;
 	
         // accessors
     
@@ -102,18 +107,24 @@ class TransportTask
 		virtual MatPtLoadBC *GetFirstFluxBCPtr(void) const = 0;
 	
         // get pointers to particle value for this transport property
+		virtual double GetParticleValue(MPMBase *mptr) const = 0;
         virtual double *GetParticleValuePtr(MPMBase *mptr) const = 0;
+		virtual double GetPrevParticleValue(MPMBase *mptr) const = 0;
         virtual double *GetPrevParticleValuePtr(MPMBase *mptr) const = 0;
 	
 		// if using XPIC
-		void SetUsingTransportXPIC(bool);
+		void SetUsingTransportXPIC(bool,double);
 		virtual bool IsUsingTransportXPIC(void) const;
-	
+		virtual bool IsUsingTransportXPIC(double &) const;
+		virtual bool ShouldBlendFromGrid(double &) const;
+
+        // multiple tasks of same type (diffusion only, but here to allow access)
+        virtual int GetNumber(void) const;
+        virtual void SetNumber(int);
+    
 		// static methods
 		static void GetTransportValues(NodalPoint *);
-#ifdef TRANSPORT_FMPM
 		static void TransportGridBCs(double,double,int);
-#endif
 		static void TransportBCsAndGradients(double);
 		static void UpdateTransportOnGrid(NodalPoint *);
 		static void TransportForceBCs(double);
@@ -122,6 +133,8 @@ class TransportTask
 
 // globals
 extern TransportTask *transportTasks;
+extern int numTransport;
+
 
 #endif
 

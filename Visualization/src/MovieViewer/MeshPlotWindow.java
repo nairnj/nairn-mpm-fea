@@ -17,7 +17,9 @@ public class MeshPlotWindow extends MoviePlotWindow
 
 	// load everything needed to plot or replot data
 	public void loadPlotData() throws Exception
-	{	resDoc.readSelectedArchive(movieControls.getArchiveIndex());
+	{	int archIndex = docView.controls.getArchiveIndex();
+		resDoc.readSelectedArchive(archIndex);
+		plotView.dataTime = resDoc.mpmArchives.get(archIndex).getTime();
 		ElementBase.loadPlotData(movieComponent,resDoc,plotView.getPlotType(),false);
 	}
 	

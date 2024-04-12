@@ -8,13 +8,18 @@
 
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import javax.swing.*;
+
+import geditcom.JNFramework.JNDialog;
+import geditcom.JNFramework.JNExpression;
+import geditcom.JNFramework.JNUtilities;
 
 public class PlotQuantity extends PlotControl
 {
 	static final long serialVersionUID=18L;
-	
-	
 	
 	// MPM plotting options
 	static final int SHIFT4MAGNITUDE=10000;
@@ -43,7 +48,7 @@ public class PlotQuantity extends PlotControl
 	static final int MPMVELY=20;
 	static final int MPMVELZ=21;
 	static final int MPMVELS=MPMVELX+SHIFT4MAGNITUDE;
-	static final int MPMVELVEC=22;
+	static final int MPMVELVEC=22;				// extra in Java app
 	
 	static final int MPMSTRENERGY=23;
 	static final int MPMKINENERGY=24;
@@ -62,7 +67,8 @@ public class PlotQuantity extends PlotControl
 	static final int MPMPOSY=34;
 	static final int MPMPOSZ=35;
 	
-	static final int MPMEXPRESSION=36;
+	static final int PLOTEXPRESSION=36;
+	//static final int MPMEXPRESSION=36;
 	static final int MPMWORKENERGY=37;
 	static final int MPMPLASTICENERGY=38;
 	static final int MPMTEMPERATURE=39;
@@ -77,7 +83,7 @@ public class PlotQuantity extends PlotControl
 	static final int MPMKI=48;
 	static final int MPMKII=49;
 	static final int MPMLENGTH=50;
-	static final int MPMMASS=51;
+	static final int MPMDENSITY=51;
 	static final int MPMARCHIVETIME=52;
 	static final int MPMGLOBALRESULTS=53;
 	static final int MPMCONCENTRATION=54;
@@ -98,20 +104,31 @@ public class PlotQuantity extends PlotControl
 	static final int MPMANGLEX=69;
 	static final int MPMELEMENTCROSSINGS=70;
 	static final int MPMTOTELEMENTCROSSINGS=71;
-	static final int MPMDEBONDLENGTH=72;
-	static final int MPMDEBONDNCTOD=73;
-	static final int MPMDEBONDSCTOD=74;
-	static final int MPMHISTORY1=75;
-	static final int MPMHISTORY2=76;
-	static final int MPMHISTORY3=77;
-	static final int MPMHISTORY4=78;
 	
-	static final int MPMEPSTOTX=90;
-	static final int MPMEPSTOTY=91;
-	static final int MPMEPSTOTXY=92;
-	static final int MPMEPSTOTZ=93;
-	static final int MPMEPSTOTXZ=94;
-	static final int MPMEPSTOTYZ=95;
+	static final int MPMPOSDISTANCE=72;				// expression only
+	static final int MPMPOSANGLE=73;
+	static final int MPMORIGPOSX=74;
+	static final int MPMORIGPOSY=75;
+	static final int MPMORIGPOSZ=76;
+	
+	static final int MPMDEBONDLENGTH=77;
+	static final int MPMDEBONDNCTOD=78;
+	static final int MPMDEBONDSCTOD=79;
+	static final int MPMHISTORY1=80;
+	static final int MPMHISTORY2=81;
+	static final int MPMHISTORY3=82;
+	static final int MPMHISTORY4=83;
+	
+	static final int MPMEPSTOTX=87;
+	static final int MPMEPSTOTY=88;
+	static final int MPMEPSTOTXY=89;
+	static final int MPMEPSTOTZ=90;
+	static final int MPMEPSTOTXZ=91;
+	static final int MPMEPSTOTYZ=92;
+	
+	static final int MPMWXY=93;
+	static final int MPMWXZ=94;
+	static final int MPMWYZ=95;
 	
 	static final int MPMMAXSTRESS=102;
 	static final int MPMMINSTRESS=103;
@@ -120,7 +137,6 @@ public class PlotQuantity extends PlotControl
 	static final int MPMEQUIVSTRESS=105;
 	static final int MPMEQUIVSTRAIN=106;
 	static final int MPMPRESSURE=107;
-
 
 	static final int MPMSPINMOMENTUMX=110;
 	static final int MPMSPINMOMENTUMY=111;
@@ -158,6 +174,10 @@ public class PlotQuantity extends PlotControl
 	static final int MPMCZMGII=142;
 	static final int MPMCZLENGTH=143;
 
+	static final int MPMMASS=144;
+	static final int MPMSIZE=145;
+	static final int MPMMAXCODE=146;
+
 	static final int MESHONLY=1001;
 	static final int MESHSIGMAX=1002;
 	static final int MESHSIGMAY=1003;
@@ -179,7 +199,7 @@ public class PlotQuantity extends PlotControl
 	static final int MESHFORCEX=1019;
 	static final int MESHFORCEY=1020;
 	static final int MESHSTRAINENERGY=1021;
-	static final int FEAEXPRESSION=1022;
+	//static final int FEAEXPRESSION=1022;
 	static final int MESHNODEX=1023;		// in expressions
 	static final int MESHNODEY=1024;		// in expressions
 	static final int INTERFACETRACTION_N=1025;
@@ -212,6 +232,14 @@ public class PlotQuantity extends PlotControl
 	private String zchar="z";
 	private String totalchar="magnitude";
 	
+	// plot expression
+	private String expression = "0";
+	private static String expressionTitle = null;
+	private JNExpression expr = new JNExpression("0");
+	private HashMap<String,String> exprVars = new HashMap<String,String>(1);
+	private ArrayList<String> keys = new ArrayList<String>(10);
+	private int[] keyCode = new int[MPMMAXCODE];
+	
 	// initialize
 	PlotQuantity(DocViewer dc)
 	{   super(ControlPanel.WIDTH,64,dc);
@@ -232,6 +260,7 @@ public class PlotQuantity extends PlotControl
 		c.weightx = 1.0;
 		gridbag.setConstraints(quant, c);
 		quant.setToolTipText("Selected the archived quantity to be plotter");
+		quant.setFocusable(false);
 		add(quant);
 		
 		// when quantity changes, update component menu
@@ -255,6 +284,7 @@ public class PlotQuantity extends PlotControl
 		c.weightx = 1.0;
 		gridbag.setConstraints(cmpnt, c);
 		cmpnt.addItem("--");
+		cmpnt.setFocusable(false);
 		cmpnt.setToolTipText("Select component of currently selected quantity, which will depend on the type of quantity");
 		add(cmpnt);
 		
@@ -306,6 +336,8 @@ public class PlotQuantity extends PlotControl
 						quant.addItem(new PlotMenuItem("Equiv. Strain",MPMEQUIVSTRAIN));
 					}
 				}
+				
+				quant.addItem(new PlotMenuItem("Expression...",PLOTEXPRESSION));
 					
 				if(arch[ReadArchive.ARCH_StrainEnergy]=='Y')
 				{   quant.addItem(new PlotMenuItem("Strain Energy",MPMSTRENERGY));
@@ -335,8 +367,8 @@ public class PlotQuantity extends PlotControl
 				quant.addItem(new PlotMenuItem("Displacement",MPMDISPX));
 				checkMeshItem=quant.getItemCount();
 				quant.addItem(new PlotMenuItem("Material",MPMPOS));
-				quant.addItem(new PlotMenuItem("Material Angle",MPMANGLEZ));
-				quant.addItem(new PlotMenuItem("Density",MPMMASS));
+				quant.addItem(new PlotMenuItem("Rotational Strain",MPMANGLEZ));
+				quant.addItem(new PlotMenuItem("Density",MPMDENSITY));
 				if(arch[ReadArchive.ARCH_DeltaTemp]=='Y')
 					quant.addItem(new PlotMenuItem("Temperature",MPMTEMPERATURE));
 					
@@ -514,7 +546,8 @@ public class PlotQuantity extends PlotControl
 				}
 				
 				// import and plot
-				quant.addItem(new PlotMenuItem("Import...",IMPORTANDPLOTFILE));
+				if(selected==LoadArchive.TIME_PLOT || selected==LoadArchive.MESH2D_PLOT)
+					quant.addItem(new PlotMenuItem("Import...",IMPORTANDPLOTFILE));
 			}
 			
 			// FEA plot quantities
@@ -544,8 +577,12 @@ public class PlotQuantity extends PlotControl
 				quant.addItem(new PlotMenuItem("Material",MESHMATERIAL));
 				quant.addItem(new PlotMenuItem("Material Angle",MESHANGLE));
 				
+				// an expression
+				quant.addItem(new PlotMenuItem("Expression...",PLOTEXPRESSION));
+				
 				// import and plot
-				quant.addItem(new PlotMenuItem("Import...",IMPORTANDPLOTFILE));
+				if(selected==LoadArchive.MESH2D_PLOT)
+					quant.addItem(new PlotMenuItem("Import...",IMPORTANDPLOTFILE));
 
 				preselect = feaMeshQuant;
 				preComp = feaMeshComp;
@@ -569,6 +606,152 @@ public class PlotQuantity extends PlotControl
 		{   quant.setEnabled(false);
 			cmpnt.setEnabled(false);
 		}
+	}
+	
+	// convert menutext to plot quantity ID
+	// but not "Import"
+	public int menuTextToPlotTag(String menutext)
+	{
+		int cmpnt = -1;
+		
+		if(docCtrl.resDoc.isMPMAnalysis())
+		{	// MPM plots
+			if(menutext.equals("Stress"))
+				cmpnt = MPMSIGMAX;
+			else if(menutext.equals("Pressure"))
+				cmpnt = MPMPRESSURE;
+			else if(menutext.equals("Equiv. Stress") || menutext.equals("Equivalent Stress"))
+				cmpnt = MPMEQUIVSTRESS;
+			else if(menutext.equals("Max Principal Stress"))
+				cmpnt = MPMMAXSTRESS;
+			else if(menutext.equals("Min Principal Stress"))
+				cmpnt = MPMMINSTRESS;
+			else if(menutext.equals("Max Stress Angle"))
+				cmpnt = MPMSTRESSDIR;
+			else if(menutext.equals("Total Strain"))
+				cmpnt = MPMEPSTOTX;
+			else if(menutext.equals("Elastic Strain"))
+				cmpnt = MPMEPSX;
+			else if(menutext.equals("Plastic Strain"))
+				cmpnt = MPMPLEPSX;
+			else if(menutext.equals("Equiv. Strain") || menutext.equals("Equivalent Strain"))
+				cmpnt = MPMEQUIVSTRAIN;
+			else if(menutext.equals("Expression...") || menutext.equals("Expression"))
+				cmpnt = PLOTEXPRESSION;
+			else if(menutext.equals("Strain Energy"))
+				cmpnt = MPMSTRENERGY;
+			else if(menutext.equals("Kinetic Energy"))
+				cmpnt = MPMKINENERGY;
+			else if(menutext.equals("Energy"))
+				cmpnt = MPMENERGY;
+			else if(menutext.equals("Plastic Energy"))
+				cmpnt = MPMPLASTICENERGY;
+			else if(menutext.equals("Work Energy"))
+				cmpnt = MPMWORKENERGY;
+			else if(menutext.equals("Heat Energy"))
+				cmpnt = MPMHEATENERGY;
+			else if(menutext.equals("Velocity"))
+				cmpnt = MPMVELX;
+			else if(menutext.equals("Angular Velocity"))
+				cmpnt = MPMSPINVELOCITYX;
+			else if(menutext.equals("Angular Momentum"))
+				cmpnt = MPMSPINMOMENTUMX;
+			else if(menutext.equals("Displacement"))
+				cmpnt = MPMDISPX;
+			else if(menutext.equals("Material"))
+				cmpnt = MPMPOS;
+			else if(menutext.equals("Rotational Strain"))
+				cmpnt = MPMANGLEZ;
+			else if(menutext.equals("Density"))
+				cmpnt = MPMDENSITY;
+			else if(menutext.equals("Temperature"))
+				cmpnt = MPMTEMPERATURE;
+			else if(menutext.equals("Pore Pressure"))
+				cmpnt = MPMCONCENTRATION;
+			else if(menutext.equals("Pore Press Gradient"))
+				cmpnt = MPMDCDX;
+			else if(menutext.equals("Concentration"))
+				cmpnt = MPMCONCENTRATION;
+			else if(menutext.equals("Conc Gradient") || menutext.equals("Conc. Gradient"))
+				cmpnt = MPMDCDX;
+			else if(menutext.equals("History") || menutext.equals("History Data"))
+				cmpnt = MPMHISTORY1;
+			else if(menutext.equals("Element Crossings"))
+				cmpnt = MPMELEMENTCROSSINGS;
+			else if(menutext.equals("Global Results"))
+				cmpnt = MPMGLOBALRESULTS;
+			else if(menutext.equals("J1"))
+				cmpnt = MPMJ1;
+			else if(menutext.equals("J2"))
+				cmpnt = MPMJ2;
+			else if(menutext.equals("KI"))
+				cmpnt = MPMKI;
+			else if(menutext.equals("KII"))
+				cmpnt = MPMKII;
+			else if(menutext.equals("CZM Mode I Force"))
+				cmpnt = MPMMODEIFB;
+			else if(menutext.equals("CZM Mode II Force"))
+				cmpnt = MPMMODEIIFB;
+			else if(menutext.equals("Cohesive Damage Length"))
+				cmpnt = MPMCZLENGTH;
+			else if(menutext.equals("Crack Length"))
+				cmpnt = MPMLENGTH;
+			else if(menutext.equals("Debonded Crack Length"))
+				cmpnt = MPMDEBONDLENGTH;
+			else if(menutext.equals("Normal CTOD"))
+				cmpnt = MPMNORMALCTOD;
+			else if(menutext.equals("Shear CTOD"))
+				cmpnt = MPMSHEARCTOD;
+			else if(menutext.equals("Debond Tip Normal CTOD"))
+				cmpnt = MPMDEBONDNCTOD;
+			else if(menutext.equals("Debond Shear Normal CTOD"))
+				cmpnt = MPMDEBONDSCTOD;
+			else if(menutext.equals("Crack Profile"))
+				cmpnt = MPMCRACKPROFILE;
+			else if(menutext.equals("Crack Normal CTOD"))
+				cmpnt = MPMNORMALCTOD;
+			else if(menutext.equals("Crack Tangential CTOD"))
+				cmpnt = MPMSHEARCTOD;
+			else if(menutext.equals("Crack Opening Fraction"))
+				cmpnt = MPMOPENINGFRACTION;
+			else if(menutext.equals("Crack Sliding Fraction"))
+				cmpnt = MPMSHEARFRACTION;
+			else if(menutext.equals("CZM GI"))
+				cmpnt = MPMCZMGI;
+			else if(menutext.equals("CZM GII"))
+				cmpnt = MPMCZMGII;
+			else if(menutext.equals("Traction") || menutext.equals("Crack Traction Data"))
+				cmpnt = MPMTRACTION1;
+		}
+		else
+		{	// FEA plots
+			if(menutext.equals("Stress"))
+				cmpnt = MESHSIGMAX;
+			else if(menutext.equals("Pressure"))
+				cmpnt = MESHPRESSURE;
+			else if(menutext.equals("Element Stress"))
+				cmpnt = MESHELEMSIGMAX;
+			else if(menutext.equals("Strain"))
+				cmpnt = MESHSTRAINX;
+			else if(menutext.equals("Energy"))
+				cmpnt = MESHSTRAINENERGY;
+			else if(menutext.equals("Element Force"))
+				cmpnt = MESHFORCEX;
+			else if(menutext.equals("Interface Traction"))
+				cmpnt = INTERFACETRACTION_N;
+			else if(menutext.equals("Displacement"))
+				cmpnt = MESHDISPX;
+			else if(menutext.equals("Shear Component"))
+				cmpnt = MESHDVDX;
+			else if(menutext.equals("Material"))
+				cmpnt = MESHMATERIAL;
+			else if(menutext.equals("Material Angle"))
+				cmpnt = MESHANGLE;
+			else if(menutext.equals("Expression...") || menutext.equals("Expression"))
+				cmpnt = PLOTEXPRESSION;
+		}
+		
+		return cmpnt;
 	}
 	
 	// called when state changed in quantity menu
@@ -640,7 +823,8 @@ public class PlotQuantity extends PlotControl
 				}
 				cmpnt.setEnabled(true);
 				break;
-				
+			
+			case MPMANGLEZ:
 			case MPMSPINVELOCITYX:
 			case MPMSPINMOMENTUMX:
 				if(docCtrl.resDoc.is3D())
@@ -734,10 +918,29 @@ public class PlotQuantity extends PlotControl
 	}
 	
 	// get plot component from current selection
-	public int getPlotComponent(int selected)
-	{	PlotMenuItem pm=(PlotMenuItem)quant.getSelectedItem();
-		if(pm==null) return -1;
-		int plotComponent=pm.getTag();
+	public int getPlotComponent(int selected,boolean getExpression,ISDictType settings)
+	{	int vindex=0,tindex=0,plotComponent=-1;
+		if(settings==null)
+		{	PlotMenuItem pm=(PlotMenuItem)quant.getSelectedItem();
+			if(pm==null) return -1;
+			plotComponent=pm.getTag();
+			vindex=cmpnt.getSelectedIndex();
+			tindex=vindex;
+		}
+		else
+		{	String mt = (String)settings.gcis_objectForKey("menutext");
+			if(mt==null) return -1;
+			plotComponent = menuTextToPlotTag(mt);
+			try
+			{	vindex = settings.gcis_integerForKey("vectorindex");
+			}
+			catch(Exception e) {}
+			try
+			{	tindex = settings.gcis_integerForKey("tensorindex");
+			}
+			catch(Exception e) {}
+		}
+		if(plotComponent<0 || vindex<0 || tindex<0) return -1;
 		
 		// adjust component menus - add component selected in component menu
 		int extra = 0;
@@ -745,14 +948,14 @@ public class PlotQuantity extends PlotControl
 		{   
 			case MPMVELX:
 			{
-				extra=cmpnt.getSelectedIndex();
+				extra=vindex;
 				int nextVal = docCtrl.resDoc.is3D()?3:2;
 				if(extra == nextVal) extra=SHIFT4MAGNITUDE;
 				break;
 			}
 			case MPMDISPX:
 			{
-				extra=cmpnt.getSelectedIndex();
+				extra=vindex;
 				int nextVal = docCtrl.resDoc.is3D()?3:2;
 				if(extra == nextVal) extra=SHIFT4MAGNITUDE;
 				break;
@@ -761,30 +964,56 @@ public class PlotQuantity extends PlotControl
 			case MPMEPSX:
 			case MPMPLEPSX:
 			case MPMEPSTOTX:
-			case MPMDCDX:
 			case MESHSIGMAX:
-			case MESHDISPX:
 			case MESHSTRAINX:
-			case MESHDVDX:
 			case MESHELEMSIGMAX:
+				extra=tindex;
+				break;
+				
+			case MPMDCDX:
+			case MESHDVDX:
+			case MESHDISPX:
 			case MESHFORCEX:
 			case INTERFACETRACTION_N:
-				extra=cmpnt.getSelectedIndex();
+				extra=vindex;
 				break;
 	
-			case PlotQuantity.MPMSPINVELOCITYX:
-			case PlotQuantity.MPMSPINMOMENTUMX:
+			case MPMSPINVELOCITYX:
+			case MPMSPINMOMENTUMX:
 				if(docCtrl.resDoc.is3D())
-					extra=cmpnt.getSelectedIndex();
+					extra=vindex;
 				else
 					extra = 2;	// only z in 2D
 				break;
+			
+			case PLOTEXPRESSION:
+				if(getExpression) setupForExpression(settings);
+				break;
+				
+			case MPMHISTORY1:
+				if(settings!=null)
+				{	if(tindex<4)
+					{	// tindex 0 to 3 select history 1 to 4
+						extra = tindex;
+					}
+					else
+					{	// tindex 4 on selects history variable 5 on
+						extra = MPMHISTORY5-MPMHISTORY1+tindex-4;
+					}
+				}
+				break;
+				
+			case MPMTRACTION1:
+				if(settings!=null)
+					extra=tindex;
+				break;
+				
 			default:
 				break;
 		}
 		
 		// save selection
-		if(plotComponent>=0 && !suspendStoreSelection)
+		if(plotComponent>=0 && !suspendStoreSelection && settings==null)
 		{	if(docCtrl.resDoc.isMPMAnalysis())
 			{	if(selected==LoadArchive.TIME_PLOT)
 				{	mpmTimeQuant=plotComponent;
@@ -918,10 +1147,11 @@ public class PlotQuantity extends PlotControl
 			
 			// Position or material
 			case MESHANGLE:
+				if(resDoc.isFEAAnalysis()) return "Material Angle";
 			case MPMANGLEZ:
 			case MPMANGLEY:
 			case MPMANGLEX:
-				return "Material Angle";
+				return "Rotational Strain";
 				
 			// Position or material
 			//case MESHMATERIAL:
@@ -933,6 +1163,11 @@ public class PlotQuantity extends PlotControl
 			case MESHDUDY:
 				return "Shear Component ("+units.strainUnits()+")";
 			
+			case MPMWXY:
+			case MPMWXZ:
+			case MPMWYZ:
+				return "Rotational Strain ("+units.strainUnits()+")";
+				
 			// histrory variables
 			case MPMHISTORY1:
 			case MPMHISTORY2:
@@ -956,10 +1191,9 @@ public class PlotQuantity extends PlotControl
 				else
 					return "Conc Grad (1/"+units.lengthUnits()+")";
 			
-			// an Expression
-			case MPMEXPRESSION:
-			case FEAEXPRESSION:
-				return "?";
+			case PLOTEXPRESSION:
+				if(expressionTitle!=null) return expressionTitle;
+				return "Expression";
 			
 			case MPMJ1:
 			case MPMJ2:
@@ -993,6 +1227,9 @@ public class PlotQuantity extends PlotControl
 			case MPMPOSY:
 			case MPMPOSX:
 			case MPMPOSZ:
+			case MPMORIGPOSY:
+			case MPMORIGPOSX:
+			case MPMORIGPOSZ:
 			case MPMCRACKPROFILE:
 				return "Position ("+units.lengthUnits()+")";
 			
@@ -1000,7 +1237,7 @@ public class PlotQuantity extends PlotControl
 			case MPMSHEARFRACTION:
 				return "Fraction";
 			
-			case MPMMASS:
+			case MPMDENSITY:
 				return "Density ("+units.massUnits()+"/"+units.lengthUnits()+"^3)";
 			
 			case MPMARCHIVETIME:
@@ -1087,6 +1324,9 @@ public class PlotQuantity extends PlotControl
 			case MESHSTRAINZ:
 			case MESHDVDX:
 			case MESHDUDY:
+			case MPMWXY:
+			case MPMWXZ:
+			case MPMWYZ:
 				return units.strainUnits();
 			
 			// Energy Density
@@ -1147,6 +1387,9 @@ public class PlotQuantity extends PlotControl
 			case MPMPOSY:
 			case MPMPOSX:
 			case MPMPOSZ:
+			case MPMORIGPOSY:
+			case MPMORIGPOSX:
+			case MPMORIGPOSZ:
 			case MPMCRACKPROFILE:
 				return units.lengthUnits();
 			
@@ -1187,7 +1430,7 @@ public class PlotQuantity extends PlotControl
 			case MESHFORCEY:
 				return units.forceUnits();
 			
-			case MPMMASS:
+			case MPMDENSITY:
 				return units.massUnits()+"/"+units.lengthUnits()+"^3";
 			
 			case MPMARCHIVETIME:
@@ -1204,6 +1447,296 @@ public class PlotQuantity extends PlotControl
 	
 	// select item for checking the mesh
 	public void setCheckMeshItem() { quant.setSelectedIndex(checkMeshItem); }
+	
+	// get expression
+	public String getExpression() { return expression; }
+	
+	// set up for using current epxresison
+	public void setupForExpression(ISDictType settings)
+	{
+		// loop until enter a valid expression
+		while(true)
+		{	String newExpr;
+			expressionTitle = null;
+			if(settings==null)
+			{	//String newExpr = (String)JOptionPane.showInputDialog(null,msg,"Plot Expression",
+				//	JOptionPane.PLAIN_MESSAGE,null,null,expression);
+				GetExpression exprDialog = new GetExpression(docCtrl,expression);
+				if(exprDialog.getClickedButton()==JNDialog.CANCEL_BUTTON) break;
+				
+				// get entered expression
+				newExpr = exprDialog.getEnteredExpression();
+			}
+			else
+			{	newExpr = (String)settings.gcis_objectForKey("expression");
+				if(newExpr==null) newExpr = "0";
+				expressionTitle = (String)settings.gcis_objectForKey("expressionTitle");
+			}
+			
+			
+			// read variables
+			try
+			{	JNExpression testExpr = new JNExpression(newExpr,null);
+				HashMap<String,String> testVars = testExpr.usedVariables();
+				// if no exception, we are done
+				expression = newExpr;
+				expr = testExpr;
+				exprVars = testVars;
+				break;
+			}
+			catch(Exception err)
+			{	JNUtilities.showMessage(docCtrl,"Invalid expression: "+err.getLocalizedMessage());
+			}
+		}
+		
+		// Get list of keys
+		exprVars.put("#PI","3.141592653589793");
+		
+		// FEA or MPM variables
+		keys.clear();
+		if(docCtrl.resDoc.isMPMAnalysis())
+		{
+		    setKeyCode("#wpx",MPMSPINVELOCITYX);
+		    setKeyCode("#wpy",MPMSPINVELOCITYY);
+		    setKeyCode("#wpz",MPMSPINVELOCITYZ);
+		    
+		    setKeyCode("#c",MPMCONCENTRATION);
+		    setKeyCode("#dcdx",MPMDCDX);
+		    setKeyCode("#dcdy",MPMDCDY);
+		    setKeyCode("#dcdz",MPMDCDZ);
+		    
+		    setKeyCode("#rho",MPMDENSITY);
+		    
+		    setKeyCode("#dispx",MPMDISPX);
+		    setKeyCode("#dispR",MPMDISPX);
+		    setKeyCode("#dispy",MPMDISPY);
+		    setKeyCode("#dispZ",MPMDISPY);
+		    setKeyCode("#dispz",MPMDISPZ);
+
+		    setKeyCode("#exxe",MPMEPSX);
+		    setKeyCode("#eRRe",MPMEPSX);
+		    setKeyCode("#eyye",MPMEPSY);
+		    setKeyCode("#eZZe",MPMEPSY);
+		    setKeyCode("#ezze",MPMEPSZ);
+		    setKeyCode("#eTTe",MPMEPSZ);
+		    setKeyCode("#exye",MPMEPSXY);
+		    setKeyCode("#eRZe",MPMEPSXY);
+		    setKeyCode("#exze",MPMEPSXZ);
+		    setKeyCode("#eyze",MPMEPSYZ);
+		    
+		    setKeyCode("#xing",MPMELEMENTCROSSINGS);
+
+		    setKeyCode("#ener",MPMENERGY);
+		    
+		    setKeyCode("#h1",MPMHISTORY1);
+		    setKeyCode("#h2",MPMHISTORY2);
+		    setKeyCode("#h3",MPMHISTORY3);
+		    setKeyCode("#h4",MPMHISTORY4);
+		    setKeyCode("#h5",MPMHISTORY5);
+		    setKeyCode("#h6",MPMHISTORY6);
+		    setKeyCode("#h7",MPMHISTORY7);
+		    setKeyCode("#h8",MPMHISTORY8);
+		    setKeyCode("#h9",MPMHISTORY9);
+		    setKeyCode("#h10",MPMHISTORY10);
+		    setKeyCode("#h11",MPMHISTORY11);
+		    setKeyCode("#h12",MPMHISTORY12);
+		    setKeyCode("#h13",MPMHISTORY13);
+		    setKeyCode("#h14",MPMHISTORY14);
+		    setKeyCode("#h15",MPMHISTORY15);
+		    setKeyCode("#h16",MPMHISTORY16);
+		    setKeyCode("#h17",MPMHISTORY17);
+		    setKeyCode("#h18",MPMHISTORY18);
+		    setKeyCode("#h19",MPMHISTORY19);
+		    
+		    setKeyCode("#kine",MPMKINENERGY);
+
+		    setKeyCode("#m",MPMMASS);
+
+		    setKeyCode("#mat",MPMPOS);
+
+		    setKeyCode("#x0",MPMORIGPOSX);
+		    setKeyCode("#y0",MPMORIGPOSY);
+		    setKeyCode("#z0",MPMORIGPOSZ);
+		    
+		    setKeyCode("#plaste",MPMPLASTICENERGY);
+		    
+		    setKeyCode("#exxp",MPMPLEPSX);
+		    setKeyCode("#eRRp",MPMPLEPSX);
+		    setKeyCode("#eyyp",MPMPLEPSY);
+		    setKeyCode("#eZZp",MPMPLEPSY);
+		    setKeyCode("#ezzp",MPMPLEPSZ);
+		    setKeyCode("#eTTp",MPMPLEPSZ);
+		    setKeyCode("#exyp",MPMPLEPSXY);
+		    setKeyCode("#eRZp",MPMPLEPSXY);
+		    setKeyCode("#exzp",MPMPLEPSXZ);
+		    setKeyCode("#eyzp",MPMPLEPSYZ);
+
+		    setKeyCode("#pp",MPMCONCENTRATION);
+		    setKeyCode("#dpdx",MPMDCDX);
+		    setKeyCode("#dpdy",MPMDCDY);
+		    setKeyCode("#dpdz",MPMDCDZ);
+
+		    setKeyCode("#x",MPMPOSX);
+		    setKeyCode("#R",MPMPOSX);
+		    setKeyCode("#y",MPMPOSY);
+		    setKeyCode("#Z",MPMPOSY);
+		    setKeyCode("#z",MPMPOSZ);
+
+		    setKeyCode("#D",MPMPOSDISTANCE);
+
+		    setKeyCode("#wxy",MPMWXY);
+		    setKeyCode("#wxz",MPMWXZ);
+		    setKeyCode("#wyz",MPMWYZ);
+
+		    setKeyCode("#exx",MPMEPSTOTX);
+		    setKeyCode("#eRR",MPMEPSTOTX);
+		    setKeyCode("#eyy",MPMEPSTOTY);
+		    setKeyCode("#eZZ",MPMEPSTOTY);
+		    setKeyCode("#ezz",MPMEPSTOTZ);
+		    setKeyCode("#eTT",MPMEPSTOTZ);
+		    setKeyCode("#exy",MPMEPSTOTXY);
+		    setKeyCode("#eRZ",MPMEPSTOTXY);
+		    setKeyCode("#exz",MPMEPSTOTXZ);
+		    setKeyCode("#eyz",MPMEPSTOTYZ);
+
+		    setKeyCode("#stre",MPMSTRENERGY);
+
+		    setKeyCode("#sxx",MPMSIGMAX);
+			setKeyCode("#sRR",MPMSIGMAX);
+		    setKeyCode("#syy",MPMSIGMAY);
+			setKeyCode("#sZZ",MPMSIGMAY);
+		    setKeyCode("#szz",MPMSIGMAZ);
+		    setKeyCode("#sTT",MPMSIGMAZ);
+		    setKeyCode("#sxy",MPMSIGMAXY);
+		    setKeyCode("#sRZ",MPMSIGMAXY);
+		    setKeyCode("#sxz",MPMSIGMAXZ);
+		    setKeyCode("#syz",MPMSIGMAYZ);
+		    
+		    setKeyCode("#T",MPMPOSANGLE);
+
+		    setKeyCode("#temp",MPMTEMPERATURE);
+
+		    setKeyCode("#heate",MPMHEATENERGY);
+
+		    setKeyCode("#t",MPMARCHIVETIME);
+
+		    setKeyCode("#velx",MPMVELX);
+		    setKeyCode("#velR",MPMVELX);
+		    setKeyCode("#vely",MPMVELY);
+		    setKeyCode("#velZ",MPMVELY);
+		    setKeyCode("#velz",MPMVELZ);
+
+		    setKeyCode("#wrke",MPMWORKENERGY);
+			
+		}
+		else
+		{
+		    setKeyCode("#dispx",MESHDISPX);
+		    setKeyCode("#dispR",MESHDISPX);
+		    setKeyCode("#dispy",MESHDISPY);
+		    setKeyCode("#dispZ",MESHDISPY);
+
+		    setKeyCode("#fx",MESHFORCEX);
+		    setKeyCode("#fy",MESHFORCEY);
+
+		    setKeyCode("#esxx",MESHELEMSIGMAX);
+		    setKeyCode("#esRR",MESHELEMSIGMAX);
+		    setKeyCode("#esyy",MESHELEMSIGMAY);
+		    setKeyCode("#esZZ",MESHELEMSIGMAY);
+		    setKeyCode("#eszz",MESHELEMSIGMAZ);
+		    setKeyCode("#esTT",MESHELEMSIGMAZ);
+		    setKeyCode("#esxy",MESHELEMSIGMAXY);
+		    setKeyCode("#esRZ",MESHELEMSIGMAXY);
+
+		    setKeyCode("#ener",MESHSTRAINENERGY);
+		    
+		    setKeyCode("#x",MESHNODEX);
+		    setKeyCode("#R",MESHNODEX);
+		    setKeyCode("#y",MESHNODEY);
+		    setKeyCode("#Z",MESHNODEY);
+		    
+		    setKeyCode("#D",MESHNODEDISTANCE);
+
+		    setKeyCode("#exx",MESHSTRAINX);
+		    setKeyCode("#eRR",MESHSTRAINX);
+		    setKeyCode("#eyy",MESHSTRAINY);
+		    setKeyCode("#eZZ",MESHSTRAINY);
+		    setKeyCode("#ezz",MESHSTRAINZ);
+		    setKeyCode("#eTT",MESHSTRAINZ);
+		    setKeyCode("#exy",MESHSTRAINXY);
+		    setKeyCode("#eRZ",MESHSTRAINXY);
+		    
+		    // shear components not mentioned in help files
+		    setKeyCode("#dudy",MESHDUDY);
+		    setKeyCode("#dvdx",MESHDVDX);
+
+		    setKeyCode("#sxx",MESHSIGMAX);
+		    setKeyCode("#sRR",MESHSIGMAX);
+		    setKeyCode("#syy",MESHSIGMAY);
+		    setKeyCode("#sZZ",MESHSIGMAY);
+		    setKeyCode("#szz",MESHSIGMAZ);
+		    setKeyCode("#sTT",MESHSIGMAZ);
+		    setKeyCode("#sxy",MESHSIGMAXY);
+		    setKeyCode("#sRZ",MESHSIGMAXY);
+
+		    setKeyCode("#T",MESHNODEANGLE);
+			
+		}
+	}
+	
+	// if variable is used, add to list of used variables
+	public void setKeyCode(String key,int code)
+	{	if(exprVars.get(key)!=null)
+	    {	keys.add(key);
+	        keyCode[keys.size()-1]=code;
+	    }
+	}
+	
+	// evaluate expression for a material point
+	public double evaluateExpressionMP(MaterialPoint mptr,double angle,ResultsDocument doc)
+	{
+		for(int i=0;i<keys.size();i++)
+		{	double keyValue = mptr.getForPlot(keyCode[i],angle,doc);
+			exprVars.put(keys.get(i),JNUtilities.formatDouble(keyValue));
+		}
+		String errMsg = expr.evaluateWith(exprVars);
+		double theValue = 1.e-20;
+		if(errMsg==null)
+		{	try
+			{	theValue = expr.getNumericValue();
+			}
+			catch(Exception e)
+			{	
+			}
+		}
+		return theValue;
+	}
+	
+	// evaluate expression for a material point
+	public double evaluateExpressionNode(ElementBase eptr,int ndi,double angle,ResultsDocument doc)
+	{
+		for(int i=0;i<keys.size();i++)
+		{	double keyValue;
+			try
+			{	keyValue = eptr.getNodeValue(ndi,keyCode[i],angle,doc);
+			}
+			catch(Exception e)
+			{	keyValue = 0.;
+			}
+			exprVars.put(keys.get(i),JNUtilities.formatDouble(keyValue));
+		}
+		String errMsg = expr.evaluateWith(exprVars);
+		double theValue = 1.e-20;
+		if(errMsg==null)
+		{	try
+			{	theValue = expr.getNumericValue();
+			}
+			catch(Exception e)
+			{	
+			}
+		}
+		return theValue;
+	}
 	
 	// name for plot component
 	public static String plotName(int component,ResultsDocument resDoc)
@@ -1401,12 +1934,13 @@ public class PlotQuantity extends PlotControl
 				return "Position";
 			
 			case MPMPOSX:
+			case MPMORIGPOSX:
 				return "Position "+xc;
-			
 			case MPMPOSY:
+			case MPMORIGPOSY:
 				return "Position "+yc;
-			
 			case MPMPOSZ:
+			case MPMORIGPOSZ:
 				return "Position "+zc;
 			
 			case MESHDUDY:
@@ -1462,9 +1996,9 @@ public class PlotQuantity extends PlotControl
 				else
 					return "Concentration";
 			
-			case MPMEXPRESSION:
-			case FEAEXPRESSION:
-				return "?";
+			case PLOTEXPRESSION:
+				if(expressionTitle!=null) return expressionTitle;
+				return resDoc.docCtrl.controls.getExpression();
 			
 			case MPMJ1:
 				return "J1 Integral";
@@ -1515,10 +2049,17 @@ public class PlotQuantity extends PlotControl
 				return "Material";
 			
 			case MESHANGLE:
+				if(resDoc.isFEAAnalysis()) return "Material Angle";
 			case MPMANGLEZ:
+			case MPMWXY:
+				return "Rotational Strain "+xc+yc;
 			case MPMANGLEY:
+			case MPMWXZ:
+				return "Rotational Strain "+xc+zc;
 			case MPMANGLEX:
-				return "Material Angle";
+			case MPMWYZ:
+				return "Rotational Strain "+yc+zc;
+			
 			
 			case MESHFORCEX:
 				return "Force "+xc;
@@ -1532,7 +2073,7 @@ public class PlotQuantity extends PlotControl
 			case INTERFACETRACTION_T:
 				return "Interface Tangential Traction";
 				
-			case MPMMASS:
+			case MPMDENSITY:
 				return "Density";
 			
 			case MPMARCHIVETIME:
@@ -1564,7 +2105,7 @@ public class PlotQuantity extends PlotControl
 			case MPMTRACTION9:
 			case MPMTRACTION10:
 				return "Traction history "+(component-MPMTRACTION1+1);
-				
+			
 			default:
 				break;
 		}

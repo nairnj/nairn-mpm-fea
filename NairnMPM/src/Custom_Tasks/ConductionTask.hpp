@@ -26,7 +26,7 @@ class ConductionTask : public TransportTask
     public:
 		static bool active,activeRamp,crackTipHeating,adiabatic;
 		static bool crackContactHeating,matContactHeating;
-	
+
 		// initialize
 		virtual TransportTask *Initialize(void);
 	
@@ -38,10 +38,7 @@ class ConductionTask : public TransportTask
 	
 		// grid force extrapolation
 		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *,short,int);
-#ifndef TRANSPORT_FMPM
-		virtual TransportTask *SetTransportForceAndFluxBCs(double);
-#endif
-	
+
 		// custom methods
 		void AddCrackTipHeating(void);
 		void StartCrackTipHeating(CrackSegment *,Vector &,double);
@@ -52,9 +49,11 @@ class ConductionTask : public TransportTask
         virtual TransportField *GetTransportFieldPtr(NodalPoint *) const;
         virtual NodalValueBC *GetFirstBCPtr(void) const;
 		virtual MatPtLoadBC *GetFirstFluxBCPtr(void) const;
-        virtual double *GetParticleValuePtr(MPMBase *mptr) const;
-        virtual double *GetPrevParticleValuePtr(MPMBase *mptr) const;
-    
+		virtual double GetParticleValue(MPMBase *mptr) const;
+		virtual double *GetParticleValuePtr(MPMBase *mptr) const;
+		virtual double GetPrevParticleValue(MPMBase *mptr) const;
+		virtual double *GetPrevParticleValuePtr(MPMBase *mptr) const;
+
         // class methods
         static void ThermodynamicsOutput(void);
         static bool IsSystemIsolated(void);

@@ -22,17 +22,17 @@ Getting Started
 
 <pre>
 cd nairn-mpm-fea/NairnMPM/build
-make SYSTEM=(system)
+make -j (np) SYSTEM=(system)
 </pre>
 
 <p>or compile <code>NairnFEA</code> navigate to its build folder and use the <code>make</code> command:</p>
 
 <pre>
 cd nairn-mpm-fea/NairnFEA/build
-make SYSTEM=(system)
+make -j (np) SYSTEM=(system)
 </pre>
 
-<p>where <code>(system)</code> is one of the systems supported for easy compilation. To learn about the available systems, you can consult comments in the <code>makefile</code> in each project in their build folders. These commands will compile all source code and install the executables in <code>nairn-mpm-fea/NairnMPM/input</code> or <code>nairn-mpm-fea/NairnFEA/input</code>, respectively.
+<p>where <code>(np)</code> is number of processors to use when compiling and <code>(system)</code> is one of the systems supported for easy compilation. To learn about the available systems, you can consult comments in the <code>makefile</code> in each project in their build folders. These commands will compile all source code and install the executables in <code>nairn-mpm-fea/NairnMPM/input</code> or <code>nairn-mpm-fea/NairnFEA/input</code>, respectively.
 
 <p>Compiling on any other Linux/Unix system should be straightforward, with the most difficult step usually being installing and linking to the <a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code></a> library. The key steps needed for successful compilation:</p>
 

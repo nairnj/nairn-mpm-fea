@@ -218,7 +218,7 @@ void MixedModeTraction::PrintMechanicalProperties(void) const
 // h[3=MM_DW] is dW or work increment
 // h[4=MM_UN] is nCod stored to get dun on next step
 // h[5=MM_UT] is tCod stored to get dut on next step
-char *MixedModeTraction::InitHistoryData(char *pchr)
+char *MixedModeTraction::InitHistoryData(char *pchr,MPMBase *mptr)
 {
     numTractionHistory = 6;
     double *p = CreateAndZeroDoubles(pchr,numTractionHistory);

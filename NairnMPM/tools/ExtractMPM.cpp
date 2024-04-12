@@ -21,6 +21,7 @@
 #include "ExtractMPM.hpp"
 
 // Global variable settings
+int versionNumber = 2;
 char fileFormat='T';
 char *outfile=NULL;
 bool stepExtension=false;
@@ -41,6 +42,7 @@ bool crackDataOnly=false;
 bool hasTempQ=false;
 bool hasConcQ=false;
 bool isStructured=false;
+bool unstructuredVTK=false;
 float archiveTimeMs=-1.;
 double zeroDouble=0.;
 int recSize;
@@ -48,7 +50,7 @@ int vectorSize,tensorSize;
 bool reverseFromInput;
 int angleOffset=-1,angleYOffset,angleXOffset,posOffset=-1,stressOffset=-1,strainOffset=-1;
 int crackPosOffset=-1,jIntOffset=-1,kSifOffset=-1,czmDispOffset=-1;
-int velocityOffset=-1,origPosOffset=-1,plStrainOffset=-1;
+int velocityOffset=-1,origPosOffset=-1,plStrainOffset=-1,sizeOffset=-1;
 int tempOffset=-1,concOffset=-1,strainEnergyOffset=-1,plasticEnergyOffset=-1;
 int history1Offset=-1,history2Offset=-1,history3Offset=-1,history4Offset=-1;
 int history5Offset=-1,history6Offset=-1,history7Offset=-1,history8Offset=-1,history9Offset=-1;
@@ -63,9 +65,16 @@ unsigned char *buffer;
 long fileLength,seekOffset,blockSize;
 FILE *fp;
 unsigned char *ap,*apNextBlock;
+unsigned char *sfBuffer;
+long sfFileLength,sfSeekOffset,sfBlockSize;
+FILE *sf;
+unsigned char *sfp,*sfpNextBlock;
 
 // 50 MB chunks
 #define MAX_READ_BLOCK 50000000
+
+// Text chunkc
+#define MAX_TEXT_BLOCK 1000000
 
 #pragma mark MAIN AND INPUT PARAMETERS
 
@@ -179,13 +188,13 @@ int main(int argc, char * const argv[])
 					q=DISPLACEMENT;
 				else if(strcmp(parm,"mat")==0)
 					q=MAT;
-				else if(strcmp(parm,"j1")==0)
+				else if(strcmp(parm,"j1")==0 || strcmp(parm,"J1")==0)
 					q=J1;
-				else if(strcmp(parm,"j2")==0)
+				else if(strcmp(parm,"j2")==0 || strcmp(parm,"J2")==0)
 					q=J2;
-				else if(strcmp(parm,"ki")==0)
+				else if(strcmp(parm,"ki")==0 || strcmp(parm,"KI")==0)
 					q=KI;
-				else if(strcmp(parm,"kii")==0)
+				else if(strcmp(parm,"kii")==0 || strcmp(parm,"KII")==0)
 					q=KII;
 				else if(strcmp(parm,"mass")==0)
 					q=MASS;
@@ -237,6 +246,12 @@ int main(int argc, char * const argv[])
 					q=MATANGLEY;
 				else if(strcmp(parm,"angx")==0)
 					q=MATANGLEX;
+				else if(strcmp(parm,"xmat")==0)
+					q=XMATUNIT;
+				else if(strcmp(parm,"ymat")==0)
+					q=YMATUNIT;
+				else if(strcmp(parm,"zmat")==0)
+					q=ZMATUNIT;
                 else if(strcmp(parm,"czm1")==0)
                     q=CZMI;
                 else if(strcmp(parm,"czm2")==0)
@@ -261,6 +276,8 @@ int main(int argc, char * const argv[])
                     q=THIST9;
                 else if(strcmp(parm,"tract10")==0)
                     q=THIST10;
+				else if(strcmp(parm,"meansize")==0)
+					q=PSIZE;
 				else
 				{   cerr << "ExtractMPM option 'q' argument of '" << parm << "' is not recognized" << endl;
 					return BadOptionErr;
@@ -333,7 +350,7 @@ int main(int argc, char * const argv[])
 				break;
 			}
 			
-			// text format (the default)
+			// include extension (the default)
 			else if(argv[parmInd][optInd]=='s' || argv[parmInd][optInd]=='S')
 			{	stepExtension=true;
 			}
@@ -367,9 +384,17 @@ int main(int argc, char * const argv[])
 				strcpy(fileExtension,"xml");
 			}
 			
-			// vtk
+			// vtk point data
 			else if(argv[parmInd][optInd]=='v' || argv[parmInd][optInd]=='V')
 			{	fileFormat='V';
+				unstructuredVTK = false;
+				strcpy(fileExtension,"vtk");
+			}
+			
+			// vtk unstructered grid
+			else if(argv[parmInd][optInd]=='u' || argv[parmInd][optInd]=='U')
+			{	fileFormat='V';
+				unstructuredVTK = true;
 				strcpy(fileExtension,"vtk");
 			}
 			
@@ -433,6 +458,7 @@ int main(int argc, char * const argv[])
 	{	int result=ExtractMPMData(argv[fileNum],fileNum-parmInd,argc-parmInd-1);
 		if(result!=noErr) return result;
 	}
+	cout << "Done" << endl;
 	
     // insert code here...
     return noErr;
@@ -456,7 +482,7 @@ void Usage(const char *msg)
 	if(msg!=NULL)
 		cout << "\nERROR: " << msg << endl;
 		
-	cout << "\nExtractMPM\n    version 1.0.0" << endl;
+	cout << "\nExtractMPM\n    version " << versionNumber << endl;
     cout << "\nUsage:\n"
         "    ExtractMPM [-options] <InputFile>\n\n"
         "This program reads the <InputFile>, extracts the desired data as\n"
@@ -482,12 +508,14 @@ void Usage(const char *msg)
 		"    -o path            Output file name with no extension\n"
 		"		                       (quoted if name has spaces)\n"
 		"    -T                 Output as tab-delimited text file (the default)\n"
-		"    -V                 Output as VTK Legacy file (particle date only)\n"
+		"    -V                 Output as VTK Legacy POLYDATA file\n"
+	    "    -U                 Output as a VTK Legacy UNSTRUCTURED_GRID file\n"
 		"    -X                 Output as XML file\n"
 		"    -d                 Output as little Endian binary doubles file\n"
         "    -D                 Output as big Endian binary doubles file\n"
         "    -f                 Output as little Endian binary floats file\n"
         "    -F                 Output as big Endian binary floats file\n"
+	    "    -Z                 Output using a custom binary style\n"
 		"  Other options\n"
         "    -H (of -?)         Show this help and exit\n"
 		"\n"
@@ -608,6 +636,14 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 		return FileAccessErr;
 	}
     
+	// unstructured grid needs size and deeformation gradient
+	if(fileFormat=='V' && unstructuredVTK && !crackDataOnly)
+	{	if(sizeOffset<0 || strainOffset<0 || rotStrainOffset<0)
+		{	cerr << "Unstructured grid extract requires the archive files to include strain and size\n";
+			return BadOptionErr;
+		}
+	}
+	
     // adjust block end pointer
     apNextBlock = fileLength>MAX_READ_BLOCK ? ap+MAX_READ_BLOCK-2*recSize : ap+MAX_READ_BLOCK+1;
 
@@ -615,6 +651,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	ofstream fout;
 	if(outfile!=NULL)
 	{	char fname[256];
+        size_t fsize=256;
 		
 		// get stepNum string
 		int ext=0,dot=(int)strlen(mpmFile)-1;
@@ -635,15 +672,15 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 		
 		if(lastIndex==0)
 		{	if(stepExtension)
-				sprintf(fname,"%s%s.%s",outfile,stepNum,fileExtension);
+				snprintf(fname,fsize,"%s%s.%s",outfile,stepNum,fileExtension);
 			else
-				sprintf(fname,"%s.%s",outfile,fileExtension);
+				snprintf(fname,fsize,"%s.%s",outfile,fileExtension);
 		}
 		else
 		{	if(stepExtension && strlen(stepNum)>0)
-				sprintf(fname,"%s%s.%s",outfile,stepNum,fileExtension);
+				snprintf(fname,fsize,"%s%s.%s",outfile,stepNum,fileExtension);
 			else
-				sprintf(fname,"%s-%d.%s",outfile,fileIndex,fileExtension);
+				snprintf(fname,fsize,"%s-%d.%s",outfile,fileIndex,fileExtension);
 		}
 		fout.open(fname);
 		if(!outfile)
@@ -659,11 +696,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	
 	// special case for VTK legacy files
 	if(fileFormat=='V')
-	{	if(crackDataOnly)
-		{	cerr << "Exports to VTK Legacy file format cannot be for crack data" << endl;
-			return FileAccessErr;
-		}
-		int vtkResult = VTKLegacy(os,mpmFile);
+	{	int vtkResult = VTKLegacy(os,mpmFile);
         fclose(fp);
 		free(buffer);
 		return vtkResult;
@@ -685,6 +718,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	if(header)
 	{	char *headBuffer=new char[2500];
 		char headLine[50];
+        size_t headSize=50;
 		headBuffer[0]=0;
 		
 		if(fileFormat=='X')
@@ -698,7 +732,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 		strcat(headBuffer,mpmFile);
 		strcat(headBuffer,"\n");
 		if(archiveTimeMs>-0.5)
-		{	sprintf(headLine,"Time %g ms",archiveTimeMs);
+		{	snprintf(headLine,headSize,"Time %g ms",archiveTimeMs);
 			strcat(headBuffer,headLine);
 			strcat(headBuffer,"\n");
 		}
@@ -711,7 +745,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 			if(includeMaterial.size()>0)
 			{	strcat(headBuffer,"Included_Materials");
 				for(i=0;i<(int)includeMaterial.size();i++)
-				{	sprintf(headLine," %d",includeMaterial[i]);
+				{	snprintf(headLine,headSize," %d",includeMaterial[i]);
 					strcat(headBuffer,headLine);
 				}
 				strcat(headBuffer,"\n");
@@ -719,7 +753,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 			if(excludeMaterial.size()>0)
 			{	strcat(headBuffer,"Excluded_Materials");
 				for(i=0;i<(int)excludeMaterial.size();i++)
-				{	sprintf(headLine," %d",excludeMaterial[i]);
+				{	snprintf(headLine,headSize," %d",excludeMaterial[i]);
 					strcat(headBuffer,headLine);
 				}
 				strcat(headBuffer,"\n");
@@ -800,12 +834,12 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 			continue;
 		}
 		
-		// if skip is true here, that skip this material
-		if(skipThisPoint(matnum))
+		// if skip is true here, that skip this point
+		if(skipThisPoint(matnum,ap))
 		{	ap+=recSize;
 			continue;
 		}
-		
+
 		// write position, special for XML which starts the <mp> element
 		if(fileFormat!='X')
 		{	OutputDouble((double *)(ap+posOffset),0,0,reverseFromInput,os,XPOS);
@@ -1026,6 +1060,8 @@ int VTKLegacy(ostream &os,const char *mpmFile)
 	os << "# vtk DataFile Version 4.0" << endl;
 	if(headerName!=NULL)
 		os << headerName;
+	else if(crackDataOnly)
+		os << "OSParticulas/NairnMPM crack data";
 	else
 		os << "OSParticulas/NairnMPM particle data";
 	os << " from file ";
@@ -1034,7 +1070,37 @@ int VTKLegacy(ostream &os,const char *mpmFile)
 		os << " at time " << archiveTimeMs << " ms" ;
 	os << endl;
 	os << "ASCII" << endl;
-	os << "DATASET POLYDATA" << endl;
+	if(crackDataOnly)
+	{	if(threeD)
+		{	// unstructured only if find cracks file
+			// Insert _Crack3D_surfaces_ before last period and append .txt
+			char *surfaceFile = new char[strlen(mpmFile)+22];
+			char stepText[20];
+			// find last period
+			int i;
+			for(i=(int)strlen(mpmFile)-1;i>=0;i--)
+			{	if(mpmFile[i]=='.') break;
+			}
+			// copy extension to temporary variable
+			strcpy(stepText,&mpmFile[i+1]);
+			
+			// build crack surface file name in surfaceFile
+			strcpy(surfaceFile,mpmFile);
+			surfaceFile[i]=0;
+			strcat(surfaceFile,"_Crack3D_surfaces_");
+			strcat(surfaceFile,stepText);
+			strcat(surfaceFile,".txt");
+			
+			sf=fopen(surfaceFile,"r");
+			unstructuredVTK = sf!=NULL ? true : false;
+		}
+		else
+			unstructuredVTK = true;
+	}
+	if(unstructuredVTK)
+		os << "DATASET UNSTRUCTURED_GRID" << endl;
+	else
+		os << "DATASET POLYDATA" << endl;
 	
 	// time and step number
 	if(strlen(stepNum)>1)
@@ -1049,6 +1115,8 @@ int VTKLegacy(ostream &os,const char *mpmFile)
 		os << "TIME 1 1 double" << endl;
 		os << archiveTimeMs << endl;
 	}
+	
+	if(crackDataOnly) return VTKLegacyCracks(os,mpmFile);
 
 	// count points to extract
 	int nummpms=(int)(fileLength/recSize);
@@ -1060,39 +1128,159 @@ int VTKLegacy(ostream &os,const char *mpmFile)
         
 		short matnum=pointMatnum(ap);
 		if(matnum<0) break;
-		if(!skipThisPoint(matnum)) numExtract++;
+		if(!skipThisPoint(matnum,ap)) numExtract++;
 		ap+=recSize;
 	}
 	
-    // output the number of points
-	os << "POINTS " << numExtract << " double" << endl;
-	if(numExtract==0) return noErr;
-    
-    // back to start of the file
-    if(!RestartFileBlocks(origOffset,mpmFile)) return FileAccessErr;
-	
-	// extract the point positions
-	for(p=0;p<nummpms;p++)
-    {   // read next block when needed
-        if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
-        
-		short matnum=pointMatnum(ap);
-		if(matnum<0) break;
-		if(!skipThisPoint(matnum))
-		{	OutputDouble((double *)(ap+posOffset),0,0,reverseFromInput,os,XPOS);
-		    OutputDouble((double *)(ap+posOffset),1,' ',reverseFromInput,os,YPOS);
-		    if(threeD)
-                OutputDouble((double *)(ap+posOffset),2,' ',reverseFromInput,os,ZPOS);
-            else
-                os << " 0";         // so ParaView can do 2D data
+	if(unstructuredVTK)
+	{	int numPoints = threeD ? 8*numExtract : 4*numExtract ;
+		
+		// output the number of points
+		os << "POINTS " << numPoints << " double" << endl;
+		if(numExtract==0) return noErr;
+		
+		// back to start of the file
+		if(!RestartFileBlocks(origOffset,mpmFile)) return FileAccessErr;
+		
+		// extract the point corners
+		for(p=0;p<nummpms;p++)
+		{   // read next block when needed
+			if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+			
+			short matnum=pointMatnum(ap);
+			if(matnum<0) break;
+			if(skipThisPoint(matnum,ap))
+			{	ap += recSize;
+				continue;
+			}
+			
+			// get the size (sizeOffset better be OK
+			double *data = (double *)(ap+sizeOffset);
+			if(reverseFromInput) Reverse((char *)data,sizeof(double));
+			double rx = *data;
+			data+=1;
+			if(reverseFromInput) Reverse((char *)data,sizeof(double));
+			double ry = *data;
+			double rz = 0.;
+			if(threeD)
+			{	data+=1;
+				if(reverseFromInput) Reverse((char *)data,sizeof(double));
+				rz = *data;
+			}
+			
+			// get position
+			data = (double *)(ap+posOffset);
+			if(reverseFromInput) Reverse((char *)data,sizeof(double));
+			double posx = *data;
+			data+=1;
+			if(reverseFromInput) Reverse((char *)data,sizeof(double));
+			double posy = *data;
+			double posz = 0.;
+			if(threeD)
+			{	data+=1;
+				if(reverseFromInput) Reverse((char *)data,sizeof(double));
+				posz = *data;
+			}
+			
+			// get deformation gradient (0,1,2)(3,4,5)(6,7,8)
+			double F[9];
+			GetDeformationGradient(F);
+			
+			// r1 = (F00,F10,F20)rx
+			double r1[3];
+			r1[0] = F[0]*rx;
+			r1[1] = F[3]*rx;
+
+			// r2 = (F01,F11,F21)rx
+			double r2[3];
+			r2[0] = F[1]*ry;
+			r2[1] = F[4]*ry;
+			
+			// 4 or 8 points
+			if(threeD)
+			{	// finish r1 and r2
+				r1[2] = F[6]*rx;
+				r2[2] = F[7]*ry;
+				
+				// r3 = (F02,F12,F22)rx
+				double r3[3];
+				r3[0] = F[2]*rz;
+				r3[1] = F[5]*rz;
+				r3[2] = F[8]*rz;
+			 
+				os << posx-r1[0]-r2[0]-r3[0] << " " << posy-r1[1]-r2[1]-r3[1] << " " << posz-r1[2]-r2[2]-r3[2] << endl;
+				os << posx+r1[0]-r2[0]-r3[0] << " " << posy+r1[1]-r2[1]-r3[1] << " " << posz+r1[2]-r2[2]-r3[2] << endl;
+				os << posx-r1[0]+r2[0]-r3[0] << " " << posy-r1[1]+r2[1]-r3[1] << " " << posz-r1[2]+r2[2]-r3[2] << endl;
+				os << posx+r1[0]+r2[0]-r3[0] << " " << posy+r1[1]+r2[1]-r3[1] << " " << posz+r1[2]+r2[2]-r3[2] << endl;
+				os << posx-r1[0]-r2[0]+r3[0] << " " << posy-r1[1]-r2[1]+r3[1] << " " << posz-r1[2]-r2[2]+r3[2] << endl;
+				os << posx+r1[0]-r2[0]+r3[0] << " " << posy+r1[1]-r2[1]+r3[1] << " " << posz+r1[2]-r2[2]+r3[2] << endl;
+				os << posx-r1[0]+r2[0]+r3[0] << " " << posy-r1[1]+r2[1]+r3[1] << " " << posz-r1[2]+r2[2]+r3[2] << endl;
+				os << posx+r1[0]+r2[0]+r3[0] << " " << posy+r1[1]+r2[1]+r3[1] << " " << posz+r1[2]+r2[2]+r3[2] << endl;
+			}
+			else
+			{	os << posx-r1[0]-r2[0] << " " << posy-r1[1]-r2[1] << " 0" << endl;
+				os << posx+r1[0]-r2[0] << " " << posy+r1[1]-r2[1] << " 0" << endl;
+				os << posx-r1[0]+r2[0] << " " << posy-r1[1]+r2[1] << " 0" << endl;
+				os << posx+r1[0]+r2[0] << " " << posy+r1[1]+r2[1] << " 0" << endl;
+			}
+			
+			// next material point
+			ap+=recSize;
+		}
+		
+		os << "CELLS " << numExtract << " " << numPoints+numExtract << endl;
+		int vertices = threeD ? 8 : 4 ;
+		int pnum = 0;
+		for(p=0;p<numExtract;p++)
+		{	os << vertices << " " << pnum << " " << pnum+1 << " " << pnum+2 << " " << pnum+3;
+			pnum += 4;
+			if(threeD)
+			{	os << " " << pnum << " " << pnum+1 << " " << pnum+2 << " " << pnum+3;
+				pnum += 4;
+			}
 			os << endl;
 		}
-		ap+=recSize;
+		
+		os << "CELL_TYPES " << numExtract << endl;
+		int cellType = threeD ? 11 : 8 ;
+		for(p=0;p<numExtract;p++) os << cellType << endl;
+
+		// extract quantities
+		if(quantity.size()==0) return noErr;
+		os << "CELL_DATA " << numExtract << endl;
 	}
-	
-	// extract quantities
-	if(quantity.size()==0) return noErr;
-	os << "POINT_DATA " << numExtract << endl;
+	else
+	{	// output the number of points
+		os << "POINTS " << numExtract << " double" << endl;
+		if(numExtract==0) return noErr;
+		
+		// back to start of the file
+		if(!RestartFileBlocks(origOffset,mpmFile)) return FileAccessErr;
+		
+		// extract the point positions
+		for(p=0;p<nummpms;p++)
+		{   // read next block when needed
+			if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+			
+			short matnum=pointMatnum(ap);
+			if(matnum<0) break;
+			if(!skipThisPoint(matnum,ap))
+			{	OutputDouble((double *)(ap+posOffset),0,0,reverseFromInput,os,XPOS);
+				OutputDouble((double *)(ap+posOffset),1,' ',reverseFromInput,os,YPOS);
+				if(threeD)
+					OutputDouble((double *)(ap+posOffset),2,' ',reverseFromInput,os,ZPOS);
+				else
+					os << " 0";         // so ParaView can do 2D data
+				os << endl;
+			}
+			ap+=recSize;
+		}
+		
+		// extract quantities
+		if(quantity.size()==0) return noErr;
+		os << "POINT_DATA " << numExtract << endl;
+	}
+
 	int i;
 	for(i=0;i<(int)quantity.size();i++)
     {   // back to start of the file
@@ -1101,6 +1289,9 @@ int VTKLegacy(ostream &os,const char *mpmFile)
 		switch(quantity[i])
 		{	case VELOCITY:
 			case DISPLACEMENT:
+			case XMATUNIT:
+			case YMATUNIT:
+			case ZMATUNIT:
 				os << "VECTORS " << quantityName[i] << " double" << endl;
 				break;
 			case STRESS:
@@ -1120,7 +1311,7 @@ int VTKLegacy(ostream &os,const char *mpmFile)
             
 			short matnum=pointMatnum(ap);
 			if(matnum<0) break;
-			if(!skipThisPoint(matnum))
+			if(!skipThisPoint(matnum,ap))
 			{	OutputQuantity(i,ap,os,matnum,0);
 				os << endl;
 			}
@@ -1130,6 +1321,320 @@ int VTKLegacy(ostream &os,const char *mpmFile)
     
     // done
     return noErr;
+}
+
+// called when start MP output - only needed for XML output
+int VTKLegacyCracks(ostream &os,const char *mpmFile)
+{
+	// skip past material points
+	int nummpms=(int)(fileLength/recSize);
+	int p;
+	for(p=0;p<nummpms;p++)
+	{   // read next block when needed
+		if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+		short matnum=pointMatnum(ap);
+		if(matnum<0) break;
+		ap+=recSize;
+	}
+	
+	// crack points
+	vector< int > numSegments;
+	int initCrack=p;
+	int numPoints = nummpms-initCrack;
+	os << "POINTS " << numPoints << " double" << endl;
+	int segmentNumber=0;
+	int startCrack=initCrack;
+	long origOffset = (long)(ap-buffer);
+	for(p=initCrack;p<nummpms;p++)
+	{   // read next block when needed
+		if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+			
+		// read marker (-1 for new crack, -2 for same crack)
+		short *mptr=(short *)(ap+sizeof(int)+sizeof(double));
+		if(reverseFromInput) Reverse((char *)mptr,sizeof(short));
+		short matnum=*mptr;
+		if(matnum==-1)
+		{	// new crack, except first one
+			if(p>initCrack)
+			{	numSegments.push_back(p-startCrack);
+				startCrack = p;
+			}
+		}
+		else if(matnum==-2)
+			segmentNumber++;
+		
+		// crack position
+		OutputDouble((double *)(ap+crackPosOffset),0,0,reverseFromInput,os,-1);
+		OutputDouble((double *)(ap+crackPosOffset),1,' ',reverseFromInput,os,-1);
+		if(threeD)
+			OutputDouble((double *)(ap+crackPosOffset),2,' ',reverseFromInput,os,-1);
+		else
+			OutputDouble(&zeroDouble,0,' ',false,os,-1);
+		os << endl;
+		ap+=recSize;
+	}
+	// last crack
+	numSegments.push_back(nummpms-startCrack);
+	
+	if(unstructuredVTK)
+	{	// back to start of the file
+		if(!RestartFileBlocks(origOffset,mpmFile)) return FileAccessErr;
+		
+		if(threeD)
+		{	// surface file was opened above
+			vector< int > numFacets;
+			
+			// get file length
+			if(fseek(sf,0L,SEEK_END)!=0)
+			{	cerr << "Crack surface file access error (fseek())" << endl;
+				fclose(sf);
+				return FileAccessErr;
+			}
+			sfFileLength=ftell(sf);
+			rewind(sf);
+			
+			// read first block of file into buffer
+			sfBlockSize = sfFileLength>MAX_TEXT_BLOCK ? MAX_TEXT_BLOCK : sfFileLength;
+			sfBuffer = (unsigned char *)malloc(sfBlockSize);
+			if(sfBuffer==NULL)
+			{	cerr << "Out of memory creating crack surface file reading buffer" << endl;
+				fclose(sf);
+				return MemoryErr;
+			}
+
+			// read first block
+			size_t res = fread(sfBuffer, sfBlockSize, 1, sf);
+			if(res!=1 && feof(sf)==0)
+			{	cerr << "Crack surface file access error (not all read)" << endl;
+				fclose(sf);
+				return FileAccessErr;
+			}
+			
+			// set up pointers
+			sfp = sfBuffer;
+			sfSeekOffset = 0;
+			sfpNextBlock = sfFileLength>MAX_TEXT_BLOCK ? sfp+MAX_TEXT_BLOCK-500 : sfp+MAX_TEXT_BLOCK+1;
+
+			// read the lines
+			char line[500];
+			
+			// scan to line starting in 'C' (should be first line)
+			while(true)
+			{	if(!GetSurfaceLine(line)) return FileAccessErr;
+				if(line[0]=='C') break;
+			}
+			
+			// read crack facets and parity check on num segments
+			int totalFacets = 0;
+			for(int i=0;i<numSegments.size();i++)
+			{	if(!GetSurfaceLine(line)) return FileAccessErr;
+				if(line[0]=='V')
+				{	cerr << "Existing crack surface file has fewer cracks than the archive file" << endl;
+					fclose(sf);
+					return FileAccessErr;
+				}
+				
+				// scan crack number, numFacets, numSegments
+				int cFacets,cSegments;
+				sscanf(line,"%*d %d %d",&cFacets,&cSegments);
+				if(cSegments!=numSegments[i])
+				{	cerr << "Existing crack surface file crack segments do not match the archive file" << endl;
+					fclose(sf);
+					return FileAccessErr;
+				}
+				numFacets.push_back(cFacets);
+				totalFacets+=cFacets;
+			}
+			
+			os << "CELLS " << totalFacets << " " << 4*totalFacets << endl;
+
+			// scan past line beginning in 'V' (should be next line)
+			while(true)
+			{	if(!GetSurfaceLine(line)) return FileAccessErr;
+				if(line[0]=='V') break;
+			}
+			
+			// read total all facets lines
+			int ptOffset = 0;
+			for(int cn=0;cn<numFacets.size();cn++)
+			{	// output all facents on this crack
+				for(int i=0;i<numFacets[cn];i++)
+				{	if(!GetSurfaceLine(line)) return FileAccessErr;
+					if(line[0]<'0' || line[0]>'9')
+					{	cerr << "Existing crack surface file facet data error" << endl;
+						fclose(sf);
+						return FileAccessErr;
+					}
+					int v1,v2,v3;
+					sscanf(line,"%d %d %d",&v1,&v2,&v3);
+					os << "3 " << (v1+ptOffset) << " " << (v2+ptOffset) << " " << (v3+ptOffset) << endl;
+				}
+				
+				// crack done, advance offset
+				ptOffset += numSegments[cn];
+			}
+			
+			os << "CELL_TYPES " << totalFacets << endl;
+			for(p=0;p<totalFacets;p++) os << "5" << endl;
+		}
+		else
+		{	// each crack segment
+			os << "CELLS " << segmentNumber << " " << 3*segmentNumber << endl;
+			for(p=initCrack;p<nummpms;p++)
+			{   // read next block when needed
+				if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+					
+				// read marker (-1 for new crack, -2 for same crack)
+				short *mptr=(short *)(ap+sizeof(int)+sizeof(double));
+				if(reverseFromInput) Reverse((char *)mptr,sizeof(short));
+				short matnum=*mptr;
+				if(matnum==-2)
+					os << "2 " << (p-initCrack-1) << " " << p-initCrack << endl;
+				ap+=recSize;
+			}
+
+			os << "CELL_TYPES " << segmentNumber << endl;
+			for(p=0;p<segmentNumber;p++) os << "3" << endl;
+		}
+	}
+
+	// extract quantities
+	os << "POINT_DATA " << numPoints << endl;
+
+	for(int i=-1;i<(int)quantity.size();i++)
+	{   // back to start of the file
+		if(!RestartFileBlocks(origOffset,mpmFile)) return FileAccessErr;
+		
+		if(i<0)
+			os << "SCALARS number double 1" << endl;
+		else
+			os << "SCALARS " << quantityName[i] << " double 1" << endl;
+		os << "LOOKUP_TABLE default" << endl;
+		
+		int crackNumber=0;
+		for(p=initCrack;p<nummpms;p++)
+		{   // read next block when needed
+			if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+			
+			// read marker (-1 for new crack, -2 for same crack)
+			short *mptr=(short *)(ap+sizeof(int)+sizeof(double));
+			if(reverseFromInput) Reverse((char *)mptr,sizeof(short));
+			short matnum=*mptr;
+			if(matnum==-1) crackNumber++;
+			
+			if(i<0)
+			{	os << crackNumber << endl;
+				ap+=recSize;
+				continue;
+			}
+			
+			switch(quantity[i])
+			{	case J1:
+				case J2:
+					if(jIntOffset>0)
+						OutputDouble((double *)(ap+jIntOffset),quantity[i]-J1,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,'\t',false,os,quantity[i]);
+					break;
+						
+				case KI:
+				case KII:
+					if(kSifOffset>0)
+						OutputDouble((double *)(ap+kSifOffset),quantity[i]-KI,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+					
+				case CZMI:
+				case CZMII:
+					if(czmDispOffset>0)
+						OutputDouble((double *)(ap+czmDispOffset),quantity[i]-CZMI,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+
+				case THIST1:
+					if(traction1Offset>0)
+						OutputDouble((double *)(ap+traction1Offset),0,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+				
+				case THIST2:
+					if(traction2Offset>0)
+						OutputDouble((double *)(ap+traction2Offset),0,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+				
+				case THIST3:
+					if(traction3Offset>0)
+						OutputDouble((double *)(ap+traction3Offset),0,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+				
+				case THIST4:
+					if(traction4Offset>0)
+						OutputDouble((double *)(ap+traction4Offset),0,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+				
+				case THIST5:
+					if(traction5Offset>0)
+						OutputDouble((double *)(ap+traction5Offset),0,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+				
+				case THIST6:
+					if(traction6Offset>0)
+						OutputDouble((double *)(ap+traction6Offset),0,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+				
+				case THIST7:
+					if(traction7Offset>0)
+						OutputDouble((double *)(ap+traction7Offset),0,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+				
+				case THIST8:
+					if(traction8Offset>0)
+						OutputDouble((double *)(ap+traction8Offset),0,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+				
+				case THIST9:
+					if(traction9Offset>0)
+						OutputDouble((double *)(ap+traction9Offset),0,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+				
+				case THIST10:
+					if(traction10Offset>0)
+						OutputDouble((double *)(ap+traction10Offset),0,0,reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+				
+				default:
+					OutputDouble(&zeroDouble,0,0,false,os,quantity[i]);
+					break;
+			}
+			os << endl;
+		}
+		// next crack point
+		ap+=recSize;
+	}
+	
+	// done
+	return noErr;
 }
 
 // called when start MP output - only needed for XML output
@@ -1145,7 +1650,7 @@ int XYZExport(ostream &os,const char *mpmFile)
 		
 		short matnum=pointMatnum(ap);
 		if(matnum<0) break;
-		if(!skipThisPoint(matnum)) numExtract++;
+		if(!skipThisPoint(matnum,ap)) numExtract++;
 		ap+=recSize;
 	}
 	
@@ -1168,25 +1673,20 @@ int XYZExport(ostream &os,const char *mpmFile)
 		
 		short matnum=pointMatnum(ap);
 		if(matnum<0) break;
-		if(!skipThisPoint(matnum))
-		{	// material number
-			//os << matnum;
-			
-			// data
-			if(!skipThisPoint(matnum))
-			{	OutputDouble((double *)(ap+posOffset),0,0,reverseFromInput,os,XPOS);
-				//OutputDouble((double *)(ap+posOffset),0,' ',reverseFromInput,os,XPOS);
-				OutputDouble((double *)(ap+posOffset),1,' ',reverseFromInput,os,YPOS);
-				if(threeD)
-					OutputDouble((double *)(ap+posOffset),2,' ',reverseFromInput,os,ZPOS);
-				else
-					os << " 0.0";         // so ParaView can do 2D data
-				os << endl;
-			}
+		if(!skipThisPoint(matnum,ap))
+		{	OutputDouble((double *)(ap+posOffset),0,0,reverseFromInput,os,XPOS);
+			//OutputDouble((double *)(ap+posOffset),0,' ',reverseFromInput,os,XPOS);
+			OutputDouble((double *)(ap+posOffset),1,' ',reverseFromInput,os,YPOS);
+			if(threeD)
+				OutputDouble((double *)(ap+posOffset),2,' ',reverseFromInput,os,ZPOS);
+			else
+				os << " 0.0";         // so ParaView can do 2D data
+			os << endl;
 		}
 		/*
 		char pos[20];
-		if(!skipThisPoint(matnum))
+         size_t psize=20;
+		if(!skipThisPoint(matnum,ap))
 		{	// output material x y z
 			if(matnum<10)
 				os << "  ";
@@ -1197,23 +1697,23 @@ int XYZExport(ostream &os,const char *mpmFile)
 			// X pos
 			double *data = (double *)(ap+posOffset);
 			if(reverseFromInput) Reverse((char *)data,sizeof(double));
-			sprintf(pos," %12.5f",*data);
+			snprintf(pos,psize," %12.5f",*data);
 			os << pos;
 			
 			// Y pos
 			data+=1;
 			if(reverseFromInput) Reverse((char *)data,sizeof(double));
-			sprintf(pos," %12.5f",*data);
+            snprintf(pos,psize," %12.5f",*data);
 			os << pos;
 			
 			// Z pos
 			if(threeD)
 			{	data+=1;
 				if(reverseFromInput) Reverse((char *)data,sizeof(double));
-				sprintf(pos," %12.5f",*data);
+				snprintf(pos,psize," %12.5f",*data);
 			}
 			else
-				sprintf(pos," %12.5f",(double)0.);
+				snprintf(pos,psize," %12.5f",(double)0.);
 			os << pos;
 			
 			// line odne
@@ -1252,6 +1752,48 @@ bool GetNextFileBlock(const char *mpmFile)
     ap=buffer;
     apNextBlock = fileLength>seekOffset+MAX_READ_BLOCK ? ap+MAX_READ_BLOCK-2*recSize : ap+MAX_READ_BLOCK+1;
     return true;
+}
+
+// get next line in the crack surface file
+// return point to next non-blank line
+bool GetSurfaceLine(char *line)
+{
+	// read next block
+	if(sfp>sfpNextBlock)
+	{	// set new offset by how much read in current buffer
+		sfSeekOffset += (long)(sfp-sfBuffer);
+		if(fseek(sf,sfSeekOffset,SEEK_SET)!=0)
+		{	cerr << "Crack surface file access error (not able to reset file position)" << endl;
+			fclose(sf);
+			return false;
+		}
+			
+		// read next block
+		sfBlockSize = sfSeekOffset+MAX_TEXT_BLOCK>sfFileLength ? sfFileLength-sfSeekOffset : MAX_TEXT_BLOCK;
+		size_t res = fread(sfBuffer, sfBlockSize, 1, sf);
+		if(res!=1 && feof(sf)==0)
+		{	cerr << "Crack surface file access error (next block not read)" << endl;
+			fclose(sf);
+			return false;
+		}
+			
+		// reset pointers
+		sfp=sfBuffer;
+		sfpNextBlock = sfFileLength>sfSeekOffset+MAX_TEXT_BLOCK ? sfp+MAX_TEXT_BLOCK-500 : sfp+MAX_TEXT_BLOCK+1;
+	}
+	
+	// grab the line one by one and add terminator
+	int ci=0;
+	while(*sfp!='\n' && *sfp!='\r')
+	{	line[ci++] = *sfp;
+		sfp++;
+	}
+	line[ci] = 0;
+	
+	// advance to start of next line
+	while(*sfp=='\n' || *sfp=='\r') sfp++;
+	
+	return true;
 }
 
 // When reading VTK file, need several passes through file and restart before each one
@@ -1596,21 +2138,59 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 		
 		case VELOCITY:
 			if(fileFormat=='V')
-			{	// VTK legacy only
-				OutputDouble((double *)(ap+velocityOffset),0,0,reverseFromInput,os,quantity[i]);
-				OutputDouble((double *)(ap+velocityOffset),1,' ',reverseFromInput,os,quantity[i]);
-				if(threeD)
-					OutputDouble((double *)(ap+velocityOffset),2,' ',reverseFromInput,os,quantity[i]);
+			{	if(velocityOffset>0)
+				{	// VTK legacy only
+					OutputDouble((double *)(ap+velocityOffset),0,0,reverseFromInput,os,quantity[i]);
+					OutputDouble((double *)(ap+velocityOffset),1,' ',reverseFromInput,os,quantity[i]);
+					if(threeD)
+						OutputDouble((double *)(ap+velocityOffset),2,' ',reverseFromInput,os,quantity[i]);
+					else
+						OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+				}
 				else
+				{	OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
 					OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+					OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+				}
 			}
-			else
+			else if(velocityOffset>0)
 			{	OutputDouble((double *)(ap+velocityOffset),0,delim,reverseFromInput,os,quantity[i]);
 				OutputDouble((double *)(ap+velocityOffset),1,delim,reverseFromInput,os,quantity[i]);
 				if(threeD)
 					OutputDouble((double *)(ap+velocityOffset),2,delim,reverseFromInput,os,quantity[i]);
 				else
 					OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			}
+			else
+			{	OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+				OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+				if(threeD) OutputDouble(&zeroDouble,0,' ',false,os,quantity[i]);
+			}
+			break;
+		
+		case PSIZE:
+			if(sizeOffset>0)
+			{	// scalar size is minimum length
+				double *data = (double *)(ap+sizeOffset);
+				if(reverseFromInput) Reverse((char *)data,sizeof(double));
+				double x = *data;
+				data+=1;
+				if(reverseFromInput) Reverse((char *)data,sizeof(double));
+				double y = *data;
+				double psize;
+				if(threeD)
+				{	data+=1;
+					if(reverseFromInput) Reverse((char *)data,sizeof(double));
+					double z = *data;
+					psize = cbrt(x*y*z);
+				}
+				else
+					psize = sqrt(x*y);
+				OutputDouble(&psize,0,delim,false,os,quantity[i]);
+			}
+			else
+			{	double oneDouble = 1.;
+				OutputDouble(&oneDouble,0,' ',false,os,quantity[i]);
 			}
 			break;
 			
@@ -1717,21 +2297,100 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 			break;
 		
 		case MATANGLEZ:
-			OutputDouble((double *)(ap+angleOffset),0,delim,reverseFromInput,os,quantity[i]);
+			if(rotStrainOffset>0)
+				OutputDouble((double *)(ap+rotStrainOffset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
 			break;
 			
 		case MATANGLEY:
-			if(angleYOffset>0)
-				OutputDouble((double *)(ap+angleYOffset),0,delim,reverseFromInput,os,quantity[i]);
+			if(rotStrainOffset>0)
+			{	double *aPtr=(double *)(ap+rotStrainOffset);
+				aPtr+=1;
+				OutputDouble((double *)(ap+rotStrainOffset+1),0,delim,reverseFromInput,os,quantity[i]);
+			}
 			else
 				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
 			break;
 			
 		case MATANGLEX:
-			if(angleXOffset>0)
-				OutputDouble((double *)(ap+angleXOffset),0,delim,reverseFromInput,os,quantity[i]);
+			if(rotStrainOffset>0)
+			{	double *aPtr=(double *)(ap+rotStrainOffset);
+				aPtr+=2;
+				OutputDouble((double *)(ap+rotStrainOffset+2),0,delim,reverseFromInput,os,quantity[i]);
+			}
 			else
 				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+		
+		case XMATUNIT:
+		case YMATUNIT:
+		case ZMATUNIT:
+			if(strainOffset>0 && rotStrainOffset>0)
+			{	// get initial material orientation
+				double *aPtr=(double *)(ap+rotStrainOffset);
+				if(reverseFromInput) Reverse((char *)aPtr,sizeof(double));
+				double angx=0.,angy=0.,angz = PI_CONSTANT*(*aPtr)/180.;
+				if(threeD)
+				{	aPtr+=1;
+					if(reverseFromInput) Reverse((char *)aPtr,sizeof(double));
+					angy = PI_CONSTANT*(*aPtr)/180.;
+					aPtr+=1;
+					if(reverseFromInput) Reverse((char *)aPtr,sizeof(double));
+					angx = PI_CONSTANT*(*aPtr)/180.;
+				}
+				double xcomp,ycomp,zcomp;
+				switch(quantity[i])
+				{	case XMATUNIT:
+						xcomp = cos(angy)*cos(angz);
+						ycomp = -cos(angy)*sin(angz);
+						zcomp = sin(angy);
+						break;
+					case YMATUNIT:
+						xcomp = cos(angz)*sin(angx)*sin(angy) + cos(angx)*sin(angz);
+						ycomp = cos(angx)*cos(angz) - sin(angx)*sin(angy)*sin(angz);
+						zcomp = -cos(angy)*sin(angx);
+						break;
+					default:
+						xcomp = -cos(angx)*cos(angz)*sin(angy) + sin(angx)*sin(angz);
+						ycomp = cos(angz)*sin(angx) + cos(angx)*sin(angy)*sin(angz);
+						zcomp = cos(angx)*cos(angy);
+						break;
+				}
+				
+				// get full deformation gradient
+				double F[9];
+				GetDeformationGradient(F);
+				double mv[3];
+				mv[0] = F[0]*xcomp + F[1]*ycomp + F[2]*zcomp;
+				mv[1] = F[3]*xcomp + F[4]*ycomp + F[5]*zcomp;
+				mv[2] = F[6]*xcomp + F[7]*ycomp + F[8]*zcomp;
+				
+				// make a unit vector
+				double len = sqrt(mv[0]*mv[0]+mv[1]*mv[1]+mv[2]*mv[2]);
+				mv[0] /= len;
+				mv[1] /= len;
+				mv[2] /= len;
+
+				if(fileFormat=='V')
+				{	// VTK legacy only
+					os << mv[0] << " " << mv[1] << " " << mv[2];
+				}
+				else
+				{	OutputDouble(&mv[0],0,delim,false,os,quantity[i]);
+					OutputDouble(&mv[1],0,delim,false,os,quantity[i]);
+					OutputDouble(&mv[2],0,delim,false,os,quantity[i]);
+				}
+			}
+			else if(fileFormat=='V')
+			{	// VTK legacy only
+				os << "0 0 0";
+			}
+			else
+			{	OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			}
 			break;
 			
         case HIST1:
@@ -1898,8 +2557,23 @@ short pointMatnum(unsigned char *ap)
 	return matnum;
 }
 
+// get element number
+int pointInElem(unsigned char *ap)
+{	int *mptr=(int *)ap;
+	int inElem;
+	if (reverseFromInput)
+	{
+		Reverse((char*)mptr, sizeof(int));
+		inElem = *mptr;
+		Reverse((char*)mptr, sizeof(int));
+	}
+	else
+		inElem = *mptr;
+	return inElem;
+}
+
 // return true to skip this point or false to include it
-bool skipThisPoint(short matnum)
+bool skipThisPoint(short matnum,unsigned char *ap)
 {
 	// is it included?
 	int i;
@@ -1926,6 +2600,11 @@ bool skipThisPoint(short matnum)
 		}
 	}
 	
+	// check for in reservoir (this could be an option if ever need particle in element 1)
+	if(!skip)
+	{	if(pointInElem(ap) <= 1) skip = true;
+	}
+
 	return skip;
 }
 
@@ -2082,6 +2761,81 @@ void EndCrack(ostream &os)
 }
 
 #pragma mark UTILITIES
+
+/**********************************************************
+	Get particle deformation Gradient
+*/
+void GetDeformationGradient(double *F)
+{
+	// angles
+	double ang[3];
+	double *aPtr=(double *)(ap+angleOffset);
+	if(reverseFromInput) Reverse((char *)aPtr,sizeof(double));
+	ang[0] = *aPtr;
+	ang[1]=0.;
+	ang[2]=0.;
+	if(threeD)
+	{	aPtr+=1;
+		if(reverseFromInput) Reverse((char *)aPtr,sizeof(double));
+		ang[1] = *aPtr;
+		aPtr+=1;
+		if(reverseFromInput) Reverse((char *)aPtr,sizeof(double));
+		ang[2] = *aPtr;
+	}
+	
+	// rotation strain (or zero if not there)
+	double erot[3];
+	if(rotStrainOffset)
+	{	aPtr=(double *)(ap+rotStrainOffset);
+		if(reverseFromInput) Reverse((char *)aPtr,sizeof(double));
+		erot[0] = *aPtr;
+		erot[1] = 0.;
+		erot[2] = 0.;
+		if(threeD)
+		{	aPtr+=1;
+			if(reverseFromInput) Reverse((char *)aPtr,sizeof(double));
+			erot[1] = *aPtr;
+			aPtr+=1;
+			if(reverseFromInput) Reverse((char *)aPtr,sizeof(double));
+			erot[2] = *aPtr;
+		}
+	}
+	else
+	{	erot[0] = 0.;
+		erot[1] = 0.;
+		erot[2] = 0.;
+	}
+	
+	// enginering rotation strain
+	double wxy = PI_CONSTANT*(erot[0]-ang[0])/90.;			// dv/dx-du/dy
+	double wxz = -PI_CONSTANT*(erot[1]-ang[1])/90.;			// dw/dx-du/dz
+	double wyz = PI_CONSTANT*(erot[2]-ang[2])/90.;			// dw/dy-dv/dz
+	
+	// deformation gradient (0,1,2)(3,4,5)(6,7,8)
+	double *data = (double *)(ap+strainOffset);
+	if(reverseFromInput) Reverse((char *)data,sizeof(double));
+	F[0] = 1. + *data;
+	data+=1;
+	if(reverseFromInput) Reverse((char *)data,sizeof(double));
+	F[4] = 1. + *data;
+	data+=1;
+	if(reverseFromInput) Reverse((char *)data,sizeof(double));
+	F[8] = 1. + *data;
+	data+=1;
+	if(reverseFromInput) Reverse((char *)data,sizeof(double));
+	F[1] = 0.5*(*data - wxy);
+	F[3] = 0.5*(*data + wxy);
+	if(threeD)
+	{	data+=1;
+		if(reverseFromInput) Reverse((char *)data,sizeof(double));
+		F[2] = 0.5*(*data - wxz);
+		F[6] = 0.5*(*data + wxz);
+		data+=1;
+		if(reverseFromInput) Reverse((char *)data,sizeof(double));
+		F[5] = 0.5*(*data - wyz);
+		F[7] = 0.5*(*data + wyz);
+	}
+}
 
 /**********************************************************
     get archive record size using current save order
@@ -2327,6 +3081,13 @@ int CalcArchiveSize(int vernum)
 			mpmRecSize+=sizeof(double);
 		}
 	}
+	if(mpmOrder[ARCH_Size]=='Y')
+	{	sizeOffset=mpmRecSize;
+		if(threeD)
+			mpmRecSize+=3*sizeof(double);
+		else
+			mpmRecSize+=2*sizeof(double);
+	}
 
     // check what will be there for crack segments
  	crackPosOffset=sizeof(int)+sizeof(double)+sizeof(short)+2;
@@ -2337,7 +3098,11 @@ int CalcArchiveSize(int vernum)
 	*/
     int crackRecSize=sizeof(int)+sizeof(double)+sizeof(short)+2;
 	//crackPosOffset=crackRecSize;
-	crackRecSize+=2*sizeof(int)+8*sizeof(double);
+    crackRecSize+=2*sizeof(int);
+    if(threeD)
+        crackRecSize+=12*sizeof(double);
+    else
+        crackRecSize+=8*sizeof(double);
     if(crackOrder[ARCH_JIntegral]=='Y')
 	{	jIntOffset=crackRecSize;
         crackRecSize+=2*sizeof(double);

@@ -14,14 +14,16 @@
 #define _MATPTFLUXBC_
 
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
+#include "Materials/MaterialBase.hpp"
 
 class MatPtFluxBC : public MatPtLoadBC
 {
     public:
 		int face;
+        int phaseStyle;
     
         // constructors and destructors
-		MatPtFluxBC(int,int,int,int);
+		MatPtFluxBC(int,int,int,int,int);
 		
 		// methods
 		virtual BoundaryCondition *PrintBC(ostream &);
@@ -34,5 +36,6 @@ class MatPtFluxBC : public MatPtLoadBC
 };
 
 extern MatPtFluxBC *firstFluxPt;
+extern MatPtFluxBC *firstDiffFluxBC[NUM_DUFFUSION_OPTIONS];
 
 #endif

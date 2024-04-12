@@ -166,7 +166,17 @@ void MatVelocityField::RestoreMomenta(void)
 {
 	// paste the extrapolated momenta back and zero storage location
 	pk = vk[pkCopy];
-
+	
+#ifdef CHECK_NAN
+	if(pk.x!=pk.x || pk.y!=pk.y || pk.z!=pk.z || ftot.x!=ftot.x || ftot.y!=ftot.y || ftot.z!=ftot.z)
+	{
+#pragma omp critical (output)
+		{	cout << "\n# MatVelocityField::RestoreMomenta: stored momenta or intial force was corrupted" << endl;
+			cout << "#      It was stored in vk[" << pkCopy << "]" << endl;
+			Describe(-1);
+		}
+	}
+#endif
 }
 
 // in response to contact, change the momentum
@@ -232,7 +242,7 @@ void MatVelocityField::GridValueCalculation(int calcOption)
 }
 
 // Add grid damping force at a node in g mm/sec^2
-void MatVelocityField::AddGravityAndBodyForceTask3(Vector *gridBodyForce,double gridAlpha,double gridForceAlpha)
+void MatVelocityField::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
 {	ftot.x += mass*gridBodyForce->x;
 	ftot.y += mass*gridBodyForce->y;
 	ftot.z += mass*gridBodyForce->z;
@@ -281,6 +291,16 @@ void MatVelocityField::AddFtotScaled(Vector *f,double scaled)
 void MatVelocityField::UpdateMomentum(double timestep)
 {	// update momenta
     AddPkScaled(&ftot,timestep);
+	
+#ifdef CHECK_NAN
+	if(pk.x!=pk.x || pk.y!=pk.y || pk.z!=pk.z)
+	{
+#pragma omp critical (output)
+		{	cout << "\n# MatVelocityField::UpdateMomentum: updated momentum corrupted" << endl;
+			Describe(-1);
+		}
+	}
+#endif
 }
 
 // Support XPIC calculations
@@ -516,7 +536,7 @@ void MatVelocityField::ZeroVelocityBC(Vector *norm,int passType,double deltime,V
 			// But, now we want it to start with
 			//      Ftotnew = -(pk.norm)/deltime norm + (Ftot.tang) tang
 			//      Ftotnew = Ftot - ((Ftot.norm) + (pk.norm)/deltime) norm
-			// Note that if have same norm on same node, the net result after first pass is
+			// Note that if >1 BC with same norm on same node, the net result after first pass is
 			//      Ftot1 = -(pk.norm)/deltime norm + (Ftot.tang) tang
 			// Then on second pass, change in force is:
 			//		dotf = Ftot1.norm = -(pk.norm)/deltime
@@ -607,9 +627,6 @@ bool MatVelocityField::IsFixedRigidField(void) const
 	if(flags&RIGID_BLOCK_BIT) return false;
 	return true;
 }
-
-// rigid block field
-bool MatVelocityField::IsRigidBlockField(void) const { return (bool)(flags&RIGID_BLOCK_BIT); }
 
 // all flags
 int MatVelocityField::GetFlags() const { return flags; }

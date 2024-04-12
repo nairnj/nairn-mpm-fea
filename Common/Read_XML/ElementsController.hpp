@@ -41,8 +41,9 @@ class ElementsController : public ParseController
 		int InterfaceElements(void);
 #endif		
 		// accessors
-		bool SetElemIDStr(char *,int);
-		bool SetCurrentElemID(int,int);
+		bool SetElemIDStr(char *);
+		bool SetElemIDCodes(int,int);
+		bool SetCurrentElemID(int);
 		int CurrentElemID(void);
 	
 	private:

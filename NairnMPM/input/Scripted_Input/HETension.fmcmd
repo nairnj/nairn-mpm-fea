@@ -17,8 +17,8 @@ EndHeader
 ! ------------ Parameters ---------------
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"
-#analysis$="Plane Strain MPM"
-Processors 4
+#analysis="Plane Stress MPM"
+Processors 10
 !XMLData "Header"
 !    <DevelFlag Number='3'>040101</DevelFlag>
 !EndXMLData
@@ -27,19 +27,19 @@ Processors 4
 #ppe=2
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method$="CPDI"
+#method="CPDI"
 
 ! pick strain update method usually "SZS" or "USAVG"
-#update$="USL-"
+#update="USL-"
 
 ! Supported materials:
 !     Elastic: "neomooney" (G2=0), "mooney" (G1=G2), "neohookean", "clampedneohookean" (if set that way CritTens=-1)
 !	  Plastic: heiso, "PMMA" (uses HEMGEOSMaterial), "clampedneohookean"
-#matID$="neohookean"
+#matID="neomooney"
 
 ! hardening law (if plastic) for current material (not all available for all materials)
 !	options Linear, Nonlinear, Nonlinear2, JohnsonCook, SCGL, SL
-#hardID$="JohnsonCook"
+#hardID="JohnsonCook"
 
 ! temperature option to test energy coupling
 StressFreeTemp 294
@@ -56,7 +56,7 @@ StressFreeTemp 294
 #UJopt=0
 
 ! Chage for special case materials
-if #matID$="PMMA"
+if #matID="PMMA"
   #gamma0 = 0.85
   #C0=2180
   #rho=1.181
@@ -77,19 +77,23 @@ endif
 #thick=5			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading$="force"	! Loading = "rigid", "force", "traction", "thermal", "contact", "grid"
+! Loading = "rigid", "force", "traction", "thermal", "contact", "grid", "loadcontrol"
+#loading="rigid"	
 
 ! Side BCs = "symmetry" to constrain y direction (and z direction if 3D), "no" for no constraint,
 ! "BC1" or "BC2" to use one or two layers of BCs instead of symmetry planes
-#fixsides$="no"
+#fixsides="no"
 
 ! #base = "symmetry" for symmetry plane, "BC1" for 1 layer or "BC2" for two layers
-#base$="symmetry"	
+#base="symmetry"
+
+! include vtk archive
+#vtkArchive="no"	
 
 ! test settings
-#gridStrain=50		! room in grid (ignored if #strain<0)
-#strain=49          ! Maximum strain (%) (stress needed is estimated for force and tractions), or dT for thermal
-#relRate=2		    ! Displacement rate as percent of wave speed of material
+#gridStrain=45		! room in grid (ignored if #strain<0)
+#strain=45         ! Maximum strain (%) (stress needed is estimated for force and tractions), or dT for thermal
+#relRate=.05		    ! Displacement rate as percent of wave speed of material
 #factor=0.25		    ! time step factor
 
 ! Loading rate
@@ -101,27 +105,28 @@ endif
 #pdamp=0
 #fbdamp=0
 #pfbdamp=0
-#xpic=1
-#xpicInterval=1
-#xpicFraction=1
 
-#conduct$="no"
-#tmode$="isothermal"
+! FMPM (>0) or FMPM (<0) or FLIP (0)
+#xpic=0
+#xpicInterval=1
+
+#conduct="no"
+#tmode="isothermal"
 
 ! ------------ Calculations ---------------
 
 ! Analysis type
-Analysis #analysis$
-MPMMethod #update$,#method$
+Analysis #analysis
+MPMMethod #update,#method
 PtsPerElement #ppe
-conduction #conduct$,#tmode$
+conduction #conduct,#tmode
 !ExtrapolateRigid
 
-Comment "Analysis:"&#analysis$&", Material:"&#matID$&", shape:"&#method$&", update:"&#update$
-Comment "Loading:"&#loading$&", Hardening:"&#hardID$&", Thermal:"&#tmode$&", Conduction:"&#conduct$
+Comment "Analysis:"&#analysis&", Material:"&#matID&", shape:"&#method&", update:"&#update
+Comment "Loading:"&#loading&", Hardening:"&#hardID&", Thermal:"&#tmode&", Conduction:"&#conduct
 
 ! convert to contact
-if #loading$="contact"
+if #loading="contact"
   MultimaterialMode 0,enabled,"specify",180,0
   !MultimaterialMode 0,enabled,"linreg",100
   !ImperfectInterfaceMM 0,1e15
@@ -131,7 +136,7 @@ endif
 #G1=#Ebase/(2*(1+#nuBase))
 #G2=0
 #Kbulk=#Ebase/(3*(1-2*#nuBase))
-if #matID$="mooney"
+if #matID="mooney"
   #G1=#G1/2
   #G2=#G1
   !#G1=0
@@ -139,14 +144,14 @@ endif
 #G0=#G1+#G2
 
 ! estimate stress to reach strain (only used if force or tractions)
-if #fixsides$!="symmetry"
+if #fixsides!="symmetry"
   #stress=#Ebase*#strain/100
 else
   #stress=#Kbulk*#strain/100
 endif
 
 ! estimate strain if thermal
-if #loading$="thermal"
+if #loading="thermal"
   #deltaT=#strain
   #strain=#aBase*#deltaT/10000
   #stress=0
@@ -160,10 +165,10 @@ endif
 #time=1000*abs(#disp)/#disprate			! time to peak load in ms
 
 ! Archiving
-if #fixsides$="symmetry"
-  Archive "Results/HEConstrainedTension/"&#analysis$&"-"&#method$&"-"&#update$&"-"&#loading$&"/"&#matID$
+if #fixsides="symmetry"
+  Archive "Results/HEConstrainedTension/"&#analysis&"-"&#method&"-"&#update&"-"&#loading&"/"&#matID
 else
-  Archive "Results/HETension/"&#analysis$&"-"&#method$&"-"&#update$&"-"&#loading$&"/"&#matID$
+  Archive "Results/HETension/"&#analysis&"-"&#method&"-"&#update&"-"&#loading&"/"&#matID
 endif
 #tend=(1+#hold+#unload)*#time
 TimeStep 1000,#tend,#factor
@@ -177,8 +182,8 @@ Comment "Hold time = "&#hold&" ms"
 
 ! ********** Materials Section **********
 
-if #matID$="neomooney"
-  Material #matID$,"Neohookean Mooney Material","Mooney"
+if #matID="neomooney"
+  Material #matID,"Neohookean Mooney Material","Mooney"
     G1 #G1
     G2 #G2
     K #Kbulk
@@ -192,8 +197,8 @@ if #matID$="neomooney"
   Done
 endif
 
-if #matID$="neohookean"
-  Material #matID$,"Neohookean Material","Neohookean"
+if #matID="neohookean"
+  Material #matID,"Neohookean Material","Neohookean"
     E #Ebase
     nu #nuBase
     rho #rho
@@ -204,8 +209,8 @@ if #matID$="neohookean"
   Done
 endif
 
-if #matID$="clampedneohookean"
-  Material #matID$,"Neohookean Material","ClampedNeohookean"
+if #matID="clampedneohookean"
+  Material #matID,"Neohookean Material","ClampedNeohookean"
     E #Ebase
     nu #nuBase
     rho #rho
@@ -219,8 +224,8 @@ if #matID$="clampedneohookean"
   Done
 endif
 
-if #matID$="mooney"
-  Material #matID$,"Mooney-Rivlin Material","Mooney"
+if #matID="mooney"
+  Material #matID,"Mooney-Rivlin Material","Mooney"
     G1 #G1
     G2 #G2
     K #Kbulk
@@ -233,26 +238,26 @@ if #matID$="mooney"
   Done
 endif
 
-if #matID$="heiso"
-  Material #matID$,"HE Isotropic Plastic","HEIsotropic"
+if #matID="heiso"
+  Material #matID,"HE Isotropic Plastic","HEIsotropic"
     G1 #G1
     !G2 #G2
     K #Kbulk
     a #aBase
     rho #rho
-    hardening #hardID$
-    if #hardID$="Linear"
+    hardening #hardID
+    if #hardID="Linear"
       yield abs(#Ebase*#yldstrain/100)
       Ep #Ebase/10
-    else if #hardID$="Nonlinear"
+    else if #hardID="Nonlinear"
       yield 4
       Khard 50
       nhard .5
-    else if #hardID$="Nonlinear2"
+    else if #hardID="Nonlinear2"
       yield 40
       Khard 2
       nhard .2
-    else if #hardID$="JohnsonCook"
+    else if #hardID="JohnsonCook"
       Ajc abs(#Ebase*#yldstrain/100)
       Bjc abs(#Ebase*#yldstrain/100)/5
       Cjc 0
@@ -260,14 +265,14 @@ if #matID$="heiso"
       mjc 3
       ep0jc 1
       Tmjc 393
-    else if #hardID$="SCGL"
+    else if #hardID="SCGL"
       yield abs(#Ebase*#yldstrain/100)
       betahard 10
       nhard 1
       yieldMax 10*abs(#Ebase*#yldstrain/100)
       GPpG0 .001
       GTpG0 .002
-    else if #hardID$="SL"
+    else if #hardID="SL"
       yield abs(#Ebase*#yldstrain/100)
       betahard 10
       nhard 1
@@ -285,7 +290,7 @@ if #matID$="heiso"
   Done
 endif
 
-if #matID$="PMMA"
+if #matID="PMMA"
   Material "PMMA","PMMA","HEMGEOSMaterial"
     C0 #C0
     gamma0 #gamma0
@@ -296,15 +301,15 @@ if #matID$="PMMA"
     kCond #kcond
     Cv #CV
     rho #rho
-    Hardening #hardID$
-    if #hardID$="Linear"
+    Hardening #hardID
+    if #hardID="Linear"
       yield abs(#Ebase*#yldstrain/100)
       Ep 0
-    else if #hardID$="Nonlinear"
+    else if #hardID="Nonlinear"
       yield abs(#Ebase*#yldstrain/100)
       Khard 190
       nhard 0.3
-    else if #hardID$="JohnsonCook"
+    else if #hardID="JohnsonCook"
       Ajc abs(#Ebase*#yldstrain/100)
       Bjc 50
       Cjc 0
@@ -313,7 +318,7 @@ if #matID$="PMMA"
       ep0jc 1
       Tmjc 393
     else
-      Stop "Hardening = "&#hardID$&" not available for PMMA"
+      Stop "Hardening = "&#hardID&" not available for PMMA"
     endif
   Done
 endif
@@ -325,20 +330,20 @@ Comment "Displacement rate = "&(#disprate/1000)&" m/sec ("&#relRate&"% of wave s
 Comment "Base kinetic energy = "&(#ke/10^6)&" J"
 if #fbdamp>0
   if #hold>0
-    #Tk$ = #ke&"*(sign("&#time&"-t)+sign(t-"&((1+#hold)*#time)&"))"
+    #Tk = #ke&"*(sign("&#time&"-t)+sign(t-"&((1+#hold)*#time)&"))"
   else
-    #Tk$ = #ke
+    #Tk = #ke
   endif
-  FeedbackDamping #fbdamp,#Tk$
+  FeedbackDamping #fbdamp,#Tk
   GlobalArchive alpha
 endif
 if #pfbdamp>0
   if #hold>0
-    #Tk$ = #ke&"*(sign("&#time&"-t)+sign(t-"&((1+#hold)*#time)&"))"
+    #Tk = #ke&"*(sign("&#time&"-t)+sign(t-"&((1+#hold)*#time)&"))"
   else
-    #Tk$ = #ke
+    #Tk = #ke
   endif
-  PFeedbackDamping #pfbdamp,#Tk$
+  PFeedbackDamping #pfbdamp,#Tk
   GlobalArchive palpha
 endif
 if #damp>0
@@ -354,50 +359,61 @@ endif
 ! displacement functions for rigid materials
 if #unload>0
   #t2=(1+#hold)*#time
-  #rfxn$ = "(box("&#disprate&",t/"&#time&")-box("&#disprate&",(t-"&#t2&")/"&(#tend-#t2)&"))"
-  !#rfxn$ = "(sinbox("&#disprate&",t/"&#time&")-sinbox("&#disprate&",(t-"&#t2&")/"&(#tend-#t2)&"))"
+  #rfxn = "(box("&#disprate&",t/"&#time&")-box("&#disprate&",(t-"&#t2&")/"&(#tend-#t2)&"))"
+  !#rfxn = "(sinbox("&#disprate&",t/"&#time&")-sinbox("&#disprate&",(t-"&#t2&")/"&(#tend-#t2)&"))"
 else
-  #rfxn$ = "box("&#disprate&",t/"&#time&")"
+  #rfxn = "box("&#disprate&",t/"&#time&")"
 endif
 if #strain>0
-  #rfxn$ = "-"&#rfxn$
+  #rfxn = "-"&#rfxn
 endif
-if #loading$="rigid"
+#rtype="none"
+if #loading="rigid"
+  #rtype="RigidBC"
   Material "rigid","Loading Clamp","RigidBC"
     direction 1
-    SettingFunction #rfxn$
+    SettingFunction #rfxn
     mirrored -1
   Done
-else if #loading$="contact"
+else if #loading="contact"
   Material "rigid","Loading Clamp","RigidContact"
-    SettingFunction #rfxn$
+    SettingFunction #rfxn
+  Done
+else if #loading="loadcontrol"
+  #rtype="RigidLC"
+  Material "rigid","Loading Clamp","RigidBC"
+    direction 1
+    mirrored -1
   Done
 endif
 
 ! global archive
-GlobalArchive sxx,#matID$
-GlobalArchive syy,#matID$
-GlobalArchive szz,#matID$
-GlobalArchive exxe,#matID$
-GlobalArchive "Strain Energy",#matID$
-GlobalArchive "Kinetic Energy",#matID$
-GlobalArchive "Plastic Energy",#matID$
-GlobalArchive "Heat Energy",#matID$
-GlobalArchive "Work Energy",#matID$
-GlobalArchive "Internal Energy",#matID$
-GlobalArchive "Entropy",#matID$
-if #matID$="PMMA"
-  GlobalArchive "Internal Energy",#matID$
-  GlobalArchive "exxp",#matID$
+GlobalArchive sxx,#matID
+GlobalArchive syy,#matID
+GlobalArchive szz,#matID
+GlobalArchive exxe,#matID
+GlobalArchive "Strain Energy",#matID
+GlobalArchive "Kinetic Energy",#matID
+GlobalArchive "Plastic Energy",#matID
+GlobalArchive "Heat Energy",#matID
+GlobalArchive "Work Energy",#matID
+GlobalArchive "Internal Energy",#matID
+GlobalArchive "Entropy",#matID
+if #matID="PMMA"
+  GlobalArchive "Internal Energy",#matID
+  GlobalArchive "exxp",#matID
 endif
-if #loading$="contact"
+if #loading="contact"
   GlobalArchive "contactx"
   GlobalArchive "contacty"
-  if #analysis$="3D MPM"
+  if #analysis="3D MPM"
     GlobalArchive "contactz"
   endif
-else if #loading$="rigid"
+else if #rtype!="none"
   GlobalArchive "reactionx","rigid"
+  if #loading="loadcontrol"
+    GlobalArchive "dispx","rigid"
+  endif
 endif
 !GlobalArchive "reactionx",-11
 GlobalArchiveTime (1+#hold+#unload)*#time/500
@@ -417,18 +433,18 @@ endif
 #zmax=#thick+#sides*#cell
 
 ! ********** Grid and Material Points Section **********
-if #base$="symmetry"
+if #base="symmetry"
   GridHoriz int((#gright-#gleft)/#cell+.5),#length,1
 else
   GridHoriz int((#gright-#gleft)/#cell+.5)
 endif
-if #fixsides$="symmetry"
+if #fixsides="symmetry"
   GridVert int((#gtop-#gbot)/#cell+.5),0,-1,#width
 else
   GridVert int((#gtop-#gbot)/#cell+.5)
 endif
-if #analysis$="3D MPM"
-  if #fixsides$="symmetry"
+if #analysis="3D MPM"
+  if #fixsides="symmetry"
     GridDepth int((#zmax-#zmin)/#cell+.5),0,-1,#thick
   else
     GridDepth int((#zmax-#zmin)/#cell+.5)
@@ -436,7 +452,7 @@ if #analysis$="3D MPM"
   GridRect #gleft,#gright,#gbot,#gtop,#zmin,#zmax
   
   ! material points
-  Region #matID$,0,0,0
+  Region #matID,0,0,0
     Box 0,#length,0,#width,0,#thick
   EndRegion
 else
@@ -445,13 +461,13 @@ else
   
   ! material points
   if 1=1
-    Region #matID$,0,0,#thick
+    Region #matID,0,0,#thick
       Rect 0,#length,0,#width
     EndRegion
   else
     Repeat "#x",0,#length-#cell/4,#cell/2
       #velx=-#disprate*(#length-#x+#cell/4)/#length
-      Region #matID$,#velx,0,#thick
+      Region #matID,#velx,0,#thick
         Rect #x,#x+#cell/2,0,#width
       EndRegion
     EndRepeat
@@ -463,19 +479,19 @@ endif
 ! loading conditions
 #t1=#time
 #t2=(1+#hold)*#time
-ifStr #loading$="rigid"
-  if #analysis$="3D MPM"
-    Region "rigid",0,0,0
+if #rtype!="None"
+  if #analysis="3D MPM"
+    Region "rigid",-#disprate,0,0
       Box -#cell,0,-#sides*#cell,#width+#sides*#cell,-#sides*#cell,#thick+#sides*#cell
     EndRegion
   else
-    Region "rigid",0,0,#thick
+    Region "rigid",-#disprate,0,#thick
       Rect -#cell,0,-#sides*#cell,#width+#sides*#cell
     EndRegion
   endif
   
-else if #loading$="contact"
-  if #analysis$="3D MPM"
+else if #loading="contact"
+  if #analysis="3D MPM"
     Region "rigid",0,0,0
       Box -2*#cell,0,-#sides*#cell,#width+#sides*#cell,-#sides*#cell,#thick+#sides*#cell
     EndRegion
@@ -485,26 +501,26 @@ else if #loading$="contact"
     EndRegion
   endif
   
-else ifStr #loading$="force"
+else ifStr #loading="force"
   #forcerate=#stress*#width*#thick/#time		! total force rate on the end
   Comment "Stress rate = "&(#stress/#time)&" MPa/msec"
   if #hold+#unload>0
-    #tpart$="*(t-(t-"&#t1&")*sign(t-"&#t1&")-(t-"&#t2&")*sign(t-"&#t2&"))"
+    #tpart="*(t-(t-"&#t1&")*sign(t-"&#t1&")-(t-"&#t2&")*sign(t-"&#t2&"))"
   else
-    #tpart$="*t"
+    #tpart="*t"
   endif
-  if #analysis$="3D MPM"
+  if #analysis="3D MPM"
     ParticleBC
       Box 0,#cell/2,0,#width,0,#thick
       LoadType net
-      Load x,function,(-#forcerate)&#tpart$
+      Load x,function,(-#forcerate)&#tpart
     EndParticleBC
   else
     ParticleBC
       Rect 0,#cell/2,0,#width
       LoadType net
       if #hold+#unload>0
-        Load x,function,(-#forcerate)&#tpart$
+        Load x,function,(-#forcerate)&#tpart
       else
         !Load x,constant,-#stress*#width*#thick
         Load x,linear,-#forcerate
@@ -514,47 +530,47 @@ else ifStr #loading$="force"
     EndParticleBC
   endif
   
-else ifStr #loading$="traction"
+else ifStr #loading="traction"
   Comment "Stress rate = "&(#stress/#time)&" MPa/msec"
   if #unload>0
-    #tpart$="ramp("&(-#stress)&",t/"&#t1&")+ramp("&(#stress)&",(t-"&#t2&")/"&(#tend-#t2)&")"
+    #tpart="ramp("&(-#stress)&",t/"&#t1&")+ramp("&(#stress)&",(t-"&#t2&")/"&(#tend-#t2)&")"
   else
-    #tpart$="ramp("&(-#stress)&",t/"&#t1&")"
+    #tpart="ramp("&(-#stress)&",t/"&#t1&")"
   endif
-  if #analysis$="3D MPM"
+  if #analysis="3D MPM"
     ParticleBC
       Box 0,#cell/2,0,#width,0,#thick
-      Traction x,4,function,#tpart$
+      Traction x,4,function,#tpart
     EndParticleBC
   else
     ParticleBC
       Rect 0,#cell/2,0,#width
-      Traction x,4,function,#tpart$
+      Traction x,4,function,#tpart
     EndParticleBC
   endif
   
-else ifStr #loading$="thermal"
+else ifStr #loading="thermal"
   CustomTask "ThermalRamp"
   Parameter "DeltaT",#deltaT
   Parameter "time",#time
   
-else ifStr #loading$="grid"
+else ifStr #loading="grid"
   Comment "Displacement rate = "&(-#disprate)&" mm/sec"
   if #hold+#unload>0
-    #tpart$="*(1-sign(t-"&#t1&")-sign(t-"&#t2&"))"
+    #tpart="*(1-sign(t-"&#t1&")-sign(t-"&#t2&"))"
   else
-    #tpart$=""
+    #tpart=""
   endif
-  if #analysis$="3D MPM"
+  if #analysis="3D MPM"
     GridBC
       Box -4*#cell,#cell/10,0,#width,0,#thick
-      Velocity x,function,(-#disprate)&#tpart$
+      Velocity x,function,(-#disprate)&#tpart
     EndGridBC
   else
     GridBC
       Line -2*#cell,-2*#cell,0,#width,2.01*#cell
       if #hold+#unload>0
-        Velocity x,function,(-#disprate)&#tpart$
+        Velocity x,function,(-#disprate)&#tpart
       else
         Velocity x,constant,-#disprate
         !Velocity x,linear,-2*#disprate/#time
@@ -572,10 +588,10 @@ endif
 
 ! Fixed bottom
 ! set to #length + #cell/2 to only two rows for cells for GIMP
-if #base$!="symmetry"
+if #base!="symmetry"
   BoundaryID -11
-  if #analysis$="3D MPM"
-    if #base$="BC1"
+  if #analysis="3D MPM"
+    if #base="BC1"
       #bcell=#cell/2
     else
       #bcell=#cell
@@ -585,7 +601,7 @@ if #base$!="symmetry"
       Velocity x,constant,0
     EndGridBC
   else
-    if #base$="BC1"
+    if #base="BC1"
       #midpt=#length
     else
       #midpt=#length+#cell/2
@@ -599,19 +615,19 @@ if #base$!="symmetry"
 endif
 
 ! Fixed sides
-#isFixed$="no"
-if #fixsides$="BC1"
-  #isFixed$="yes"
-else if #fixsides$="BC2"
-  #isFixed$="yes"
+#isFixed="no"
+if #fixsides="BC1"
+  #isFixed="yes"
+else if #fixsides="BC2"
+  #isFixed="yes"
 endif
-if #isFixed$="yes"
-  if #fixsides$="BC1"
+if #isFixed="yes"
+  if #fixsides="BC1"
     #bcell=#cell/2
   else
     #bcell=#cell
   endif
-  if #analysis$="3D MPM"
+  if #analysis="3D MPM"
     GridBC
       Box #gleft,#gright,-#bcell,0.1*#cell,#zmin,#zmax
       Velocity y,constant,0
@@ -629,7 +645,7 @@ if #isFixed$="yes"
       Velocity z,constant,0
     EndGridBC
   else
-    if #fixsides$="BC2"
+    if #fixsides="BC2"
       #midpt1=-#cell/2
       #midpt2=#width+#cell/2
     else
@@ -664,26 +680,56 @@ endif
 !CustomTask "ReverseLoad"
 !Parameter style,"reverse"
 !Parameter "quantity","sxx"
-!Parameter "material",#matID$
+!Parameter "material",#matID
 !Parameter "hold",.5
 !Parameter "maxValue",3
 
-CustomTask VTKArchive
-Parameter mass
-Parameter strain
-Parameter stress
-Parameter strainenergy
-Parameter heatenergy
-Parameter plasticenergy
+if #vtkArchive="yes"
+  CustomTask VTKArchive
+  Parameter mass
+  Parameter strain
+  Parameter stress
+  Parameter strainenergy
+  Parameter heatenergy
+  Parameter plasticenergy
+endif
 
 CustomTask AdjustTimeStep
 Parameter verbose,1
 
-if #xpic>0
+if #loading="LoadControl"
+  ! ramp and hold
+  !#frate=-#Ebase*#thick*#width*#disprate/(1000*#length)
+  !#fmax=#frate*#time/4
+  !#ffxn="ramp("&#fmax&",t/"&(0.25*#time)&")"
+  
+  ! ramp
+  #frate=-#Ebase*#thick*#width*#disprate/(1000*#length)
+  #ffxn=#frate&"*t"
+  CustomTask "LoadControl"
+  Parameter matname,"Loading Clamp"
+  Parameter velocity,-#disprate
+  Parameter minVelocity,.2*#disprate
+  Parameter startupTime,-0.1*#time
+  Parameter direction,1
+  Parameter Load,#ffxn
+  
+  !Parameter smoothF,0.9
+  Parameter smoothA,1
+  Parameter At,1250
+  !Parameter smoothErr,0
+  Parameter Kp,.1
+  Parameter Ki,0
+  Parameter Kd,0
+  Parameter Archive,"LC.txt"
+endif
+
+if #xpic!=0
   CustomTask "PeriodicXPIC"
-  Parameter "XPICOrder",#xpic
-  Parameter "periodicSteps",#xpicInterval
-  if #xpicFraction<1
-    Parameter "fractionPIC",#xpicFraction
+  if #xpic>0
+    Parameter "FMPMOrder",#xpic
+  else
+    Parameter "XPICOrder",-#xpic
   endif
+  Parameter "periodicSteps",#xpicInterval
 endif

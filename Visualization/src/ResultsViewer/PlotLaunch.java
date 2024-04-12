@@ -15,7 +15,7 @@ public class PlotLaunch extends PlotControl
 	
 	// variables
 	private JButton plotBtn=new JButton("Add Plot");		// longest text
-	public JProgressBar progress=new JProgressBar(0,10);		// longest text
+	public JProgressBar progress=new JProgressBar(0,10);
 	
 	// initialize
 	PlotLaunch(DocViewer dc)
@@ -26,6 +26,7 @@ public class PlotLaunch extends PlotControl
 		plotBtn.setAction(docCtrl.getStartPlotAction());
 		plotBtn.setActionCommand("Start Plot");
 		plotBtn.setSize(plotBtn.getPreferredSize());
+		plotBtn.setFocusable(false);
 		int centerLoc=(36-plotBtn.getHeight())>>1;
 		plotBtn.setLocation(10,centerLoc);
 		//plotBtn.addActionListener(docCtrl);
@@ -50,7 +51,7 @@ public class PlotLaunch extends PlotControl
 		switch(plotType)
 		{	case LoadArchive.PARTICLE_PLOT:
 			case LoadArchive.MESH_PLOT:
-				if(docCtrl.getMovieFrame()!=null)
+				if(docCtrl.didInternalPlot)
 					plotBtn.setText("Replot");
 				else
 					plotBtn.setText("Plot");

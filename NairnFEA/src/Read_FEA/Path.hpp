@@ -9,9 +9,9 @@
 		none
 ********************************************************************************/
 
-#ifndef _PATH_
+#ifndef _JAN_PATH_
 
-#define _PATH_
+#define _JAN_PATH_
 
 class Keypoint;
 

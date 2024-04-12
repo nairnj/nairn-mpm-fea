@@ -9,6 +9,7 @@
 
 
 import geditcom.JNFramework.JNApplication;
+import geditcom.JNFramework.JNUtilities;
 
 import java.awt.GridLayout;
 import java.io.*;
@@ -130,6 +131,8 @@ public class RemoteConnection {
 	{	Channel channel = session.openChannel("sftp");
 		channel.connect();
 		ChannelSftp c = (ChannelSftp) channel;
+		
+		// if needed create and folders that do not yet exisit
 		// implied "./" prefix on path and if starts with "/" it is ignored
 		String[] folders = remoteDestinationDir.split("/");
 		String lastFolder = "";
@@ -147,9 +150,10 @@ public class RemoteConnection {
 			}
 		}
 		
-		// create a new sub folder is requiring unique
+		// create a new sub folder if requiring unique
 		if(makeUnique)
-		{	int num=1;
+		{	// create a unique folder name "out#" as needed
+			int num=1;
 			while(true)
 			{	lastFolder = "out"+num;
 				try
@@ -165,18 +169,25 @@ public class RemoteConnection {
 			}
 		}
 		else if(clearContents && lastExists && lastFolder.length()>0)
-		{	// if requested, delete last folder and create it again
+		{	// if requested and parent folder existed, clear it now
+			
+			// move sftp channel back one directory
 			c.cd("..");
+			
+			// the login shell is still in home direction, delete from there
 			String cmd;
 			if(lastFolder.indexOf(" ")>0)
-				cmd = "rm -r '"+lastFolder+"'";
+				cmd = "rm -r '"+remoteDestinationDir+"'";
 			else
-				cmd = "rm -r "+lastFolder;
+				cmd = "rm -r "+remoteDestinationDir;
 			execCommands(cmd,false);
+			
+			// tell sftp channel to recreate an emtpy folder and move there
 			c.mkdir(lastFolder);
 			c.cd(lastFolder);
 		}
 
+		// upload the file overwriting if needed
 		File f1 = new File(localFilePath);
 		c.put(new FileInputStream(f1), f1.getName(), ChannelSftp.OVERWRITE);
 
@@ -368,7 +379,7 @@ public class RemoteConnection {
 	private void generateUI() {
 		ui = new MyUserInfo() {
 			public void showMessage(String message) {
-				JOptionPane.showMessageDialog(null, message);
+				JNUtilities.showMessage(null, message);
 			}
 
 			public boolean promptYesNo(String message) {

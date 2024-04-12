@@ -57,14 +57,15 @@ CommonArchiveData::~CommonArchiveData()
 void CommonArchiveData::ArchiveNodalPoints(int np)
 {
 	char fname[256];
+	size_t fnsize=256;
 	int i;
 	ofstream outfile;
 	
 	if(archiveMesh)
-	{	GetFilePath(fname,"%s%s_Nodes.txt");
+	{	GetFilePath(fname,fnsize,"%s%s_Nodes.txt");
 		outfile.open(fname);
 		if(outfile)
-    	{	sprintf(fname,"%s_Nodes.txt",archiveRoot);		// name for output mpm file
+    	{	snprintf(fname,fnsize,"%s_Nodes.txt",archiveRoot);		// name for output mpm file
 			cout << "File: " << fname << endl << endl;
 			for(i=1;i<=nnodes;i++)
 				nd[i]->PrintNodalPoint(outfile);
@@ -88,14 +89,15 @@ void CommonArchiveData::ArchiveNodalPoints(int np)
 void CommonArchiveData::ArchiveElements(int np)
 {
 	char fname[256];
+	size_t fnsize=256;
 	int i;
 	ofstream outfile;
 	
 	if(archiveMesh)
-	{	GetFilePath(fname,"%s%s_Elems.txt");
+	{	GetFilePath(fname,fnsize,"%s%s_Elems.txt");
 		outfile.open(fname);
 		if(outfile)
-    	{	sprintf(fname,"%s_Elems.txt",archiveRoot);			// name for output mpm file
+    	{	snprintf(fname,fnsize,"%s_Elems.txt",archiveRoot);			// name for output mpm file
 			cout << "File: " << fname << endl << endl;
 			for(i=0;i<nelems;i++)
 				theElements[i]->PrintElement(outfile,np);
@@ -257,32 +259,32 @@ bool CommonArchiveData::SetArchiveRoot(char *newRoot,bool makeUnique)
 char *CommonArchiveData::GetArchiveRoot(void) { return archiveRoot; }
 
 // build archiving file path (fname better be long enough)
-void CommonArchiveData::GetFilePath(char *fname, const char *prefix)
+void CommonArchiveData::GetFilePath(char *fname,size_t fsize,const char *prefix)
 {	// build name for unix
 #ifdef WINDOWS_EXE
-	sprintf(fname, prefix, outputDir, archiveDosRoot);
+	snprintf(fname, fsize, prefix, outputDir, archiveDosRoot);
 #else
-	sprintf(fname, prefix, outputDir, archiveRoot);
+	snprintf(fname, fsize, prefix, outputDir, archiveRoot);
 #endif
 }
 
 // build archiving file path with a number (fname better be long enough)
-void CommonArchiveData::GetFilePathNum(char *fname, const char *prefix,int pnum)
+void CommonArchiveData::GetFilePathNum(char *fname,size_t fsize,const char *prefix,int pnum)
 {	// build name for unix
 #ifdef WINDOWS_EXE
-	sprintf(fname, prefix, outputDir, archiveDosRoot,pnum);
+	snprintf(fname, fsize, prefix, outputDir, archiveDosRoot,pnum);
 #else
-	sprintf(fname, prefix, outputDir, archiveRoot,pnum);
+	snprintf(fname, fsize, prefix, outputDir, archiveRoot,pnum);
 #endif
 }
 
-// build arelative rchiving file path with a number (fname better be long enough)
-void CommonArchiveData::GetRelativeFilePathNum(char *fname, const char *prefix,int pnum)
+// build relative archiving file path with a number (fname better be long enough)
+void CommonArchiveData::GetRelativeFilePathNum(char *fname,size_t fsize,const char *prefix,int pnum)
 {	// build name for unix
 #ifdef WINDOWS_EXE
-	sprintf(fname, prefix, archiveDosRoot,pnum);
+	snprintf(fname, fsize, prefix, archiveDosRoot,pnum);
 #else
-	sprintf(fname, prefix, archiveRoot,pnum);
+	snprintf(fname, fsize, prefix, archiveRoot,pnum);
 #endif
 }
 

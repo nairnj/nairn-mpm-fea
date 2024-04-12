@@ -49,6 +49,7 @@ class GridPatch
 		bool AddMovingParticle(MPMBase *,GridPatch *,MPMBase *);
 		void MoveParticlesToNewPatches(void);
 		void AddParticle(MPMBase *);
+		void RemoveParticle(MPMBase *);
 		void RemoveParticleAfter(MPMBase *,MPMBase *);
 		void XPICSupport(int,int,NodalPoint *,double,int,int,double);
         void InitializeForXPICTransport(TransportTask *,int);

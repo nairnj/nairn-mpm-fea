@@ -19,13 +19,15 @@ public class TimePlotOptions extends PlotControl
 	private JTextField ptNumberText=new JTextField("1");
 	private JTextField matNumberText=new JTextField("1");
 	private JRadioButton plotPoint=new JRadioButton("Point Number");
-	private JRadioButton plotAll=new JRadioButton("Total All Materials");
-	private JRadioButton plot1Mat=new JRadioButton("Total Selected Material");
+	private JRadioButton plotAll=new JRadioButton("All Points");
+	private JRadioButton plot1Mat=new JRadioButton("One Material");
 	
 	private JComboBox<PlotMenuItem> xyContour=new JComboBox<PlotMenuItem>();
 	private JTextField functionText=new JTextField("1");
 	private JLabel plusMinus=new JLabel("+/-");
 	private JTextField rangeText=new JTextField();
+	JCheckBox averaged=new JCheckBox("Averaged");
+
 	
 	private static final int left=3,mid=3,right=3;
 	private static final int top=6,rows=1,bottom=6;
@@ -64,6 +66,7 @@ public class TimePlotOptions extends PlotControl
 		{	public void actionPerformed(ActionEvent e)
 			{	ptNumberText.setEnabled(true);
 				matNumberText.setEnabled(false);
+				averaged.setEnabled(false);
 				prevPlotWhat = 0;
 		}
 		});
@@ -84,18 +87,20 @@ public class TimePlotOptions extends PlotControl
 		{	public void actionPerformed(ActionEvent e)
 			{	ptNumberText.setEnabled(false);
 				matNumberText.setEnabled(false);
+				averaged.setEnabled(true);
 				prevPlotWhat = 1;
 			}
 		});
 		plotWhat.add(plotAll);
 		add(plotAll);
 		
-		JLabel blank=new JLabel(" ");
 		c.insets.set(0,mid,rows,right);
 		c.gridwidth = GridBagConstraints.REMAINDER;
 		c.weightx = 1.0;
-		gridbag.setConstraints(blank, c);
-		add(blank);
+		averaged.setSelected(true);
+		averaged.setFocusable(false);
+		gridbag.setConstraints(averaged, c);
+		add(averaged);
 		
 		// all points on material and field number
 		c.insets.set(0,left,rows,0);
@@ -107,6 +112,7 @@ public class TimePlotOptions extends PlotControl
 		{	public void actionPerformed(ActionEvent e)
 			{	ptNumberText.setEnabled(false);
 				matNumberText.setEnabled(true);
+				averaged.setEnabled(true);
 				prevPlotWhat = 2;
 			}
 		});
@@ -125,6 +131,7 @@ public class TimePlotOptions extends PlotControl
 		xyContour.addItem(new PlotMenuItem("y="));
 		xyContour.addItem(new PlotMenuItem("D="));
 		xyContour.addItem(new PlotMenuItem("T="));
+		xyContour.setFocusable(false);
 		c.gridwidth = 1;
 		c.weightx = 0.0;
 		gridbag.setConstraints(xyContour, c);
@@ -151,14 +158,22 @@ public class TimePlotOptions extends PlotControl
 		add(rangeText);
 		
 		// enable at first
-		setEnabled(LoadArchive.NO_PLOT,0,false);
+		setEnabled(LoadArchive.NO_PLOT,0,null);
 	}
 	
 	// set current state
-	public void setEnabled(int plotType,int plotComponent,boolean isMPM)
+	public void setEnabled(int plotType,int plotComponent,ResultsDocument resDoc)
 	{
+
+		boolean isMPM=false,is3D=false;
+		if(resDoc!=null)
+		{	isMPM = resDoc.isMPMAnalysis();
+			is3D = resDoc.is3D();
+		}
+		
 		if(plotType==LoadArchive.TIME_PLOT)
 		{	// Always MPM analysis
+			this.setVisible(true);
 			switch(plotComponent)
 			{	case PlotQuantity.MPMSTRENERGY:
 				case PlotQuantity.MPMKINENERGY:
@@ -173,6 +188,10 @@ public class TimePlotOptions extends PlotControl
 					else
 						ptNumberText.setEnabled(false);	
 					plotAll.setEnabled(true);
+					if(plotPoint.isSelected())
+						averaged.setEnabled(false);
+					else
+						averaged.setEnabled(true);	
 					plot1Mat.setEnabled(true);
 					if(plot1Mat.isSelected())
 						matNumberText.setEnabled(true);
@@ -193,7 +212,9 @@ public class TimePlotOptions extends PlotControl
 				case PlotQuantity.MPMSHEARCTOD:
 				case PlotQuantity.MPMDEBONDNCTOD:
 				case PlotQuantity.MPMDEBONDSCTOD:
-					setEnabled(LoadArchive.NO_PLOT,0,true);
+				case PlotQuantity.MPMGLOBALRESULTS:
+				case PlotQuantity.IMPORTANDPLOTFILE:
+					this.setVisible(false);
 					break;
 				
 				default:
@@ -203,6 +224,10 @@ public class TimePlotOptions extends PlotControl
 					else
 						ptNumberText.setEnabled(false);	
 					plotAll.setEnabled(true);
+					if(plotPoint.isSelected())
+						averaged.setEnabled(false);
+					else
+						averaged.setEnabled(true);	
 					plot1Mat.setEnabled(true);
 					if(plot1Mat.isSelected())
 						matNumberText.setEnabled(true);
@@ -226,8 +251,10 @@ public class TimePlotOptions extends PlotControl
 		}
 		else if(plotType==LoadArchive.MESH2D_PLOT)
 		{	// FEA or MPM analysis
+			this.setVisible(true);
 			plotPoint.setEnabled(false);
 			plotAll.setEnabled(false);
+			averaged.setEnabled(false);
 			plot1Mat.setEnabled(false);
 			ptNumberText.setEnabled(false);			
 			matNumberText.setEnabled(false);
@@ -248,7 +275,9 @@ public class TimePlotOptions extends PlotControl
 				case PlotQuantity.MPMTRACTION8:
 				case PlotQuantity.MPMTRACTION9:
 				case PlotQuantity.MPMTRACTION10:
+				case PlotQuantity.IMPORTANDPLOTFILE:
 					// MPM analysis to plot crack data
+					this.setVisible(false);
 					popup=false;
 					break;
 				default:
@@ -256,11 +285,20 @@ public class TimePlotOptions extends PlotControl
 			}
 			xyContour.setEnabled(popup);
 			if(popup)
-			if(xyContour.getItemCount()<=4 && isMPM)
-			{	xyContour.addItem(new PlotMenuItem("xp="));
-				xyContour.addItem(new PlotMenuItem("yp="));
-				xyContour.addItem(new PlotMenuItem("xp0="));
-				xyContour.addItem(new PlotMenuItem("yp0="));
+			{	// FEA just x=,y=,D=,T= (was set in the beginning)
+				// MPM 2D adds p:x+dt=,p0x+dt
+				// 3D only p:x+dt,p0:x+dt
+				if(isMPM)
+				{	if(xyContour.getItemCount()<=4 && !is3D)
+					{	xyContour.addItem(new PlotMenuItem("p:x+dt="));
+						xyContour.addItem(new PlotMenuItem("p0:x+dt="));
+					}
+					else if(xyContour.getItemCount()>2 && is3D)
+					{	xyContour.removeAllItems();
+						xyContour.addItem(new PlotMenuItem("p:x+dt="));
+						xyContour.addItem(new PlotMenuItem("p0:x+dt="));
+					}
+				}
 			}
 			functionText.setEnabled(popup);
 			plusMinus.setEnabled(popup);
@@ -268,8 +306,11 @@ public class TimePlotOptions extends PlotControl
 		}
 		else
 		{	// Not a 2D plot
+			this.setVisible(false);
+			/*
 			plotPoint.setEnabled(false);
 			plotAll.setEnabled(false);
+			averaged.setEnabled(false);
 			plot1Mat.setEnabled(false);
 			ptNumberText.setEnabled(false);			
 			matNumberText.setEnabled(false);
@@ -277,6 +318,7 @@ public class TimePlotOptions extends PlotControl
 			functionText.setEnabled(false);
 			plusMinus.setEnabled(false);
 			rangeText.setEnabled(false);
+			*/
 		}
 	}
 	
@@ -297,8 +339,18 @@ public class TimePlotOptions extends PlotControl
 		}
 	}
 	
-	// get selected item for contour menu options
-	public int getContour() { return xyContour.getSelectedIndex(); }
+	// get status of averaged check box
+	public boolean getAveraged() { return averaged.isSelected(); }
+	
+	// get selected item for contour menu options (3D adds 4)
+	public int getContour()
+	{	int selected = xyContour.getSelectedIndex();
+	
+		// need to fix this if number alone not enough to see if 3D
+		if(xyContour.getItemCount()<3) selected += 4;
+		
+		return selected;
+	}
 	
 	// get contour expression
 	public String getContourFunction()

@@ -19,8 +19,8 @@ public class ControlPanel extends JPanel
 	//----------------------------------------------------------------------------
 	// variables and constants
 	//----------------------------------------------------------------------------
-	static final int TOP_MARGIN=10;
-	static final int LEFT_MARGIN=10;
+	static final int TOP_MARGIN=16;
+	static final int LEFT_MARGIN=16;
 	static final int ROW_SPACING=24;
 	static final int COL_SPACING=16;
 	static final int WIDTH=340;
@@ -29,13 +29,14 @@ public class ControlPanel extends JPanel
 	
 	private LoadArchive load;
 	private TimeSelector selectTime;
-	private PlotQuantity quantity;
+	public PlotQuantity quantity;
 	private PlotOptions options;
 	private TimePlotOptions timeoptions;
 	private CrackSelector thecrack;
 	private LimitsSelector thelimits;
-	private PlotLaunch launch;
+	protected PlotLaunch launch;
 	private DocViewer docCtrl;
+	private int vStart;
 	
 	//----------------------------------------------------------------------------
 	// initialize
@@ -48,62 +49,59 @@ public class ControlPanel extends JPanel
 		setBackground(Color.gray);
 		docCtrl=dc;
 		
-		int[] colv=new int[4];
-		colv[0]=TOP_MARGIN;
-		
-		int[] colh=new int[4];
-		colh[0]=LEFT_MARGIN;
-		colh[1]=LEFT_MARGIN+WIDTH+COL_SPACING;
+		int vloc=TOP_MARGIN;
+		int hloc=LEFT_MARGIN;
 		
 		// load the archive
 		load=new LoadArchive(docCtrl);
-		load.setLocation(colh[0],colv[0]);
+		load.setLocation(hloc,vloc);
 		add(load);
-		colv[0]+=load.getHeight()+ROW_SPACING;
+		vloc += load.getHeight()+ROW_SPACING;
 		
 		// quantity selector
 		quantity=new PlotQuantity(docCtrl);
-		quantity.setLocation(colh[0],colv[0]);
+		quantity.setLocation(hloc,vloc);
 		add(quantity);
+		vloc += quantity.getHeight()+ROW_SPACING;
+		vStart = vloc;
 		
 		// time selector
 		selectTime=new TimeSelector(null,docCtrl);
-		selectTime.setLocation(colh[1],colv[0]);
+		selectTime.setLocation(hloc,vloc);
 		add(selectTime);
-		colv[0]+=Math.max(quantity.getHeight(),selectTime.getHeight()+8)+ROW_SPACING;
-		colv[1]=colv[0];
+		vloc += selectTime.getHeight()+ROW_SPACING;
 		
-		// movie options selector
+		// movie and time options at same vertical position
+		// they are never both active
 		options=new PlotOptions(docCtrl);
-		options.setLocation(colh[0],colv[0]);
+		options.setLocation(hloc,vloc);
 		add(options);
-		colv[0]+=options.getHeight()+ROW_SPACING;
 		
 		// time options selector
 		timeoptions=new TimePlotOptions(docCtrl);
-		timeoptions.setLocation(colh[1],colv[1]);
+		timeoptions.setLocation(hloc,vloc);
 		add(timeoptions);
-		colv[1]+=timeoptions.getHeight()+ROW_SPACING;
+		vloc += Math.max(options.getHeight(),timeoptions.getHeight())+ROW_SPACING;
 		
-		// crack selector
+		// crack selector and limts at same vertical location
+		// They are never used at the same time
 		thecrack=new CrackSelector(docCtrl);
-		thecrack.setLocation(colh[1],colv[1]);
+		thecrack.setLocation(hloc,vloc);
 		add(thecrack);
 		
 		// limits selector
 		thelimits=new LimitsSelector(docCtrl);
-		thelimits.setLocation(colh[0],colv[1]);
+		thelimits.setLocation(hloc,vloc);
 		add(thelimits);
-		colv[1]+=Math.max(thecrack.getHeight(),thelimits.getHeight())+ROW_SPACING;
+		vloc += Math.max(thecrack.getHeight(),thelimits.getHeight())+ROW_SPACING;
 		
 		// plot button selector
-		colv[0]=Math.max(colv[0],colv[1]);
 		launch=new PlotLaunch(docCtrl);
-		launch.setLocation(colh[1]-COL_SPACING/2-launch.getWidth()/2,colv[0]);
-		//launch.setLocation(colh[0],colv[1]-thecrack.getHeight()-ROW_SPACING);
+		launch.setLocation(hloc,vloc);
 		add(launch);
+		vloc += launch.getHeight()+20;
 		
-		setPreferredSize(new Dimension(colh[1]+WIDTH+LEFT_MARGIN, colv[0]+launch.getHeight()+20));
+		setPreferredSize(new Dimension(hloc+WIDTH+LEFT_MARGIN, vloc));
 	}
 
 	//----------------------------------------------------------------------------
@@ -112,49 +110,105 @@ public class ControlPanel extends JPanel
 
 	// draw frame
 	protected void paintComponent(Graphics g)
-	{
+	{	
 		Graphics2D g2=(Graphics2D)g;
 		
 		// fill background (and erase prior view)
-		g2.setColor(Color.gray);
+		g2.setColor(new Color(0.617f,0.685f,0.791f));
 		Dimension d=getSize();
 		g2.fill(new Rectangle2D.Double(0.,0.,(double)d.width,(double)d.height));
 		
 		int selected=load.getSelected();
+		int hloc = LEFT_MARGIN;
+		int vloc = vStart;
 		
-		g2.setColor(Color.blue);
-		g2.setStroke(new BasicStroke((float)2.));
+		g2.setColor(new Color(1.0f,0.0f,0.0f));
+		g2.setStroke(new BasicStroke((float)3.));
+		PlotControl aboveLimits = options;
 		switch(selected)
 		{	case LoadArchive.PARTICLE_PLOT:
 			case LoadArchive.MESH_PLOT:
 				connectControls(load,quantity,g2);
 				if(docCtrl.resDoc.isMPMAnalysis())
 				{	connectControls(quantity,selectTime,g2);
+					vloc += selectTime.getHeight()+ROW_SPACING;
+					options.setLocation(hloc,vloc);
 					connectControls(selectTime,options,g2);
 				}
 				else
+				{	options.setLocation(hloc,vloc);
 					connectControls(quantity,options,g2);
-				connectControls(options,thelimits,g2);
+				}
+				vloc += options.getHeight()+ROW_SPACING;
+				thelimits.setLocation(hloc,vloc);
+				connectControls(aboveLimits,thelimits,g2);
+				vloc += thelimits.getHeight()+ROW_SPACING;
+				launch.setLocation(hloc,vloc);
 				connectControls(thelimits,launch,g2);
 				break;
 			
 			case LoadArchive.TIME_PLOT:
 				connectControls(load,quantity,g2);
-				connectControls(quantity,timeoptions,g2);
-				connectControls(timeoptions,thecrack,g2);
-				connectControls(thecrack,launch,g2);
+				if(timeoptions.isVisible())
+				{	timeoptions.setLocation(hloc,vloc);
+					connectControls(quantity,timeoptions,g2);
+					vloc += timeoptions.getHeight()+ROW_SPACING;
+					launch.setLocation(hloc,vloc);
+					connectControls(timeoptions,launch,g2);
+				}
+				else if(thecrack.isVisible())
+				{	// time plot of crack data
+					thecrack.setLocation(hloc,vloc);
+					connectControls(quantity,thecrack,g2);
+					vloc += thecrack.getHeight()+ROW_SPACING;
+					launch.setLocation(hloc,vloc);
+					connectControls(thecrack,launch,g2);
+				}
+				else
+				{	// global results
+					launch.setLocation(hloc,vloc);
+					connectControls(quantity,launch,g2);					
+				}
 				break;
 				
 			case LoadArchive.MESH2D_PLOT:
 				connectControls(load,quantity,g2);
 				if(docCtrl.resDoc.isMPMAnalysis())
-				{	connectControls(quantity,selectTime,g2);
-					connectControls(selectTime,timeoptions,g2);
+				{	if(timeoptions.isVisible())
+					{	selectTime.setVisible(true);
+						connectControls(quantity,selectTime,g2);
+						vloc += selectTime.getHeight()+ROW_SPACING;
+						timeoptions.setLocation(hloc,vloc);
+						connectControls(selectTime,timeoptions,g2);
+						vloc += timeoptions.getHeight()+ROW_SPACING;
+						launch.setLocation(hloc,vloc);
+						connectControls(timeoptions,launch,g2);
+					}
+					else if(thecrack.isVisible())
+					{	// time plot of crack data
+						selectTime.setVisible(true);
+						connectControls(quantity,selectTime,g2);
+						vloc += selectTime.getHeight()+ROW_SPACING;
+						thecrack.setLocation(hloc,vloc);
+						connectControls(selectTime,thecrack,g2);
+						vloc += thecrack.getHeight()+ROW_SPACING;
+						launch.setLocation(hloc,vloc);
+						connectControls(thecrack,launch,g2);
+					}
+					else
+					{	// must be import
+						selectTime.setVisible(false);
+						launch.setLocation(hloc,vloc);
+						connectControls(quantity,launch,g2);
+					}
 				}
 				else
+				{	timeoptions.setLocation(hloc,vloc);
 					connectControls(quantity,timeoptions,g2);
-				connectControls(timeoptions,thecrack,g2);
-				connectControls(thecrack,launch,g2);
+					vloc += timeoptions.getHeight()+ROW_SPACING;
+					launch.setLocation(hloc,vloc);
+					connectControls(timeoptions,launch,g2);
+				}
 				break;
 			
 			default:
@@ -229,19 +283,26 @@ public class ControlPanel extends JPanel
 	public void fileHasLoaded()
 	{	load.setEnabled();
 		hiliteControls();
+		selectTime.select.setValue(0);
 	}
 	
 	// call when select new plot option and may need to adjust controls
 	public void hiliteControls()
 	{
+		// type of plot 0,1,2,3 (-1 is no plot)
 		int selected=load.getSelected();
-		quantity.setEnabled(selected);
-		selectTime.setEnabled(selected);
-		options.setEnabled(selected);
 		
-		int plotComponent=getPlotComponent(selected);
+		// quantity and time
+		quantity.setEnabled(selected);
+		int plotComponent=getPlotComponent(selected,false,null);
+		selectTime.setEnabled(selected,plotComponent);
+		
+		// options or time options
+		options.setEnabled(selected);
+		timeoptions.setEnabled(selected,plotComponent,docCtrl.resDoc);
+		
+		// limits and crack
 		thelimits.setEnabled(selected,plotComponent);
-		timeoptions.setEnabled(selected,plotComponent,docCtrl.resDoc.isMPMAnalysis());
 		thecrack.setEnabled(selected,plotComponent);
 		
 		plotOpened();
@@ -254,12 +315,14 @@ public class ControlPanel extends JPanel
 	// call when select new plot component
 	public void changeComponent()
 	{	int selected=load.getSelected();
-		int plotComponent=getPlotComponent(selected);
-		timeoptions.setEnabled(selected,plotComponent,docCtrl.resDoc.isMPMAnalysis());
+		int plotComponent=getPlotComponent(selected,false,null);
+		timeoptions.setEnabled(selected,plotComponent,docCtrl.resDoc);
 		thecrack.setEnabled(selected,plotComponent);
+		
 		/*
 		// include this to replot on each menu change in control panel, but user might
 		// prefer to change both before replotting and it activated plot window too
+		// note that getPlotType() no longer valid
 		if(docCtrl.movieFrame!=null)
 		{	if(getPlotType()==docCtrl.movieFrame.plotType)
 				JNNotificationCenter.getInstance().postNotification("PlotQuantityChanged",docCtrl,null);
@@ -286,14 +349,27 @@ public class ControlPanel extends JPanel
 	{	launch.progress.setValue(thisSteps);
 	}
 	
+	public boolean isPlotting()
+	{	return launch.progress.isEnabled();
+	}
+	
 	//----------------------------------------------------------------------------
 	// accessors
 	//----------------------------------------------------------------------------
 	
 	// get plot wanted
-	public int getPlotComponent(int selected) { return quantity.getPlotComponent(selected); }
+	public int getPlotComponent(int selected,boolean getExpression,ISDictType settings)
+	{	return quantity.getPlotComponent(selected,getExpression,settings);
+	}
 	public JComboBox<PlotMenuItem> getQuantityMenu() { return quantity.quant; }
 	public JComboBox<String> getComponentMenu() { return quantity.cmpnt; }
+	public String getExpression() { return quantity.getExpression(); }
+	public double evaluateExpressionMP(MaterialPoint mptr,double angle,ResultsDocument doc)
+	{	return quantity.evaluateExpressionMP(mptr,angle,doc);
+	}
+	public double evaluateExpressionNode(ElementBase eptr,int ndi,double angle,ResultsDocument doc)
+	{	return quantity.evaluateExpressionNode(eptr,ndi,angle,doc);
+	}
 	
 	// set to item for checking the mesh
 	public void setCheckMeshItem() { quantity.setCheckMeshItem(); }
@@ -307,18 +383,60 @@ public class ControlPanel extends JPanel
 	public int getArchiveIndex() { return selectTime.getArchiveIndex(); }
 	public boolean setArchiveIndex(int newIndex) { return selectTime.setArchiveIndex(newIndex); }
 	public void updateTimeDisplay() { selectTime.updateLabel(); }
+	public boolean incrementArchiveIndex() { return selectTime.incrementArchiveIndex(); }
+	public boolean decrementArchiveIndex() { return selectTime.decrementArchiveIndex(); }
 	
 	// get current plotting type
 	public int getPlotType() { return load.getSelected(); }
+	public void changePlotType(int newType) { load.changeSelected(newType); }
 	
 	// get particle number option for time plots
-	public int getParticleNumber() throws Exception { return timeoptions.getParticleNumber(); }
+	public int getParticleNumber(ISDictType settings) throws Exception
+	{	if(settings==null)
+			return timeoptions.getParticleNumber();
+	
+		// default if xy plot
+		String ptype = (String)settings.gcis_objectForKey("plottype");
+		if(ptype.contentEquals("xyplot")) return 1;
+	
+		// get material option, then wif needed get material or point number
+		int mopt = settings.gcis_integerForKey("materialoption");
+		if(mopt==1 || mopt==3)
+			return 0;
+		else if(mopt==2 || mopt==4)
+			return -settings.gcis_integerForKey("materialnumber");
+		else
+			return settings.gcis_integerForKey("initialpoint");
+	}
 	
 	// get particle number option for time plots
-	public int getCrackNumber() throws Exception { return thecrack.getCrackNumber(); }
+	public boolean getAveraging(ISDictType settings) throws Exception
+	{ 	if(settings==null)
+			return timeoptions.getAveraged();
+	
+		// default if xy plot
+		String ptype = (String)settings.gcis_objectForKey("plottype");
+		if(ptype.contentEquals("xyplot")) return true;
+
+		// default to true if needed
+		int mopt = settings.gcis_integerForKey("materialoption");
+		if(mopt==1 || mopt==2) return true;
+		return false;
+	}
 	
 	// get particle number option for time plots
-	public int getCrackTip() { return thecrack.getCrackTip(); }
+	public int getCrackNumber(ISDictType settings) throws Exception
+	{ 	if(settings==null)
+			return thecrack.getCrackNumber();
+		return settings.gcis_integerForKey("cracknumber");
+	}
+	
+	// get particle number option for time plots
+	public int getCrackTip(ISDictType settings) throws Exception
+	{	if(settings==null)
+			return thecrack.getCrackTip();
+		return settings.gcis_integerForKey("tipnumber");
+	}
 	
 	// adjust limits if desired
 	public Point2D.Double adjustLimits(double dmin,double dmax)
@@ -328,8 +446,9 @@ public class ControlPanel extends JPanel
 	}
 	
 	// for time plots, adjust for total options
-	public int adjustComponent(int theComponent) throws Exception
-	{	if(getParticleNumber()>0) return theComponent;
+	// skip if averaging has been set
+	public int adjustComponent(int theComponent,ISDictType settings) throws Exception
+	{	if(getParticleNumber(settings)>0 || getAveraging(settings)) return theComponent;
 		switch(theComponent)
 		{	case PlotQuantity.MPMSTRENERGY:
 				theComponent=PlotQuantity.MPMTOTSTRENERGY;
@@ -359,13 +478,38 @@ public class ControlPanel extends JPanel
 	}
 	
 	// get selected item for contour menu options
-	public int getContour() { return timeoptions.getContour(); }
+	// if settings, integer 0 to 6 (return -1 error on not set)
+	public int getContour(ISDictType settings)
+	{	if(settings==null)
+			return timeoptions.getContour();
+		try
+		{	return settings.gcis_integerForKey("variable");
+		}
+		catch(Exception e) { }
+		return -1;
+	}
 	
 	// get contour expression
-	public String getContourFunction() { return timeoptions.getContourFunction(); }
+	// if settings get string (return "" error if not set)
+	public String getContourFunction(ISDictType settings)
+	{	if(settings==null)
+			return timeoptions.getContourFunction();
+		String ct = (String)settings.gcis_objectForKey("contour");
+		if(ct==null) return "";
+		return ct;
+	}
 	
 	// get contour +/- range (or zero if empty)
-	public double getPlusMinus() throws Exception { return timeoptions.getPlusMinus(); }
+	// if settings return 0 if none provided
+	public double getPlusMinus(ISDictType settings) throws Exception
+	{	if(settings==null)
+			return timeoptions.getPlusMinus();
+		try
+		{	return settings.gcis_doubleForKey("contourrange");
+		}
+		catch(Exception e) { }
+		return 0.;
+	}
 	
 	//----------------------------------------------------------------------------
 	// static methods

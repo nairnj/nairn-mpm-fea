@@ -104,6 +104,8 @@ void LineController::SetProperty(const char *aName,char *value,CommonReadHandler
 		ShapeController::SetProperty(aName,value,reader);
 }
 
+#pragma mark LineController: Accessors
+
 // set tolerance (no need of scaling)
 void LineController::SetTolerance(double value) { tolerance=value; }
 

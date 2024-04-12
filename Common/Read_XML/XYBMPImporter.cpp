@@ -12,7 +12,8 @@
 #pragma mark XYBMPImporter: Constructors and Destructors
 
 // create an instance
-XYBMPImporter::XYBMPImporter(char *filePath,bool isReadingXML)  : XYFileImporter(filePath,isReadingXML)
+XYBMPImporter::XYBMPImporter(char *filePath,bool isReadingXML,int dataType) :
+		XYFileImporter(filePath,isReadingXML,dataType)
 {
 }
 
@@ -22,6 +23,8 @@ XYBMPImporter::XYBMPImporter(char *filePath,bool isReadingXML)  : XYFileImporter
 // throws SAXException or CommonException
 void XYBMPImporter::GetXYFileHeader(XYInfoHeader &info)
 {
+	info.dataType = BYTE_DATA;
+	
 	// read and check the header (individual reads due to Windows alignment issues)
 	// 14 byte header
 	short status=true;
@@ -68,7 +71,7 @@ void XYBMPImporter::GetXYFileHeader(XYInfoHeader &info)
 		Reverse((char *)&header.importantcolors,sizeof(int));
 	}
     
-    // negative means image stored top to bottom, commads can flip if needed, here read all bottom to top
+	// negative means image stored top to bottom, commads can flip if needed, here read all bottom to top
     info.topDown = 0;
     if(info.height<0)
     {   info.height = -info.height;

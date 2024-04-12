@@ -24,6 +24,7 @@
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -53,10 +54,11 @@ bool ProjectRigidBCsTask::Execute(int taskOption)
 				  (BoundaryCondition **)&firstRigidTempBC,(BoundaryCondition **)&reuseRigidTempBC);
 	UnsetRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,
 				  (BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);
-	
+
 	// For Rigid BC materials create velocity BC on each node in the element
 	for(int p=nmpmsRC;p<nmpms;p++)
 	{	MPMBase *mpmptr = mpm[p];										// pointer
+		if(mpmptr->InReservoir()) continue;
 		
 		int matid0 = mpmptr->MatID();
 		const MaterialBase *matID = theMaterials[matid0];				// material object for this particle
@@ -114,33 +116,44 @@ bool ProjectRigidBCsTask::Execute(int taskOption)
 			
 			// temperature
 			if(rigid->RigidTemperature())
-			{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pTemperature=rvalue;
+			{   // if has function change it, otherwise leave as is
+                if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pTemperature=rvalue;
 				SetRigidBCs(mi,matid0,TEMP_DIRECTION,mpmptr->pTemperature,0.,0,
 							(BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,
 							(BoundaryCondition **)&firstRigidTempBC,(BoundaryCondition **)&reuseRigidTempBC);
 			}
 			
-			// concentration
-			if(rigid->RigidConcentration() && fmobj->HasFluidTransport())
-			{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pConcentration=rvalue;
+			// concentration (but only if has diffusion or poroelasticity)
+            // only concentratation and always in pDiff[0]
+			if(rigid->RigidConcentration())
+			{   // if has function change it, otherwise leave as is
+                if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pDiff[0]->conc=rvalue;
 				if(fmobj->HasDiffusion())
-				{	if(mpmptr->pConcentration<0.)
-						mpmptr->pConcentration=0.;
-					else if(mpmptr->pConcentration>1.)
-						mpmptr->pConcentration=1.;
+				{	if(mpmptr->pDiff[0]->conc<0.)
+						mpmptr->pDiff[0]->conc=0.;
+					else if(!diffusion->noLimit && mpmptr->pDiff[0]->conc>1.)
+						mpmptr->pDiff[0]->conc=1.;
 				}
-				SetRigidBCs(mi,matid0,CONC_DIRECTION,mpmptr->pConcentration,0.,0,
+ 				SetRigidBCs(mi,matid0,CONC_DIRECTION,mpmptr->pDiff[0]->conc,0.,0,
 							(BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,
 							(BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);
 			}
 		}
 	}
 	
-	// if any left over rigid BCs, delete them now
+ 	// if any left over rigid BCs, delete them now
 	RemoveRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,(BoundaryCondition **)&firstRigidVelocityBC);
 	RemoveRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,(BoundaryCondition **)&firstRigidTempBC);
 	RemoveRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,(BoundaryCondition **)&firstRigidConcBC);
     
+    // reset pointer to first one
+    if(fmobj->HasFluidTransport())
+    {   firstDiffBC[MOISTURE_DIFFUSION] = firstConcBC;
+    }
+    else
+    {   firstDiffBC[POROELASTICITY_DIFFUSION] = firstConcBC;
+    }
+
     return true;
 }
 
@@ -206,14 +219,17 @@ void ProjectRigidBCsTask::SetRigidBCs(int mi,int matid0,int type,double value,do
 			if(*reuseRigidBC!=NULL)
 				newBC=(*reuseRigidBC)->SetRigidProperties(mi,type,CONSTANT_VALUE,value);
 			else
-				newBC=(BoundaryCondition *)(new NodalTempBC(mi,CONSTANT_VALUE,value,(double)0.));
+            {   newBC=(BoundaryCondition *)(new NodalTempBC(mi,CONSTANT_VALUE,value,(double)0.));
+            }
 			break;
 			
 		case CONC_DIRECTION:
-			if(*reuseRigidBC!=NULL)
+ 			if(*reuseRigidBC!=NULL)
 				newBC=(*reuseRigidBC)->SetRigidProperties(mi,type,CONSTANT_VALUE,value);
 			else
-				newBC=(BoundaryCondition *)(new NodalConcBC(mi,CONSTANT_VALUE,value,(double)0.));
+			{	newBC=(BoundaryCondition *)(new NodalConcBC(mi,CONSTANT_VALUE,value,
+															(double)0.,MOISTURE_DIFFUSION));
+ 			}
 			break;
 			
 		default:

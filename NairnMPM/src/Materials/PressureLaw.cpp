@@ -20,7 +20,8 @@ extern double mtime;
 PressureLaw::PressureLaw(char *matName,int matID) : TractionLaw(matName,matID)
 {
 	function = NULL;
-	minCOD = 0.;
+	minCOD = -1.;
+    useMinCOD = false;
 }
 
 #pragma mark PressureLaw::Initialization
@@ -40,6 +41,7 @@ char *PressureLaw::InputTractionLawProperty(char *xName,int &input,double &gScal
 	
 	else if(strcmp(xName,"minCOD")==0)
 	{	input=DOUBLE_NUM;
+        useMinCOD = true;
 		return (char *)&minCOD;
 	}
 	
@@ -73,7 +75,7 @@ void PressureLaw::SetStressFunction(char *bcFunction)
 const char *PressureLaw::VerifyAndLoadProperties(int np)
 {
 	// disallow negative COD for pressure range
-	if(minCOD<0.) minCOD = 0.;
+	//if(minCOD<0.) minCOD = 0.;
 	
 	// go to parent
 	return TractionLaw::VerifyAndLoadProperties(np);
@@ -89,7 +91,8 @@ void PressureLaw::PrintMechanicalProperties(void) const
 	else
 	{	cout << "Stress = " << function->GetString() << endl;
 	}
-	PrintProperty("Min COD",minCOD,UnitsController::Label(CULENGTH_UNITS));
+    if(useMinCOD)
+        PrintProperty("Min COD",minCOD,UnitsController::Label(CULENGTH_UNITS));
 	cout << endl;
 }
 
@@ -110,9 +113,8 @@ void PressureLaw::CalculateTimeFunction(void)
 void PressureLaw::CrackTractionLaw(CrackSegment *cs, double nCod, double tCod, Vector *n, Vector *t, double area)
 {
 	// no pressure if less then a specific critical COD
-	if(nCod <= minCOD)
-	{
-		cs->tract.x = 0.;
+	if(useMinCOD && nCod<minCOD)
+	{   cs->tract.x = 0.;
 		cs->tract.y = 0.;
 		cs->tract.z = 0.;
 		return;
@@ -130,7 +132,10 @@ void PressureLaw::CrackTractionLaw(CrackSegment *cs, double nCod, double tCod, V
 // units of F/L
 double PressureLaw::CrackWorkEnergy(CrackSegment *cs,double nCod,double tCod)
 {
-	return nCod<minCOD ? 0. : stress1*(nCod-minCOD);
+    if(useMinCOD)
+        return nCod<minCOD ? 0. : stress1*(nCod-minCOD);
+    else
+        return stress1*nCod;
 }
 
 #pragma mark CubicTraction::Accessors

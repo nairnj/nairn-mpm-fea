@@ -6,7 +6,7 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 
 	Dependencies
-		Elastic.hpp
+		Elastic.hpp (MaterialBase.hpp)
 ********************************************************************************/
 
 #ifndef ISOTROPIC

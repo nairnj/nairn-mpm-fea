@@ -13,6 +13,8 @@
 
 #define _MATPTLOADBC_
 
+class MPMBase;
+
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 
 class MatPtLoadBC: public BoundaryCondition
@@ -35,11 +37,7 @@ class MatPtLoadBC: public BoundaryCondition
         MatPtLoadBC *MakeConstantLoad(double);
 	
 		// accessors
-#ifdef USE_ASCII_MAP
 		virtual void GetPositionVars(double *);
-#else
-		virtual void GetPositionVars(unordered_map<string,double>);
-#endif
 		virtual void SetBCValue(double);
     
 		// overridden by flux sub classes
@@ -47,7 +45,8 @@ class MatPtLoadBC: public BoundaryCondition
 	
 		// class methods
 		static void SetParticleFext(double);
-    
+		static void DeleteParticleBCs(MPMBase *,MatPtLoadBC **);
+
     private:
         double holdValue;
         bool holding;

@@ -19,29 +19,40 @@ NodalValueBC::NodalValueBC(int num,int setStyle,double concentration,double argT
                 : BoundaryCondition(setStyle,concentration,argTime)
 {
     nodeNum=num;
-    nd[nodeNum]->SetFixedDirection(GetSetDirection());
 }
 
 #pragma mark NodalValueBC: Methods
 
 // save nodal concentration and zero it
-NodalValueBC *NodalValueBC::CopyNodalValue(NodalPoint *nd)
+NodalValueBC *NodalValueBC::CopyNodalValue(NodalPoint *nd,TransportField *gTrans)
 {
-    TransportField *gTrans = GetTransportFieldPtr(nd);
+    //cout << fmobj->mstep << ": copy node " << nd->num << " value " << gTrans->gTValue << endl;
     valueNoBC = gTrans->gTValue;
     return (NodalValueBC *)GetNextObject();
 }
 
-// restore nodal concentration and get initial force to cancel no-BC result
-NodalValueBC *NodalValueBC::PasteNodalValue(NodalPoint *nd)
+// save nodal concentration and zero it
+NodalValueBC *NodalValueBC::CopyNodalValue(NodalPoint *nd,TransportField *gTrans,bool getActivity)
 {
-    TransportField *gTrans = GetTransportFieldPtr(nd);
+    //cout << fmobj->mstep << ": copy node " << nd->num << " value " << gTrans->gTValue << endl;
+    valueNoBC = gTrans->gTValue;
+    nodalActivity = !DbleEqual(valueNoBC,0.) ? gTrans->gTValueRel/valueNoBC : 1. ;
+    return (NodalValueBC *)GetNextObject();
+}
+
+// restore nodal concentration and get initial force to cancel no-BC result
+NodalValueBC *NodalValueBC::PasteNodalValue(NodalPoint *nd,TransportField *gTrans)
+{
+    //cout << fmobj->mstep << ": paste node " << nd->num << " value " << valueNoBC << endl;
     gTrans->gTValue = valueNoBC;
     return (NodalValueBC *)GetNextObject();
 }
 
 // initialize reaction flow at constant temperature boundary conditions
 void NodalValueBC::InitQReaction(void) { qreaction = 0.; }
+
+// scale current value instead of setting to zero (for blended FLIP/FMPM blending)
+void NodalValueBC::InitQReaction(double scale) { qreaction *= scale; }
 
 // add flow required to bring global nodal temperature to the BC temperature
 void NodalValueBC::SuperposeQReaction(double qflow) { qreaction += qflow; }

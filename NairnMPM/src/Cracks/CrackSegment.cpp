@@ -130,13 +130,13 @@ void CrackSegment::MovePositionToMidpoint(void)
 
 // Move crack plane position (2D) (in mm)
 // only used when contact.GetMoveOnlySurfaces() is FALSE and thus need to move crack plane
-void CrackSegment::MovePosition(Vector *velnp1,Vector *cacc,double dt,double shapeNorm)
+void CrackSegment::MovePosition(Vector *velnp1,Vector *cpAcc,double dt,double shapeNorm)
 {
-	// PIC position change is dX = dt*(1.5*svelnp1-surfAccc*dt-0.5*prevVel)
+	// XPIC(1) position change is dX = dt*(1.5*svelnp1-0.5*prevVel-cpAcc*dt)/shapeNorm
 	Vector delX = SetScaledVector(&cpVel,-0.5);
-	AddScaledVector(&delX,velnp1,1.5/shapeNorm);
-	AddScaledVector(&delX,cacc,-dt/shapeNorm);
-	ScaleVector(&delX,dt);
+	AddScaledVector(&delX,velnp1,1.5);
+	AddScaledVector(&delX,cpAcc,-dt);
+    ScaleVector(&delX,dt/shapeNorm);
 	
 	// add to current postion
 	AddVector(&cp,&delX);
@@ -154,11 +154,11 @@ bool CrackSegment::MoveSurfacePosition(short side,Vector *svelnp1,Vector *surfAc
 	short j=side-1;
 	bool movedOther=false;
 	
-	// if hasNodes
-	// new velocity is in svelnp1
+	// if hasNodes new velocity is in svelnp1, get increment
 	Vector delX;
 	if(hasNodes)
-	{	// position change is dX = dt*(1.5*svelnp1-surfAccc*dt-0.5*prevVel)
+	{
+        // position change is dX = dt*(1.5*svelnp1-0.5*prevVel-surfAcc*dt)
 		delX = SetScaledVector(&surfVel[j],-0.5);
 		AddScaledVector(&delX,svelnp1,1.5);
 		AddScaledVector(&delX,surfAcc,-dt);
@@ -182,7 +182,7 @@ bool CrackSegment::MoveSurfacePosition(short side,Vector *svelnp1,Vector *surfAc
 	{	// below crack is second
 		// ... if has nodes than get average movement or just this one if top did not move
 		//			also move top along if it had no nodes
-		// ... else if no nodes, move along with the top field (if it had one)
+		// ... else if no nodes, move bottom along with the top field (if it had one)
 		if(hasNodes)
 		{	AddVector(&surf[j],&delX);
 			surfVel[j] = *svelnp1;
@@ -194,13 +194,16 @@ bool CrackSegment::MoveSurfacePosition(short side,Vector *svelnp1,Vector *surfAc
 			}
 			else
 			{	dPlane = delX;
-				AddVector(&surf[ABOVE_CRACK-1],&dPlane);	// move above by (xpt,ypt) too
+				AddVector(&surf[ABOVE_CRACK-1],&dPlane);	// move above by delX from below
 				surfVel[ABOVE_CRACK-1] = SetScaledVector(&delX,1./dt);
-				movedOther = true;				// in case above moved elements now (this tells to check on return)
+                
+                // in case above moved elements now (this tells to check on return)
+				movedOther = true;
 			}
 		}
 		else if(hadAboveNodes)
-		{	AddVector(&surf[j],&dPlane);		// only had nodes above the crack, move both and the plane by dPlane
+		{   // only had nodes above the crack, move bottom by delX from above
+            AddVector(&surf[j],&dPlane);
 			surfVel[j] = SetScaledVector(&dPlane,1./dt);
 		}
 		else
@@ -247,80 +250,63 @@ void CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,double
 	int numnds = nds[0];
 
 #define MASS_WEIGHTED_FORCE
-#ifdef MASS_WEIGHTED_FORCE
+    bool hasNodes = false;
 	// find mass from nodes seen by this crack particle
 	for(int i=1;i<=numnds;i++)
 	{	// Get velocity field to use
 		ndi = nd[nds[i]];
-		cvfld[i] = ndi->GetFieldForSurfaceParticle(side,cnum,this);
+		cvfld[i] = ndi->GetFieldForSurfaceParticle(side,cnum,this,false);
 		
 		// if has particles (and they see cracks), get weighted shape function
 		if (cvfld[i] >= 0)
-		{	fn[i] *= ndi->cvf[cvfld[i]]->GetTotalMass(true);
+		{
+#ifdef MASS_WEIGHTED_FORCE
+            // The theory: here fnorm = sum(mi*Sip) is interpreted as mass on the crack surface particle
+            // The crack surface acceleration is T/fnorm where T is stored traction
+            // Extrapolate this acceleration to node ai = Sip*T/fnorm
+            // Convert to force on node fi = mi*Sip*T/fnorm = (fn[i]/fnorm)*T
+            fn[i] *= ndi->cvf[cvfld[i]]->GetTotalMass(true);
 			fnorm += fn[i];
+#else
+            // The theory here is node fi = Sip*T/fnorm where fnorm = sum(Sip)
+            fnorm += fn[i];
+#endif
+            hasNodes = true;
 		}
 	}
 	
-	// The theory: here fnorm = sum(mi*Sip) is interpreted as mass on the crack surface particle
-	// The crack sruface acceleration in T/fnorm where T is stored traction
-	// Extrapolate this acceleration to node ai = Sip*T/fnorm
-	// Convert to force on node fi = mi*Sip*T/fnorm = (fn[i]/fnorm)*T
+    // skip if none
+    if(!hasNodes) return;
+    
 	// Get 1/fnorm once for speed and add scale to handle crack side
 	fnorm = scale/fnorm;
 	
 	// loop over all nodes seen by this crack surface particle
 	for(int i=1;i<=numnds;i++)
-	{	// if has particles (and they see cracks), add force and track normalization
+	{	// if has particles (and they see cracks), add force
 		if(cvfld[i]>=0)
 		{	ndi = nd[nds[i]];
 			ndi->AddFtotSpreadTask3(cvfld[i],FTract(fnorm*fn[i]));
 		}
 	}
-#else
-	// loop over all nodes seen by this crack surface particle
-	for(int i=1;i<=numnds;i++)
-	{	// Get velocity field to use
-		ndi = nd[nds[i]];
-		cvfld[i] = ndi->GetFieldForSurfaceParticle(side,cnum,this);
-
-		// if has particles (and they see cracks), add the shape function normalization
-		if (cvfld[i] >= 0) fnorm += fn[i];
-		
-	}
-
-	// skip if not enough
-	if(fnorm<1.e-3) return;
-	
-	// normlization and side
-	fnorm = scale/fnorm;
-	
-	// loop over all nodes seen by this crack surface particle
-	for(int i=1;i<=numnds;i++)
-	{	// if has particles (and they see cracks), add force and track normalization
-		if(cvfld[i]>=0)
-		{	ndi = nd[nds[i]];
-			ndi->AddFtotSpreadTask3(cvfld[i],FTract(fnorm*fn[i]));
-		}
-	}
-#endif
 }
-
 
 /* This method is called for use with traction force and energy and does several tasks
 	1. Get normal pointing from below to above
  	2. Get tangential that is perpendicular to normal and in direction of tangential cod
  			delta = (delta.n)n + (delta.t)t
  			tangential is in direction of delta - (delta.n)n
- 	3. If theCrack!=NULL find area for traction of this crack point (returned value
+ 	3. If theCrack!=NULL find area for traction of this crack point (returned value)
  	4. Return nCod = delta.n and nCod = delta.t
- 	5. Might be better to use spline
+ 	5. Might be better to use splines
  In 2D
  	a. Find tangential = (tx,ty,0) from line segments arround point
  	b. Normal = (-ty,tx,0)
-*/// CrackPoint overrides this
+ in 3D
+    This method overridden in CrackPoint
+*/
 double CrackSegment::GetNormalAndTangent(CrackHeader *theCrack,Vector *norm,Vector *tang,double &nCod,double &tCod) const
 {
-	
 	// area to return
 	double area = 1.;
 	
@@ -353,12 +339,10 @@ double CrackSegment::GetNormalAndTangent(CrackHeader *theCrack,Vector *norm,Vect
 	ScaleVector(tang,1./dl);
 	*norm = MakeVector(-tang->y,tang->x,0.);
 	
-	// need 3D calculationa here
-	
 	// get nCod and tCod
 	nCod = DotVectors(&cod,norm);
 	tCod = DotVectors(&cod,tang);
-	
+
 	// return area (if needed)
 	return area;
 }
@@ -378,15 +362,38 @@ void CrackSegment::UpdateTractions(CrackHeader *theCrack)
 	// or force per radian if axisymmetric
 	TractionLaw *theLaw=(TractionLaw *)theMaterials[MatID()];
 	theLaw->CrackTractionLaw(this,nCod,tCod,&n,&t,area);
-
 }
+
+// get surface traction on this crack particle or zero (if no traction law)
+// return true if set traction, or false is closed
+bool CrackSegment::SurfaceTraction(CrackHeader *theCrack,Vector *ntract)
+{
+    // get normal and tangential unit vectors and length
+    Vector n,t;
+    double nCod,tCod;
+    double area = GetNormalAndTangent(theCrack,&n,&t,nCod,tCod);
+    
+    // false if closed *may prefer small minimum here?)
+    if(nCod<0.) return false;
+    
+    // zero if not using a traction law
+    if(MatID()<0)
+    {   ZeroVector(ntract);
+        return true;
+    }
+    
+    *ntract = tract;
+    ScaleVector(ntract,-1./area);
+    return true;
+}
+
 
 // Calculate energy in the traction law for this segment if in traction
 // fullEnergy true gets total energy at location of this segment or nearest traction law tip
 // fullEnergy false gets recoverable energy at the traction law tip
 // Only used in J integral calculations for released and bridged energy, so return energy in N/mm
 // If tipSegment is not NULL and this segment is not in the cohesive zone, it is set
-//    to the crack segment and the beginning of the cohesive zone (or to NULL if no cohesive zone),
+//    to the crack segment at the beginning of the cohesive zone (or to NULL if no cohesive zone),
 //    otherwise it is not changed
 double CrackSegment::TractionEnergy(Vector *crossPt,int crkTipIdx,bool fullEnergy,CrackSegment **tipSegment)
 {
@@ -430,7 +437,7 @@ double CrackSegment::TractionEnergy(Vector *crossPt,int crkTipIdx,bool fullEnerg
 	
 	// check other side of the cross point and interpolate if has energy too
 	CrackSegment *fartherSeg = (crkTipIdx==START_OF_CRACK) ? nextSeg : prevSeg;
-	if(fartherSeg!=NULL)
+	if(fartherSeg!=NULL && crossPt!=NULL)
 	{	if(fartherSeg->MatID()>=0)
 		{	double energy2=fartherSeg->SegmentTractionEnergy(fullEnergy);
 	
@@ -453,7 +460,7 @@ double CrackSegment::TractionEnergy(Vector *crossPt,int crkTipIdx,bool fullEnerg
 	return energy;
 }
 
-// Calculate potentialEnergy (is true) or dissipated energy (if false) for segment
+// Calculate potentialEnergy (if true) or dissipated energy (if false) for segment
 // If not at crack tip, scan to one at the crack tip
 // Used in J integral calculations so return energy in N/mm
 double CrackSegment::SegmentTractionEnergy(bool getPotentialEnergy)
@@ -476,7 +483,7 @@ double CrackSegment::SegmentTractionEnergy(bool getPotentialEnergy)
 }
 
 // fill archive with this object values
-void CrackSegment::FillArchive(char *app,int segNum)
+void CrackSegment::FillArchive(char *app,int segNum,bool threeD)
 {
     char *appInit=app;
     
@@ -511,12 +518,22 @@ void CrackSegment::FillArchive(char *app,int segNum)
     *(double *)app=cp.y;
     app+=sizeof(double);
     
+    if(threeD)
+    {   *(double *)app=cp.z;
+        app+=sizeof(double);
+    }
+    
     // original position
     *(double *)app=orig.x;
     app+=sizeof(double);
     
     *(double *)app=orig.y;
     app+=sizeof(double);
+    
+    if(threeD)
+    {   *(double *)app=orig.z;
+        app+=sizeof(double);
+    }
     
     // above the crack
     *(int *)app=surfInElem[0];
@@ -528,6 +545,11 @@ void CrackSegment::FillArchive(char *app,int segNum)
     *(double *)app=surf[0].y;
     app+=sizeof(double);
     
+    if(threeD)
+    {   *(double *)app=surf[0].z;
+        app+=sizeof(double);
+    }
+    
     // below the crack
     *(int *)app=surfInElem[1];
     app+=sizeof(int);
@@ -537,6 +559,11 @@ void CrackSegment::FillArchive(char *app,int segNum)
     
     *(double *)app=surf[1].y;
     app+=sizeof(double);
+    
+    if(threeD)
+    {   *(double *)app=surf[1].z;
+        app+=sizeof(double);
+    }
     
     // J integral
     if(archiver->CrackArchive(ARCH_JIntegral))
@@ -877,7 +904,7 @@ int CrackSegment::CheckSurfaces(void)
 // vector dir*(-dyp,dxp) should point from surface to back across the crack normal to segment.
 // side = ABOVE_CRACK (1) or BELOW)_CRACK (2)
 bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool thereIsAnotherSegement,double dir)
-{	
+{
 	int j=side-1;								// index to surface position
 	double dxs=surf[j].x-cp.x,dys=surf[j].y-cp.y;		// vector crack particle to surface particle = xs-x
 	double segLength=sqrt(dxp*dxp+dyp*dyp);		// segment length
@@ -1001,15 +1028,16 @@ Vector CrackSegment::SlightlyMovedIfNotMovedYet(int side)
 	moved = surf[side-1];
 	if(cp.x!=moved.x && cp.y!=moved.y) return moved;
 	
-    // get vector normal to crack from above to below v = (dx,dy)
+    // get vector normal to crack from above to below
+	// v = (dx,dy) is segment (to next or from previous), then n = (dy,-dx)
 	double dx,dy;
 	if(nextSeg!=NULL)
-	{	dy=cp.x-nextSeg->cp.x;		// -¶x
-		dx=nextSeg->cp.y-cp.y;		// ¶y
+	{	dy=cp.x-nextSeg->cp.x;		// -dx
+		dx=nextSeg->cp.y-cp.y;		// dy
 	}
 	else
-	{	dy=prevSeg->cp.x-cp.x;		// -¶x
-		dx=cp.y-prevSeg->cp.y;		// ¶y
+	{	dy=prevSeg->cp.x-cp.x;		// -dx
+		dx=cp.y-prevSeg->cp.y;		// dy
 	}
 	
     // move in direction of this side
@@ -1042,6 +1070,4 @@ int CrackSegment::surfaceElemID(int side) const { return surfInElem[side-1]-1; }
 
 // store crack header (2D segment does not)
 void CrackSegment::SetCrackHeader(CrackHeader *theHeader) { header = theHeader; }
-
-
 

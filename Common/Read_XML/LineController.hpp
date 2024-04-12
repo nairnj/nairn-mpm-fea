@@ -37,7 +37,7 @@ class LineController : public ShapeController
 		
 		// line only methods
 		void SetTolerance(double);
-    
+
         // accessors
         virtual const char *GetShapeName();
 

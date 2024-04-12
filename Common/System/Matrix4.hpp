@@ -6,8 +6,8 @@
 	Copyright (c) 2018 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
-#ifndef _MATRIX4_
-#define _MATRIX4_
+#ifndef _JAN_MATRIX4_
+#define _JAN_MATRIX4_
 
 class Matrix4
 {

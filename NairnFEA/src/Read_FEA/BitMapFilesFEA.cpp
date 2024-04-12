@@ -79,10 +79,10 @@ void FEAReadHandler::TranslateBMPFiles(void)
 		
 		// Get range of rows and columns and their weights (or skip if not in the image)
 		if(!MapDomainToImage(info,center,orig,del,pw,bwidth,bheight,map)) continue;
-		
+
 		// find maximum level and its material ID or none (a hole)
 		int matID=-1;
-		BMPLevel *nextLevel = FindBMPLevel(firstLevel,map,rows);
+		BMPLevel *nextLevel = FindBMPLevel(firstLevel,map,rows,info.dataType);
 		if(nextLevel!=NULL) matID = nextLevel->Material();
 		
 		// set material ID if found a match
@@ -92,8 +92,9 @@ void FEAReadHandler::TranslateBMPFiles(void)
 			
 			// is there an angle image too?
 			if(setAngles)
-			{	double totalIntensity = FindAverageValue(map,angleRows);
-				if(totalIntensity>0.)
+			{	bool hasWeight = false;
+				double totalIntensity = FindAverageValue(map,angleRows,BYTE_DATA,hasWeight);
+				if(hasWeight)
 				{	double matAngle=minAngle[0]+(totalIntensity-minIntensity[0])*angleScale[0];
 					elem->SetAngleInDegrees(matAngle);
 				}

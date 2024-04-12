@@ -1,0 +1,61 @@
+-------------------------------------------------------------------
+Creating a NairnFEAMPMViz package
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+For Windows
+-------------------------------------------------------------------
+
+1. Create a folder called NairnFEAMPMViz
+2. Copy NairnFEAMPMLaunch.bat to that folder
+3. Create a "Resources" folder in the NairnFEAMPMViz folder
+4. Copy the most recent "NairnFEAMPMViz.jar file to that folder
+5. Create a "bundle" folder in the "Resources" folder
+6. In the bundle folder copy all needed binaries, libraries, and DTD files:
+     a. NairnFEA.exe and NairnMPM.exe
+     b. NairnFEA.dtd and NairnMPM.dtd
+     c. The xerces dll file
+     d. The libraries msvcp140.dll, vcomp140.dll, and vcruntime140.dll
+     e. ExtractMPM.exe
+5. Copy NairnFEAMPMViz.ico to the bundle folder
+
+The NairnFEA.exe and NairnMPM.exe binaries are results of compiling them in Visual Studio. The xerces dll can be compiled or downloaded from the internet. The remaining libraries are available in Visual Studio installs. All these dll's are permissible for distribution. You may need different versions for future version of Windows.
+
+The NairnFEAMPMViz.ico can optionally be used create a short cut with a nice icon:
+
+1. Right click on NairnFEAMPMLaunch.bat and choose to create a short cut from the menu
+2. Rename that shortcut to NairnFEAMPM
+3. Right-click on the short cut and open is Properties...
+4. Change its icon to NairnFEAMPMViz.ico
+5. Move the short cut to your desktop (or other location).
+
+-------------------------------------------------------------------
+For Mac
+-------------------------------------------------------------------
+
+1. Create a folder called NairnFEAMPMViz
+2. Copy NairnFEAMPMLaunch to that folder
+3. Create a "Resources" folder in the NairnFEAMPMViz folder
+4. Copy the most recent "NairnFEAMPMViz.jar file to that folder
+5. Create a "bundle" folder in the "Resources" folder
+6. In the bundle folder copy the binaries
+     a. NairnFEA.exe and NairnMPM.exe
+     b. NairnFEA.dtd and NairnMPM.dtd
+
+Unlike in Windows, this package is not a stand-alone package because it does not include the xerces library or the libraries needed to run c++ code. To use this package, users will need to install xerces at location /usr/local/lib on their computer. Unfortunately, the c++ libraries shipped in MacOS do not support OpenMP needed for parallel code. Thus, to use this package, uses will also need to install the clang-mp compiler that was used to compile the code engines. It includes c++ libraries as will as a library of parallel OpenMP code.
+
+It might be possible to get MacOS version with bundled liibraries, but so far I cannot figure it out. This blog could help
+
+http://nickdesaulniers.github.io/blog/2016/11/20/static-and-dynamic-libraries/
+
+but some things in that blog are not work in Terminal app. The goal is to get NairnFESA and NairnMPM to look in current folder for xerces and libomp (the c++ and System may not be needed).
+
+One way to test is to try to run in folder with the libraries on Mac that does not have them installed.
+
+To find all dynamic libraries needed for thebundle
+
+otool -L NairnMPM 
+
+To find architectures in those libraries
+
+nm xerces-c.dylib

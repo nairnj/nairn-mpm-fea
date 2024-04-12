@@ -27,6 +27,7 @@
 extern double timestep;
 
 bool RigidMaterial::someSetTemperature = false;
+bool RigidMaterial::someSetConcentration = false;
 
 #pragma mark RigidMaterial::Constructors and Destructors
 
@@ -40,7 +41,7 @@ RigidMaterial::RigidMaterial(char *matName,int matID,int sd) : MaterialBase(matN
 	function2=NULL;
 	function3=NULL;
     Vfunction=NULL;
-	rho=1.;						// volume per L^3 (per mm^3 in Legacy)
+	rho=1.;						// volume per L^3 (per mm^3 in Legacy), mp is then volume
 	mirrored=0;
 	allowsCracks=false;			// rigid material default to ignoring cracks
 	useControlVelocity = false;
@@ -51,6 +52,9 @@ RigidMaterial::RigidMaterial(char *matName,int matID,int sd) : MaterialBase(matN
 // preliminary calculations (throw CommonException on problem)
 const char *RigidMaterial::VerifyAndLoadProperties(int np)
 {
+	// reset rho to 1 in case was  set in code
+	rho = 1.;
+	
 	// is rigid multimaterial, then nothing else allowed
 	if(setDirection&RIGID_MULTIMATERIAL_MODE && (setDirection!=RIGID_MULTIMATERIAL_MODE || setTemperature || setConcentration))
 	{	return "Rigid material for contact in multimaterial mode cannot also set other velocities, temperature, or concentration.";
@@ -60,8 +64,8 @@ const char *RigidMaterial::VerifyAndLoadProperties(int np)
 	if(setDirection&RIGID_MULTIMATERIAL_MODE)
 	{	// in this mode, no boundary conditions can be applied
 		setDirection = RIGID_MULTIMATERIAL_MODE;
-		setConcentration = FALSE;
-		setTemperature = FALSE;
+		setConcentration = false;
+		setTemperature = false;
 		if(Vfunction!=NULL)
 		{   delete Vfunction;
 			Vfunction = NULL;
@@ -88,7 +92,7 @@ void RigidMaterial::PrintMechanicalProperties(void) const
 		if(function2!=NULL)
 			cout << "Velocity " << ydir << " = " << function2->GetString() << endl;
 		if(function3!=NULL)
-			cout << "Velocity z = " << function2->GetString() << endl;
+			cout << "Velocity z = " << function3->GetString() << endl;
 	}
 	else
     {   // count velocities with functions
@@ -220,12 +224,14 @@ void RigidMaterial::PrintMechanicalProperties(void) const
 			cout << "Boundary conditions set after extrapolating to the grid" << endl;
 	}
 	
-	if(setTemperature) someSetTemperature = TRUE;
-	
+	if(setTemperature) someSetTemperature = true;
+	if(setConcentration) someSetConcentration = true;
+
 	// optional color
 	if(red>=0.)
 	{	char mline[200];
-		sprintf(mline,"color= %g, %g, %g, %g",red,green,blue,alpha);
+        size_t msize=200;
+		snprintf(mline,msize,"color= %g, %g, %g, %g",red,green,blue,alpha);
 		cout << mline << endl;
 	}
 }
@@ -246,7 +252,7 @@ char *RigidMaterial::InputMaterialProperty(char *xName,int &input,double &gScali
 	
     else if(strcmp(xName,"SetConcentration")==0 || strcmp(xName,"SetPorePressure")==0)
     {	// also sets pore pressure if doing poroelasticity
-		setConcentration=TRUE;
+		setConcentration=true;
         input=NOT_NUM;
         return((char *)&setConcentration);
     }
@@ -414,7 +420,6 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
 		// here is rigid contact material and has at least one function
 
 		// set variables
-#ifdef USE_ASCII_MAP
 		double vars[6];
 		vars[0] = 5.5;
 		vars[1] = theTime*UnitsController::Scaling(1.e3);		//t
@@ -422,14 +427,6 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
 		vars[3] = pos->y;		//y
 		vars[4] = pos->z;		//z
 		vars[5] = timestep*UnitsController::Scaling(1.e3);		//dt or d
-#else
-		unordered_map<string,double> vars;
-		vars["t"] = theTime*UnitsController::Scaling(1.e3);
-		vars["x"] = pos->x;
-		vars["y"] = pos->y;
-		vars["z"] = pos->z;
-		vars["dt"] = timestep*UnitsController::Scaling(1.e3);
-#endif
 		
 		// set those controlled
 		if(function!=NULL)
@@ -441,7 +438,7 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
 			hasDir[1] = true;
 		}
 		if(function3!=NULL)
-		{	vel->z = function2->EvaluateFunction(vars);
+		{	vel->z = function3->EvaluateFunction(vars);
 			hasDir[2] = true;
 		}
 		
@@ -480,7 +477,6 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
 	}
 	
 	// set variables
-#ifdef USE_ASCII_MAP
 	double vars[6];
 	vars[0] = 5.5;
 	vars[1] = theTime*UnitsController::Scaling(1.e3);		//t
@@ -488,14 +484,6 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
 	vars[3] = pos->y;		//y
 	vars[4] = pos->z;		//z
 	vars[5] = timestep*UnitsController::Scaling(1.e3);		//dt or d
-#else
-	unordered_map<string,double> vars;
-	vars["t"] = theTime*UnitsController::Scaling(1.e3);
-	vars["x"] = pos->x;
-	vars["y"] = pos->y;
-	vars["z"] = pos->z;
-	vars["dt"] = timestep*UnitsController::Scaling(1.e3);
-#endif
 
 	// BC rigid materials - has at least one function
 	// Change velocity only if have function, otherwise leave at input particle velocity
@@ -623,11 +611,5 @@ void RigidMaterial::ClearFunctions(void)
 void RigidMaterial::SetControlVelocity(double velocity,int direction)
 {	controlVelocity = velocity;
 	controlDirection = direction;
-	useControlVelocity = true;
-}
-
-void RigidMaterial::SetControlVelocity(Vector *Velocity)
-{	ControlVelocityVector = *Velocity;
-	controlDirection = 4;
 	useControlVelocity = true;
 }

@@ -80,8 +80,7 @@ public class LimitsSelector extends PlotControl
 				if(currentLimits==FIXED_LIMITS)
 				{	// when switching to global units from fixed units, must revalidate limits
 					MoviePlotWindow movieFrame=docCtrl.getMovieFrame();
-					if(movieFrame!=null)
-						movieFrame.plotView.dataLimitsSet=false;
+					movieFrame.plotView.dataLimitsSet=false;
 				}
 				currentLimits=GLOBAL_LIMITS;
 			}
@@ -131,7 +130,8 @@ public class LimitsSelector extends PlotControl
 	public void setEnabled(int plotType,int plotComponent)
 	{
 		if(plotType==LoadArchive.MESH_PLOT || plotType==LoadArchive.PARTICLE_PLOT)
-		{	dynamicLimits.setEnabled(true);
+		{	this.setVisible(true);
+			dynamicLimits.setEnabled(true);
 			fixedLimits.setEnabled(true);
 			if(dynamicLimits.isSelected())
 			{	minText.setEnabled(false);
@@ -147,12 +147,15 @@ public class LimitsSelector extends PlotControl
 			}
 		}
 		else
-		{	dynamicLimits.setEnabled(false);
+		{	this.setVisible(false);
+			/*
+			dynamicLimits.setEnabled(false);
 			fixedLimits.setEnabled(false);
 			minText.setEnabled(false);
 			maxText.setEnabled(false);
 			minLabel.setEnabled(false);
 			maxLabel.setEnabled(false);
+			*/
 		}
 	}
 	
