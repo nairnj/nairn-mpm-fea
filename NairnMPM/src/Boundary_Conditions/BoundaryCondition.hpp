@@ -13,6 +13,11 @@
 
 #define _BOUNDARYCONDITION_
 
+#include <ostream>
+#include "Common/System/LinkedObject.hpp"
+
+using namespace std;
+
 class Expression;
 
 // BC directions (x and y are used at bit locations too)
