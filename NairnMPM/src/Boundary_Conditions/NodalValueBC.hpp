@@ -14,6 +14,7 @@
 #define _NODALVALUEBC_
 
 #include "Boundary_Conditions/BoundaryCondition.hpp"
+#include "System/DataTypes.hpp"
 
 class NodalPoint;
 

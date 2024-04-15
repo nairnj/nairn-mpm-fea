@@ -5,12 +5,14 @@
     Created by John Nairn on Thu Apr 1 2004.
     Copyright (c) 2004 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "System/UnitsController.hpp"
+
 
 // Nodal concentration BC globals
 NodalConcBC *firstConcBC=NULL;

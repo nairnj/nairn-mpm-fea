@@ -8,8 +8,10 @@
     Created by John Nairn on Sep 20, 2017.
     Copyright (c) 2017 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
+
 #include "Boundary_Conditions/NodalValueBC.hpp"
 #include "Nodes/NodalPoint.hpp"
 

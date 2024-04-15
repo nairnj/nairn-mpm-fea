@@ -5,8 +5,9 @@
     Created by John Nairn on Oct 18 2004.
     Copyright (c) 2004 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"

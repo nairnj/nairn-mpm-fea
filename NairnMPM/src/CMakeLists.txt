@@ -1,5 +1,6 @@
 
 include_directories("src")
+include_directories("..") #NARINMPM
 include_directories("../../Common")
 include_directories("../..")
 

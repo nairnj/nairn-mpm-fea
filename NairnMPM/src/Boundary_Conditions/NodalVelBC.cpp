@@ -5,8 +5,9 @@
     Created by John Nairn on Wed Jan 31 2002.
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
@@ -14,6 +15,8 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
+#include <cmath>
+#include "tools/ExtractMPM.hpp" //PI
 
 // Nodal velocity BC globals
 NodalVelBC *firstVelocityBC=NULL;

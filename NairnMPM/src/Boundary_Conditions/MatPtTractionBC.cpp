@@ -18,6 +18,8 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "System/UnitsController.hpp"
 #include "Exceptions/CommonException.hpp"
+#include <cmath>
+#include "System/MPMPrefix.hpp"
 
 // Local globals for BCs
 // xi1 starts with x12i[1] and xi2 starts with x12i[0]]
