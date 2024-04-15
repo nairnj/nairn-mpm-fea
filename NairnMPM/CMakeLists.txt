@@ -4,7 +4,9 @@ CMAKE_MINIMUM_REQUIRED (VERSION 3.0)
 PROJECT (NairnMPM C CXX)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3")
-
+add_definitions(-DMPM_CODE)
+add_definitions(-DCONST_ARRAYS)
+add_definitions(-DPOROELASTICITY)
 
 
 ADD_SUBDIRECTORY(src)

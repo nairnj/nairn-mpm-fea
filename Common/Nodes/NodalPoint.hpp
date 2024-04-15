@@ -15,6 +15,8 @@
 
 #ifdef MPM_CODE
 
+#include "System/DataTypes.hpp"
+
 class CrackSegment;
 class CrackNode;
 class TransportTask;

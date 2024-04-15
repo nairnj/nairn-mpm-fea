@@ -13,6 +13,7 @@
 
 #define _INITIALCONDITION_
 
+#include "System/DataTypes.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 
 // loading boundary conditions

@@ -13,6 +13,10 @@
 
 #define _JAN_EXPRESSION_
 
+#include "System/DataTypes.hpp"
+#include <unordered_map>
+
+using namespace std;
 #define MAX_EXPRESSIONS 12
 
 class Atomic;

@@ -15,6 +15,7 @@
 
 #include <ostream>
 #include "Common/System/LinkedObject.hpp"
+#include <cstring>
 
 using namespace std;
 

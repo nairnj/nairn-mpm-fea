@@ -39,6 +39,7 @@ class MPMBase;
 // max nodes in an element + 1
 #define MaxElFaces 4
 #define MxFree 2
+#define MaxElNd 10
 
 // neighbors
 #define UNKNOWN_NEIGHBOR -2

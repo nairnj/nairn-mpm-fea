@@ -13,6 +13,8 @@
 
 #define _COMMONANALYSIS_
 
+#include <ctime>
+
 #define NUMBER_DEVELOPMENT_FLAGS 20
 
 class CommonReadHandler;

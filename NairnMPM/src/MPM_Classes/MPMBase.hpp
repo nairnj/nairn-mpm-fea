@@ -13,6 +13,8 @@
 
 #define _MPM_BASE_
 
+#include "System/DataTypes.hpp"
+
 // If define, traction BC always integrate on deformed edge, regardless of shape function
 // being used. If not defined, uGIMP and and non-GIMP use undeformed edges
 //#define TRACTION_ALWAYS_DEFORMED

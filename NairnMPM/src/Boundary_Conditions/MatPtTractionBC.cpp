@@ -6,7 +6,9 @@
 	Copyright (c) 2012 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
-#include "stdafx.h"
+#if defined ( _MSC_VER) || defined (__APPLE__) 
+#include "stdafx.h" 
+#endif
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Elements/ElementBase.hpp"

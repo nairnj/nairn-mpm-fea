@@ -5,12 +5,14 @@
     Created by John Nairn on July 5, 2017
     Copyright (c) 2017 John A. Nairn, All rights reserved.
  ********************************************************************************/
-
+#ifdef _MSC_VER
 #include "stdafx.h"
+#endif
 #include "Boundary_Conditions/InitialCondition.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Materials/MaterialBase.hpp"
+#include <cmath>
 
 // global
 InitialCondition *firstDamagedPt=NULL;

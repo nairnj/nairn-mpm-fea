@@ -6,7 +6,10 @@
     Copyright (c) 2013 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#ifdef _MSC_VER
 #include "stdafx.h"
+#endif
+
 #include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -18,6 +21,8 @@
 #include "Exceptions/CommonException.hpp"
 #include "Read_XML/Expression.hpp"
 #include "Elements/ElementBase.hpp"
+#include "System/MPMPrefix.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
 
 // Local globals for BCs
 // c1 starts with c12i[1] and c2 starts with c12i[o]

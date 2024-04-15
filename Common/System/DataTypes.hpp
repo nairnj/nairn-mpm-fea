@@ -14,6 +14,8 @@
 
 #define _DATA_TYPES_
 
+#include <vector>
+using namespace std;
 class Matrix3;
 
 // vector 3D

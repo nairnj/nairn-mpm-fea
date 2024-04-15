@@ -9,6 +9,10 @@
 #ifndef _JAN_MATRIX3_
 #define _JAN_MATRIX3_
 
+#include <ostream>
+using namespace std;
+
+
 class Matrix3
 {
 	public:

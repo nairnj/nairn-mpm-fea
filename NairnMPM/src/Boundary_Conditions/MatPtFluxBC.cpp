@@ -5,8 +5,10 @@
     Created by John Nairn on Wed Mar 17 2004.
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
+
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -18,6 +20,9 @@
 #include "Exceptions/CommonException.hpp"
 #include "Read_XML/Expression.hpp"
 #include "Elements/ElementBase.hpp"
+#include <cmath>
+#include "System/MPMPrefix.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
 
 // Local globals for BCs
 // c1 starts with c12i[1] and c2 starts with c12i[o]

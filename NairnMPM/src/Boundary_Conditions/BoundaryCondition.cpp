@@ -8,8 +8,11 @@
 #ifdef _MSWIN_
 #include "stdafx.h"
 #endif 
+#include <cmath>
 
 #include "Boundary_Conditions/BoundaryCondition.hpp"
+
+#define MPM_CODE
 #include "Nodes/NodalPoint.hpp"
 #include "System/UnitsController.hpp"
 #include "Exceptions/CommonException.hpp"

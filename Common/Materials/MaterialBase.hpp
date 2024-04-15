@@ -10,8 +10,9 @@
 ********************************************************************************/
 
 #ifndef _MATERIAL_BASE_
-
 #define _MATERIAL_BASE_
+
+#include "System/DataTypes.hpp"
 
 // prototypes
 #ifdef MPM_CODE
