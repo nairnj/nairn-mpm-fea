@@ -5,8 +5,12 @@
     Created by John Nairn on 7/20/06.
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
+#include "System/DataTypes.hpp"
+#include "System/MPMPrefix.hpp"
+
 #include "Elements/ElementBase3D.hpp"
 #include "Nodes/NodalPoint.hpp"
 #ifdef MPM_CODE

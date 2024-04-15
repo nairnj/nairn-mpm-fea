@@ -5,8 +5,13 @@
 	Created by John Nairn on 7/20/06.
 	Copyright 2006 RSAC Software. All rights reserved.
  ******************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
+#include <cmath>
+#include "System/DataTypes.hpp"
+#include "System/MPMPrefix.hpp"
+
 #include "Elements/EightNodeIsoparamBrick.hpp"
 #include "Nodes/NodalPoint.hpp"
 #ifdef MPM_CODE

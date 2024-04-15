@@ -5,8 +5,10 @@
 	Created by John Nairn on Feb 27, 2019.
 	Copyright (c) 2019 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
+
 #include "Boundary_Conditions/NodalVelGradBC.hpp"
 #include "Read_XML/Expression.hpp"
 #include "Nodes/NodalPoint.hpp"
@@ -16,6 +18,8 @@
 #include "System/UnitsController.hpp"
 
 #pragma mark NodalVelGradBC::Constructors and Destructors
+
+#include <cmath>
 
 // MPM Constructors
 // Warning: dof must be 1,2,3 only

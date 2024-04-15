@@ -39,8 +39,9 @@ enum { SXX=0,SYY,SZZ,SXY,SXZ,SYZ,STRESS,
 
 #define PI_CONSTANT 3.141592653589793
 
+//ATTENTION: defined previopusly on CommonException.hpp
 // error codes
-enum { noErr=0, NoInputFileErr, BadOptionErr, FileAccessErr, MemoryErr };
+//enum { noErr=0, NoInputFileErr, BadOptionErr, FileAccessErr, MemoryErr };
 
 #define ARCH_ByteOrder 0
 #define ARCH_Defaults 1
