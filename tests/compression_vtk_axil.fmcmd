@@ -2,8 +2,8 @@
 <!DOCTYPE JANFEAInput SYSTEM '/Users/jnairn/Programming/Cocoa_Projects/nairn-mpm-fea/NairnMPM/input/NairnMPM.dtd'
 [
  <!-- <!ENTITY vel "-1.0*sign(1-t)"> -->
- <!ENTITY vel "-1.0">
- <!ENTITY maxtime "2000">
+ <!ENTITY vel "-2.0">
+ <!ENTITY maxtime "12000">
  <!ENTITY atime ".04">
  <!ENTITY cs "1">
  <!ENTITY xbil "80">
@@ -52,7 +52,7 @@
     <GlobalArchive type="contacty"/>
     <Damping>0</Damping>
     <MultiMaterialMode Vmin="0" Dcheck="1" Normals="0" RigidBias="10">
-      <Friction>0</Friction>
+      <Friction>0.2</Friction>
     </MultiMaterialMode>
   </MPMHeader>
   
@@ -73,12 +73,18 @@
     </Body>
   </MaterialPoints>
 
-  <Material Type="1" Name="Isotropic Material">
+  <Material Type="9" Name="Isotropic Material">
     <rho>1</rho>
     <E>2000</E>
     <nu>0.333333333</nu>
     <alpha>60</alpha>
+	<kCond> 401 </kCond>
+     <Hardening>3</Hardening>
+     <Ajc> 300.0</Ajc> 
+	 <Bjc> 150.0</Bjc>
+	 <njc> 0.3</njc>
   </Material>
+  
 
   <!-- ORIGINAL RIGID DIRECTION 8 NOT ANYMORE -->
   
@@ -97,13 +103,15 @@
       <DisBC dir="2" style="1" vel="0"/>
     </BCLine>
   </GridBCs>
-
+  
 <Schedule name='VTKArchive'>
    <Parameter name='archiveTime'>0.1</Parameter>
    <Parameter name='firstArchiveTime'>0.0</Parameter>
+   <Parameter name="displacement">1</Parameter>   
    <Parameter name='selectMaterial'>1</Parameter>
    <Parameter name="contactforce">1</Parameter>
-   <Parameter name="equivstress">1</Parameter>
+   <Parameter name="equivstress">4</Parameter>
+   <Parameter name="plasticstrain">5</Parameter>
 </Schedule>
 
  <CustomTasks>
