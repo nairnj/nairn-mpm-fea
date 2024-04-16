@@ -1,0 +1,115 @@
+<?xml version='1.0'?>
+<!DOCTYPE JANFEAInput SYSTEM '/Users/jnairn/Programming/Cocoa_Projects/nairn-mpm-fea/NairnMPM/input/NairnMPM.dtd'
+[
+ <!-- <!ENTITY vel "-1.0*sign(1-t)"> -->
+ <!ENTITY vel "-1.0">
+ <!ENTITY maxtime "2000">
+ <!ENTITY atime ".04">
+ <!ENTITY cs "1">
+ <!ENTITY xbil "80">
+ <!ENTITY ybil "120">
+ <!ENTITY rman "12">
+ <!ENTITY ymax "140">
+ <!ENTITY xmax "100">
+ <!ENTITY rigid "8">
+]>
+<JANFEAInput version="3">
+
+<!-- Unaxial compression by contact conditions in plane stress
+      vel = velocity function, first number is rate (mm/s) and first number
+             in sign is when it stops. Max strain (%) is rate*stoptime/1000.
+             max stress is 10*strain(%) (since E=1000)
+      maxtime = end time in ms (longer than stoptime to see hold perios
+      atime = archive time interval
+      cs = cell size (sample is 100 mm X 20 mm)
+      ymax = should be set to 20+cs
+      rigid = 8 to use contact mechanics or 1 to use rigid BCs
+-->
+  <Header>
+    <Description>
+	Title: Tensile Loading
+	User Name: John Nairn
+	Simple tensile loading on a bar to test different material types
+	and to test various boundary conditions
+    </Description>
+    <Analysis>13</Analysis>
+	<ConsistentUnits length='mm' mass='g' time='ms'/>
+  </Header>
+
+  <MPMHeader>
+    <MPMMethod>2</MPMMethod>
+    <GIMP/>
+    <ArchiveTime units="ms">&atime;</ArchiveTime>
+    <TimeStep units="ms">1000</TimeStep>
+    <MaxTime units="ms">&maxtime;</MaxTime>
+    <ArchiveRoot>Output/isocontact.</ArchiveRoot>
+    <MPMArchiveOrder>mYYYYNNNNNNNYNNNYY</MPMArchiveOrder>
+    <CrackArchiveOrder>mYNNN</CrackArchiveOrder>
+    <GlobalArchiveTime units="ms">&atime;</GlobalArchiveTime>
+    <GlobalArchive type="sxx" material="1"/>
+    <GlobalArchive type="exx" material="1"/>
+    <GlobalArchive type="contactx"/>
+    <GlobalArchive type="contacty"/>
+    <Damping>0</Damping>
+    <MultiMaterialMode Vmin="0" Dcheck="1" Normals="0" RigidBias="10">
+      <Friction>0</Friction>
+    </MultiMaterialMode>
+  </MPMHeader>
+  
+
+  <Mesh output="file">
+    <Grid xmin="0" xmax="&xmax;" ymin="-4" ymax="&ymax;">
+      <Horiz cellsize="&cs;"/>
+      <Vert cellsize="&cs;"/>
+    </Grid>
+  </Mesh>
+
+  <MaterialPoints>
+    <Body mat="1" angle="0" thick="5" vx="0" vy="0">
+      <Rect xmin="&rman;" xmax="&xbil;" ymin="0" ymax="&ybil;"/>
+    </Body>
+    <Body mat="2" thick="5" vx="0" vy="0">
+      <Rect xmin="-1.0" xmax="&xbil;" ymin="&ybil;" ymax="&ymax;"/>
+    </Body>
+  </MaterialPoints>
+
+  <Material Type="1" Name="Isotropic Material">
+    <rho>1</rho>
+    <E>2000</E>
+    <nu>0.333333333</nu>
+    <alpha>60</alpha>
+  </Material>
+
+  <!-- ORIGINAL RIGID DIRECTION 8 NOT ANYMORE -->
+  
+  <!-- <Material Type="11" Name="Loading Clamp"> -->
+    <!-- <SetDirection>&rigid;</SetDirection> -->
+    <!-- <SettingFunction>&vel;</SettingFunction> -->
+  <!-- </Material> -->
+
+  <Material Type="11" Name="Loading Clamp">
+    <SetDirection>2</SetDirection>
+    <SettingFunction>&vel;</SettingFunction>
+  </Material>
+
+  <GridBCs>
+    <BCLine x1="min-" y1="0" x2="max+" y2="0" tolerance="*1">
+      <DisBC dir="2" style="1" vel="0"/>
+    </BCLine>
+  </GridBCs>
+
+<Schedule name='VTKArchive'>
+   <Parameter name='archiveTime'>0.1</Parameter>
+   <Parameter name='firstArchiveTime'>0.0</Parameter>
+   <Parameter name='selectMaterial'>1</Parameter>
+   <Parameter name="contactforce">1</Parameter>
+   <Parameter name="equivstress">1</Parameter>
+</Schedule>
+
+ <CustomTasks>
+    <Schedule name='HistoryArchive'>
+      <Parameter name='1'/>
+    </Schedule>
+  </CustomTasks>
+  
+</JANFEAInput>
