@@ -94,6 +94,8 @@ char *AnisoPlasticity::InputMaterialProperty(char *xName,int &input,double &gSca
 }
 
 // verify settings and some initial calculations
+// NOTE: This code duplicated in OrthoPlasticSoftening. Keep them in sync
+
 const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
 {
 #ifdef POROELASTICITY

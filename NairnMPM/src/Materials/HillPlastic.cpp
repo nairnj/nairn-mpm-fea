@@ -61,6 +61,8 @@ char *HillPlastic::InputMaterialProperty(char *xName,int &input,double &gScaling
 }
 
 // verify settings and some initial calculations
+// NOTE: This code duplicated in OrthoPlasticSoftening. Keep them in sync
+
 const char *HillPlastic::VerifyAndLoadProperties(int np)
 {
     if(hardStyle==AP_UNKNOWN)

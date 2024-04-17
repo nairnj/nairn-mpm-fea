@@ -15,7 +15,7 @@
 <!-- Headers -->
 
 <!ELEMENT	Header
-			( Description | Analysis | DevelFlag | ConsistentUnits )+>
+			( Description | Analysis | DevelFlag | ConsistentUnits | RandSeed )+>
 
 <!ELEMENT	MPMHeader
 			( MatlPtsPerElement | Cracks | MPMMethod | Timing | ArchiveGroup | ArchiveRoot | MPMArchiveOrder
@@ -227,7 +227,8 @@
 				| alphaPE | alphaAPE | alphaTPE | alphaxPE | alphayPE | alphazPE | alphaRPE | alphaZPE | Darcy | DarcyA | DarcyT | Darcyx
 				| Darcyy | Darcyz | DarcyR | DarcyZ | Ku | viscosityPE | Eactivation | maxTemp | PeakShape | PeakArg
 				| time0 | nm | Ajwl | Bjwl | Cjwl | R1 | R2 | Omega | Dv | StartX | StartY | StartZ | NormX | NormY | NormZ
-				| Dw | DeleteDist | GT0 | GA0 | KT0 | en0 | ell0 | Pk | mref | Cm1 | Cm2 | tauMS | Cms1 | Cms2
+				| Dw | DeleteDist | GT0 | GA0 | KT0 | en0 | ell0 | Pk | mref | Cm1 | Cm2 | kMS | amuMS
+                | bTemp | bTValue | bConc | bCValue
 				| I-k | II-k | AI-k | TII-k | AII-k | XX-k | YY-k | ZZ-k | XYX-k | XYY-k | XZX-k | XZZ-k | YZY-k | YZZ-k
 				| I-alpha | II-alpha | AI-alpha | TII-alpha | AII-alpha | XX-alpha | YY-alpha | ZZ-alpha | XYX-alpha
 				| XYY-alpha | XZX-alpha | XZZ-alpha | YZY-alpha | YZZ-alpha
@@ -330,6 +331,7 @@
 
 <!ELEMENT	Description (#PCDATA)>
 <!ELEMENT	Analysis (#PCDATA)>
+<!ELEMENT	RandSeed (#PCDATA)>
 <!ELEMENT	DevelFlag (#PCDATA)>
 <!ATTLIST	DevelFlag
 			Number CDATA #IMPLIED>
@@ -644,9 +646,12 @@
 <!ELEMENT   Cm1 (#PCDATA)>
 <!ELEMENT   Cm2 (#PCDATA)>
 <!ELEMENT   mref (#PCDATA)>
-<!ELEMENT   tauMS (#PCDATA)>
-<!ELEMENT   Cms1 (#PCDATA)>
-<!ELEMENT   Cms2 (#PCDATA)>
+<!ELEMENT   kMS (#PCDATA)>
+<!ELEMENT   amuMS (#PCDATA)>
+<!ELEMENT   bTemp (#PCDATA)>
+<!ELEMENT   bTValue (#PCDATA)>
+<!ELEMENT   bConc (#PCDATA)>
+<!ELEMENT   bCValue (#PCDATA)>
 <!ELEMENT   GT0 (#PCDATA)>
 <!ELEMENT   GA0 (#PCDATA)>
 <!ELEMENT   KT0 (#PCDATA)>

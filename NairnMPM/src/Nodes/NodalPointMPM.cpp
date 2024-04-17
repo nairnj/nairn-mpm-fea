@@ -698,9 +698,8 @@ void NodalPoint::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real
 }
 
 // add to vStarNext
-void NodalPoint::AddVStarNext(short vfldi,int matfld,Vector *vStarPrevj,Vector *delXiMpPtr,Vector *delXjPtr,
-							  Matrix3 *Dpinv,double weight,double weightContact)
-{	cvf[vfldi]->AddVStarNext(matfld,vStarPrevj,delXiMpPtr,delXjPtr,Dpinv,weight,weightContact);
+void NodalPoint::AddVStarNext(short vfldi,int matfld,Vector *vStarPrevj,double weight,double weightContact)
+{	cvf[vfldi]->AddVStarNext(matfld,vStarPrevj,weight,weightContact);
 }
 
 // get real node vStarPrev point

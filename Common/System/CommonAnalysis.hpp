@@ -23,6 +23,7 @@ class CommonAnalysis
 		int np;									// analysis method
 		int nfree;								// degrees of freedom (here 2D)
 		int dflag[NUMBER_DEVELOPMENT_FLAGS];	// flags that can be set for use in development
+		int randseed;							// random seend if > 0
 	
         //  Constructors and Destructor
         CommonAnalysis();

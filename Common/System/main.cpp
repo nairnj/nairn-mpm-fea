@@ -29,7 +29,7 @@ int main(int argc,const char *argv[])
 	bool abort=FALSE;
 	bool useWorkingDir=FALSE;
     int numProcs=1;
-	
+
 	// ---------------------------------------------
     // 1. Create main analysis object
 #ifdef MPM_CODE
@@ -38,9 +38,6 @@ int main(int argc,const char *argv[])
 	fmobj=new NairnFEA();
 #endif
 	
-	// Initialize things for random numbers
-	InitRandom(0);
-    
 	// ---------------------------------------------
     // 2. Check command line and extract arguments.
     if(argc<2)
@@ -121,6 +118,12 @@ int main(int argc,const char *argv[])
     // 3. Read the input file, exceptions handled in ReadFile()
 	retval=fmobj->ReadFile(argv[parmInd],useWorkingDir);
     if(retval!=noErr) return retval;
+	
+	// Initialize things for random numbers
+	if(fmobj->randseed>0)
+		InitRandom((unsigned int)fmobj->randseed);
+	else
+		InitRandom(0);
 	
 	// ------------------------------------------------------------
     // 4. Main analysis block

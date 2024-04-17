@@ -60,8 +60,6 @@ ifeq ($(SYSTEM),mac)
     xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
 
-$(info *** Compiling for system <$(SYSTEM)> using xercesSo <$(xercesSo)>)
-
 # 2. Path to xerces headers (if not at default /usr/local/include)
 headersPath= /usr/local/include
 ifeq ($(SYSTEM),carbon)
@@ -73,8 +71,6 @@ endif
 ifeq ($(SYSTEM),zia)
 	headersPath = /usr/include/xercesc
 endif
-
-$(info *** Path to xerces headers is <$(headersPath)>)
 
 # 3. Define compiler to use and other commands
 #     CC is path to the c++ compiler, must support OpenMP
@@ -110,8 +106,6 @@ endif
 RM= rm
 CP= cp
 
-$(info *** Comiler is <$(CC)> and linker is <$(CCLINK)>)
-
 # 4. Compiler options -c=compile only is required, others are optional
 #     CFLAGS are flags passed to compile each source file. If must contain -c and
 #	  can add any other needed options. Some flags found useful in this project are
@@ -144,8 +138,6 @@ endif
 ifeq ($(SYSTEM),carbon)
     LFLAGS = -fopenmp -Wl,-rpath=/usr/lib64 -L/usr/lib64
 endif
-
-$(info *** Linking with flags <$(LFLAGS)>)
 
 # 5. Define executable destination
 #     output = relative or full path to save executable or to find it for a subsequent make install
@@ -303,6 +295,9 @@ NodesController = $(com)/Read_XML/NodesController
 NonlinearHardening = $(src)/Materials/NonlinearHardening
 Nonlinear2Hardening = $(src)/Materials/Nonlinear2Hardening
 NonlinearInterface = $(src)/Materials/NonlinearInterface
+OrthoFailureSurface = $(src)/Materials/OrthoFailureSurface
+OrthoPlasticSoftening = $(src)/Materials/OrthoPlasticSoftening
+OrthoSoftening = $(src)/Materials/OrthoSoftening
 Orthotropic = $(com)/Materials/Orthotropic
 OvalController = $(com)/Read_XML/OvalController
 ParseController = $(com)/Read_XML/ParseController
@@ -339,10 +334,12 @@ StrX = $(com)/Exceptions/StrX
 svninfo = $(com)/System/svninfo
 TaitLiquid = $(src)/Materials/TaitLiquid
 ThermalRamp = $(src)/Global_Quantities/ThermalRamp
+TIFailureSurface = $(src)/Materials/TIFailureSurface
 TIViscoelastic = $(src)/Materials/TIViscoelastic
 TorusController = $(src)/Read_MPM/TorusController
 TrackError = $(src)/Custom_Tasks/TrackError
 TractionLaw = $(src)/Materials/TractionLaw
+TransIsoSoftening = $(src)/Materials/TransIsoSoftening
 TransIsotropic = $(com)/Materials/TransIsotropic
 TransportTask = $(src)/Custom_Tasks/TransportTask
 TrilinearTraction = $(src)/Materials/TrilinearTraction
@@ -460,6 +457,9 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # NonlinearHardening.hpp: HardeningLawBase.hpp, MaterialBase.hpp
 # Nonlinear2Hardening.hpp: NonlinearHardening.hpp, HardeningLawBase.hpp, MaterialBase.hpp
 # NonlinearInterface.hpp : LinearInterface.hpp, ContactLaw.hpp, MaterialBase.hpp
+# OrthoFailureSurface.hpp : TIFailureSurface.hpp (FailureSurface.hpp)
+# OrthoPlasticSoftening.hpp : OrthoSoftening.hpp (TransIsoSoftening.hpp TransIsotropic.hpp Elastic.hpp MaterialBase.hpp)
+# OrthoSoftening.hpp : TransIsoSoftening.hpp (TransIsotropic.hpp Elastic.hpp MaterialBase.hpp)
 # Orthotropic.hpp : TransIsotropic.hpp (Elastic.hpp MaterialBase.hpp)
 # OvalController.hpp : ShapeController.hpp
 # PeriodicXPIC.hpp : CustomTask.hpp
@@ -485,9 +485,11 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # SmoothStep3.hpp : SofteningLaw.hpp
 # SphereController.hpp : ShapeController.hpp
 # TaitLiquid.hpp : HyperElastic.hpp (MaterialBase.hpp)
+# TIFailureSurface.hpp : FailureSurface.hpp
 # TIViscoelastic.hpp : TransIsotropic.hpp (Elastic.hpp MaterialBase.hpp)
 # TorusController.hpp : ShapeController.hpp
 # TractionLaw.hpp : MaterialBase.hpp
+# TransIsoSoftening.hpp : TransIsotropic.hpp (Elastic.hpp MaterialBase.hpp)
 # TransIsotropic.hpp : Elastic.hpp (MaterialBase.hpp)
 # TrilinearTraction : MaterialBase.hpp TractionLaw.hpp CohesiveZone.hpp ExponentialTraction.hpp
 # UpdateMomentaTask.hpp : MPMTask.hpp (CommonTask.hpp)
@@ -571,11 +573,16 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		SmoothStep3.o SofteningLaw.o XPICExtrapolationTask.o MixedModeTraction.o ExponentialTraction.o FluidSource.o \
 		XPICExtrapolationTaskTO.o IsoPlasticSoftening.o MachineLearning.o DeleteDamaged.o DbleExpSoftening.o \
 		LoadControl.o TrackError.o AreaOfInterest.o IsoPhaseFieldSoftening.o IsoDamageMech.o PhaseFieldDiffusion.o \
-		TIViscoelastic.o
+        OrthoFailureSurface.o TransIsoSoftening.o OrthoSoftening.o OrthoPlasticSoftening.o \
+        TIFailureSurface.o TIViscoelastic.o
 
 # -------------------------------------------------------------------------
 # Link all objects
 NairnMPM : $(objects)
+	$(info *** Compiled using <$(CC)> with flags <$(CFLAGS)>)
+	$(info *** ... for system <$(SYSTEM)> using xercesSo <$(xercesSo)>)
+	$(info *** ... with xerces headers at <$(headersPath)>)
+	$(info *** Linking with <$(CCLINK)> with flags <$(LFLAGS)>)
 	$(CCLINK) $(LFLAGS) -o $(output) $(objects) $(xercesSo)
 
 # -------------------------------------------------------------------------
@@ -660,7 +667,8 @@ MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialControlle
 		$(HEIsotropic).hpp $(HEMGEOSMaterial).hpp $(Neohookean).hpp $(ClampedNeohookean).hpp $(ContactLaw).hpp \
 		$(CoulombFriction).hpp $(LinearInterface).hpp $(NonlinearInterface).hpp $(LiquidContact).hpp $(AdhesionFriction).hpp \
 		$(IsoSoftening).hpp $(MixedModeTraction).hpp $(ExponentialTraction).hpp $(IsoPlasticSoftening).hpp \
-		$(IsoPhaseFieldSoftening).hpp $(IsoDamageMech).hpp
+        $(IsoPhaseFieldSoftening).hpp $(IsoDamageMech).hpp $(TransIsoSoftening).hpp $(OrthoSoftening).hpp \
+        $(OrthoPlasticSoftening).hpp $(TIViscoelastic).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
 
 Atomic.o : $(Atomic).cpp $(Atomic).hpp  $(Expression).hpp
@@ -972,7 +980,8 @@ MaterialBaseMPM.o : $(MaterialBaseMPM).cpp $(dprefix) $(MaterialBase).hpp $(Nair
 			$(CrackSurfaceContact).hpp $(HardeningLawBase).hpp $(LinearHardening).hpp $(DDBHardening).hpp $(NodalPoint).hpp \
 			$(NonlinearHardening).hpp $(JohnsonCook).hpp $(SCGLHardening).hpp $(SLMaterial).hpp $(Nonlinear2Hardening).hpp \
 			$(ContactLaw).hpp $(BodyForce).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(DbleExpSoftening).hpp \
-			$(ExponentialSoftening).hpp $(LinearSoftening).hpp $(SofteningLaw).hpp $(SmoothStep3).hpp $(FailureSurface).hpp
+			$(ExponentialSoftening).hpp $(LinearSoftening).hpp $(SofteningLaw).hpp $(SmoothStep3).hpp $(FailureSurface).hpp \
+			$(TIFailureSurface).hpp $(OrthoFailureSurface).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialBaseMPM).cpp
 ElasticMPM.o : $(ElasticMPM).cpp $(dprefix) $(Elastic).hpp $(MaterialBase).hpp $(ThermalRamp).hpp \
 			$(MPMBase).hpp $(MeshInfo).hpp $(ElementBase).hpp $(NairnMPM).hpp $(SofteningLaw).hpp \
@@ -1040,6 +1049,26 @@ IsoPlasticSoftening.o : $(IsoPlasticSoftening).cpp $(dprefix) $(IsoPlasticSoften
 			$(Elastic).hpp $(MPMBase).hpp $(DiffusionTask).hpp $(TransportTask).hpp $(CommonException).hpp \
 			$(FailureSurface).hpp $(SofteningLaw).hpp $(LinearSoftening).hpp $(MaterialBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(IsoPlasticSoftening).cpp
+TIFailureSurface.o : $(TIFailureSurface).cpp $(dprefix) $(TIFailureSurface).hpp $(FailureSurface).hpp $(MaterialBase).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TIFailureSurface).cpp
+OrthoFailureSurface.o : $(OrthoFailureSurface).cpp $(dprefix) $(OrthoFailureSurface).hpp $(TIFailureSurface).hpp $(FailureSurface).hpp \
+            $(MaterialBase).hpp $(CommonException).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(OrthoFailureSurface).cpp
+TransIsoSoftening.o : $(TransIsoSoftening).cpp $(dprefix) $(TransIsoSoftening).hpp $(TransIsotropic).hpp $(MaterialBase).hpp $(Elastic).hpp \
+            $(MPMBase).hpp $(ConductionTask).hpp $(DiffusionTask).hpp $(TransportTask).hpp $(CommonException).hpp \
+            $(TIFailureSurface).hpp $(FailureSurface).hpp $(SofteningLaw).hpp $(LinearSoftening).hpp \
+            $(ArchiveData).hpp $(CommonArchiveData).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TransIsoSoftening).cpp
+OrthoSoftening.o : $(OrthoSoftening).cpp $(dprefix) $(OrthoSoftening).hpp $(TransIsoSoftening).hpp $(TransIsotropic).hpp $(MaterialBase).hpp \
+            $(Elastic).hpp $(MPMBase).hpp $(ConductionTask).hpp $(DiffusionTask).hpp $(TransportTask).hpp $(CommonException).hpp \
+            $(OrthoFailureSurface).hpp $(TIFailureSurface).hpp $(FailureSurface).hpp $(SofteningLaw).hpp $(LinearSoftening).hpp \
+            $(ArchiveData).hpp $(CommonArchiveData).hpp $(MPMWarnings).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(OrthoSoftening).cpp
+OrthoPlasticSoftening.o : $(OrthoPlasticSoftening).cpp $(dprefix) $(OrthoPlasticSoftening).hpp $(OrthoSoftening).hpp \
+        $(TransIsoSoftening).hpp $(TransIsotropic).hpp $(MaterialBase).hpp $(Elastic).hpp $(MPMBase).hpp $(MPMWarnings).hpp \
+        $(AnisoPlasticity).hpp  $(CommonException).hpp $(DiffusionTask).hpp $(Orthotropic).hpp \
+        $(OrthoFailureSurface).hpp $(TIFailureSurface).hpp $(FailureSurface).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(OrthoPlasticSoftening).cpp
 IsoPhaseFieldSoftening.o : $(IsoPhaseFieldSoftening).cpp $(dprefix) $(IsoPhaseFieldSoftening).hpp $(IsotropicMat).hpp $(Elastic).hpp \
 			$(MaterialBase).hpp $(MPMBase).hpp $(ThermalRamp).hpp $(PhaseFieldDiffusion).hpp $(DiffusionTask).hpp $(TransportTask).hpp \
 			$(CustomTask).hpp $(IsotropicMat).hpp $(Elastic).hpp $(MaterialBase).hpp \

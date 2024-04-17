@@ -1096,7 +1096,7 @@ void ArchiveData::ArchiveResults(double atime,bool lastStep)
 				app+=sizeof(double);
 			}
 			else
-        	{	*(double *)app=mpm[p]->GetAnglez0InDegrees();
+            {   *(double *)app=mpm[p]->GetAnglez0InDegrees();
 				app+=sizeof(double);
 			}
 		}
@@ -1120,8 +1120,7 @@ void ArchiveData::ArchiveResults(double atime,bool lastStep)
 			}
 		}
 
-		// Particle spin momentum (Legacy Units J-sec)
-		// zero unless tracking particle spin
+		// Particle angular momentum (Legacy Units J-sec)
 		if(mpmOrder[ARCH_SpinMomentum]=='Y')
 		{	Vector Lp = mpm[p]->GetParticleAngMomentum();
 			double Lscale = UnitsController::Scaling(1.e-9);
@@ -1139,13 +1138,13 @@ void ArchiveData::ArchiveResults(double atime,bool lastStep)
 			}
 		}
 		
-		// Particle spin velocity (Legacy units 1/sec)
-		// zero unless using affine MPM methods
+		// Particle angular velocity (for ccw rotation)
+		// Gets from spatial velocity gradient extrapolated from grid velocities
 		if(mpmOrder[ARCH_SpinVelocity]=='Y')
 		{	// angular spatial velocity gradient
-			Matrix3 spatialGradVp = mpm[p]->GetParticleGradVp(true);
-			
-			// Extract angular velocity for antisymmetric spon
+            Matrix3 spatialGradVp = mpm[p]->GetParticleGradVp(true,false);
+ 			
+			// Extract antisymmetic deformation gradient
 			Vector wp = MakeVector(0.5*(spatialGradVp(2,1)-spatialGradVp(1,2)),
 								   0.5*(spatialGradVp(0,2)-spatialGradVp(2,0)),
 								   0.5*(spatialGradVp(1,0)-spatialGradVp(0,1)));

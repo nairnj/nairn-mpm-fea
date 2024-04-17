@@ -331,7 +331,6 @@ double TaitLiquid::GetTwoEtaOverRho(double shearRate) const
 	return twoetaspRate;
 }
 
-
 // This method has several options:
 //	1. Solve x(1+k*eta(x*gmaxdot)) - 1 = 0 on interval 0 < x < 1 and return eta(g(dot))
 //		Note: x = g(dot)/gmaxdot

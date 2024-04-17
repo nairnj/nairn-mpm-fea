@@ -65,12 +65,9 @@ void XPICExtrapolationTaskTO::InitializeXPICData(GridPatch *patchPtr,int xpicOpt
 	}
 }
 
-// need gradients in XPIC double loop
-bool XPICExtrapolationTaskTO::XPICDoubleLoopNeedsGradients(void) { return false; }
-
 // Double XPIC loop for transport tasks
-void XPICExtrapolationTaskTO::XPICDoubleLoop(MPMBase *mpmptr,int matfld,int *nds,double *fn,int pn,double scale,
-											 double scaleContact,double *xDeriv,double *yDeriv,double *zDeriv)
+void XPICExtrapolationTaskTO::XPICDoubleLoop(MPMBase *mpmptr,int matfld,int *nds,double *fn,
+											 int pn,double scale,double scaleContact)
 {
 	// number of nodes
 	int numnds = nds[0];

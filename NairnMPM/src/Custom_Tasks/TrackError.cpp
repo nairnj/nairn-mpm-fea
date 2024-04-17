@@ -131,12 +131,12 @@ CustomTask *TrackError::Initialize(void)
 		switch(lp_norm_p[i])
 		{	case 0:
 				if(Cumulative[i]==0)
-				{	cout << "sqrt[Sum_p ("<<error_expr[i]->GetString()<<")^2/Np]";
-					afile << "sqrt[Sum_p ("<<error_expr[i]->GetString()<<")^2/Np]";
+				{	cout << "sqrt[(1/Np) Sum_p ("<<error_expr[i]->GetString()<<")^2]";
+					afile << "sqrt[(1/Np) Sum_p ("<<error_expr[i]->GetString()<<")^2]";
 				}
 				else
-				{	cout << "(1/Ns) Sum_s {sqrt[Sum_p ("<<error_expr[i]->GetString()<<")^2/Np]}";
-					afile << "(1/Ns) Sum_s {sqrt[Sum_p ("<<error_expr[i]->GetString()<<")^2/Np]}";
+				{	cout << "(1/Ns) Sum_s {sqrt[(1/Np) Sum_p ("<<error_expr[i]->GetString()<<")^2]}";
+					afile << "(1/Ns) Sum_s {sqrt[(1/Np) Sum_p ("<<error_expr[i]->GetString()<<")^2]}";
 				}
 				break;
 			case 1:
@@ -181,7 +181,7 @@ CustomTask *TrackError::Initialize(void)
 
 // See if need to write to file
 // If not writting to file, then only need to do cummulative calculations
-CustomTask *TrackError::PrepareForStep(bool &)
+CustomTask *TrackError::PrepareForStep(bool &doNodalExtraps)
 {
 	if (customArchiveTime >= 0.)
 	{
@@ -250,7 +250,7 @@ CustomTask * TrackError::StepCalculation(void)
 		// Evaluate each error
 		for(int i=0;i<numExprs;i++)
 		{	double exprVal = error_expr[i]->EvaluateFunction(vars);
-			switch(lp_norm_p[i])
+            switch(lp_norm_p[i])
 			{	case 1:
 					error[i] += exprVal;
 					break;
@@ -318,8 +318,8 @@ CustomTask * TrackError::StepCalculation(void)
 	if (!afile.is_open())
 		archiver->FileError("Cannot open a Error archive file", fname, "TrackError::StepCalculation");
 	
-	// Write a row of results
-	afile << mtime * UnitsController::Scaling(1.e3);
+	// Write a row of results (results at end of time step archive ith advanced time)
+	afile << (mtime+timestep) * UnitsController::Scaling(1.e3);
 	for(int i=0;i<numExprs;i++)
 		afile << "\t" << total_error[i];
 	afile << endl;

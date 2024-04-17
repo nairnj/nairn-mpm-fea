@@ -1959,6 +1959,13 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 			
         case SOFTI_LAW_SELECTION:
 		case SOFTII_LAW_SELECTION:
+		case SOFTAI_LAW_SELECTION:
+		case SOFTAII_LAW_SELECTION:
+		case SOFTTII_LAW_SELECTION:
+		case SOFTZZ_LAW_SELECTION:
+		case SOFTXZX_LAW_SELECTION:
+		case SOFTXZZ_LAW_SELECTION:
+		case SOFTYZZ_LAW_SELECTION:
             ((MaterialBase *)inputPtr)->SetSofteningLaw(xData,input);
             break;
 			

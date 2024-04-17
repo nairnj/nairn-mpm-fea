@@ -907,7 +907,7 @@ Spline2D *FreeSpline(vector<double> sx,vector<double> sy)
 }
 
 // To test splines
-// Call this in many and exit if returns true (it always does)
+// Call this in main and exit if returns true (it always does)
 // Will also need to include Spline2D.hpp in main
 bool SplineTesting(void)
 {

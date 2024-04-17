@@ -86,7 +86,7 @@ class CrackVelocityField
 
 		// XPIC methods
 		virtual void XPICSupport(int,int,NodalPoint *,double,int,int,double) = 0;
-		virtual void AddVStarNext(int,Vector *,Vector *,Vector *,Matrix3 *,double,double);
+		virtual void AddVStarNext(int,Vector *,double,double);
 		virtual Vector *GetVStarPrev(int) const;
 		virtual double GetMaterialMass(int) const;
 	

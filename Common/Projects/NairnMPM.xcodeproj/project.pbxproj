@@ -9,6 +9,16 @@
 /* Begin PBXBuildFile section */
 		520EA247201BD0D100A75921 /* PeriodicXPIC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 520EA245201BD0D100A75921 /* PeriodicXPIC.cpp */; };
 		520EA248201BD0D100A75921 /* PeriodicXPIC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 520EA246201BD0D100A75921 /* PeriodicXPIC.hpp */; };
+		52210FFF2BCF2FE300364E15 /* OrthoSoftening.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52210FF52BCF2FE300364E15 /* OrthoSoftening.hpp */; };
+		522110002BCF2FE300364E15 /* OrthoPlasticSoftening.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52210FF62BCF2FE300364E15 /* OrthoPlasticSoftening.hpp */; };
+		522110012BCF2FE300364E15 /* OrthoFailureSurface.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52210FF72BCF2FE300364E15 /* OrthoFailureSurface.hpp */; };
+		522110022BCF2FE300364E15 /* OrthoSoftening.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52210FF82BCF2FE300364E15 /* OrthoSoftening.cpp */; };
+		522110032BCF2FE300364E15 /* TIFailureSurface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52210FF92BCF2FE300364E15 /* TIFailureSurface.cpp */; };
+		522110042BCF2FE300364E15 /* TIFailureSurface.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52210FFA2BCF2FE300364E15 /* TIFailureSurface.hpp */; };
+		522110052BCF2FE300364E15 /* TransIsoSoftening.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 52210FFB2BCF2FE300364E15 /* TransIsoSoftening.hpp */; };
+		522110062BCF2FE300364E15 /* TransIsoSoftening.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52210FFC2BCF2FE300364E15 /* TransIsoSoftening.cpp */; };
+		522110072BCF2FE300364E15 /* OrthoPlasticSoftening.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52210FFD2BCF2FE300364E15 /* OrthoPlasticSoftening.cpp */; };
+		522110082BCF2FE300364E15 /* OrthoFailureSurface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52210FFE2BCF2FE300364E15 /* OrthoFailureSurface.cpp */; };
 		523685CD1FE9C9B400861D29 /* CSTriangle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523685CB1FE9C9B400861D29 /* CSTriangle.cpp */; };
 		523685CE1FE9C9B400861D29 /* CSTriangle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 523685CC1FE9C9B400861D29 /* CSTriangle.hpp */; };
 		523685CF1FE9C9EA00861D29 /* CSTriangle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523685CB1FE9C9B400861D29 /* CSTriangle.cpp */; };
@@ -526,6 +536,16 @@
 		08FB7796FE84155DC02AAC07 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; tabWidth = 4; };
 		520EA245201BD0D100A75921 /* PeriodicXPIC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PeriodicXPIC.cpp; sourceTree = "<group>"; };
 		520EA246201BD0D100A75921 /* PeriodicXPIC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PeriodicXPIC.hpp; sourceTree = "<group>"; };
+		52210FF52BCF2FE300364E15 /* OrthoSoftening.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = OrthoSoftening.hpp; path = Materials/OrthoSoftening.hpp; sourceTree = "<group>"; };
+		52210FF62BCF2FE300364E15 /* OrthoPlasticSoftening.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = OrthoPlasticSoftening.hpp; path = Materials/OrthoPlasticSoftening.hpp; sourceTree = "<group>"; };
+		52210FF72BCF2FE300364E15 /* OrthoFailureSurface.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = OrthoFailureSurface.hpp; path = Materials/OrthoFailureSurface.hpp; sourceTree = "<group>"; };
+		52210FF82BCF2FE300364E15 /* OrthoSoftening.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OrthoSoftening.cpp; path = Materials/OrthoSoftening.cpp; sourceTree = "<group>"; };
+		52210FF92BCF2FE300364E15 /* TIFailureSurface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TIFailureSurface.cpp; path = Materials/TIFailureSurface.cpp; sourceTree = "<group>"; };
+		52210FFA2BCF2FE300364E15 /* TIFailureSurface.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = TIFailureSurface.hpp; path = Materials/TIFailureSurface.hpp; sourceTree = "<group>"; };
+		52210FFB2BCF2FE300364E15 /* TransIsoSoftening.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = TransIsoSoftening.hpp; path = Materials/TransIsoSoftening.hpp; sourceTree = "<group>"; };
+		52210FFC2BCF2FE300364E15 /* TransIsoSoftening.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TransIsoSoftening.cpp; path = Materials/TransIsoSoftening.cpp; sourceTree = "<group>"; };
+		52210FFD2BCF2FE300364E15 /* OrthoPlasticSoftening.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OrthoPlasticSoftening.cpp; path = Materials/OrthoPlasticSoftening.cpp; sourceTree = "<group>"; };
+		52210FFE2BCF2FE300364E15 /* OrthoFailureSurface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OrthoFailureSurface.cpp; path = Materials/OrthoFailureSurface.cpp; sourceTree = "<group>"; };
 		523685CB1FE9C9B400861D29 /* CSTriangle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CSTriangle.cpp; sourceTree = "<group>"; };
 		523685CC1FE9C9B400861D29 /* CSTriangle.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CSTriangle.hpp; sourceTree = "<group>"; };
 		524FCF491F8C3560009F583B /* IsoPlasticSoftening.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IsoPlasticSoftening.cpp; path = Materials/IsoPlasticSoftening.cpp; sourceTree = "<group>"; };
@@ -1152,8 +1172,18 @@
 				678148A41E10A3850081F65B /* ExponentialSoftening.cpp */,
 				674664831F5DBF2400F188A7 /* SmoothStep3.hpp */,
 				674664821F5DBF2400F188A7 /* SmoothStep3.cpp */,
-				52884F5B298AFAD900C821FC /* DbleExpSoftening.cpp */,
 				52884F5A298AFAD900C821FC /* DbleExpSoftening.hpp */,
+				52884F5B298AFAD900C821FC /* DbleExpSoftening.cpp */,
+				52210FFA2BCF2FE300364E15 /* TIFailureSurface.hpp */,
+				52210FF92BCF2FE300364E15 /* TIFailureSurface.cpp */,
+				52210FF72BCF2FE300364E15 /* OrthoFailureSurface.hpp */,
+				52210FFE2BCF2FE300364E15 /* OrthoFailureSurface.cpp */,
+				52210FFB2BCF2FE300364E15 /* TransIsoSoftening.hpp */,
+				52210FFC2BCF2FE300364E15 /* TransIsoSoftening.cpp */,
+				52210FF52BCF2FE300364E15 /* OrthoSoftening.hpp */,
+				52210FF82BCF2FE300364E15 /* OrthoSoftening.cpp */,
+				52210FF62BCF2FE300364E15 /* OrthoPlasticSoftening.hpp */,
+				52210FFD2BCF2FE300364E15 /* OrthoPlasticSoftening.cpp */,
 			);
 			name = Softening;
 			path = ..;
@@ -1875,6 +1905,7 @@
 				A767E04308B14CAA004540AB /* CrackController.hpp in Headers */,
 				A767E04508B14CAA004540AB /* ElementsController.hpp in Headers */,
 				A767E04708B14CAA004540AB /* LineController.hpp in Headers */,
+				522110012BCF2FE300364E15 /* OrthoFailureSurface.hpp in Headers */,
 				A767E04908B14CAA004540AB /* MaterialController.hpp in Headers */,
 				A767E04B08B14CAA004540AB /* MpsController.hpp in Headers */,
 				A767E04D08B14CAA004540AB /* NodesController.hpp in Headers */,
@@ -1917,6 +1948,7 @@
 				A712FAB20E54ED8500AF8D78 /* JohnsonCook.hpp in Headers */,
 				A750ED3E0EE9C10E003545A3 /* VTKArchive.hpp in Headers */,
 				A708FDD40F326C1A003FA82B /* SLMaterial.hpp in Headers */,
+				522110052BCF2FE300364E15 /* TransIsoSoftening.hpp in Headers */,
 				A700094B0F86B75E00FD76C7 /* MatVelocityField.hpp in Headers */,
 				A75FFB801033577F0048082E /* CrackVelocityField.hpp in Headers */,
 				A7721178103F13EA002F99FC /* CrackVelocityFieldMulti.hpp in Headers */,
@@ -1955,6 +1987,7 @@
 				A778E0CA16A8D4F1003D27FE /* NonlinearHardening.hpp in Headers */,
 				523685CE1FE9C9B400861D29 /* CSTriangle.hpp in Headers */,
 				520EA248201BD0D100A75921 /* PeriodicXPIC.hpp in Headers */,
+				522110002BCF2FE300364E15 /* OrthoPlasticSoftening.hpp in Headers */,
 				A778E0CE16A8D7C0003D27FE /* LinearHardening.hpp in Headers */,
 				A778E0D816AA078B003D27FE /* SCGLHardening.hpp in Headers */,
 				52884F4E298AE8AB00C821FC /* AreaOfInterest.hpp in Headers */,
@@ -1964,6 +1997,7 @@
 				67FFAA0C16D31E95003A7C53 /* HEMGEOSMaterial.hpp in Headers */,
 				A7B45CF81715D36E003FDED6 /* GridPatch.hpp in Headers */,
 				678C04531F0D0EE0008E3A14 /* InitialCondition.hpp in Headers */,
+				52210FFF2BCF2FE300364E15 /* OrthoSoftening.hpp in Headers */,
 				67083428171717FB007AD581 /* GhostNode.hpp in Headers */,
 				A79D0A301744268600321C74 /* TorusController.hpp in Headers */,
 				A7D62D2A175582E0008FA00A /* MatPtHeatFluxBC.hpp in Headers */,
@@ -1973,6 +2007,7 @@
 				67FB2A0118901EB200417546 /* ShellController.hpp in Headers */,
 				6753B83218CD3302005310B7 /* Neohookean.hpp in Headers */,
 				6727B3CD19E04F66006D93EC /* CrossedCrack.hpp in Headers */,
+				522110042BCF2FE300364E15 /* TIFailureSurface.hpp in Headers */,
 				6740614A1A0A86290004451F /* GridArchive.hpp in Headers */,
 				A70366141A8157CC006BBD80 /* ClampedNeohookean.hpp in Headers */,
 				676D76971AAAB30000A9AB57 /* InitVelocityFieldsTask.hpp in Headers */,
@@ -2243,6 +2278,7 @@
 				A766704D05862EB600F56460 /* ArchiveData.cpp in Sources */,
 				A766704E05862EB600F56460 /* CommonException.cpp in Sources */,
 				A766704F05862EB600F56460 /* CrackHeader.cpp in Sources */,
+				522110072BCF2FE300364E15 /* OrthoPlasticSoftening.cpp in Sources */,
 				A766705005862EB600F56460 /* CrackSegment.cpp in Sources */,
 				67BA944B2101A0AC000492B1 /* SetCustomTasks.cpp in Sources */,
 				A766705105862EB600F56460 /* Generators.cpp in Sources */,
@@ -2277,6 +2313,7 @@
 				A74E8C290729C8A00065FC30 /* MoreMPMElementBase.cpp in Sources */,
 				A7D1E5830749581A00BC2956 /* RigidMaterial.cpp in Sources */,
 				A71AC1590767529600B944AD /* BitMapFiles.cpp in Sources */,
+				522110032BCF2FE300364E15 /* TIFailureSurface.cpp in Sources */,
 				A71AC1D90767605F00B944AD /* BMPLevel.cpp in Sources */,
 				A747207A07BBC6A800456B14 /* MPMWarnings.cpp in Sources */,
 				A7313F9A07CF77F90074510B /* CrackNode.cpp in Sources */,
@@ -2296,6 +2333,7 @@
 				A7C77A3209869EA6001BE128 /* CommonArchiveData.cpp in Sources */,
 				A79E3D320A1A80BF00378F5C /* MeshInfo.cpp in Sources */,
 				52F81DAF2B0BC8850086B029 /* PhaseFieldDiffusion.cpp in Sources */,
+				522110022BCF2FE300364E15 /* OrthoSoftening.cpp in Sources */,
 				A7E037250A6D4639006B5A4E /* TransportTask.cpp in Sources */,
 				A777F7200A704DBA00446CB5 /* EightNodeIsoparamBrick.cpp in Sources */,
 				52884F55298AEADF00C821FC /* Reservoir.cpp in Sources */,
@@ -2361,11 +2399,13 @@
 				6700560C163AFC6B00FFE145 /* HistoryArchive.cpp in Sources */,
 				67C3E42E16482C7500AD5339 /* MatPointAS.cpp in Sources */,
 				67C733C016741ED100698D4F /* Matrix3.cpp in Sources */,
+				522110082BCF2FE300364E15 /* OrthoFailureSurface.cpp in Sources */,
 				A778E0C816A8CBB1003D27FE /* HardeningLawBase.cpp in Sources */,
 				A778E0CC16A8D514003D27FE /* NonlinearHardening.cpp in Sources */,
 				52F81DB42B0BC9480086B029 /* TIViscoelastic.cpp in Sources */,
 				A778E0D016A8D7D9003D27FE /* LinearHardening.cpp in Sources */,
 				A778E0DA16AA07A2003D27FE /* SCGLHardening.cpp in Sources */,
+				522110062BCF2FE300364E15 /* TransIsoSoftening.cpp in Sources */,
 				67B916D416AE15E600632385 /* HEIsotropic.cpp in Sources */,
 				6715DFD116C567350042F15C /* Nonlinear2Hardening.cpp in Sources */,
 				5292DD54293837890020A870 /* Gauss.cpp in Sources */,
@@ -2543,7 +2583,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD)";
-				CC = "/opt/local/bin/clang-mp-11";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
@@ -2565,10 +2604,13 @@
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				OTHER_CFLAGS = "-fopenmp";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				OTHER_CFLAGS = (
+					"-Xclang",
+					"-fopenmp",
+				);
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
-				OTHER_LDFLAGS = "-fopenmp";
+				OTHER_LDFLAGS = "-lomp";
 				PRODUCT_NAME = NairnMPM;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = "";
@@ -2603,10 +2645,13 @@
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				LINK_WITH_STANDARD_LIBRARIES = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				OTHER_CFLAGS = "-fopenmp";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				OTHER_CFLAGS = (
+					"-Xclang",
+					"-fopenmp",
+				);
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
-				OTHER_LDFLAGS = "-fopenmp";
+				OTHER_LDFLAGS = "-lomp";
 				PRODUCT_NAME = NairnFEA;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = "";
@@ -2620,10 +2665,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD)";
-				CC = "/opt/local/bin/clang-mp-11";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
@@ -2654,7 +2697,6 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				LDPLUSPLUS = "/opt/local/bin/clang++-mp-11";
 				LIBRARY_SEARCH_PATHS = "";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				ONLY_ACTIVE_ARCH = YES;

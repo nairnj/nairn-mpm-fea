@@ -60,8 +60,6 @@ ifeq ($(SYSTEM),mac)
     xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
 
-$(info *** Compiling for system <$(SYSTEM)> using xercesSo <$(xercesSo)>)
-
 # 2. Path to xerces headers (if not at default /usr/local/include)
 headersPath= /usr/local/include
 ifeq ($(SYSTEM),carbon)
@@ -73,8 +71,6 @@ endif
 ifeq ($(SYSTEM),zia)
 	headersPath = /usr/include/xercesc
 endif
-
-$(info *** Path to xerces headers is <$(headersPath)>)
 
 # 3. Define compiler to use and other commands
 #     CC is path to the c++ compiler, must support OpenMP
@@ -110,8 +106,6 @@ endif
 RM= rm
 CP= cp
 
-$(info *** Comiler is <$(CC)> and linker is <$(CCLINK)>)
-
 # 4. Compiler options -c=compile only is required, others are optional
 #     CFLAGS are flags passed to compile each source file. If must contain -c and
 #	  can add any other needed options. Some flags found useful in this project are
@@ -144,8 +138,6 @@ endif
 ifeq ($(SYSTEM),carbon)
     LFLAGS = -fopenmp -Wl,-rpath=/usr/lib64 -L/usr/lib64
 endif
-
-$(info *** Linking with flags <$(LFLAGS)>)
 
 # 5. Define executable destination
 #     output = relative or full path to save executable or to find it for a subsequent make install
@@ -231,6 +223,7 @@ QuadInterface = $(src)/Elements/QuadInterface
 RectController = $(com)/Read_XML/RectController
 ShapeController = $(com)/Read_XML/ShapeController
 SixNodeTriangle = $(src)/Elements/SixNodeTriangle
+Spline2D = $(com)/System/Spline2D
 StrX = $(com)/Exceptions/StrX
 svninfo = $(com)/System/svninfo
 TransIsotropic = $(com)/Materials/TransIsotropic
@@ -307,7 +300,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		EdgeBCController.o NodalDispBCController.o NodalLoadController.o MaterialBaseFEA.o \
 		ImperfectInterface.o MoreElementBase.o Quad2D.o EightNodeIsoparam.o SixNodeTriangle.o \
 		CSTriangle.o Interface2D.o LinearInterface.o QuadInterface.o MoreNodalPoint.o \
-		NodalDispBC.o NodalLoad.o EdgeBC.o Gauss.o Elastic.o Constraint.o ConstraintController.o \
+		NodalDispBC.o NodalLoad.o EdgeBC.o Gauss.o Spline2D.o Elastic.o Constraint.o ConstraintController.o \
 		FEABoundaryCondition.o ShapeController.o PointController.o PathBCController.o \
 		RectController.o ArcController.o BitMapFilesCommon.o \
 		OvalController.o BMPLevel.o BitMapFilesFEA.o Lagrange2D.o MatRegionFEA.o \
@@ -316,6 +309,10 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 # -------------------------------------------------------------------------
 # Link all objects
 NairnFEA : $(objects)
+	$(info *** Compiled using <$(CC)> with flags <$(CFLAGS)>)
+	$(info *** ... for system <$(SYSTEM)> using xercesSo <$(xercesSo)>)
+	$(info *** ... with xerces headers at <$(headersPath)>)
+	$(info *** Linking with <$(CCLINK)> with flags <$(LFLAGS)>)
 	$(CCLINK) $(LFLAGS) -o $(output) $(objects) $(xercesSo)
 
 # -------------------------------------------------------------------------
@@ -340,6 +337,8 @@ UnitsController.o : $(UnitsController).cpp $(UnitsController).hpp $(CommonReadHa
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UnitsController).cpp
 Gauss.o : $(Gauss).cpp $(dprefix)
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Gauss).cpp
+Spline2D.o : $(Spline2D).cpp $(dprefix)
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Spline2D).cpp
 
 # Common: Read_XML
 CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp \

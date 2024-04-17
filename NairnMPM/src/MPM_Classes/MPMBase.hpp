@@ -70,6 +70,7 @@ class MPMBase : public LinkedObject
         virtual void SetPosition(Vector *) = 0;
         virtual void SetVelocity(Vector *) = 0;
 		virtual void UpdateStrain(double,int,int,void *,int,bool) = 0;
+        virtual Matrix3 ExtraVelocityGradient(void) = 0;
 		virtual void GetFintPlusFext(Vector *,double,double,double,double) = 0;
 		virtual void MoveParticle(GridToParticleExtrap *) = 0;
 		virtual void MovePosition(double) = 0;
@@ -212,11 +213,9 @@ class MPMBase : public LinkedObject
 		virtual void GetExactTractionInfo(int,int,int *,Vector *,Vector *,int *) const;
         void SetNum(int zeroBasedNumber);
         int GetNum(void) const;
-    
-        // These always defined, but a reserved for a future feature
-		Matrix3 GetParticleGradVp(bool);
+		Matrix3 GetParticleGradVp(bool,bool);
 		Vector GetParticleAngMomentum(void);
-	
+ 
 		bool AllocateFiniteGIMPStructures(bool);
 		virtual void GetFiniteGIMP_Integrals(void);
 		FiniteGIMPInfo *GetFiniteGIMPInfo(void);

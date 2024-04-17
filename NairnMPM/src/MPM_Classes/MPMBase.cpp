@@ -253,24 +253,79 @@ FiniteGIMPInfo *MPMBase::GetFiniteGIMPInfo(void) { return (FiniteGIMPInfo *)cpdi
 
 #pragma mark SPIN MOMENTUM FEATURES
 
-// Get spatial velocity gradient on the particles
-// For future version that might track velocity gradients on particles
-Matrix3 MPMBase::GetParticleGradVp(bool spatial)
+// Get velocity gradient on the particles by extrapolating from velocity on the grid
+//      with option to be spatial gradient
+// Time step zero will get zero because no grid velocity yet
+Matrix3 MPMBase::GetParticleGradVp(bool spatial,bool allowTracked)
 {
 	// this creates zerod matrix in contructor
 	Matrix3 spatialGradVp;
-	
+
+    // extrapolate from grid velocity, but time zero has no velocity or CPDI info yet
+    if(fmobj->mstep>0)
+    {   // extraplolate from grid velocities
+        spatialGradVp = ExtraVelocityGradient();
+        
+        if(!spatial)
+        {   // convert to (dF/dt) = (spatial grad Vp)*F
+            Matrix3 F = GetDeformationGradientMatrix();
+            spatialGradVp *= F;
+        }
+    }
+    
 	// return the matrix
 	return spatialGradVp;
 }
 
-// Get angular momentum on the particles
-#ifndef OSPARTICULAS
-// For future version that might track velocity gradients on particles
-#endif
+// Get angular momentum on this particle
 Vector MPMBase::GetParticleAngMomentum(void)
 {
-	Vector partLp = MakeVector(0.,0.,0.);
+    // get spatial velocity gradient
+    Matrix3 Vgrad = GetParticleGradVp(true,false);
+    
+    // get polygon vectors - these are from particle to edge
+    //      and generalize semi width lp in 1D GIMP
+    Vector r1,r2,r3;
+    Vector *r3ptr = fmobj->IsThreeD() ? &r3 : NULL ;
+    GetSemiSideVectors(&r1,&r2,r3ptr);
+
+    // Get Rotation tensor = (1/3) F I0 F^T where I0 = diag(dx^2,dy^2,dz^2)
+    // Here expanded in full (and it is symmetric)
+    Matrix3 Irot;
+    
+    if(fmobj->IsThreeD())
+    {   Irot.set(0,0,r1.x*r1.x+r2.x*r2.x+r3.x*r3.x);
+        double cross = r1.x*r1.y+r2.x*r2.y+r3.x*r3.y;
+        Irot.set(0,1,cross);
+        Irot.set(1,0,cross);
+        cross = r1.x*r1.z+r2.x*r2.z+r3.x*r3.z;
+        Irot.set(0,2,cross);
+        Irot.set(2,0,cross);
+        Irot.set(1,1,r1.y*r1.y+r2.y*r2.y+r3.y*r3.y);
+        cross = r1.y*r1.z+r2.y*r2.z+r3.y*r3.z;
+        Irot.set(1,2,cross);
+        Irot.set(2,1,cross);
+        Irot.set(2,2,r1.z*r1.z+r2.z*r2.z+r3.z*r3.z);
+   }
+    else
+    {   Irot.set(0,0,r1.x*r1.x+r2.x*r2.x);
+        double cross = r1.x*r1.y+r2.x*r2.y;
+        Irot.set(0,1,cross);
+        Irot.set(1,0,cross);
+        Irot.set(0,0,r1.y*r1.y+r2.y*r2.y);
+    }
+    
+    // get Vg.Irot
+    Vgrad *= Irot;
+    Matrix3 VgradT = Vgrad.Transpose();
+	
+	// get -2(Vg.Irot)^{anti) = 2(Irot.Vg^T)^{anti}
+    VgradT -= Vgrad;
+
+	// Get Lp from matrix elements and scale by mp/3 for final result
+    Vector partLp = MakeVector(VgradT(1,2),-VgradT(0,2),VgradT(0,1));
+    ScaleVector(&partLp,mp/3.);
+    
 	return partLp;
 }
 

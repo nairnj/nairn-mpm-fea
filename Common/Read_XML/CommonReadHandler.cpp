@@ -74,7 +74,16 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
     	input=ANALYSIS_NUM;
     }
 	
-	// begin a material
+	// developed flag
+	else if(strcmp(xName,"RandSeed")==0)
+	{	if(block!=HEADER)
+			throw SAXException("<RandSeed> must be within the <Header> element.");
+		input=INT_NUM;
+		CommonAnalysis *obj = GetCommonAnalysis();
+		inputPtr=(char *)&obj->randseed;
+	}
+
+	// developed flag
     else if(strcmp(xName,"DevelFlag")==0)
     {	if(block!=HEADER)
 			throw SAXException("<DevelFlag> must be within the <Header> element.");

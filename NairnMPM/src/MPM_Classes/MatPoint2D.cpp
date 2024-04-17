@@ -36,33 +36,10 @@ MatPoint2D::MatPoint2D(int inElemNum,int theMatl,double angin,double thickin) : 
 // postUpdate true means called after updating particle position
 void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld,bool postUpdate)
 {
-#ifdef CONST_ARRAYS
-	int ndsArray[MAX_SHAPE_NODES];
-	double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
-#else
-	int ndsArray[maxShapeNodes];
-	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
-#endif
-	Vector vel;
-    Matrix3 dv;
-	Tensor *gStressPtr=NULL;
-
-	// don't need to zero zDeriv for 2D planar because never used in this function
-    // Note that both plane strain and plain stress will get dv(2,2)=0. In plane stress,
-    //    constitutive law should calculate ezz strain.
+    // get velocity gradient
+    Matrix3 dv = ExtraVelocityGradient();
     
-	// find shape functions and derviatives
-	const ElementBase *elemRef = theElements[ElemID()];
-	int *nds = ndsArray;
-	elemRef->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,this);
-	int numnds = nds[0];
-
-    // Find strain rates at particle from current grid velocities
-	//   and using the velocity field for that particle and each node and the right material
-    for(int i=1;i<=numnds;i++)
-	{	vel = nd[nds[i]]->GetVelocity((short)vfld[i],matFld);
-        dv += Matrix3(vel.x*xDeriv[i],vel.x*yDeriv[i],vel.y*xDeriv[i],vel.y*yDeriv[i],0.);
-    }
+    Tensor *gStressPtr=NULL;
 
     // save velocity gradient (if needed for J integral calculation)
     SetVelocityGradient(dv(0,0),dv(1,1),dv(0,1),dv(1,0),secondPass);
@@ -74,6 +51,41 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	ResidualStrains res = ScaledResidualStrains(secondPass);
 	PerformConstitutiveLaw(dv,strainTime,np,props,&res,gStressPtr);
 }
+
+// Extrapolation spatial velocity gradient from current grid
+// velocties and gradient shape functions
+Matrix3 MatPoint2D::ExtraVelocityGradient(void)
+{
+#ifdef CONST_ARRAYS
+    double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
+    int ndsArray[MAX_SHAPE_NODES];
+#else
+    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+    int ndsArray[maxShapeNodes];
+#endif
+    Vector vel;
+    Matrix3 dv;
+
+    // find shape functions and derviatives
+    const ElementBase *elemRef = theElements[ElemID()];
+    int *nds = ndsArray;
+    elemRef->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,this);
+    int numnds = nds[0];
+
+    // get the material
+    const MaterialBase *matRef = theMaterials[MatID()];
+    int matfld = matRef->GetField();
+    
+    // Find strain rates at particle from current grid velocities
+    //   and using the velocity field for that particle and each node and the right material
+    for(int i=1;i<=numnds;i++)
+    {   vel = nd[nds[i]]->GetVelocity((short)vfld[i],matfld);
+        dv += Matrix3(vel.x*xDeriv[i],vel.x*yDeriv[i],vel.y*xDeriv[i],vel.y*yDeriv[i],0.);
+    }
+
+    return dv;
+}
+
 
 // Pass on to material class
 void MatPoint2D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void *props,ResidualStrains *res,Tensor *gStress)
@@ -88,20 +100,15 @@ void MatPoint2D::MoveParticle(GridToParticleExtrap *gp)
 {
 	// get vm = S(v-a dt) for FLIP and Sv^+ FMPM (and PIC)
 	Vector vm;
-	if(gp->m>0)
-	{	// FMPM damps with Sk^+(k)
-		vm.x = gp->Svtilde.x;
-		vm.y = gp->Svtilde.y;
-	}
-	else if(gp->m>-2)
-	{	// FLIP and XPIC(1) damps with Sv (which is initial lumped velocity)
-		vm.x = gp->Svtilde.x - gp->Sacc.x*timestep;
-		vm.y = gp->Svtilde.y - gp->Sacc.y*timestep;
-	}
+    if(gp->m==0)
+    {    // FLIP damps with Sv (which is initial lumped velocity)
+        vm.x = gp->Svk.x - gp->Sacc.x*timestep;
+        vm.y = gp->Svk.y - gp->Sacc.y*timestep;
+    }
 	else
-	{	// XPIC(k>1) damps by initial lumped velocity, and Svtilde holds Sv(k)
-		vm.x = gp->Svlumped.x - gp->Sacc.x*timestep;
-		vm.y = gp->Svlumped.y - gp->Sacc.y*timestep;
+	{	// FMPM damps with Sv^+(k) and XPIC with S(v(k)+a*dt)
+		vm.x = gp->Svk.x;
+		vm.y = gp->Svk.y;
 	}
 
 	// find Adamp0
@@ -126,11 +133,13 @@ void MatPoint2D::MoveParticle(GridToParticleExtrap *gp)
 		delV.x = vel.x - delXRate.x;
 		delV.y = vel.y - delXRate.y;
 
-		// del X = 0.5*(V(n+1)+V(n))
+        // 2*del X = (V(n+1)+V(n))
         delXRate.x += vel.x;
         delXRate.y += vel.y;
-		pos.x += 0.5*delXRate.x*timestep;
-		pos.y += 0.5*delXRate.y*timestep;
+        
+        // dX = 0.5*(V(n+1)+V(n))*dt
+        pos.x += 0.5*delXRate.x*timestep;
+        pos.y += 0.5*delXRate.y*timestep;
 	}
 	else if(gp->m==0)
 	{	// FLIP update velcity change
@@ -157,9 +166,9 @@ void MatPoint2D::MoveParticle(GridToParticleExtrap *gp)
 		delXRate.y = vel.y;
 		
 		// XPIC(k) velocity update
-		// For XPIC(1) Svtilde has Sv+, for XPIC(k>1) Svtilde has S(v(k)+a*dt)
-		vel.x = gp->Svtilde.x - Adamp0.x*timestep;
-		vel.y = gp->Svtilde.y - Adamp0.y*timestep;
+		// For XPIC(1) Svk has Sv+, for XPIC(k>1) Svk has S(v(k)+a*dt)
+		vel.x = gp->Svk.x - Adamp0.x*timestep;
+		vel.y = gp->Svk.y - Adamp0.y*timestep;
 		
 		// find change in velocity
 		delV.x = vel.x - delXRate.x;

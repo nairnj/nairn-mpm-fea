@@ -33,6 +33,8 @@
 #include "Materials/DbleExpSoftening.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "Materials/FailureSurface.hpp"
+#include "Materials/TIFailureSurface.hpp"
+#include "Materials/OrthoFailureSurface.hpp"
 #include <vector>
 
 // global
@@ -1908,12 +1910,24 @@ void MaterialBase::SetInitiationLaw(char *lawName)
 	FailureSurface *iLaw = NULL;
 	int lawID = 0;
 	
-	// check initiation loaw options
+	// check initiation law options
 	if(strcmp(lawName,"MaxPrincipal")==0 || strcmp(lawName,"1")==0 || strcmp(lawName,"IsoFailure")==0 || strcmp(lawName,"MaxPrinciple")==0)
 	{   iLaw = new FailureSurface(this);
 		lawID = MAXPRINCIPALSTRESS;
 	}
 
+	// transversly isotopic
+	else if(strcmp(lawName,"TIFailure")==0 || strcmp(lawName,"2")==0)
+	{   iLaw = (FailureSurface *)new TIFailureSurface(this);
+		lawID = TIFAILURESURFACE;
+	}
+	
+	// orthotropic
+	else if(strcmp(lawName,"OrthoFailure")==0 || strcmp(lawName,"3")==0)
+	{   iLaw = (FailureSurface *)new OrthoFailureSurface(this);
+		lawID = ORTHOFAILURESURFACE;
+	}
+	
 	// was it found
 	if(iLaw==NULL)
 	{	ThrowSAXException("The damage initiation law '%s' is not valid",lawName);

@@ -63,6 +63,8 @@ bool UpdateParticlesTask::Execute(int taskOption)
 	double gridAlpha = bodyFrc.GetGridDamping(mtime);
 	
 	// Calculate velocities on the grid
+	// For FLIP, FMPM(1), and XPIC(1) v_i will be v_i^{L+}
+	// For FMPM(k>1) and XPIC(k>1) v(i) will be v(k) = m_k^{-1}p^+
 	int m = bodyFrc.GetXPICOrder();
 	if(m>1)
 	{	// FLIP(k>1) or XPIC(k>1) always has XPICMechanicsTask
@@ -79,6 +81,7 @@ bool UpdateParticlesTask::Execute(int taskOption)
 	}
 
 	// change sign of m if not FMPM
+	// m>0 is FMPM(m) while m<0 will be XPIC(-m) (m=0 is FLIP)
 	if(!bodyFrc.UsingFMPM()) m = -m;
 	
 	// get grid transport values
@@ -116,15 +119,13 @@ bool UpdateParticlesTask::Execute(int taskOption)
 			gp.gridAlpha = gridAlpha;
 			gp.particleAlpha = matRef->GetMaterialDamping(particleAlpha);
 
-			// extrapolate nodal velocity from grid to particle S v+(k)
-			ZeroVector(&gp.Svtilde);
+			// extrapolate nodal velocity from grid to particle Sv
+            // Sv+(lumped) FLIP/PIC, Sv+(k) FMPM, S(v(k)+a*dt) XPIC
+			ZeroVector(&gp.Svk);
 			
 			if(m<=0)
 			{	// acceleration on the particle or S a (for FLIP and XPIC)
 				ZeroVector(&gp.Sacc);
-				
-				// XPIC(k>1) needs separate velocity extrapolation
-				if(m<-1) ZeroVector(&gp.Svlumped);
 			}
 						
 			// zero for each transport tasks

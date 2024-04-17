@@ -22,7 +22,7 @@ class MPMBase;
 #define ARCH_ByteOrder 0
 #define ARCH_Defaults 1
 
-// Archiving options for material points
+// Archiving options for material points (add 1 for byte number if documentation)
 enum { ARCH_Velocity=2,ARCH_Stress,ARCH_Strain,ARCH_PlasticStrain,
             ARCH_OldOrigPosition,ARCH_WorkEnergy,ARCH_DeltaTemp,ARCH_PlasticEnergy,
             ARCH_ver2Empty, ARCH_ShearComponents, ARCH_StrainEnergy,

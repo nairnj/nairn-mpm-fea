@@ -19,9 +19,15 @@
 #include "Exceptions/CommonException.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 
+// When uncommented, the constitutive law recalculates stress on each time step
+// When commented out, the constitutive law use incremental stress updates
+// WARNING: if commented out calculations can not do vertical shifting to implement
+//          temperature and moisture dependent properties
+#define TOTAL_STRESS_CALC_TI
+
 #pragma mark TIViscoelastic::Constructors and Destructors
 
-// Thie method should call parent class and then fill in any new initiatizations
+// This method should call parent class and then fill in any new initiatizations
 // Constructor
 TIViscoelastic::TIViscoelastic(char *matName,int matID) : TransIsotropic(matName,matID)
 {
@@ -54,11 +60,6 @@ TIViscoelastic::TIViscoelastic(char *matName,int matID) : TransIsotropic(matName
     Cm1base10 = 10.;
     Cm2base10 = 0.025/0.04;
 
-#ifdef OSPARTICULAS
-	tauMS = -1.;
-	Cms = 0.;
-#endif
-
 	// Visual Studio wants these initiatlized
 	GAe = 0.;
 	KTe = 0.;
@@ -70,6 +71,12 @@ TIViscoelastic::TIViscoelastic(char *matName,int matID) : TransIsotropic(matName
 	currentPk = 0;
 	currentTauk = 0;
 	numHistory = 0;
+    
+    // vertical shifting (total stress only)
+    bTemp.clear();
+    bTValue.clear();
+    bConc.clear();
+    bCValue.clear();
 }
 
 #pragma mark TIViscoelastic::Initialization
@@ -183,19 +190,30 @@ char *TIViscoelastic::InputMaterialProperty(char *xName,int &input,double &gScal
     {   input=DOUBLE_NUM;
         return((char *)&Cm2base10);
     }
-
-#ifdef OSPARTICULAS
-    else if(strcmp(xName,"tauMS")==0)
-    {   input=DOUBLE_NUM;
-        return((char *)&tauMS);
+    
+    else if(strcmp(xName,"bTemp")==0)
+    {   bTemp.push_back(0.);
+        input=DOUBLE_NUM;
+        return (char *)&bTemp[(int)bTemp.size()-1];
     }
-
-    else if(strcmp(xName,"Cms")==0)
-    {   input=DOUBLE_NUM;
-        return((char *)&Cms);
+    
+    else if(strcmp(xName,"bConc")==0)
+    {   bConc.push_back(0.);
+        input=DOUBLE_NUM;
+        return (char *)&bTemp[(int)bConc.size()-1];
     }
-        
-#endif
+    
+    else if(strcmp(xName,"bTValue")==0)
+    {   bTValue.push_back(0.);
+        input=DOUBLE_NUM;
+        return (char *)&bTValue[(int)bTemp.size()-1];
+    }
+    
+    else if(strcmp(xName,"bCValue")==0)
+    {   bCValue.push_back(0.);
+        input=DOUBLE_NUM;
+        return (char *)&bCValue[(int)bTemp.size()-1];
+    }
     
     return TransIsotropic::InputMaterialProperty(xName,input,gScaling);
 }
@@ -382,7 +400,7 @@ const char *TIViscoelastic::VerifyAndLoadProperties(int np)
     if(nuA<-nulim || nuA>nulim)
         return "Evaluated value of nuA out of valid range";
     if(ET*nuA*nuA/EA>0.5*(1.-nuT))
-        return "Incompatibale values of nuA and nuT";
+        return "Incompatible values of nuA and nuT";
 
     // convert to analysis units
     aT *= 1.e-6;
@@ -397,8 +415,10 @@ const char *TIViscoelastic::VerifyAndLoadProperties(int np)
     kCondA /= rho;
     kCondT /= rho;
     
-    // count the history variables
-    numHistory = ntauKT + ntaun + 2*ntauell;
+    // always 2 KT (xx and yy or xx and zz), 1 n (yy or zz), 3 ell (xx, yy, zz)
+    numHistory = 2*ntauKT + ntaun + 3*ntauell;
+    
+    // number of shear depends on analysis mode
     if(fmobj->IsThreeD())
     {   // 3 GT (xx, yy, xy) and 2 GA (xz,yz) where z is always axial direction
         numHistory += 3*ntauGT + 2*ntauGA;
@@ -411,32 +431,40 @@ const char *TIViscoelastic::VerifyAndLoadProperties(int np)
     {   // 2D axial in y direction (2 GT (xx, zz) and 1 GA (xy) ) where y is axial direction
         numHistory += 2*ntauGT + ntauGA;
     }
-    // 2 KT (xx and yy or xx and zz), 1 n (yy or zz), 3 ell (xx, yy, zz)
-    numHistory += 2*ntauKT + ntaun + 3*ntauell;
 
     // WLF coefficients convert to ln aT
     C1 = log(10.)*C1base10;
 
-    // Moisture terms - convert to use ln am = - Cm1*(c-cref)/(Cm2+c) where c = m/mref
+    // Moisture terms input as log ac = -Cm1base(m-mref)/(Cm2base+m-mref)
+    // ... convert to use ln ac = - Cm1*(c-cref)/(Cm2+c) where c = m/csat and cref=mref/csat
+    // ... Cm1 = Cm1base*ln(10) and Cm2 = (Cm2base-mref)/csat
+    // log ac =
     Cm1 = log(10.)*Cm1base10;
-    Cm2 = Cm2base10/concSaturation;
+    Cm2 = (Cm2base10-mref)/concSaturation;
     mref /= concSaturation;
     if(mref>=0. && Cm2<=0.)
-        return "Cm2 must be greater than zero";
+        return "Cm2 must be greater than mref";
 	if(mref>1.)
 		return "mref must less than or equal to csat";
 
-#ifdef OSPARTICULAS
-	tauMS *= concSaturation;
-	Cms *= concSaturation;
-	if(mref>0.)
-	{	if(Cms>=1./mref)
-			return "Cms must be less than 1/mref";
-	}
-	if(mref<1.)
-	{	if(Cms<=-1./(1.-mref))
-			return "Cms must be greater than -1/(csat-mref)";
-	}
+#ifdef TOTAL_STRESS_CALC
+    // vertical shifting temperature same number and sorted
+    if(bTemp.size()!=bTValue.size())
+        return "Vertical shifting for temperature must have same number of temperature and values";
+    for(int i=1;i<bTemp.size();i++)
+    {   if(bTemp[i]<=bTemp[i-1])
+            return "Vertical shifting temperature points must monotonically increase";
+    }
+
+    // vertical shifting temperature same number and sorted (and scaled to csat)
+    if(bConc.size()!=bCValue.size())
+        return "Vertical shifting for concentration must have same number of concentrations and values";
+    if(bConc.size()>0) bConc[0] /= concSaturation;
+    for(int i=1;i<bConc.size();i++)
+    {   bConc[i] /= concSaturation;
+        if(bConc[i]<=bConc[i-1])
+            return "Vertical shifting concentration points must monotonically increase";
+    }
 #endif
 
     // superclass call (fills transport property matrices
@@ -473,6 +501,12 @@ void TIViscoelastic::PrintMechanicalProperties(void) const
     PrintPronySeries("n",n0,ntaun,nk,taunk);
     PrintPronySeries("ell",ell0,ntauell,ellk,tauellk);
 
+#ifdef TOTAL_STRESS_CALC_TI
+    cout << "Total stress method" << endl;
+#else
+    cout << "Incremental stress method" << endl;
+#endif
+    
     // WLF properties
     if(Tref>=0.)
     {   PrintProperty("Tref",Tref,"K");
@@ -491,15 +525,32 @@ void TIViscoelastic::PrintMechanicalProperties(void) const
         PrintProperty("Cm1",Cm1base10,"");
         PrintProperty("Cm2",Cm2base10,"");
         cout << endl;
-#ifdef OSPARTICULAS
-        PrintProperty("tauMS",tauMS/concSaturation,UnitsController::Label(TIME_UNITS));
-        PrintProperty("Cms",tauMS/concSaturation,"1/conc");
-        cout << endl;
-#endif
     }
     else if(Tref>=0.)
         cout << "Isosolvent viscoelasticity" << endl;
 
+#ifdef TOTAL_STRESS_CALC
+    if(bTemp.size()==0 || Tref<0)
+        cout << "No vertical shifting for temperature";
+    else
+    {   cout << "Vertical themal shifting:" << endl;
+        for(int i=0;i<bTemp.size();i++)
+        {   PrintProperty("  T",bTemp[i],"K");
+            PrintProperty("  bT",bTValue[i],"");
+        }
+        cout << endl;
+    }
+    if(bTemp.size()==0 || mref<0 || diffusion==NULL)
+        cout << "No vertical shifting for concentration";
+    else
+    {   cout << "Vertical concentration shifting:" << endl;
+        for(int i=0;i<bConc.size();i++)
+        {   PrintProperty("  c",bConc[i]*concSaturation,"K");
+            PrintProperty("  bc",bCValue[i],"");
+        }
+        cout << endl;
+    }
+#endif
     PrintProperty("aA",aA*1.e6,"");
     PrintProperty("aT",aT*1.e6,"");
     cout << endl;
@@ -557,35 +608,48 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     // always in large rotation mode
     // Note: cannot call generic method because need Umat from decomposition
     
-    // current previous deformation gradient and stretch
+    // get current deformation gradient at the start of this time step
     Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
     
     // get incremental deformation gradient and decompose it
     const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
     
     // Update total deformation gradient
-    // Both plane strain and plane stress will have dezz=1 here, so no change in Fzz
+    // Both plane strain and plane stress will have dezz=0 here, so no change in Fzz
+    // ... plane strews adds calculated dezz later
     Matrix3 pF = dF*pFnm1;
-    //mptr->SetDeformationGradientMatrix(pF);       // done at the end
+    //mptr->SetDeformationGradientMatrix(pF);       // done at the end instead of hear
     
-    // two decompositions to get previous Rn and Rn-1
+    // two decompositions to get rotation to initial config: Rn-1 and Rn
+    // Umat is strength at start of the time step in initial config
     Matrix3 Rnm1,Rn;
-    Matrix3 Umat = pFnm1.RightDecompose(&Rnm1,NULL);        // in initial configuration here
+    Matrix3 Umat = pFnm1.RightDecompose(&Rnm1,NULL);
     pF.LeftDecompose(&Rn,NULL);
 
     // Rn = dR*Rnm1 or dR = Rn*Rnm1^T
     Matrix3 dR = Rn*Rnm1.Transpose();
     
-    // get strain and strain increments in material configuration R0^T (initial) R0
-    //    where (initial) = Rn^T(dF-dR)F(n-1)
+    // Material configuration is rotation R0 from initial configuration
+    // get strain and strain increments in material configuration using R0^T (initial) R0
+    //    where (initial) de = Rn^T(dF-dR)F(n-1) and Umat above
     Matrix3 dFmdR = dF - dR;
     Matrix3 de = Rn.Transpose()*(dFmdR*pFnm1);
+    
+    // Rotate initial de and Umat to material configuration
     Matrix3 R0 = mptr->GetInitialRotation();
     de = de.RTMR(R0);
     Umat = Umat.RTMR(R0);
     
-    // Full rotation from material to current
+    // Full rotation from material to current configuration
     Matrix3 Rtot = Rn*R0;
+    
+#ifdef TOTAL_STRESS_CALC_TI
+    // shift of elastic modulus based on mptr->pPreviousTemperature and mptr->pPreviousConcentration
+    double bshift = Viscoelastic::GetVertialShift(mptr,Tref,bTemp,bTValue,mref,bConc,bCValue);
+#else
+    // incremental method does not support elastic modulus variations (or vertical shifting)
+    double bshift=1.;
+#endif
     
     // residual strains (thermal and moisture) in material axes
     double eTr,eAr,eTstretch,eAstretch;
@@ -598,8 +662,8 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     {   eTr += betaTconc*res->dC;
         eAr += betaAconc*res->dC;
 		double dConc = diffusion->GetDeltaConcentration(mptr);
-        eTstretch = aT*dConc;
-        eAstretch = aA*dConc;
+        eTstretch += betaTconc*dConc;
+        eAstretch += betaAconc*dConc;
     }
     
     // history pointer and address
@@ -615,6 +679,7 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     // terms for different axes and other variables
     double arg,omtmp,omtmp2,*sT,*sA,dispEnergy=0.,dTq0=0.;
     int k,eT,eA;
+    // For TOTAL_STRESS_CALC_TI, dsig will be total stress, otherwise it is stress increment
     Tensor dsig;
     if(AxialDirection()==AXIAL_Z)
     {   eT = 1;         // y direction in MAS
@@ -625,18 +690,39 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     else
     {   eT = 2;         // z direction in MAS
         sT = &dsig.zz;
-        eA = 1;         // y direction in MAAS
+        eA = 1;         // y direction in MAS
         sA = &dsig.yy;
     }
 
-    // effective strains
+    // effective strain increment
     de(0,0) -= eTr;
     de(eT,eT) -= eTr;
     de(eA,eA) -= eAr;
+    
+    // Umat is strain at start of the time step
     Umat(0,0) -= (1.+eTstretch);
     Umat(eT,eT) -= (1.+eTstretch);
     Umat(eA,eA) -= (1.+eAstretch);
 
+#ifdef TOTAL_STRESS_CALC_TI
+    // elastic terms in each stress component (scaled by bshift when done)
+    Matrix3 etot = Umat+de;
+    dsig.xx = (KTe+GTe)*etot(0,0) + (KTe-GTe)*etot(eT,eT) + elle*etot(eA,eA);
+    *sT =     (KTe-GTe)*etot(0,0) + (KTe+GTe)*etot(eT,eT) + elle*etot(eA,eA);
+    *sA =       elle*etot(0,0)    +     elle*etot(eT,eT)  +  ne*etot(eA,eA);
+    if(np==THREED_MPM)
+    {   // axial direction always in z direction
+        dsig.xy = 2.*GTe*etot(0,1);
+        dsig.xz = 2.*GAe*etot(0,2);
+        dsig.yz = 2.*GAe*etot(1,2);
+    }
+    else
+    {   // 2D
+        dsig.xy = AxialDirection()==AXIAL_Z ? 2.*GTe*etot(0,1) : 2.*GAe*etot(0,1) ;
+        dsig.xz = dsig.yz = 0.;
+    }
+    ScaleTensor(&dsig,bshift);
+#else
     // increment with zero-time modulis
     dsig.xx = (KTe+GTe)*de(0,0) + (KTe-GTe)*de(eT,eT) + elle*de(eA,eA);
     *sT =     (KTe-GTe)*de(0,0) + (KTe+GTe)*de(eT,eT) + elle*de(eA,eA);
@@ -652,27 +738,29 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
         dsig.xy = AxialDirection()==AXIAL_Z ? 2.*GTe*de(0,1) : 2.*GAe*de(0,1) ;
         dsig.xz = dsig.yz = 0.;
     }
+#endif
     
     // get effective time increment
-#ifdef OSPARTICULAS
-    double delEffTime = Viscoelastic::GetEffectiveIncrement(mptr,res,delTime,Tref,C1,C2,mref,Cm1,Cm2,tauMS,Cms);
-#else
     double delEffTime = Viscoelastic::GetEffectiveIncrement(mptr,res,delTime,Tref,C1,C2,mref,Cm1,Cm2,0.,0.);
-#endif
     
     // subtract each serires
     int ai=0,asave=0;
     
 #pragma mark GT Series
-    // 3 GT (xT, TT, xT) for 3D or for AXIAL_Z, (xx and TT) for AXIAL_Y (in 2D)
+    // 3 GT (xT, TT, xy) for 3D or for AXIAL_Z, (xx and TT) for AXIAL_Y (in 2D)
     for(k=0;k<ntauGT;k++)
     {   GetAlphaArgs(delEffTime,tauGTk[k],omtmp,omtmp2);
-        // xx, yy(T), xy (2X for shear), but xx, zz(T) for AXIAL_Y (always 2D)
+        // xx, yy(T), xy(T) (2X for shear), but xx, zz(T) for AXIAL_Y (always 2D)
         double daxx = omtmp*(Umat(0,0)-ak[ai]) + omtmp2*de(0,0);
         double daT = omtmp*(Umat(eT,eT)-ak[ai+1]) + omtmp2*de(eT,eT);
         
+#ifdef TOTAL_STRESS_CALC_TI
+        // add to stress
+        arg = bshift*GTk[k]*(ak[ai]+daxx-ak[ai+1]-daT);
+#else
         // add to stress increments
         arg = GTk[k]*(daxx-daT);
+#endif
         dsig.xx -= arg;
         *sT += arg;
         
@@ -681,21 +769,28 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
         if(AxialDirection()==AXIAL_Z)
         {   // includes 3D, which is always axial z
             daxy = omtmp*(2.*Umat(0,1)-ak[ai+2]) + omtmp2*2.*de(0,1);
+#ifdef TOTAL_STRESS_CALC_TI
+            // add to stress
+            dsig.xy -= bshift*GTk[k]*(ak[ai+2]+daxy);
+#else
+            // add to stress increments
             dsig.xy -= GTk[k]*daxy;
+#endif
         }
          
         // update history
         ak[ai] += daxx;
         ak[ai+1] += daT;
-            
+
         // dissipated energy
         if(np!=PLANE_STRESS_MPM || AxialDirection()==AXIAL_Z)
-        {   arg = Umat(0,0)+de(0,0)-Umat(eT,eT)-de(eT,eT)-ak[ai]+ak[ai+1];
-            dispEnergy += GTk[k]*( arg*(daxx-daT) );
+        {   // (exx-axx) - (eT-aT) where T is always y here
+            arg = Umat(0,0)+de(0,0)-Umat(eT,eT)-de(eT,eT)-ak[ai]+ak[ai+1];
+            dispEnergy += bshift*GTk[k]*( arg*(daxx-daT) );
             if(AxialDirection()==AXIAL_Z)
-            {   // includes 3D, which is always axial z
+            {   // includes 3D, which is always axial z and eT=1 here
                 ak[ai+2] += daxy;
-                dispEnergy += GTk[k]*(2.*(Umat(0,eT)+de(0,eT))-ak[ai+2])*daxy;
+                dispEnergy += bshift*GTk[k]*(2.*(Umat(0,eT)+de(0,eT))-ak[ai+2])*daxy;
                 ai++;
             }
         }
@@ -710,7 +805,7 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     }
 
 #pragma mark GA Series
-    //  2 GA (xA,TA) for 3D, none for 2D, AXIAL_Z, and 1 GA (xy) for AXIAL_Y
+    //  2 GA (xA=xz,TA=yz) for 3D, none for 2D/AXIAL_Z, and 1 GA (xy) for 2D/AXIAL_Y
     if(np==THREED_MPM)
     {   for(k=0;k<ntauGA;k++)
         {   GetAlphaArgs(delEffTime,tauGAk[k],omtmp,omtmp2);
@@ -718,16 +813,22 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
             double daxz = omtmp*(2.*Umat(0,2)-ak[ai]) + 2.*omtmp2*de(0,2);
             double dayz = omtmp*(2.*Umat(1,2)-ak[ai+1]) + 2.*omtmp2*de(1,2);
             
+			// update history
+			ak[ai] += daxz;
+			ak[ai+1] += dayz;
+			
+#ifdef TOTAL_STRESS_CALC_TI
+            // add to stress
+            dsig.xz -= bshift*GAk[k]*ak[ai];
+            dsig.yz -= bshift*GAk[k]*ak[ai+1];
+#else
             // add to stress increments
             dsig.xz -= GAk[k]*daxz;
             dsig.yz -= GAk[k]*dayz;
-            
-            // update history
-            ak[ai] += daxz;
-            ak[ai+1] += dayz;
+#endif
                 
             // dissipated energy
-            dispEnergy += GAk[k]*( (2.*(Umat(0,2)+de(0,2))-ak[ai])*daxz
+            dispEnergy += bshift*GAk[k]*( (2.*(Umat(0,2)+de(0,2))-ak[ai])*daxz
                                   + (2.*(Umat(1,2)+de(1,2))-ak[ai+1])*dayz );
             
             // next history variable
@@ -741,14 +842,19 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
             // xy (2X for shear)
             double daxy = omtmp*(2.*Umat(0,1)-ak[ai]) + omtmp2*2.*de(0,1);
             
+			// update history
+			ak[ai] += daxy;
+			
+#ifdef TOTAL_STRESS_CALC_TI
+            // add to stress
+            dsig.xy -= bshift*GAk[k]*ak[ai];
+#else
             // add to stress increments
             dsig.xy -= GAk[k]*daxy;
-            
-            // update history
-            ak[ai] += daxy;
+#endif
                      
-            // dissipated energy
-            dispEnergy += GAk[k]*(2.*(Umat(0,eA)+de(0,eA))-ak[ai])*daxy;
+            // dissipated energy - here eA=1 is y direction
+            dispEnergy += bshift*GAk[k]*(2.*(Umat(0,eA)+de(0,eA))-ak[ai])*daxy;
             
             // next history variable
             ai++;
@@ -758,13 +864,18 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
 #pragma mark KT Series
     // 2 for KT series
     for(k=0;k<ntauKT;k++)
-    {   // xx and T
+    {   // x and T
         GetAlphaArgs(delEffTime,tauKTk[k],omtmp,omtmp2);
         double daxx = omtmp*(Umat(0,0)-ak[ai]) + omtmp2*de(0,0);
         double daT = omtmp*(Umat(eT,eT)-ak[ai+1]) + omtmp2*de(eT,eT);
 
+#ifdef TOTAL_STRESS_CALC_TI
+        // add to stress
+        arg = bshift*KTk[k]*(ak[ai]+daxx+ak[ai+1]+daT);
+#else
         // add to stress increments
         arg = KTk[k]*(daxx+daT);
+#endif
         dsig.xx -= arg;
         *sT -= arg;
         
@@ -774,8 +885,9 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
 
         // dissipated energy
         if(np!=PLANE_STRESS_MPM || AxialDirection()==AXIAL_Z)
-        {   arg = Umat(0,0)+de(0,0)+Umat(eT,eT)+de(eT,eT)-ak[ai]-ak[ai+1];
-            dispEnergy += KTk[k]*arg*(daxx+daT);
+        {	// Here eT=1 is y direction or eT=2 for 2D/AXIAL_Y/Plane strain
+			arg = Umat(0,0)+de(0,0)+Umat(eT,eT)+de(eT,eT)-ak[ai]-ak[ai+1];
+            dispEnergy += bshift*KTk[k]*arg*(daxx+daT);
         }
         else
         {   // only save for PLANE_STRESS_MPM and AXIAL_Y
@@ -793,15 +905,22 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     {   GetAlphaArgs(delEffTime,taunk[k],omtmp,omtmp2);
         double daA = omtmp*(Umat(eA,eA)-ak[ai]) + omtmp2*de(eA,eA);
         
+		// update history
+		ak[ai] += daA;
+		
+#ifdef TOTAL_STRESS_CALC_TI
+        // add to stress
+        *sA -= bshift*nk[k]*ak[ai];
+#else
         // add to stress increments
         *sA -= nk[k]*daA;
-        
-        // update history
-        ak[ai] += daA;
+#endif
              
         // dissipated energy
         if(np!=PLANE_STRESS_MPM || AxialDirection()==AXIAL_Y)
-            dispEnergy += nk[k]*(Umat(eA,eA)+de(eA,eA)-ak[ai])*daA;
+		{	// Here eA=2 unless axial y then eA=1
+			dispEnergy += bshift*nk[k]*(Umat(eA,eA)+de(eA,eA)-ak[ai])*daA;
+		}
         else
         {   // only save for PLANE_STRESS_MPM and AXIAL_Z
             dazzHold[asave++] = daA;
@@ -820,19 +939,26 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
         double daT = omtmp*(Umat(eT,eT)-ak[ai+1]) + omtmp2*de(eT,eT);
         double daA = omtmp*(Umat(eA,eA)-ak[ai+2]) + omtmp2*de(eA,eA);
         
+		// update history
+		ak[ai] += daxx;
+		ak[ai+1] += daT;
+		ak[ai+2] += daA;
+		
+#ifdef TOTAL_STRESS_CALC_TI
+        // add to stress increments
+        dsig.xx -= bshift*ellk[k]*ak[ai+2];
+        *sT -= bshift*ellk[k]*ak[ai+2];
+        *sA -= bshift*ellk[k]*(ak[ai]+ak[ai+1]);
+#else
         // add to stress increments
         dsig.xx -= ellk[k]*daA;
         *sT -= ellk[k]*daA;
         *sA -= ellk[k]*(daxx+daT);
-        
-        // update history
-        ak[ai] += daxx;
-        ak[ai+1] += daT;
-        ak[ai+2] += daA;
+#endif
 
         // dissipated energy
         if(np!=PLANE_STRESS_MPM)
-        {   dispEnergy += ellk[k]*( (Umat(eA,eA)+de(eA,eA)-ak[ai+2])*(daxx+daT)
+        {   dispEnergy += bshift*ellk[k]*( (Umat(eA,eA)+de(eA,eA)-ak[ai+2])*(daxx+daT)
                             + (Umat(0,0)+de(0,0)+Umat(eT,eT)+de(eT,eT)-ak[ai]-ak[ai+1])*daA );
         }
         else
@@ -852,55 +978,55 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     {   double dezz;
         
         if(AxialDirection()==AXIAL_Z)
-        {   double phi = ne;
-            for(k=0;k<ntaun;k++) phi -= nk[k]*GetPSArg(delEffTime,taunk[k]);
+        {   double phi = bshift*ne;
+            for(k=0;k<ntaun;k++) phi -= bshift*nk[k]*GetPSArg(delEffTime,taunk[k]);
             dezz = -dsig.zz/phi;
             pF(2,2) *= (1.+dezz);
             de(2,2) += dezz;
             dsig.zz = 0.;
 
             // skip GT and KT (no GA in this 2D with A in z direction)
-            // For AXIAL_Z, will have saves 1 for n and 3 got ell
+            // For AXIAL_Z, will have saves 1 for n and 3 for ell
             ai = 3*ntauGT + 2*ntauKT ;
             asave = 0;
                 
             // n series
             for(k=0;k<ntaun;k++)
-            {   // A
+            {   // alpha zz has changed
                 double daA = dazzHold[asave++];
-                double daAzz = GetPSArg(delEffTime,taunk[k])*dezz;
+                double dazz = GetPSArg(delEffTime,taunk[k])*dezz;
                 
                 // update history
-                ak[ai] += daAzz;
+				daA += dazz;
+                ak[ai] += dazz;
                      
-                // dissipated energy
-                daA += daAzz;
-                dispEnergy += nk[k]*(Umat(eA,eA)+de(eA,eA)-ak[ai])*daA;
+                // dissipated energy with final daA not added above
+                dispEnergy += bshift*nk[k]*(Umat(eA,eA)+de(eA,eA)-ak[ai])*daA;
                 
                 // next history
                 ai++;
             }
                 
             // ell series
-            dsig.xx += elle*dezz;
-            dsig.yy += elle*dezz;
+            dsig.xx += bshift*elle*dezz;
+            dsig.yy += bshift*elle*dezz;
             for(k=0;k<ntauell;k++)
-            {   // xx, yy, and zz
+            {   // alpha xx, yy, and zz
                 double daxx = dazzHold[asave++];
                 double daT = dazzHold[asave++];
                 double daA = dazzHold[asave++];
-                double daAzz = GetPSArg(delEffTime,tauellk[k])*dezz;
+                double dazz = GetPSArg(delEffTime,tauellk[k])*dezz;
                 
-                // stresses
-                dsig.xx -= ellk[k]*daAzz;
-                dsig.yy -= ellk[k]*daAzz;
+                // stress increments
+                dsig.xx -= bshift*ellk[k]*dazz;
+                dsig.yy -= bshift*ellk[k]*dazz;
                 
                 // update history
-                ak[ai+2] += daAzz;
+				daA += dazz;
+				ak[ai+2] += dazz;
 
-                // dissipated energy
-                daA += daAzz;
-                dispEnergy += ellk[k]*( (Umat(eA,eA)+de(eA,eA)-ak[ai+2])*(daxx+daT)
+                // dissipated energy with final daA not added above
+                dispEnergy += bshift*ellk[k]*( (Umat(eA,eA)+de(eA,eA)-ak[ai+2])*(daxx+daT)
                                     + (Umat(0,0)+de(0,0)+Umat(eT,eT)+de(eT,eT)-ak[ai]-ak[ai+1])*daA );
                 
                 // next history
@@ -909,9 +1035,10 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
         }
         else
         {   // axial in y direction, z is a transverse direction
-            double phiG = GTe,phiK = KTe;
-            for(k=0;k<ntauGT;k++) phiG -= GTk[k]*GetPSArg(delEffTime,tauGTk[k]);
-            for(k=0;k<ntauKT;k++) phiK -= KTk[k]*GetPSArg(delEffTime,tauKTk[k]);
+			// In MAS, x is x, A is y, and T is z
+            double phiG = bshift*GTe,phiK = bshift*KTe;
+            for(k=0;k<ntauGT;k++) phiG -= bshift*GTk[k]*GetPSArg(delEffTime,tauGTk[k]);
+            for(k=0;k<ntauKT;k++) phiK -= bshift*KTk[k]*GetPSArg(delEffTime,tauKTk[k]);
             dezz = -dsig.zz/(phiG+phiK);
             pF(2,2) *= (1.+dezz);
             de(2,2) += dezz;
@@ -924,18 +1051,19 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
             ai = asave = 0;
             
             // GT series (xx and zz) for AXIAL_Y
+            // Here T is z in MAS (a transverse direction). Update it with dezz
             for(k=0;k<ntauGT;k++)
             {   double daxx = dazzHold[asave++];
                 double daT = dazzHold[asave++];
-                double daAzz = GetPSArg(delEffTime,tauGTk[k])*dezz;
+                double dazz = GetPSArg(delEffTime,tauGTk[k])*dezz;
                  
-                // update history
-                ak[ai+1] += daAzz;
+                // update history for daT
+				daT += dazz;
+                ak[ai+1] += dazz;
                     
-                // dissipated ene4rgy
-                daT += daAzz;
+                // dissipated energy, eT=2 is z in MAS
                 arg = Umat(0,0)+de(0,0)-Umat(eT,eT)-de(eT,eT)-ak[ai]+ak[ai+1];
-                dispEnergy += GTk[k]*( arg*(daxx-daT) );
+                dispEnergy += bshift*GTk[k]*( arg*(daxx-daT) );
                   
                 // next history variable
                 ai += 2 ;
@@ -945,19 +1073,20 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
             ai += ntauGA;
             
             // 2 for KT series
+			// Here T is z in MAS (a transverse direction). Update it with dezz
             for(k=0;k<ntauKT;k++)
             {   // xx and T
                 double daxx = dazzHold[asave++];
                 double daT = dazzHold[asave++];
-                double daAzz = GetPSArg(delEffTime,tauKTk[k])*dezz;
+                double dazz = GetPSArg(delEffTime,tauKTk[k])*dezz;
 
                 // update history
-                ak[ai+1] += daAzz;
+				daT += dazz;
+                ak[ai+1] += dazz;
 
-                // dissipated energy
-                daT += daAzz;
-                arg = Umat(0,0)+de(0,0)+Umat(eT,eT)+de(eT,eT)-ak[ai]-ak[ai+1];
-                dispEnergy += KTk[k]*arg*(daxx+daT);
+                // dissipated energy, eT=2 is z in MAS
+				arg = Umat(0,0)+de(0,0)+Umat(eT,eT)+de(eT,eT)-ak[ai]-ak[ai+1];
+                dispEnergy += bshift*KTk[k]*arg*(daxx+daT);
 
                 // next history variable
                 ai += 2;
@@ -967,23 +1096,24 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
             ai += ntaun;
             
             // ell series
-            dsig.yy += elle*dezz;
+			// Here T is z in MAS (a transverse direction). Update it with dezz
+            dsig.yy += bshift*elle*dezz;
             for(k=0;k<ntauell;k++)
             {   // xx, yy, and zz
                 double daxx = dazzHold[asave++];
                 double daT = dazzHold[asave++];
                 double daA = dazzHold[asave++];
-                double daAzz = GetPSArg(delEffTime,tauellk[k])*dezz;
+                double dazz = GetPSArg(delEffTime,tauellk[k])*dezz;
                 
                 // stresses
-                dsig.yy -= ellk[k]*daAzz;
+                dsig.yy -= bshift*ellk[k]*dazz;
                 
                 // update history
-                ak[ai+1] += daAzz;
+				daT += dazz;
+                ak[ai+1] += dazz;
 
                 // dissipated energy
-                daT += daAzz;
-                dispEnergy += ellk[k]*( (Umat(eA,eA)+de(eA,eA)-ak[ai+2])*(daxx+daT)
+                dispEnergy += bshift*ellk[k]*( (Umat(eA,eA)+de(eA,eA)-ak[ai+2])*(daxx+daT)
                                     + (Umat(0,0)+de(0,0)+Umat(eT,eT)+de(eT,eT)-ak[ai]-ak[ai+1])*daA );
                 
                 // next history
@@ -999,29 +1129,60 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     Tensor *sp=mptr->GetStressTensor();
     
     // update stresses
-    Tensor matSig;
     double workEnergy,resEnergy;
+#ifdef TOTAL_STRESS_CALC_TI
     if(np==THREED_MPM)
-    {    // incremental rotate of prior stress and add new stress
+    {   // energy uses total strain, so add back residual strains
+        workEnergy = dsig.xx*(de(0,0)+eTr) + dsig.yy*(de(1,1)+eTr) + dsig.zz*(de(2,2)+eAr)
+               + 2.*(dsig.xz*de(0,2) + dsig.yz*de(1,2) + dsig.xy*de(0,1));
+        resEnergy = dsig.xx*eTr + dsig.yy*eTr + dsig.zz*eAr;
+		
+		// now get stress in current configuration
+		*sp = Rtot.RVoightRT(&dsig,true,false);
+    }
+    else
+    {   // energy uses total strain, so add back residual strains
+        workEnergy = dsig.xx*(de(0,0)+eTr) + 2.*dsig.xy*de(0,1);
+        resEnergy = dsig.xx*eTr;
+        if(AxialDirection()==AXIAL_Z)
+        {   workEnergy += dsig.yy*(de(1,1)+eTr) + dsig.zz*(de(2,2)+eAr);
+            resEnergy += dsig.yy*eTr + dsig.zz*eAr;
+        }
+        else
+        {   workEnergy += dsig.yy*(de(1,1)+eAr) + dsig.zz*(de(2,2)+eTr);
+            resEnergy += dsig.yy*eAr + dsig.zz*eTr;
+        }
+		
+		// now get stress in current configuration
+		*sp = Rtot.RVoightRT(&dsig,true,true);
+    }
+    
+#else
+    if(np==THREED_MPM)
+    {   // rotate increment to current configuration and prior stress by dR
+        //... then add to get new stress in current configuration
         Tensor dsigma = Rtot.RVoightRT(&dsig,true,false);
         *sp = dR.RVoightRT(sp, true, false);
         AddTensor(sp, &dsigma);
         
-        // rotate back for simpler energy
-        matSig = Rtot.RTVoightR(sp,true,false);
+        // rotate back to material axes (where strain is known) for energy calculations)
+        // Add residual strain increment back to get total strain increment
+        Tensor matSig = Rtot.RTVoightR(sp,true,false);
         workEnergy = matSig.xx*(de(0,0)+eTr) + matSig.yy*(de(1,1)+eTr) + matSig.zz*(de(2,2)+eAr)
-               + 2.*(matSig.xz*de(0,2) + matSig.yz*de(1,2) + matSig.xy*de(0,2));
+               + 2.*(matSig.xz*de(0,2) + matSig.yz*de(1,2) + matSig.xy*de(0,1));
         resEnergy = matSig.xx*eTr + matSig.yy*eTr + matSig.zz*eAr;
     }
     else
-    {    // incremental rotate of prior stress
+    {   // rotate increment to current configuration and prior stress by dR
+        //... then add to get new stress in current configuration
         Tensor dsigma = Rtot.RVoightRT(&dsig,true,true);
         *sp = dR.RVoightRT(sp, true, true);
         AddTensor(sp, &dsigma);
         
-        // rotate back for simpler energy
-        matSig = Rtot.RTVoightR(sp,true,true);
-        workEnergy = matSig.xx*(de(0,0)+eTr) + 2.*matSig.xy*de(0,2);
+        // rotate back to material axes (where strain is known) for energy calculations)
+        // Add residual strain increment back to get total strain increment
+        Tensor matSig = Rtot.RTVoightR(sp,true,true);
+        workEnergy = matSig.xx*(de(0,0)+eTr) + 2.*matSig.xy*de(0,1);
         resEnergy = matSig.xx*eTr;
         if(AxialDirection()==AXIAL_Z)
         {   workEnergy += matSig.yy*(de(1,1)+eTr) + matSig.zz*(de(2,2)+eAr);
@@ -1032,6 +1193,7 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
             resEnergy += matSig.yy*eAr + matSig.zz*eTr;
         }
     }
+#endif
     
     // incremental work energy
     // Whan it residual energy?
@@ -1091,6 +1253,9 @@ const char *TIViscoelastic::MaterialType(void) const
         wave speeds are GT/rho, GA/rho, (KT+GT)/rho, and (EA + 4KT nuA^2)/rho
         return largest (assumes shear ones are not largest)
 */
+#ifdef TOTAL_STRESS_CALC_TI
+// Should get shift in KTe and GTe and GAe and ne to do this right
+#endif
 double TIViscoelastic::WaveSpeed(bool threeD,MPMBase *mptr) const
 {
     if(AxialDirection()==AXIAL_Z && !threeD)

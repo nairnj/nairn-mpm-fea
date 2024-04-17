@@ -1048,7 +1048,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			value *= UnitsController::Scaling(1.e-6);
 			break;
 			
-		// angular momentum (Legacy J-sec)
+		// total angular momentum (Legacy J-sec)
 		case ANGMOMX:
 		case ANGMOMY:
 		case ANGMOMZ:
@@ -1061,6 +1061,10 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 				{	// get Mp Xp X Vp
 					CrossProduct(&cp,&mpm[p]->pos,&mpm[p]->vel);
 					AddScaledVector(&Ltot,&cp,mpm[p]->mp);
+                    
+					// add particle spin angular momentum
+					Vector Lp = mpm[p]->GetParticleAngMomentum();
+					AddVector(&Ltot,&Lp);
 				}
 			}
 			if(quantity==ANGMOMX)
@@ -1074,7 +1078,6 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		}
 
 		// particle spin angular momentum (Legacy J-sec)
-		// zero unless tracking particle spin
 		case LPMOMX:
 		case LPMOMY:
 		case LPMOMZ:
@@ -1098,7 +1101,6 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		}
 			
 		// average particle angular velocity (radians per sec)
-		// zero unless tracking particle spin
 		case ANGVELX:
 		case ANGVELY:
 		case ANGVELZ:
@@ -1115,9 +1117,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 					Vtot += Vp;
 					
 					// angular spatial velocity gradient
-					Matrix3 spatialGradVp = mpm[p]->GetParticleGradVp(true);
+					Matrix3 spatialGradVp = mpm[p]->GetParticleGradVp(true,false);
 						
-					// Extract angular velocity for antisymmetric spon
+                    // Extract angular velocity antisymmetric grad Vp
 					if(fmobj->IsThreeD())
 					{	Vector wp = MakeVector(0.5*(spatialGradVp(2,1)-spatialGradVp(1,2)),
 											   0.5*(spatialGradVp(0,2)-spatialGradVp(2,0)),

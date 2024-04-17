@@ -46,7 +46,10 @@
 	#include "Materials/IsoSoftening.hpp"
     #include "Materials/IsoPhaseFieldSoftening.hpp"
     #include "Materials/IsoDamageMech.hpp"
-
+    #include "Materials/TransIsoSoftening.hpp"
+    #include "Materials/OrthoSoftening.hpp"
+    #include "Materials/IsoPlasticSoftening.hpp"
+    #include "Materials/OrthoPlasticSoftening.hpp"
 
 #else // not MPM_CODE
 
@@ -207,6 +210,19 @@ int MaterialController::AddMaterial(int matID,char *matName)
             break;
         case ISODAMAGEMECHANICS:
             newMaterial=new IsoDamageMech(matName,matID);
+            break;
+        case TRANSISOSOFTENING1:
+        case TRANSISOSOFTENING2:
+            newMaterial=new TransIsoSoftening(matName,matID);
+            break;
+        case ORTHOSOFTENING:
+            newMaterial=new OrthoSoftening(matName,matID);
+            break;
+        case ORTHOPLASTICSOFTENING:
+            newMaterial=new OrthoPlasticSoftening(matName,matID);
+            break;
+        case ISOPLASTICSOFTENING:
+            newMaterial=new IsoPlasticSoftening(matName,matID);
             break;
 			
 #else // not MPM_CODE

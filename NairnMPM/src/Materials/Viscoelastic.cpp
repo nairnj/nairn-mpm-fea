@@ -19,7 +19,9 @@
 
 // When uncommented, the constitutive law recalculates stress on each time step
 // When commented out, the constitutive law use incremental stress updates
-//#define TOTAL_STRESS_CALC
+// WARNING: if commented out calculations can not do vertical shifting to implement
+//          temperature and moisture dependent properties
+#define TOTAL_STRESS_CALC
 
 // class statics
 int Viscoelastic::warnExcessiveX = -1;
@@ -61,7 +63,12 @@ Viscoelastic::Viscoelastic(char *matName,int matID) : MaterialBase(matName,matID
     mref = -1.;
     Cm1base10 = 10.;
     Cm2base10 = 0.025/0.4;
-
+    
+    // vertical shifting (total stress only)
+    bTemp.clear();
+    bTValue.clear();
+    bConc.clear();
+    bCValue.clear();
 }
 
 #pragma mark Viscoelastic::Initialization
@@ -162,6 +169,29 @@ void Viscoelastic::PrintMechanicalProperties(void) const
     }
     else if(Tref>=0.)
         cout << "Isosolvent viscoelasticity" << endl;
+    
+#ifdef TOTAL_STRESS_CALC
+    if(bTemp.size()==0 || Tref<0)
+        cout << "No vertical shifting for temperature";
+    else
+    {   cout << "Vertical themal shifting:" << endl;
+        for(int i=0;i<bTemp.size();i++)
+        {   PrintProperty("  T",bTemp[i],"K");
+            PrintProperty("  bT",bTValue[i],"");
+        }
+        cout << endl;
+    }
+    if(bTemp.size()==0 || mref<0 || diffusion==NULL)
+        cout << "No vertical shifting for concentration";
+    else
+    {   cout << "Vertical concentration shifting:" << endl;
+        for(int i=0;i<bConc.size();i++)
+        {   PrintProperty("  c",bConc[i]*concSaturation,"K");
+            PrintProperty("  bc",bCValue[i],"");
+        }
+        cout << endl;
+    }
+#endif
 }
     
 // Read material properties
@@ -304,6 +334,30 @@ char *Viscoelastic::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&Cm2base10);
     }
 
+    else if(strcmp(xName,"bTemp")==0)
+    {   bTemp.push_back(0.);
+        input=DOUBLE_NUM;
+        return (char *)&bTemp[(int)bTemp.size()-1];
+    }
+    
+    else if(strcmp(xName,"bConc")==0)
+    {   bConc.push_back(0.);
+        input=DOUBLE_NUM;
+        return (char *)&bTemp[(int)bConc.size()-1];
+    }
+    
+    else if(strcmp(xName,"bTValue")==0)
+    {   bTValue.push_back(0.);
+        input=DOUBLE_NUM;
+        return (char *)&bTValue[(int)bTemp.size()-1];
+    }
+    
+    else if(strcmp(xName,"bCValue")==0)
+    {   bCValue.push_back(0.);
+        input=DOUBLE_NUM;
+        return (char *)&bCValue[(int)bTemp.size()-1];
+    }
+    
     return(MaterialBase::InputMaterialProperty(xName,input,gScaling));
 }
 
@@ -402,19 +456,42 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 	// WLF coefficients convert to ln aT
 	C1 = log(10.)*C1base10;
 	
-	// Moisture terms - convert to use ln am = - Cm1*(c-cref)/(Cm2+c) where c = m/csat and cref=mref/csat
+	// Moisture terms input as log ac = -Cm1base(m-mref)/(Cm2base+m-mref)
+    // ... convert to use ln ac = - Cm1*(c-cref)/(Cm2+c) where c = m/csat and cref=mref/csat
+    // ... Cm1 = Cm1bas*ln(10) and Cm2 = (Cm2base-mref)/csat
+    // log ac =
 	Cm1 = log(10.)*Cm1base10;
-	Cm2 = Cm2base10/concSaturation;
+	Cm2 = (Cm2base10-mref)/concSaturation;
 	mref /= concSaturation;
 	if(mref>=0. && Cm2<=0.)
-		return "Cm2 must be greater than zero";
+		return "Cm2 must be greater than mref";
 	if(mref>1.)
 		return "mref must less than or equal to csat";
+	
+#ifdef TOTAL_STRESS_CALC
+    // vertical shifting temperature same number and sorted
+    if(bTemp.size()!=bTValue.size())
+        return "Vertical shifting for temperature must have same number of temperature and values";
+    for(int i=1;i<bTemp.size();i++)
+    {   if(bTemp[i]<=bTemp[i-1])
+            return "Vertical shifting temperature points must monotonically increase";
+    }
+
+    // vertical shifting temperature same number and sorted (and scaled to csat)
+    if(bConc.size()!=bCValue.size())
+        return "Vertical shifting for concentration must have same number of concentrations and values";
+    if(bConc.size()>0) bConc[0] /= concSaturation;
+    for(int i=1;i<bConc.size();i++)
+    {   bConc[i] /= concSaturation;
+        if(bConc[i]<=bConc[i-1])
+            return "Vertical shifting concentration points must monotonically increase";
+    }
+#endif
 
     // call super class
     return MaterialBase::VerifyAndLoadProperties(np);
 }
-
+    
 // plane stress not allows for some viscoelasticity
 // throws CommonException()
 void Viscoelastic::ValidateForUse(int np) const
@@ -514,10 +591,10 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
     
 #ifdef TOTAL_STRESS_CALC
     // shift of elastic modulus based on mptr->pPreviousTemperature and mptr->pPreviousConcentration
-    double bshift=1.;
+    double bshift = GetVertialShift(mptr,Tref,bTemp,bTValue,mref,bConc,bCValue);
 #else
     // incremental method does not support vertical shifting
-    double bshift=1.;
+    double bshift = 1.;
 #endif
     
     // Effective strain by deducting thermal strain (no shear thermal strain because isotropic)
@@ -580,6 +657,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 
 #ifdef TOTAL_STRESS_CALC
     // get new particle deviatoric stresses - elastic part = 2G ednp1
+    // note that dsig is actaully total sig in this mode
     Tensor dsig = ednp1;
 #else
     // increment particle deviatoric stresses - elastic part = 2G de
@@ -589,7 +667,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
     ScaleTensor(&dsig,bshift*Gered);
 
     // get effective time increment
-    double delEffTime = GetEffectiveIncrement(mptr,res,delTime,Tref,C1,C2,mref,Cm1,Cm2,0.,0.);
+    double delEffTime = GetEffectiveIncrement(mptr,res,delTime,Tref,C1,C2,mref,Cm1,Cm2,0.,1.);
     
     // get internal variable increments, update them, add to incremental stress, and get dissipated energy
     // For plane stress, this gets initial deviatoric stress update only
@@ -680,7 +758,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
         double eresStretch=CTE*dTemp;
         if(DiffusionTask::HasDiffusion())
         {   double dConc = diffusion->GetDeltaConcentration(mptr);
-            eresStretch = CME*dConc;
+            eresStretch += CME*dConc;
         }
         
         // find current V* (diagonal has 1+eii) from U in updated initial config
@@ -1039,10 +1117,29 @@ double Viscoelastic::GetCpMinusCv(MPMBase *mptr) const
 {   return mptr!=NULL ? Ka2sp*mptr->pPreviousTemperature : Ka2sp*thermal.reference;
 }
 
+// Get vertical shift
+double Viscoelastic::GetVertialShift(MPMBase *mptr,double T0,vector<double> Txpts,vector<double> Typts,
+                                     double m0,vector<double> Cxpts,vector<double> Cypts)
+{
+    double btot = 1.;
+    
+    // First check shift to reference temperature
+    if(T0>=0.)
+    {   btot = PiecewiseInterpolate(mptr->pPreviousTemperature, Txpts, Typts);
+    }
+    
+    // Add concentration shift to reference concentration (requires diffusion task)
+    if(m0>=0. && diffusion!=NULL)
+    {   btot = PiecewiseInterpolate(mptr->pDiff[0]->prevConc, Cxpts, Cypts);
+    }
+
+    return btot;
+}
+
 // Get effective time increment for viscoelatic materials
 double Viscoelastic::GetEffectiveIncrement(MPMBase *mptr,ResidualStrains *res,double dRealTime,
                                            double T0,double cT1,double cT2,double m0,double cC1,
-                                           double cC2,double taums,double cMs)
+                                           double cC2,double kms,double amu)
 {
     // if reference properties not set, using actual time
     if(T0<0. && m0<0.) return dRealTime;
@@ -1063,29 +1160,45 @@ double Viscoelastic::GetEffectiveIncrement(MPMBase *mptr,ResidualStrains *res,do
         
         // only deviates from ln 1=0 when dT changes
         if(!DbleEqual(res->dT,0.))
-        {   lnR = cT1*cT2*res->dT/((cT2+Tnew-T0)*(cT2+Told-T0));
+        {   if(cT1>0)
+            {   // WLF equation (using ln) is ln aT = -C1(T-T0)/(C2+T-T0)
+                // which leads to this R
+                lnR = cT1*cT2*res->dT/((cT2+Tnew-T0)*(cT2+Told-T0));
+            }
+            else
+            {   // Arhenius methods ln aT = -C1(1/T - 1/T0) where C1 = -Delta H/R
+                lnR = -cT1*res->dT/(Tnew*Told);
+            }
         }
         
         // will need this even if does not change (previous -ln aT)
-        mlogaold = cT1*(Told-T0)/(cT2+Told-T0);
+        if(cT1>0)
+        {   // WLF version
+            mlogaold = cT1*(Told-T0)/(cT2+Told-T0);
+        }
+        else
+        {   // Arhenius version
+            mlogaold= cT1*(1/Told - 1/T0);
+        }
     }
     
     // Up to here
     // lnR = ln aT(T)/(aT(T+dT)) and mlogaold = - ln aT(T)
 
     // now check if moisture effect too (only if simulation has a concentration in pDiff[0])
+    // Input properties converted to give ln ac = -cC1*(c-cref)/(cC2+c) where c=m/csat and cref=mref/csat
     if(m0>=0. && diffusion!=NULL)
 	{   // concentrations from the grid
 		double cnew = mptr->pDiff[0]->prevConc;
 		double cold = cnew - res->dC;
 		
-		// moisture shift (previous -ln am)
+		// moisture shift (previous -ln ac)
 		mlogamold = cC1*(cold-m0)/(cC2+cold);
 		
 		// only need more when dC changes)
 		if(!DbleEqual(res->dC,0.))
-		{   // add to temperature changes using (ln am(cold)-ln am(cnew))
-			// when done, lnR = ln aT(T)am(c)/(aT(T+dT)am(c+dc))
+		{   // add to temperature changes using (ln ac(cold)-ln ac(cnew))
+			// when done, lnR+del = ln aT(T)ac(c)/(aT(T+dT)ac (c+dc))
 			double del = cC1*(cC2+m0)*res->dC/((cC2+cnew)*(cC2+cold));
 
 			// add to ln R from temperature
@@ -1096,10 +1209,10 @@ double Viscoelastic::GetEffectiveIncrement(MPMBase *mptr,ResidualStrains *res,do
 		mlogaold += mlogamold;
 	}
 	
-    // When here
-    // lnR = ln aT(T)am(c)/(aT(T+dT)am(c+dc)) and mlogaold = -ln aT(T)am(c)
+    // When here have
+    // lnR = ln aT(T)ac(c)/(aT(T+dT)ac(c+dc)) and mlogaold = -ln aT(T)ac(c)
     
-    // return the effective increment = dt*scale/(aT am)
+    // return the effective increment = dt*scale/(aT ac)
     return dRealTime*GetDtScale(lnR)*exp(mlogaold);
 }
 

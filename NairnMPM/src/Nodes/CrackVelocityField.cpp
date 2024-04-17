@@ -211,9 +211,8 @@ void CrackVelocityField::CopyGridForces(NodalPoint *real)
 #pragma mark TASK 5 METHODS
 
 // add to vStarNext
-void CrackVelocityField::AddVStarNext(int matfld,Vector *vStarPrevj,Vector *delXiMpPtr,Vector *delXjPtr,
-											 Matrix3 *Dpinv,double weight,double weightContact)
-{	mvf[matfld]->AddVStarNext(vStarPrevj,delXiMpPtr,delXjPtr,Dpinv,weight,weightContact);
+void CrackVelocityField::AddVStarNext(int matfld,Vector *vStarPrevj,double weight,double weightContact)
+{	mvf[matfld]->AddVStarNext(vStarPrevj,weight,weightContact);
 }
 
 // Get vStarPrev pointer

@@ -28,6 +28,7 @@ class MatPointAS : public MatPoint2D
 		// methods
         virtual void UpdateStrain(double,int,int,void *,int,bool);
 		virtual void PerformConstitutiveLaw(Matrix3,double,int,void *,ResidualStrains *,Tensor *);
+        virtual Matrix3 ExtraVelocityGradient(void);
 		virtual void GetFintPlusFext(Vector *,double,double,double,double);
         virtual void SetOrigin(Vector *);
 		virtual double GetVolume(int);

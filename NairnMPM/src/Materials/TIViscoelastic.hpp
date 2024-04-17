@@ -62,9 +62,11 @@ class TIViscoelastic : public TransIsotropic
         int numHistory;
         double Tref,C1,C1base10,C2;
         double mref,Cm1,Cm2,Cm1base10,Cm2base10;
-#ifdef OSPARTICULAS
-        double tauMS,Cms;
-#endif
+        // vertical shifting
+        vector<double> bTemp;
+        vector<double> bTValue;
+        vector<double> bConc;
+        vector<double> bCValue;
 };
 
 #endif

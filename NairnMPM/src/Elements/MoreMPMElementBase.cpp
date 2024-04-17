@@ -583,7 +583,7 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 	int i,j,numnds;
 	CPDIDomain **cpdi = mpmptr->GetCPDIInfo();
 
-//#define FAST_CPDI
+#define FAST_CPDI
 #ifdef FAST_CPDI
 	// For grid shape functions having non values
 	// Array may need gridNiNodes*numCPDINodes elements
@@ -629,6 +629,17 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 			// if didn't find it, add to the list, and initialize
 			if(add_new)
             {   ind++;
+                
+                // max sure we don't have too many nodes
+                if(ind >= maxShapeNodes)
+                {
+#pragma omp critical (output)
+                    {   cout << "# Found " << ind - 1 << " nodes; only room for "
+                                    << maxShapeNodes << " nodes." << endl;
+                        throw CommonException("Too many CPDI nodes found; increase maxShapeNodes in source code by at least number of remaining nodes", "ElementBase::GetCPDIFunctions");
+                    }
+                }
+                
 				storenodes[ind] = thisnode;
 				fn[ind] = cpdi[i]->ws*cfn[j];
 				nds[ind] = thisnode;
@@ -638,16 +649,6 @@ int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDe
 					zDeriv[ind] = cpdi[i]->wg.z*cfn[j];
 				}
 			}
-		}
-	}
-    
-	// max sure we don't have too many nodes
-	if(ind >= maxShapeNodes)
-    {
-#pragma omp critical (output)
-		{   cout << "# Found " << ind - 1 << " nodes; only room for "
-                        << maxShapeNodes << " nodes." << endl;
-            throw CommonException("Too many CPDI nodes found; increase maxShapeNodes in source code by at least number of remaining nodes", "ElementBase::GetCPDIFunctions");
 		}
 	}
     
@@ -1034,7 +1035,7 @@ int ElementBase::GetShapeFunctionOrder(void)
 	return 1;
 }
 
-// return true if CPDI method, false is POINT_GIMP or any GIMP
+// return true if CPDI method, false if POINT_GIMP or any GIMP
 bool ElementBase::UsingCPDIMethod(void) { return useGimp>=LINEAR_CPDI; }
 
 

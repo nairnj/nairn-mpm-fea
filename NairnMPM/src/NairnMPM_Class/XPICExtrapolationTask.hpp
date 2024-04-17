@@ -33,12 +33,9 @@ class XPICExtrapolationTask : public MPMTask
 		virtual int GetXPICOrder(void);
 		virtual void InitializeXPICData(NodalPoint *,double,int);
 		virtual void InitializeXPICData(GridPatch *,int);
-		virtual bool XPICDoubleLoopNeedsGradients(void);
-		virtual void XPICDoubleLoop(MPMBase *,int,int *,double *,int,double,double,double *,double *,double *);
+		virtual void XPICDoubleLoop(MPMBase *,int,int *,double *,int,double,double);
 		virtual void ReduceXPICData(GridPatch *,int);
 		virtual void UpdateXStar(NodalPoint *,double,int,int,double);
-		virtual bool XPICDoesBackExtrapolation(void);
-		virtual void XPICBackExtrapolation(MPMBase *,int *,double *,int);
 	
 	protected:
 	

@@ -230,6 +230,36 @@ void PrintVector(const char *label,const Vector *v)
 	cout << "(" << v->x << ", " << v->y << ", " << v->z << ") ";
 }
 
+// Given piecewise pairs in xpts and ypts, find y(x)
+// Assumes xpts and ypts are the same length and xpts is monotonically increasing
+// Returns 1 if arrays are empty or single value if arrays have only 1 value
+// Points outside range use linear extrapolation
+double PiecewiseInterpolate(double x,vector<double> xpts,vector<double> ypts)
+{
+    // empty returns 1
+    if(xpts.size()==0) return 1;
+    
+    // single value is constant
+    if(xpts.size()==1) return ypts[0];
+    
+    // get interval for x value
+    int intvl = (int)xpts.size()-1;
+    for(int i=1;i<xpts.size();i++)
+    {   // found the interval
+        if(x<=xpts[i])
+        {   intvl = i;
+            break;
+        }
+    }
+    
+    // Here x<=xpts[1], then intvl = 1
+    //   x>xpts[size-1], then intvl = size-1
+    //   otherwise xpts[intvl-1] < x <= xpts[intvl]
+    // Note: assums xpts[intvl]>xpts[intvl-1]
+    double fract = (xpts[intvl]-x)/(xpts[intvl]-xpts[intvl-1]);
+    return fract*ypts[intvl-1] + (1.-fract)*ypts[intvl];
+}
+
 #pragma mark Tensor Functions
 
 // return tensor from components

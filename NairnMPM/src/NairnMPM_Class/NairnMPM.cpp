@@ -89,7 +89,7 @@ int maxElementIntersections=15;		// Maximum elements that particle can intersect
 // throws std::bad_alloc
 NairnMPM::NairnMPM()
 {
-    version=17;                      // main version
+    version=18;                      // main version
     subversion=0;                    // subversion (must be < 10)
     buildnumber=0;                   // build number
 
@@ -280,7 +280,7 @@ void NairnMPM::CMAnalysis(bool abort)
 // Main analysis loop for MPM analysis
 // Made up of tasks created in MPMAnalysis()
 void NairnMPM::MPMStep(void)
-{	
+{
 	// Step initialization
 #ifdef LOG_PROGRESS
 	char logLine[200];
@@ -996,7 +996,7 @@ void NairnMPM::CreateTasks(void)
 	}
 
 	// ------------------------------------------------------
-	// This is the section when full mechanics is aticvated
+	// This is the section when full mechanics is activated
 	// ------------------------------------------------------
 	nextMPMTask=(MPMTask *)new PostExtrapolationTask("Post Extrapolation Tasks");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
@@ -1314,6 +1314,13 @@ void NairnMPM::ValidateOptions(void)
 		}
 	}
 	
+    else
+    {   // using point GIMP
+        if((mpmApproach==USAVG_METHOD || mpmApproach==USL_METHOD) && fmobj->skipPostExtrapolation)
+        {   throw CommonException("Dirac (or Classic) not allowed for USL- or USAVG- methods","NairnMPM::ValidateOptions");
+        }
+    }
+    
 	// Only allowed if 2D and ExactTractions
 	if(exactTractions && fmobj->IsThreeD())
 		throw CommonException("Exact tractions not supported yet in 3D simulations.","NairnMPM::ValidateOptions");

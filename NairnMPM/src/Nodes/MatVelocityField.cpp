@@ -323,7 +323,7 @@ void MatVelocityField::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint
 			if(bodyFrc.UsingFMPM())
 			{	CopyScaleVector(&vk[VSTARPREV_VEC],&pk,korder/mass);
 				
-				// set v* = vStarPrev (build velocity directly in v^*)
+				// set v* = vStarPrev will be v(k) = m_k^{-1}p^+
 				vk[VSTAR_VEC] = vk[VSTARPREV_VEC];
 			}
 			else
@@ -332,11 +332,10 @@ void MatVelocityField::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint
 				AddScaledVector(&vk[VSTARPREV_VEC], &ftot, -timestep);
 				ScaleVector(&vk[VSTARPREV_VEC],korder/mass);
 				
-				// set v* = vStarPrev * a*dt (build v-v^* + a*dt directly in v*)
+				// set v* = vStarPrev + a*dt such that final v* will be v(m) + a*dt)
 				vk[VSTAR_VEC] = vk[VSTARPREV_VEC];
 				AddScaledVector(&vk[VSTAR_VEC], &ftot, timestep/mass);
 			}
-			
 			
 #if MM_XPIC == 1
 			// in multimaterial mode, get delta v from stored delta p due to contact
@@ -351,15 +350,15 @@ void MatVelocityField::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint
 		{	// Add to Vstar and reset for next iteration
 			if(numberPoints==0) return;
 			
-			// add to vStar += (-1)^k * vStarNext
+			// add to vStar += (-1)^k * vStarNext (i.e. v* += vsign*v_k^*)
 			vk[VSTAR_VEC].x += vsign*vk[VSTARNEXT_VEC].x;
 			vk[VSTAR_VEC].y += vsign*vk[VSTARNEXT_VEC].y;
 			vk[VSTAR_VEC].z += vsign*vk[VSTARNEXT_VEC].z;
 			
-			// copy to previous
+			// save v_k* in v*(prev)
 			vk[VSTARPREV_VEC] = vk[VSTARNEXT_VEC];
 			
-			// zero vStarNext
+			// zero v*(next) for next pass through the loop
 			ZeroVector(&vk[VSTARNEXT_VEC]);
 			
 #if MM_XPIC == 1
@@ -384,9 +383,9 @@ void MatVelocityField::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint
 		{	// Copy to real node and zero vStarNext on this ghose node
 			if(numberPoints==0) return;
 			
-			// add to real node (note that vfld in xpicOption and matfld in m
+			// add to real node (note that vfld in xpicOption and matfld in m)
 			Vector *vStarNextj = &vk[VSTARNEXT_VEC];
-			real->AddVStarNext((short)xpicOption,m,vStarNextj,NULL,NULL,NULL,1.,1.);
+			real->AddVStarNext((short)xpicOption,m,vStarNextj,1.,1.);
 			
 			// zero on this material field on this ghost node for next loop
 			ZeroVector(vStarNextj);
@@ -403,22 +402,21 @@ void MatVelocityField::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint
 }
 
 // add to vStarNext
-void MatVelocityField::AddVStarNext(Vector *vStarPrevj,Vector *delXiMpPtr,Vector *delXjPtr,
-									  Matrix3 *Dpinv,double weight,double weightContact)
+void MatVelocityField::AddVStarNext(Vector *vStarPrevj,double weight,double weightContact)
 {
-	// no particle spin
-	vk[VSTARNEXT_VEC].x += weight*vStarPrevj->x;
-	vk[VSTARNEXT_VEC].y += weight*vStarPrevj->y;
-	vk[VSTARNEXT_VEC].z += weight*vStarPrevj->z;
-	
+    // update
+    vk[VSTARNEXT_VEC].x += weight*vStarPrevj->x;
+    vk[VSTARNEXT_VEC].y += weight*vStarPrevj->y;
+    vk[VSTARNEXT_VEC].z += weight*vStarPrevj->z;
+		
 #if MM_XPIC == 1
-	// add contact term - assume in vector +2 from vStarPrevj
-	if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
-	{	Vector *deltaVStarPrevj = vStarPrevj+2;
-		vk[DELTA_VSTARNEXT_VEC].x += weightContact*deltaVStarPrevj->x;
-		vk[DELTA_VSTARNEXT_VEC].y += weightContact*deltaVStarPrevj->y;
-		vk[DELTA_VSTARNEXT_VEC].z += weightContact*deltaVStarPrevj->z;
-	}
+    // add contact term when no spin - assume in vector +2 from vStarPrevj
+    if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
+    {	Vector *deltaVStarPrevj = vStarPrevj+2;
+        vk[DELTA_VSTARNEXT_VEC].x += weightContact*deltaVStarPrevj->x;
+        vk[DELTA_VSTARNEXT_VEC].y += weightContact*deltaVStarPrevj->y;
+        vk[DELTA_VSTARNEXT_VEC].z += weightContact*deltaVStarPrevj->z;
+    }
 #endif
 }
 
@@ -426,11 +424,12 @@ void MatVelocityField::AddVStarNext(Vector *vStarPrevj,Vector *delXiMpPtr,Vector
 // fi is shape function
 void MatVelocityField::IncrementNodalVelAcc(double fi,GridToParticleExtrap *gp) const
 {
- 	// Summing S v+ (FMPM has Sv+(k) and XPIC has Sv(k))
-	gp->Svtilde.x += vk->x*fi;				// velocity += v[0]
-	gp->Svtilde.y += vk->y*fi;
-	gp->Svtilde.z += vk->z*fi;
+ 	// Summing Svk (FMPM: Sv+(k), XPIC: S(v(k)+a*dt), FLIP/PIC: Sv^+(lumped))
+	gp->Svk.x += vk->x*fi;
+	gp->Svk.y += vk->y*fi;
+	gp->Svk.z += vk->z*fi;
 	
+	// Only FLIP and XPIC(-m) need acceleration terms
 	if(gp->m<=0)
 	{	double mnode = fi/mass;					// Ni/mass
 	
@@ -438,13 +437,6 @@ void MatVelocityField::IncrementNodalVelAcc(double fi,GridToParticleExtrap *gp) 
 		gp->Sacc.x += ftot.x*mnode;
 		gp->Sacc.y += ftot.y*mnode;
 		gp->Sacc.z += ftot.z*mnode;
-		
-		if(gp->m<-1)
-		{	// Summing S v^+ lumped for XPIC(k>1)
-			gp->Svlumped.x += pk.x*mnode;
-			gp->Svlumped.y += pk.y*mnode;
-			gp->Svlumped.z += pk.z*mnode;
-		}
 	}
 }
 

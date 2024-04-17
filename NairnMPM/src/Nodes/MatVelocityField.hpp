@@ -118,7 +118,7 @@ class MatVelocityField
 	
 		// XPIC
 		virtual void XPICSupport(int,int,NodalPoint *,double,int,int,double);
-		virtual void AddVStarNext(Vector *,Vector *,Vector *,Matrix3 *,double,double);
+		virtual void AddVStarNext(Vector *,double,double);
 
 	protected:
 		int flags;					// bitwise flags for some field properties

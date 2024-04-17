@@ -139,8 +139,7 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 
 	typedef struct {
 		Vector Sacc;			// FLIP and XPIC only
-		Vector Svtilde;
-		Vector Svlumped;		// XPIC(k>1) only
+		Vector Svk;             // Sv+(lumped) FLIP/PIC, Sv+(k) FMPM, S(v(k)+a*dt) XPIC)
 		double gridAlpha;
 		double particleAlpha;
 		int m;					// m>1 FMPM,m=0 FLIP,m<0 XPIC
@@ -221,6 +220,7 @@ double CrossProduct2D(const Vector *,const Vector *);
 double DotVectors(const Vector *,const Vector *);
 double DotVectors2D(const Vector *,const Vector *);
 void PrintVector(const char *,const Vector *);
+double PiecewiseInterpolate(double x,vector<double> xpts,vector<double> ypts);
 
 Tensor MakeTensor(double, double, double, double, double, double);
 Tensor MakeTensor2D(double, double, double, double);

@@ -150,7 +150,7 @@ class NodalPoint : public LinkedObject
 	
 		// XPIC
 		void XPICSupport(int,int,NodalPoint *,double,int,int,double);
-		void AddVStarNext(short,int,Vector *,Vector *,Vector *,Matrix3 *,double,double);
+		void AddVStarNext(short,int,Vector *,double,double);
 		virtual Vector *GetVStarPrev(short,int) const;
 		double GetMaterialMass(short,int) const;
 	

@@ -355,7 +355,7 @@ void Neohookean::IncrementThicknessStress(double dszz,MPMBase *mptr) const
 }
 
 // Calculate wave speed in L/sec (because G in mass/(L sec^2) and rho in mass/L^3)
-// Uses sqrt((K +4G/3)/rho) which is dilational wave speed at low strain
+// Uses sqrt((K+4G/3)/rho) which is dilational wave speed at low strain
 double Neohookean::WaveSpeed(bool threeD,MPMBase *mptr) const
 {	return sqrt((Kbulk+4.*G/3.)/rho);
 }
@@ -376,6 +376,7 @@ double Neohookean::GetCurrentRelativeVolume(MPMBase *mptr,int offset) const
 }
 
 // Calculate current wave speed. Uses sqrt((Lambda+2G)/rho)
+// Note that Lame+2G = Kbulk+4.*G/3. Here we get current tangent Kbulk
 double Neohookean::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
 {	double J = mptr->GetHistoryDble(J_History,offset);
 	double Jres = mptr->GetHistoryDble(J_History+1,offset);
@@ -383,22 +384,25 @@ double Neohookean::CurrentWaveSpeed(bool threeD,MPMBase *mptr,int offset) const
 	Tensor *B = mptr->GetAltStrainTensor();
 	double Jres2third = pow(Jres,2./3.);
 	double Gterm = G*(9.-(B->xx+B->yy+B->zz)/Jres2third)/(9.*Jeff);
-	double Kcurrent;
+	double Kcurrent,Gcurrent;
 	switch(UofJOption)
 	{   case J_MINUS_1_SQUARED:
 			Kcurrent = Lame*Jeff + Gterm;
+            Gcurrent = G + Lame*Jeff*(1-Jeff);
 			break;
 			
 		case LN_J_SQUARED:
 			Kcurrent = Lame*(1-log(Jeff))/Jeff + Gterm;
+            Gcurrent = G - Lame*log(Jeff);
 			break;
 			
 		case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
 		default:
 			Kcurrent = 0.5*Lame*(Jeff + 1./Jeff) + Gterm;
+            Gcurrent = G + 0.5*Lame*(1-Jeff*Jeff);
 			break;
 	}
-	return sqrt(Kcurrent/rho);
+	return sqrt((Kcurrent+4.*Gcurrent/3.)/rho);
 }
 
 

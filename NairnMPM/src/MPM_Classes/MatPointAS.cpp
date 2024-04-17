@@ -43,34 +43,11 @@ MatPointAS::MatPointAS(int inElemNum,int theMatl,double angin,double thickin) : 
 // postUpdate true if after particle position updated
 void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld,bool postUpdate)
 {
-#ifdef CONST_ARRAYS
-	int ndsArray[MAX_SHAPE_NODES];
-	double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
-#else
-	int ndsArray[maxShapeNodes];
-	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
-#endif
-	int i,numnds;
-	Vector vel;
-    Matrix3 dv;
-	Tensor *gStressPtr=NULL;
-
-	// don't need to zero zDeriv because always set in axisymmetric shape functions
+    // get velocity gradient
+    Matrix3 dv = ExtraVelocityGradient();
     
-	// find shape functions and derviatives
-	const ElementBase *elemRef = theElements[ElemID()];
-	int *nds = ndsArray;
-	elemRef->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,this);
-	numnds = nds[0];
-    
-    // Find strain rates at particle from current grid velocities
-	//   and using the velocity field for that particle and each node and the right material
-    // In axisymmetric x->r, y->z, and z->hoop
-    for(i=1;i<=numnds;i++)
-	{	vel=nd[nds[i]]->GetVelocity((short)vfld[i],matFld);
-        dv += Matrix3(vel.x*xDeriv[i],vel.x*yDeriv[i],vel.y*xDeriv[i],vel.y*yDeriv[i],vel.x*zDeriv[i]);
-    }
-    
+    Tensor *gStressPtr=NULL;
+	
     // save velocity gradient (if needed for J integral calculation)
     SetVelocityGradient(dv(0,0),dv(1,0),dv(0,1),dv(1,0),secondPass);
     
@@ -81,6 +58,41 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	// pass on to material class to handle
 	ResidualStrains res = ScaledResidualStrains(secondPass);
 	PerformConstitutiveLaw(dv,strainTime,np,props,&res,gStressPtr);
+}
+
+// Extrapolation spatial velocity gradient from current grid
+// velocties and gradient shape functions
+Matrix3 MatPointAS::ExtraVelocityGradient(void)
+{
+#ifdef CONST_ARRAYS
+    double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
+    int ndsArray[MAX_SHAPE_NODES];
+#else
+    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+    int ndsArray[maxShapeNodes];
+#endif
+    Vector vel;
+    Matrix3 dv;
+
+    // find shape functions and derviatives
+    const ElementBase *elemRef = theElements[ElemID()];
+    int *nds = ndsArray;
+    elemRef->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,this);
+    int numnds = nds[0];
+
+    // get the material
+    const MaterialBase *matRef = theMaterials[MatID()];
+    int matfld = matRef->GetField();
+    
+    // Find strain rates at particle from current grid velocities
+    //   and using the velocity field for that particle and each node and the right material
+    // In axisymmetric x->r, y->z, and z->hoop
+    for(int i=1;i<=numnds;i++)
+    {   vel=nd[nds[i]]->GetVelocity((short)vfld[i],matfld);
+        dv += Matrix3(vel.x*xDeriv[i],vel.x*yDeriv[i],vel.y*xDeriv[i],vel.y*yDeriv[i],vel.x*zDeriv[i]);
+    }
+
+    return dv;
 }
 
 // Pass on to material class

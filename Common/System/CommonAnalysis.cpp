@@ -28,6 +28,7 @@ CommonAnalysis::CommonAnalysis()
 	reverseBytes=false;			// reverse bytes in archived files
 	description=NULL;
 	SetDescription("\nNo Description");
+	randseed=0;
 	
 	np=-1;						// analysis method to be set
 	nfree=2;					// 2D analysis
@@ -82,6 +83,12 @@ void CommonAnalysis::StartResultsOutput(void)
     // Description
     PrintSection("ANALYSIS DESCRIPTION");
     cout << GetDescription() << endl;
+	
+	// Ranndom number seed
+	if(randseed>0)
+	{	cout << "User-defined randome number seed = " << randseed << endl;
+		cout << endl;
+	}
 
 	/*	NairnMPM/NairnFEA: Current Flags in Use
 	 *	 none
