@@ -71,6 +71,9 @@
     <Body mat="2" thick="5" vx="0" vy="0">
       <Rect xmin="-1.0" xmax="&xbil;" ymin="&ybil;" ymax="&ymax;"/>
     </Body>
+    <Body mat="3" thick="5" vx="0" vy="0">
+      <Rect xmin="-1.0" xmax="&xbil;" ymin="&ybil;" ymax="&ymax;"/>
+    </Body>
   </MaterialPoints>
 
   <Material Type="9" Name="Isotropic Material">
@@ -98,6 +101,11 @@
     <SettingFunction>&vel;</SettingFunction>
   </Material>
 
+  <Material Type="11" Name="Loading Clamp">
+    <SetDirection>2</SetDirection>
+    <SettingFunction>&vel;</SettingFunction>
+  </Material>
+  
   <GridBCs>
     <BCLine x1="min-" y1="0" x2="max+" y2="0" tolerance="*1">
       <DisBC dir="2" style="1" vel="0"/>

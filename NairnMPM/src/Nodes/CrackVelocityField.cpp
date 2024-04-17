@@ -5,8 +5,9 @@
 	Created by John Nairn on 11 August 2009.
 	Copyright (c) 2009 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Nodes/CrackVelocityField.hpp"
@@ -19,6 +20,10 @@
 #include "Materials/RigidMaterial.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Global_Quantities/BodyForce.hpp"
+
+#include <cmath>
+#include "System/MPMPrefix.hpp"
+#include "System/DataTypes.hpp"
 
 #pragma mark INITIALIZATION
 

@@ -12,7 +12,9 @@
 #ifndef _COMMONARCHIVEDATA_
 
 #define _COMMONARCHIVEDATA_
-
+#ifdef __GNUC__
+#include <stddef.h> //size_t
+#endif 
 class CommonArchiveData
 {
     public:

@@ -12,8 +12,12 @@
 #ifndef _ARCHIVEDATA_
 
 #define _ARCHIVEDATA_
+#include "System/DataTypes.hpp" //Vector
 
 #include "System/CommonArchiveData.hpp"
+#include <vector>
+
+using namespace std;
 
 class BoundaryCondition;
 class MPMBase;

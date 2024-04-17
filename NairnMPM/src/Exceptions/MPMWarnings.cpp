@@ -5,18 +5,21 @@
     Created by John Nairn on Tues Feb 08 2005.
     Copyright (c) 2005 John A. Nairn, All rights reserved.    
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
 #include "Exceptions/MPMWarnings.hpp"
 #include "System/ArchiveData.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MPMTask.hpp"
+#include "System/MPMPrefix.hpp"
 
 // Single global warnings object
 MPMWarnings warnings;
 
 #pragma mark MPMWarnings: Constructors and Destructors
 
+using namespace std;
 // Constructors
 MPMWarnings::MPMWarnings()
 {	lastWarning = NULL;
