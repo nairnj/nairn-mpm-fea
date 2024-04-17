@@ -7,8 +7,9 @@
 	
 	NodalPoint: Methods for MPM only
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Nodes/NodalPoint.hpp"

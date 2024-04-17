@@ -14,6 +14,7 @@
 #ifndef _NAIRNMPM_
 
 #define _NAIRNMPM_
+#include "Common/Read_XML/CommonReadHandler.hpp"
 
 class MPMBase;
 class BoundaryCondition;

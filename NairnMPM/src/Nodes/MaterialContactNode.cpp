@@ -8,8 +8,10 @@
 	This object handles material contact nodes when using machine learning
 	method to find the normals
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
+
 #include "Nodes/MaterialContactNode.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Exceptions/CommonException.hpp"

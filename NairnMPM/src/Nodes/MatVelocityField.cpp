@@ -11,8 +11,10 @@
 			disp will be sum Vp*(pos-origpos), expos will be sum of Vp*pos
 			and volume will be unscaled volume
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
+
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/MatVelocityField.hpp"
 #include "Exceptions/CommonException.hpp"

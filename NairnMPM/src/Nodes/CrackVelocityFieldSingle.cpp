@@ -5,8 +5,10 @@
 	Created by John Nairn on 21 August 2009.
 	Copyright (c) 2009 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
+
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Nodes/CrackVelocityFieldSingle.hpp"
