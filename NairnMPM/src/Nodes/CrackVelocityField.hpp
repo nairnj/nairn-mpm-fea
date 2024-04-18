@@ -13,6 +13,9 @@
 
 #define _CRACKVELOCITYFIELD_
 
+#include "System/DataTypes.hpp"
+#include <cmath>
+
 typedef struct {
 	int numParticles;
 	Vector cmVel;

@@ -29,6 +29,8 @@
 #define DELTA_VSTARNEXT_VEC 4
 #define DELTA_VSTORE_VEC 5
 
+#include "System/DataTypes.hpp"
+
 // calculations options
 enum { INITIALIZE_XPIC=0,UPDATE_VSTAR,COPY_VSTARNEXT };
 
@@ -85,9 +87,9 @@ class MatVelocityField
 		void AddContactVector(int,Vector *,double);
 		void AddContactVector(int,Vector *);
 
-#if ADJUST_COPIED_PK == 1
+//#if ADJUST_COPIED_PK==1
         void AdjustForSymmetryBC(int);
-#endif
+//#endif
 	
 		// accessors
 		void Describe(int) const;

@@ -12,6 +12,8 @@
 #ifndef _MATERIALCONTACTNODE_
 
 #define _MATERIALCONTACTNODE_
+#include <vector>
+using namespace std;
 
 class NodalPoint;
 

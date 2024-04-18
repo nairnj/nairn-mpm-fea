@@ -29,6 +29,7 @@
 #include <xercesc/sax2/XMLReaderFactory.hpp>
 #include <xercesc/sax/SAXParseException.hpp>
 #include <xercesc/sax/SAXException.hpp>
+#include <System/DataTypes.hpp>
 
 XERCES_CPP_NAMESPACE_USE		// for Xerces >=2.3.0
 

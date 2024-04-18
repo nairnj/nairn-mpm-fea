@@ -23,6 +23,9 @@
 #include "Exceptions/MPMWarnings.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "Elements/ElementBase.hpp"
+#include <cmath>
+#include <iostream>
+using namespace std;
 
 #pragma mark INITIALIZATION
 

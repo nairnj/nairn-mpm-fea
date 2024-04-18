@@ -7,6 +7,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3")
 add_definitions(-DMPM_CODE)
 add_definitions(-DCONST_ARRAYS)
 add_definitions(-DPOROELASTICITY)
+add_definitions(-DRESTART_OPTION)
 
 
 ADD_SUBDIRECTORY(src)

@@ -24,6 +24,7 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "System/MPMPrefix.hpp"
 
 // class statics
 int MatVelocityField::pkCopy=0;
@@ -569,9 +570,9 @@ void MatVelocityField::AddVelocityBC(Vector *norm,double vel,int passType,double
 	switch(passType)
 	{	case MASS_MOMENTUM_CALL:
 			AddPkScaled(norm, mass*vel);
-#if ADJUST_COPIED_PK == 2
-			vk[pkCopy] = pk;
-#endif
+// #if ADJUST_COPIED_PK == 2
+			// vk[pkCopy] = pk;
+// #endif
 			break;
 		case UPDATE_MOMENTUM_CALL:
 		{	double pvel = mass*vel;
@@ -598,7 +599,7 @@ void MatVelocityField::AddVelocityBC(Vector *norm,double vel,int passType,double
 	}
 }
 
-#if ADJUST_COPIED_PK == 1
+//#if ADJUST_COPIED_PK==1
 // set symmetry plane momenta to zero in copied momenta
 void MatVelocityField::AdjustForSymmetryBC(int fixedDirection)
 {   if(fixedDirection&XSYMMETRYPLANE_DIRECTION)
@@ -608,7 +609,7 @@ void MatVelocityField::AdjustForSymmetryBC(int fixedDirection)
     if(fixedDirection&ZSYMMETRYPLANE_DIRECTION)
 		vk[pkCopy].z=0.;
 }
-#endif
+//#endif
 
 // total force
 Vector MatVelocityField::GetFtot(void) const { return ftot; }

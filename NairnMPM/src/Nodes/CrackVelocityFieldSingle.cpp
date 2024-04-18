@@ -18,6 +18,9 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 
+#include <iostream>
+using namespace std;
+
 #pragma mark INITIALIZATION
 
 // constructor

@@ -8,8 +8,10 @@
  
 	Linear, Logistic, and SVN methods for contact normals
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
+
 #include "Nodes/CrackVelocityFieldMulti.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/MaterialContactNode.hpp"
@@ -19,6 +21,10 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Exceptions/MPMWarnings.hpp"
+
+
+#include <iostream>
+using namespace std;
 
 // To print convergence progress
 //#define SHOW_CONVERGENCE

@@ -20,7 +20,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Elements/ElementBase.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
-
+#include "System/MPMPrefix.hpp"
 #define PARALLEL_LINKING
 
 // global point to contact conditions

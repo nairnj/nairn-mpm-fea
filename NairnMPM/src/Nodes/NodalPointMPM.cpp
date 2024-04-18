@@ -29,6 +29,8 @@
 #include "System/UnitsController.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 
+#include "System/MPMPrefix.hpp"
+
 // class statics
 double NodalPoint::interfaceEnergy=0.;
 double NodalPoint::frictionWork=0.;
