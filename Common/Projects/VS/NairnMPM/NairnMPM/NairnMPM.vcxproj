@@ -173,6 +173,9 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Nonlinear2Hardening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\NonlinearHardening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\NonlinearInterface.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\OrthoFailureSurface.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\OrthoPlasticSoftening.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\OrthoSoftening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\PressureLaw.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\RigidMaterial.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SCGLHardening.hpp" />
@@ -180,8 +183,10 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SmoothStep3.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TaitLiquid.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TIFailureSurface.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TIViscoelastic.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TractionLaw.hpp" />
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TransIsoSoftening.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\Viscoelastic.hpp" />
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint2D.hpp" />
@@ -357,6 +362,9 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Nonlinear2Hardening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\NonlinearHardening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\NonlinearInterface.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\OrthoFailureSurface.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\OrthoPlasticSoftening.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\OrthoSoftening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\PressureLaw.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\RigidMaterial.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SCGLHardening.cpp" />
@@ -364,8 +372,10 @@
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SmoothStep3.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\SofteningLaw.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TaitLiquid.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TIFailureSurface.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TIViscoelastic.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TractionLaw.cpp" />
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TransIsoSoftening.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TrilinearTraction.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\Viscoelastic.cpp" />
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\MPM_Classes\MatPoint2D.cpp" />

@@ -626,6 +626,21 @@
     <ClInclude Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PhaseFieldDiffusion.hpp">
       <Filter>NairnMPM_src\Custom_Tasks</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\OrthoFailureSurface.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\OrthoPlasticSoftening.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\OrthoSoftening.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TIFailureSurface.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\NairnMPM\src\Materials\TransIsoSoftening.hpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -1194,6 +1209,21 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\NairnMPM\src\Custom_Tasks\PhaseFieldDiffusion.cpp">
       <Filter>NairnMPM_src\Custom_Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\OrthoFailureSurface.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\OrthoPlasticSoftening.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\OrthoSoftening.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TIFailureSurface.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\NairnMPM\src\Materials\TransIsoSoftening.cpp">
+      <Filter>NairnMPM_src\Softening</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
