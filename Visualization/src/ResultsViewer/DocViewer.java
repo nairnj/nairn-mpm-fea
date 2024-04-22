@@ -282,7 +282,7 @@ public class DocViewer extends JNDocument
 				}
 				catch(Exception tpe)
 				{	JNApplication.appBeep();
-					JOptionPane.showMessageDialog(timeFrame,tpe.getLocalizedMessage());
+					JNUtilities.showMessage(timeFrame,tpe.getLocalizedMessage());
 				}
 				
 				break;
@@ -299,7 +299,7 @@ public class DocViewer extends JNDocument
 				}
 				catch(Exception tpe)
 				{	JNApplication.appBeep();
-					JOptionPane.showMessageDialog(xyPlotFrame,tpe.getLocalizedMessage());
+					JNUtilities.showMessage(xyPlotFrame,tpe.getLocalizedMessage());
 				}
 				
 				break;
@@ -450,7 +450,7 @@ public class DocViewer extends JNDocument
 			{	String emsg = e.getMessage();
 				if(emsg == null)
 					emsg = "Scanner error probably due to corrupted or misformatted data.";
-				JOptionPane.showMessageDialog(this,"The analysis failed to read for rescaling:\n   "
+				JNUtilities.showMessage(this,"The analysis failed to read for rescaling:\n   "
 												+ emsg);
 				windowClosing(null);
 			}

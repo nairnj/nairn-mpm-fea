@@ -388,7 +388,7 @@ Define type of analysis to be done; <code>(type)</code> can be following strings
 <li>&quot;Axisymmetric MPM+PS&quot;</li>
 <li>&quot;3D MPM+PS&quot;</li>
 </ul>
-The "+PS" options implement MPM with tracking of particle spin and they require use of <a href="http://osupdocs.forestry.oregonstate.edu/index.php/OSParticulas">OSParticulas</a>. A feature in development can extend 2D MPM to <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Generalized_Plane_Stress_and_Strain">generalized plane stress or strain</a> for selected materials.</li>
+The "+PS" options implement MPM with tracking of particle velocity gradient and they require use of <a href="http://osupdocs.forestry.oregonstate.edu/index.php/OSParticulas">OSParticulas</a>. A feature in development can extend 2D MPM to <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Generalized_Plane_Stress_and_Strain">generalized plane stress or strain</a> for selected materials.</li>
 
 <li><code><a name="trackspin"></a>ConsistentUnits &lt;(length)&gt;,&lt;(mass)&gt;,&lt;(time)&gt;</code><br>
 Determines the units used for all input commands for length, mass and time. Only metric options are allowed as follows:
@@ -442,6 +442,14 @@ Select the desired output results for FEA calculations. The arguments appear in 
 </ul>
 to include those results in output FEA results file. The second of each pair (<i>e.g.</i>, <code>(out1)</code>) can be &quot;yes&quot; or &quot;no&quot; to include or omit those results, or it can be &quot;selected&quot; to only include results for selected nodes and elements (see <a href="#select">Select</a>, <a href="#selectline">SelectLine</a>, and <a href="#selectpoint">SelectPoint</a> commands).</li>
 </ul>
+
+<p>Two developer options can be added to the main header using an <a href="#xmldata">XMLData command</a> block:</p>
+<pre>XMLData "Header"
+  &lt;RandSeed&gt;5739&lt;RandSeed&gt;
+  &lt;DevelFlag Number='4'&gt;1&lt;DevelFlag&gt;
+EndXMLData
+</pre>
+<p>If <code>RandSeed</code> is greater than zero, it seeds the random number generator with that constant. This change makes stochastic modeling reproducible (each run gets the same random numbers). It is helpful when setting up stochastic simulations, but must be removed when ready to get stochastic results. <code>DevelFlag</code> sets a developer flag (by number) that is only useful if working with source code and you want to temporarily activate some different option. The flag values must be integers.</p> 
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
@@ -563,8 +571,8 @@ Specify results to be archived in MPM calculations. The list can be in multiple 
 <li>workenergy - cumulative &sigma;.d&epsilon;</li>
 <li>heatenergy</li>
 <li>plasticenergy</li>
-<li><code>lp</code> - angular momentum due to particle spin (zero unless <a href="#trackspin">particle spin</a> is activated)</li>
-<li><code>wp</code> - angular velocity due to particle spin (zero unless <a href="#trackspin">particle spin</a> is activated).</li>
+<li><code>lp</code> - angular momentum due to particle velocity gradient</li>
+<li><code>wp</code> - angular velocity due to particle velocity gradient.</li>
 <li>temperature</li>
 <li>concentration or porepressure - concentration and gradients when doing diffusion calculations or pore pressure and gradients when doing poroelasticity calculations </li>
 <li><code>history#</code> - where '#' is 1 to 19 to archive that history variable for a material. These history variables depend on material types being used.</li>
@@ -635,8 +643,8 @@ Specify time interval for archiving global results, <code>(time)</code> is the g
 	<li><code>px</code>, <code>py</code>, or <code>pz</code> - average component of momentum (in <a href="#units">linear momentum units</a>)</li>
 	<li><code>pR</code> or <code>pR</code> - average component of axisymmetric momentum (in <a href="#units">linear momentum units</a>) (synonyms for <code>px</code> or <code>py</code>)</li>
 	<li><code>Lx</code>, <code>Ly</code>, or <code>Lz</code> - average component of angular momentum (in <a href="#units">angular momentum units</a>) (note that only Lz is non-zero in 2D or axisymmetric calculations).</li>
-	<li><code>Lpx</code>, <code>Lpy</code>, or <code>Lpz</code> - average component of particle spin angular momentum (in <a href="#units">angular momentum units</a>) (note that only Lpz is non-zero in 2D or axisymmetric calculations and the simulation must be <a href="#trackspin">tracking particle spin</a> for any component to be non zero).</li>
-	<li><code>wpx</code>, <code>wpy</code>, or <code>wpz</code> - average component of particle spin velocity (in <a href="#units">1/time units</a>) (note that only wpz is non-zero in 2D or axisymmetric calculations and the simulation must be <a href="#trackspin">tracking particle spin</a> for any component to be non zero).</li>
+	<li><code>Lpx</code>, <code>Lpy</code>, or <code>Lpz</code> - average component of particle angular momentum due to velocity gradient (in <a href="#units">angular momentum units</a>) (note that only Lpz is non-zero in 2D or axisymmetric calculations).</li>
+	<li><code>wpx</code>, <code>wpy</code>, or <code>wpz</code> - average component of particle angular velocity due to velocity gradient (in <a href="#units">1/time units</a>) (note that only wpz is non-zero in 2D or axisymmetric calculations).</li>
 </ul></li>
 
 <li>Contact and Reaction Forces
@@ -658,7 +666,7 @@ Specify time interval for archiving global results, <code>(time)</code> is the g
 <li>Thermodynamics Functions
 <ul>
 	<li><code>Work Energy</code> - total work energy in <a href="#units">energy units</a></li>
-	<li><code>Kinetic Energy</code> - total kinetic energy in <a href="#units">energy units</a> on the particles</li>
+	<li><code>Kinetic Energy</code> - total kinetic energy in <a href="#units">energy units</a> on the particles. When using a <a href="#header">+PS option</a>, the kinetic energy will include energy due to tracked particle velocity gradient.</li>
 	<li><code>Grid Kinetic Energy</code> - total kinetic energy in <a href="#units">energy units</a> on the grid</li>
 	<li><code>Strain Energy</code> - total external work in <a href="#units">energy units</a></li>
 	<li><code>Heat Energy</code> - total heat energy in <a href="#units">energy units</a></li>

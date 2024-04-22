@@ -622,11 +622,19 @@ and rubber elastic materials as special cases.</td>
 <li>G0 - the steady-state (or long time) shear modulus (in <a href="commands.html#units">pressure units</a>)</li>
 <li>Gk - the shear modulus for the next relaxation time (in <a href="commands.html#units">pressure units</a>)</li>
 <li>tauk - the next shear modulus relaxation time (in <a href="commands.html#units">time units</a>)</li>
-<li>pressureLaw - set to 0 to use small strain method (with provided K terms) or 1 to use MGEOS (with all its properties)</li>
+<li>pressureLaw - set to 0 to use small strain method (with provided K terms) or 1 to use MGEOS (with all its properties). MGEOS cannot be used with time-dependent bulk modulus.</li>
 <li>K - the steady-state (or long time) bulk modulus (in <a href="commands.html#units">pressure units</a>) (when pressureLaw=0)</li>
 <li>Kk - the bulk modulus for the next relaxation time (in <a href="commands.html#units">pressure units</a>) (when pressureLaw=0)</li>
 <li>tauKk - the next bulk modulus relaxation time (in <a href="commands.html#units">time units</a>) (when pressureLaw=0)</li>
 <li>MGEOS Properties - for pressureLaw=1, set <code>C0</code>, <code>S1</code>, <code>S2</code>, <code>S3</code>, <code>gamma0</code>, and  <code>Kmax</code> for the <a href="#MGEOS">MGEOS</a> calculations. The <code>UJOption</code> is fixed at 1.</li>
+<li>Tref - reference temperature to shift relaxation times using the WLF equation. If Tref&lt;0, then no shifting is done and relaxation times will be independent of temperature.</li>
+<li>C1 - coefficient in WLF equation used when Tref&gt;0 to shift relaxation times. If the entered value is negative, the thermal shift switches to Arrhenious activation energy with <i>&Delta;H<sub>a</sub> = -RC<sub>1</sub></i>.</li>
+<li>C2 - coefficient in WLF equation used when Tref&gt;0 to shift relaxation times (not used if <i>C<sub>1</sub></i> is negative).
+<li>mref - reference concentration to shift relaxation times using the WLF-style equation. If mref&lt;0, then no shifting is done and relaxation times will be independent of concentration.</li>
+<li>Cm1 - coefficient in WLF-style equation used when mref&ge;0 to shift relaxation times.</li>
+<li>Cm2 - coefficient in WLF-style equation used when mref&ge;0 to shift relaxation times/</li>
+<li>bTemp<br>bTValue - enter (bTemp,bTValue) pairs for piecewise interpolation of vertical temperature shift of elastic properties. Enter any number of pairs with bTemp values monotonically increasing.</li>
+<li>bConc<br>bCValue - enter (bConc,bCValue) pairs for piecewise interpolation of vertical concentration (or moisture) shift of elastic properties. Enter any number of pairs with bConc values monotonically increasing.</li>
 <li>alpha - the thermal expansion coefficient (in ppm/K) (ignored for MGEOS when pressureLaw=1)</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
@@ -636,6 +644,8 @@ G<sub>ntaus</sub>exp(-t/tau<sub>n</sub>), where ntaus is the number of shear mod
 
 <p>The relaxation bulk modulus is given by K(t) = K + K<sub>1</sub>exp(-t/tau<sub>1</sub>) + K<sub>2</sub>exp(-t/tau<sub>2</sub>) + ... +
 K<sub>ntausK</sub>exp(-t/tau<sub>n</sub>), where ntausK is the number of bulk modulus relation times entered (and that number must exactly match the number of Kk shear moduli entered). To use time-independent bulk modulus, enter only K.</p>
+
+<p>For more details relaxation time and elastic property shifting see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Viscoelastic_Material">OSUPDocs wiki</a>.</p>
 
 <p>This material can be used in plane stress analysis, but only if <code>pressureLaw=0</code> and <a href="#cmn5">artificial visocity</a> is not used.</p>
 
@@ -649,39 +659,7 @@ K<sub>ntausK</sub>exp(-t/tau<sub>n</sub>), where ntausK is the number of bulk mo
 
 <h2><a name="tivisc"></a>Transversely Isotropic Viscoelastic Material</h2>
 
-<p>This material is a small-strain, linear viscoelastic material with five time-dependent moduli each given by a sum of relaxation times.The axial direction is along the <code>z</code> axis and the material is isotropic in the <code>x-y</code> plane. Any other orientation is achieved by rotating from these initial orientations. Use the <code>swapz</code> property to move the axial direction into the 2D analysis plane. The input properties are:</p>
-
-<ul>
-
-<li><code>GT0</code> for the steady-state (or long time) transverse shear modulus (in <a href="commands.html#units">pressure units</a>),</li>
-
-<li><code>GA0</code> for the steady-state (or long time) axial shear modulus (in <a href="commands.html#units">pressure units</a>),</li>
-
-<li><code>KT0</code> for the steady-state (or long time) plane-strain bulk modulus (in <a href="commands.html#units">pressure units</a>),</li>
-
-<li><code>en0</code> for the steady-state (or long time) C<sub>33</sub> element of the stiffness tensor where 3 is the axial direction (in <a href="commands.html#units">pressure units</a>),</li>
-
-<li><code>ell0</code> for the steady-state (or long time) C<sub>13</sub> = C<sub>23</sub> element of the stiffness tensor where 3 is the axial direction (in <a href="commands.html#units">pressure units</a>),</li>
-
-<li><code>Pk</code> for the next modulus (in <a href="commands.html#units">pressure units</a>) in series for the current property.</li>
-
-<li><code>tauk</code> for the next relaxation time (in <a href="commands.html#units">time units</a>) in series for the current property.</li>
-
-<li><code>swapz</code> - set to &gt;0 to move axial direction from <code>z</code> axis to the <code>y</code> axis (or from &theta; axis to <code>Z</code> axis in axisymmetric calculations). This property is only needed for 2D simulations that want axial direction in the analysis plane (it is not allowed in 3D MPM simulations).</li>
-
-<li><a href="#trans1">TI Properties</a>: enter other transversely properties for thermal expansion and moisture expansion properties.</li>
-
-<li><a href="#common">Properties common to all materials</a></li>
-
-</ul>
-
-<p>Each relaxation modulus is given by P(t) = P<sub>0</sub> + P<sub>1</sub>exp(-t/tau<sub>1</sub>) + P<sub>2</sub>exp(-t/tau<sub>2</sub>) + ... +
-P<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>) when the P<sub>k</sub> and tau<sub>k</sub> are matched in the order they are supplied. For each of five properties, enter the steady value (which becomes P<sub>0</sub>) and follow that by series of P<sub>k</sub> and tau<sub>k</sub> values
-For more details see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Transversely_Isotropic_Viscoelastic_Material">OSUPDocs wiki</a>.</p>
-
-<h3>History Data for Transversely Isotropic Viscoelastic Materials</h3>
-
-<p>This material tracks numerous internal viscoelastic variables. They can be archived, but may not provide much useful information.</p>
+<p>This material extends the <a href="#visc">isotropic viscoelastic material</a> to model transversely isotropic viscoelastic materials. The detailed documentation is currently only available on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Transversely_Isotropic_Viscoelastic_Material">OSUPDocs wiki</a>.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
@@ -1683,7 +1661,7 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <h2><a name="orthoFailure"></a>Orthotropic Failure Initiation (number=3)</h2>
 
-<p>This law is currently in development. See the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Orthotropic_Failure_Surface">OSUPdocs Wiki</a> for details and all its properties.</p>
+<p>This law is currently only documented on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Orthotropic_Failure_Surface">OSUPdocs Wiki</a> .</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 

@@ -386,7 +386,7 @@ public class RemoteConnection {
 				Object[] options = { "yes", "no" };
 				int foo = JOptionPane.showOptionDialog(null, message,
 						"Warning", JOptionPane.DEFAULT_OPTION,
-						JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+						JOptionPane.WARNING_MESSAGE, JNApplication.miniAppIcon(), options, options[0]);
 				return foo == 0;
 			}
 

@@ -336,17 +336,17 @@ This use assumes <code>mylist</code> is a <a href="#list">list</a> object and th
 This command must be the first command in a script. Its presence is how <b>NairnFEAMPMViz</b> knows to interpret the commands as a script rather than as commands to setup FEA or MPM calculations.</li>
 </ul>
 
-<p>The other direct commands are list here (in alphabetical order):</p>
+<p>The other direct commands are list here (in alphabetical order). The commands are followed by their arguments where those in square brackets ("[(arg)]") are option argument.</p>
 
 <ul>
 
 <li><code>CreateDictionary objName</code><br>
 Create a <a href="#dict">dictionary</a> object and set <code>objName</code> object name to the created dictionary.</li>
 
-<li><code>CreateList objName,&lt;(item1),(item2),...&gt;</code><br>
+<li><code>CreateList objName,[(item1),(item2),...]</code><br>
 Create a <a href="#list">list</a> object and set <code>objName</code> object name to the created list. If optional arguments are provided, they are added to the lists. Strings and numbers are added. If any paramaters match an existing object name, that object is added to the list.</li>
 
-<li><code>Export &lt;(path)&gt;</code><br>
+<li><code>Export [(path)]</code><br>
 This command will save the contents of the script window's console pane
 to the file specified by <code>(path)</code>. The optional <code>(path)</code> can be a full path or a path relative to the script document. The folder to receive the output file must already exist.
 If <code>(path)</code> is omitted, the user is given a file-saving dialog box to select file name and save location.</li>
@@ -355,13 +355,12 @@ If <code>(path)</code> is omitted, the user is given a file-saving dialog box to
 Because object names cannot be used in expressions, this command provides the equivalent of <code>objName1 = objName2[.#i]</code> when needed. If <code>objName2[.#i]</code> is not a <a href="#vars">valid object</a>, <code>objName1</code> will be set to <a href="#none">None</a> object that can be checked with <a href="commands.html#conditionals">ifDef or ifNDef</a> conditionals. One common use of this command is to pass objects to <a href="#vars">subroutines</a>.
 </li>
 
-<li><code>Open (doc),&lt;(path)&gt;</code><br>
-Open a document and set the object name in <code>(doc)</code> to the opened document object. The optional <code>(path)</code> argument is full
-or relative path to the document to be opened or is "_results_" or "_commands_". Relative paths are given from
-the saved script document. If this variable is omitted, the user is presented a standard file-opening dialog box and asked to select the file to be opened. If the requested file is already opened, its window will be brought to the front.
+<li><code>Open (doc),[(path)]</code><br>
+Open a document and set the object name in <code>(doc)</code> to the opened document object. The optional <code>(path)</code> argument is file name, a full or relative path
+to a document to be opened, is "_results_", or is "_commands_". The entered text is checked to see if it matches name (without path) of an currently opened document. A full or relative path (where relative paths are relative to the saved saved script document) will display that document if already opened or open and display it if needed. If <code>(path)</code> variable is omitted, the user is presented a standard file-opening dialog box and asked to select the file to be opened.
 If <code>(path)</code> is "_results_" or "_commands_", this command will open (and bring to the front) the first results or command document it finds that is already open (not counting the script itself as a command document). The order of documents is not reliable, which means this option works best when only one such document is available.</li>
 
-<li><code>OpenFolder "#var",&lt;(title)&gt;,&lt;(path)&gt;</code><br>
+<li><code>OpenFolder "#var",[(title)],[(path)]</code><br>
 This command will select a folder and create it if needed. If the optional <code>(path)</code> variable is omitted,
 this command presents the user with a file opening dialog that can select only folders
 (and can create new folders if desired). If provided, the title of the folder selection window will
@@ -382,9 +381,15 @@ when running in Mac or Linux. You can provide a system-independent path to files
 where <code>#fldr</code> was the <code>(strVar)</code> argument to the <code>OpenFolder</code> command.
 </li>
 
-<li><code>UserInput "#var",(title),(prompt),&lt;(initialText)&gt;,&lt;(btn1)&gt;,&lt;(btn2)&gt;,&lt;(btn3)&gt;</code><br>
-Will display a dialog box where the user can enter one line of text. The <code>title</code> is displayed in the title bar of the window. The <code>(prompt)</code> is displayed above the text field to explain the requested input (it can be any length and use multiple lines). The three optional buttons can change the text of the default &quot;OK&quot; and &quot;Cancel&quot; buttons and optionally add a third button, but these are currently ignored. The results  are returned in a variable array using the provided (and quoted) variable --- <code>#var[1]</code> set to text of clicked button and <code>#var[2]</code> set to text entered by the user (also sets <code>#var[0]=2</code>).<br />
+<li><code>UserChoice "#var",(prompt),(list),[(title)],[(multiple)],[(btn1)],[(btn2)],[(btn3)]</code><br>
+Displays a dialog box where the user can select items from a provided <a href="isdict.html#list"><code>(list)</code></a> object. To have an item preselected, use a semicolon (&quot;;&quot;) as the first character (the semicolon will not be displayed), otherwise first item is selected. The <code>(prompt)</code> is displayed above the list box to explain the requested selection. The optional <code>(title)</code> is displayed in the title bar of the window. The optional <code>(multiple)</code> can be true or false to allow selection of multiple items. The optional <code>(buttons)</code> can change the text of the default &quot;OK&quot; and &quot;Cancel&quot; buttons and optionally add a third button. The result is in a variable list <code>#var</code> with <code>#var[0]</code> = number of items in the list. <code>#var[1]</code> is text of the button that was clicked. <code>#var[2]</code> to <code>#var[1+n]</code> are text of <code>n</code> selected items and <code>#var[2+n]</code> to <code>#var[1+2n]</code> are indices of selected items. If user types escape or clicks dialog close box, <code>#var[1]]""</code> and <code>#var[0]=1</code>.</li>
+
+<li><code>UserInput "#var",(title),(prompt),[(initialText)],[(btn1)],[(btn2)],[(btn3)]</code><br>
+Displays a dialog box where the user can enter one line of text. The <code>title</code> is displayed in the title bar of the window. The <code>(prompt)</code> is displayed above the text field to explain the requested input. The three optional buttons can change the text of the default &quot;OK&quot; and &quot;Cancel&quot; buttons and optionally add a third button. The results  are returned in a variable array using the provided (and quoted) variable --- <code>#var[1]</code> set to text of clicked button and <code>#var[2]</code> set to text entered by the user (also sets <code>#var[0]=2</code>). If user types escape or clicks dialog close box, <code>#var[1]</code> and <code>#var[2]</code> will be empty strings.
 </li>
+
+<li><code>UserOption "#var",(title),(prompt),[(btn1)],[(btn2)],[(btn3)]</code><br>
+Displays a dialog box to the user with one to three <code>(buttons)</code> (or one "OK" button if none provided). The <code>(title)</code> iswindow title (if displayed) and <code>(prompt)</code> is text to explain the purpose of the dialog. The first button is the default button (if use type return). The variable <code>#var</code> is set to the text of the clicked button. If user types escape or clicks dialog close box, the returned value is an empty string.</li>
 
 </ul>
 
@@ -450,7 +455,7 @@ if it is not provided)</li>
 When the calculations are done the object name in <code>(resDoc)</code> (which must be a valid object variable name and not an expression) will be set to the final results document, but if <code>(localOption)</code> is <code>NoDownload</code>, no results document will be opened and <code>(resDoc)</code> will not be set. This command will wait until the calculations are done before returning control to the script.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;Before this command can be used, you must <a href="help.html#setserver">set up the server</a> for remote calculations. If you do not specify a password when setting up the server, this command will ask for one; thus to run an unattended script for many calculations, you should enter a password in the server setup.</li>
 
-<li><code>object.export &lt;(path)&gt;</code><br>
+<li><code>object.export [(path)]</code><br>
 This command will save the contents of the console pane in the object document
 to the file specified by <code>(path)</code>. The optional <code>(path)</code> can be a full path or a path relative
 to the script document. The folder to receive the output file must already exist.
@@ -460,8 +465,8 @@ If <code>(path)</code> is omitted, the user is given a file-saving dialog box to
 <h3>Commands for Results Documents</h3>
 
 <ul>
-<li><a name="timeplot"></a><code>@object.timeplot (xyData),(settings)</code><br>
-Set object name <code><(xyData)</code> to plot of the selected quantity as a function of time in a <a href="list">list</a> that contains two lists at index 0 and 1 for time data and y data respectively (for MPM calculations only). The data to plot are defined by options entered in the the <a href="#dict">dictionary</a> with object name <code>(settings)</code>. The keys to be set in the dictionary are
+<li><a name="timeplot"></a><code>object.timeplot (xyData),(settings)</code><br>
+Set object name <code>(xyData)</code> to plot of the selected quantity as a function of time in a <a href="list">list</a> that contains two lists at index 0 and 1 for time data and y data respectively (for MPM calculations only). The data to plot are defined by options entered in the the <a href="#dict">dictionary</a> with object name <code>(settings)</code>. The keys to be set in the dictionary are
 <ul>
 <li><code>menutext</code> - quantity by name in "Plot:" menu (string, case sensitive). Except, to plot history or traction data, enter "History Data" or "Crack Traction Data" and set <code>tensorindex</code> as explained next.</li>
 <li><code>tensorindex</code> - when plotting tensors (like "Stress") select component of tensor to plot (numbered from 0 in the "Component:" menu). For history or traction data, enter number to plot minus 1 (<i>i.e.</i>, history data n is at tensor index n-1).</li>
@@ -490,9 +495,9 @@ PublishPlotJ application. A single <code>plottable</code>
 command can plot multiple tables if the are separated by blank lines with the <code>(table)</code> string argument.
 The use of multiple <code>plottable</code> will create multiple plot windows.</li>
 
-<li><a name="xyplot"></a><code>@object.xyplot (xyData),(settings)</code><br>
-Set object name <code><(xyData)</code> to plot of selected quantity as a function of position in a <a href="list">list</a> that contains two lists at index 0 and 1 for x data and y data respectively.
-The data to plot are defined by options entered in the the <a href="#dict">dictionary</a> with object name <code>(settings)</code>. The first six keys are the same is listed for <a href="#timeplot">timeplot</a> command. The extra keys in the dictionary for for x-y plots are:
+<li><a name="xyplot"></a><code>object.xyplot (xyData),(settings)</code><br>
+Set object name <code>(xyData)</code> to plot of selected quantity as a function of position in a <a href="list">list</a> that contains two lists at index 0 and 1 for x data and y data respectively.
+The data to plot are defined by options entered in the the <a href="#dict">dictionary</a> with object name <code>(settings)</code>. The first six keys are the same as listed for <a href="#timeplot">timeplot</a> command. The extra keys in the dictionary for x-y plots are:
 <ul>
 <li><code>archive</code> - select time to plot by archive index (numbered from 1)</li>
 <li><code>variable</code> - plot option (by number) for path though the mesh as 0: x or r, 1: y or z, 2: D, 3: T, 4: p:x+d*t, 5: p0:x0+d*t, or 6: Histogram</li>
@@ -507,6 +512,10 @@ Note that all invalid values will be returned as "nan" text. Scripts should chec
 <h3>Commands for Lists</h3>
 
 <ul>
+
+<li><a name="addlist"></a>object.addList (obj1),[(obj2),...]</dt>
+Adds individual elements of one or more list objects to the target liast. Any parameters that do not correspond to a valid list object will be skipped. Use <a href="#addobject">addObject</a> to add a list as a single object to another list.</li>
+
 <li><a name="addstring"></a>object.addString (expr1),[(expr2),...]<br>
 Adds one or more strings to the target <a href="#list">list</a>. All parameters must be valid <a href="commands.html#varexp">expressions</a>.
 </li>

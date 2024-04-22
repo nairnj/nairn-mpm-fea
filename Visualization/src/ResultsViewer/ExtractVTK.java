@@ -389,7 +389,7 @@ class ExtractVTK extends JNDialog implements Runnable
 		}
 		catch(Exception e)
 		{	Toolkit.getDefaultToolkit().beep();
-			JOptionPane.showMessageDialog(this,e.getMessage());
+			JNUtilities.showMessage(null,e.getMessage());
 			return false;
 		}
 		

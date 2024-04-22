@@ -13,6 +13,8 @@ import java.awt.geom.Point2D;
 
 import javax.swing.*;
 
+import geditcom.JNFramework.JNUtilities;
+
 public class LimitsSelector extends PlotControl
 {
 	static final long serialVersionUID=27L;
@@ -182,7 +184,7 @@ public class LimitsSelector extends PlotControl
 		}
 		catch(Exception pe)
 		{	Toolkit.getDefaultToolkit().beep();
-			JOptionPane.showMessageDialog(docCtrl,"Error: "+pe.getMessage()+" (plot will switch to dynamic limits)");
+			JNUtilities.showMessage(docCtrl,"Error: "+pe.getMessage()+" (plot will switch to dynamic limits)");
 			dynamicLimits.setSelected(true);
 			minText.setEnabled(false);
 			maxText.setEnabled(false);

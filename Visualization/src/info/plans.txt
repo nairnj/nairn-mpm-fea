@@ -1,17 +1,29 @@
 -------------------------------------------------------------------
-Changes in Version 11.0
+Changes in Version 12.0
 -------------------------------------------------------------------
 
-* Redid control panel for single column and only show those needed
-* Unified window UI for particle and mesh plots (2D plots still spawn windows)
-* Blocks closing of windows in active calculations
-* Removed time selector in plot area (had failure to open file, but went away)
-* Changed mod(x,y) to work with non-integers
-* Cleanup interface issues
+* UserOption and UserChoice Internal Scripts
+* UserInput can customize buttons
+* addList and join commands for lists
+* Some interface updates
 
 -------------------------------------------------------------------
 Interface Options or other Tasks
 -------------------------------------------------------------------
+
+* Preferences
+** Spectra inversion and brightness
+** Temp and Conc BC colors
+
+* Control click plot for pop-up menu of plot options
+** Including export graphics (is preference needed for export format?)
+
+* Plot angle - add slider in the movie window before PS slider
+** Tensor values need to look for angle and rotate
+
+* When clip to particles in mesh plot and zoom, it draws outside the view port
+
+* FEA Crack Closure Calculations
 
 * Remote execution
 ** Background submits (use submit commands instead of run, and no download)
@@ -20,23 +32,9 @@ Interface Options or other Tasks
 ** Trap error returns and show error stream in window
 ** Download progress bar?
 
-* Control click plot for pop-up menu of plot options
-** Including export graphics (is preference needed for export format?)
-
-* Preferences
-** Spectra inversion and brightness
-** Temp and Conc BC colors
-
 * X11 run in Linux does bring window to front (windows menu)
 
 * Can run in background mode in Windows?
-
-* Plot angle - add slider in the movie window before PS slider
-** Tensor values need to look for angle and rotate
-
-* When clip to particles in mesh plot and zoom, it draws outside the view port
-
-* FEA Crack Closure Calculations
 
 * Language
 ** Maintain library of subroutines to load
@@ -50,24 +48,18 @@ New Script Options - update to match some in NFM for Mac
 Next Steps
 * xyplot and timeplot object command
 	option to plot vector magnitudes (2D) and (3D)
-* Direct commands (done in NFM)
-	UserInput - In place, but cannot customize buttons
 * Direct commands (do in NFM and NFMViz)
-	user option (buttons)
-	user choice (list)
 	user openFile (is it needed?)
 	user save (is it needed?)
 	close
-* List object commands to add
-	addlist
-	join
+* List object commands to add (see NFM)
 	pop
 	sort
 	sublist
-* Results Document object commands to add
+* Results Document object commands to add (see NFM)
 	Crack Closure
 	Find Node near (x,y)
-* Dictionary object attributes
+* Dictionary object attributes (not in NFM either)
 	sortedKeys
 	keysSortedByNumericValues
 	keysSortedByStringValues

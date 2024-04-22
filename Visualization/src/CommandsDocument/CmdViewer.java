@@ -6,9 +6,16 @@
  * Created 
  */
 
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GraphicsEnvironment;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.*;
+import java.awt.geom.GeneralPath;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
@@ -1028,19 +1035,21 @@ public class CmdViewer extends JNCmdTextDocument
 			}
 		}
 		
-		// ---------- openfolder objName,path (omit path for dialog, can be relative path)
+		// ---------- open objName,path (omit path for dialog, can be relative path)
 		// path can be "_results_" or "_commands_" for front document of that type
 		else if(theCmd.equals("open"))
 		{	// object name to return
 			String objectVar = getObjVarName(1,args,"open",true);
 
-			// file by path or null or _results_ or _commands_
+			// file by name (if opened), path, null, _results_, or _commands_
 			JNDocument currentDoc = NairnFEAMPMViz.main.frontDocument();
 			JNDocument openedDoc = null;
 			File docToOpen = null;
 			
 			if(args.size() > 2)
-			{	String openArg = readStringArg(args.get(2));
+			{	// has a file "name" to be optioned
+				String openArg = readStringArg(args.get(2));
+				
 				if(openArg.toLowerCase().equals("_results_"))
 				{	// set openedDoc to first DocViewer, exit if none
 					ArrayList<JNDocument> docs = NairnFEAMPMViz.main.getDocuments();
@@ -1070,10 +1079,24 @@ public class CmdViewer extends JNCmdTextDocument
 					
 				}
 				else
-				{	// get path and set openedDoc if opened
-					docToOpen = scriptPath(readStringArg(openArg), args, false);
-					docToOpen = new File(docToOpen.getCanonicalPath());
-					openedDoc = NairnFEAMPMViz.main.findDocument(docToOpen);
+				{	// look for a window with this name
+					ArrayList<JNDocument> docs = NairnFEAMPMViz.main.getDocuments();
+					for(int i=0;i<docs.size();i++)
+					{	JNDocument adoc = docs.get(i);
+						File dfile = adoc.getFile();
+						String dname = dfile==null ? "untitled" : dfile.getName();
+						if(dname.equals(openArg))
+						{	openedDoc = adoc;
+							break;
+						}
+					}
+					
+					// get path and set openedDoc if opened
+					if(openedDoc==null)
+					{	docToOpen = scriptPath(openArg, args, false);
+						docToOpen = new File(docToOpen.getCanonicalPath());
+						openedDoc = NairnFEAMPMViz.main.findDocument(docToOpen);
+					}
 				}
 				
 				if(openedDoc!=null)
@@ -1148,9 +1171,152 @@ public class CmdViewer extends JNCmdTextDocument
 			variablesStrs.put(varName, fldrPath);
 		}
 		
-		// ---------- userInput "#var",(title),(msg),(initial)
+		// ----------- UserChoice
+		else if(theCmd.equals("userchoice"))		
+		{	// Needs 3 parameters
+			if(args.size()<4)
+				throw new Exception("The UserChoice command needs three parameters.\n" + args);
+
+			// variable to return the input
+			String varName = getObjVarName(1,args,"userinput",false);
+					
+			// prompt
+			String prompt = readStringArg(args.get(2));
+			
+			// list
+			String objVar = readStringArg(args.get(3));
+			Object obj = findExistingObject(objVar);
+			if(obj==null)
+				throw new Exception("The UserChoice command parameter 3 must be a list.\n" + args);
+			if(!obj.getClass().equals(ISListType.class))
+				throw new Exception("The UserChoice command parameter 3 must be a list.\n" + args);
+			ISListType objList = (ISListType)obj;
+			
+			String dtitle = "";
+			if(args.size() > 4)
+			{	dtitle = readStringArg(args.get(4));
+			}
+			
+			boolean multiple=false;
+			if(args.size() > 5)
+			{	String mult = readStringArg(args.get(5));
+				if(mult.equalsIgnoreCase("true"))
+					multiple = true;
+			}
+			
+			// 0 to three buttons
+			String[] btns = {"OK","Cancel",""};
+			int optionType=JOptionPane.DEFAULT_OPTION;
+			if(args.size() > 6)
+			{	btns[0] = readStringArg(args.get(6));
+				if(args.size() > 7)
+				{	btns[1] = readStringArg(args.get(7));
+					optionType = JOptionPane.OK_CANCEL_OPTION;
+					if(args.size() > 8)
+					{	btns[2] = readStringArg(args.get(8));
+						optionType = JOptionPane.YES_NO_CANCEL_OPTION;
+					}
+				}
+			}
+			String[] options;
+			if(optionType==JOptionPane.DEFAULT_OPTION)
+			{	options = new String[1];
+				options[0]=btns[0];
+			}
+			else if(optionType==JOptionPane.OK_CANCEL_OPTION)
+			{	options = new String[2];
+				options[0]=btns[0];
+				options[1]=btns[1];
+			}
+			else
+				options = btns;
+			
+			// decode list to strings
+			ArrayList<Integer> preselect = new ArrayList<Integer>(5);
+			String[] choices = new String[objList.count()];
+			for(int i=0;i<choices.length;i++)
+			{	Object cobj = objList.objectAtIndex(i);
+				if(cobj.getClass().equals(String.class))
+				{	choices[i] = (String)cobj;
+					if(choices[i].length()>0)
+					{	if(choices[i].charAt(0)==';')
+						{	preselect.add(new Integer(i));
+							choices[i] = choices[i].replaceFirst(";","");
+						}
+					}
+				}
+				else
+					choices[i] = "[nonstring object]";
+			}
+
+	        JPanel panel = new JPanel();
+	        panel.setMinimumSize(new Dimension(200,300));
+			GridBagLayout gridbag = new GridBagLayout();
+			panel.setLayout(gridbag);
+		
+			// label
+			JLabel label = new JLabel(prompt);
+			label.setHorizontalAlignment(JTextField.LEFT);
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.HORIZONTAL;
+			c.insets=new Insets(0,0,6,0);
+			c.gridx=0;
+			c.weightx = 1.;
+			c.weighty = 0.;
+			c.gridwidth = 1;
+			c.anchor=GridBagConstraints.WEST;
+			gridbag.setConstraints(label,c);
+			panel.add(label);
+			
+			// list
+			c.insets=new Insets(0,0,0,0);
+			c.weighty=10;
+	        JScrollPane scrollPane = new JScrollPane();
+	        scrollPane.setMinimumSize(new Dimension(200,300));
+	        JList<String> theList = new JList<String>(choices);
+	        if(multiple)
+	        	theList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+	        else
+	        	theList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+	        if(preselect.size()==0)
+	        	theList.setSelectedIndex(1);
+	        else
+	        {	for(int i=0;i<preselect.size();i++)
+	        	{	int j = preselect.get(i).intValue();
+	        		theList.addSelectionInterval(j,j);
+	        		if(!multiple) break;
+	        	}
+	        }
+	        scrollPane.setViewportView(theList);
+	        gridbag.setConstraints(scrollPane,c);
+	        panel.add(scrollPane);
+
+			int opt = JOptionPane.showOptionDialog(null, panel, dtitle,
+					optionType,JOptionPane.PLAIN_MESSAGE, 
+					JNApplication.miniAppIcon(), options, options[0]);
+			String response = opt<0 ? "" : (String)options[opt];
+			variablesStrs.put(varName+"[1]",response);
+			if(opt>=0)
+			{	int[] picks = theList.getSelectedIndices();
+				int varLength = 1+2*picks.length;
+				variablesStrs.put(varName+"[0]",""+varLength);
+				int j=2,jj=2+picks.length;
+				for(int i=0;i<picks.length;i++)
+				{	int item = picks[i];
+					variablesStrs.put(varName+"["+j+"]",choices[item]);
+					variablesStrs.put(varName+"["+jj+"]",""+(item+1));
+					j++;
+					jj++;
+				}
+			}
+			else
+				variablesStrs.put(varName+"[0]","1");
+
+		}
+		
+		// ---------- userInput "#var",(title),(msg),(initial),(btn1),(btn2),(btn3)
 		else if(theCmd.contentEquals("userinput"))
-		{	// variable to return the path
+		{	// variable to return the input
 			String varName = getObjVarName(1,args,"userinput",false);
 
 			// dialog box options
@@ -1166,20 +1332,101 @@ public class CmdViewer extends JNCmdTextDocument
 			if(args.size() > 4)
 			{	initText = readStringArg(args.get(4));
 			}
-			String newExpr = (String)JOptionPane.showInputDialog(null,prompt,dtitle,
-					JOptionPane.PLAIN_MESSAGE,null,null,initText);
 			
-			if(newExpr!=null)
-			{	variablesStrs.put(varName+"[1]", "OK");
-				variablesStrs.put(varName+"[2]",newExpr);
+			// 0 to three buttons
+			String[] btns = {"OK","Cancel",""};
+			int optionType=JOptionPane.DEFAULT_OPTION;
+			if(args.size() > 5)
+			{	btns[0] = readStringArg(args.get(5));
+				if(args.size() > 6)
+				{	btns[1] = readStringArg(args.get(6));
+					optionType = JOptionPane.OK_CANCEL_OPTION;
+					if(args.size() > 7)
+					{	btns[2] = readStringArg(args.get(7));
+						optionType = JOptionPane.YES_NO_CANCEL_OPTION;
+					}
+				}
+			}
+			String[] options;
+			if(optionType==JOptionPane.DEFAULT_OPTION)
+			{	options = new String[1];
+				options[0]=btns[0];
+			}
+			else if(optionType==JOptionPane.OK_CANCEL_OPTION)
+			{	options = new String[2];
+				options[0]=btns[0];
+				options[1]=btns[1];
 			}
 			else
-			{	variablesStrs.put(varName+"[1]", "Cancel");
+				options = btns;
+			
+	        JPanel panel = new JPanel(new GridLayout(2,1));
+	        panel.add(new JLabel(prompt));
+	        JTextField textField = new JTextField(20);
+	        textField.setText(initText);
+	        panel.add(textField);
+
+	        System.out.println("Icon="+JNApplication.miniAppIcon());
+			int opt = JOptionPane.showOptionDialog(null, panel, dtitle,
+					optionType,JOptionPane.PLAIN_MESSAGE, 
+			        JNApplication.miniAppIcon(), options, options[0]);
+			String response = opt<0 ? "" : (String)options[opt];
+			variablesStrs.put(varName+"[1]",response);
+			if(opt>=0)
+				variablesStrs.put(varName+"[2]",textField.getText());
+			else
 				variablesStrs.put(varName+"[2]","");
-			}
 			variablesStrs.put(varName+"[0]", "2");
 		}
 		
+		// ---------- UserOption "#var",(title),[(message)],[(buttons 1 to 3)]
+		else if(theCmd.contentEquals("useroption"))
+		{	// variable to return the button text
+			String varName = getObjVarName(1,args,"userinput",false);
+
+			// dialog box options
+			String dtitle = "";
+			if(args.size() > 2)
+			{	dtitle = readStringArg(args.get(2));
+			}
+			String message = "Click an option";
+			if(args.size() > 3)
+			{	message = readStringArg(args.get(3));
+			}
+			
+			// 0 to three buttons
+			String[] btns = {"OK","",""};
+			int optionType=JOptionPane.DEFAULT_OPTION;
+			if(args.size() > 4)
+			{	btns[0] = readStringArg(args.get(4));
+				if(args.size() > 5)
+				{	btns[1] = readStringArg(args.get(5));
+					optionType = JOptionPane.OK_CANCEL_OPTION;
+					if(args.size() > 6)
+					{	btns[2] = readStringArg(args.get(6));
+						optionType = JOptionPane.YES_NO_CANCEL_OPTION;
+					}
+				}
+			}
+			String[] options;
+			if(optionType==JOptionPane.DEFAULT_OPTION)
+			{	options = new String[1];
+				options[0]=btns[0];
+			}
+			else if(optionType==JOptionPane.OK_CANCEL_OPTION)
+			{	options = new String[2];
+				options[0]=btns[0];
+				options[1]=btns[1];
+			}
+			else
+				options = btns;
+			int opt = JOptionPane.showOptionDialog(null, message, dtitle,
+					optionType,JOptionPane.PLAIN_MESSAGE, 
+					JNApplication.miniAppIcon(), options, options[0]);
+			String response = opt<0 ? "" : (String)options[opt];
+			variablesStrs.put(varName,response);
+		}
+
 		// ---------- object commands
 		// if no direct command found look for obj.[#i.]command format object command
 		else
@@ -1235,8 +1482,27 @@ public class CmdViewer extends JNCmdTextDocument
 		// Possible commands follow in alphabetical order
 		theCmd = theCmd.toLowerCase();
 		
-		// ----------- addList item1,item2,...
-		if(theCmd.equals("addobject"))
+		// ----------- addList object,[object],... elements of each list added to object
+		if(theCmd.equals("addlist"))
+		{	if(!obj.getClass().equals(ISListType.class))
+				throw new Exception("The addList command can only by used on lists.\n" + args);
+		
+			// look for list objects
+			for(i=1;i<args.size();i++)
+			{	String expr = readStringArg(args.get(i));
+				Object objList = scriptObjectForKey(expr);
+				if(objList!=null)
+				{	if(objList.getClass().equals(ISListType.class))
+					{	ISListType theList = (ISListType)objList;
+						for(int j=0;j<theList.count();j++)
+							((ISListType)obj).gcis_addObject(theList.objectAtIndex(j));
+					}
+				}
+			}
+		}
+		
+		// ----------- addObject item1,item2,...
+		else if(theCmd.equals("addobject"))
 		{	if(!obj.getClass().equals(ISListType.class))
 				throw new Exception("The addObject command can only by used on lists.\n" + args);
 
@@ -1251,7 +1517,7 @@ public class CmdViewer extends JNCmdTextDocument
 			}
 		}
 
-		// ----------- addList item1,item2,...
+		// ----------- addString item1,item2,...
 		else if(theCmd.equals("addstring"))
 		{	if(!obj.getClass().equals(ISListType.class))
 				throw new Exception("The addString command can only by used on lists.\n" + args);
@@ -1263,6 +1529,11 @@ public class CmdViewer extends JNCmdTextDocument
 			{	String expr = readStringArg(args.get(i));
 				list.gcis_addObject(expr);
 			}
+		}
+		
+		// ----------- CrackClosure
+		else if(theCmd.equals("crackclosure"))
+		{	throw new Exception("The crackClosure command only allowed in NairnFEAMPM.\n" + args);
 		}
 		
 		// ---------- export path
@@ -1285,6 +1556,11 @@ public class CmdViewer extends JNCmdTextDocument
 
 			if(!((CmdViewer) obj).exportOutput(oneDoc, null))
 				throw new Exception("The export command failed.\n" + args);
+		}
+		
+		// ----------- FindNode
+		else if(theCmd.equals("findnode"))
+		{	throw new Exception("The findNode command only allowed in NairnFEAMPM.\n" + args);
 		}
 		
 		// ---------- obj[#i].get ("#var" or objName)
@@ -1401,6 +1677,32 @@ public class CmdViewer extends JNCmdTextDocument
 			}
 		}
 
+		// ----------- Join "#var",[(sep)]
+		else if(theCmd.equals("join"))
+		{	if(!obj.getClass().equals(ISListType.class))
+			throw new Exception("The join command can only by used on lists.\n" + args);
+
+			ISListType list = (ISListType)obj;
+			
+			// variable to return the input
+			String varName = getObjVarName(1,args,"join",false);
+					
+			String sep = "";
+			if(args.size() > 2)
+				sep = readStringArg(args.get(2));
+			
+			StringBuffer joined = new StringBuffer("");
+			for(i=0;i<list.count();i++)
+			{	Object lobj = list.objectAtIndex(i);
+				if(lobj.getClass().equals(String.class))
+				{	if(i>0) joined.append(sep);
+					joined.append((String)lobj);
+				}
+			}
+			
+			variablesStrs.put(varName,joined.toString());
+		}
+		
 		// ---------- plottable (table)
 		// plot table of data in a new plot window
 		else if(theCmd.equals("plottable"))
@@ -1417,6 +1719,11 @@ public class CmdViewer extends JNCmdTextDocument
 				throw new Exception("The plottable command had no data.\n" + args);
 		}
 
+		// ----------- Pop
+		else if(theCmd.equals("pop"))
+		{	throw new Exception("The pop command only allowed in NairnFEAMPM.\n" + args);
+		}
+		
 		// -----------  remove index
 		else if(theCmd.equals("remove"))
 		{	if(!obj.getClass().equals(ISListType.class))
@@ -1628,6 +1935,16 @@ public class CmdViewer extends JNCmdTextDocument
 			((ISDictType)obj).gcis_setObjectforKey(objValue,key);
 		}
 		
+		// ----------- Sort
+		else if(theCmd.equals("sort"))
+		{	throw new Exception("The sort command only allowed in NairnFEAMPM.\n" + args);
+		}
+		
+		// ----------- SubList
+		else if(theCmd.equals("sublist"))
+		{	throw new Exception("The subList command only allowed in NairnFEAMPM.\n" + args);
+		}
+		
 		// ---------- timeplot objName,settings
 		// plot time data and return list of two lists for x and y data
 		else if(theCmd.equals("timeplot"))
@@ -1732,6 +2049,7 @@ public class CmdViewer extends JNCmdTextDocument
 			ISListType plotResults = ((DocViewer)obj).scriptXYplot((ISDictType)objValue);
 			objs.put(objname, plotResults);
 		}
+		
 		// ---------- invalid object command is an error
 		else
 			throw new Exception("An unrecognized object command.\n" + args);
@@ -1914,7 +2232,7 @@ public class CmdViewer extends JNCmdTextDocument
 		// Mac/Linux full path begins in / at at lease 1 more character
 		File oneDoc = null;
 		if(fPath.charAt(0) == '/')
-		{ // needs at least on more letter
+		{	// needs at least on more letter
 			if(fPath.length() < 2)
 				throw new Exception("'" + args.get(0) + "' command has incomplete full path.\n" + args);
 			oneDoc = new File(fPath);
@@ -4009,7 +4327,7 @@ public class CmdViewer extends JNCmdTextDocument
 	
 		// somthing is running so stop the close
 		String message = "Cannot close this window while it is running\ncalculations or doing script control?";
-		JOptionPane.showMessageDialog(this,message);
+		JNUtilities.showMessage(this,message);
 		return false;
 	}
 
