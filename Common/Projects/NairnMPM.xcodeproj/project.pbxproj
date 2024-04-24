@@ -2151,7 +2151,6 @@
 				A766701B05862EB600F56460 /* Headers */,
 				A766703D05862EB600F56460 /* Sources */,
 				A766706205862EB600F56460 /* Frameworks */,
-				A766706505862EB600F56460 /* Rez */,
 			);
 			buildRules = (
 			);
@@ -2169,7 +2168,6 @@
 				A766739D05863A1700F56460 /* Headers */,
 				A76673B005863A1700F56460 /* Sources */,
 				A76673C505863A1700F56460 /* Frameworks */,
-				A76673C805863A1700F56460 /* Rez */,
 			);
 			buildRules = (
 			);
@@ -2222,23 +2220,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXRezBuildPhase section */
-		A766706505862EB600F56460 /* Rez */ = {
-			isa = PBXRezBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A76673C805863A1700F56460 /* Rez */ = {
-			isa = PBXRezBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXRezBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		67C5D7582172B4C3003FF010 /* Sources */ = {
@@ -2602,9 +2583,10 @@
 					/usr/local/include,
 					/opt/local/include/libomp,
 				);
-				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/lib @loader_path/lib";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = (
 					"-Xclang",
 					"-fopenmp",
@@ -2642,10 +2624,11 @@
 					/usr/local/include,
 					/opt/local/include/libomp,
 				);
-				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib @executable_path/lib";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				LINK_WITH_STANDARD_LIBRARIES = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = (
 					"-Xclang",
 					"-fopenmp",

@@ -111,17 +111,21 @@ CP= cp
 #	  can add any other needed options. Some flags found useful in this project are
 #            -O3 = optimize most -O0 = not optimized
 #            -fopenmp = enable OpenMP compile (link too)
+#            -Xclang -fopenmp = hack to get Apple clang to use OpenMP
+#            -x c++ = Apple clang to compile c++ (not sure if it is needed)
+#            -std=c++11 = style of c++ to compile
 #            -g = debugging info  -pg = profiling
-#            -arch i386 = compile architecture (MacOS X only, other archs are x86_64, ppc, and ppc64)
+#            -arch arm64 = compile architecture (MacOS X only, also x86_64; i386, ppc, ppc64)
 #     LFLAGS are flags passed at link time. The default is -fopenmp. Some flags found useful
 #       in this project are
 #            -fopenmp = enable OpenMP link (compile too)
-#            -arch i386 = link architecture (MacOS X only, other archs are x86_64, ppc, and ppc64)
+#            -lomp = link to libomb.dylib for OpenMP using Apple clang
+#            -arch arm64 = link architecture (MacOS X only, also x86_64; i386, ppc, ppc64)
 #            -pg = profiling
 #			 -Wl,-rpath,<path_to_libraries> = add path to libraries and this appears needed
 #                   in clang-14 or newer (or maybe caused by MacOS Sonoma command line tools)
 #     If using -fopenmp, -arch, or -pg, must have in both CFLAGS and LFLAGS. For MacOS X, the specified arch
-#       must match the xerces library used for linking
+#       must be available in the xerces and libomp library used for linking
 CFLAGS= -c -O3 -fopenmp -std=c++11
 LFLAGS= -fopenmp
 ifeq ($(SYSTEM),mac-clang17)
