@@ -11,7 +11,7 @@
  <!ENTITY xbil "90">
  <!ENTITY xbil_int "30">
  <!ENTITY ybil "150">
- <!ENTITY rman "30.0">
+ <!ENTITY rman "26.5">
  <!ENTITY msfac "100.0">
 
  <!ENTITY T0 '298'>

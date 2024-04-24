@@ -16,8 +16,9 @@
 	Dependencies
 		Orthotropic.hpp (TranIsotropic.hpp, MaterialBase.hpp)
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
 #include "Materials/AnisoPlasticity.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
@@ -26,6 +27,9 @@
 #include "System/UnitsController.hpp"
 #include "Exceptions/MPMWarnings.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"		// only need to trial solution method
+#include <cmath>
+#include <iostream>
+using namespace std;
 
 int hstepsMax=0;
 

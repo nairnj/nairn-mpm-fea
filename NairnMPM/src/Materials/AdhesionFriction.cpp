@@ -8,13 +8,17 @@
 	Created by John Nairn, Nov 16, 2015.
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
 #include "Materials/AdhesionFriction.hpp"
 #include "System/UnitsController.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
 
 #pragma mark AdhesionFriction::Constructors and Destructors
+#include <iostream>
+#include <string.h> 
+using namespace std;
 
 // Constructor
 AdhesionFriction::AdhesionFriction(char *matName,int matID) : CoulombFriction(matName,matID)
