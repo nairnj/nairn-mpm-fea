@@ -16,8 +16,10 @@
 	  is before any are needed).
 	* May be velocity, temperature, and concentration
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
+#include "System/MPMPrefix.hpp"
 #include "NairnMPM_Class/ExtrapolateRigidBCsTask.hpp"
 #include "NairnMPM_Class/ProjectRigidBCsTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"

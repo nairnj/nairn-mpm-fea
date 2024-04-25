@@ -22,8 +22,10 @@
 		  if undeformed
 	* Reduction to copy ghost to real nodes
  ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
+#include "System/MPMPrefix.hpp"
 #include "NairnMPM_Class/MassAndMomentumTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/RigidMaterial.hpp"

@@ -5,8 +5,9 @@
 	Created by John Nairn on July 22, 2010
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/MPMTask.hpp"
 #include "System/ArchiveData.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
@@ -14,7 +15,8 @@
 #include "Nodes/NodalPoint.hpp"
 
 #pragma mark MPMTask::Constructors
-
+#include <iostream>
+using namespace std;
 // constructor
 MPMTask::MPMTask(const char *name) : CommonTask(name) {}
 

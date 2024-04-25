@@ -13,8 +13,10 @@
 		- In multimaterial mode, and MVF if will be needed
 	* Reduction to copy field info to ghost nodes
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
+#include "System/MPMPrefix.hpp"
 #include "NairnMPM_Class/InitVelocityFieldsTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Patches/GridPatch.hpp"

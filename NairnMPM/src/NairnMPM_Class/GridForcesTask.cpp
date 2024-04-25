@@ -14,8 +14,10 @@
     * After main loop, make transport tasks forces consistent with transport nodal BCs
             (TO only because these done in PostForcesTasks in regular MPM)
 *****************************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
+#include "System/MPMPrefix.hpp"
 #include "NairnMPM_Class/GridForcesTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/MaterialBase.hpp"

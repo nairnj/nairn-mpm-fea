@@ -14,8 +14,9 @@
 	* Set particle external forces
 	* Clear out stored crack nodes and interface nodes
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__) 
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/InitializationTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/NodalPoint.hpp"
