@@ -12,7 +12,9 @@
 	* Find vstar on all nodes (needed when update particles)
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/XPICExtrapolationTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/NodalPoint.hpp"

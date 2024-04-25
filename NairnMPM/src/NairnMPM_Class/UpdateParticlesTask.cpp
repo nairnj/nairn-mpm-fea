@@ -16,7 +16,9 @@
 	* After main loop, update position of all rigid particles
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/UpdateParticlesTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/MaterialBase.hpp"

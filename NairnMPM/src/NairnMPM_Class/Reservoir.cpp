@@ -6,7 +6,9 @@
 	Copyright (c) 2021, All rights reserved.
 *********************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/Reservoir.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"

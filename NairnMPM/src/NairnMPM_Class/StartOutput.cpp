@@ -6,7 +6,9 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 *********************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"

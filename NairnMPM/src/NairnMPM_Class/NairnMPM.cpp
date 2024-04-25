@@ -6,7 +6,9 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 *********************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "System/ArchiveData.hpp"
 #include "System/UnitsController.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"

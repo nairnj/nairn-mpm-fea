@@ -13,6 +13,7 @@
 
 #define _CRACKHEADER_
 
+#include "System/MPMPrefix.hpp"
 /* Define method to find crack tip direction and COD.
 	If _LINEAR_INTERPOLATION_ is defined then finds crack direction from direction
 		of last crack segment and finds COD at adjacent segment. To get normalized

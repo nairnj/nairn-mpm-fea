@@ -13,7 +13,9 @@
  	* Use to change particle transport values
  ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/XPICExtrapolationTaskTO.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Global_Quantities/BodyForce.hpp"

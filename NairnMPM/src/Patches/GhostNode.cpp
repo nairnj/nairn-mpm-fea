@@ -6,7 +6,9 @@
 	Copyright (c) 2013 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Patches/GhostNode.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Nodes/NodalPoint.hpp"

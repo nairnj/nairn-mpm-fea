@@ -13,6 +13,8 @@
 
 #define _MESHINFO_
 
+#include "System/DataTypes.hpp"
+
 class GridPatch;
 class NodalPoint;
 class MPMBase;

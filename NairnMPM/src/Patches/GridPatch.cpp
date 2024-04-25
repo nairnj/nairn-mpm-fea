@@ -12,7 +12,9 @@
 		last ghostRows+1 rows: xnodes + 2*ghostRows
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Patches/GridPatch.hpp"
 #include "Patches/GhostNode.hpp"
 #include "Nodes/NodalPoint.hpp"

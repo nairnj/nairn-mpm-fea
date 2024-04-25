@@ -19,7 +19,9 @@
  
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MPMBase.hpp"

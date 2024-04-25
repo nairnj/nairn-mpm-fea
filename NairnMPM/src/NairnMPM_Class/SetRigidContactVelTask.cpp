@@ -10,7 +10,9 @@
 		* Set the velocity only if a direction is controlled by a user-defined functions
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/SetRigidContactVelTask.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/RigidMaterial.hpp"

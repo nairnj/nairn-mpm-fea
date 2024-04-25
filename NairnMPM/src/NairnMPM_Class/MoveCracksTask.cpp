@@ -13,7 +13,9 @@
 	* Update crack tractinos
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/MoveCracksTask.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"

@@ -6,7 +6,9 @@
     Copyright (c) 2006, All rights reserved.
 ********************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "NairnMPM_Class/Reservoir.hpp"
 #include "Patches/GridPatch.hpp"
@@ -21,6 +23,9 @@
 #include "Exceptions/MPMWarnings.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 #include <algorithm>
+#include <iostream>
+using namespace std;
+#include "System/MPMPrefix.hpp"
 
 // global class for grid information
 MeshInfo mpmgrid;

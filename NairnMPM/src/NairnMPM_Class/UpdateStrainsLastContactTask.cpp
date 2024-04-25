@@ -31,7 +31,9 @@
 	This tasks not used when doing transport only
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/UpdateStrainsLastContactTask.hpp"
 #include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"

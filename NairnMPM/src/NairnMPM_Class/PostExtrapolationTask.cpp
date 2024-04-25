@@ -20,7 +20,9 @@
  		- impose velocity BCs
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/PostExtrapolationTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Cracks/CrackHeader.hpp"

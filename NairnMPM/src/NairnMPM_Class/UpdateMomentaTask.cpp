@@ -20,7 +20,9 @@
 	  momentum change (because not in post-update tasks)
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/UpdateMomentaTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Custom_Tasks/TransportTask.hpp"

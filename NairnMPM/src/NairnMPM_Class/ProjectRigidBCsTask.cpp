@@ -14,7 +14,9 @@
 	* May be velocity, temperature, and concentration
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/ProjectRigidBCsTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/RigidMaterial.hpp"
