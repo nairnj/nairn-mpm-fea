@@ -18,9 +18,9 @@
 class InitVelocityFieldsTask : public MPMTask
 {
 	public:
-#ifdef PREHASH_CRACKS
+//#ifdef PREHASH_CRACKS
         static bool prehashed;
-#endif
+//#endif
 	
 		// constructor
 		InitVelocityFieldsTask(const char *);

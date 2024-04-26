@@ -49,6 +49,8 @@
 #include "Exceptions/CommonException.hpp"
 #include "NairnMPM_Class/UpdateMomentaTask.hpp"
 
+#include "System/MPMPrefix.hpp"
+
 #pragma mark CONSTRUCTORS
 
 UpdateStrainsLastContactTask::UpdateStrainsLastContactTask(const char *name) : MassAndMomentumTask(name)

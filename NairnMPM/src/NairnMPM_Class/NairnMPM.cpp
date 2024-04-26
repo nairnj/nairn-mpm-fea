@@ -60,6 +60,9 @@
 #include "Exceptions/MPMWarnings.hpp"
 #include <time.h>
 
+#include <iostream>
+#include "System/MPMPrefix.hpp"
+
 // Activate this to print steps as they run. If too many steps happen before failure
 // better to use LOG_PROGRESS in MPMPrefix.hpp
 //#define COUT_PROGRESS

@@ -36,6 +36,9 @@
 #include "Boundary_Conditions/InitialCondition.hpp"
 #include "NairnMPM_Class/InitVelocityFieldsTask.hpp"
 
+#include "System/MPMPrefix.hpp"
+#include <iostream>
+
 /*********************************************************************
     Print setup information
 *********************************************************************/

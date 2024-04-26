@@ -26,6 +26,8 @@
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 
+#include "System/MPMPrefix.hpp"
+
 #pragma mark CONSTRUCTORS
 
 RunCustomTasksTask::RunCustomTasksTask(const char *name) : MPMTask(name)

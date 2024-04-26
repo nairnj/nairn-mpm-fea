@@ -33,6 +33,8 @@
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "NairnMPM_Class/XPICExtrapolationTaskTO.hpp"
 
+#include "System/MPMPrefix.hpp"
+
 #pragma mark CONSTRUCTORS
 
 UpdateParticlesTask::UpdateParticlesTask(const char *name) : MPMTask(name)

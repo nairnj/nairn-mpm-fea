@@ -35,6 +35,8 @@
 #include "NairnMPM_Class/XPICExtrapolationTask.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 
+#include "System/MPMPrefix.hpp"
+
 // class globals
 UpdateStrainsFirstTask *USFTask = NULL;
 

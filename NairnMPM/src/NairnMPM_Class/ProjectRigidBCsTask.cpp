@@ -28,6 +28,9 @@
 #include "Exceptions/CommonException.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 
+#include <iostream>
+#include "System/MPMPrefix.hpp"
+
 #pragma mark CONSTRUCTORS
 
 ProjectRigidBCsTask::ProjectRigidBCsTask(const char *name) : MPMTask(name)

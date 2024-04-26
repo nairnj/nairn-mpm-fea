@@ -2,20 +2,15 @@
 <!DOCTYPE JANFEAInput SYSTEM '/Users/jnairn/Programming/Cocoa_Projects/nairn-mpm-fea/NairnMPM/input/NairnMPM.dtd'
 [
  <!-- <!ENTITY vel "-1.0*sign(1-t)"> -->
- <!-- VEL 15.5mm/s -->
- <!ENTITY vel "-0.0155">
+ <!ENTITY vel "-3.0">
  <!ENTITY zerof "0.0"> 
  <!ENTITY maxtime "20000">
- <!ENTITY atime "10000.0">
- <!ENTITY cs "1">
+ <!ENTITY atime "100.0">
+ <!ENTITY cs "2">
  <!ENTITY xbil "90">
  <!ENTITY xbil_int "30">
  <!ENTITY ybil "350">
- <!ENTITY rman "30.0">
- <!ENTITY msfac "100.0">
-
- <!ENTITY T0 '298'>
- <!ENTITY temp '300'>
+ <!ENTITY rman "27.5">
  
  <!ENTITY xmatr_i "90">
  <!ENTITY xmatr_e "140">
@@ -55,14 +50,12 @@
     <MPMMethod>2</MPMMethod>
     <GIMP/>
     <ArchiveTime units="ms">&atime;</ArchiveTime>
-    <GlobalArchiveTime units="ms">&atime;</GlobalArchiveTime>
     <TimeStep units="ms">1000</TimeStep>
-
     <MaxTime units="ms">&maxtime;</MaxTime>
-    <ArchiveRoot>output_bin/isocontact.</ArchiveRoot>
+    <ArchiveRoot>Output/isocontact.</ArchiveRoot>
     <MPMArchiveOrder>mYYYYNNNNNNNYNNNYY</MPMArchiveOrder>
     <CrackArchiveOrder>mYNNN</CrackArchiveOrder>
-
+    <GlobalArchiveTime units="ms">&atime;</GlobalArchiveTime>
     <GlobalArchive type="sxx" material="1"/>
     <GlobalArchive type="exx" material="1"/>
     <GlobalArchive type="contactx"/>
@@ -71,8 +64,6 @@
     <GlobalArchive type="temp" material="1"/>
     <GlobalArchive type="temp" material="2"/>
     <GlobalArchive type="temp" material="3"/>
-    <GlobalArchive type="temp" material="1"/>
-    <StressFreeTemp>&T0;</StressFreeTemp>
     <Damping>0</Damping>
     <MultiMaterialMode Vmin="0" Dcheck="1" Normals="0" RigidBias="10">
       <Friction>0.2</Friction>
@@ -89,7 +80,7 @@
 
   <MaterialPoints>
   <!-- Billet -->
-    <Body mat="1" angle="0" thick="5" vx="0" vy="0" temp="973.0">
+    <Body mat="1" angle="0" thick="5" vx="0" vy="0" temp="700.0">
       <Rect xmin="&xbil_int;" xmax="&xbil;" ymin="0" ymax="&ybil;"/>
     </Body>
    <!-- Pusher -->
@@ -111,11 +102,11 @@
   </MaterialPoints>
 
   <Material Type="9" Name="Isotropic Material">
-    <rho>8700</rho>
-    <E>70000.0</E>
+    <rho>1</rho>
+    <E>70000</E>
     <nu>0.333333333</nu>
     <alpha>60</alpha>
-    <kCond> 0.401 </kCond>
+	<kCond> 401 </kCond>
      <Hardening>3</Hardening>
          <Ajc> 93.0</Ajc> 
 	 <Bjc> 300.0</Bjc>
@@ -156,10 +147,6 @@
     </BCLine>
   </GridBCs>
 
-    <Thermal>
-	<Conduction/>
-	<EnergyCoupling/>
-  </Thermal>
   
 <Schedule name='VTKArchive'>
    <Parameter name='archiveTime'>0.1</Parameter>

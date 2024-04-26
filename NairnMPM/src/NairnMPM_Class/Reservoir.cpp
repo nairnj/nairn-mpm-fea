@@ -23,6 +23,8 @@
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 
+#include  <iostream>
+
 Reservoir *mpmReservoir = NULL;
 
 #pragma mark Reservoir:Constructors and Destructors
