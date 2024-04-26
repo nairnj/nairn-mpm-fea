@@ -22,7 +22,7 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Materials/TractionLaw.hpp"
-
+#include "System/MPMPrefix.hpp"
 #pragma mark CONSTRUCTORS
 
 MoveCracksTask::MoveCracksTask(const char *name) : MPMTask(name)

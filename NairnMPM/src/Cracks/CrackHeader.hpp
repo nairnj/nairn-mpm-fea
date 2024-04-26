@@ -13,7 +13,6 @@
 
 #define _CRACKHEADER_
 
-#include "System/MPMPrefix.hpp"
 /* Define method to find crack tip direction and COD.
 	If _LINEAR_INTERPOLATION_ is defined then finds crack direction from direction
 		of last crack segment and finds COD at adjacent segment. To get normalized
@@ -41,6 +40,7 @@ class ParseController;
 #define START_OF_CRACK 0
 #define END_OF_CRACK 1
 #define EXTERIOR_CRACK -2
+#include "System/DataTypes.hpp"
 
 class CrackHeader : public LinkedObject
 {
