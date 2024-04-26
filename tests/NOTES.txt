@@ -1,0 +1,3 @@
+20240416- 
+In legacy times, as is, output time units are the same for vtk and output.
+LEGACY CRASHES AT ENERGY COUPLING (BUT NOT CONDUCTION )

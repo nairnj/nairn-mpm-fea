@@ -2,18 +2,18 @@
 <!DOCTYPE JANFEAInput SYSTEM '/Users/jnairn/Programming/Cocoa_Projects/nairn-mpm-fea/NairnMPM/input/NairnMPM.dtd'
 [
  <!-- <!ENTITY vel "-1.0*sign(1-t)"> -->
- <!ENTITY vel "-15.0">
+ <!ENTITY vel "-1500.0">
  <!ENTITY zerof "0.0"> 
  <!ENTITY maxtime "20000">
- <!ENTITY atime "0.01">
+ <!ENTITY atime "0.1">
  <!ENTITY cs "2">
  <!ENTITY xbil "90">
  <!ENTITY xbil_int "30">
  <!ENTITY ybil "350">
  <!ENTITY rman "27.5">
 
- <!ENTITY T0 '298'>
- <!ENTITY temp '300'>
+ <!ENTITY T0 "298">
+ <!ENTITY temp "300">
  
  <!ENTITY xmatr_i "90">
  <!ENTITY xmatr_e "140">
@@ -86,19 +86,19 @@
       <Rect xmin="&xbil_int;" xmax="&xbil;" ymin="0" ymax="&ybil;"/>
     </Body>
    <!-- Pusher -->
-    <Body mat="2" thick="5" vx="0" vy="0" temp="22">
+    <Body mat="2" thick="5" vx="0" vy="0" temp="&T0;">
       <Rect xmin="&rman;" xmax="&xmatr_i;" ymin="&ybil;" ymax="&ymax;"/>
     </Body>
    <!-- Mandrel -->
-    <Body mat="3" thick="5" vx="0" vy="0" temp="22">
+    <Body mat="3" thick="5" vx="0" vy="0" temp="&T0;">
       <Rect xmin="0.0" xmax="&rman;" ymin="0.0" ymax="&ymax;"/>
     </Body>
    <!-- Container -->
-    <Body mat="3" thick="5" vx="0" vy="0" temp="22">
+    <Body mat="3" thick="5" vx="0" vy="0" temp="&T0;">
       <Rect xmin="&xmatr_i;" xmax="&xmatr_e;" ymin="0.0" ymax="&ymax;"/>
     </Body>
    <!-- Die -->
-    <Body mat="3" thick="5" vx="0" vy="0" temp="22">
+    <Body mat="3" thick="5" vx="0" vy="0" temp="&T0;">
       <Rect xmin="&xdie;" xmax="&xmax;" ymin="-&ydie;" ymax="0.0;"/>
     </Body>
   </MaterialPoints>
@@ -108,7 +108,8 @@
     <E>70000</E>
     <nu>0.333333333</nu>
     <alpha>60</alpha>
-	<kCond> 401 </kCond>
+	<kCond> 40100. </kCond>
+  <Cp>6000.</Cp>
      <Hardening>3</Hardening>
          <Ajc> 93.0</Ajc> 
 	 <Bjc> 300.0</Bjc>
@@ -117,6 +118,7 @@
 	 <Cjc> 0.0935</Cjc>
 	 <Tmjc> 1400.0 </Tmjc>
 	 <ep0jc> 0.001</ep0jc>
+   <Tmjc> 1800.0 </Tmjc>
   </Material>
   
 
@@ -151,11 +153,11 @@
 
     <Thermal>
 	<Conduction/>
-	<EnergyCoupling/>
+	<!-- <EnergyCoupling/> -->
   </Thermal>
   
 <Schedule name='VTKArchive'>
-   <Parameter name='archiveTime'>1.0</Parameter>
+   <Parameter name='archiveTime'>0.1</Parameter>
    <Parameter name='firstArchiveTime'>0.0</Parameter>
    <Parameter name="displacement">1</Parameter>   
    <Parameter name='selectMaterial'>1</Parameter>
