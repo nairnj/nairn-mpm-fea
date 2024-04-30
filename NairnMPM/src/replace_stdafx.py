@@ -1,6 +1,6 @@
 import glob
 
-files = glob.glob('./NairnMPM_Class/*.cpp')
+files = glob.glob('./Global_Quantities/*.cpp')
 # print(files)
 
 

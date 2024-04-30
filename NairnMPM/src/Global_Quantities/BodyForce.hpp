@@ -24,6 +24,7 @@ class NodalPoint;
 #define VSTAR_NO_CONTACT 1
 #define VSTAR_WITH_CONTACT 2
 #define FMPM_WITH_CONTACT 2
+#include "System/MPMPrefix.hpp"
 
 enum { GRIDBC_COMBINED=0,GRIDBC_VELOCITY_ONLY,GRIDBC_LUMPED_ONLY };
 

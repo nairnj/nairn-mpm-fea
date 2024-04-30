@@ -11,7 +11,9 @@
 		3. Add calculations in AppendQuantity()
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Global_Quantities/GlobalQuantity.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/Reservoir.hpp"

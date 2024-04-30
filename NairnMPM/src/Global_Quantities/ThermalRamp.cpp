@@ -9,7 +9,9 @@
     Copyright (c) 2004 John A. Nairn, All rights reserved.    
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "System/UnitsController.hpp"
 

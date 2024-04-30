@@ -8,6 +8,7 @@ add_definitions(-DMPM_CODE)
 add_definitions(-DCONST_ARRAYS)
 add_definitions(-DPOROELASTICITY)
 add_definitions(-DRESTART_OPTION)
+add_definitions(-DADJUST_COPIED_PK)
 
 
 ADD_SUBDIRECTORY(src)

@@ -17,6 +17,7 @@
 #include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
 #include <cmath>
 #include "tools/ExtractMPM.hpp" //PI
+#include "Nodes/CrackVelocityField.hpp"
 
 // Nodal velocity BC globals
 NodalVelBC *firstVelocityBC=NULL;
