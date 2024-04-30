@@ -24,6 +24,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Materials/MaterialBase.hpp"
+#include "System/MPMPrefix.hpp"
 
 // class globals
 XPICExtrapolationTask *XPICMechanicsTask=NULL;

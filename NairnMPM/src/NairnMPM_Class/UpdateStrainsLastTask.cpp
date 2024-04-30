@@ -32,6 +32,7 @@
 #include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
+#include "System/MPMPrefix.hpp"
 
 #pragma mark CONSTRUCTORS
 
