@@ -591,7 +591,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
     
 #ifdef TOTAL_STRESS_CALC
     // shift of elastic modulus based on mptr->pPreviousTemperature and mptr->pPreviousConcentration
-    double bshift = GetVertialShift(mptr,Tref,bTemp,bTValue,mref,bConc,bCValue);
+    double bshift = GetVertialShift(mptr,bTemp,bTValue,bConc,bCValue);
 #else
     // incremental method does not support vertical shifting
     double bshift = 1.;
@@ -1117,20 +1117,19 @@ double Viscoelastic::GetCpMinusCv(MPMBase *mptr) const
 {   return mptr!=NULL ? Ka2sp*mptr->pPreviousTemperature : Ka2sp*thermal.reference;
 }
 
-// Get vertical shift
-double Viscoelastic::GetVertialShift(MPMBase *mptr,double T0,vector<double> Txpts,vector<double> Typts,
-                                     double m0,vector<double> Cxpts,vector<double> Cypts)
+// Get vertical shift. This is done by piecewise interpolations. If not interpolating
+// points are provided, the result is 1.
+double Viscoelastic::GetVertialShift(MPMBase *mptr,vector<double> Txpts,vector<double> Typts,
+                                     vector<double> Cxpts,vector<double> Cypts)
 {
     double btot = 1.;
     
     // First check shift to reference temperature
-    if(T0>=0.)
-    {   btot = PiecewiseInterpolate(mptr->pPreviousTemperature, Txpts, Typts);
-    }
+    btot = PiecewiseInterpolate(mptr->pPreviousTemperature, Txpts, Typts);
     
     // Add concentration shift to reference concentration (requires diffusion task)
-    if(m0>=0. && diffusion!=NULL)
-    {   btot = PiecewiseInterpolate(mptr->pDiff[0]->prevConc, Cxpts, Cypts);
+    if(diffusion!=NULL)
+    {   btot *= PiecewiseInterpolate(mptr->pDiff[0]->prevConc, Cxpts, Cypts);
     }
 
     return btot;

@@ -639,6 +639,7 @@ void GetFileExtension(const char *fileName,char *ext,int maxLength)
 // fmt contains N labels delimited by spaces or commas (multiple delim = one)
 // variable number arguments must be exactly N but label starting in % is
 // output text alone without referencing a variable
+// Example: dout("a b c",a,b,c) ==> a=4.5 b=3 c=145 (i.e., equal signs are provided)
 void dout(const char* fmt...)
 {
 	va_list args;

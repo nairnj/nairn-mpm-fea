@@ -60,8 +60,7 @@ class Viscoelastic : public MaterialBase
 		virtual bool SupportsDiffusion(void) const;
     
         // class methods
-        static double GetVertialShift(MPMBase *,double,vector<double>,vector<double>,
-                                      double,vector<double>,vector<double>);
+        static double GetVertialShift(MPMBase *,vector<double>,vector<double>,vector<double>,vector<double>);
         static double GetEffectiveIncrement(MPMBase *,ResidualStrains *,double,double,double,double,
                                             double,double,double,double,double);
 		static double GetDtScale(double);

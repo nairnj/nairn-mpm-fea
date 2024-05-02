@@ -200,19 +200,19 @@ char *TIViscoelastic::InputMaterialProperty(char *xName,int &input,double &gScal
     else if(strcmp(xName,"bConc")==0)
     {   bConc.push_back(0.);
         input=DOUBLE_NUM;
-        return (char *)&bTemp[(int)bConc.size()-1];
+        return (char *)&bConc[(int)bConc.size()-1];
     }
     
     else if(strcmp(xName,"bTValue")==0)
     {   bTValue.push_back(0.);
         input=DOUBLE_NUM;
-        return (char *)&bTValue[(int)bTemp.size()-1];
+        return (char *)&bTValue[(int)bTValue.size()-1];
     }
     
     else if(strcmp(xName,"bCValue")==0)
     {   bCValue.push_back(0.);
         input=DOUBLE_NUM;
-        return (char *)&bCValue[(int)bTemp.size()-1];
+        return (char *)&bCValue[(int)bCValue.size()-1];
     }
     
     return TransIsotropic::InputMaterialProperty(xName,input,gScaling);
@@ -447,7 +447,7 @@ const char *TIViscoelastic::VerifyAndLoadProperties(int np)
 	if(mref>1.)
 		return "mref must less than or equal to csat";
 
-#ifdef TOTAL_STRESS_CALC
+#ifdef TOTAL_STRESS_CALC_TI
     // vertical shifting temperature same number and sorted
     if(bTemp.size()!=bTValue.size())
         return "Vertical shifting for temperature must have same number of temperature and values";
@@ -515,9 +515,9 @@ void TIViscoelastic::PrintMechanicalProperties(void) const
         cout << endl;
     }
     else if(mref<0.)
-        cout << "Isothermal and isosolvent viscoelasticity" << endl;
+        cout << "Isothermal and isosolvent viscoelastic relaxations" << endl;
     else
-        cout << "Isothermal viscoelasticity" << endl;
+        cout << "Isothermal viscoelastic relaxations" << endl;
 
     // WLF moisture properties
     if(mref>=0.)
@@ -527,11 +527,11 @@ void TIViscoelastic::PrintMechanicalProperties(void) const
         cout << endl;
     }
     else if(Tref>=0.)
-        cout << "Isosolvent viscoelasticity" << endl;
+        cout << "Isosolvent viscoelastic relaxations" << endl;
 
-#ifdef TOTAL_STRESS_CALC
-    if(bTemp.size()==0 || Tref<0)
-        cout << "No vertical shifting for temperature";
+#ifdef TOTAL_STRESS_CALC_TI
+    if(bTemp.size()==0)
+        cout << "No vertical shifting for temperature" << endl;
     else
     {   cout << "Vertical themal shifting:" << endl;
         for(int i=0;i<bTemp.size();i++)
@@ -540,15 +540,15 @@ void TIViscoelastic::PrintMechanicalProperties(void) const
         }
         cout << endl;
     }
-    if(bTemp.size()==0 || mref<0 || diffusion==NULL)
-        cout << "No vertical shifting for concentration";
+    if(bConc.size()==0 || diffusion==NULL)
+        cout << "No vertical shifting for concentration" << endl;
     else
     {   cout << "Vertical concentration shifting:" << endl;
         for(int i=0;i<bConc.size();i++)
         {   PrintProperty("  c",bConc[i]*concSaturation,"K");
             PrintProperty("  bc",bCValue[i],"");
+			cout << endl;
         }
-        cout << endl;
     }
 #endif
     PrintProperty("aA",aA*1.e6,"");
@@ -645,7 +645,7 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     
 #ifdef TOTAL_STRESS_CALC_TI
     // shift of elastic modulus based on mptr->pPreviousTemperature and mptr->pPreviousConcentration
-    double bshift = Viscoelastic::GetVertialShift(mptr,Tref,bTemp,bTValue,mref,bConc,bCValue);
+    double bshift = Viscoelastic::GetVertialShift(mptr,bTemp,bTValue,bConc,bCValue);
 #else
     // incremental method does not support elastic modulus variations (or vertical shifting)
     double bshift=1.;
@@ -741,7 +741,7 @@ void TIViscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
 #endif
     
     // get effective time increment
-    double delEffTime = Viscoelastic::GetEffectiveIncrement(mptr,res,delTime,Tref,C1,C2,mref,Cm1,Cm2,0.,0.);
+    double delEffTime = Viscoelastic::GetEffectiveIncrement(mptr,res,delTime,Tref,C1,C2,mref,Cm1,Cm2,0.,1.);
     
     // subtract each serires
     int ai=0,asave=0;

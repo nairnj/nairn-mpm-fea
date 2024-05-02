@@ -510,7 +510,6 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 	double rampFraction = (mtime+timestep-rampStart)/isoRampTime;
 	if(rampFraction>1.)
 	{	rampFraction = 1.;
-
 	}
     else if(lifetimes>0.)
     {   rampFraction = stretch>0. ? 1.-exp(-pow(lifetimes*rampFraction,stretch)) : 1.-exp(-lifetimes*rampFraction) ;
@@ -535,9 +534,10 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 		// loop over nonrigid material points and update temperature
 		for(int p=0;p<nmpmsNR;p++)
 		{   if(mpm[p]->InReservoir()) continue;
-			double dTp = deltaT;
-			if(scaleFxn!=NULL)
-				dTp = deltaT*scaleFxn->XYZTValue(&mpm[p]->pos,mtime*UnitsController::Scaling(1000.));
+			
+			// change by deltaT, but optionally scale by function of position and time
+			double scale = scaleFxn!=NULL ? scaleFxn->XYZTValue(&mpm[p]->pos,mtime*UnitsController::Scaling(1000.)) : 1. ;
+			double dTp = scale*deltaT;
 			
 			if(property==RAMP_TEMP)
 			{	mpm[p]->pTemperature += dTp;
@@ -577,10 +577,10 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
                     mpm[p]->pDiff[0]->conc = 1.;
             }
             else if(property==RAMP_STRENGTH)
-            {   mpm[p]->SetRelativeStrength(newDeltaT);
+            {   mpm[p]->SetRelativeStrength(scale*newDeltaT);
             }
             else if(property==RAMP_TOUGHNESS)
-            {   mpm[p]->SetRelativeToughness(newDeltaT);
+            {   mpm[p]->SetRelativeToughness(scale*newDeltaT);
             }
 		}
 	}
