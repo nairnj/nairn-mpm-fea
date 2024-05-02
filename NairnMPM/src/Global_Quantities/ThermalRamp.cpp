@@ -15,6 +15,10 @@
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "System/UnitsController.hpp"
 
+#include "MPM_Classes/MPMBase.hpp"
+#include <iostream>
+#include <cstddef>
+
 // Single thermal ramp global object
 ThermalRamp thermal;
 

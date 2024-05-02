@@ -13,6 +13,8 @@
 
 #define _GLOBALQUANTITY_
 
+#include "MPM_Classes/MPMBase.hpp"
+
 // possible global averages
 enum { UNKNOWN_QUANTITY,AVG_SXX,AVG_SYY,AVG_SXY,AVG_SZZ,AVG_SXZ,AVG_SYZ,
 			AVG_EXXE,AVG_EYYE,AVG_EXYE,AVG_EZZE,AVG_EXZE,AVG_EYZE,

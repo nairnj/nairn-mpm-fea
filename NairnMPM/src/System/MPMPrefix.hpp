@@ -8,6 +8,8 @@
 	Dependencies
 		DataTypes.hpp
 *********************************************************************/
+#ifndef _MPM_PREFIX_H
+#define _MPM_PREFIX_H
 
 #define MPM_CODE
 
@@ -147,3 +149,4 @@ enum { NO_CRACK=0,ABOVE_CRACK,BELOW_CRACK};
 #define LINEAR_CPDI_AS 12
 #define BSPLINE_CPDI 13
 
+#endif

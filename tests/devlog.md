@@ -3,4 +3,5 @@
          - El material 2 (para que el mandrel se desplace), no funciona ok si no se colocan también condiciones de borde 
            radiales.
          - Se agrega conductividad por contacto: https://osupdocs.forestry.oregonstate.edu/index.php/Thermal_Calculations#Conduction
-         
+         - LAS CONDICIONES DE BORDE TERMICAS NO FUNCIONAN CON TEMP EN EL BODY PARA CUERPOS RIGIDOS; Y SetTemperature CRASHEA
+           ES MEJOR <TempBC adentro de BCLINE
