@@ -101,7 +101,7 @@ char *CustomThermalRamp::InputParam(char *pName,int &input,double &gScaling)
 		return UnitsController::ScaledPtr((char *)&rampStart,gScaling,1.e-3);
 	}
 	
-	else if(strcmp(pName,"sigmoidal")==0)
+	else if(strcmp(pName,"sigmoidal")==0 || strcmp(pName,"style")==0)
 	{	input=INT_NUM;
 		return (char *)&sigmoidal;
 	}
