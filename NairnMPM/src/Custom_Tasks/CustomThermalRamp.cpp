@@ -30,7 +30,7 @@ CustomThermalRamp::CustomThermalRamp() : CustomTask()
 	property = RAMP_TEMP;
 	rampStart = 0.;
 	isoDeltaT = 0.;
-	sigmoidal = 0;
+	sigmoidal = 0;			// <0 function is dP/dt, 0 is linear, >0 is sigmoidal
     lifetimes = -1.;
     stretch = -1.;
 	scaleFxn = NULL;
@@ -330,7 +330,7 @@ CustomTask *CustomThermalRamp::Initialize(void)
             nsteps = 1;
             isoRampTime = timestep;
             endTime = rampStart+1.9*timestep;
-            strcpy(rampValue,"scaled damge toughness");
+            strcpy(rampValue,"scaled damage toughness");
             cout << "Relative particle damage toughness:" << endl;
             rampUnits[0] = 0;
             break;
@@ -348,7 +348,10 @@ CustomTask *CustomThermalRamp::Initialize(void)
 	size_t hsize=200;
 	
 	if(bmpFile==NULL)
-	{	snprintf(hline,hsize,"   Final %s difference: %g %s",rampValue,isoDeltaT,rampUnits);
+	{	if(sigmoidal>=0)
+			snprintf(hline,hsize,"   Final %s difference: %g %s",rampValue,isoDeltaT,rampUnits);
+		else
+			snprintf(hline,hsize,"   Changing %s",rampValue);
 		cout << hline << endl;
 		snprintf(hline,hsize,"   Ramped between %g and %g %s",rampStart*UnitsController::Scaling(1.e3),
 					(rampStart+isoRampTime)*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
@@ -363,22 +366,34 @@ CustomTask *CustomThermalRamp::Initialize(void)
 				normExp = stretch>0. ? 1.-exp(-pow(lifetimes,stretch)) : 1.-exp(-lifetimes) ;
 				normExp = 1./normExp;
 			}
-            else if(sigmoidal)
+            else if(sigmoidal>0)
 			{	ksig = stretch>0 ? stretch : 12.;
 				kcon = (1.+exp(-0.5*ksig))/(1.-exp(-ksig/2.));
                 cout << "      (use sigmoidal ramp with k = " << ksig << ")" << endl;
 			}
+			else if(sigmoidal<0)
+			{	if(scaleFxn==NULL)
+					throw CommonException("simoidal<0 must provide function for change rate","CustomThermalRamp::Initialize");
+				cout << "   Property change rate =  " << scaleFxn->GetString() << endl;
+				snprintf(hline,hsize,"      (rate units are %s/%s)",rampUnits,UnitsController::Label(ALTTIME_UNITS));
+				cout << hline << endl;
+			}
+			else
+				cout << "      (use linear ramp)" << endl;
         }
         else
         {   // not used when nsteps=1
             lifetimes = -1.;
             sigmoidal = 0;
         }
-		if(scaleFxn!=NULL)
+		if(sigmoidal>=0 && scaleFxn!=NULL)
 			cout << "   Scaling function =  " << scaleFxn->GetString() << endl;
 	}
 	else
-	{	// Read the File
+	{	if(sigmoidal<0)
+			throw CommonException("sigoidal<0 not allowed when using image or text from a file","CustomThermalRamp::Initialize");
+
+		// Read the File
 		XYInfoHeader info;
 		unsigned char **rows;
 		char *bmpFullPath = archiver->ExpandOutputPath(bmpFile);
@@ -515,7 +530,7 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
     {   rampFraction = stretch>0. ? 1.-exp(-pow(lifetimes*rampFraction,stretch)) : 1.-exp(-lifetimes*rampFraction) ;
 		rampFraction *= normExp;
     }
-	else if(sigmoidal)
+	else if(sigmoidal>0)
 	{	rampFraction = kcon*(1.-exp(-ksig*rampFraction))/(1+exp(-ksig*(rampFraction-0.5)));
 	}
     
@@ -535,9 +550,10 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 		for(int p=0;p<nmpmsNR;p++)
 		{   if(mpm[p]->InReservoir()) continue;
 			
-			// change by deltaT, but optionally scale by function of position and time
+			// change by deltaT, but optionally scale by function of position and time or use function
+			// if sigmoidal<0, function is there is is rate, multiple by time step in function units
 			double scale = scaleFxn!=NULL ? scaleFxn->XYZTValue(&mpm[p]->pos,mtime*UnitsController::Scaling(1000.)) : 1. ;
-			double dTp = scale*deltaT;
+			double dTp = sigmoidal>=0 ? scale*deltaT : scale*timestep*UnitsController::Scaling(1000.) ;
 			
 			if(property==RAMP_TEMP)
 			{	mpm[p]->pTemperature += dTp;
@@ -577,10 +593,14 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
                     mpm[p]->pDiff[0]->conc = 1.;
             }
             else if(property==RAMP_STRENGTH)
-            {   mpm[p]->SetRelativeStrength(scale*newDeltaT);
+            {	// if sigmoidal<0, just set to function
+				if(sigmoidal<0) newDeltaT=1.;
+				mpm[p]->SetRelativeStrength(scale*newDeltaT);
             }
             else if(property==RAMP_TOUGHNESS)
-            {   mpm[p]->SetRelativeToughness(scale*newDeltaT);
+            {	// if sigmoidal<0, just set to function
+				if(sigmoidal<0) newDeltaT=1.;
+				mpm[p]->SetRelativeToughness(scale*newDeltaT);
             }
 		}
 	}
