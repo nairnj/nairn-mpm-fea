@@ -11,6 +11,8 @@
 #endif
 #include "Read_XML/Atomic.hpp"
 #include "Read_XML/Expression.hpp"
+#include <cstring>
+#include <iostream>
 
 static char opChar[] = {' ',' ',' ',')','+','-','*','/','^','(',','};
 static const char *fxnName[] = {"sin","cos","tan","asin","acos","atan","sinh","cosh",

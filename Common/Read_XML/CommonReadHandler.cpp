@@ -18,6 +18,9 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Exceptions/StrX.hpp"
 #include "Read_XML/Expression.hpp"
+#include <ostream>
+#include <iostream>
+
 
 #pragma mark CommonReadHandler: Constructors and Destructor
 

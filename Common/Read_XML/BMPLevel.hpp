@@ -13,6 +13,8 @@
 
 #define _BMPLEVEL_
 
+#include "System/MPMPrefix.hpp"
+
 class BMPLevel : public LinkedObject
 {
     public:

@@ -5,7 +5,6 @@ include_directories("Read_XML")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-
 FILE(GLOB_RECURSE BC_SRCS "Read_XML/*.h" "Read_XML/*.cpp")
 
 ADD_LIBRARY(Read_XML SHARED ${BC_SRCS})

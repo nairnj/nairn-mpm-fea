@@ -49,7 +49,7 @@
     #include "Materials/IsoPhaseFieldSoftening.hpp"
     #include "Materials/IsoDamageMech.hpp"
 
-
+#include "System/MPMPrefix.hpp"
 #else // not MPM_CODE
 
 	// Material for FEA only

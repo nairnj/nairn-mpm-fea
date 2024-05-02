@@ -49,6 +49,9 @@
 // only here to help XCODE dynamically compile
 #include <string>
 #include <unordered_map>
+#include <cstring>
+#include <cmath>
+#include "System/MPMPrefix.hpp"
 
 // extra function defined at the bottom
 double erfcc(double x);

@@ -14,6 +14,7 @@
 #pragma mark ParseController: Constructors and Destructor
 
 #include "Common/System/LinkedObject.hpp"
+#include "System/MPMPrefix.hpp"
 
 ParseController::ParseController()
 {

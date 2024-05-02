@@ -10,12 +10,16 @@
 ********************************************************************************/
 
 #ifndef _ELEMENTBASE_
-
 #define _ELEMENTBASE_
+
+#include "Common/System/LinkedObject.hpp"
+#include "System/MPMPrefix.hpp"
 
 #ifdef MPM_CODE
 class MPMBase;
 #endif
+
+#include <ostream>
 
 // element types
 #define CS_TRIANGLE 1

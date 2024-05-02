@@ -16,6 +16,8 @@
 #include "System/DataTypes.hpp"
 #include <unordered_map>
 
+#include <string>
+
 using namespace std;
 #define MAX_EXPRESSIONS 12
 

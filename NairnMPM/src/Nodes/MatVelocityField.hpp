@@ -29,7 +29,7 @@
 #define DELTA_VSTARNEXT_VEC 4
 #define DELTA_VSTORE_VEC 5
 
-#include "System/DataTypes.hpp"
+#include "Common/System/DataTypes.hpp"
 
 // calculations options
 enum { INITIALIZE_XPIC=0,UPDATE_VSTAR,COPY_VSTARNEXT };
