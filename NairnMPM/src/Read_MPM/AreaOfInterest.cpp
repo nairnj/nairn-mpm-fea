@@ -5,9 +5,12 @@
 	Created by John Nairn on 2/19/2016.
 	Copyright (c) 2016 John A. Nairn, All rights reserved.
 ********************************************************************************/
-
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
+
 #include "AreaOfInterest.hpp"
+#include "System/MPMPrefix.hpp"
 
 #pragma mark AreaOfInterest::Constructors and Destructors
 

@@ -6,7 +6,9 @@
     Copyright (c) 2006 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Exceptions/StrX.hpp"

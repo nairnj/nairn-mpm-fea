@@ -6,7 +6,9 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 
 #pragma mark LinkedObect::Constructors and Destructor
 

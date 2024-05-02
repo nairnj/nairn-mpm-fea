@@ -13,7 +13,9 @@
 		material point
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MatPointAS.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -24,6 +26,8 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "Exceptions/CommonException.hpp"
+
+#include "System/MPMPrefix.hpp"
 
 #pragma mark MatPointAS::Constructors and Destructors
 

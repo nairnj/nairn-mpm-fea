@@ -27,7 +27,9 @@
     Copyright (c) 2023 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Spline2D.hpp"
 
 #pragma mark Spline2D:Constructors and Destructor

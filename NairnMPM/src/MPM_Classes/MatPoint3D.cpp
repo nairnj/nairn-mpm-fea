@@ -6,7 +6,9 @@
     Copyright (c) 2006 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MatPoint3D.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -17,6 +19,8 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
+
+#include "System/MPMPrefix.hpp"
 
 // locations of the 8 corners relative to the center
 // when adding semi-side vectors

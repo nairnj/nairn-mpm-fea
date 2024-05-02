@@ -6,7 +6,9 @@
     Copyright (c) 2007 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Materials/Elastic.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
@@ -15,6 +17,10 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Exceptions/MPMWarnings.hpp"
+
+#include "System/MPMPrefix.hpp"
+#include <iostream>
+
 
 // for numerical softening methods
 #include "SofteningLaw.hpp"

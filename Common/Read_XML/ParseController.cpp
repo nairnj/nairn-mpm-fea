@@ -11,6 +11,8 @@
 
 #pragma mark ParseController: Constructors and Destructor
 
+#include "Common/System/LinkedObject.hpp"
+
 ParseController::ParseController()
 {
 	firstObject=NULL;

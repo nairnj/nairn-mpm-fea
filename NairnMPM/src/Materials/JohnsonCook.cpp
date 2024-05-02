@@ -9,12 +9,17 @@
         (Ajc + Bjc εpnjc) [1 + Cjc ln(dεp/ep0jc) ] (1 - Trmjc)
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Materials/JohnsonCook.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "System/UnitsController.hpp"
+
+#include "System/MPMPrefix.hpp"
+#include <iostream>
 
 #pragma mark JohnsonCook::Constructors and Destructors
 

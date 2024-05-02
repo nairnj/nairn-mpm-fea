@@ -14,6 +14,8 @@
 #define _POLYHEDRONCONTROLLER_
 
 #include "Read_XML/ShapeController.hpp"
+#include "System/MPMPrefix.hpp"
+
 
 class PolyTriangle;
 

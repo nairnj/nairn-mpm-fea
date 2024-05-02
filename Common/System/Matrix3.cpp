@@ -49,7 +49,9 @@
 
 *************************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Matrix3.hpp"
 #include <float.h>
 

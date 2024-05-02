@@ -7,7 +7,9 @@
     Copyright (c) 2004 RSAC Software. All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Read_MPM/MPMReadHandler.hpp"
 #include "Read_XML/BMPLevel.hpp"
@@ -18,6 +20,7 @@
 #include "Read_MPM/MpsController.hpp"
 #include "System/ArchiveData.hpp"
 #include "Read_XML/Expression.hpp"
+#include "System/MPMPrefix.hpp"
 
 extern char *angleExpr[3];
 extern char rotationAxes[4];

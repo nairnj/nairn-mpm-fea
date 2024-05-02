@@ -6,7 +6,9 @@
 	Copyright (c) 2018 RSAC Software. All rights reserved.
  ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Read_MPM/MPMReadHandler.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 

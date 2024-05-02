@@ -6,7 +6,9 @@
 	Copyright (c) 2011 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "PolyhedronController.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Read_MPM/PolyTriangle.hpp"

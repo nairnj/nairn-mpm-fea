@@ -6,7 +6,9 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 *********************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #ifdef MPM_CODE
 	#include "NairnMPM_Class/NairnMPM.hpp"
 #else

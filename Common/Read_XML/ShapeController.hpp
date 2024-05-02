@@ -13,6 +13,8 @@
 
 #define _SHAPECONTROLLER_
 
+#include "System/MPMPrefix.hpp"
+
 class CommonReadHandler;
 #ifdef MPM_CODE
 	class MPMBase;

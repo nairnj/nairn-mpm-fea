@@ -6,7 +6,9 @@
 	Copyright (c) 2015 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "System/UnitsController.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 

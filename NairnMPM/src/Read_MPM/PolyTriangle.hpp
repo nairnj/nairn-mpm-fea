@@ -12,6 +12,8 @@
 #ifndef _POLYTRIANGLE_
 
 #define _POLYTRIANGLE_
+#include "System/MPMPrefix.hpp"
+
 
 enum { USE_NX=1,USE_NY,USE_NZ };
 

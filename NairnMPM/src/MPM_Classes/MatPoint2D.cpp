@@ -6,7 +6,9 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MatPoint2D.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -19,6 +21,7 @@
 #include "Exceptions/CommonException.hpp"
 
 #pragma mark MatPoint2D::Constructors and Destructors
+#include "System/MPMPrefix.hpp"
 
 // Constructors
 MatPoint2D::MatPoint2D() {}

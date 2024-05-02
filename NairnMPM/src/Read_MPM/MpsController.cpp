@@ -6,13 +6,17 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Read_MPM/MpsController.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "NairnMPM_Class/ResetElementsTask.hpp"
+
+#include "System/MPMPrefix.hpp"
 
 MpsController *mpCtrl=NULL;
 

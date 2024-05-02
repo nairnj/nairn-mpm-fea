@@ -6,10 +6,14 @@
     Copyright (c) 2005 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Read_MPM/CrackController.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackSegment.hpp"
+
+#include  "System/LinkedObject.hpp"
 
 CrackController *crackCtrl=NULL;
 

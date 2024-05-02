@@ -13,6 +13,8 @@
 
 #define _PARSECONTROLLER_
 
+class LinkedObject;
+
 class ParseController
 {
     public:

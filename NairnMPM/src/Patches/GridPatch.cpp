@@ -24,6 +24,8 @@
 #include "Materials/MaterialBase.hpp"
 #include "Exceptions/CommonException.hpp"
 
+#include "System/MPMPrefix.hpp"
+
 // globals
 GridPatch **patches;            // list of patches (or NULL if only one patch or if serial)
 int GridPatch::ghostRows = 1;   // number of ghost rows. If needed, increase for higher strain limits

@@ -6,7 +6,9 @@
     Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 
 // prototype
 int gelbnd(double **,int,int,double *,double *,int);
