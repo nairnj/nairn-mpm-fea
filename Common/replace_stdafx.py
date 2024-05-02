@@ -1,6 +1,6 @@
 import glob
 
-files = glob.glob('./System/*.cpp')
+files = glob.glob('./Read_XML/*.cpp')
 # print(files)
 
 

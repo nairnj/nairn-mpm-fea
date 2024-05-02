@@ -6,7 +6,9 @@
  	Copyright (c) 2018 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Read_XML/Atomic.hpp"
 #include "Read_XML/Expression.hpp"
 

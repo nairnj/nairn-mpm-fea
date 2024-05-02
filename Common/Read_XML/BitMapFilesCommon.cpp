@@ -7,7 +7,9 @@
     Copyright (c) 2004 RSAC Software. All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include <fstream>
 
 #include "Read_XML/CommonReadHandler.hpp"

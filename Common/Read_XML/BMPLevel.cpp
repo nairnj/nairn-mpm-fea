@@ -6,7 +6,9 @@
     Copyright (c) 2004 RSAC Software. All rights reserved.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Read_XML/BMPLevel.hpp"
 #ifdef MPM_CODE
 #include "NairnMPM_Class/MeshInfo.hpp"

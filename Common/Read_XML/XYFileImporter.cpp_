@@ -9,7 +9,9 @@
 	various file types
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Read_XML/XYFileImporter.hpp"
 #include "Exceptions/CommonException.hpp"
 

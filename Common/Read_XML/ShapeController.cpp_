@@ -43,7 +43,9 @@
 		BCs.
 ********************************************************************************/
 
+#if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
+#endif
 #include "Read_XML/ShapeController.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Nodes/NodalPoint.hpp"
