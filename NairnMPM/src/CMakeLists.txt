@@ -41,6 +41,7 @@ TARGET_LINK_LIBRARIES(BoundaryConditions Custom_Tasks
                                          Exceptions
                                          Materials
                                          Nodes
+                                         Patches
                                          MPMClasses
                                          Elements
                                          System
@@ -50,7 +51,7 @@ TARGET_LINK_LIBRARIES(Custom_Tasks
                                       Nodes    
                                       Read_XML)
 
-TARGET_LINK_LIBRARIES(Global_QTs      )
+TARGET_LINK_LIBRARIES(Global_QTs      BoundaryConditions)
 
 TARGET_LINK_LIBRARIES(Read_MPM        Read_XML)
 TARGET_LINK_LIBRARIES(Elements        Elements_C)
