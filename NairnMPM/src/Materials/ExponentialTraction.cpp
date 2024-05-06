@@ -12,6 +12,7 @@
 #include "stdafx.h"
 #endif
 #include "Materials/ExponentialTraction.hpp"
+#include <cmath>
 
 extern double mtime;
 

@@ -6,6 +6,7 @@ include_directories("Read_XML")
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 FILE(GLOB_RECURSE EXCEPTIONS_C "Exceptions/*.h" "Exceptions/*.cpp")
+FILE(GLOB_RECURSE ELEMENTS_C "Elements/*.h" "Elements/*.cpp")
 FILE(GLOB_RECURSE MATERIALS "Materials/*.h" "Materials/*.cpp")
 FILE(GLOB_RECURSE NODES_C "Nodes/*.h" "Nodes/*.cpp")
 
@@ -22,11 +23,11 @@ FILE(GLOB_RECURSE SYSTEM "System/*.h" "System/CommonAnalysis.cpp"
                                       "System/svninfo.cpp"
                                       "System/UnitsController.cpp"
                                       )
-
+ADD_LIBRARY(Elements_C SHARED ${ELEMENTS_C})
 ADD_LIBRARY(Exceptions_C SHARED ${EXCEPTIONS_C})
 ADD_LIBRARY(Materials_C SHARED ${MATERIALS})
 ADD_LIBRARY(Nodes_C SHARED ${NODES_C})
 ADD_LIBRARY(Read_XML SHARED ${BC_SRCS})
 ADD_LIBRARY(System SHARED ${SYSTEM})
 
-TARGET_LINK_LIBRARIES(Read_XML)
+TARGET_LINK_LIBRARIES(Read_XML Materials)

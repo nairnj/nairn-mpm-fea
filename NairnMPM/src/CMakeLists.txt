@@ -15,8 +15,7 @@ FILE(GLOB_RECURSE EXCEPT_SRCS "Exceptions/*.h" "Exceptions/*.cpp")
 FILE(GLOB_RECURSE GLOBAL_QTS "Global_Quantities/*.h" "Global_Quantities/*.cpp")
 
 FILE(GLOB_RECURSE NODES_SRCS "Nodes/*.h" "Nodes/*.cpp")
-FILE(GLOB_RECURSE MATERIALS_SRCS "Materials/*.h" "Materials/ElasticMPM.cpp"
-                                                 "Materials/JohnsonCook.cpp")
+FILE(GLOB_RECURSE MATERIALS_SRCS "Materials/*.h"  "Materials/*.cpp")
 
 FILE(GLOB_RECURSE MPMCLASSES_SRCS "MPM_Classes/*.h" "MPM_Classes/*.cpp")
 FILE(GLOB_RECURSE NAIRNMPMCLASS_SRCS "NairnMPM_Class/*.h" "NairnMPM_Class/*.cpp")
@@ -41,10 +40,14 @@ TARGET_LINK_LIBRARIES(Custom_Tasks    BoundaryConditions
                                       Read_XML)
 
 TARGET_LINK_LIBRARIES(Read_MPM        Read_XML)
-TARGET_LINK_LIBRARIES(NairnMPMClass   
+TARGET_LINK_LIBRARIES(Elements        Elements_C)
+TARGET_LINK_LIBRARIES(Materials       Materials_C)
+TARGET_LINK_LIBRARIES(NairnMPMClass   BoundaryConditions
                                       Custom_Tasks
                                       Elements
                                       GLOBAL_QTS
                                       Materials
                                       # Materials_C
-                                      MPMClasses)
+                                      MPMClasses
+                                      Nodes
+                                      Patches)
