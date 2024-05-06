@@ -27,7 +27,7 @@ ADD_LIBRARY(BoundaryConditions SHARED ${BC_SRCS})
 ADD_LIBRARY(Custom_Tasks      SHARED ${CUSTOM_TASKS})
 ADD_LIBRARY(Elements          SHARED ${Elements_SRCS})
 ADD_LIBRARY(Exceptions        SHARED ${EXCEPT_SRCS})
-ADD_LIBRARY(GLOBAL_QTS        SHARED ${GLOBAL_QTS})
+ADD_LIBRARY(Global_QTs        SHARED ${GLOBAL_QTS})
 ADD_LIBRARY(Materials         SHARED ${MATERIALS_SRCS})
 ADD_LIBRARY(MPMClasses        SHARED ${MPMCLASSES_SRCS})
 ADD_LIBRARY(NairnMPMClass     SHARED ${NAIRNMPMCLASS_SRCS})
@@ -36,27 +36,39 @@ ADD_LIBRARY(Patches           SHARED ${PATCHES_SRCS})
 ADD_LIBRARY(Read_MPM          SHARED ${READ_MPM_SRCS})
 ADD_LIBRARY(System            SHARED ${SYSTEM_SRCS})
 
-TARGET_LINK_LIBRARIES(BoundaryConditions)
-TARGET_LINK_LIBRARIES(Custom_Tasks    BoundaryConditions
+TARGET_LINK_LIBRARIES(BoundaryConditions Custom_Tasks
+                                         Elements
+                                         Exceptions
+                                         Materials
+                                         Nodes
+                                         MPMClasses
+                                         Elements
+                                         System
+                                         Read_XML)
+TARGET_LINK_LIBRARIES(Custom_Tasks    
                                       Materials
                                       Nodes    
                                       Read_XML)
 
+TARGET_LINK_LIBRARIES(Global_QTs      )
+
 TARGET_LINK_LIBRARIES(Read_MPM        Read_XML)
 TARGET_LINK_LIBRARIES(Elements        Elements_C)
-TARGET_LINK_LIBRARIES(Materials       BoundaryConditions
+TARGET_LINK_LIBRARIES(Materials       
                                       Materials_C)
 TARGET_LINK_LIBRARIES(Nodes           Nodes_C
                                       )
 
 TARGET_LINK_LIBRARIES(System   System_C)
-TARGET_LINK_LIBRARIES(NairnMPMClass   BoundaryConditions
+TARGET_LINK_LIBRARIES(NairnMPMClass   
+                                      BoundaryConditions
                                       Custom_Tasks
                                       Elements
-                                      GLOBAL_QTS
+                                      Global_QTs
                                       Materials
                                       # Materials_C
                                       MPMClasses
                                       Nodes
                                       Patches
+                                      BoundaryConditions
                                       System)
