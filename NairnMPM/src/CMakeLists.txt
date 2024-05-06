@@ -21,6 +21,7 @@ FILE(GLOB_RECURSE MPMCLASSES_SRCS "MPM_Classes/*.h" "MPM_Classes/*.cpp")
 FILE(GLOB_RECURSE NAIRNMPMCLASS_SRCS "NairnMPM_Class/*.h" "NairnMPM_Class/*.cpp")
 FILE(GLOB_RECURSE PATCHES_SRCS "Patches/*.h" "Patches/*.cpp")
 FILE(GLOB_RECURSE READ_MPM_SRCS "Read_MPM/*.h" "Read_MPM/*.cpp")
+FILE(GLOB_RECURSE SYSTEM_SRCS        "System/*.h" "System/*.cpp")
 
 ADD_LIBRARY(BoundaryConditions SHARED ${BC_SRCS})
 ADD_LIBRARY(Custom_Tasks      SHARED ${CUSTOM_TASKS})
@@ -33,15 +34,22 @@ ADD_LIBRARY(NairnMPMClass     SHARED ${NAIRNMPMCLASS_SRCS})
 ADD_LIBRARY(Nodes             SHARED ${NODES_SRCS})
 ADD_LIBRARY(Patches           SHARED ${PATCHES_SRCS})
 ADD_LIBRARY(Read_MPM          SHARED ${READ_MPM_SRCS})
+ADD_LIBRARY(System            SHARED ${SYSTEM_SRCS})
 
 TARGET_LINK_LIBRARIES(BoundaryConditions)
 TARGET_LINK_LIBRARIES(Custom_Tasks    BoundaryConditions
+                                      Materials
                                       Nodes    
                                       Read_XML)
 
 TARGET_LINK_LIBRARIES(Read_MPM        Read_XML)
 TARGET_LINK_LIBRARIES(Elements        Elements_C)
-TARGET_LINK_LIBRARIES(Materials       Materials_C)
+TARGET_LINK_LIBRARIES(Materials       BoundaryConditions
+                                      Materials_C)
+TARGET_LINK_LIBRARIES(Nodes           Nodes_C
+                                      )
+
+TARGET_LINK_LIBRARIES(System   System_C)
 TARGET_LINK_LIBRARIES(NairnMPMClass   BoundaryConditions
                                       Custom_Tasks
                                       Elements
@@ -50,4 +58,5 @@ TARGET_LINK_LIBRARIES(NairnMPMClass   BoundaryConditions
                                       # Materials_C
                                       MPMClasses
                                       Nodes
-                                      Patches)
+                                      Patches
+                                      System)
