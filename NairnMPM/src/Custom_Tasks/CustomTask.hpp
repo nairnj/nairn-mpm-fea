@@ -13,6 +13,8 @@
 
 #define _CUSTOMTASK_
 
+#include "System/MPMPrefix.hpp"
+
 class NodalPoint;
 class MPMBase;
 

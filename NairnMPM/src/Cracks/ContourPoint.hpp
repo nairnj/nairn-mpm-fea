@@ -13,6 +13,9 @@
 
 #define _CONTOURPOINT_
 
+#include "System/MPMPrefix.hpp"
+
+
 class NodalPoint;
 class CrackHeader;
 class CrackSegment;

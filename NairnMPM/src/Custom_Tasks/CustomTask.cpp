@@ -9,6 +9,7 @@
 #include "stdafx.h"
 #include "Custom_Tasks/CalcJKTask.hpp"
 
+#include "System/CommonAnalysis.hpp"
 #include <iostream>
 using namespace std;
 

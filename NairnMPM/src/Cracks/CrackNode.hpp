@@ -12,7 +12,8 @@
 #ifndef _CRACKNODE_
 
 #define _CRACKNODE_
-
+#include <vector>
+using namespace std;
 class NodalPoint;
 
 class CrackNode

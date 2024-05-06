@@ -12,7 +12,7 @@
 #ifndef _CROSSEDCRACK_
 
 #define _CROSSEDCRACK_
-
+#include "Common/System/LinkedObject.hpp"
 class CrackHeader;
 
 class CrossedCrack : public LinkedObject

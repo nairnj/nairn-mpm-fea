@@ -19,11 +19,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/NairnFEA/src)
 ADD_SUBDIRECTORY(NairnMPM)
 ADD_SUBDIRECTORY(Common)
 
-# ADD_EXECUTABLE (Nairn_MPM "Common/System/main.cpp")
-# TARGET_LINK_LIBRARIES (Nairn_MPM 
-                                 # NairnMPMClass  
+ADD_EXECUTABLE (Nairn_MPM "Common/System/main.cpp")
+TARGET_LINK_LIBRARIES (Nairn_MPM 
+                                 Custom_Tasks
+                                 NairnMPMClass  
 
-                                 # #COMMON
-                                 # Exceptions_C
-                                 # System 
-                                 # xerces-c)
+                                 #COMMON
+                                 Exceptions_C
+                                 System 
+                                 xerces-c)
