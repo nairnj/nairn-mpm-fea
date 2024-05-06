@@ -16,6 +16,9 @@
 
 #pragma mark CommonException: Constructors and Destructors
 
+#include <cstring>
+#include <iostream>
+using namespace std;
 // Constructors
 CommonException::CommonException()
 {

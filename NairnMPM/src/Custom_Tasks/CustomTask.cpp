@@ -9,6 +9,9 @@
 #include "stdafx.h"
 #include "Custom_Tasks/CalcJKTask.hpp"
 
+#include <iostream>
+using namespace std;
+
 // globals
 CustomTask *theTasks=NULL;
 int CustomTask::numberCustomHistoryVariables = 0;

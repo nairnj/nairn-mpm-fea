@@ -9,6 +9,11 @@
 #ifndef _JAN_SPLINE2D_
 #define _JAN_SPLINE2D_
 
+#include <iostream>
+#include <vector>
+#include <cstring> //strcpy
+using namespace std;
+
 enum { SPLINE_NOERR=0,SPLINE_XERR,SPLINE_YERR,
     SPLINE_TOOFEWKNOTS,SPLINE_INVALID_DERIVATIVE,
     SPLINE_NOTPARAMETRIC,SPLINE_NOFIT,SPLINE_OUTOFRANGE

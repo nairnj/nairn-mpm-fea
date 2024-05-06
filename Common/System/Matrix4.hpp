@@ -9,6 +9,8 @@
 #ifndef _JAN_MATRIX4_
 #define _JAN_MATRIX4_
 
+#include <ostream>
+using namespace std;
 class Matrix4
 {
 	public:

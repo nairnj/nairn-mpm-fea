@@ -13,6 +13,8 @@
 
 #define _TRANSPORTTASK_
 
+#include "System/MPMPrefix.hpp"
+
 class NodalPoint;
 class MPMBase;
 class MatVelocityField;

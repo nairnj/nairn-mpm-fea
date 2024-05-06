@@ -9,6 +9,7 @@
 #if defined ( _MSC_VER) || defined (__APPLE__)
 #include "stdafx.h"
 #endif
+#include <cmath>
 
 // prototype
 int gelbnd(double **,int,int,double *,double *,int);

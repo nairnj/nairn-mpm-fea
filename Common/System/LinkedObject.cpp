@@ -10,6 +10,9 @@
 #include "stdafx.h"
 #endif
 
+#include "LinkedObject.hpp"
+#include "System/MPMPrefix.hpp"
+
 #pragma mark LinkedObect::Constructors and Destructor
 
 LinkedObject::LinkedObject()

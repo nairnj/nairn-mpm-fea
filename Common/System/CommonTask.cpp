@@ -11,6 +11,7 @@
 #include "stdafx.h"
 #endif
 #include "CommonTask.hpp"
+#include "System/MPMPrefix.hpp"
 
 // class statics
 int CommonTask::numberOfTasks=0;

@@ -11,4 +11,4 @@ Refresh your Github page and your fork should now be even (in sync) with the ori
 
 
 
-cmake ../nairn-mpm-fea -DXERCESC_INCLUDE_DIR=/home/weldform-pc/Numerico/xerces-c-2.3.0/include
+cmake ../nairn-mpm-fea -DXERCESC_INCLUDE_DIR=/home/weldform-pc/Numerico/xerces-c-2.3.0/include -DXERCESC_LIB_DIR=/home/weldform-pc/Numerico/xerces-c-2.3.0/lib

@@ -10,6 +10,8 @@
 #include "stdafx.h"
 #endif
 #include <stdarg.h>
+#include <cmath>
+#include "System/MPMPrefix.hpp"
 
 #define T_SQRT3    1.73205080756887729352744634151   // sqrt(3)
 
