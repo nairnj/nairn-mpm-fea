@@ -53,7 +53,9 @@ TARGET_LINK_LIBRARIES(Custom_Tasks
 
 TARGET_LINK_LIBRARIES(Global_QTs      BoundaryConditions)
 
-TARGET_LINK_LIBRARIES(Read_MPM        Read_XML)
+TARGET_LINK_LIBRARIES(Read_MPM        Read_XML
+                                      )
+                                     
 TARGET_LINK_LIBRARIES(Elements        Elements_C)
 TARGET_LINK_LIBRARIES(Materials       
                                       Materials_C)
@@ -72,4 +74,5 @@ TARGET_LINK_LIBRARIES(NairnMPMClass
                                       Nodes
                                       Patches
                                       BoundaryConditions
+                                      Read_MPM
                                       System)
