@@ -21,10 +21,6 @@ ADD_SUBDIRECTORY(Common)
 
 ADD_EXECUTABLE (Nairn_MPM "Common/System/main.cpp")
 TARGET_LINK_LIBRARIES (Nairn_MPM 
-                                 Custom_Tasks
                                  NairnMPMClass  
-
-                                 #COMMON
-                                 Exceptions_C
-                                 System 
+ 
                                  xerces-c)

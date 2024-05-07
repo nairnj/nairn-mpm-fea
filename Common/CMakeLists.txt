@@ -10,7 +10,7 @@ FILE(GLOB_RECURSE ELEMENTS_C "Elements/*.h" "Elements/*.cpp")
 FILE(GLOB_RECURSE MATERIALS "Materials/*.h" "Materials/*.cpp")
 FILE(GLOB_RECURSE NODES_C "Nodes/*.h" "Nodes/*.cpp")
 
-FILE(GLOB_RECURSE BC_SRCS "Read_XML/*.h" "Read_XML/*.cpp")
+FILE(GLOB_RECURSE READXML_SRCS "Read_XML/*.h" "Read_XML/*.cpp")
 FILE(GLOB_RECURSE SYSTEM_C "System/*.h" "System/CommonAnalysis.cpp"
                                       "System/CommonArchiveData.cpp"
                                       "System/CommonTask.cpp"
@@ -23,11 +23,11 @@ FILE(GLOB_RECURSE SYSTEM_C "System/*.h" "System/CommonAnalysis.cpp"
                                       "System/svninfo.cpp"
                                       "System/UnitsController.cpp"
                                       )
-ADD_LIBRARY(Elements_C SHARED ${ELEMENTS_C})
-ADD_LIBRARY(Exceptions_C SHARED ${EXCEPTIONS_C})
-ADD_LIBRARY(Materials_C SHARED ${MATERIALS})
-ADD_LIBRARY(Nodes_C SHARED ${NODES_C})
-ADD_LIBRARY(Read_XML SHARED ${BC_SRCS})
-ADD_LIBRARY(System_C SHARED ${SYSTEM_C})
+ADD_LIBRARY(Elements_C STATIC ${ELEMENTS_C})
+ADD_LIBRARY(Exceptions_C STATIC ${EXCEPTIONS_C})
+ADD_LIBRARY(Materials_C STATIC ${MATERIALS})
+ADD_LIBRARY(Nodes_C STATIC ${NODES_C})
+# ADD_LIBRARY(Read_XML STATIC ${READXML_SRCS})
+ADD_LIBRARY(System_C STATIC ${SYSTEM_C})
 
-TARGET_LINK_LIBRARIES(Read_XML Materials)
+# TARGET_LINK_LIBRARIES(Read_XML Materials)

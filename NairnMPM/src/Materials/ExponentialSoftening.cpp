@@ -20,6 +20,9 @@
 #include "stdafx.h"
 #endif
 #include "Materials/ExponentialSoftening.hpp"
+#include "Common/System/DataTypes.hpp"
+
+#include <cmath>
 
 #pragma mark ExponentialSoftening::Constructors and Destructors
 

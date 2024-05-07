@@ -18,6 +18,7 @@
 
 // Angle to pick tension or shear
 #define TANPIOVER8 0.414213562373095
+#include "Common/System/DataTypes.hpp"
 
 // TENSILE_FAILURE is max principle stress
 // SHEAR_FAILURE is max shear stress
