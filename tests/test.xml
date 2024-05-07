@@ -1,0 +1,17 @@
+<?xml version='1.0'?>
+
+<JANFEAInput version="3">
+<Header>
+fasdfas
+<Analysis> 13 </Analysis>
+  <Description>
+Title: Tensile Loading
+User Name: John Nairn
+Simple tensile loading on a bar to test different material types
+and to test various boundary conditions
+  </Description>
+
+</Header>
+
+</JANFEAInput>
+
