@@ -174,6 +174,12 @@ This use assumes <code>mylist</code> is a <a href="#list">list</a> object and th
 <li><b>resultsDocuments</b> : an ordered <a href="#list">list</a> of opened <a href="#rdocs">Results documents</a>. Item 0 is the front most results document.</li>
 </ul>
 
+<h4>Supported Commands</h4>
+
+<ul>
+<li>See <a href="#basic">Direct Scripting Commands</a></li>
+</ul>
+
 <h3><a name="cdocs"></a>Command Documents</h3>
 
 <p>Command documents are documents with commands to run FEA or MPM calculations.</p>
@@ -200,6 +206,12 @@ This use assumes <code>mylist</code> is a <a href="#list">list</a> object and th
 
 <ul>
 <li>None</li>
+</ul>
+
+<h4>Supported Commands</h4>
+
+<ul>
+<li><a href="#commandsCmds">Commands Document commands</a></li>
 </ul>
 
 <h3><a name="rdocs">ResultsDocuments</h3>
@@ -233,6 +245,12 @@ This use assumes <code>mylist</code> is a <a href="#list">list</a> object and th
 <li><b>arhives</b> : a <a href="#list">list</a> of <a href="#mpmarchve">MPM archives</a> for the document</li>
 </ul>
 
+<h4>Supported Commands</h4>
+
+<ul>
+<li><a href="#resultsCmds">Results Document commands</a></li>
+</ul>
+
 <h3><a name="mpmarchive"></a>MPM Archive</h3>
 
 <p>Information on one MPM archive file for the current <a href="#rdocs">Results document</a>.</p>
@@ -251,6 +269,12 @@ This use assumes <code>mylist</code> is a <a href="#list">list</a> object and th
 </ul>
 
 <h4>To-Many Attributes</h4>
+<ul>
+<li>None</li>
+</ul>
+
+<h4>Supported Commands</h4>
+
 <ul>
 <li>None</li>
 </ul>
@@ -280,6 +304,12 @@ This use assumes <code>mylist</code> is a <a href="#list">list</a> object and th
 <li>None</li>
 </ul>
 
+<h4>Supported Commands</h4>
+
+<ul>
+<li><a href="#listCmds">List commands</a></li>
+</ul>
+
 <h3><a name="dict"></a>Dictionaries</h3>
 
 <p>Dictionaries store objects, strings, or numbers in key-value pairs.</p>
@@ -306,6 +336,12 @@ This use assumes <code>mylist</code> is a <a href="#list">list</a> object and th
 <li><b>allValues</b>: A <a href="#list">list</a> containing all values in the dictionary.</li>
 </ul>
 
+<h4>Supported Commands</h4>
+
+<ul>
+<li><a href="#dictCmds">Dictionary commands</a></li>
+</ul>
+
 <h3><a name="none"></a>None Type</h3>
 
 <p>This object is returned by any "To-One" object attribute that does not have that connection and by several other commands when an object cannot be found. If <code>objName</code> is a "None" type object, the conditional <a href="commands.html#conditionals">ifDef objName</a> is false and the conditional <a href="commands.html#conditionals">ifNDef objName</a> is true. Alternatively, you can check for "None" type object by seeing if <code>@objName.class</code> is equal to "none".</p>
@@ -325,6 +361,12 @@ This use assumes <code>mylist</code> is a <a href="#list">list</a> object and th
 <li>None</li>
 </ul>
 
+<h4>Supported Commands</h4>
+
+<ul>
+<li>None</li>
+</ul>
+
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
 <h2><a name="basic"></a>Direct Scripting Commands</h2>
@@ -336,7 +378,7 @@ This use assumes <code>mylist</code> is a <a href="#list">list</a> object and th
 This command must be the first command in a script. Its presence is how <b>NairnFEAMPMViz</b> knows to interpret the commands as a script rather than as commands to setup FEA or MPM calculations.</li>
 </ul>
 
-<p>The other direct commands are list here (in alphabetical order). The commands are followed by their arguments where those in square brackets ("[(arg)]") are option argument.</p>
+<p>The other direct commands are list here (in alphabetical order). The commands are followed by their arguments are arguments in square brackets ("[(arg)]") are optional.</p>
 
 <ul>
 
@@ -404,7 +446,9 @@ Displays a dialog box to the user with one to three <code>(buttons)</code> (or o
 <li>Object in a list: If some objects are stored in a <a href="#list">list</a>, you can extract on object from the list using <code>myList.#i</code> where <code>myList</code> is object name for the list and <code>#i</code> is index of desired object in the list (the first item in a list is index zero). The index can be an integer or a single variable (when a variable, the name must begin in <code>#</code>)</li>
 </ol>
 
-<p>The object specified (in place of <code>object</code> used in each command listed below) is followed by a period, and then followed by the command and it's arguments. The object commands supported by each <a href="#properties">object type</a> are listed below. First, the following command is supported by <a href="#list">lists</a> and by any object that has <a href="#properties">"to-one attributes" or "to-many attributes"</a>.</p>
+<p>The object specified (in place of <code>object</code> used in each command listed below) is followed by a period, and then followed by the command and it's arguments. Arguments in square brackets ("[(arg)]") are optional arguments. The object commands supported by each <a href="#properties">object type</a> are listed below.</p>
+
+<p>The following generic command is supported by <a href="#list">lists</a> and by any object that has <a href="#properties">"to-one attributes" or "to-many attributes"</a>:</p>
 
 <ul>
 <li><a name="get"></a><code>object.get ("#var" or objName),(attribute)</code></br>
@@ -419,7 +463,7 @@ will set <code>myObj</code> to the object at index 5 in the <code>mylist</code> 
 </li>
 </ul>
 
-<h3>Commands for Commands Documents</h3>
+<h3><a name="commandsCmds"></a>Commands for Commands Documents</h3>
 
 <p>The first three commands below tell a command document to interpret its commands or to interpret and run calculations, all variables defined in the script are transferred to the document. The typical script will define variables to control a calculation and then run one or more calculations. Most FEA and MPM command documents are written as stand-alone documents, which means they define all their own variables. To allow such documents to use script-defined variables when run from a script but their own variables when run on their own, a running script will also define a read only variable named <code>_ScriptMode_</code>. Thus, an FEA or MPM commands document can contain a section like:</p>
 
@@ -462,7 +506,7 @@ to the script document. The folder to receive the output file must already exist
 If <code>(path)</code> is omitted, the user is given a file-saving dialog box to select file name and save location.</li>
 </ul>
 
-<h3>Commands for Results Documents</h3>
+<h3><a name="resultsCmds"></a>Commands for Results Documents</h3>
 
 <ul>
 <li><a name="timeplot"></a><code>object.timeplot (xyData),(settings)</code><br>
@@ -509,11 +553,11 @@ Note that all invalid values will be returned as "nan" text. Scripts should chec
 </li>
 </ul>
 
-<h3>Commands for Lists</h3>
+<h3><a name="listCmds"></a>Commands for Lists</h3>
 
 <ul>
 
-<li><a name="addlist"></a>object.addList (obj1),[(obj2),...]</dt>
+<li><a name="addlist"></a>object.addList (obj1),[(obj2),...]<br>
 Adds individual elements of one or more list objects to the target liast. Any parameters that do not correspond to a valid list object will be skipped. Use <a href="#addobject">addObject</a> to add a list as a single object to another list.</li>
 
 <li><a name="addstring"></a>object.addString (expr1),[(expr2),...]<br>
@@ -532,13 +576,16 @@ Inserts one object at <code>index</code> in the list. The provided <code>objName
 Inserts one string or number at <code>index</code> in the list. The provided <code>(expr)</code> must be a valid <a href="commands.html#varexp">expression</a>.
 </li>
 
+<li><a name="join"></a>object.join "#var",[(string)]<br>
+Joins all elements in the target object (which must be a list) separated by the optional <code>(string)</code> (if omitted joined by empty string). To work correctly, all elements in the target list must be strings. The provided variable, quoted <code>#var</code>, is set equal to the joined strings.</li>
+
 <li><a name="remove"></a>object.remove (index)</br>
 Remove item in the list at <code>(index)</code>.
 </li>
 </ul>
 
 
-<h3>Commands for Dictionaries</h3>
+<h3><a name="dictCmds"></a>Commands for Dictionaries</h3>
 
 <ul>
 <li><code>object.setObjectForKey (obj),(key)</code><br>

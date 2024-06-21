@@ -127,10 +127,9 @@ table { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-R
 
 <p>Each line of scripting commands has the format:</p>
 <pre>
-Command #1,#2,#3,#4,...
+Command #1,#2,#3,#4,...   ! line comment
 </pre>
-<p>where <code>Command</code> is the command and #1, #2, <i>etc</i>., are arguments to the command. The command must be separated from the arguments by a space. The arguments are delimited by commas, spaces, or tabs. When spaces or tabs are delimiters, any number of consecutive spaces or tabs are treated as a single delimiter. Leading and trailing spaces in arguments are ignored. Blank lines are ignored.
-Lines whose first non-blank character is &quot;!&quot; are comments and are also ignored.
+<p>where <code>Command</code> is the command and #1, #2, <i>etc</i>., are arguments to the command. The command must be separated from the arguments by a space. The arguments are delimited by commas, spaces, or tabs. When spaces or tabs are delimiters, any number of consecutive spaces or tabs are treated as a single delimiter. Leading and trailing spaces in arguments are ignored. Any line can be followed by an optional comment which is started by an exclamation point (note that in <a href="#conditionals">conditionals</a>, "!=" is used for "not equal" so any comment, if used, must not begin in "!="). Blank lines and comment lines (<i>i.e.</i>, first non-blank character is &quot;!&quot;) are ignored.
 </p>
 
 <p>Any argument to any command can be a number, a string, or an expression. Arguments that expect numeric values can use string expressions provided those expressions evaluate to a string containing only a number. See next section for details on expressions.</p>
@@ -246,7 +245,7 @@ x = @key.#id.x
 
 <p>Conditional blocks have the format:</p>
 <pre>
-if expr1 == expr2
+if expr1 == expr2 [ && expr3 >= expr4 || expr5 != expr6 ... ]
   ...
 else ifStr expr3 &lt; expr4
   ...
@@ -260,14 +259,15 @@ else
   ...
 endif
 </pre>
-<p>In the standard if, the expressions are compared by numeric comparison, unless one or
-both are strings, in which case string comparison is used. The ifStr command forces string
+<p>In an <code>if</code> command, the expressions are compared by numeric comparison, unless one or
+both are strings, in which case string comparison is used. The <code>ifStr</code> command forces string
 comparison between the expressions. The comparison operators
 are =, ==, &quot;is&quot;, !=, &gt;, &gt;=, &lt;, and &lt;=. For numbers, =, ==, and &quot;is&quot; are
 the same. For strings, = and &quot;is&quot; are case insensitive comparisons
-and == is case sensitive. An ifDef comparison is true if the variable name
-given has been defined in at least one Set command. The ifNDef comparison is true if the variable
-has not been defined in any Set command. When using scripts, ifDef and ifNDef look at object variables too and <a href="scripting.html#none">none type</a> object is same as an undefined variable. An IfNum comparison is true if the variable contains a valid number.</p>
+and == is case sensitive. A uniary conditional (<i>e.g.</i>, <code>if #x</code>) is true if a number is not zero or if a string is equal to "true". The <code>if</code> command (and only that command) can optionally include any number of numeric or string comparison groups separated by "&&" for AND or  "||" for OR logicals. The blocks cannot be group and are evaluated with "&&" having precedence over "||".<p>
+
+<p>An <code>ifDef</code> comparison is true if the variable name
+given has been defined in a previous command. The <code>ifNDef</code> comparison is true if the variable has not been defined. For scripts, <code>ifDef</code> and <code>ifNDef</code> look at object variables too and a <a href="scripting.html#none">none type</a> object is same as an undefined object. An <code>ifNum</code> comparison is true if the variable contains a valid number.</p>
 
 <h3><a name="repeat"></a>Repeat Loops</h3>
 
