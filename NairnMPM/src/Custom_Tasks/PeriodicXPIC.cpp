@@ -34,8 +34,16 @@ PeriodicXPIC::PeriodicXPIC() : CustomTask()
 	
 	periodicTimeConduction = -1.;
 	periodicCFLConduction = -1.;
+	
+	// command to set periodicStepsConduction set conductionFractionMPM
+	// conductionFractionFMPM options:
+	//		<0 means steps never step (will using FMPM only if
+	//				periodicTimeConduction or periodicCFLConduction are set
+	//		<1 menas blended FMPM and FLIP on every time stepo
+	//		>=1 means switch between FLIP and FMPM that number of stepas
     periodicStepsConduction = -1;
 	conductionFractionFMPM = -1.;
+	
 	for(int i=0;i<MAX_DIFFUSION_TASKS;i++)
 	{	periodicTimeDiffusion[i] = -1.;
 		periodicCFLDiffusion[i] = -1.;
@@ -194,16 +202,23 @@ void PeriodicXPIC::Finalize(void)
 	if(conductionFractionFMPM>0.)
 	{	periodicTimeConduction = periodicCFLConduction = -1.;
 		if(conductionFractionFMPM<1.)
-		{	periodicStepsConduction=1;
+		{	// using conductionFractionFMPM FMPM and (1-conductionFractionFMPM) FLIP on every time step
+			periodicStepsConduction=1;
 		}
 		else
-		{	periodicStepsConduction=int(conductionFractionFMPM+0.5);
+		{	// Use full FMPM every periodicStepsConduction
+			periodicStepsConduction=int(conductionFractionFMPM+0.5);
 			conductionFractionFMPM=1.;
 		}
 		xpicActive = true;
 	}
 	else if(periodicTimeConduction>0. || periodicCFLConduction>0.)
+	{	// Use full XPIC on step based on time
+		// Note that started revision 3556 and fixed in 3909
+		// It only affect conduction using time or CLF setting
+		conductionFractionFMPM=1.;
 		xpicActive = true;
+	}
 	
 	// diffusion tasks
 	for(int i=0;i<MAX_DIFFUSION_TASKS;i++)
