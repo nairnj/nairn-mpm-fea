@@ -1845,12 +1845,12 @@ void MPMReadHandler::myEndElement(char *xName)
 			throw SAXException("Material points per element must be positive.");
 		int oneSide;
 		if(fmobj->IsThreeD())
-		{	oneSide = pow((double)totalPoints,1./3.)+0.1;
+		{	oneSide = (int)(pow((double)totalPoints,1./3.)+0.1);
 			if(oneSide*oneSide*oneSide!=totalPoints)
 				throw SAXException("Material points per element in 3D must be a cubed number.");
 		}
 		else
-		{	oneSide = sqrt((double)totalPoints)+0.1;
+		{	oneSide = (int)(sqrt((double)totalPoints)+0.1);
 			if(oneSide*oneSide!=totalPoints)
 				throw SAXException("Material points per element in 2D must be a squared number.");
 		}

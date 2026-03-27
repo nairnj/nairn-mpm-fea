@@ -17,7 +17,7 @@
 char *origfile=NULL;
 double minMean = 0.;
 
-#pragma mark MAIN AND INPUT PARAMETERS
+// MARK: MAIN AND INPUT PARAMETERS
 
 // main entry point
 int main(int argc, char * const argv[])
@@ -36,7 +36,7 @@ int main(int argc, char * const argv[])
 	char *parm;
     for(parmInd=1;parmInd<argc && argv[parmInd][0]=='-';parmInd++)
 	{	// each character in the next argument (skipping the '-')
-		unsigned long optNum = strlen(argv[parmInd]);
+		unsigned long optNum = (unsigned long)strlen(argv[parmInd]);
 		for(opt=1;opt<optNum;opt++)
 		{	// Help request
 			if(argv[parmInd][opt]=='H' || argv[parmInd][opt]=='h')
@@ -128,7 +128,7 @@ void Usage(const char *msg)
           <<  endl;
 }
 
-#pragma mark EXTRACTION CODE
+// MARK: EXTRACTION CODE
 
 // main entry to extract results from one file
 void CompareGlobalFiles(const char *mpmFile,int fileIndex,int lastIndex)
@@ -335,7 +335,7 @@ void CompareGlobalFiles(const char *mpmFile,int fileIndex,int lastIndex)
 			strcpy(rep,"Time ");
 		else
 			strcpy(rep,(const char *)(origCols+origColOffs[i-1]+1));
-		long clen = strlen(rep)-1;
+		long clen = (long)strlen(rep)-1;
 		for(int i=(int)clen;i<17;i++)
 			rep[i] = ' ';
 		rep[17]=0;
