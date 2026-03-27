@@ -16,9 +16,7 @@
 
 MpsController *mpCtrl=NULL;
 
-/********************************************************************************
-	MpsController: methods
-********************************************************************************/
+#pragma mark MpsController: methods
 
 // add new material point
 void MpsController::AddMaterialPoint(MPMBase *newMpt,double conc,double temp)

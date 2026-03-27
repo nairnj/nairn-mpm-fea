@@ -33,8 +33,7 @@ class NodalValueBC: public BoundaryCondition
 	
 		// reaction flow calculation
 		void InitQReaction(void);
-        void InitQReaction(double scale);
-		void SuperposeQReaction(double);
+ 		void SuperposeQReaction(double);
 	
 	protected:
 		double qreaction;

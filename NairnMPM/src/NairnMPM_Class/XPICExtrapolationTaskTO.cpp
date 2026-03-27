@@ -66,8 +66,7 @@ void XPICExtrapolationTaskTO::InitializeXPICData(GridPatch *patchPtr,int xpicOpt
 }
 
 // Double XPIC loop for transport tasks
-void XPICExtrapolationTaskTO::XPICDoubleLoop(MPMBase *mpmptr,int matfld,int *nds,double *fn,
-											 int pn,double scale,double scaleContact)
+void XPICExtrapolationTaskTO::XPICDoubleLoop(MPMBase *mpmptr,int matfld,int *nds,double *fn,int pn)
 {
 	// number of nodes
 	int numnds = nds[0];
@@ -93,7 +92,7 @@ void XPICExtrapolationTaskTO::XPICDoubleLoop(MPMBase *mpmptr,int matfld,int *nds
 				for(int j=1;j<=numnds;j++)
 				{	// read gTprev from real node j and add to node i (which may be ghost)
 					TransportField *gTransj = nextTransport->GetTransportFieldPtr(nd[nds[j]]);
-					gTransi->gTnext += scale*VpCTpWeight*fn[j]*gTransj->gTprev;
+					gTransi->gTnext += VpCTpWeight*fn[j]*gTransj->gTprev;
 				}
 			}
 		}
@@ -104,26 +103,44 @@ void XPICExtrapolationTaskTO::XPICDoubleLoop(MPMBase *mpmptr,int matfld,int *nds
 }
 
 // copy gTnext to real node and zero it
-void XPICExtrapolationTaskTO::ReduceXPICData(GridPatch *patchPtr,int k)
+void XPICExtrapolationTaskTO::ReduceXPICData(GridPatch *patchPtr)
 {	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
 	{	if(nextTransport->IsUsingTransportXPIC())
-			patchPtr->XPICReductionTransport(k,nextTransport);
+			patchPtr->XPICReductionTransport(nextTransport);
 		nextTransport = nextTransport->GetNextTransportTask();
 	}
 }
 
-// Update gTstar and reset gTprev and GTnext
-void XPICExtrapolationTaskTO::UpdateXStar(NodalPoint *ndptr,double timestep,int m,int k,double vsign)
+// Get Delta theta on all real nodes (gTPrev-gTNext) and set BC node transport to zero
+void XPICExtrapolationTaskTO::GetDeltaV(double timestep,int xpicOption)
+{	TransportTask *nextTransport=transportTasks;
+	while(nextTransport!=NULL)
+	{	if(nextTransport->IsUsingTransportXPIC())
+		{
+#pragma omp parallel for
+			for(int i=1;i<=*nda;i++)
+			{	TransportField *gTrans = nextTransport->GetTransportFieldPtr(nd[nda[i]]);
+				gTrans->gTprev -= gTrans->gTnext;
+			}
+			
+			// Set BC nodes to zero in latest Delta theta
+			TransportTask::TransportGridBCs(mtime,timestep,XPIC_TRANSPORT_CALL);
+		}
+		nextTransport = nextTransport->GetNextTransportTask();
+	}
+}
+
+// Add Delta theta = gTprev to gTstar and reset gTnext to zero
+void XPICExtrapolationTaskTO::UpdateXStar(NodalPoint *ndptr,double timestep)
 {	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
 	{	if(nextTransport->IsUsingTransportXPIC())
 		{	// add to gTstar
 			TransportField *gTrans = nextTransport->GetTransportFieldPtr(ndptr);
-			gTrans->gTstar += vsign*gTrans->gTnext;
+			gTrans->gTstar += gTrans->gTprev;
 			
-			// copy next to prev and zero
-			gTrans->gTprev = gTrans->gTnext;
+			// zero gTnext for next pass
 			gTrans->gTnext = 0.;
 		}
 		
@@ -132,7 +149,9 @@ void XPICExtrapolationTaskTO::UpdateXStar(NodalPoint *ndptr,double timestep,int 
 	}
 }
 
-// Copy gTstar to gTvalue
+// Swap gTstar to gTvalue
+// gTvalue is for standard FMPM updates, while gTstar will
+//		hold the FLIP result for use in blending
 void XPICExtrapolationTaskTO::CopyXStar(NodalPoint *ndptr)
 {	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
@@ -151,3 +170,4 @@ void XPICExtrapolationTaskTO::CopyXStar(NodalPoint *ndptr)
 		nextTransport = nextTransport->GetNextTransportTask();
 	}
 }
+

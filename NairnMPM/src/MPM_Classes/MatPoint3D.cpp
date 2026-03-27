@@ -45,7 +45,7 @@ MatPoint3D::MatPoint3D(int inElemNum,int theMatl,double angin) : MPMBase(inElemN
 void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld,bool postUpdate)
 {
     // get velocity gradient
-    Matrix3 dv = ExtraVelocityGradient();
+    Matrix3 dv = ExtrapVelocityGradient(ElemID());
     
     Tensor *gStressPtr=NULL;
 
@@ -59,7 +59,7 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 
 // Extrapolation spatial velocity gradient from current grid
 // velocties and gradient shape functions
-Matrix3 MatPoint3D::ExtraVelocityGradient(void)
+Matrix3 MatPoint3D::ExtrapVelocityGradient(int useElemID)
 {
 #ifdef CONST_ARRAYS
     double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
@@ -72,7 +72,7 @@ Matrix3 MatPoint3D::ExtraVelocityGradient(void)
     Matrix3 dv;
 
     // find shape functions and derviatives
-    const ElementBase *elemRef = theElements[ElemID()];
+    const ElementBase *elemRef = theElements[useElemID];
     int *nds = ndsArray;
     elemRef->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,this);
     int numnds = nds[0];
@@ -91,6 +91,7 @@ Matrix3 MatPoint3D::ExtraVelocityGradient(void)
 
     return dv;
 }
+
 // Pass on to material class
 void MatPoint3D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void *props,ResidualStrains *res,Tensor *gStress)
 {
@@ -182,7 +183,7 @@ void MatPoint3D::MoveParticle(GridToParticleExtrap *gp)
 	acc = MakeVector(delV.x/timestep,delV.y/timestep,delV.z/timestep);
 		
 #ifdef CHECK_NAN
-	if(pos.x!=pos.x || pos.y!=pos.y || pos.z!=pos.z || vel.x!=vel.x || vel.y!=vel.y || vel.z!=vel.z)
+	if(IsNanVector(&pos,true) || IsNanVector(&vel,true))
 	{
 #pragma omp critical (output)
 		{	cout << "\n# MatPoint2D::MoveParticle: bad pos or vel" << endl;
@@ -251,7 +252,7 @@ void MatPoint3D::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double 
 	theFrc->z = -mp*(sp.xz*xDeriv+sp.yz*yDeriv+(sp.zz-pressure)*zDeriv) + fni*pFext.z;
 	
 #ifdef CHECK_NAN
-	if(theFrc->x!=theFrc->x || theFrc->y!=theFrc->y || theFrc->z!=theFrc->z)
+	if(IsNanVector(theFrc,true))
 	{
 #pragma omp critical (output)
 		{	cout << "\n# MatPoint3D::GetFintPlusFext: bad nodal fint+fext";

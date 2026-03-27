@@ -61,8 +61,10 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		virtual int PasteFieldMomenta(Vector *,int);
 		virtual void Describe(void) const;
 	
-		// XPIC
-		virtual void XPICSupport(int,int,NodalPoint *,double,int,int,double);
+		// FMPM/XPIC
+		virtual void XPICSupport(int,int,NodalPoint *,double,int);
+		virtual Vector GetCMatMomentumIncrement(bool &,double *) const;
+		virtual void ChangeVelocityIncrement(Vector *,double,int);
 	
 };
 

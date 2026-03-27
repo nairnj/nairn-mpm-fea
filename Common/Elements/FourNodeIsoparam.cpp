@@ -27,8 +27,8 @@ static double eti[4]={-1.,-1.,1.,1.};
 static double gxii[16]={-1.,1.,1.,-1.,-3.,-1.,1.,3.,3.,3.,3.,1.,-1.,-3.,-3.,-3.};
 static double geti[16]={-1.,-1.,1.,1.,-3.,-3.,-3.,-3.,-1.,1.,3.,3.,3.,3.,1.,-1.};
 // = int(0.5*(gxii[i]+1)) and int(0.5*(getai[i]+1))
-static int xoff[16]={0,1,1,0,-1,0,1,2,2,2,2,1,0,-1,-1,-1};
-static int yoff[16]={0,0,1,1,-1,-1,-1,-1,0,1,2,2,2,2,1,0};
+static int xoff[16]={0,1,1,0, -1, 0, 1, 2, 2,2,2,1, 0,-1,-1,-1};
+static int yoff[16]={0,0,1,1, -1,-1,-1,-1, 0,1,2,2, 2, 2, 1, 0};
 #endif
 
 #pragma mark FourNodeIsoparam::Constructors and Destructor

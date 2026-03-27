@@ -65,8 +65,14 @@ const char *MixedModeTraction::VerifyAndLoadProperties(int np)
     const char *msg;
     switch(modelI)
     {   case TRIANGULARTRACTIONMATERIAL:
-            msg = SetSawToothTractionLaw(stress1,kI1,delIc,JIc,umidI,phiI1,RI1);
-            break;
+		{	bool elasticBrittle = false;
+			msg = SetSawToothTractionLaw(stress1,kI1,delIc,JIc,umidI,phiI1,RI1,elasticBrittle);
+			if(elasticBrittle)
+			{   msg = "Mixed-mode traction material does not allow brittle failure yet";
+				break;
+			}
+			break;
+		}
         case TRILINEARTRACTIONMATERIAL:
         {   msg = SetTLTractionLaw(stress1,kI1,umidI,sI2,uI2,delIc,JIc,break1is2I,JI_1c,JI_2c);
             // See if break points are the same
@@ -108,8 +114,14 @@ const char *MixedModeTraction::VerifyAndLoadProperties(int np)
     // mode II model
     switch(modelII)
     {   case TRIANGULARTRACTIONMATERIAL:
-            msg = SetSawToothTractionLaw(stress2,kII1,delIIc,JIIc,umidII,phiII1,RII1);
-            break;
+		{	bool elasticBrittle = false;
+			msg = SetSawToothTractionLaw(stress2,kII1,delIIc,JIIc,umidII,phiII1,RII1,elasticBrittle);
+			if(elasticBrittle)
+			{   msg = "Mixed-mode traction material does not allow brittle failure";
+				break;
+			}
+			break;
+		}
         case TRILINEARTRACTIONMATERIAL:
         {   msg = SetTLTractionLaw(stress2,kII1,umidII,sII2,uII2,delIIc,JIIc,break1is2II,JII_1c,JII_2c);
             // See if break points are the same

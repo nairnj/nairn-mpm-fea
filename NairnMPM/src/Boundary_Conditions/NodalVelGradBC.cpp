@@ -313,9 +313,6 @@ void NodalVelGradBC::BCGradValue(double stepTime,int ni,int bcType)
 	// extract gradient from nodes firstNode-nodeStep and firstNode
 	gradValue = 0.;
 	
-	// get c-o-m velocities, nodes firstNode-nodeStep to wall (exit if any empty)
-	bool useVelocity = bcType==UPDATE_GRID_STRAINS_CALL ? true : false ;
-	
 	// least squares fit for node firstNode-nodeStep and firstNode to wall
 	// I tried fitting all points before the wall, but seemed slightly worse
 	int mnode = firstNode-nodeStep;
@@ -323,7 +320,7 @@ void NodalVelGradBC::BCGradValue(double stepTime,int ni,int bcType)
 	double dvdx = 0., dxdx = 0., dx,dv;
 	for(int nn=0;nn<2;nn++)
 	{	// use zero gradient if any target nodes are inactive
-		if(!nd[mnode]->GetCenterOfMassVelocity(&vi,useVelocity)) return;
+		if(!nd[mnode]->GetCenterOfMassVelocity(&vi)) return;
 		
 		// find difference from current position value
 		if(dir&X_DIRECTION)

@@ -20,9 +20,7 @@
 
 Area *theArea=NULL;
 
-/********************************************************************************
-	Area: Constructors and Destructor
-********************************************************************************/
+#pragma mark Area: Constructors and Destructor
 
 // Initialize, but assumes name already 32 characters or less and unique
 Area::Area(int matNum,char *matAngle,double thickness)
@@ -47,9 +45,7 @@ Area::~Area()
 		delete [] angleExpr;
 }
 
-/********************************************************************************
-	Area: methods
-********************************************************************************/
+#pragma mark Area: methods
 
 // add key point to the last path
 int Area::AddPath(char *pathName)

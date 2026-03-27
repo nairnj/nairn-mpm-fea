@@ -281,9 +281,6 @@ const char *OrthoSoftening::VerifyAndLoadProperties(int np)
 	if(!useLargeRotation)
 		return "OrthoSoftening materials require activation of large rotation option";
 	
-	if(np==PLANE_STRESS_MPM)
-		return "OrthoSoftening materials cannot yet be used in plane stress calculations";
-    
     // Remap softening laws
     if(swapz==1)
     {   SwapLaws(&softeningAI,&softeningZZ);        // XX with ZZ
@@ -767,11 +764,12 @@ void OrthoSoftening::LoadCrackAxisProperties(int np,CrackAxisProperties *d,int D
 			d->C44 = p->C[3][3];			// Gyz=C44
 		}
 		else
-		{	d->C11 = p->C[1][1];			// Cxx
+		{	// these are reduced for plane stress
+			d->C11 = p->C[1][1];			// Cxx
 			d->C22 = p->C[2][2];			// Cyy
 			d->C12 = p->C[1][2];			// Cxy
-			d->C13 = p->C[4][1];			// Cxz for sigmaxx in dsig.zz
-			d->C23 = p->C[4][2];			// Cyz for sigmayy in dsig.zz
+			d->C13 = p->C[4][1];			// Cxz for sigmaxx in dsig.zz (-Cxz/Czz if plane stress)
+			d->C23 = p->C[4][2];			// Cyz for sigmayy in dsig.zz (-Cyz/Czz if plane stress)
 			d->C33 = p->C[4][4];			// Czz for ezzr in dsig.zz
 			d->vzxc = p->alpha[5];			// for dsig.zz
 			d->vzyc = p->alpha[6];			// for dsig.zz
@@ -804,7 +802,8 @@ void OrthoSoftening::LoadCrackAxisProperties(int np,CrackAxisProperties *d,int D
 			d->C44 = p->C[4][4];			// Gxz=C55
 		}
 		else
-		{	d->C11 = p->C[2][2];			// Cyy
+		{	// these are reduced in plane stress
+			d->C11 = p->C[2][2];			// Cyy
 			d->C22 = p->C[1][1];			// Cxx
 			d->C12 = p->C[1][2];			// Cxy
 			d->C13 = p->C[4][2];			// Cxz for sigmaxx in dsig.zz
@@ -829,7 +828,7 @@ void OrthoSoftening::LoadCrackAxisProperties(int np,CrackAxisProperties *d,int D
 		}
 	}
 	
-	// ratios
+	// ratios (these are reduced ratios in plane stress)
 	d->C12C11 = d->C12/d->C11;
 	d->C13C11 = d->C13/d->C11;
 }

@@ -12,15 +12,8 @@
 // archiver global
 FEAArchiveData *archiver;
 
-/********************************************************************************
-	FEAArchiveData: Constructors and Destructor
-********************************************************************************/
+#pragma mark FEAArchiveData: Constructors and Destructor
 
 FEAArchiveData::FEAArchiveData()
 {
 }
-
-/********************************************************************************
-	FEAArchiveData: methods
-********************************************************************************/
-

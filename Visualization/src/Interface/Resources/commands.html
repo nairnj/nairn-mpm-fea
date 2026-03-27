@@ -1165,9 +1165,9 @@ and intersections between materials on nodes are resolved using various contact
 mechanics models. Many details are on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Multimaterial_MPM">OSUPDocs</a>. The key commands to use this mode are:</p>
 
 <ul>
-<li><code>MultimaterialMode 0.0,1,&lt;(norm)&gt;,&lt;(rigidBiasOrAzimuth)&gt;,&lt;(polar)&gt;</code><br>
-Sets to use multimaterial modes and sets some options.
-The first two parameters are no longer used, but should specify previous default values (0.0 and 1) for parameter alignment. <code>(norm)</code> determines the method used to find surface normals during
+<li><code>MultimaterialMPM &lt;(norm)&gt;,&lt;(rigidBiasOrAzimuth)&gt;,&lt;(polar)&gt;</code><br>
+Sets to use multimaterial mode.
+<code>(norm)</code> determines the method used to find surface normals during
 contact calculations, with options:
 <ul>
 <li>&quot;logreg&quot; (or 6) - the preferred and default option</li>
@@ -1178,7 +1178,7 @@ contact calculations, with options:
 <li>&quot;maxvol&quot; (or 1)</li>
 <li>&quot;owngrad&quot; (or 3)</li>
 </ul>
-When <code>(norm)</code> is "maxgrad," "avggrad," "linreg," or "logreg," the <code>(rigidBiasOrAzimuth)</code> parameter sets a bias factor to use rigid normal over nonrigid material normal (default 1). When <code>(norm)</code> is "specify", the <code>(rigidBiasOrAzimuth)</code> and <code>(polar)</code> parameters set the azimuth (&phi;) and polar (&theta;) angles for the normal vector, which is given by (cos &phi; sin &theta;, sin &phi; sin &theta;, cos &theta;). For 2D calculations, the <code>(polar)</code> setting is ignored (and automatically set to 90 degrees). The normal should point from the lower-numbered material to the higher-numbered material. For contact with rigid materials, the normal should point from the non-rigid material to the rigid material.</li>
+When <code>(norm)</code> is "maxgrad," "avggrad," "linreg," or "logreg," the <code>(rigidBiasOrAzimuth)</code> parameter sets a bias factor to use rigid normal over nonrigid material normal (default 1). When <code>(norm)</code> is "specify", the <code>(rigidBiasOrAzimuth)</code> and <code>(polar)</code> parameters set the azimuth (&phi;) and polar (&theta;) angles for the normal vector, which is given by (cos &phi; sin &theta;, sin &phi; sin &theta;, cos &theta;). For 2D calculations, the <code>(polar)</code> setting is ignored (and automatically set to 90 degrees). The normal should point from the lower-numbered field into the higher-numbered field where field number is the order the materials are added to the simulated object (see "FULL MASS MATRIX" section for field number used by each material). For contact with rigid materials, the normal should point from the non-rigid material to the rigid material. Note: this commands has replaced deprecated <a href="#multimaterialmode">MultimaterialMode</a> command.</li>
 
 <li><a name="CPMatCommand"></a><code>ContactPosition (con)</code><br>
 Determines method used to evaluate material separation. See <a href="#CPCommand"><code>ContactPositionCracks</code></a> command for the options, but this command applies those options to material contact instead of crack contact (but this command has no effect when using &quot;logreg&quot; or &quot;linreg&quot; options for normals). Unless materials start out in contact, the preferred option for material contact is to use a <code>ContactPosition</code> command. A simulation can use both of <code>ContactPosition</code> and <code>ContactPositionCracks</code> commands to allow crack contact and material contact to use different methods for finding separation. A common situtation in multimaterial mode with cracks is to use <code>ContactPosition</code> command but omit the <code>ContactPositionCracks</code> command. For compatibility with old code that had only one <code>ContactPosition</code> option, simulations in single material mode that use a <code>ContactPosition</code> will apply that command to crack contact.  </li>
@@ -1586,9 +1586,10 @@ custom task parameters do not take a value.
 <li>heatenergy - the heat energy (in <a href="#units">energy units</a>).</li>
 <li>plasticenergy - the plastic energy (in <a href="#units">energy units</a>).</li>
 <li>history,(num) - material-dependent history variable using the provided (num) argument.</li>
-<li>contactforce - the nodal force on the grid for <code>MultiMaterialMode</code> simulations
+<li>contactforce - the nodal force on the grid for <code>MultiMaterialMPM</code> simulations
 when they include rigid materials that have <code>SetDirection</code>=8. It is force of the rigid material on the object in <a href="#units">force units</a>.</li>
-<li>volumegradient,(mat) - the volume gradient used for contact calculations when running in multimaterial model. The (mat) argument is the material ID whose gradient is archived.</li>
+<li>volumegradient,(mat) - the volume gradient used for contact calculations by some normals methods when running in multimaterial mode. The (mat) argument is the material ID whose gradient is archived.</li>
+<li>contactnormal - the normal vector used in contact calculations by any normals method when running in multimaterial mode.</li>
 <li>numpoints - the number of material points interacting with each node in the grid.</li>
 <li>archiveTime,(time) - enter the time interval (in <a href="#units">alt time units</a>) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives.</li>
 <li>firstArchiveTime,(time) - enter the time to save the first results (in <a href="#units">alt time units</a>). This parameter is ignored unless archiveTime has be set as well.</li>
@@ -1784,8 +1785,11 @@ If <code>(where)</code> is omitted (or is "<code>End</code>"), the XML content i
 
 <ul>
 
+<li><a name="multimaterialmode"></a><code>MultimaterialMode 0.0,1,&lt;(norm)&gt;,&lt;(rigidBiasOrAzimuth)&gt;,&lt;(polar)&gt;</code><br>
+Sets to use multimaterial mode (and still works). You should delete the first two parameters and use <a href="#mmmode">MultimaterialMPM command</a> instead.</li>
+
 <li><a name="frictmm"></a><code>FrictionMM (frict)</code><br>
-Set default multimaterial mode friction properties where (first) sets it as explained in the <a href="#frict">Friction command</a>. Replace with <a href="#mmode">ContactMM</a> command.</li>
+Set default multimaterial mode friction properties where (frict) sets it as explained in the <a href="#frict">Friction command</a>. Replace with <a href="#mmode">ContactMM</a> command.</li>
 
 <li><a name="imperfectmm"></a><code>ImperfectInterfaceMM (Dt),(Dn),&lt;(Dnc)&gt;</code><br>
 Set default properties for material contact to model an imperfect interface. The parameters are entered as explained in the <a href="#imperfect">ImperfectInterface command</a>. Replace with <a href="#mmode">ContactMM</a> command.</li>

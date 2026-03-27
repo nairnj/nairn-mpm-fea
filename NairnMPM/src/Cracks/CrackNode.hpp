@@ -23,13 +23,18 @@ class CrackNode
 
         // constructors and destructors
 		CrackNode(NodalPoint *,int,CrackNode *);
-	
+		virtual ~CrackNode();
+
 		// common methods
+		NodalPoint *GetTheNode(void);
 		void SetPrevNode(CrackNode *);
 		CrackNode *GetPrevNode(void);
 	
 		// interface and contact methods
 		virtual void NodalCrackContact(double,int);
+		void NodalXPICIncrement(double,int);
+		int CCIndex(int, int);
+		FMPMContact *GetContactInfo(int,int);
 
 		// class methods
 		static bool ContactOnKnownNodes(double,int);
@@ -40,6 +45,7 @@ class CrackNode
 		NodalPoint *theNode;
         CrackNode *prevNode;
 		int hasFlags;
+		FMPMContact *ccContact;
 };
 
 #endif

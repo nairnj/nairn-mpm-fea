@@ -9,9 +9,7 @@
 #include "stdafx.h"
 #include "Read_XML/ArcController.hpp"
 
-/********************************************************************************
-	ArcController: Constructors and Destructor
-********************************************************************************/
+#pragma mark ArcController: Constructors and Destructor
 
 ArcController::ArcController(int block) : LineController(block,true)
 {	startAngle=0.;
@@ -29,9 +27,7 @@ bool ArcController::FinishSetup(void)
     return true;
 }
 
-/********************************************************************************
-	ArcController: methods
-********************************************************************************/
+#pragma mark ArcController: methods
 
 // Determine if point is sufficiently close to the line from
 //   (xmin,ymin) to (xmax,ymax). Must be within rectangle a

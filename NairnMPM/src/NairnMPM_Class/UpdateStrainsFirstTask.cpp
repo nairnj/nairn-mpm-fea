@@ -109,11 +109,8 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 		if(!postUpdate || !fmobj->skipPostExtrapolation)
 		{	// !postUpdate means USF, USAVG-, or USAVG+ - always do calculations
 			// postUpdate with !skipPostExtrapolation  means USAVG+ or USL+ - needs new calculations
-			// postUpdate with skipPostExtrapolation  means USAVG- or USL- - use stored results, this code skippedq
-			XPICMechanicsTask->Execute(0);
-			// velocity BCs
-			if(bodyFrc.GridBCOption()!=GRIDBC_LUMPED_ONLY)
-				NodalVelBC::GridVelocityConditions(UPDATE_GRID_STRAINS_CALL);
+			// postUpdate with skipPostExtrapolation  means USAVG- or USL- - use stored results, this code skipped
+			XPICMechanicsTask->Execute(XPIC_STRAIN_UPDATE);
 		}
 	}
 	else

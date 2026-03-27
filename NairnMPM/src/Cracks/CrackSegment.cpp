@@ -16,6 +16,7 @@
 #include "Cracks/CrackHeader.hpp"
 #include "System/UnitsController.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "Exceptions/MPMWarnings.hpp"
 
 extern char *app;
 
@@ -115,7 +116,7 @@ int CrackSegment::FindElement(short side)
 }
 
 // Reset crack plane position from surfaces (2D) (in mm)
-// only used when contact.GetMoveOnlySurfaces() is true and thus get crack position
+// only used when crackContact.GetMoveOnlySurfaces() is true and thus get crack position
 //		from previous movement of the surfaces
 void CrackSegment::MovePosition(void)
 {	cp.x += dPlane.x;
@@ -129,7 +130,7 @@ void CrackSegment::MovePositionToMidpoint(void)
 }
 
 // Move crack plane position (2D) (in mm)
-// only used when contact.GetMoveOnlySurfaces() is FALSE and thus need to move crack plane
+// only used when crackContact.GetMoveOnlySurfaces() is FALSE and thus need to move crack plane
 void CrackSegment::MovePosition(Vector *velnp1,Vector *cpAcc,double dt,double shapeNorm)
 {
 	// XPIC(1) position change is dX = dt*(1.5*svelnp1-0.5*prevVel-cpAcc*dt)/shapeNorm
@@ -137,6 +138,26 @@ void CrackSegment::MovePosition(Vector *velnp1,Vector *cpAcc,double dt,double sh
 	AddScaledVector(&delX,velnp1,1.5);
 	AddScaledVector(&delX,cpAcc,-dt);
     ScaleVector(&delX,dt/shapeNorm);
+	
+#ifdef LIMIT_CRACK_MOVE
+	// limit move to a crack of a cell size
+	if(CrackHeader::maxSurfaceMove>0.)
+	{	double distMove=sqrt(DotVectors(&delX,&delX));
+		if(distMove>CrackHeader::maxSurfaceMove*mpmgrid.GetMinCellDimension())
+		{	// block moves > maxSurfaceMove*minimum cell size
+			ZeroVector(&delX);
+			ZeroVector(velnp1);
+			// issue warning first time  move is blocked
+			if(warnings.Issue(CrackHeader::warnBlockSurfaceMove,0)==GAVE_WARNING)
+			{
+#pragma omp critical (blockmove)
+				{	cout << "#    Excessive Crack plane at (" << cp.x << ","
+								<< cp.y << ")" << endl;
+				}
+			}
+		}
+	}
+#endif
 	
 	// add to current postion
 	AddVector(&cp,&delX);
@@ -163,6 +184,26 @@ bool CrackSegment::MoveSurfacePosition(short side,Vector *svelnp1,Vector *surfAc
 		AddScaledVector(&delX,svelnp1,1.5);
 		AddScaledVector(&delX,surfAcc,-dt);
 		ScaleVector(&delX,dt);
+
+#ifdef LIMIT_CRACK_MOVE
+		// limit move to a crack of a cell size
+		if(CrackHeader::maxSurfaceMove>0.)
+		{	double distMove=sqrt(DotVectors(&delX,&delX));
+			if(distMove>CrackHeader::maxSurfaceMove*mpmgrid.GetMinCellDimension())
+			{	// block moves > maxSurfaceMove*minimum cell size
+				ZeroVector(&delX);
+				ZeroVector(svelnp1);
+				// issue warning first time  move is blocked
+				if(warnings.Issue(CrackHeader::warnBlockSurfaceMove,0)==GAVE_WARNING)
+				{
+#pragma omp critical (blockmove)
+					{	cout << "#    Surface " << side << " at (" << surf[j].x << ","
+									<< surf[j].y << ")" << endl;
+					}
+				}
+			}
+		}
+#endif
 	}
 	
 	if(side==ABOVE_CRACK)

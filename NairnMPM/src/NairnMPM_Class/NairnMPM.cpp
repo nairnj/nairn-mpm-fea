@@ -42,6 +42,8 @@
 #include "Nodes/CrackVelocityFieldMulti.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
+#include "Cracks/CrackNode.hpp"
+#include "Nodes/MaterialContactNode.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Patches/GridPatch.hpp"
 #include "MPM_Classes/MPMBase.hpp"
@@ -89,7 +91,7 @@ int maxElementIntersections=15;		// Maximum elements that particle can intersect
 // throws std::bad_alloc
 NairnMPM::NairnMPM()
 {
-    version=18;                      // main version
+    version=19;                      // main version
     subversion=0;                    // subversion (must be < 10)
     buildnumber=0;                   // build number
 
@@ -742,9 +744,6 @@ void NairnMPM::SetupMaterialModeContactXPIC(void)
 	}
 	else
 	{	mpmgrid.MaterialContactPairs(maxMaterialFields);
-#ifdef THREE_MAT_CONTACT
-		if(maxMaterialFields>0) CrackVelocityFieldMulti::CreateThreeMatWarnings();
-#endif // end THREE_MAT_CONTACT
 	}
 	
 	// ghost particles will need to know this setting when creating patches
@@ -759,12 +758,12 @@ void NairnMPM::SetupMaterialModeContactXPIC(void)
 	{	// number of contact extrapolation vectors
 		mpmgrid.numContactVectors = 0;
 		
-		// displacement extrapolations
+		// displacement extrapolations always
 		mpmgrid.displacementIndex = mpmgrid.numContactVectors;
 		mpmgrid.numContactVectors++;
 		
 		// position extrapolations
-		if(!mpmgrid.contactByDisplacements || !contact.crackContactByDisplacements)
+		if(!mpmgrid.contactByDisplacements || !crackContact.contactByDisplacements)
 		{	mpmgrid.positionIndex = mpmgrid.numContactVectors;
 			mpmgrid.numContactVectors++;
 		}
@@ -776,15 +775,6 @@ void NairnMPM::SetupMaterialModeContactXPIC(void)
 		{	mpmgrid.volumeGradientIndex = mpmgrid.numContactVectors;
 			mpmgrid.numContactVectors++;
 		}
-		
-#if MM_XPIC == 1
-		// need 3 more vectors to store delta p^alpha and process when needed
-		if(bodyFrc.XPICVectors()>=3)
-			bodyFrc.SetXPICVectors(6);
-		// If using on first time step, set flag
-		if(bodyFrc.UsingVstar()>0)
-			bodyFrc.SetUsingVstar(VSTAR_WITH_CONTACT);
-#endif
 	}
 }
 
@@ -812,6 +802,7 @@ void NairnMPM::CreateWarnings(void)
 	{	// crack warnings
 		CrackHeader::warnNodeOnCrack=warnings.CreateWarning("Unexpected crack side; possibly caused by node or particle on a crack",-1,5);
 		CrackHeader::warnThreeCracks=warnings.CreateWarning("Node with three or more cracks",-1,5);
+		CrackHeader::warnBlockSurfaceMove=warnings.CreateWarning("Excessive crack surface or plane move blocked",-1,0);
 		if(firstCrack->GetNextObject()!=NULL)
 		{	// multiple crack warnings
 			CrackHeader::warn2ndTipInContour = warnings.CreateWarning("Two crack tips within the same J contour region",-1,0);
@@ -1054,17 +1045,16 @@ void NairnMPM::CreateTasks(void)
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
 
-	// XPIC extrapolations is needed only if order 2 or higher
-	if (bodyFrc.XPICVectors() > 1)
+	// XPIC extrapolations as needed only if order 2 or higher
+	// called when needed (not in task loop)
+	if(bodyFrc.XPICVectors() > 1)
 	{	XPICMechanicsTask = new XPICExtrapolationTask("XPIC Extrapolations");
 	}
 
 	// XPIC extrapolations for transport is needed if activated
+	// called just before particle update
 	if(TransportTask::hasXPICOption)
-	{	nextMPMTask=(MPMTask *)new XPICExtrapolationTaskTO("XPIC Transport Extrapolations");
-		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
-		lastMPMTask=nextMPMTask;
-		XPICTransportTask=(XPICExtrapolationTaskTO *)nextMPMTask;
+	{	XPICTransportTask = new XPICExtrapolationTaskTO("XPIC Transport Extrapolations");
 	}
     
 	// UPDATE PARTICLES
@@ -1430,6 +1420,16 @@ bool NairnMPM::HasFluidTransport(void) { return diffusion!=NULL; }
 
 // Get Courant-Friedrichs-Levy condition factor for convergence for propagation calculations
 double NairnMPM::GetPropagationCFLCondition(void) { return PropFractCellTime; }
+
+// true if current step has any nodes needing contact calculations
+// Better then checking for multimaterial model of number of cracks because
+//    if will be false if materials and cracks are separated on the grid
+bool NairnMPM::HasContactNodes(void) const
+{
+	if(MaterialContactNode::materialContactNodes.size()>0) return true;
+	if(CrackNode::crackContactNodes.size()>0) return true;
+	return false;
+}
 
 #pragma mark ARCHIVER PASS THROUGHS
 

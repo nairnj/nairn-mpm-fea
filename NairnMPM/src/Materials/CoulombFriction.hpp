@@ -29,30 +29,24 @@ class CoulombFriction : public ContactLaw
 	
 		// methods
 		virtual bool GetFrictionalDeltaMomentum(Vector *,Vector *,double,double,double *,double,bool,
-												double,double,Vector *,NodalPoint *) const;
-		virtual void GetSeparationAndForce(double &,double &,double,double,double,double) const;
+												double,double,Vector *,NodalPoint *,bool) const;
 		virtual double GetSslideAcDt(double,double,double,double,bool &,double) const;
-#ifdef THREE_MAT_CONTACT
-		virtual bool CanHandleTwoPairContact(void) const;
-		virtual void BracketSSlide(double &,double &,double,double);
-		virtual double GetDSslideAcDt(double) const;
-		virtual bool ProvisionalInContact(Vector *,Vector *,double,double,double,double) const;
-#endif // end THREE_MAT_CONTACT
 	
 		// accessors
 		virtual const char *MaterialType(void) const;
 		void SetFrictionCoeff(double);
 		virtual bool IgnoreContact(void) const;
-		virtual bool ContactLawNeedsContactArea(void) const;
 		virtual bool IsFrictionless(void) const;
 		virtual bool IsStick(void) const;
-	
+		virtual bool HasFreeSeparation(void) const;
+
 	protected:
 		double frictionCoeff;
 		double frictionCoeffStatic;
 		int frictionStyle;
-		double displacementOnly;
-		double Dc;
+	
+		// no longer used
+		double displacementOnly,Dc;
 	
 };
 

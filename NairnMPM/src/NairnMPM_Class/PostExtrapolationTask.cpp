@@ -71,6 +71,7 @@ bool PostExtrapolationTask::Execute(int taskOption)
 					ndptr->MirrorIgnoredCrackFields();
 				
 				// Get total nodal masses and count materials if multimaterial mode
+				// true return means a multimaterial node
 				if(ndptr->CalcTotalMassAndCount())
 				{	// save multimaterial nodes that might have contact
 					lastMCNode = new MaterialContactNode(ndptr,lastMCNode);
@@ -149,13 +150,13 @@ bool PostExtrapolationTask::Execute(int taskOption)
 			nextBC = nextBC->SetMirroredVelBC(mtime);
 	}
 	
-	// precalculate velocity BC values
+	// precalculate velocity BC values (not setting BCs though)
 	NodalVelBC::GridVelocityBCValues();
 	
 	// contact and grid velocity conditions
-    //if(MaterialContactNode::materialContactNodes.size()==0)
-    //    cout << "# no contact nodes were identified" << endl;
-	UpdateMomentaTask::ContactAndMomentaBCs(MASS_MOMENTUM_CALL);
+	// (For linear regression, this call is needed to get list of
+	//		material points for each contact node)
+ 	UpdateMomentaTask::ContactAndMomentaBCs(MASS_MOMENTUM_CALL);
 
 	// Impose transport BCs and extrapolate gradients to the particles
 	TransportTask::TransportBCsAndGradients(mtime);

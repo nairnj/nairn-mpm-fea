@@ -1,5 +1,5 @@
 <!-- ==============================================
-		NairnMPM Input File
+		OSParticulas/NairnMPM Input File
 ================================================-->
 
 <!ELEMENT	JANFEAInput 
@@ -213,7 +213,8 @@
 				| Bjc | njc | Cjc | ep0jc | Djc | n2jc | C0 | S1 | S2 | S3 | GPpG0 | GTpG0 | gamma0 | pressureLaw
 				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2 | LiquidPhase | alphaMax
                 | tayM | rhoW | rhoC | fo | flim | fsto | sto | m | n | alp | burg | K1 | alpstar
-                | betastar | k0 | Atd | Btd | tempDepend | MMG | PDamping | order | Sa | Na | kmu | vhalf
+                | betastar | k0 | Atd | Btd | tempDepend | MMG | PDamping | Sa | Na | kmu | vhalf
+                | normal_shape | tangential_shape | Npeak | Tpeak
 				| allowsCracks| Tmelt | Tsigma| DeltaT | Hfusion | SolidPhase | sigmac | tauc | I-min | II-min
 				| I-Gc | II-Gc | Initiation | SofteningI | SofteningII | tractionFailureSurface
 				| coefVariation | coefVariationMode | statDistributionMode | wShape | wV0
@@ -627,7 +628,10 @@
 <!ELEMENT	Dnt (#PCDATA)>
 <!ELEMENT	Dnc (#PCDATA)>
 <!ELEMENT	Dt (#PCDATA)>
-<!ELEMENT	order (#PCDATA)>
+<!ELEMENT	normal_shape (#PCDATA)>
+<!ELEMENT	tangential_shape (#PCDATA)>
+<!ELEMENT	Npeak (#PCDATA)>
+<!ELEMENT	Tpeak (#PCDATA)>
 <!ELEMENT	coeff (#PCDATA)>
 <!ELEMENT	coeffStatic (#PCDATA)>
 <!ELEMENT	displacementOnly (#PCDATA)>

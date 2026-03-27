@@ -67,7 +67,7 @@ class IdealGas : public HyperElastic
 		double CpMinusCv;
 		double gammaAdiabatic;
         bool vanderWaalsGas;
-        double aprime,bprime,V0n,P0prime;
+        double aprime,bprime,V0n,P0prime,xn;
         double twoMu0sp;
         bool realPressure;
 };

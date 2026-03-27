@@ -60,12 +60,14 @@ bool MoveCracksTask::Execute(int taskOption)
 			{	if(!crackList[cn]->MoveCrack(ABOVE_CRACK))
 				{	char errMsg[100];
 					size_t errSize=100;
+					cout << "# MoveCrack above fails" << endl;
 					snprintf(errMsg,errSize,"Crack No. %d surface (above) has left the grid.",cn+1);
 					throw CommonException(errMsg,"MoveCracksTask::Execute");
 				}
 				if(!crackList[cn]->MoveCrack(BELOW_CRACK))
 				{	char errMsg[100];
 					size_t errSize=100;
+					cout << "# MoveCrack below fails" << endl;
 					snprintf(errMsg,errSize,"Crack No. %d surface (below) has left the grid.",cn+1);
 					throw CommonException(errMsg,"MoveCracksTask::Execute");
 				}
@@ -98,11 +100,11 @@ bool MoveCracksTask::Execute(int taskOption)
 	if(mcErr!=NULL) throw *mcErr;
 	
 	// get center of mass if moving crack planes that way
-	if(!contact.GetMoveOnlySurfaces())
+	if(!crackContact.GetMoveOnlySurfaces())
 	{
 #pragma omp parallel for
 		for(int i=1;i<=nnodes;i++)
-		{	nd[i]->GetCenterOfMassVelocity(NULL,false);
+		{	nd[i]->GetCenterOfMassVelocity(NULL);
 		}
 	}
 
@@ -152,7 +154,6 @@ bool MoveCracksTask::Execute(int taskOption)
     // throw any errors
 	if(mcErr!=NULL) throw *mcErr;
 	
-
     return true;
 }
 	

@@ -1082,6 +1082,7 @@ void IsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,
 		else if(np==PLANE_STRESS_MPM)
 		{	// zz deformation. zz stress stays at zero for plane stress
 			// Here C[4][1] = C[4][2] = -v/(1-v)
+			// (plane stress with plasticity needs dep.zz, but that was added when found)
 			de.zz = p->C[4][1]*(deij.xx-decxx) + p->C[4][2]*deij.yy + eres;
 			mptr->IncrementDeformationGradientZZ(de.zz);
 		}

@@ -18,6 +18,8 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Elements/ElementBase.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "Materials/ContactLaw.hpp"
+#include "Global_Quantities/BodyForce.hpp"
 
 #define PARALLEL_LINKING
 
@@ -31,7 +33,22 @@ MaterialContactNode::MaterialContactNode(NodalPoint *nd,MaterialContactNode *pre
 {
 	theNode = nd;
 	prevNode = prev;
+	
+	// stores list of materials points in each crack velocity field that
+	//    sees this contact node. It is filled in just after mass and momentum extrapolation
 	lists = NULL;
+	ZeroVector(&contactNorm);
+
+	// create array of FMPMContact items for each crack velocity field
+	// Set each to NULL if not using FMPM or XPIC with k>1
+	if(bodyFrc.GetXPICOrder()>1)
+	{	for(int vfld=0;vfld<MAX_FIELDS_FOR_CRACKS;vfld++)
+			mmContact[vfld] = new FMPMContact[maxMaterialFields];
+	}
+	else
+	{	for(int vfld=0;vfld<MAX_FIELDS_FOR_CRACKS;vfld++)
+			mmContact[vfld] = NULL;
+	}
 }
 
 // Destructor
@@ -55,10 +72,12 @@ MaterialContactNode::~MaterialContactNode()
 	
 	// null pointer from node to this contact node
 	theNode->contactData = NULL;
-}
 
-// Get the node
-NodalPoint *MaterialContactNode::GetTheNode(void) { return theNode; }
+	if(mmContact[0]!=NULL)
+	{	for(int vfld=0;vfld<MAX_FIELDS_FOR_CRACKS;vfld++)
+			delete [] mmContact[vfld];
+	}
+}
 
 #pragma mark MaterialContactNode: Methods
 
@@ -69,7 +88,7 @@ void MaterialContactNode::NodalMaterialContact(double dtime,int passType)
 	theNode->MaterialContactOnNode(dtime,passType,this);
 }
 
-// Add material point to list of materials points in a crack velocity field
+// Add material point to list of materials point in a crack velocity field
 void MaterialContactNode::AddMaterialContactPoint(int pnum,short vfld)
 {
 #ifdef PARALLEL_LINKING
@@ -87,7 +106,7 @@ void MaterialContactNode::AddMaterialContactPoint(int pnum,short vfld)
 	
 }
 
-// create lists needed to store material points on target not
+// create lists needed to store material points on target node
 void MaterialContactNode::PrepareForLists(void)
 {
 	// need maxCrackFields list (at most)
@@ -95,7 +114,72 @@ void MaterialContactNode::PrepareForLists(void)
 	lists = new vector< int >[maxCrackFields];
 }
 
+#pragma mark MaterialContactNode: FMPM Contact
+
+// In FMPM increment, force contacting nodes to use zero displacement difference
+// in increment FMPM velocities (so lumped calculations stay correct)
+void MaterialContactNode::NodalXPICIncrement(double dtime,int callType)
+{
+	theNode->MaterialXPICIncrementOnNode(mmContact,dtime,callType);
+}
+
+// pointer to FMPMContact for field number and material numer
+FMPMContact *MaterialContactNode::GetContactInfo(int vfld,int matnum)
+{	return &(mmContact[vfld][matnum]);
+}
+
+// Set initial constants to cache contact info
+void MaterialContactNode::SetContactInfo(FMPMContact *cache,double deltaDotn,int paired,
+										   Vector *delPi,Vector *norm,ContactLaw *theLaw,double area)
+{
+	if(cache==NULL) return;
+	cache->deltaDotn = deltaDotn;
+	cache->paired = paired;
+	if(norm==NULL)
+		cache->comContact = true;
+	else
+	{	cache->comContact = false;
+		cache->norm = *norm;
+	}
+	cache->priorDelPiZero = *delPi;
+	cache->theContactLaw = theLaw;
+	cache->contactArea = area;
+	cache->priorMredDelWf = 0.;
+	ZeroVector(&cache->netDelPi);
+	ZeroVector(&cache->startDelFi);
+	cache->skipLowMass = false;
+}
+
+// Input is delPi for initial lumped contact
+// Set new delPi and qrate
+void MaterialContactNode::ContactSetDelPi(FMPMContact *cache,Vector *finalDelPi,double mredDelWf)
+{
+	if(cache==NULL) return;
+	cache->netDelPi = *finalDelPi;
+ 	if(mredDelWf>0.) cache->priorMredDelWf = mredDelWf;
+}
+
+// Skip nodes with low mass
+// Currently only for imperfect interfaces
+void MaterialContactNode::ContactSetLowMass(FMPMContact *cache,bool setting,int pairedCode)
+{
+	if(cache==NULL) return;
+	cache->skipLowMass = setting;
+	cache->paired = pairedCode;
+}
+
+// set parameters needed for imperfect interface
+void MaterialContactNode::ContactInterfaceInfo(FMPMContact *cache,double delt,Vector *tang)
+{
+	if(cache==NULL) return;
+	cache->deltaDott = delt;
+	cache->tangDel = *tang;
+}
+
 #pragma mark MaterialContactNode: Accessors
+
+// Get the node
+NodalPoint *MaterialContactNode::GetTheNode(void) { return theNode; }
 
 // next node accessors
 void MaterialContactNode::SetPrevNode(MaterialContactNode *next) { prevNode=next; }
@@ -106,8 +190,8 @@ vector<int> MaterialContactNode::ParticleLists(int vfld) { return lists[vfld]; }
 
 #pragma mark CrackNode: Class methods
 
-// On last pass (for USAVG or SZS), will already know which
-// nodes are crack nodes and now need to adjust forces
+// On last pass (for USAVG+ or USL+), will already know which
+// nodes are material contact nodes and now need to adjust forces
 // passType == MASS_MOMENTUM_CALL, UPDATE_MOMENTUM_CALL, UPDATE_STRAINS_LAST_CALL
 bool MaterialContactNode::ContactOnKnownNodes(double dtime,int passType)
 {

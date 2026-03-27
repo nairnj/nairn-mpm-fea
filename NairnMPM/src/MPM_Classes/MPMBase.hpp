@@ -70,7 +70,7 @@ class MPMBase : public LinkedObject
         virtual void SetPosition(Vector *) = 0;
         virtual void SetVelocity(Vector *) = 0;
 		virtual void UpdateStrain(double,int,int,void *,int,bool) = 0;
-        virtual Matrix3 ExtraVelocityGradient(void) = 0;
+        virtual Matrix3 ExtrapVelocityGradient(int) = 0;
 		virtual void GetFintPlusFext(Vector *,double,double,double,double) = 0;
 		virtual void MoveParticle(GridToParticleExtrap *) = 0;
 		virtual void MovePosition(double) = 0;
@@ -117,6 +117,8 @@ class MPMBase : public LinkedObject
 		bool InReservoir(void) const;
 		int ElemID(void) const;
 		void ChangeElemID(int,bool);
+		void KeepElemID(void);
+		int GetPrevInElem(void);
 		int ArchiveElemID(void);
 		void ReverseParticle(bool,bool);
 		void StopParticle(void);
@@ -253,6 +255,7 @@ class MPMBase : public LinkedObject
     private:
 		// variables (changed in MPM time step)
 		int inElem;
+		int prevInElem;
 		int elementCrossings;		// fabs() is # element crossinsgs, when <0 particle has left the grid
 	
 		// constants (not changed in MPM time step)

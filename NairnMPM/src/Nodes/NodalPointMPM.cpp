@@ -27,6 +27,8 @@
 #include "Materials/RigidMaterial.hpp"
 #include "System/UnitsController.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
+#include "Materials/ContactLaw.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
 
 // class statics
 double NodalPoint::interfaceEnergy=0.;
@@ -689,17 +691,22 @@ void NodalPoint::IncrementDelvaTask5(short vfld,int matfld,double fi,GridToParti
 }
 
 // Support XPIC calculations
-// xpicOptions: INITIALIZE_XPIC, UPDATE_VSTAR, COPY_VSTARNEXT
-void NodalPoint::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int m,int k,double vsign)
+// xpicCalculation: INITIALIZE_XPIC, UPDATE_VSTAR, COPY_VSTARNEXT, GET_DELTAV
+// xpicOption: XPIC_STRAIN_UPDATE (which is not in USL-) or XPIC_PARTICLE_UPDATE
+//				For COPY_VSTARNEXT it changes to particle vfld
+// real: only used in reduction for COPY_VSTARNEXT to copy from ghost to real node
+// timestep: if needed
+// iarg: set to material field for COPY_VSTARNEXT in CrackVelocityFieldSingle (or Multi)
+void NodalPoint::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int iarg)
 {	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
-			cvf[i]->XPICSupport(xpicCalculation,xpicOption,real,timestep,m,k,vsign);
+			cvf[i]->XPICSupport(xpicCalculation,xpicOption,real,timestep,iarg);
 	}
 }
 
 // add to vStarNext
-void NodalPoint::AddVStarNext(short vfldi,int matfld,Vector *vStarPrevj,double weight,double weightContact)
-{	cvf[vfldi]->AddVStarNext(matfld,vStarPrevj,weight,weightContact);
+void NodalPoint::AddVStarNext(short vfldi,int matfld,Vector *vStarPrevj,double weight)
+{	cvf[vfldi]->AddVStarNext(matfld,vStarPrevj,weight);
 }
 
 // get real node vStarPrev point
@@ -1355,11 +1362,11 @@ int NodalPoint::SurfaceCrossesOtherCrack(Vector *xp1,Vector *xp2,int cnum) const
 }
 
 // Calculate CM velocity at a node
-// When vout==NULL it was called when contact.GetMoveOnlySurfaces() is FALSE, i.e., when crack particles
+// When vout==NULL it was called when crackContact.GetMoveOnlySurfaces() is FALSE, i.e., when crack particles
 //		move in CM velocity field,  and then only when crack plane particles are about to move)
 //      Tasks are to find vcm and acm and store in cvf[0]
 // When vout!=NULL, find and return center of mass in that vector
-bool NodalPoint::GetCenterOfMassVelocity(Vector *vout,bool useVelocity)
+bool NodalPoint::GetCenterOfMassVelocity(Vector *vout)
 {
 	Vector nodePk,nodeAcc,*accPtr=NULL;
 	bool hasParticles = false;
@@ -1375,7 +1382,7 @@ bool NodalPoint::GetCenterOfMassVelocity(Vector *vout,bool useVelocity)
 	// loop over crack velocity fields
 	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
-		{	if(cvf[i]->CollectMomentaInCrackField(&nodePk,&foundMass,accPtr,useVelocity))
+		{	if(cvf[i]->CollectMomentaInCrackField(&nodePk,&foundMass,accPtr,false))
 				hasParticles = true;
 		}
 	}
@@ -1400,8 +1407,8 @@ bool NodalPoint::GetCenterOfMassVelocity(Vector *vout,bool useVelocity)
 }
 
 // Get velocity for center of mass
-//   (assumes recently called GetCenterOfMassVelocity(NULL,false) for this node)
-//   (only used when contact.GetMoveOnlySurfaces() is FALSE and crack plane
+//   (assumes recently called GetCenterOfMassVelocity(NULL) for this node)
+//   (only used when crackContact.GetMoveOnlySurfaces() is FALSE and crack plane
 //       particles are moving)
 bool NodalPoint::GetCMVelocityTask8(Vector *vcm,Vector *ak) const
 {	return cvf[0]->GetCMVelocityTask8(vcm,ak);
@@ -1526,7 +1533,7 @@ int NodalPoint::HasCrackContact(void)
 // poastUpdate is only TRUE when called in the momentum update (and the expectation is that
 //      the forces at that time are the contact forces and used for friction)
 // throws std::bad_alloc
-void NodalPoint::CrackContact(int callType,double deltime,int hasFlags)
+void NodalPoint::CrackContact(int callType,double deltime,int hasFlags,CrackNode *ccn)
 {
 	bool has0 = hasFlags&1;
 	bool has1 = hasFlags&2;
@@ -1537,28 +1544,28 @@ void NodalPoint::CrackContact(int callType,double deltime,int hasFlags)
 	int cnum,cabove;
 	if(has0 && has1)
 	{	cnum=cvf[1]->crackNumber(FIRST_CRACK);
-		if(contact.HasContact(cnum))
+		if(crackContact.HasContact(cnum))
 		{	cabove=(cvf[1]->location(FIRST_CRACK)==ABOVE_CRACK) ? 1 : 0;
-			AdjustContact(cabove,1-cabove,&(cvf[1]->norm[FIRST_CRACK]),cnum,callType,deltime);
+			AdjustContact(cabove,1-cabove,&(cvf[1]->norm[FIRST_CRACK]),cnum,callType,deltime,ccn);
 		}
 	}
 	
 	// between [0] & [2]
 	if(has2 && has0)
 	{	cnum=cvf[2]->crackNumber(FIRST_CRACK);
-		if(contact.HasContact(cnum))
+		if(crackContact.HasContact(cnum))
 		{	cabove=(cvf[2]->location(FIRST_CRACK)==ABOVE_CRACK) ? 2 : 0;
-			AdjustContact(cabove,2-cabove,&(cvf[2]->norm[FIRST_CRACK]),cnum,callType,deltime);
+			AdjustContact(cabove,2-cabove,&(cvf[2]->norm[FIRST_CRACK]),cnum,callType,deltime,ccn);
 		}
 	}
 	
 	// with [3]
 	if(has3)
 	{	// between [1] & [3]
-		if(has1) CrackContactThree(1,callType,deltime);
+		if(has1) CrackContactThree(1,callType,deltime,ccn);
 		
 		// between [2] & [3]
-		if(has2) CrackContactThree(2,callType,deltime);
+		if(has2) CrackContactThree(2,callType,deltime,ccn);
 	}
 	
 }
@@ -1569,7 +1576,7 @@ void NodalPoint::CrackContact(int callType,double deltime,int hasFlags)
 //    crack in [single]. In other words, [single] acts like field [0] relative
 //    to field [3] crossing that other crack
 // Caller must verify that [3] is not empty
-void NodalPoint::CrackContactThree(int single,int callType,double deltime)
+void NodalPoint::CrackContactThree(int single,int callType,double deltime,CrackNode *ccn)
 {
 	// get common crack
 	int cnum=cvf[single]->crackNumber(FIRST_CRACK);
@@ -1587,7 +1594,7 @@ void NodalPoint::CrackContactThree(int single,int callType,double deltime)
 	}
 	
 	// skip if otherCrack not doing contact
-	if(!contact.HasContact(otherCrack)) return;
+	if(!crackContact.HasContact(otherCrack)) return;
 
 	// get above field
 	int cabove,cbelow;
@@ -1601,17 +1608,20 @@ void NodalPoint::CrackContactThree(int single,int callType,double deltime)
 	}
 	
 	// adjust contact
-	AdjustContact(cabove,cbelow,&(cvf[3]->norm[otherCrack]),otherCrack,callType,deltime);
+	AdjustContact(cabove,cbelow,&(cvf[3]->norm[otherCrack]),otherCrack,callType,deltime,ccn);
 }
 
 // Look for crack contact and adjust accordingly - a for field above and b for field below and both
 // fields must be verified as present (1 or more points)
-void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,int callType,double deltime)
+void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,int callType,double deltime,CrackNode *ccn)
 {
 	// see if in contact and get change in momentum
     Vector delP;
 	int inContact;
-	bool changeMomentum = contact.GetDeltaMomentum(this,&delP,cvf[a],cvf[b],norm,crackNumber,callType,deltime,&inContact);
+	// pointer to ccContact (NULL if not FMPM(k>1))
+	FMPMContact *ccCache = ccn->GetContactInfo(a,b);
+	bool changeMomentum = crackContact.GetDeltaMomentum(this,&delP,cvf[a],cvf[b],norm,crackNumber,
+														callType,deltime,&inContact,ccCache);
 
 	// exit if no momentum change
 	if(!changeMomentum) return;
@@ -1620,6 +1630,154 @@ void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,int 
 	cvf[a]->ChangeCrackMomentum(&delP,callType,deltime);
 	Vector delPb;
     cvf[b]->ChangeCrackMomentum(CopyScaleVector(&delPb,&delP,-1.),callType,deltime);
+	
+	// Cache total delP found in this lumped-mass code
+	if(ccCache!=NULL) ccCache->netDelPi = delP;
+
+}
+
+#pragma mark FMPM CONTACT EXTRA
+
+// Called in multimaterial mode for FMPM/XPIC k>1 to change incremental
+// terms to be equal (so difference is zero and lumped mass calculation
+// remains valid)
+void NodalPoint::MaterialXPICIncrementOnNode(FMPMContact *mmContact[4],double dtime,int callType)
+{
+	// check each crack velocity field on this node
+	for(int i=0;i<maxCrackFields;i++)
+	{	if(CrackVelocityField::ActiveField(cvf[i]))
+			cvf[i]->MaterialXPICIncrementOnCVF(this,mmContact[i],dtime,callType);
+	}
+}
+
+// Called in FMPM/XPIC k>1 for crack nodes in contact to change incremental
+// terms to be equal (so difference is zero and lumped mass calculation
+// remains valid)
+void NodalPoint::CrackXPICIncrementOnNode(FMPMContact *ccContact,double dtime,int callType)
+{
+	if(ccContact[0].paired==1)
+		AdjustXPICIncrement(0,1,dtime,callType,&ccContact[0]);
+	if(ccContact[1].paired==1)
+		AdjustXPICIncrement(0,2,dtime,callType,&ccContact[1]);
+	if(ccContact[2].paired==1)
+		AdjustXPICIncrement(1,3,dtime,callType,&ccContact[2]);
+	if(ccContact[3].paired==1)
+		AdjustXPICIncrement(2,3,dtime,callType,&ccContact[3]);
+}
+
+// make increments in fields above (a) and below (b) match center of mass
+void NodalPoint::AdjustXPICIncrement(int a,int b,double dtime,int callType,FMPMContact *ccCache)
+{
+	// skip low mass
+	if(ccCache->skipLowMass) return;
+	
+	// Get COM momenta using incremental velocities
+	bool hasa=false,hasb=false;
+	double massa=0.,massb=0.;
+	Vector Pa = cvf[a]->GetCMatMomentumIncrement(hasa,&massa);
+	Vector Pb = cvf[b]->GetCMatMomentumIncrement(hasb,&massb);
+	double mnode=1./(massa+massb);
+	double mred = massa*massb*mnode;
+	
+	// find Delta p_a (see notes)
+	Vector delPa;
+	CopyScaleVector(&delPa,&Pb,massa*mnode);
+	AddScaledVector(&delPa,&Pa,-massb*mnode);
+
+	// add prior velocities and save to be next prior delPi
+	AddVector(&delPa,&ccCache->priorDelPiZero);
+	ccCache->priorDelPiZero = delPa;
+	
+	// Variables
+	double mredDelWf = -1.;
+	
+	// normal velocity
+	double dotn = dotn = DotVectors(&delPa,&ccCache->norm);
+	
+	// normal separation
+	double deltaDotn = deltaDotn = ccCache->deltaDotn;
+	
+	// contact law
+	ContactLaw *theContactLaw = ccCache->theContactLaw;
+	
+	// contact area
+	double contactArea = ccCache->contactArea;
+	
+	bool getHeating = ConductionTask::matContactHeating && callType==XPIC_PARTICLE_UPDATE ;
+
+	if(theContactLaw->IsFrictionalContact())
+	{	// frictional contact
+
+		// get change in momentum, but false return means friction law wants no change
+		if(!theContactLaw->GetFrictionalDeltaMomentum(&delPa,&ccCache->norm,dotn,deltaDotn,
+							&mredDelWf,mred,getHeating,contactArea,timestep,&ccCache->startDelFi,this,true))
+		{
+			// not in contact so delPa is zero
+			// Net method: previous delPi was set above and no change to total delPi
+			// therefore done if total delPi is current zero
+			if(IsZeroVector(&ccCache->netDelPi,fmobj->IsThreeD())) return;
+			
+			// If not contact, need to use -netDelPi
+			// (zero here and subtracted net below)
+			ZeroVector(&delPa);
+		}
+	}
+	else
+	{	// Handle imperfect interface
+		double deltaDott = ccCache->deltaDott;
+		Vector tangDel = ccCache->tangDel;
+
+		// Get interface force, energy, and posibly change delPi
+		double rawEnergy;
+		Vector fImp = ccCache->startDelFi;
+		bool postUpdate = callType==XPIC_PARTICLE_UPDATE;
+		theContactLaw->GetInterfaceForces(&ccCache->norm,&fImp,&rawEnergy,
+								contactArea,&delPa,dotn,mred,&tangDel,
+								deltaDotn,deltaDott,postUpdate);
+		if(postUpdate)
+		{	// add force (if any) to momentum change
+			AddScaledVector(&delPa, &fImp, timestep);
+			
+			// Add interface energy. (Legacy units g-mm^2/sec^2 or multiply by 1e-9 to get J - kg-m^2/sec^2)
+#pragma omp atomic
+			NodalPoint::interfaceEnergy += rawEnergy;
+		}
+	}
+
+	// Net method: Get delPa to apply by subtracting sum of prior delPa (then reset net delPa)
+	Vector newDelPa = delPa;
+	SubVector(&delPa,&ccCache->netDelPi);
+	ccCache->netDelPi = newDelPa;
+ 	if(getHeating)
+	{	double newMredDelWf;
+		if(mredDelWf>0.)
+		{	// found heat, save it and then adjust to increment
+		   newMredDelWf = mredDelWf;
+		   mredDelWf -= ccCache->priorMredDelWf;
+		}
+		else
+		{	// new heating, save as zero and adjust to increment
+		   newMredDelWf = 0.;
+		   mredDelWf = -ccCache->priorMredDelWf;
+		}
+		ccCache->priorMredDelWf = newMredDelWf;
+	}
+ 		
+	// Apply momentum change to incremental velocities
+	cvf[a]->ChangeVelocityIncrement(&delPa,dtime,callType);
+	ScaleVector(&delPa,-1.);
+	cvf[b]->ChangeVelocityIncrement(&delPa,dtime,callType);
+
+	if(getHeating && mredDelWf!=0.)
+	{	double qrate = mredDelWf/mred;
+		// As heat source need nJ/sec or multiply by 1/timestep
+		// Note that this is after transport rates are calculated (by true in last parameter)
+		conduction->AddFluxCondition(this,qrate/dtime,true);
+		
+		// this line seems to crack XCode analyzer, comment our temporarily to analyze code
+#pragma omp atomic
+		NodalPoint::frictionWork += qrate;
+	}
 }
 
 #pragma mark ACCESSORS

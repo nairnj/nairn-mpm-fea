@@ -28,8 +28,9 @@ class LinearInterface : public ContactLaw
 		virtual void PrintContactLaw(void) const;
 	
 		// methods
-		virtual void GetInterfaceForces(Vector *,Vector *,double *,double,Vector *,double,double,Vector *,double,double,double) const;
-	
+		virtual void GetInterfaceForces(Vector *,Vector *,double *,double,Vector *,double,double,Vector *,double,double,bool) const;
+		virtual double GetTerms(double d,double m,double &sineTerm,double &sincosTerm) const;
+
 		// accessors
 		virtual const char *MaterialType(void) const;
 		void SetParameters(double,double,double);

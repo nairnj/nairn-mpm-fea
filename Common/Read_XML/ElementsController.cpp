@@ -25,9 +25,7 @@
 
 ElementsController *theElems=NULL;
 
-/********************************************************************************
-	ElementsController: Constructur and Destructor
-********************************************************************************/
+#pragma mark ElementsController: Constructur and Destructor
 
 ElementsController::ElementsController(void)  : ParseController()
 {
@@ -37,9 +35,7 @@ ElementsController::ElementsController(void)  : ParseController()
 #endif
 }
 
-/********************************************************************************
-	ElementsController: methods
-********************************************************************************/
+#pragma mark ElementsController: methods
 
 void ElementsController::AddElement(ElementBase *newElem)
 {
@@ -421,9 +417,7 @@ int ElementsController::ElementSides(void)
 }
 #endif
 
-/********************************************************************************
-	ElementsController: accessors
-********************************************************************************/
+#pragma mark ElementsController: accessors
 
 int ElementsController::CurrentElemID(void) { return currentElemID; }
 

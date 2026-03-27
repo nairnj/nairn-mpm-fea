@@ -44,7 +44,7 @@ MatPointAS::MatPointAS(int inElemNum,int theMatl,double angin,double thickin) : 
 void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld,bool postUpdate)
 {
     // get velocity gradient
-    Matrix3 dv = ExtraVelocityGradient();
+    Matrix3 dv = ExtrapVelocityGradient(ElemID());
     
     Tensor *gStressPtr=NULL;
 	
@@ -62,7 +62,7 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 
 // Extrapolation spatial velocity gradient from current grid
 // velocties and gradient shape functions
-Matrix3 MatPointAS::ExtraVelocityGradient(void)
+Matrix3 MatPointAS::ExtrapVelocityGradient(int useElemID)
 {
 #ifdef CONST_ARRAYS
     double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
@@ -75,7 +75,7 @@ Matrix3 MatPointAS::ExtraVelocityGradient(void)
     Matrix3 dv;
 
     // find shape functions and derviatives
-    const ElementBase *elemRef = theElements[ElemID()];
+    const ElementBase *elemRef = theElements[useElemID];
     int *nds = ndsArray;
     elemRef->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,this);
     int numnds = nds[0];

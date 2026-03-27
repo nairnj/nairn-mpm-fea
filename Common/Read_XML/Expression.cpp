@@ -212,6 +212,8 @@ void Expression::TokenizeExpr(void)
 		exprHasGroups = false;
 	}
 	
+	// debugging could call Describe() here
+	
 	numAtoms = 1;
 	prevAtom = prevAtom->GetNextAtom();
 	while(prevAtom!=NULL)
@@ -758,7 +760,7 @@ void Expression::AddSubstringToken(ExprRange expr,bool aNum,bool beforeGroup)
 	Atomic *nextAtom = NULL;
 	if(beforeGroup)
 	{	nextAtom = new Atomic(subString,FUNCTION_NAME);
-		delete [] subString;
+		//delete [] subString;
 		if(nextAtom->GetFunctionCode()<0)
 			throw CommonException("Expression with invalid function name",subString);
 	}
@@ -828,8 +830,10 @@ void Expression::ValidateCodeOrder(int prevCode,int nextCode) const
 				case ATOM_VARIABLE:
 				case FUNCTION_NAME:
 				case OP_OPEN_GROUP:
+					throw CommonException("Invalid expression: ')' followed by number, variable, function, or '('",exprStr);
 				case OP_DIVIDE_GROUP:
-					throw CommonException("Invalid expression: ')' followed by number, variable, function, ',', or '('",exprStr);
+					// OK here. On return, a comma not in function will cause an error
+					break;
 				default:
 					// Allowed: +, -, *, /, ^, )
 					break;
@@ -948,6 +952,21 @@ void Expression::Describe(Atomic *tmpFirstAtom) const
 	}
 }
 
+// return true if expression does not depend on particle state
+// this only applies to functions that depend on t,x,y,z,dt,q - true if only t or dt
+bool Expression::IsPositionIndependent(void)
+{
+	Atomic *nextAtom = firstAtom;
+	while(nextAtom!=NULL)
+	{	if(nextAtom->GetCode()==ATOM_VARIABLE)
+		{	int mapID = vmap[nextAtom->GetVarID()];
+			if(mapID!=1 && mapID!=5) return false;
+		}
+		nextAtom = nextAtom->GetNextAtom();
+	}
+	return true;
+}
+
 #pragma mark CLASS METHODS
 
 // Create new expression
@@ -959,10 +978,21 @@ Expression *Expression::CreateExpression(char *exprString,const char *notValid)
 		function->TokenizeExpr();
 	}
 	catch(CommonException& err)
-	{	char errMsg[200];
+	{	char errMsg[310];
 		strcpy(errMsg,notValid);
 		strcat(errMsg,": ");
 		strcat(errMsg,err.Message());
+		int msg = (int)strlen(err.InCode());
+		if(msg>0)
+		{	int maxUse = 300-(int)strlen(errMsg);
+			strcat(errMsg," [");
+			if(msg>maxUse) err.InCode()[maxUse]=0;
+			strcat(errMsg,err.InCode());
+			if(msg>maxUse)
+				strcat(errMsg,"...)");
+			else
+				strcat(errMsg,"]");
+		}
 		ThrowSAXException(errMsg);
 	}
 	catch(...)

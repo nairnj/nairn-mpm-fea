@@ -31,6 +31,9 @@
 // to do axisymmetric J by Broberg method (any other number uses Bergkvist and Huong method)
 #define AXISYM_BROBERG_J 1
 
+// limit surface moves to fraction of cell size (in maxSurfaceMove)
+#define LIMIT_CRACK_MOVE
+
 class CrackSegment;
 class ContourPoint;
 class CrackLeaf;
@@ -54,6 +57,8 @@ class CrackHeader : public LinkedObject
 		static int warn2ndTipInContour;
         static int warn2ndTipInCell;
         static int warnAdatedContourFailed;
+		static int warnBlockSurfaceMove;
+		static double maxSurfaceMove;
 		
         // constructors and destructors
         CrackHeader();

@@ -25,12 +25,9 @@
 #define VSTAR_VEC 0
 #define VSTARPREV_VEC 1
 #define VSTARNEXT_VEC 2
-#define DELTA_VSTARPREV_VEC 3
-#define DELTA_VSTARNEXT_VEC 4
-#define DELTA_VSTORE_VEC 5
 
 // calculations options
-enum { INITIALIZE_XPIC=0,UPDATE_VSTAR,COPY_VSTARNEXT };
+enum { INITIALIZE_XPIC=0,UPDATE_VSTAR,COPY_VSTARNEXT,GET_DELTAV };
 
 class NodalPoint;
 
@@ -117,8 +114,8 @@ class MatVelocityField
 		static bool ActiveNonrigidSeesCracksField(MatVelocityField *,bool);
 	
 		// XPIC
-		virtual void XPICSupport(int,int,NodalPoint *,double,int,int,double);
-		virtual void AddVStarNext(Vector *,double,double);
+		virtual void XPICSupport(int,int,NodalPoint *,double,int);
+		virtual void AddVStarNext(Vector *,double);
 
 	protected:
 		int flags;					// bitwise flags for some field properties

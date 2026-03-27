@@ -410,7 +410,6 @@ public class CmdViewer extends JNCmdTextDocument
 		otherDiffusion = new StringBuffer();
 		conduction = null;
 		gravity = null;
-		MMLump = -1;
 		MMNormals = -1;
 		MMRigidBias = 1.0;
 		MMAzimuth = 0.0;
@@ -858,8 +857,8 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("ptsperelement"))
 			doPtsPerElement(args);
 
-		else if(theCmd.equals("multimaterialmode"))
-			doMultimaterialMode(args);
+		else if(theCmd.equals("multimaterialmode") || theCmd.equals("multimaterialmpm"))
+			doMultimaterialMode(args,theCmd);
 
 		else if(theCmd.equals("contactposition"))
 			doContactPosition(args,false);
@@ -1171,7 +1170,7 @@ public class CmdViewer extends JNCmdTextDocument
 			variablesStrs.put(varName, fldrPath);
 		}
 		
-		// ----------- UserChoice
+		// ----------- UserChoice "#var",(prompt),(list),[(title)],[(multiple)],[(btn1)],[(btn2)],[(btn3)]
 		else if(theCmd.equals("userchoice"))		
 		{	// Needs 3 parameters
 			if(args.size()<4)
@@ -1366,7 +1365,7 @@ public class CmdViewer extends JNCmdTextDocument
 	        textField.setText(initText);
 	        panel.add(textField);
 
-	        System.out.println("Icon="+JNApplication.miniAppIcon());
+	        //System.out.println("Icon="+JNApplication.miniAppIcon());
 			int opt = JOptionPane.showOptionDialog(null, panel, dtitle,
 					optionType,JOptionPane.PLAIN_MESSAGE, 
 			        JNApplication.miniAppIcon(), options, options[0]);
@@ -3296,34 +3295,24 @@ public class CmdViewer extends JNCmdTextDocument
 	}
 
 	// MultimaterialMode Lumping,Dcheck,Normals,RigidBias
-	public void doMultimaterialMode(ArrayList<String> args) throws Exception
+	public void doMultimaterialMode(ArrayList<String> args,String theCmd) throws Exception
 	{	// MPM Only
 		requiresMPM(args);
 
 		// turn it on
-		MMLump = -1; // not used by default
-		MMNormals = 2; // avggrad default (>=0 means multimaterial mode)
+		MMNormals = 6; // logreg default (>=0 means multimaterial mode)
 		MMRigidBias = 1.0;
 		MMAzimuth = 0.0;
 		MMPolar = 0.0;
 
-		// Lumping (used to be Vmin), but current not used even if set
-		if(args.size() > 1)
-		{	MMLump = readIntArg(args.get(1));
-		}
-
-		// Dcheck (but no longer used)
-		/*
-		 * if(args.size() > 2) { HashMap<String, Integer> options = new HashMap<String, Integer>(4);
-		 * options.put("enabled", new Integer(1)); options.put("yes", new Integer(1)); options.put("disabled", new
-		 * Integer(0)); options.put("no", new Integer(0)); MMDcheck = readIntOption(args.get(2), options,
-		 * "Displacement check option"); }
-		 */
+		// which argnumber has normals setting?
+		int argNum = 1;
+		if(theCmd.equals("multimaterialmode")) argNum = 3;
 
 		// Normals
-		if(args.size() > 3)
+		if(args.size() > argNum)
 		{
-			HashMap<String, Integer> options = new HashMap<String, Integer>(4);
+			HashMap<String, Integer> options = new HashMap<String, Integer>(7);
 			options.put("maxgrad", new Integer(0));
 			options.put("maxvol", new Integer(1));
 			options.put("avggrad", new Integer(2));
@@ -3331,19 +3320,19 @@ public class CmdViewer extends JNCmdTextDocument
 			options.put("specify", new Integer(4));
 			options.put("linreg", new Integer(5));
 			options.put("logreg", new Integer(6));
-			MMNormals = readIntOption(args.get(3), options, "Normals option");
+			MMNormals = readIntOption(args.get(argNum), options, "Normals option");
 		}
 
 		if(MMNormals == 4)
-		{ // polar angles
-			if(args.size() > 4)
-				MMAzimuth = readDoubleArg(args.get(4));
-			if(args.size() > 5)
-				MMPolar = readDoubleArg(args.get(5));
+		{	// polar angles only for "specify"
+			if(args.size() > argNum+1)
+				MMAzimuth = readDoubleArg(args.get(argNum+1));
+			if(args.size() > argNum+2)
+				MMPolar = readDoubleArg(args.get(argNum+2));
 		}
-		else if(args.size() > 4)
-		{ // Rigid Bias
-			MMRigidBias = readDoubleArg(args.get(4));
+		else if(args.size() > argNum+1)
+		{   // Rigid Bias
+			MMRigidBias = readDoubleArg(args.get(argNum+1));
 			if(MMRigidBias < 0.)
 				MMRigidBias = 0.;
 		}

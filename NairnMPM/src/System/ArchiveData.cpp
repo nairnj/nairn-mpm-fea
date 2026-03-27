@@ -26,6 +26,7 @@
 #include "System/UnitsController.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/CustomTask.hpp"
+#include "Nodes/MaterialContactNode.hpp"
 
 // archiver global
 ArchiveData *archiver;
@@ -1142,7 +1143,7 @@ void ArchiveData::ArchiveResults(double atime,bool lastStep)
 		// Gets from spatial velocity gradient extrapolated from grid velocities
 		if(mpmOrder[ARCH_SpinVelocity]=='Y')
 		{	// angular spatial velocity gradient
-            Matrix3 spatialGradVp = mpm[p]->GetParticleGradVp(true,false);
+            Matrix3 spatialGradVp = mpm[p]->GetParticleGradVp(true,true);
  			
 			// Extract antisymmetic deformation gradient
 			Vector wp = MakeVector(0.5*(spatialGradVp(2,1)-spatialGradVp(1,2)),
@@ -1870,6 +1871,17 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
                     break;
                 }
 				
+				case VTK_CONTACTNORMAL:
+				{   MaterialContactNode *mcn = nd[i]->contactData;
+					if(mcn!=NULL)
+					{	Vector cnorm = mcn->contactNorm;
+						afile << cnorm.x << " " << cnorm.y << " " << cnorm.z << endl;
+					}
+					else
+						afile << "0. 0. 0." << endl;
+					break;
+				}
+
 				case VTK_BCFORCES:
 					// currently not implement (or documented)
 					if(nd[i]->fixedDirection&XYZ_SKEWED_DIRECTION)

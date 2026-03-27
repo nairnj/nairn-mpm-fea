@@ -5,7 +5,7 @@
 	Created by John Nairn, June 16, 2008.
 	Copyright (c) 2008 John A. Nairn, All rights reserved.
  
-	See Create_MPM_Material for details in google code web site wiki
+	See *Create_MPM_Material* for details in google code web site wiki
 ********************************************************************************/
 
 #include "NewMaterial.hpp"

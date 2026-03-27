@@ -18,9 +18,7 @@
 // used in ConvertToRatio() and associated routines
 double ratio2,argx0,argx1,argx2,argy0,argy1,argy2,comparea;
 
-/********************************************************************************
-	Path: Constructors and Destructor
-********************************************************************************/
+#pragma mark Path: Constructors and Destructor
 
 // Initialize, but assumes name already 32 characters or less and unique
 // ... which is done by prior call to paths->ValidName()
@@ -40,9 +38,7 @@ Path::Path(const char *pathName,int intvls,double rat)
 	subPath[0]=subPath[1]=NULL;
 }
 
-/********************************************************************************
-	Path: methods
-********************************************************************************/
+#pragma mark Path: methods
 
 // add key point to the last path
 int Path::AddKeypoint(char *keyName)
@@ -332,9 +328,7 @@ double Path::NormalSum(double r)
 	return sum-comparea;
 }
 
-/********************************************************************************
-	Path: accessors
-********************************************************************************/
+#pragma mark Path: accessors
 
 // must be called before path used as it converts ratio<0 to actual ratio
 int Path::ValidPath(void)

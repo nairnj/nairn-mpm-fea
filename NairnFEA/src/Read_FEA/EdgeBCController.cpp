@@ -13,9 +13,7 @@
 
 EdgeBCController *edgeBCCtrl=NULL;
 
-/********************************************************************************
-	EdgeBCController: methods
-********************************************************************************/
+#pragma mark EdgeBCController: methods
 
 // add object to linked list, but only if unique
 bool EdgeBCController::AddObject(LinkedObject *obj)

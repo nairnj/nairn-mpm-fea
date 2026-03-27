@@ -448,7 +448,7 @@ CustomTask *LoadControl::StepCalculation(void)
     else if(numStartup>=0)
     {   // note that zero is an error here
         if(numStartup==0)
-        {   throw CommonException("Load control start up time did not include and global archives",
+        {   throw CommonException("Load control start up time did not include any global archives",
                                   "LoadControl::StepCalculation");
         }
         double n = (double)numStartup;
@@ -466,6 +466,10 @@ CustomTask *LoadControl::StepCalculation(void)
         {   double localAt = (load-prevLoad)/(velocity*dTime);
             At = smoothA*At + (1.0-smoothA)*localAt;
         }
+		else
+		{	// used load and distance - best for elastic with damage
+			At = smoothA*At + (1.0-smoothA)*(load/distance);
+		}
 #else
         // At from load and displacement and then smooth
         At = smoothA*At + (1.0-smoothA)*(load/distance);

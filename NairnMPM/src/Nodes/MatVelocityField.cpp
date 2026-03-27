@@ -1,4 +1,4 @@
-/********************************************************************************
+/*****************************************************************************************
     MatVelocityField.cpp
     nairn-mpm-fea
     
@@ -7,10 +7,25 @@
  
 	Special case for rigid material
 		pk will be sum of Vp*vel
- 		ContactInfo
-			disp will be sum Vp*(pos-origpos), expos will be sum of Vp*pos
+ 		contactInfo
+			disp will be sum [Vp*(pos-origpos)], expos will be sum of [Vp*pos]
 			and volume will be unscaled volume
-********************************************************************************/
+ 
+	vk[pkCopy] - holds a copy of extrapolated momentum. It holds momentum plus
+			changes iin momentum do to contact done after initial extrapolation.
+			It normally does not include velocity condition changes done in
+			USF or USAVG+/-. It may not be needed in USL+/-
+		It is zerod in Zero()
+		it is set to extrapolated pk in GetTotalMassAndCount() which is called
+			by CalcTotalMassAndCount() called in PostExtrapolationTask()
+		If contact changes momentum, vk[pkCopy] = pk + delta pk where delta pk
+			is contact change after initial extrapolation, but before momentum update
+		if [ADJUST_COPIED_PK=1], adjust for symmetry BCs only
+		if [ADJUST_COPIED_PK=2], adjust for velocity BCs too
+		Change pk back to vk[pkCopy] in RestoreMomenta() in PostForcesTasks.
+		Used as workspace in JPIC custom tasks (that is at and of time step so
+			causes not conflict. It is rezeroed when next time steps start.
+******************************************************************************************/
 
 #include "stdafx.h"
 #include "NairnMPM_Class/NairnMPM.hpp"
@@ -22,6 +37,8 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+
+//#define BLENDLUMPED 0.9
 
 // class statics
 int MatVelocityField::pkCopy=0;
@@ -49,6 +66,7 @@ MatVelocityField::MatVelocityField(int setFlags)
 	// ...note that DELTA_VSTAR_PREV must be VSTAR_PREV+2 - XPIC calcs assume that
 	// FLIP and PIC need only 1 vector (to copy momenta)
 	
+	// FMPM/XPIC needs 3 vectors (v* and two working copies in XPIC tasks)
 	// add one more to store pk outside the xpic space
 	int numVecs = bodyFrc.XPICVectors()+1;
 	vk = new Vector[numVecs];
@@ -142,12 +160,6 @@ double MatVelocityField::GetTotalMassAndCount(void)
 	// copy the extrapolated momenta
 	vk[pkCopy] = pk;
 	
-#if MM_XPIC == 1
-	// When doing XPIC in multimaterial modes, need to track change in momenta too
-	if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
-		ZeroVector(&vk[DELTA_VSTORE_VEC]);
-#endif
-	
 	return mass;
 }
 
@@ -168,7 +180,7 @@ void MatVelocityField::RestoreMomenta(void)
 	pk = vk[pkCopy];
 	
 #ifdef CHECK_NAN
-	if(pk.x!=pk.x || pk.y!=pk.y || pk.z!=pk.z || ftot.x!=ftot.x || ftot.y!=ftot.y || ftot.z!=ftot.z)
+	if(IsNanVector(&pk,true) || IsNanVector(&ftot,true))
 	{
 #pragma omp critical (output)
 		{	cout << "\n# MatVelocityField::RestoreMomenta: stored momenta or intial force was corrupted" << endl;
@@ -184,34 +196,31 @@ void MatVelocityField::RestoreMomenta(void)
 // callType == MASS_MOMENTUM_CALL, UPDATE_MOMENTUM_CALL, UPDATE_STRAINS_LAST_CALL
 void MatVelocityField::ChangeMatMomentum(Vector *delP,int callType,double deltime)
 {
-	// add to momentum
-	AddPk(delP);
-	
 	// callType dependent changes
-	if(callType==UPDATE_MOMENTUM_CALL)
-	{	// add to force too
-		AddFtotScaled(delP, 1./deltime);
+	switch(callType)
+	{	case UPDATE_MOMENTUM_CALL:
+			// add to momentum
+			AddPk(delP);
+			
+			// add to force too
+			AddFtotScaled(delP, 1./deltime);
+			break;
+			
+		case MASS_MOMENTUM_CALL:
+			// add to momentum
+			AddPk(delP);
+			
+			// for contact to be correct, need contact correction to be in initial momenta
+			// update previous stored value here
+			// (can skip to test the consequences)
+			vk[pkCopy] = pk;
+			break;
+			
+		default:
+			// UPDATE_STRAINS_LAST_CALL just change Pk
+			AddPk(delP);
+			break;
 	}
-	else if(callType==MASS_MOMENTUM_CALL)
-	{	// hack to skip the first contact corrections - i.e.,do not change anything
-		//return;
-		
-		// for contact to be correct, need contact correction to be in initial momenta
-		vk[pkCopy] = pk;
-#if MM_XPIC == 1
-		// For XPIC in multimaterial mode, track sum of contact changes
-		if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
-			AddVector(&vk[DELTA_VSTORE_VEC],delP);
-	}
-	else
-	{	// update strains last, for FMPM in multimaterial mode, track sum of contact changes in all modes
-		if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
-		{	AddVector(&vk[DELTA_VSTORE_VEC],delP);
-		}
-	}
-#else
-	}
-#endif
 }
 
 // in response to contact, and only for rigid materials, add contact force to ftot
@@ -267,6 +276,7 @@ void MatVelocityField::AddPk(Vector *f)
 	pk.y += f->y;
 	pk.z += f->z;
 }
+
 // total momentum - scale and add
 void MatVelocityField::AddPkScaled(Vector *f,double scaled)
 {	pk.x += f->x*scaled;
@@ -293,7 +303,7 @@ void MatVelocityField::UpdateMomentum(double timestep)
     AddPkScaled(&ftot,timestep);
 	
 #ifdef CHECK_NAN
-	if(pk.x!=pk.x || pk.y!=pk.y || pk.z!=pk.z)
+	if(IsNanVector(&pk,true))
 	{
 #pragma omp critical (output)
 		{	cout << "\n# MatVelocityField::UpdateMomentum: updated momentum corrupted" << endl;
@@ -304,120 +314,95 @@ void MatVelocityField::UpdateMomentum(double timestep)
 }
 
 // Support XPIC calculations
-void MatVelocityField::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int m,int k,double vsign)
+// For COPY_VSTARNEXT, xpicOption is vfld and m is matfld
+void MatVelocityField::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int m)
 {
 	switch(xpicCalculation)
 	{	case INITIALIZE_XPIC:
 		{	// these are needed zero on ghost and real nodes
 			ZeroVector(&vk[VSTARNEXT_VEC]);
-#if MM_XPIC == 1
-			if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
-				ZeroVector(&vk[DELTA_VSTARNEXT_VEC]);
-#endif
 			
 			// skip if none or if ghost node setting
 			if(numberPoints==0 || timestep<0.) return;
 			
-			// set vStarPrev to k*v^+ = k*pi^+/mi, which is updated velocity
-			double korder = (double)bodyFrc.GetXPICOrder();
+			// set vStarPrev to v^+ = pi^+/mi, which is updated lumped mass velocity
 			if(bodyFrc.UsingFMPM())
-			{	CopyScaleVector(&vk[VSTARPREV_VEC],&pk,korder/mass);
+			{	CopyScaleVector(&vk[VSTARPREV_VEC],&pk,1./mass);
 				
 				// set v* = vStarPrev will be v(k) = m_k^{-1}p^+
 				vk[VSTAR_VEC] = vk[VSTARPREV_VEC];
 			}
 			else
-			{	// For XPIC (only called during particle update), set to k*v = k(pi^+-fi*dt)/mi
+			{	// For XPIC, set to v* = (pi^+-fi*dt)/mi (initial lumped mass velocity)
 				vk[VSTARPREV_VEC] = pk;
 				AddScaledVector(&vk[VSTARPREV_VEC], &ftot, -timestep);
-				ScaleVector(&vk[VSTARPREV_VEC],korder/mass);
+				ScaleVector(&vk[VSTARPREV_VEC],1./mass);
 				
-				// set v* = vStarPrev + a*dt such that final v* will be v(m) + a*dt)
+				// set v* = vStarPrev + a*dt such that final v* will be v(k) + a*dt)
 				vk[VSTAR_VEC] = vk[VSTARPREV_VEC];
 				AddScaledVector(&vk[VSTAR_VEC], &ftot, timestep/mass);
 			}
 			
-#if MM_XPIC == 1
-			// in multimaterial mode, get delta v from stored delta p due to contact
-			if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
-			{	CopyScaleVector(&vk[DELTA_VSTARPREV_VEC],&vk[DELTA_VSTORE_VEC],(korder-1.)/mass);
-			}
-#endif
 			break;
 		}
 		
-		case UPDATE_VSTAR:
+		case GET_DELTAV:
 		{	// Add to Vstar and reset for next iteration
 			if(numberPoints==0) return;
 			
-			// add to vStar += (-1)^k * vStarNext (i.e. v* += vsign*v_k^*)
-			vk[VSTAR_VEC].x += vsign*vk[VSTARNEXT_VEC].x;
-			vk[VSTAR_VEC].y += vsign*vk[VSTARNEXT_VEC].y;
-			vk[VSTAR_VEC].z += vsign*vk[VSTARNEXT_VEC].z;
+			// save Delta v(k) = (I-S^+S)vprev = vprev-vnext
+			vk[VSTARPREV_VEC].x -= vk[VSTARNEXT_VEC].x;
+			vk[VSTARPREV_VEC].y -= vk[VSTARNEXT_VEC].y;
+			vk[VSTARPREV_VEC].z -= vk[VSTARNEXT_VEC].z;
+
+#ifdef BLENDLUMPED
+			// scale with lumped
+			ScaleVector(&vk[VSTARPREV_VEC],BLENDLUMPED);
+#endif
 			
-			// save v_k* in v*(prev)
-			vk[VSTARPREV_VEC] = vk[VSTARNEXT_VEC];
+			break;
+		}
+			
+		case UPDATE_VSTAR:
+		{	// Add to Vstar and reset for next iteration
+			if(numberPoints==0) return;
+
+			// add to vStar += Delta v(k)
+			vk[VSTAR_VEC].x += vk[VSTARPREV_VEC].x;
+			vk[VSTAR_VEC].y += vk[VSTARPREV_VEC].y;
+			vk[VSTAR_VEC].z += vk[VSTARPREV_VEC].z;
 			
 			// zero v*(next) for next pass through the loop
 			ZeroVector(&vk[VSTARNEXT_VEC]);
 			
-#if MM_XPIC == 1
-			if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
-			{	// add to v += (-1)^k * deltaVStarPrev
-				// This adding previous
-				vk[VSTAR_VEC].x += vsign*vk[DELTA_VSTARPREV_VEC].x;
-				vk[VSTAR_VEC].y += vsign*vk[DELTA_VSTARPREV_VEC].y;
-				vk[VSTAR_VEC].z += vsign*vk[DELTA_VSTARPREV_VEC].z;
-				
-				// copy to previous
-				vk[DELTA_VSTARPREV_VEC] = vk[DELTA_VSTARNEXT_VEC];
-				
-				// zero deltaVStarNext
-				ZeroVector(&vk[DELTA_VSTARNEXT_VEC]);
-			}
-#endif
 			break;
 		}
 			
 		case COPY_VSTARNEXT:
-		{	// Copy to real node and zero vStarNext on this ghose node
+		{	// Copy to real node and zero vStarNext on this ghost node
 			if(numberPoints==0) return;
 			
 			// add to real node (note that vfld in xpicOption and matfld in m)
 			Vector *vStarNextj = &vk[VSTARNEXT_VEC];
-			real->AddVStarNext((short)xpicOption,m,vStarNextj,1.,1.);
+			real->AddVStarNext((short)xpicOption,m,vStarNextj,1.);
 			
 			// zero on this material field on this ghost node for next loop
 			ZeroVector(vStarNextj);
-#if MM_XPIC == 1
-			// Assume vector for multimaterial mode is shifted by 2
-			if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT) ZeroVector(vStarNextj+2);
-#endif
 			break;
 		}
-	
+		
 		default:
 			break;
 	}
 }
 
 // add to vStarNext
-void MatVelocityField::AddVStarNext(Vector *vStarPrevj,double weight,double weightContact)
+void MatVelocityField::AddVStarNext(Vector *vStarPrevj,double weight)
 {
     // update
     vk[VSTARNEXT_VEC].x += weight*vStarPrevj->x;
     vk[VSTARNEXT_VEC].y += weight*vStarPrevj->y;
     vk[VSTARNEXT_VEC].z += weight*vStarPrevj->z;
-		
-#if MM_XPIC == 1
-    // add contact term when no spin - assume in vector +2 from vStarPrevj
-    if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
-    {	Vector *deltaVStarPrevj = vStarPrevj+2;
-        vk[DELTA_VSTARNEXT_VEC].x += weightContact*deltaVStarPrevj->x;
-        vk[DELTA_VSTARNEXT_VEC].y += weightContact*deltaVStarPrevj->y;
-        vk[DELTA_VSTARNEXT_VEC].z += weightContact*deltaVStarPrevj->z;
-    }
-#endif
 }
 
 // on particle updates, increment nodal velocity and acceleration and others as needed
@@ -444,11 +429,6 @@ void MatVelocityField::IncrementNodalVelAcc(double fi,GridToParticleExtrap *gp) 
 void MatVelocityField::RezeroNodeTask6(void)
 {	ZeroVector(&pk);
 	ZeroContactTerms();
-#if MM_XPIC == 1
-	// When doing FMPM in multimaterial modes, rzero vector to track delta p
-	if(bodyFrc.UsingVstar()==VSTAR_WITH_CONTACT)
-		ZeroVector(&vk[DELTA_VSTORE_VEC]);
-#endif
 }
 
 #pragma mark CONTACTINFO METHODS
@@ -544,16 +524,25 @@ void MatVelocityField::ZeroVelocityBC(Vector *norm,int passType,double deltime,V
 			AddVector(freaction,&deltaF);
 			break;
 		}
-		case UPDATE_GRID_STRAINS_CALL:
-			dotn = DotVectors(vk, norm);
-			AddScaledVector(vk, norm, -dotn);
+		case XPIC_STRAIN_UPDATE:
+		case XPIC_PARTICLE_UPDATE:
+			// FMPM or XPIC (k>1), set zero at BCs in VSTARPREV_VEC
+			dotn = DotVectors(&vk[VSTARPREV_VEC], norm);
+			AddScaledVector(&vk[VSTARPREV_VEC], norm, -dotn);
+			if(passType==XPIC_PARTICLE_UPDATE)
+			{	// lumped mass addition to freaction for this BC
+				Vector deltaF = SetScaledVector(norm,-mass*dotn/deltime);
+				AddVector(freaction,&deltaF);
+				// Only XPIC needs material force for subsequent updates
+				if(!bodyFrc.UsingFMPM()) AddFtot(&deltaF);
+			}
 			break;
 		default:
 			break;
 	}
 }
 
-// add one component of velocity (FMPM only), momentum, or force
+// Add one component of momentum or force
 void MatVelocityField::AddVelocityBC(Vector *norm,double vel,int passType,double deltime,Vector *freaction)
 {
 	switch(passType)
@@ -580,9 +569,6 @@ void MatVelocityField::AddVelocityBC(Vector *norm,double vel,int passType,double
 			AddVector(freaction,&deltaF);
 			break;
 		}
-		case UPDATE_GRID_STRAINS_CALL:
-			AddScaledVector(vk, norm, vel);
-			break;
 		default:
 			break;
 	}
@@ -656,7 +642,6 @@ bool MatVelocityField::ActiveNonrigidSourceField(MatVelocityField *mvf,int field
 
 // return true if references field that is active, is not rigid, and matches requireCracks
 // (i.e., if requireCracks is true, this field must see cracks, otherwise any field is OK)
-// In NairnMPM, same as having any nonrigid particles
 bool MatVelocityField::ActiveNonrigidSeesCracksField(MatVelocityField *mvf,bool requireCracks)
 {   if(mvf==NULL) return false;										// no field
 	if(mvf->numberPoints==0 || mvf->IsRigidField()) return false;	// no points or rigid

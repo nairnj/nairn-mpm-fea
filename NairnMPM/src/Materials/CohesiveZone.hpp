@@ -48,7 +48,7 @@ class CohesiveZone : public TractionLaw
         virtual double GetDeltaFromD(int,double);
 
         // Sawtooth methods (don't override)
-        const char *SetSawToothTractionLaw(double &,double &,double &,double &,double &,double &,double &);
+        const char *SetSawToothTractionLaw(double &,double &,double &,double &,double &,double &,double &,bool &);
         void PrintSawToothModel(const char *,double,double,double,double,double,double) const;
         double GetSawToothDeltaPrimeFromD(double,double,double);
     
@@ -63,6 +63,7 @@ class CohesiveZone : public TractionLaw
 		double umidI,umidII;
         double phiI1,phiII1;
         double RI1,RII1;
+		bool elasticBrittleI,elasticBrittleII;
 };
 
 #endif

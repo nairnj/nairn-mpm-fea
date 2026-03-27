@@ -14,6 +14,7 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "System/UnitsController.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 
 #pragma mark CoulombFriction::Constructors and Destructors
 
@@ -22,7 +23,9 @@ CoulombFriction::CoulombFriction(char *matName,int matID) : ContactLaw(matName,m
 {
 	frictionCoeff = 0.0;			// <0 is stick
 	frictionCoeffStatic = -1.;		// ignored if negative or if frictionCoeff < 0
-	displacementOnly = 0.;			// >0 means displacementOnly, <=0 means tensile stress < fabs(displacementOnly)
+	
+	// lasrt used in Revision 3491. If entered printing message it is ignored
+	displacementOnly = 0.;
 	Dc = -1.;
 }
 
@@ -44,12 +47,14 @@ char *CoulombFriction::InputContactProperty(char *xName,int &input,double &gScal
 	}
 	
 	else if(strcmp(xName,"displacementOnly")==0)
-	{	input=DOUBLE_NUM;
+	{	// ignored - warning if enter other than 0
+		input=DOUBLE_NUM;
 		return UnitsController::ScaledPtr((char *)&displacementOnly,gScaling,1.e6);
 	}
 	
 	else if(strcmp(xName,"Dc")==0)
-	{	input=DOUBLE_NUM;
+	{	// ignored - warning if positive
+		input=DOUBLE_NUM;
 		return UnitsController::ScaledPtr((char *)&Dc,gScaling,1.e6);
 	}
 	
@@ -110,21 +115,13 @@ void CoulombFriction::PrintContactLaw(void) const
 		cout << hline << endl;
 	}
 	
-	if(Dc<0.)
-		cout << "   Stress found by perfect interface methods" << endl;
-	else
-	{	cout << "   Stress found by linear imperfect interface with Dc = ";
-		cout << Dc*UnitsController::Scaling(1.e-6) << " " << UnitsController::Label(INTERFACEPARAM_UNITS) << endl;
-	}
-	if(displacementOnly>0.1)
-		cout << "   Detection by only negative separation" << endl;
-	else if(displacementOnly<0.)
-	{	const char *label = UnitsController::Label(PRESSURE_UNITS);
-		cout << "   Detection by negative separation and stress < " <<
-			-displacementOnly*UnitsController::Scaling(1.e-6) << " " << label << endl;
-	}
-	else
-		cout << "   Detection by negative separation and stress < 0" << endl;
+	cout << "   Detection by negative separation and stress < 0" << endl;
+	
+	// features last used in revision 3941
+	if(displacementOnly>0.1 || displacementOnly<0.)
+		cout << "    (displacementOnly option entered - no longer used)" << endl;
+	if(Dc>=0.)
+		cout << "    (Dc option entered - no longer used)" << endl;
 }
 
 #pragma mark CoulombFriction:Step Methods
@@ -136,18 +133,19 @@ void CoulombFriction::PrintContactLaw(void) const
 //		dotn = delPi.norm (precalculated)
 //		deltaDotn = initial normal opening cod precalculated (=delta.norm)
 //		mred = reduced mass
-//		getHeating = true to calculated frictional heating term
+//		getHeating = true to calculate frictional heating term
 //		contactArea = contact area, which is only needed by some laws
 //		deltime = time step
 //		delFi = force changed needed in post update calculations (only non-NULL in UPDATE_MOMENTUM_CALL)
 //				and needed when frictional heating is activated
+//		forCracks = true when called for crack contact
 // Output
 //		delPi change to reflect contact law
 //		true is returned or false if decide now not in contact
 //		*mredDelWf set to heat energy (actually mred*heat energy) (only if getHeating is true)
 bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double deltaDotn,
 							double *mredDelWf,double mred,bool getHeating,double contactArea,
-							double deltime,Vector *delFi,NodalPoint *ndptr) const
+							double deltime,Vector *delFi,NodalPoint *ndptr,bool forCracks) const
 {
 	// indicate no frictional heat yet
 	*mredDelWf=-1.;
@@ -158,56 +156,40 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
 		return true;
 	}
 
-	else if(frictionStyle==FRICTIONLESS)
-	{	// Check contact at start or end of the interval
-		
-		// Scheme I - JANOSU-13-71 (scheme II OK, but scheme III terrible)
-		double delEnd = deltaDotn;
-		double fnaDt = dotn;
-		if(delFi!=NULL)
-			GetSeparationAndForce(delEnd,fnaDt,DotVectors(delFi,norm),deltime,mred,contactArea);
-		
-		// contact requires negative separation
-		if(delEnd<0.)
-		{	// Get stress cutoff
-			double fnaDtMax = 0.;
-			if(displacementOnly>0.1)
-				fnaDtMax = fnaDt+1.;
-			else if(displacementOnly<0.)
-				fnaDtMax = -displacementOnly*contactArea*deltime;
-			if(fnaDt<fnaDtMax)
-			{	// frictionless contact - return normal component
-				CopyScaleVector(delPi,norm,fnaDt);
-				return true;
-			}
+	// Adjust deltaDotn after mommentum update (small change, maybe not needed and
+	//    it is skipped for linear or logistic regressions beause they are based
+	//    on two closest particles and not total nodal force, but always done for cracks)
+	if(delFi!=NULL && (forCracks || !mpmgrid.UsingRegressionForContact()))
+	{	// dotn/mred = delta v, fn/mred = delta a so we want
+		// extra disp = delta v*dt - 1/2 delta a dt^2 or in current terms as here:
+		double fn = DotVectors(delFi,norm);
+		deltaDotn += deltime*(dotn - 0.5*fn*deltime)/mred;
+	}
+
+	// provisional setting for in contact
+	// Both negative separation (deltaDotn<0) and compression (dotn<0)
+	bool inContact = deltaDotn<0. && dotn<0. ? true : false ;
+	
+	// Handle frictionless is special case. It uses provional contact
+	// and adjust delPi when in contact. Frictionles has no heating.
+	if(frictionStyle==FRICTIONLESS)
+	{	// contact requires negative separation and positive pressure
+		if(inContact)
+		{	// frictionless contact - return normal component
+			CopyScaleVector(delPi,norm,dotn);
+			return true;
 		}
 
 		// separated so no contact
 		return false;
 	}
 
-	// Rest implements friction sliding
+	// Rest implements for frictional sliding
 	// The initial delPi = (-N A dt) norm + (Sstick A dt) tang = dotn norm + dott tang
 	// where N is normal traction (positive in compression), A is contact area, and dt is timestep
 	
-	// First verify contact during the time step and find the normal force
-	double delEnd = deltaDotn;
-	double fnaDt = dotn;
-	if(delFi!=NULL)
-		GetSeparationAndForce(delEnd,fnaDt,DotVectors(delFi,norm),deltime,mred,contactArea);
-	
-	// provisional setting for in contact
-	bool inContact = false;
-	if(delEnd<0.)
-	{	// check stress or use just this displacement
-		double fnaDtMax = 0.;
-		if(displacementOnly>0.1)
-			fnaDtMax = fnaDt+1.;
-		else if(displacementOnly<0.)
-			fnaDtMax = -displacementOnly*contactArea*deltime;
-		if(fnaDt<fnaDtMax)
-			inContact = true;
-	}
+	// we are done if this law never changes momentum when not in contact (adhesion can cause non-free separation)
+	if(!inContact && HasFreeSeparation()) return false;
 	
 	// Get force to stick  in tangential motion
 	double dott = 0.;
@@ -228,30 +210,27 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
         }
 	}
 	
-	// hacks to using velocity only for contact
-	//if(dotn>=0.) return false;
-	//inContact = true;
+	// Get frictional sliding force to be Sslide Ac dt = f(N) Ac dt where NAcDt = -fnaDt
+	double SslideAcDt = GetSslideAcDt(-dotn,dott,mred,contactArea,inContact,deltime);
 	
-	// Get frictional sliding force be Sslide Ac dt = f(N) Ac dt where NAcDt = -fnaDt
-	double SslideAcDt = GetSslideAcDt(-fnaDt,dott,mred,contactArea,inContact,deltime);
-	
-	// if not in contact and did not find adhesive sticking, then done and no contact changes
+	// If provisional inContact was false and adhesive contaact did not change it
+	// then exit
 	if(!inContact) return false;
 	
 	// if dott > Sslide Ac dt (which means Sstick>Sslide), then sliding, otherwise stick
 	// but Sslide Ac dt <=0 means effectively frictionless
 	if(SslideAcDt<=0.)
 	{	// Normal stick condition
-		CopyScaleVector(delPi,norm,fnaDt);
+		CopyScaleVector(delPi,norm,dotn);
 		//ZeroVector(delPi);		// fixes FricionL2 when displacement only because reverting to stress&displacement
 	}
 	else if(dott > SslideAcDt)
 	{	// Normal stick condition
-		CopyScaleVector(delPi,norm,fnaDt);
+		CopyScaleVector(delPi,norm,dotn);
 
-		// frictional terms only added in update momentum call
-		if(delFi!=NULL)
-			AddScaledVector(delPi,&tang,SslideAcDt);
+		// frictional terms
+		// revision 3941 and older, only added in momentum update (delFi!=NULL)
+		AddScaledVector(delPi,&tang,SslideAcDt);
 		
 		// get frictional heating term as friction work times reduced mass
 		// As heat source need Del Wf/sec or divided by timestep*reduced mass
@@ -261,71 +240,38 @@ bool CoulombFriction::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,doub
 		{	// delFi must be provided when getHeating is true (acceleration is delFi/mred, which is applied after return)
 			// Vs alone is first order heating (i.e., *mredDelWf = Vs is first order method)
 			double Vs = SslideAcDt*(dott-SslideAcDt);
-			AddScaledVector(delFi, delPi, -1./deltime);
-			double AsDt = SslideAcDt*DotVectors(delFi,&tang)*deltime;
-			if(AsDt>Vs)
-				*mredDelWf = 0.5*Vs*Vs/AsDt;
+			if(delFi!=NULL)
+			{	AddScaledVector(delFi, delPi, -1./deltime);
+				double AsDt = SslideAcDt*DotVectors(delFi,&tang)*deltime;
+				if(AsDt>Vs)
+					*mredDelWf = 0.5*Vs*Vs/AsDt;
+				else
+					*mredDelWf = Vs - 0.5*AsDt;
+			}
 			else
-				*mredDelWf = Vs - 0.5*AsDt;
+				*mredDelWf = Vs;
 			//*mredDelWf = Vs;							// revert to first order heating
 		}
 	}
 	else
-	{	// frictional stick - leave delPi as is
+	{	// frictional stick - leave delPi as is and no neating
 	}
 	
 	// still in contact
 	return true;
 }
 
-// Get delta(dt) and interfacial force, which is only changed in post-momentum update contact (when delFi!=NULL)
-// On input delEnd = delta(0) and fnaDt = Delta P_a.n = dn'
-void CoulombFriction::GetSeparationAndForce(double &delEnd,double &fnaDt,double fn,double deltime,double mred,double Ac) const
-{
-	// perfect interface conditions (adjust separation, leave fnaDt alone)
-	if(Dc<0.)
-	{	delEnd += deltime*(fnaDt - 0.5*fn*deltime)/mred;
-		return;
-	}
-	
-	double m = mred/deltime;
-	double d = Dc*Ac*deltime;
-	
-	// if frequency too high, use perfect interface limit
-	if(d > 2.467401100272340*m)
-	{	// treat as perfect  (adjust separation, leave fnaDt alone)
-		delEnd += deltime*(fnaDt - 0.5*fn*deltime)/mred;
-		return;
-	}
-	
-	// linear imperfect interface analysis
-	double sineTerm,sincosTerm;
-	double phi = GetTerms(d,m,sineTerm,sincosTerm);
-	
-	double delZero = delEnd;
-	double dnp = fnaDt;
-	double fnDt = fn*deltime;
-	
-	fnaDt = 2.*(m*delEnd*(1-cos(phi)) + dnp*sineTerm) + fnDt*(2.*sincosTerm - 1.);
-	delEnd = delZero*cos(phi) + (dnp*(1.-sineTerm) - fnDt*sincosTerm)/m;
-}
-
 // Return Sslide Ac dt = f(N) Ac dt
 // Input is N Ac dt (and is always positive when in contact)
-// If needed in the friction law, Ac is the contact area (not yet provided)
-// The relative sliding speed after correcting the momentum will be (SStickAcDt-SslideAcDt)/mred
 double CoulombFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred,
 									  double contactArea,bool &inContact,double deltime) const
 {
-	// if not in contact return or if tension return zero friction force
-	if(!inContact || NAcDt<0.) return 0.;
-	
 	// check static coefficient
 	if(frictionCoeffStatic>0.)
 	{	// If force to stick is less that static coefficient, then it will stick
 		double Sstatic = frictionCoeffStatic*NAcDt;
 		
-		// returns force higher than static so contact law will pick static force
+		// returns force >= stick so contact law will pick static force
 		if(SStickAcDt<=Sstatic) return Sstatic;
 		
 		// it did not stick, so fall through to sliding
@@ -335,59 +281,6 @@ double CoulombFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred
 	return frictionCoeff*NAcDt;
 }
 
-#ifdef THREE_MAT_CONTACT
-
-// Cannot handle velocity dependent coefficient until 3+ material code extended to non-linear laws
-// Technically cannot handle smooth static to dynamic, but does handle as if not smooth for 3+ pairs
-bool CoulombFriction::CanHandleTwoPairContact(void) const { return true; }
-
-// On call Smin=0 and Smax=Sstick, change if needed for this law
-void CoulombFriction::BracketSSlide(double &Smin,double &Smax,double contactArea,double deltime)
-{
-	if(frictionCoeff<=0.)
-	{	// frictionless (not often called here)
-		Smax = 0.;
-	}
-	else if(frictionCoeffStatic>frictionCoeff)
-	{	// adjust max is has static coefficient of friction
-		Smax *= frictionCoeffStatic/frictionCoeff;
-	}
-	
-}
-// Return d(Sslide Ac dt)/d(N Ac dt)
-// Assuming node is sliding and is in contact
-double CoulombFriction::GetDSslideAcDt(double NAcDt) const
-{
-	return frictionCoeff;
-}
-
-
-// Decide is this contact law might be in contact
-// Only used in three+ material contact code
-bool CoulombFriction::ProvisionalInContact(Vector *delPi,Vector *norm,double dotn,double deltaDotn,
-												 double contactArea,double deltime) const
-{
-	// stick is always in contact
-	if(frictionStyle==STICK) return true;
-	
-	// frictionlaw but no adhesion - Check contact at start only
-	if(deltaDotn<0.)
-	{	// contact if stress below cutoff
-		double fnaDtMax = 0.;
-		if(displacementOnly>0.1)
-			fnaDtMax = dotn+1.;
-		else if(displacementOnly<0.)
-			fnaDtMax = -displacementOnly*contactArea*deltime;
-		if(dotn<fnaDtMax)
-			return true;
-	}
-	
-	// separated so no contact
-	return false;
-}
-
-#endif // end THREE_MAT_CONTACT
-
 #pragma mark CoulombFriction::Accessors
 
 // return unique, short name for this material
@@ -396,17 +289,16 @@ const char *CoulombFriction::MaterialType(void) const { return "Coulomb Friction
 // Set coefficient of friction
 void CoulombFriction::SetFrictionCoeff(double newCoeff) { frictionCoeff = newCoeff; }
 
-// True to ignore contact and revert to single velocity field
+// This and subclasses handle contact
 bool CoulombFriction::IgnoreContact(void) const { return false; }
-
-// All interfaces need the law, if friction law needs it, must override and return true
-bool CoulombFriction::ContactLawNeedsContactArea(void) const
-{ 	return Dc>=0. || displacementOnly<0.;
-}
 
 // Return true is frictionless contact and no adhesion
 bool CoulombFriction::IsFrictionless(void) const { return frictionStyle==FRICTIONLESS; }
 
 // Return true is stick contact
 bool CoulombFriction::IsStick(void) const { return frictionStyle==STICK; }
+
+// If no momentum change whenever separated, then return true
+// When true, GetSlideAcDt() always has inContact=true
+bool CoulombFriction::HasFreeSeparation(void) const { return true; }
 

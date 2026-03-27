@@ -9,9 +9,7 @@
 #include "stdafx.h"
 #include "PolyTriangle.hpp"
 
-/********************************************************************************
-	PolyTriangle: constructors and destructors
-********************************************************************************/
+#pragma mark PolyTriangle: constructors and destructors
 
 // these are a triangle face ccw when looking from outside the polyhedron
 PolyTriangle::PolyTriangle(Vector vp0,Vector vp1,Vector vp2)
@@ -56,9 +54,7 @@ PolyTriangle::PolyTriangle(Vector vp0,Vector vp1,Vector vp2)
 	fmax.z = fmax(fmax(v0.z,v1.z),v2.z);
 }
 
-/********************************************************************************
-	PolyTriangle: methods
-********************************************************************************/
+#pragma mark PolyTriangle: methods
 
 // return -1 if does not cross, 0 if point on the face, 1 if does cross
 // Increment edges if point on edge of face (for nx!=0), but for nx==0

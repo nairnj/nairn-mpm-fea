@@ -22,6 +22,9 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Materials/MaterialBase.hpp"
+#include "Boundary_Conditions/NodalVelBC.hpp"
+#include "Cracks/CrackNode.hpp"
+#include "Nodes/MaterialContactNode.hpp"
 
 // class globals
 XPICExtrapolationTask *XPICMechanicsTask=NULL;
@@ -30,12 +33,18 @@ XPICExtrapolationTask *XPICMechanicsTask=NULL;
 
 XPICExtrapolationTask::XPICExtrapolationTask(const char *name) : MPMTask(name)
 {
+	// It always does FMPM(2) at least
+	dynamicKmax = 2;
 }
 
 #pragma mark REQUIRED METHODS
 
 // XPIC and FMPM extrapolation to get modifed grid velocities or transport values
-// xpicOption is always zero (it is used in multimaterial mode, but done later and not when called)
+// xpicOption is XPIC_STRAIN_UPDATE or XPIC_PARTICLE_UPDATE for two ways this method
+//		is called. First only occurs in USF, USAVG+, USAVG-, and USF. It is 0
+//		when called for transpoirt calculations
+// WARNING: this entry point is called by both mechanics and transport. Any features
+//		added here about mechanics should be overridden in TO version
 // throws CommonException()
 bool XPICExtrapolationTask::Execute(int xpicOption)
 {
@@ -53,10 +62,10 @@ bool XPICExtrapolationTask::Execute(int xpicOption)
 #endif
 	
 	// For Mechanics:
+	//   Set v* = v^{L+} for FMPM or v^{L} for XPIC (in end v(k)=v*)
+	//       (for XPIC add a*dt to v* so result will be v(k)+a*dt)
+	//   Set v*(prev) = v* on real nodes
 	//   Set v*(next) = 0 on real and ghost nodes
-	//   Set v*(prev) = v_1* = kv^{L+} for FMPM or kv^{L} for XPIC
-	//   Start v*=v*(prev)
-	//   Note that velocity gradient terms add to v*(next) as well
 	// For Transport set corresponding terms for transport value
 	//   Always FMPM for transport
 #pragma omp parallel for
@@ -72,7 +81,6 @@ bool XPICExtrapolationTask::Execute(int xpicOption)
 	
 	// iterate for k from 2 to find v_k*
 	//   (note that loop is skipped for order 1)
-	double vsign = -1.;					// (-1)^k starting at -1 for k=2 to subtract v_2*
 	for(int k=2;k<=m;k++)
 	{
 #pragma omp parallel private(fn,ndsArray)
@@ -93,18 +101,10 @@ bool XPICExtrapolationTask::Execute(int xpicOption)
 					int *nds = ndsArray;
 					elref->GetShapeFunctions(fn,&nds,mpmptr);
 					
-					// Add to each node for this particle
-					double scale = (double)(m-k+1)/(double)k;
-#if MM_XPIC == 1
-					double scaleContact = (double)(m-k)/(double)k;
-#else
-					double scaleContact = 1.;
-#endif
-					
 					// double loop over nodes
-					// Adds scale*(S^+S)v*(prev) to v*(next)
-					// With spin, adds scale*(S^+S + S^{L+}S^L)v*(prev) to v*(next)
-					XPICDoubleLoop(mpmptr,matfld,nds,fn,pn,scale,scaleContact);
+					// Subtract (S^+S)v*(prev) from v*(next)
+					// With velocity gradient, subtract (S^+S + S^{L+}S^L)v*(prev) from v*(next)
+					XPICDoubleLoop(mpmptr,matfld,nds,fn,pn);
 					
 					// next material point
 					mpmptr = (MPMBase *)mpmptr->GetNextObject();
@@ -138,21 +138,23 @@ bool XPICExtrapolationTask::Execute(int xpicOption)
 		// throw now - only possible error if too many CPDI nodes in 3D
 		if(xpicErr!=NULL) throw *xpicErr;
 		
-		// reduction of ghost node velocities to real nodes (and zero vStarNext on ghost nodes)
+		// reduction of ghost node velocities to real nodes
+		// add ghost to real nodes and set vnext on ghost to zero for next time step.
 		if(totalPatches>1)
 		{	for(int pn=0;pn<totalPatches;pn++)
-				ReduceXPICData(patches[pn],k);
+				ReduceXPICData(patches[pn]);
 		}
 		
-		// Increment v* += v_k* (in v*(next))
-		// Set v*(prev) =  v*(next) - it stored v_k* for the next loop
-		// Zero v*(next) for next pass through the loop
+		// Set Delta v(k) as vprev = vprev - vnext
+		// Set BC nodes to zero and do incremental material contact
+		GetDeltaV(timestep,xpicOption);
+
+		// Increment v(k) += Delta v(k) (in code v* += vprev)
+		// Zero vnext on real nodes for next pass through the loop
 #pragma omp parallel for
 		for(int i=1;i<=*nda;i++)
-			UpdateXStar(nd[nda[i]],timestep,m,k,vsign);
-		
-		// change the sign
-		vsign = -vsign;
+			UpdateXStar(nd[nda[i]],timestep);
+
 	}
 
     return true;
@@ -169,17 +171,16 @@ int XPICExtrapolationTask::GetXPICOrder(void)
 
 // Initialize real node vStar, vStarNext, and vStarPrev
 void XPICExtrapolationTask::InitializeXPICData(NodalPoint *ndptr,double timestep,int xpicOption)
-{	ndptr->XPICSupport(INITIALIZE_XPIC,xpicOption,NULL,timestep,0,0,0.);
+{	ndptr->XPICSupport(INITIALIZE_XPIC,xpicOption,NULL,timestep,0);
 }
 
 // vStar and vStarNext need to be zero on ghost nodes too
 void XPICExtrapolationTask::InitializeXPICData(GridPatch *patchPtr,int xpicOption)
-{	patchPtr->XPICSupport(INITIALIZE_XPIC,xpicOption,NULL,-1.,0,0,0.);
+{	patchPtr->XPICSupport(INITIALIZE_XPIC,xpicOption,NULL,-1.,0);
 }
 
 // Double XPIC loop to find vStar
-void XPICExtrapolationTask::XPICDoubleLoop(MPMBase *mpmptr,int matfld,int *nds,double *fn,
-										   int pn,double scale,double scaleContact)
+void XPICExtrapolationTask::XPICDoubleLoop(MPMBase *mpmptr,int matfld,int *nds,double *fn,int pn)
 {
 	// number of nodes
 	int numnds = nds[0];
@@ -205,20 +206,61 @@ void XPICExtrapolationTask::XPICDoubleLoop(MPMBase *mpmptr,int matfld,int *nds,d
 			Vector *vStarPrevj = ndptrj->GetVStarPrev(vfldj,matfld);
 
             // add to node i
-            // Spi+ Spj = Mp Spi Spj/mi
-			double weight = mpmptr->mp*fn[i]*fn[j]/mass;
-			ndptri->AddVStarNext(vfldi,matfld,vStarPrevj,scale*weight,scaleContact*weight);
+            // Spi+ Spj = Mp Spi Spj/mi (Mp/mi applied at the end)
+			double weight = fn[i]*fn[j];
+			ndptri->AddVStarNext(vfldi,matfld,vStarPrevj,mpmptr->mp*weight/mass);;
 		}
 	}
 }
 
 // Transfer vStarNext to real node and zero it
-void XPICExtrapolationTask::ReduceXPICData(GridPatch *patchPtr,int k)
-{	patchPtr->XPICSupport(COPY_VSTARNEXT,0,NULL,0.,0,k,0.);
+void XPICExtrapolationTask::ReduceXPICData(GridPatch *patchPtr)
+{	patchPtr->XPICSupport(COPY_VSTARNEXT,0,NULL,0.,0);
 }
 
-// Update vStar, transfer vStarNext to vStarPrev and zero vStarNext
-void XPICExtrapolationTask::UpdateXStar(NodalPoint *ndptr,double timestep,int m,int k,double vsign)
-{	ndptr->XPICSupport(UPDATE_VSTAR,0,NULL,timestep,m,k,vsign);
+// Get Delta v on all nodes (vprev-nvext), set BC node velocities to zero,
+//  and impose incrementl contact
+void XPICExtrapolationTask::GetDeltaV(double timestep,int xpicOption)
+{
+	// Get Delta V =  (I-{S+}S)vprev = vprev-vnext (i.e., vnext = {S+}S vprev)
+#pragma omp parallel for
+	for(int i=1;i<=*nda;i++)
+		nd[nda[i]]->XPICSupport(GET_DELTAV,0,NULL,timestep,0);
+	
+	// Set BC nodes to zero in latest Delta v
+	NodalVelBC::GridVelocityConditions(xpicOption);
+	
+	// If contact (multimaterial or cracks) adjust contact calculations (mechanics only)
+	ImposeIncrementalContact(timestep,xpicOption);
 }
 
+// Add Delta v (now in vprev to v(k) and zero vnext for next pass in the loop
+// If contact nodes, add mass*Delta v to pk
+void XPICExtrapolationTask::UpdateXStar(NodalPoint *ndptr,double timestep)
+{	ndptr->XPICSupport(UPDATE_VSTAR,0,NULL,timestep,0);
+}
+
+// Change lastest increment in vk[VPREV] to be same in all contacting field
+void XPICExtrapolationTask::ImposeIncrementalContact(double dtime,int callType)
+{
+	// recalculate interface energy each increment
+	NodalPoint::interfaceEnergy=0.;
+	
+	// set incremental material contact nodes
+	long numContactNodes = MaterialContactNode::materialContactNodes.size();
+	if(numContactNodes>0)
+	{	int numNodesPerProc = (int)((double)numContactNodes/(double)(fmobj->GetNumberOfProcessors()));
+#pragma omp parallel for if(numNodesPerProc>1)
+		for(long i=0;i<numContactNodes;i++)
+			MaterialContactNode::materialContactNodes[i]->NodalXPICIncrement(dtime,callType);
+	}
+	
+	// set incremental crack contact nodes
+	long numCrackNodes = CrackNode::crackContactNodes.size();
+	if(numCrackNodes>0)
+	{	int numNodesPerProc = (int)((double)numCrackNodes/(double)(fmobj->GetNumberOfProcessors()));
+#pragma omp parallel for if(numNodesPerProc>1)
+		for(long i=0;i<numCrackNodes;i++)
+			CrackNode::crackContactNodes[i]->NodalXPICIncrement(dtime,callType);
+	}
+}

@@ -20,6 +20,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Global_Quantities/BodyForce.hpp"
 
 // global point to contact conditions
 vector< CrackNode * > CrackNode::crackContactNodes;
@@ -32,23 +33,63 @@ CrackNode::CrackNode(NodalPoint *nd,int flags,CrackNode *prev)
 	theNode = nd;
 	prevNode = prev;
 	hasFlags = flags;
+	
+	// create array of FMPMContact items for each crack velocity field
+	// NULL if not using FMPM or XPIC with k>1
+	if(bodyFrc.GetXPICOrder()>1)
+	{	ccContact = new FMPMContact[MAX_FIELDS_FOR_CRACKS];
+		for(int vfld=0;vfld<MAX_FIELDS_FOR_CRACKS;vfld++)
+			ccContact[vfld].paired = 0;
+	}
+	else
+		ccContact = NULL;
 }
 
+// Destructor
+CrackNode::~CrackNode()
+{
+	if(ccContact!=NULL) delete ccContact;
+}
 #pragma mark CrackNode: Methods
 
 // check contact on this node during update strains last
 void CrackNode::NodalCrackContact(double deltime,int passType)
 {
-	theNode->CrackContact(passType,deltime,hasFlags);
+	theNode->CrackContact(passType,deltime,hasFlags,this);
 }
 
 // next BC accessors
 void CrackNode::SetPrevNode(CrackNode *next) { prevNode=next; }
 CrackNode *CrackNode::GetPrevNode(void) { return prevNode; }
 
+// Get the node
+NodalPoint *CrackNode::GetTheNode(void) { return theNode; }
+
+#pragma mark CrackNode: FMPM Contact
+
+// In FMPM increment, force contacting nodes to use zero displacement difference
+// in increment FMPM velocities (so lumped calculations stay correct)
+void CrackNode::NodalXPICIncrement(double dtime,int callType)
+{
+	theNode->CrackXPICIncrementOnNode(ccContact,dtime,callType);
+}
+
+// return index in ccContact array for contact between fields [a] and [b]
+int CrackNode::CCIndex(int a, int b)
+{	//[0]+[1]=1 to 0, [0]+[2]=2 to 1, [1]+[3]=4 to 2, [2]+[3]=5 to 3
+	int sumSides = a+b;
+	return sumSides<3 ? sumSides-1 : sumSides-2 ;
+}
+
+// point to FMPMContact for contact between [a] and [b]
+FMPMContact *CrackNode::GetContactInfo(int a,int b)
+{	if(ccContact==NULL) return NULL;
+	return &(ccContact[CCIndex(a,b)]);
+}
+
 #pragma mark CrackNode: Class methods
 
-// On last pass (for USAVG or SZS), will already know which
+// On last pass (for USAVG+ or USL+), will already know which
 // nodes are crack nodes and now need to adjust forces
 bool CrackNode::ContactOnKnownNodes(double deltime,int passType)
 {

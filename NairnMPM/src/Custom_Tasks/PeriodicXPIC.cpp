@@ -30,7 +30,6 @@ PeriodicXPIC::PeriodicXPIC() : CustomTask()
 	periodicSteps = -1;
 
 	periodicFMPMorder = 0;
-	gridBCOption = -1;
 	
 	periodicTimeConduction = -1.;
 	periodicCFLConduction = -1.;
@@ -50,6 +49,9 @@ PeriodicXPIC::PeriodicXPIC() : CustomTask()
 		diffusionFractionFMPM[i] = -1.;
         periodicStepsDiffusion[i] = -1;
 	}
+	
+	// for dynamic FMPM
+	dynamicConverge = -1.;
 }
 
 // Return name of this task
@@ -145,31 +147,13 @@ char *PeriodicXPIC::InputParam(char *pName,int &input,double &gScaling)
 		return (char *)&periodicFMPMorder;
 	}
 	
-	else if(strcmp(pName,"GridBCOption")==0)
-	{	input=TEXT_PARAMETER;
-		return (char *)&gridBCOption;
+	else if(strcmp(pName,"DynamicConverge")==0)
+	{	input=DOUBLE_NUM;
+		return (char *)&dynamicConverge;
 	}
 	
 	// check remaining commands
 	return CustomTask::InputParam(pName,input,gScaling);
-}
-
-// Set text-based parameters
-void PeriodicXPIC::SetTextParameter(char *fxn,char *ptr)
-{
-	if(ptr == (char *)&gridBCOption)
-	{	// bmp file name
-		if(CIstrcmp(fxn,"combined")==0)
-			gridBCOption = GRIDBC_COMBINED;
-		else if(CIstrcmp(fxn,"velocity")==0)
-			gridBCOption = GRIDBC_VELOCITY_ONLY;
-		else if(CIstrcmp(fxn,"lumped")==0)
-			gridBCOption = GRIDBC_LUMPED_ONLY;
-		else
-			ThrowSAXException("GridBCOption must be 'combined', 'velocity', or 'lumped'");
-	}
-	else
-		CustomTask::SetTextParameter(fxn,ptr);
 }
 
 // Called while reading when done setting all parameters
@@ -252,9 +236,7 @@ void PeriodicXPIC::Finalize(void)
 		bodyFrc.SetXPICVectors(1);
 
 	bodyFrc.SetUsingFMPM(usingFMPM);
-	if(gridBCOption<0)
-		gridBCOption = usingFMPM ? GRIDBC_COMBINED : GRIDBC_LUMPED_ONLY;
-	bodyFrc.SetGridBCOption(gridBCOption);
+	bodyFrc.dynamicConverge = dynamicConverge;
 }
 
 // called once at start of MPM analysis - initialize and print info
@@ -270,6 +252,7 @@ CustomTask *PeriodicXPIC::Initialize(void)
 		cout << periodicTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
         // if this time < timestep, then done every time step
 		nextPeriodicTime = periodicTime;
+		if(dynamicConverge>0.) cout << "      Dynamic convergence limit: " << dynamicConverge << endl;
 	}
 	else if(periodicSteps>0)
 	{	if(periodicSteps>1)
@@ -277,29 +260,10 @@ CustomTask *PeriodicXPIC::Initialize(void)
 		else
 			cout << "every time step" << endl;
 		nextPeriodicStep = periodicSteps;
+		if(dynamicConverge>0.) cout << "      Dynamic convergence limit: " << dynamicConverge << endl;
 	}
 	else
 		cout << "not used" << endl;
-	
-	// when used
-	if(periodicTime>0. || periodicSteps>0)
-	{	// velocity only not allowed in XPIC
-		if(!usingFMPM && gridBCOption==GRIDBC_VELOCITY_ONLY)
-			gridBCOption = GRIDBC_LUMPED_ONLY;
-		if(periodicXPICorder>0)
-		{	cout << "      Grid Velocity BC Option: ";
-			if(gridBCOption==GRIDBC_COMBINED)
-				cout << "combined" << endl;
-			else if(gridBCOption==GRIDBC_VELOCITY_ONLY)
-				cout << "velocity only" << endl;
-			else
-				cout << "lumped only" << endl;
-		}
-#if MM_XPIC == 1
-		if(bodyFrc.XPICVectors()>3)
-			cout << "      " << GetType() << " accounts for contact" << endl;
-#endif
-	}
 
 	// Conduction XPIC
 	if(ConductionTask::active)
@@ -464,7 +428,6 @@ CustomTask *PeriodicXPIC::StepCalculation(void)
 {
 	// reset to FLIP
 	bodyFrc.SetXPICOrder(0);
-	bodyFrc.SetUsingVstar(VSTAR_NOT_USED);
 
 	TransportTask::XPICOrder = 0;
 	if(ConductionTask::active) conduction->SetUsingTransportXPIC(false,1.);
@@ -474,17 +437,6 @@ CustomTask *PeriodicXPIC::StepCalculation(void)
 	if(doXPIC)
 	{	// switch to XPIC for next time step
 		bodyFrc.SetXPICOrder(periodicXPICorder);
-		if(periodicXPICorder>1)
-		{	bodyFrc.SetUsingVstar(VSTAR_NO_CONTACT);
-#if MM_XPIC == 1
-			if(firstCrack!=NULL || fmobj->multiMaterialMode)
-				bodyFrc.SetUsingVstar(VSTAR_WITH_CONTACT);
-#endif
-		}
-		else
-		{	// for order 1
-			bodyFrc.SetUsingVstar(VSTAR_NOT_USED);
-		}
 	
 		if(verbose)
 		{	cout <<"# Use " << GetType() << "(" << periodicXPICorder << ") in step " << (fmobj->mstep+1) << endl;

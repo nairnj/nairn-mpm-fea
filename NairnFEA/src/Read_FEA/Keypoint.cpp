@@ -10,9 +10,7 @@
 #include "Read_FEA/Keypoint.hpp"
 #include "Read_XML/NodesController.hpp"
 
-/********************************************************************************
-	Keypoins: Constructors and Destructor
-********************************************************************************/
+#pragma mark Keypoins: Constructors and Destructor
 
 // Initialize, but assumes name already 32 characters or less and unique
 // ... which is done by prior call to keyPts->ValidName()
@@ -26,9 +24,7 @@ Keypoint::Keypoint(const char *keyName,double xpt,double ypt)
 	temperature=0.0;
 }
 
-/********************************************************************************
-	Keypoint: methods
-********************************************************************************/
+#pragma mark Keypoint: methods
 
 // Create node for this keypoint
 void Keypoint::AssignToNode(void)
@@ -48,9 +44,7 @@ int Keypoint::SamePtAs(Keypoint *otherKey)
 	return TRUE;
 }
 
-/********************************************************************************
-	Keypoint: accessors
-********************************************************************************/
+#pragma mark Keypoint: accessors
 
 void Keypoint::GetKeypointXY(Vector *keyCoords)
 {	keyCoords->x=x;

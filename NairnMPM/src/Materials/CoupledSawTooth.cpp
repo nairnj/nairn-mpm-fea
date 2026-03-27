@@ -8,33 +8,33 @@
     This material is based on mixed-mode damage law developed by Hogberg such
  	that tractions are
  
-       Tn = (sigma_c*S(lamdaw)/(lambdaw*un^c) * un
-       Tt = (tau_c*S(lamdaw)/(lambdaw*un^t) * ut
+       Tn = (sigma(c) X S(lamdaw)/(lambdaw X un^c) X un
+       Tt = (tau(c) X S(lamdaw)/(lambdaw X un^t) X ut
  
     where lambdaw is maximum lambda after failure. The lambda term is
  
        lambda = sqrt((un/un^c)^2 + (ut/ut^c)^2)
  
     is a damage variable. The damage initiates with lambda first reaches
-    lambda_p(theta) where
+    lambda(p,theta) where
  
-	    tan(theta) = un*ut^c/(un^c*ut)
+	    tan(theta) = un X ut^c/(un^c X ut)
  
     Failure occurs when lambdaw reaches 1. Hogberg used a saw tooth law
  
-        S(lambdaw) = (1-lambdaw)/(1-lambda_p(theta))
+        S(lambdaw) = (1-lambdaw)/(1-lambda(p,theta))
  
  	The model also allows exponential law with
  
-        S(lambdaw) = exp(-alpha*(lambdaw-lambda_p(theta))/(1.-lambda_p(theta)))-exp(-alpha)
+        S(lambdaw) = exp(-alpha X (lambdaw-lambda(p,theta))/(1.-lambda(p,theta)))-exp(-alpha)
                      -----------------------------------------------------------------------
                                         1 - exp(-alpha)
  
-    Comanho (and others) are a special case of Hogberg that assume un^c=ut_c = uc. Then
+    Comanho (and others) are a special case of Hogberg that assume un^c=ut(c) = uc. Then
  
         lambda = sqrt(un^2 + ut^2)/uc
  
-    This model is technically only valid lambda_p(theta) is independent of theta. The
+    This model is technically only valid if lambda(p,theta) is independent of theta. The
  	later applies if input properties have
  
         un^e/un^c = ut^e/ut^c

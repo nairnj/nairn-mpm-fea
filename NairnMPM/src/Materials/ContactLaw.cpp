@@ -97,19 +97,21 @@ void ContactLaw::PrintContactLaw(void) const
 //		delPi change to reflect contact law
 //		true is returned or false if decide now not in contact
 //		*mredDelWf set to heat energy (actually mred*heat energy) (only if getHeating is true)
-bool ContactLaw::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double deltaDotn,double *mredDelWf,double mred,
-											bool getHeating,double contactArea,double deltime,Vector *delFi,NodalPoint *ndptr) const
+bool ContactLaw::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double deltaDotn,
+					double *mredDelWf,double mred,bool getHeating,double contactArea,double deltime,
+					Vector *delFi,NodalPoint *ndptr,bool forCracks) const
 {
 	return false;
 }
 
 // Contact handled here only for perfect interface parts (Dt or Dn < 0) by changing delPi
-//		if done return false (but no used now?)
+//		if done return false (but not used now?)
 // Imperfect interfaces are calculated and always check if force is too high as determined by whether or not
 //      the material's position is forced to pass the center of mass position by the calculated force
 // Outputs are fImp, rawEnergy, and possible changed depPi. Rest are inputs, tandDel, deln, delt refer to cod vector
 void ContactLaw::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEnergy,double surfaceArea,Vector *delPi,
-										   double dotn,double mred,Vector *tangDel,double deln,double delt,double hperp) const
+									double dotn,double mred,Vector *tangDel,double deln,
+									double delt,bool postUpdate) const
 {}
 
 // Return Sslide Ac dt = f(N) Ac dt
@@ -119,59 +121,8 @@ void ContactLaw::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEnergy,
 double ContactLaw::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred,
 								 double contactArea,bool &inContact,double deltime) const
 {
-	// law can change whether or not in contact, but most laws exit here if not in contact
-	if(!inContact) return 0;
-	
 	// in contact, but no frictional force in contact law
 	return 0.;
-}
-
-#ifdef THREE_MAT_CONTACT
-
-// Contact laws cannot handle two-pair contact unless then override this method and validate
-bool ContactLaw::CanHandleTwoPairContact(void) const { return false; };
-
-// On call Smin=0 and Smax=Sstick, contact law must override if need to change either one
-void ContactLaw::BracketSSlide(double &Smin,double &Smax,double contactArea,double deltime)
-{
-}
-
-// Return d(Sslide Ac dt)/d(N Ac dt)
-// Assuming node is sliding and is in contact
-// Not sure what for stick and LiquidContact not supported
-double ContactLaw::GetDSslideAcDt(double NAcDt) const
-{
-	return 0.;
-}
-
-// Decide is this contact law might be in contact
-// Only used in three+ material contact code
-// Liquid contact not handled
-bool ContactLaw::ProvisionalInContact(Vector *delPi,Vector *norm,double dotn,double deltaDotn,
-												 double contactArea,double deltime) const
-{	// stick is always in contact
-	return true;
-}
-
-#endif // end THREE_MAT_CONTACT
-
-// Used by imperfect interfaces and maybe contact laws
-// Get sineTerm = 1-sin phi/phi and sincosTerm = sin phi/phi -  (1-cos phi)/phi^2 stable even for phi near zero
-// return phi
-double ContactLaw::GetTerms(double d,double m,double &sineTerm,double &sincosTerm) const
-{
-	double phi = sqrt(d/m);
-	if(phi<0.02)
-	{	double phi2 = phi*phi;
-		sineTerm = phi2/6.;				// = 1-sin phi/phi within 1e-10
-		sincosTerm = 0.5 - 0.125*phi2;	// = sin phi/phi - (1-cos phi)/phi^2) within 1e-10
-	}
-	else
-	{	double sineRatio = sin(phi)/phi;
-		sineTerm = 1. - sineRatio;
-		sincosTerm = sineRatio - (1.-cos(phi))/(phi*phi);
-	}
-	return phi;
 }
 
 #pragma mark ContactLaw::Accessors
@@ -195,6 +146,8 @@ bool ContactLaw::IsFrictionalContact(void) const
 bool ContactLaw::ContactLawNeedsContactArea(void) const { return IsImperfectInterface(); }
 
 // only this base law, rest should override and return false
+// Note: multimaterial modes reverts to single material, but crack skip contact
+//       and therefore bad for crack that actually have contact
 bool ContactLaw::IgnoreContact(void) const { return true; }
 
 // Describe type of imperfect interface
@@ -203,7 +156,7 @@ bool ContactLaw::IsImperfectInterface(void) const { return false; }
 // Return true is frictionless contact and no adhesion
 bool ContactLaw::IsFrictionless(void) const { return false; }
 
-// Return true is stick contact
+// Return true if stick contact
 bool ContactLaw::IsStick(void) const { return false; }
 
 #pragma mark ContactLaw::Class Methods

@@ -230,6 +230,26 @@ void PrintVector(const char *label,const Vector *v)
 	cout << "(" << v->x << ", " << v->y << ", " << v->z << ") ";
 }
 
+// Return true is all vector components are zero
+bool IsZeroVector(const Vector *v,const bool is3D)
+{	if(!DbleEqual(v->x,0.)) return false;
+	if(!DbleEqual(v->y,0.)) return false;
+	if(is3D)
+	{	if(!DbleEqual(v->z,0.)) return false;
+	}
+	return true;
+}
+
+// Return true is and vector components is nan
+bool IsNanVector(const Vector *v,const bool is3D)
+{	if(v->x!=v->x) return true;
+	if(v->y!=v->y) return true;
+	if(is3D)
+	{	if(v->z!=v->z) return true;
+	}
+	return false;
+}
+
 // Given piecewise pairs in xpts and ypts, find y(x)
 // Assumes xpts and ypts are the same length and xpts is monotonically increasing
 // Returns 1 if arrays are empty or single value if arrays have only 1 value

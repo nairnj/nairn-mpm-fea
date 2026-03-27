@@ -51,9 +51,6 @@ NodalValueBC *NodalValueBC::PasteNodalValue(NodalPoint *nd,TransportField *gTran
 // initialize reaction flow at constant temperature boundary conditions
 void NodalValueBC::InitQReaction(void) { qreaction = 0.; }
 
-// scale current value instead of setting to zero (for blended FLIP/FMPM blending)
-void NodalValueBC::InitQReaction(double scale) { qreaction *= scale; }
-
 // add flow required to bring global nodal temperature to the BC temperature
 void NodalValueBC::SuperposeQReaction(double qflow) { qreaction += qflow; }
 

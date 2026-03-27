@@ -39,14 +39,13 @@ MeshInfo::MeshInfo(void)
 	
 	// for contact
 	materialNormalMethod=LOGISTIC_REGRESSION;		// method to find normals in multimaterial contact
-	hasImperfectInterface = false;							// flag for any imperfect interfaces
+	hasImperfectInterface = false;					// flag for any imperfect interfaces
 	materialContactLawID = -1;
-	rigidGradientBias=1.;						// Use rigid gradient unless material volume gradient is this much higher (only normal method 2)
-	lumpingMethod = LUMP_OTHER_MATERIALS;
+	rigidGradientBias=1.;			// Use rigid gradient unless material volume gradient is this much higher (only normal method 2)
 	volumeGradientIndex = -1;		// turned on in multimaterial mode only
 	positionIndex = -1;				// index to position extrapolation for contact
 	displacementIndex = -1;			// index to displacement extrapolation for contact
-	contactByDisplacements=true;				// contact by displacements for materials
+	contactByDisplacements=true;	// contact by displacements for materials
 }
 
 #pragma mark MeshInfo:Methods
@@ -145,12 +144,14 @@ void MeshInfo::OutputContactByDisplacements(bool regressionMethod,bool byDisplac
 	if(regressionMethod)
 	{	cout << "   (normal cod found in regression methods)" << endl;
 		contactByDisplacements = true;		// no needed for normal, set to true for interface displacements
+		cout << "   (tangential cod for interfaces from displacements)" << endl;
 		return;
 	}
 	
 	// other material contact and crack contact methods
     if(byDisplacements)
-		cout << "   (normal cod from displacements)" << endl;
+	{	cout << "   (normal cod from displacements)" << endl;
+	}
 	else if(cutoff>0.)
 	{	cout << "   (normal cod from position with contact when separated less than " << cutoff
                 << " of cell)" << endl;
@@ -160,6 +161,9 @@ void MeshInfo::OutputContactByDisplacements(bool regressionMethod,bool byDisplac
 						<< " power-law correction)" << endl;
 	}
 	
+	// code now fixed
+	cout << "   (tangential cod for interfaces from displacements)" << endl;
+
 }
 
 // check if element is on edge of 2D structured mesh - only needed for GIMP calculations
@@ -1189,19 +1193,7 @@ void MeshInfo::MaterialOutput(void)
 	
 	// lumping method
 	cout << "3+ Material Contact Nodes: ";
-	switch(lumpingMethod)
-	{
-#ifdef THREE_MAT_CONTACT
-		case EXPLICIT_PAIRS:
-			cout << "Explicitly handle one or two pairs in contact";
-			break;
-#endif // end THREE_MAT_CONTACT
-		case LUMP_OTHER_MATERIALS:
-		default:
-			lumpingMethod = LUMP_OTHER_MATERIALS;
-			cout << "Lump other materials into a virtual material";
-			break;
-	}
+	cout << "Lump other materials into a virtual material";
 	cout << endl;
 }
 
@@ -1745,7 +1737,7 @@ double MeshInfo::GetDefaultThickness()
 	return gthick>0. ? gthick : 1.0 ;
 }
 
-// find hperp distance used in contact calculations in interface force calculations
+// find hperp distance used in contact calculations and in interface force calculations
 Vector MeshInfo::GetPerpendicularDistance(Vector *norm,NodalPoint *ndptr)
 {
 	// magnitude of hperp and hperp before and after the node

@@ -29,16 +29,11 @@ class AdhesionFriction : public CoulombFriction
 		
 		// methods
 		virtual double GetSslideAcDt(double,double,double,double,bool &,double) const;
-#ifdef THREE_MAT_CONTACT
-		virtual bool CanHandleTwoPairContact(void) const;
-		virtual void BracketSSlide(double &,double &,double,double);
-		virtual double GetDSslideAcDt(double) const;
-		virtual bool ProvisionalInContact(Vector *,Vector *,double,double,double,double) const;
-#endif // end THREE_MAT_CONTACT
 	
 		// accessors
 		virtual const char *MaterialType(void) const;
 		virtual bool ContactLawNeedsContactArea(void) const;
+		virtual bool HasFreeSeparation(void) const;
 		
 	protected:
 		double Sa;

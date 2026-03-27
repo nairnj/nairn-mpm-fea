@@ -51,10 +51,8 @@ BodyForce::BodyForce()
 								// provide option to change to allow particle kintic energy instead
 	
 	XPICOrder = 0;				// default to FLIP
-	isUsingVstar = 0;			// XPIC being used (always 0 in NairnMPM)
 	xpicVectors = 1;			// to store vk and one is added to store pk
 	usingFMPM = false;
-	gridBCOption = GRIDBC_COMBINED;
 	
 	gridBodyForceFunction[0]=NULL;
 	gridBodyForceFunction[1]=NULL;
@@ -100,13 +98,14 @@ void BodyForce::GetGridBodyForce(Vector *theFrc,Vector *fpos,double utime)
 	if(!hasGridBodyForce) return;
 
     // set variables (see Expression vmap)
-	double vars[5];
-	vars[0] = 4.5;
+	double vars[6];
+	vars[0] = 5.5;
 	vars[1] = utime*UnitsController::Scaling(1.e3);		//t
 	vars[2] = fpos->x;		//x
 	vars[3] = fpos->y;		//y
 	vars[4] = fpos->z;		//z
-	
+	vars[5] = timestep;		//dt
+
 	// body force functions
 	if(gridBodyForceFunction[0]!=NULL)
 		theFrc->x += gridBodyForceFunction[0]->EvaluateFunction(vars);
@@ -437,19 +436,10 @@ void BodyForce::SetXPICOrder(int newOrder) { XPICOrder = newOrder>=0 ? newOrder 
 // return XPIC order (1 is normal PIC, 2 or higher is XPIC/FMPM )
 int BodyForce::GetXPICOrder(void) { return XPICOrder; }
 
-// return if simulations is using high-order XPIC/FMPM (2 or higher)
-// called during set up and to allocate XPIC tasks
-int BodyForce::UsingVstar(void) { return isUsingVstar; }
-void BodyForce::SetUsingVstar(int setting) { isUsingVstar = setting; }
-
 // change the number needed if add PeriodicXPIC custom task
 int BodyForce::XPICVectors(void) { return xpicVectors; }
 void BodyForce::SetXPICVectors(int vnum) { xpicVectors = vnum; }
 
-// Is this XPIC or FMPM (note that not changed for intersperse FLIP steps)
+// Is this XPIC or FMPM (note that not changed for interspersed FLIP steps)
 bool BodyForce::UsingFMPM(void) { return usingFMPM; }
 void BodyForce::SetUsingFMPM(bool useit) { usingFMPM = useit; }
-
-// FMPM(k>1) and XPIC(k>1) grid BC option
-int BodyForce::GridBCOption(void) { return gridBCOption; }
-void BodyForce::SetGridBCOption(int newOption) { gridBCOption = newOption; }

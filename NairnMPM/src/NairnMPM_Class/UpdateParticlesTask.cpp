@@ -63,18 +63,15 @@ bool UpdateParticlesTask::Execute(int taskOption)
 	double gridAlpha = bodyFrc.GetGridDamping(mtime);
 	
 	// Calculate velocities on the grid
-	// For FLIP, FMPM(1), and XPIC(1) v_i will be v_i^{L+}
-	// For FMPM(k>1) and XPIC(k>1) v(i) will be v(k) = m_k^{-1}p^+
 	int m = bodyFrc.GetXPICOrder();
 	if(m>1)
-	{	// FLIP(k>1) or XPIC(k>1) always has XPICMechanicsTask
-		XPICMechanicsTask->Execute(0);
-		// velocity BCs (in case used)
-		if(bodyFrc.GridBCOption()!=GRIDBC_LUMPED_ONLY)
-			NodalVelBC::GridVelocityConditions(UPDATE_GRID_STRAINS_CALL);
+	{	// FMPM(k>1) or XPIC(k>1) always has XPICMechanicsTask
+		// will find v(k) = m_k^{-1}p^+ in vk[VSTAR_VEC]_i (and VSTAR_VEC=0 so in vk[0]_i too)
+		XPICMechanicsTask->Execute(XPIC_PARTICLE_UPDATE);
 	}
 	else
 	{	// FLIP and PIC (FMPM(1) or XPIC(1)) use lumped mass matrix here
+		// will get v_i^{L+}=p_i^+/m_i in vk[0]_i will be lumped mass
 #pragma omp parallel for
 		for(int i=1;i<=*nda;i++)
 			nd[nda[i]]->GridValueCalculation(VELOCITY_FOR_STRAIN_UPDATE);
@@ -89,11 +86,12 @@ bool UpdateParticlesTask::Execute(int taskOption)
 	if(XPICTransportTask!=NULL)
 	{	xpicOrder = XPICTransportTask->GetXPICOrder();
 		if(xpicOrder>1)
-		{
+		{	XPICTransportTask->Execute(0);
+			
+			// copy theta(k) to grid value (save lumped value in gTStar to implement blending)
 #pragma omp parallel for
 			for(int i=1;i<=*nda;i++)
 				XPICTransportTask->CopyXStar(nd[nda[i]]);
-			TransportTask::TransportGridBCs(mtime,timestep,UPDATE_GRID_STRAINS_CALL);
 		}
 	}
 
@@ -286,7 +284,7 @@ bool UpdateParticlesTask::Execute(int taskOption)
 			}
 		}
 	}
-	
+
 	// throw any errors
 	if(upErr!=NULL) throw *upErr;
 	

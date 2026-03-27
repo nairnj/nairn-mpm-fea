@@ -176,9 +176,13 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
        double crot = theMaterials[matid]->CurrentWaveSpeed(fmobj->IsThreeD(),mpm[p],0);
        
        // check to see if particle speed is above critical speed
-       double crot1 = fabs(mpm[p]->vel.x)+fabs(mpm[p]->vel.y);
-       if(fmobj->IsThreeD()) crot1 += fabs(mpm[p]->vel.z);
-       crot1 /= velocityCFL;
+	   double crot1 = mpm[p]->vel.x*mpm[p]->vel.x + mpm[p]->vel.y*mpm[p]->vel.y;
+	   if(fmobj->IsThreeD()) crot1 += mpm[p]->vel.z*mpm[p]->vel.z;
+	   crot1 = sqrt(crot1)/velocityCFL;
+	   
+       //double crot1 = fabs(mpm[p]->vel.x)+fabs(mpm[p]->vel.y);
+       //if(fmobj->IsThreeD()) crot1 += fabs(mpm[p]->vel.z);
+       //crot1 /= velocityCFL;
        
        // Pick highest speed
        if(crot1>crot)

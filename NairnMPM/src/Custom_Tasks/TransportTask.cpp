@@ -14,9 +14,9 @@
  		Set gTValue, gtValueForGrad, gVCT, and gQ on node to zero (in gDiff[] and gCond)
  	Mass and Momentum Task
  		Extrapolate gTValue, gVCT (Task1Extrapolation())
- 			If contact implemented, add extrapolations m... and c...
+ 			If contact implemented, add extrapolations to mT->... and cT->...
 		In reduction, copy gTValue, and gVCT from ghost to real (Task1Reduction())
- 			If contact implemented, add extrapolations m... and c...
+ 			If contact implemented, add extrapolations to mT->... and cT->...
 		(N)ote that materials where csat varies with position extrapolate gTValueRel
 			here and implement like gTValue in next task and nodal calculations below - only diffusion)
 	Post M&M Extrapolation Task
@@ -24,38 +24,34 @@
  		Call TransportBCsAndGradients()
  			Copy no BC value and impose grid Tvalue BCs (ImposeValueBCs(time,true))
  			Find grad Tvalue on particles (GetGradients(), ZeroTransportGradients(), AddTransportGradients())
- 				If contact implemented, get gradients for m... and c...
+ 				If contact implemented, get gradients for mT->... and cT->...
 		Paste back initial gTValue
  	Update strains first (if used)
  		Read changes in value to input to constitutive laws
  	Grid Forces Task
  		Add transport force to gQ (AddForces())
- 			If contact implemented, add for m... and c...
+ 			If contact implemented, add for mT->... and cT->...
  			Material point classes must return force given gradient and gradient shape functions
  		In reduction, copy gQ from ghost to real (Task1Reduction())
- 			If contact implemented, add extrapolations m... and c...
+ 			If contact implemented, add extrapolations mT->... and cT->...
+		In transport only, impose only flux BCs in gQ (SetTransportFluxBCs())
+			Done here because PostForcesTask.cpp is not used in transport only mode
 	Post Forces Task
- 		Old Method
- 			Impose force (grid BC in gQ) and add flux BCs (SetTransportForceAndFluxBCs())
- 				If contact implemented, add for m... and c... (only in force part)
- 		FMPM Method with FLIP
- 			Impose only flux BCs in gQ (SetTransportFluxBCs())
-			In transport only, this is done in GridForcesTask.cpp and PostForcesTask.cpp is not used
+		Impose only flux BCs in gQ (SetTransportFluxBCs())
  	Update Momenta Task
  		Divide gQ by gVCT to get transport rates (UpdateTransport()) and update nodal value
- 			If contact implemented, get rates in m... and c...
- 		FMPM (with FLIP) approach only
- 			Impose grid BCs (TransportGridBCs(mtime,timestep,UPDATE MOMENTUM CALL)
-                Calls ImposeValueGridBCs(UPDATE MOMENTUM CALL))
- 				For FMPM this is lumped mass matrix preliminary calculations
- 	XPIC/FMPM Calculations
- 		Calculate gTstar = Sum gTk starting with gTk = m*gTValue (* to format these comments better)
- 	Update Particles Task
- 		If FMPM with k>1
+ 			If contact implemented, get rates in mT->... and cT->...
+		Impose grid BCs (TransportGridBCs(mtime,timestep,_UPDATE_MOMENTUM_CALL_)
+			Calls ImposeValueGridBCs(_UPDATE_MOMENTUM_CALL_))
+	XPIC/FMPM Calculations
+	 	Called before update particles tasks (and therefore before XPIC mechanics tasks
+		Calculate gTstar = theta(k)
+		Impose grid BCs (TransportGridBCs(mtime,timestep,_XPIC_TRANSPORT_CALL_) on each increment
+			Calls ImposeValueGridBCs(_XPIC_TRANSPORT_CALL_))
+	Update Particles Task
+		If FMPM with k>1 X
             Copy gTstar (theta(k)) to gTValue
-            Save lumped value in gTstar to implement blending FLIP/FPMP(k>1)
- 			Impose grid BCs (TransportGridBCs(mtime,timestep,UPDATE GRID STRAINS CALL)
-                Calls ImposeValueGridBCs(UPDATE GRID STRAINS CALL))
+				Save lumped value in gTstar to implement blending FLIP/FPMP(k>1)
  		Each particle: zero rate, value, and pic value, and then extrapolate all from nodes to particle
             value - from theta(k) (if any FMPM(k>1)) or gets pic value if all FLIP (or if FMPM(1))
             If any FPMPM
@@ -68,7 +64,7 @@
  			poroelasticity does adiabatic pressure
  		Store d(value) on particle for input to next strain updates
  		Find grad Tvalue on particles (GetGradients(), ZeroTransportGradients(), AddTransportGradients())
- 			If contact implemented, get for m... and c...
+ 			If contact implemented, get for mT->... and cT->...
  	Update strains last (if used and if second extrapolation)
  		Read changes in value to input to constitutive laws
 
@@ -312,10 +308,10 @@ void TransportTask::AddFluxCondition(NodalPoint *ndptr,double extraFlux,bool pos
 }
 
 // Impose grid-based transport value BCs after updating values on the grid in UpdateMomentumTask.
-// FLIP: stype==UPDATE_GRID_STRAINS_CALL never called
-// FMPM: callStyle==UPDATE_GRID_STRAINS_CALL only called with order>1, no need to update rate
+// FLIP: stype==XPIC_TRANSPORT_CALL never called
+// FMPM: callStyle==XPIC_TRANSPORT_CALL only called with order>1, no need to update rate
 //			QReaction is recalculated
-// FLIP/FMPM mix: UPDATE_GRID_STRAINS_CALL only called with order>1, currently skips rate
+// FLIP/FMPM mix: XPIC_TRANSPORT_CALL only called with order>1, currently skips rate
 //			and recalculates QReaction. Not certain yet if this is correct or not
 TransportTask *TransportTask::ImposeValueGridBCs(double bctime,double deltime,int callStyle)
 {   // Skip if no BCs
@@ -326,18 +322,42 @@ TransportTask *TransportTask::ImposeValueGridBCs(double bctime,double deltime,in
 	// --------- set value and consistent rates for grid transport BCs ------------
 	int i;
 	TransportField *gTrans;
+	double dv;
+
+	if(callStyle==XPIC_TRANSPORT_CALL)
+	{	// Set Delta Value (in gTprev) to zero
+		// get dgQ = -Value/dt and add to heat (scaled by usingFraction)
+		// Do not changed gQ (it is used by FLIP if being blended, or not needed
+		//		if not blended).
+		// Not that superposed BC on same node just adds zero on subsequent calls
+		while(nextBC!=NULL)
+		{	i = nextBC->GetNodeNum(mtime);
+			if(i!=0)
+			{	gTrans = GetTransportFieldPtr(nd[i]);
+				
+				// temperature rate in Delta gT
+				dv = -gTrans->gTprev/deltime;
+				
+				// add to heat (scaled)
+				nextBC->SuperposeQReaction(usingFraction*gTrans->gVCT*dv);
+				
+				// zero the increment
+				gTrans->gTprev = 0.;
+			}
+			nextBC = (NodalValueBC *)nextBC->GetNextObject();
+		}
+		return nextTask;
+	}
  	
-	// The rest is update momentum call - set BC in lumped capacity value on the grid
-	// Set rates too
+	// The rest is update momentum call
+	
+	// Initial read of reaction to zero
 	while(nextBC!=NULL)
 	{	i = nextBC->GetNodeNum(mtime);
 		if(i!=0)
 		{	gTrans = GetTransportFieldPtr(nd[i]);
 			gTrans->gFirstBC = true;
-            if(callStyle==UPDATE_GRID_STRAINS_CALL)
-                nextBC->InitQReaction(1.-usingFraction);
-            else
-                nextBC->InitQReaction();
+			nextBC->InitQReaction();
 		}
 		nextBC = (NodalValueBC *)nextBC->GetNextObject();
 	}
@@ -345,10 +365,9 @@ TransportTask *TransportTask::ImposeValueGridBCs(double bctime,double deltime,in
 	// Set Value to Sum(bc) Value(BC)
 	// Change gQ to (Sum(bc) Value(BC) - Value(0))/dt
 	//    But: Value was just changed in momentum update to Value(up) = Value(0) + gQ*dT
-	//    Solution: Add (Sum(bc) Value(BC) - Value(up))/dt to gQ to get (Sum(bc) Value(BC) - Value(0))/dt
-	//          (Sum(bc) Value(BC) - Value(0) - gQ*dt)/dt + dt =
-	// Add gVCT*(Sum(bc) Value(BC) - Value(0))/dt to sum of BC reactions
-	double dv;
+	//    Solution: gQ -> gQ + dgQ where dgQ = (Sum(bc) Value(BC) - Value(up))/dt
+	//    Result: Implied update is Value(new) = Value(0) + gQ*dT + dgQ*dT = Sum(bc) Value(BC)
+	// Add gVCT*dgQ/dt to sum of BC reactions
 	nextBC = GetFirstBCPtr();
 	while(nextBC!=NULL)
 	{	i = nextBC->GetNodeNum(mtime);
@@ -360,12 +379,8 @@ TransportTask *TransportTask::ImposeValueGridBCs(double bctime,double deltime,in
 			{	// temperature rate -T(0)/dt first one only
 				dv = -gTrans->gTValue/deltime;
 				// Note summing is correct because done after momentum update (see above)
-                if(callStyle==UPDATE_GRID_STRAINS_CALL)
-                    nextBC->SuperposeQReaction(usingFraction*gTrans->gVCT*dv);
-                else
-                {   gTrans->gQ += dv;
-                    nextBC->SuperposeQReaction(gTrans->gVCT*dv);
-                }
+                gTrans->gQ += dv;
+				nextBC->SuperposeQReaction(gTrans->gVCT*dv);
 				
 				// clear value for first one
 				gTrans->gTValue = 0.;
@@ -378,12 +393,8 @@ TransportTask *TransportTask::ImposeValueGridBCs(double bctime,double deltime,in
 			double bcT = nextBC->BCValue(bctime);
 			gTrans->gTValue += bcT;
 			dv = bcT/deltime;
-            if(callStyle==UPDATE_GRID_STRAINS_CALL)
-                nextBC->SuperposeQReaction(usingFraction*gTrans->gVCT*dv);
-			else
-            {   gTrans->gQ += dv;
-                nextBC->SuperposeQReaction(gTrans->gVCT*dv);
-            }
+            gTrans->gQ += dv;
+			nextBC->SuperposeQReaction(gTrans->gVCT*dv);
 		}
 		nextBC = (NodalValueBC *)nextBC->GetNextObject();
 	}
@@ -420,15 +431,14 @@ void TransportTask::TransportContactRates(NodalPoint *ndptr,double deltime) {}
 
 #pragma mark UPDATE PARTICLES TASK
 
-// increment temperature rate on the particle (only used in transport XPIC)
+// increment temperature rate on the particle (only used in transport FMPM)
 // only implemented for global temperature - need update to handle contact heat flow
 TransportTask *TransportTask::InitializeForXPIC(NodalPoint *ndptr,double timestep,int xpicOption) const
 {	TransportField *gTrans = GetTransportFieldPtr(ndptr);
 	gTrans->gTnext = 0.;
 	// skip if ghost node (ghost only needs gTnext=0)
 	if(timestep>0.)
-	{	double m = TransportTask::XPICOrder;
-		gTrans->gTprev = m*gTrans->gTValue;
+	{	gTrans->gTprev = gTrans->gTValue;
 		gTrans->gTstar = gTrans->gTprev;
 	}
 	return nextTask;
@@ -584,7 +594,7 @@ void TransportTask::TransportGridBCs(double bctime,double deltime,int callStyle)
 	if(callStyle==UPDATE_MOMENTUM_CALL)
 	{	nextTransport=transportTasks;
 		while(nextTransport!=NULL)
-		{	if(callStyle==UPDATE_GRID_STRAINS_CALL)
+		{	if(callStyle==XPIC_TRANSPORT_CALL)
 			{	// only called when FMPM activated, but only call if using FMPM
 				if(nextTransport->IsUsingTransportXPIC())
 				{	// imposes BCs

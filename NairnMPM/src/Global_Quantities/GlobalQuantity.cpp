@@ -1117,7 +1117,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 					Vtot += Vp;
 					
 					// angular spatial velocity gradient
-					Matrix3 spatialGradVp = mpm[p]->GetParticleGradVp(true,false);
+					Matrix3 spatialGradVp = mpm[p]->GetParticleGradVp(true,true);
 						
                     // Extract angular velocity antisymmetric grad Vp
 					if(fmobj->IsThreeD())

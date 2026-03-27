@@ -12,9 +12,7 @@
 
 PathsController *paths=NULL;
 
-/********************************************************************************
-	PathsController: contructor and destructor
-********************************************************************************/
+#pragma mark PathsController: contructor and destructor
 
 // delete keypoints
 PathsController::~PathsController(void)
@@ -28,9 +26,7 @@ PathsController::~PathsController(void)
 	}
 }
 
-/********************************************************************************
-	PathsController: methods
-********************************************************************************/
+#pragma mark PathsController: methods
 
 // add key point to the last path
 int PathsController::AddKeypoint(char *keyName)

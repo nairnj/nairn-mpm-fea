@@ -52,7 +52,8 @@ class Expression
 		const char *GetString(void) const;
 		void Describe(void) const;
 		void Describe(Atomic *) const;
-	
+		bool IsPositionIndependent(void);
+
 		// class methods
 		static Expression *CreateExpression(char *,const char *);
 		static bool CreateFunction(char *&,int);

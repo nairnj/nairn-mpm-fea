@@ -34,6 +34,7 @@ CustomThermalRamp::CustomThermalRamp() : CustomTask()
     lifetimes = -1.;
     stretch = -1.;
 	scaleFxn = NULL;
+	posIndependent = true;
 	
 	// for imaged ramp
 	bmpFile = NULL;
@@ -234,6 +235,7 @@ void CustomThermalRamp::SetTextParameter(char *fxn,char *ptr)
 		}
 
 		scaleFxn =  Expression::CreateExpression(fxn,"Ramp scale function is not valid");
+		posIndependent = scaleFxn->IsPositionIndependent();
 	}
 	
 	else
@@ -546,13 +548,19 @@ CustomTask *CustomThermalRamp::StepCalculation(void)
 		deltaT = newDeltaT - currentDeltaT;
 		currentDeltaT = newDeltaT;
 		
+		// get function here if position independent
+		double scale = 1.;
+		if(scaleFxn!=NULL && posIndependent)
+			scale = scaleFxn->TValue(mtime*UnitsController::Scaling(1000.));
+		
 		// loop over nonrigid material points and update temperature
 		for(int p=0;p<nmpmsNR;p++)
 		{   if(mpm[p]->InReservoir()) continue;
 			
 			// change by deltaT, but optionally scale by function of position and time or use function
 			// if sigmoidal<0, function is there is is rate, multiple by time step in function units
-			double scale = scaleFxn!=NULL ? scaleFxn->XYZTValue(&mpm[p]->pos,mtime*UnitsController::Scaling(1000.)) : 1. ;
+			if(!posIndependent)
+				scale = scaleFxn->XYZTValue(&mpm[p]->pos,mtime*UnitsController::Scaling(1000.));
 			double dTp = sigmoidal>=0 ? scale*deltaT : scale*timestep*UnitsController::Scaling(1000.) ;
 			
 			if(property==RAMP_TEMP)

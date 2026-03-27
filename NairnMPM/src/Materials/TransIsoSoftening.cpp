@@ -686,7 +686,7 @@ void TransIsoSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 // Tensor de = total elastic strain increment in CAS
 // Tensor er = total residual strain increment in CAS
 // str is prior stress in the CAS
-// dR and Rtot are incemental and total rotation matrices
+// dR and Rtot are incremental and total rotation matrices
 // ecrack is cracking strain in the CAS
 // dispEnergy is dissipated energy before evolving damage (or zero if none)
 void TransIsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor &de,Tensor &str,Tensor &er,CrackAxisProperties &d,
@@ -708,7 +708,6 @@ void TransIsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor
 	}
 	else
 	{	// Effective strains in crack axis system including zz effective strain
-		// FINISH UP: Plane stress
 		dvxxeff = de.xx-er.xx;
 		dvyyeff = de.yy-er.yy;
 		dgamxy = de.xy-er.xy;
@@ -726,6 +725,7 @@ void TransIsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor
 	// ecrack is cracking strain in CAS
 	
 	// normal strain increments (dvzzeff=0 in plane strain)
+	// plane stress also set dvzzeff and C12/C11 are for reduced stiffnesses)
 	double den = dvxxeff + d.C12C11*dvyyeff + d.C13C11*dvzzeff;
 	
 	// to calculate cracking plane changes depending on current state
@@ -942,6 +942,14 @@ void TransIsoSoftening::DamageEvolution(MPMBase *mptr,int np,double *soft,Tensor
 		{	// need to add back terms to go from reduced cte to actual cte
 			// then subtract cracking strain from x and others use current stiffness elements
             dsig.zz = d.C13*(dvxxeff + d.vzxc*er.xx - decxx) + d.C23*(dvyyeff + d.vzyc*er.yy) - d.C33*er.zz;
+		}
+		else
+		{	// plane stress
+			// zz deformation. zz stress stays at zero for plane stress
+			// Here C13 is -C13/C33 and C23 is -C23/C33
+			// (plane stress with plasticity needs dep.zz, but it was added before)
+			de.zz = d.C13*(dvxxeff-decxx) + d.C23*dvyyeff + er.zz;
+			mptr->IncrementDeformationGradientZZ(de.zz);
 		}
 	}
 	
@@ -1393,7 +1401,7 @@ Tensor TransIsoSoftening::GetAnisoResStrains(double &exxr,double &eyyr,double &e
     }
     else
     {   // reduced residual strains when in plane strain
-        // alpha[1] = alpha(xx)^(r), alpha[2]=alpha(yy)^r, but alpha[5]=alpha(zz)
+        // alpha[1] = alpha(xx)^(r), alpha[2]=alpha(yy)^r, but alpha[4]=alpha(zz)
         exxr = p->alpha[1]*res->dT;
         eyyr = p->alpha[2]*res->dT;
         ezzr = p->alpha[4]*res->dT;

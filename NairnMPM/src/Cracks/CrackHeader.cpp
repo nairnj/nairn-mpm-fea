@@ -48,6 +48,8 @@ int CrackHeader::warnThreeCracks;
 int CrackHeader::warn2ndTipInContour;
 int CrackHeader::warn2ndTipInCell;
 int CrackHeader::warnAdatedContourFailed;
+int CrackHeader::warnBlockSurfaceMove;
+double CrackHeader::maxSurfaceMove=0.5;
 
 // globals
 CrackHeader *firstCrack;		// first crack
@@ -308,7 +310,7 @@ void CrackHeader::Output(void)
 	}
 	
 	// custom contact law
-	contact.CustomCrackContactOutput(customContactLawID,number);
+	crackContact.CustomCrackContactOutput(customContactLawID,number);
 	
 	// custom traction propagation material
 	if(customTractionPropID>0)
@@ -811,7 +813,7 @@ void CrackHeader::Archive(ofstream &afile)
 	delete [] aptr;
  }
 
-// If contact.GetMoveOnlySurfaces() is true, crack plane was already moved by
+// If crackContact.GetMoveOnlySurfaces() is true, crack plane was already moved by
 //		the surfaces; thus only need to move to midpoint and check if element has changed
 // If contact.GetMoveOnlySurfaces() is false, move all crack plane particles
 //		using CM velocities (precalculated and stored in field[0])
@@ -820,7 +822,7 @@ short CrackHeader::MoveCrack(void)
 {
 	CrackSegment *scrk=firstSeg;
 	// move only surfaces
-	if(contact.GetMoveOnlySurfaces())
+	if(crackContact.GetMoveOnlySurfaces())
 	{	while(scrk != NULL)
 		{
 			if(!fixedCrack)
@@ -831,7 +833,7 @@ short CrackHeader::MoveCrack(void)
 				if(!scrk->FindElement()) return false;
 				
 				// make sure surface are on correct side of the crack
-				if(contact.GetPreventPlaneCrosses())
+				if(crackContact.GetPreventPlaneCrosses())
 				{	if(!scrk->CheckSurfaces()) return false;
 				}
 			}
@@ -893,12 +895,12 @@ short CrackHeader::MoveCrack(void)
 					}
 					
 					// check surfaces
-					if(contact.GetPreventPlaneCrosses())
+					if(crackContact.GetPreventPlaneCrosses())
 					{	if(!scrk->CheckSurfaces()) return false;
 					}
 				}
 				
-				else if(contact.GetPreventPlaneCrosses())
+				else if(crackContact.GetPreventPlaneCrosses())
 				{	// crack in free space, but check if surfaces have moved
 					if(!scrk->CheckSurfaces()) return FALSE;
 				}
@@ -965,12 +967,15 @@ short CrackHeader::MoveCrack(short side)
 			// Update crack surface velocity and position
 			if(scrk->MoveSurfacePosition(side,&svelnp1,&surfAcc,timestep,(nodeCounter>0)))
 			{   // if bottom moved above, check if above moved elements
-                if(!scrk->FindElement(ABOVE_CRACK)) return false;
+                if(!scrk->FindElement(ABOVE_CRACK))
+				{	return false;
+				}
 			}
 			
 			// did surface move elements
 			if(!scrk->FindElement(side))
-			{	return false;
+			{
+				return false;
 			}
 		}
             
@@ -1319,48 +1324,44 @@ void CrackHeader::JIntegral(void)
                     
                     // if for another crack, get other crack properties for integrating
                     if(crackNum[cn]!=GetNumber())
-                    {
+                    {	// not that crossin between foundSeg[cn] and foundSeg[cn]->nextSeg so they
+						//   are always there, but foundSeg[cn]->prevSeg might be NULL is a crack tip
+						
+						// next segment in rect (if no next, set to zero
+						bool nextIn0 = PtInRect(&foundSeg[cn]->nextSeg->cp,&crect);
+
                         // new way to get crack sign
-                        if(PtInRect(&foundSeg[cn]->cp,&crect))
-                        {   // implies ->nextSeg is out of contour
-                            foundSeg[cn]=foundSeg[cn]->nextSeg;
-                            crackSign = -1;
-                            if(PtInRect(&foundSeg[cn]->cp,&crect))
-                               cout << "# found unexpected segment inside contour" << endl;
-                            /*
-                            if(foundSeg[cn]->prevSeg==NULL)
-                            {   // foundSeg must be crack tip at start of crack in contour
-                                crackSign=-1;
-                                foundSeg[cn]=foundSeg[cn]->nextSeg;
-                            }
-                            else if(!PtInRect(&foundSeg[cn]->prevSeg->cp,&crect))
-                            {   crackSign=1;
-                                foundSeg[cn]=foundSeg[cn]->prevSeg;
-                            }
-                            else
-                            {   crackSign=-1;
-                                foundSeg[cn]=foundSeg[cn]->nextSeg;
-                            }
-                            */
-                        }
-                        else
-                        {   // implies ->nextSeg is in the contour
-                            crackSign = 1;
-                            if(!PtInRect(&foundSeg[cn]->nextSeg->cp,&crect))
-                               cout << "# found unexpected segment outside contour" << endl;
-                            /*
-                            if(foundSeg[cn]->prevSeg==NULL)
-                            {   // foundSeg is crack tip just outside the countour
-                                crackSign=1;
-                            }
-                            else if(PtInRect(&foundSeg[cn]->prevSeg->cp,&crect))
-                            {   crackSign=-1;
-                            }
-                            else
-                            {   crackSign=1;
-                            }
-                            */
-                        }
+						if(nextIn0)
+						{	// implies current one is out of the countour
+							crackSign = 1;
+						}
+						else
+						{	// this this segment
+							bool segIn0 = PtInRect(&foundSeg[cn]->cp,&crect);
+							if(segIn0)
+							{	// this in but next not in, start from next and switch directions
+								foundSeg[cn]=foundSeg[cn]->nextSeg;
+								crackSign = -1;
+							}
+							else
+							{	// this implies foundSeg[cn] and foundSeg[cn]->nextSeg crosses through
+								// the contour. Keep crack sign and start point
+								// Integration will find because endSeg will equal startSeg->nextSeg
+								crackSign = 1;
+							}
+						}
+                        
+#ifdef LOG_PROGRESS
+                        bool prevIn = foundSeg[cn]->prevSeg!=NULL ? PtInRect(&foundSeg[cn]->prevSeg->cp,&crect) : false;
+                        bool segIn = foundSeg[cn]!=NULL ? PtInRect(&foundSeg[cn]->cp,&crect) : false;
+                        bool nextIn = foundSeg[cn]->nextSeg!=NULL ? PtInRect(&foundSeg[cn]->nextSeg->cp,&crect) : false;
+                        snprintf(logLine,logSize,"... ....In contour for %d X %d sign %d: %d (%ld) %d (%ld) %d (%ld)",crackSign,
+                                 crackNum[cn],GetNumber(),
+								 (int)prevIn,(long)foundSeg[cn]->prevSeg,
+                                 (int)segIn,(long)foundSeg[cn],
+                                 (int)nextIn,(long)foundSeg[cn]->nextSeg);
+                        archiver->WriteLogFile(logLine,NULL);
+#endif
                         
                         // look for next segment outside, but kink will be inside
                         bool exitPtIsKink = false;
@@ -1382,6 +1383,8 @@ void CrackHeader::JIntegral(void)
                             
                         // did this exit at a previous countour point
                         // search up to this point
+						// Note that a segment that crosses corner of J contour witll have
+						//     insertPt->endSeg = foundSeg[cn]->nextSeg and will not match another crossing point
                         if(insertPt->endSeg!=NULL)
                         {   ContourPoint *matchPt = firstOtherPt;
 
@@ -1394,6 +1397,11 @@ void CrackHeader::JIntegral(void)
                                     insertPt->crackSign = 0;
                                     break;
                                 }
+								else if(matchPt->startSeg==insertPt->startSeg)
+								{	// this is segment that goes through the contour
+									// the second one should subtract the result
+									insertPt->subtractJ = true;
+								}
                                 matchPt = matchPt->nextOther;
                             }
                         }
@@ -1652,8 +1660,8 @@ void CrackHeader::JIntegral(void)
                 prevOtherPt = prevOtherPt->nextOther;
             }   // end block intergrating other cracks
             
-            // If gets here, current contour has not other crack tips
-            // or adapting the countour failue and we give up ain continue
+            // If gets here, current contour has no other crack tips
+            // or adapting the contour failed and we give up ain continue
             // with that contour
             excludedTip = NULL;
 
@@ -1770,7 +1778,7 @@ void CrackHeader::JIntegral(void)
 				
 				// Int(T.du) at current deformation
                 // Warning: this calculation would be incorrect if segments with no traction law
-                //   is between segments with traction law (withing the J contour)
+                //   are between segments with traction law (within the J contour)
 				tractionEnergy = startSeg->TractionEnergy(&crossPt,crkTipIdx,true,&tipSegment);
                 
                 // look for intersections
@@ -1815,7 +1823,7 @@ void CrackHeader::JIntegral(void)
 				bridgingReleased = startSeg->TractionEnergy(&crossPt,crkTipIdx,false,NULL);
 				
 				// extra traction correction if Bergkvist and Huong axisymmetric J integral only
-                // note that non-axisymmetri is always AXISYM_BROBERG_J
+                // note that non-axisymmetric is always AXISYM_BROBERG_J
 				if(JContourType != AXISYM_BROBERG_J)
 				{	tractionEnergy *= crossPt.x/crackr;		// scale contour point energy
 					
@@ -1856,14 +1864,17 @@ void CrackHeader::JIntegral(void)
 			Jy = Jy1 + Jy2;
  
 			/* Jint -- crack-axis components of dynamic J-integral
-				  Jint.x is J1 in archiving and literature and is energy release rate, here
-						it accounts for traction laws. Friction can be handled but not yet implemented
-				  Jint.y literature J2 - needed only to convert to KI and KII (archive when propagation is off)
-						physcially is J for crack growth normal to crack direction
-				  Jint.z is actual energy released when the crack and traction zone propagate together
-							(archived as J2 when propagation is on)
+				J(x) = Jtip + tractionEnergy. The code finds J by countour and then reports
+				Jint.x = Jtip and is J1 in archiving and literature and is energy release rate, here
+					it accounts for traction laws. Friction can be handled but not yet implemented
+					It ERR for growth of crack tip alone, but actually only valid for elastic
+					traction law. Code uses Jtip to propagate the crack and traction laws to propagate
+					the process zone.
+				Jint.y = literature J2 - needed only to convert to KI and KII (archive when propagation is off)
+				Jint.z = R is actual energy released by crack growth and process zone dissipation
+					(archived as J2 when propagation is on)
 			   crackDir -- crack propagating direction cosines from above
-			   Units uN/mm, multiply by 1e-3 to get N/m = J/m^2
+			   Legacy units uN/mm, multiply by 1e-3 to get N/m = J/m^2
 			*/
 			tipCrk->Jint.x = Jx*crackDir.x + Jy*crackDir.y - tractionEnergy;		// Jtip or energy that will be released if crack grows
 			tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;                         // J2(x) - for growth normal to crack plane
@@ -1989,9 +2000,9 @@ Vector CrackHeader::JIntersectionCrack(ContourPoint *cpt)
                 df2->kinetic *= dscale;
                 df2->work *= dscale;
                 ScaleTensor(&df2->stress,dscale);
-           }
+			}
             
-           // -------- Task 2: check for crack traction (a traction law or zero if opened)
+			// -------- Task 2: check for crack traction (a traction law or zero if opened)
             useT2 = scrk2->SurfaceTraction(this,&T2);
             
             // -------- Task 3: first segment just stores it and goes on to next segment
@@ -2033,7 +2044,6 @@ Vector CrackHeader::JIntersectionCrack(ContourPoint *cpt)
             }
 
             // calculate Jx (or Jr if axisymmetric by Broberg only)
-#
             // [(W+K)nx-ti*ui,x]
             double fForJx1 = (df1->work+df1->kinetic)*nx - (T1.x*df1->du.x + T1.y*df1->dv.x);
             double fForJx2 = (df2->work+df2->kinetic)*nx - (T2.x*df2->du.x + T2.y*df2->dv.x);
@@ -2042,18 +2052,22 @@ Vector CrackHeader::JIntersectionCrack(ContourPoint *cpt)
             // special case first and last segment
             double Jxs,phi;
             if(scrk1==cpt->startSeg)
-            {   double dcpx = scrk2->cp.x - scrk1->cp.x;
-                double dcpy = scrk2->cp.y - scrk1->cp.y;
-                double dprex = cpt->node->x - scrk1->cp.x;
-                double dprey = cpt->node->y - scrk1->cp.y;
-                double dcl = sqrt(dcpx*dcpx+dcpy*dcpy);
-                double dpre = sqrt(dprex*dprex+dprey*dprey);
-                phi = dpre/dcl;
-                Jxs = 0.5*(fForJx1*(1.-phi)*(1.-phi) + fForJx2*(1.-phi*phi))*ds;
+            {	// get phi from startSeg to contour
+				double dcpx = scrk2->cp.x - scrk1->cp.x;
+				double dcpy = scrk2->cp.y - scrk1->cp.y;
+				double dprex = cpt->node->x - scrk1->cp.x;
+				double dprey = cpt->node->y - scrk1->cp.y;
+				double dcl = sqrt(dcpx*dcpx+dcpy*dcpy);
+				double dpre = sqrt(dprex*dprex+dprey*dprey);
+				phi = dpre/dcl;
+				Jxs = 0.5*(fForJx1*(1.-phi)*(1.-phi) + fForJx2*(1.-phi*phi))*ds;
+				
+				// for segments that pass through the contour (always at a corner)
+				if(cpt->subtractJ) Jxs = -Jxs;
             }
             else if(scrk2==cpt->endSeg)
             {   // if endingpPt==NULL the crossing never found a match
-                // This is rare and might be kink (crosses back) or some other erro
+                // This is rare and might be kink (crosses back) or some other error
                 if(cpt->endingPt!=NULL)
                 {   double dcpx = scrk2->cp.x - scrk1->cp.x;
                     double dcpy = scrk2->cp.y - scrk1->cp.y;

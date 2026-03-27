@@ -42,6 +42,7 @@ MPMBase::MPMBase()
 MPMBase::MPMBase(int elem,int theMatl,double angin)
 {
     inElem=elem;
+	prevInElem=elem;
 	mp=-1.;						// calculated in PreliminaryParticleCalcs, unless set in input file
     matnum=theMatl;
 	SetAnglez0InDegrees(angin);
@@ -256,19 +257,26 @@ FiniteGIMPInfo *MPMBase::GetFiniteGIMPInfo(void) { return (FiniteGIMPInfo *)cpdi
 // Get velocity gradient on the particles by extrapolating from velocity on the grid
 //      with option to be spatial gradient
 // Time step zero will get zero because no grid velocity yet
+// This is only called by archiving or global archving for ARCH_SpinVelocity KINE_ENERGY
+//		and from GetParticleAngMomentum() which is for ARCH_SpinMomentum, ANGMOM(X,Y,Z),
+//		and LPMOM(X,Y,Z)
 Matrix3 MPMBase::GetParticleGradVp(bool spatial,bool allowTracked)
 {
 	// this creates zerod matrix in contructor
 	Matrix3 spatialGradVp;
 
     // extrapolate from grid velocity, but time zero has no velocity or CPDI info yet
-    if(fmobj->mstep>0)
-    {   // extraplolate from grid velocities
-        spatialGradVp = ExtraVelocityGradient();
+	// This only reached when not using particle spin.
+	// Because it occurs after resetting elements, this needs to extrapolate to the
+	//   particle using the previous element. I have not checked what happens for particles
+	//   leaving the grid on the time step (it is probably be OK)
+    if(fmobj->mstep>0 && inElem>0 && prevInElem>0)
+    {	// extraplolate from grid velocities using previous ElemID()
+        spatialGradVp = ExtrapVelocityGradient(prevInElem-1);
         
         if(!spatial)
         {   // convert to (dF/dt) = (spatial grad Vp)*F
-            Matrix3 F = GetDeformationGradientMatrix();
+			Matrix3 F = GetDeformationGradientMatrix();
             spatialGradVp *= F;
         }
     }
@@ -281,7 +289,7 @@ Matrix3 MPMBase::GetParticleGradVp(bool spatial,bool allowTracked)
 Vector MPMBase::GetParticleAngMomentum(void)
 {
     // get spatial velocity gradient
-    Matrix3 Vgrad = GetParticleGradVp(true,false);
+    Matrix3 Vgrad = GetParticleGradVp(true,true);
     
     // get polygon vectors - these are from particle to edge
     //      and generalize semi width lp in 1D GIMP
@@ -290,6 +298,7 @@ Vector MPMBase::GetParticleAngMomentum(void)
     GetSemiSideVectors(&r1,&r2,r3ptr);
 
     // Get Rotation tensor = (1/3) F I0 F^T where I0 = diag(dx^2,dy^2,dz^2)
+	//    and here dx, dy, and dz are semi sides, which is why 1/3 instead of 1/12
     // Here expanded in full (and it is symmetric)
     Matrix3 Irot;
     
@@ -323,6 +332,7 @@ Vector MPMBase::GetParticleAngMomentum(void)
     VgradT -= Vgrad;
 
 	// Get Lp from matrix elements and scale by mp/3 for final result
+	// (because 1/3 was omitted above from I0 calculation)
     Vector partLp = MakeVector(VgradT(1,2),-VgradT(0,2),VgradT(0,1));
     ScaleVector(&partLp,mp/3.);
     
@@ -357,7 +367,7 @@ void MPMBase::InitializeMass(double rho,double volPerParticle,bool trackSpin)
 }
 
 // set or average velocity gradient (2D) (only needed for second J Term)
-// for USF and SZS, sets gradient on its only pass
+// for USF and USL+/-, sets gradient on its only pass
 // for USAVG, stores in on first pass and then averages on second (J calc follows the second pass)
 void MPMBase::SetVelocityGradient(double dvxx,double dvyy,double dvxy,double dvyx,int secondPass)
 {
@@ -456,10 +466,13 @@ void MPMBase::ChangeElemID(int newElem,bool adjust)
 	}
 	
 	// reset element
+	prevInElem=inElem;
 	inElem=newElem+1;                   // set using zero basis
 	IncrementElementCrossings();		// count crossing
 }
 int MPMBase::ArchiveElemID(void) { return inElem; }			// one based for archiving
+void MPMBase::KeepElemID(void) { prevInElem = inElem; }
+int MPMBase::GetPrevInElem(void) { return prevInElem; }		// one based like inElem
 
 // return current element crossings for archiving and reset to zero
 int MPMBase::GetElementCrossings(void) { return elementCrossings>=0 ? elementCrossings : -elementCrossings; }
@@ -502,7 +515,7 @@ void MPMBase::SetDimensionlessByPts(int pointsPerSide)
 void MPMBase::GetDimensionlessSize(Vector &lp) const { lp = mpm_lp; }
 
 // Particle semi-size in actual units (3D overrides to add z component)
-// note that in 2D, part.z will be 1
+// note that in 2D, part.z will be 1.
 Vector MPMBase::GetParticleSize(void) const
 {	Vector part = theElements[inElem-1]->GetDeltaBox();
 	part.x *= 0.5*mpm_lp.x;

@@ -135,10 +135,10 @@ void GhostNode::MassAndMomentumReduction(void)
 	}
 }
 
-// Support XPIC calculations (always xpicCalculation==COPY_VSTARNEXT, and k=pass in XPIC loop)
-void GhostNode::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *dummy,double timestep,int m,int k,double vsign)
+// Support XPIC calculations (always xpicCalculation==COPY_VSTARNEXT)
+void GhostNode::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *dummy,double timestep,int iarg)
 {	if(ghost!=NULL)
-	ghost->XPICSupport(xpicCalculation,xpicOption,real,timestep,m,k,vsign);
+		ghost->XPICSupport(xpicCalculation,xpicOption,real,timestep,iarg);
 }
 
 // zero gTnext on ghost nodes
@@ -148,7 +148,7 @@ void GhostNode::InitializeForXPICTransport(TransportTask *nextTransport,int xpic
 }
 
 // XPIC reduction
-void GhostNode::XPICReductionTransport(int k,TransportTask *nextTransport)
+void GhostNode::XPICReductionTransport(TransportTask *nextTransport)
 {	if(ghost!=NULL)
 	{	// add from ghost to real
 		TransportField *gTransGhost = nextTransport->GetTransportFieldPtr(ghost);

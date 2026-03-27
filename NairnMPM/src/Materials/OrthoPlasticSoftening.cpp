@@ -118,6 +118,9 @@ const char *OrthoPlasticSoftening::VerifyAndLoadProperties(int np)
         return "Anisotropic plasticity materials cannot yet be used when poroelasticity is activated";
 #endif
     
+	if(np==PLANE_STRESS_MPM && hMAS.style==SQRT_TERMS)
+		return "OrthoPlasticSoftening materials require HillStype=2 (squared terms) when using plane stress MPM";
+	
     if(hardStyle==AP_UNKNOWN)
     {   hardStyle = nhard<=0. ? AP_NONLINEAR1 : AP_NONLINEAR2;
         nhard = fabs(nhard);
@@ -331,6 +334,7 @@ void OrthoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double d
     Matrix3 deT = LRGetStrainIncrement(INITIALMATERIAL,mptr,du,&dR,&R0,&Rnm1,&Rtot);
     
     // get strain increments in material axis system as Tensor type
+	// deT(2,2)=0 in both plane stress and plane strain
     Tensor de = is2D ?
         MakeTensor2D(deT(0, 0), deT(1, 1), deT(2, 2), deT(0, 1) + deT(1, 0)) :
         MakeTensor(deT(0,0), deT(1,1), deT(2,2), deT(1,2)+deT(2,1), deT(0,2)+deT(2,0), deT(0,1)+deT(1,0));
@@ -353,6 +357,7 @@ void OrthoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double d
     double dispEnergyPlastic = 0.;
     
     // residual strains (thermal and moisture) in material axes
+	// xx and yy reduced in plane strain only, ezz always unreduced
     double exxr,eyyr,ezzr;
     Tensor er = GetAnisoResStrains(exxr,eyyr,ezzr,ep,res,np);
     
@@ -388,7 +393,7 @@ void OrthoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double d
         LoadCrackHillProperties(np,&h,&d,DForm);
         
         // get cracking strain increments for an elastic update (de(net) = de-er)
-        // plane stress is different here, but not yet supported elsewhere
+        // plane stress is different here (and d.C12C11 uses ratio of reduced elements)
         double den = de.xx-er.xx +  d.C12C11*(de.yy-er.yy);
         if(np==THREED_MPM) den += d.C13C11*(de.zz-er.zz);
         // ... and make sure increment does not create negative normal strain
@@ -408,12 +413,13 @@ void OrthoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double d
     // for plasticity phase de(trial)eff = de - er in material/CAS (for undamaged/damaged)
     // Material and Hill properties in material/CAS are in d and h
 
-    // Step 1: Get trial stress (in str) in material/CAS assuming increment is elastic and no cracking strain increment
+    // Step 1: Get trial stress (in str) in material/CAS assuming increment is elastic or no new
+	//    cracking strain increment (so elastic crack strain increment above is used)
     
     // effective strains
     double dvxxeff = de.xx-er.xx;
     double dvyyeff = de.yy-er.yy;
-    double dvzzeff = de.zz-er.zz;       // not used in plain strain
+    double dvzzeff = de.zz-er.zz;
     // rotate current stress to material axes and then increment
     Tensor stnm1Mat = Rnm1.RTVoightR(sp,true,is2D);
     Tensor strPlastic,str;
@@ -435,6 +441,8 @@ void OrthoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double d
         // sigma(zz)
         if(np==PLANE_STRAIN_MPM)
             str.zz = stnm1Mat.zz + d.C13*(dvxxeff+d.vzxc*ezzr) + d.C23*(dvyyeff+d.vzyc*ezzr) - d.C33*ezzr;
+		else if(np==PLANE_STRESS_MPM)
+			str.zz = 0.;
         else
             str.zz = stnm1Mat.zz + d.C13*dvxxeff + d.C23*dvyyeff + d.C33*dvzzeff;
     }
@@ -477,31 +485,50 @@ void OrthoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double d
         SubTensor(&strPlastic,&str);
         
         // get dissipated energy
+		// Total work energy is sigma.de and softening phase will add only sigma.(de-dep)
+		//     To compenstate, we add sigma.dep here (note that using trial elastic-plastic stress
+		//     rather than final elastic-plastic-softening stress)
+		// FINISH UP: I think correct to add non-zero dep.zz here even in plane strain
+		// heat energy incremented here prior to damage or in damage evolution adter damage
+		double partialWorkEnergy;
         if(np==THREED_MPM)
-        {   // Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
+        {	// Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
             dispEnergyPlastic = str.xx*dep.xx + str.yy*dep.yy + str.zz*dep.zz
                             + str.xy*dep.xy + str.xz*dep.xz + str.yz*dep.yz;
+			
+			// Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
+			partialWorkEnergy = str.xx*dep.xx + str.yy*dep.yy + str.xy*dep.xy + str.zz*dep.zz
+								+ str.yz*dep.yz + str.xz*dep.xz;
         }
+		else if(np==PLANE_STRESS_MPM)
+		{	// get dezz required to give zero stress in z direction
+			// separate out just the dezzp term. Later code will add elastic change
+			//  based on de-dep in x and y directions
+			mptr->IncrementDeformationGradientZZ(dep.zz);
+			
+			// Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
+			dispEnergyPlastic = str.xx*dep.xx + str.yy*dep.yy + str.xy*dep.xy;
+			
+			// Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
+			partialWorkEnergy = str.xx*dep.xx + str.yy*dep.yy + str.xy*dep.xy;
+		}
         else
         {   // Plastic energy increment per unit mass (dU/(rho0 V0)) (Legacy nJ/g)
             dispEnergyPlastic = str.xx*dep.xx + str.yy*dep.yy + str.zz*dep.zz + str.xy*dep.xy;
+			
+			// Plastic energy increment per unit mass (dU/(rho0 V0)) (Legacy nJ/g)
+			partialWorkEnergy = str.xx*dep.xx + str.yy*dep.yy + str.xy*dep.xy + str.zz*dep.zz;
         }
         
         // add dissipated energy to plastic energy to the particle after subtracting q*dalpha
         dispEnergyPlastic -= (GetYield(ap)-1.)*(ap->aint-alpha0)/sqrt23OversigmaYref;
         mptr->AddPlastEnergy(dispEnergyPlastic);
         
-        // Total work energy is sigma.de and softening phase will add only sigma.(de-dep)
-        //     To compenstate, we add sigma.dep here (note that using trial elastic-plastic stress
-        //     rather than final elastic-plastic-softening stress)
-        // FINISH UP: I think correct to add non-zero dep.zz here even in plane strain
-        // heat energy incremented here prior to damage or in damage evolution adter damage
-        double partialWorkEnergy = str.xx*dep.xx + str.yy*dep.yy + str.xy*dep.xy + str.zz*dep.zz;
-        if(!is2D)
-            partialWorkEnergy += str.yz*dep.yz + str.xz*dep.xz;
+		// add work energy
         mptr->AddWorkEnergy(partialWorkEnergy);
         
         // get elastic strain increment (de(elastic) = de(total)-dep = de(trial)+dec-dep) in crack axis system
+		// (in plane stress, de.zz = -dep.zz because de(total)=0 on input)
         AddTensor(&de,&dec);
         SubTensor(&de,&dep);
         
@@ -553,6 +580,15 @@ void OrthoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double d
                     workEnergy += sp->zz*de.zz;
                     resEnergy += sp->zz*er.zz;
                 }
+				else if(np==PLANE_STRESS_MPM)
+				{	// set dezz from in-plane effective elastic strains
+					// here C13=-C13/C33 and C23=-C23/C33 and this from solving dsigzz=0
+					// (note the dep.zz was added before)
+					de.zz = d.C13*(dvxxeff-dep.xx) + d.C23*(dvyyeff-dep.yy) + er.zz;
+					mptr->IncrementDeformationGradientZZ(de.zz);
+					
+					// no sp->zz energy (it is zero)
+				}
                 else
                 {   // extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
                     workEnergy += sp->zz*de.zz;
@@ -592,14 +628,14 @@ void OrthoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double d
         R0 *= RToCrack;
         Vector globalNorm = MakeVector(R0(0,0),R0(1,0),R0(2,0));
         
-        // get intersection with this normal
-        soft[GCSCALING] = GetAcOverVp(np,mptr,&globalNorm)/rho;            // divide by rho because divided by specific stress
+        // get intersection with this normal (divide by rho because divided by specific stress)
+        soft[GCSCALING] = GetAcOverVp(np,mptr,&globalNorm)/rho;
         
         // Rotate elastic strain increments from material to CAS
         de = RToCrack.RTVoightR(&de,false,is2D);
         er = RToCrack.RTVoightR(&er,false,is2D);
 
-        // Rotate plastic stress change from material to CAS (should verify)
+        // Rotate any non-zero plastic stress change from material to CAS (should verify)
         if(ftrial>0.)
             strPlastic = RToCrack.RTVoightR(&strPlastic,true,is2D);
         
@@ -616,8 +652,9 @@ void OrthoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double d
     }
 
     // de is elastic strain increment in CAS as de = de(total)-dep
+	// (in plane stress, de.xx = -dep.zz because input de(total)=0
     // er is residual strain incement in CAS
-    
+	
     // subtract plastic stress change from n-1 state currently on the particle
     // DamageEvolution() will finish rotation to current state
     if(ftrial>0.)
@@ -689,23 +726,44 @@ void OrthoPlasticSoftening::LoadCrackHillProperties(int np,HillProperties *h,Cra
 	if(h->style==SQUARED_TERMS && DForm!=DX_DAMAGE)
 	{	// matrix C.P (non-zero elements)
 		// Elements of P = 2A are scaled by rho^2 and P by 1/rho so CP is * rho
-		h->CP11 = 2.*( d->C11*h->syxx2 - d->C12*h->H - d->C13*h->G );
-		h->CP12 = 2.*( -d->C11*h->H + d->C12*h->syyy2 - d->C13*h->F );
-		h->CP13 = 2.*( -d->C11*h->G - d->C12*h->F + d->C13*h->syzz2 );
-		h->CP21 = 2.*( d->C12*h->syxx2 - d->C22*h->H - d->C23*h->G );
-		h->CP22 = 2.*( -d->C12*h->H + d->C22*h->syyy2 - d->C23*h->F );
-		h->CP23 = 2.*( -d->C12*h->G - d->C22*h->F + d->C23*h->syzz2 );
-		h->CP31 = 2.*( d->C13*h->syxx2 - d->C23*h->H - d->C33*h->G );
-		h->CP32 = 2.*( -d->C13*h->H + d->C23*h->syyy2 - d->C33*h->F );
-		h->CP33 = 2.*( -d->C13*h->G - d->C23*h->F + d->C33*h->syzz2 );
-		h->CP66 = 2.*d->C66*h->N;
-		if(np==THREED_MPM)
-		{	h->CP44 = 2.*d->C44*h->L;
-			h->CP55 = 2.*d->C55*h->M;
+		if(np!=PLANE_STRESS_MPM)
+		{	h->CP11 = 2.*( d->C11*h->syxx2 - d->C12*h->H - d->C13*h->G );
+			h->CP12 = 2.*( -d->C11*h->H + d->C12*h->syyy2 - d->C13*h->F );
+			h->CP13 = 2.*( -d->C11*h->G - d->C12*h->F + d->C13*h->syzz2 );
+			h->CP21 = 2.*( d->C12*h->syxx2 - d->C22*h->H - d->C23*h->G );
+			h->CP22 = 2.*( -d->C12*h->H + d->C22*h->syyy2 - d->C23*h->F );
+			h->CP23 = 2.*( -d->C12*h->G - d->C22*h->F + d->C23*h->syzz2 );
+			h->CP31 = 2.*( d->C13*h->syxx2 - d->C23*h->H - d->C33*h->G );
+			h->CP32 = 2.*( -d->C13*h->H + d->C23*h->syyy2 - d->C33*h->F );
+			h->CP33 = 2.*( -d->C13*h->G - d->C23*h->F + d->C33*h->syzz2 );
+			h->CP66 = 2.*d->C66*h->N;
+			if(np==THREED_MPM)
+			{	h->CP44 = 2.*d->C44*h->L;
+				h->CP55 = 2.*d->C55*h->M;
+			}
+			else
+			{	h->CP44 = 0.;
+				h->CP55 = 0.;
+			}
 		}
-		
+		else
+		{	// plane stress
+			h->CP11 = 2.*( d->C11*h->syxx2 - d->C12*h->H );
+			h->CP12 = 2.*( -d->C11*h->H + d->C12*h->syyy2 );
+			h->CP13 = 0.;
+			h->CP21 = 2.*( d->C12*h->syxx2 - d->C22*h->H );
+			h->CP22 = 2.*( -d->C12*h->H + d->C22*h->syyy2 );
+			h->CP23 = 0.;
+			h->CP31 = 0.;
+			h->CP32 = 0.;
+			h->CP33 = 0.;
+			h->CP44 = 0.;
+			h->CP55 = 0.;
+			h->CP66 = 2.*d->C66*h->N;
+		}
+			
 		// Q = PZP matrix (scale by rho^2 and symmetric)
-		// same 2D and 3D
+		// same 2D and 3D (plane stress only uses Q11, Q12, Q22, and Q66)
 		h->Q11 = 8.*(h->G*h->G + h->G*h->H + h->H*h->H);
 		h->Q12 = 4.*(h->F*(h->G-h->H) - h->H*(h->G+2.*h->H));
 		h->Q13 = 4.*(-h->G*(h->F+h->G) + h->F*h->H - h->G*(h->G+h->H));
@@ -755,7 +813,12 @@ double OrthoPlasticSoftening::GetGPrime(AnisoPlasticProperties *p) const
     }
 }
 
-// Solve numerically plastic strain increment by explicit radial return
+// Solve numerically plastic strain increment by implicit radial return
+// stk is trial stress state assuming elastic increment (lambda=0)
+// ftrial>0 is in Phi(lambda=0) for elastic increment
+// alphak in p->aint in alpha(lambda=0)
+// returns dep, stk changed to stress, and p->aint to cummulative plastic strain
+// (Copied and revised from same method in AnisoPlasticity)
 Tensor OrthoPlasticSoftening::SolveForPlasticIncrement(MPMBase *mptr,int np,double fk,Tensor &stk,AnisoPlasticProperties *p,
                                                        CrackAxisProperties *d,HillProperties *h) const
 {
@@ -779,95 +842,169 @@ Tensor OrthoPlasticSoftening::SolveForPlasticIncrement(MPMBase *mptr,int np,doub
 		// P strial = DPhi/dSigma, (2/3)Q strial, and sqrt((2/3)strial Q strial) stored in p->
 		AnisoPlasticity::GetHillDfDsigmaPQsigma(strial,np,p,h);
 		
-		// get (I + lambdak CP)^{-1} for first step when lambdak=0
-		Matrix3 IlamCPInv = Matrix3::Identity();
-		double lamInv[3][3];
-		IlamCPInv.get(lamInv);
-		
-		while(nsteps<10)
-		{	// stk = sigma(lambdak) = (I + lambda CP)^{-1}strial (from above=strial or end of previous step)
-			
-			// get P stk, (2/3)Q stk, and sqrt((2/3)stk Q stk) (from above using strial or end of previous step)
-
-			// dsigma/dlambda = -(I + lamdak CP)^{-1) CP.sigma(lambdak)
-			Tensor CPSigma,dSigdLam;
-			CPSigma.xx = h->CP11*stk.xx + h->CP12*stk.yy + h->CP13*stk.zz;
-			CPSigma.yy = h->CP21*stk.xx + h->CP22*stk.yy + h->CP23*stk.zz;
-			CPSigma.zz = h->CP31*stk.xx + h->CP32*stk.yy + h->CP33*stk.zz;
-			CPSigma.xy = h->CP66*stk.xy;
-			if(np==THREED_MPM)
-			{   CPSigma.yz = h->CP44*stk.yz;
-				CPSigma.xz = h->CP55*stk.xz;
-			}
-			dSigdLam.xx = -lamInv[0][0]*CPSigma.xx - lamInv[0][1]*CPSigma.yy - lamInv[0][2]*CPSigma.zz;
-			dSigdLam.yy = -lamInv[1][0]*CPSigma.xx - lamInv[1][1]*CPSigma.yy - lamInv[1][2]*CPSigma.zz;
-			dSigdLam.zz = -lamInv[2][0]*CPSigma.xx - lamInv[2][1]*CPSigma.yy - lamInv[2][2]*CPSigma.zz;
-			dSigdLam.xy = -CPSigma.xy/(1.+lambdak*h->CP66);
-			if(np==THREED_MPM)
-			{   dSigdLam.yz = -CPSigma.yz/(1.+lambdak*h->CP44);
-				dSigdLam.xz = -CPSigma.xz/(1.+lambdak*h->CP55);
-			}
-			
-			// hardining terms
-			p->aint = atrial + lambdak*p->sAQsmag;
-			double hardTerm = 2.*GetYield(p)*GetGPrime(p);
-			
-			// remaining terms
-			double ppterm,a2term;
-			if(np==THREED_MPM)
-			{	ppterm = DotTensors(&(p->dfdsPsigma),&dSigdLam);
-				a2term = p->sAQsmag + lambdak*DotTensors(&(p->CdfQsigma),&dSigdLam)/p->sAQsmag;
-			}
-			else
-			{	ppterm = DotTensors2D(&(p->dfdsPsigma),&dSigdLam);
-				a2term = p->sAQsmag + lambdak*DotTensors2D(&(p->CdfQsigma),&dSigdLam)/p->sAQsmag;
-			}
-			
-			// the final scalar derivative
-			double dPhidLambda = ppterm - hardTerm*a2term;
-			
-			// the update
-			double dlambda = -fk/dPhidLambda;
-			lambdak += dlambda;
-			
-			// get new stress (I + lambdak CP)^{-1}strial
-			// get (I+lambdak CP) - 3X3 upper left, diagonal bottom right
-			Matrix3 IlamCP = Matrix3(1.+lambdak*h->CP11,lambdak*h->CP12,lambdak*h->CP13,
-									lambdak*h->CP21,1.+lambdak*h->CP22,lambdak*h->CP23,
-									lambdak*h->CP31,lambdak*h->CP32,1.+lambdak*h->CP33);
-			IlamCPInv = IlamCP.Inverse();
+		if(np!=PLANE_STRESS_MPM)
+		{	// get (I + lambdak CP)^{-1} for first step when lambdak=0
+			Matrix3 IlamCPInv = Matrix3::Identity();
+			double lamInv[3][3];
 			IlamCPInv.get(lamInv);
-			stk.xx = lamInv[0][0]*strial.xx + lamInv[0][1]*strial.yy + lamInv[0][2]*strial.zz;
-			stk.yy = lamInv[1][0]*strial.xx + lamInv[1][1]*strial.yy + lamInv[1][2]*strial.zz;
-			stk.zz = lamInv[2][0]*strial.xx + lamInv[2][1]*strial.yy + lamInv[2][2]*strial.zz;
-			stk.xy = strial.xy/(1.+lambdak*h->CP66);
-			if(np==THREED_MPM)
-			{   stk.yz = strial.yz/(1.+lambdak*h->CP44);
-				stk.xz = strial.xz/(1.+lambdak*h->CP55);
+			
+			while(nsteps<10)
+			{	// stk = sigma(lambdak) = (I + lambda CP)^{-1}strial (from above=strial or end of previous step)
+				
+				// get P stk, (2/3)Q stk, and sqrt((2/3)stk Q stk) (from above using strial or end of previous step)
+				
+				// dsigma/dlambda = -(I + lamdak CP)^{-1) CP.sigma(lambdak)
+				Tensor CPSigma,dSigdLam;
+				CPSigma.xx = h->CP11*stk.xx + h->CP12*stk.yy + h->CP13*stk.zz;
+				CPSigma.yy = h->CP21*stk.xx + h->CP22*stk.yy + h->CP23*stk.zz;
+				CPSigma.zz = h->CP31*stk.xx + h->CP32*stk.yy + h->CP33*stk.zz;
+				CPSigma.xy = h->CP66*stk.xy;
+				if(np==THREED_MPM)
+				{   CPSigma.yz = h->CP44*stk.yz;
+					CPSigma.xz = h->CP55*stk.xz;
+				}
+				dSigdLam.xx = -lamInv[0][0]*CPSigma.xx - lamInv[0][1]*CPSigma.yy - lamInv[0][2]*CPSigma.zz;
+				dSigdLam.yy = -lamInv[1][0]*CPSigma.xx - lamInv[1][1]*CPSigma.yy - lamInv[1][2]*CPSigma.zz;
+				dSigdLam.zz = -lamInv[2][0]*CPSigma.xx - lamInv[2][1]*CPSigma.yy - lamInv[2][2]*CPSigma.zz;
+				dSigdLam.xy = -CPSigma.xy/(1.+lambdak*h->CP66);
+				if(np==THREED_MPM)
+				{   dSigdLam.yz = -CPSigma.yz/(1.+lambdak*h->CP44);
+					dSigdLam.xz = -CPSigma.xz/(1.+lambdak*h->CP55);
+				}
+				
+				// hardining terms
+				p->aint = atrial + lambdak*p->sAQsmag;
+				double hardTerm = 2.*GetYield(p)*GetGPrime(p);
+				
+				// remaining terms
+				double ppterm,a2term;
+				if(np==THREED_MPM)
+				{	ppterm = DotTensors(&(p->dfdsPsigma),&dSigdLam);
+					a2term = p->sAQsmag + lambdak*DotTensors(&(p->CdfQsigma),&dSigdLam)/p->sAQsmag;
+				}
+				else
+				{	ppterm = DotTensors2D(&(p->dfdsPsigma),&dSigdLam);
+					a2term = p->sAQsmag + lambdak*DotTensors2D(&(p->CdfQsigma),&dSigdLam)/p->sAQsmag;
+				}
+				
+				// the final scalar derivative
+				double dPhidLambda = ppterm - hardTerm*a2term;
+				
+				// the update
+				double dlambda = -fk/dPhidLambda;
+				lambdak += dlambda;
+				
+				// get new stress (I + lambdak CP)^{-1}strial
+				// get (I+lambdak CP) - 3X3 upper left, diagonal bottom right
+				Matrix3 IlamCP = Matrix3(1.+lambdak*h->CP11,lambdak*h->CP12,lambdak*h->CP13,
+										 lambdak*h->CP21,1.+lambdak*h->CP22,lambdak*h->CP23,
+										 lambdak*h->CP31,lambdak*h->CP32,1.+lambdak*h->CP33);
+				IlamCPInv = IlamCP.Inverse();
+				IlamCPInv.get(lamInv);
+				stk.xx = lamInv[0][0]*strial.xx + lamInv[0][1]*strial.yy + lamInv[0][2]*strial.zz;
+				stk.yy = lamInv[1][0]*strial.xx + lamInv[1][1]*strial.yy + lamInv[1][2]*strial.zz;
+				stk.zz = lamInv[2][0]*strial.xx + lamInv[2][1]*strial.yy + lamInv[2][2]*strial.zz;
+				stk.xy = strial.xy/(1.+lambdak*h->CP66);
+				if(np==THREED_MPM)
+				{   stk.yz = strial.yz/(1.+lambdak*h->CP44);
+					stk.xz = strial.xz/(1.+lambdak*h->CP55);
+				}
+				
+				// P stk = DPhi/dSigma, (2/3)Q stk, and sqrt((2/3)stk Q stk)
+				AnisoPlasticity::GetHillDfDsigmaPQsigma(stk,np,p,h);
+				
+				// get new alpha
+				p->aint = atrial + lambdak*p->sAQsmag;
+				
+				// check convergenve with new values
+				double halfsPs = AnisoPlasticity::GetHillMagnitude(stk,h,np);
+				double yield = GetYield(p);
+				fk = halfsPs - yield*yield;
+				
+				// check for convergence
+				nsteps++;
+				//if(fmobj->mstep>dstep)
+				//{	cout << "   " << nsteps << ": f = " << fk << ", a = " << p->aint << ", dlambda = "
+				//            << dlambda << ", lambda = " << lambdak << ", dfk/dlam = " << dPhidLambda << endl;
+				//}
+				if(fabs(fk)<cutoff)
+				{	// get final plastic strain
+					dep = p->dfdsPsigma;
+					ScaleTensor(&dep,lambdak);
+					break;
+				}
 			}
+		}
+		else
+		{	// get lamInv = (I + lambdak CP)^{-1} (start with identity matrix))
+			double lamInv11=1.,lamInv12=0.,lamInv21=0.,lamInv22=1.;
 			
-			// P stk = DPhi/dSigma, (2/3)Q stk, and sqrt((2/3)stk Q stk)
-			AnisoPlasticity::GetHillDfDsigmaPQsigma(stk,np,p,h);
-
-			// get new alpha
-			p->aint = atrial + lambdak*p->sAQsmag;
-
-			// check convergenve with new values
-			double halfsPs = AnisoPlasticity::GetHillMagnitude(stk,h,np);
-			double yield = GetYield(p);
-			fk = halfsPs - yield*yield;
+			while(nsteps<10)
+			{	// stk = sigma(lambdak) = lamInv.strial (pass 1 = strial, rest found below)
+				
+				// get P stk, (2/3)Q stk, and sqrt((2/3)stk Q stk) (pass 1 uses strial, rest found below)
+				
+				// dSigdLam = dsigma/dlambda = -lamInv.CP.sigma(lambdak)
+				Tensor CPSigma,dSigdLam;
+				CPSigma.xx = h->CP11*stk.xx + h->CP12*stk.yy;
+				CPSigma.yy = h->CP21*stk.xx + h->CP22*stk.yy ;
+				CPSigma.xy = h->CP66*stk.xy;
+				dSigdLam.xx = -lamInv11*CPSigma.xx - lamInv12*CPSigma.yy;
+				dSigdLam.yy = -lamInv21*CPSigma.xx - lamInv22*CPSigma.yy;
+				dSigdLam.xy = -CPSigma.xy/(1.+lambdak*h->CP66);
+				
+				// hardining terms (h in notes)
+				p->aint = atrial + lambdak*p->sAQsmag;
+				double hardTerm = 2.*GetYield(p)*GetGPrime(p);
+				
+				// remaining terms (d_1 abd d_2 in notes)
+				double ppterm,a2term;
+				ppterm = p->dfdsPsigma.xx*dSigdLam.xx + p->dfdsPsigma.yy*dSigdLam.yy + p->dfdsPsigma.xy*dSigdLam.xy;
+				double arg = p->CdfQsigma.xx*dSigdLam.xx + p->CdfQsigma.yy*dSigdLam.yy + p->CdfQsigma.xy*dSigdLam.xy;
+				a2term = p->sAQsmag + lambdak*arg/p->sAQsmag;
+				
+				// the final scalar derivative
+				double dPhidLambda = ppterm - hardTerm*a2term;
+				
+				// the update
+				double dlambda = -fk/dPhidLambda;
+				lambdak += dlambda;
+				
+				// get new stress stk = lanInv.strial
+				// get (I+lambdak CP) as 2X2 upper left and invert it
+				//   = {{1.+lambdak*h.CP11,lambdak*h.CP12},{lambdak*h.CP21,1.+lambdak*h.CP22}}
+				double det = 1./((1.+lambdak*h->CP11)*(1.+lambdak*h->CP22)-lambdak*h->CP12*lambdak*h->CP21);
+				lamInv11 = (1.+lambdak*h->CP22)*det;
+				lamInv12 = -lambdak*h->CP12*det;
+				lamInv21 = -lambdak*h->CP21*det;
+				lamInv22 = (1.+lambdak*h->CP11)*det;
+				stk.xx = lamInv11*strial.xx + lamInv12*strial.yy;
+				stk.yy = lamInv21*strial.xx + lamInv22*strial.yy;
+				stk.xy = strial.xy/(1.+lambdak*h->CP66);
 			
-			// check for convergence
-			nsteps++;
-			//if(fmobj->mstep>dstep)
-			//{	cout << "   " << nsteps << ": f = " << fk << ", a = " << p->aint << ", dlambda = "
-			//            << dlambda << ", lambda = " << lambdak << ", dfk/dlam = " << dPhidLambda << endl;
-			//}
-			if(fabs(fk)<cutoff)
-			{	// get final plastic strain
-				dep = p->dfdsPsigma;
-				ScaleTensor(&dep,lambdak);
-				break;
+				// Get P stk = DPhi/dSigma, (2/3)Q stk, and sqrt((2/3)stk Q stk) from new stress
+				AnisoPlasticity::GetHillDfDsigmaPQsigma(stk,np,p,h);
+
+				// get new alpha from new stress
+				p->aint = atrial + lambdak*p->sAQsmag;
+
+				// check convergence with new values
+				double halfsPs = AnisoPlasticity::GetHillMagnitude(stk,h,np);
+				double yield = GetYield(p);
+				fk = halfsPs - yield*yield;
+				
+				// check for convergence
+				nsteps++;
+				//if(fmobj->mstep>dstep)
+				//{	cout << "   " << nsteps << ": f = " << fk << ", a = " << p->aint << ", dlambda = "
+				//            << dlambda << ", lambda = " << lambdak << ", dfk/dlam = " << dPhidLambda << endl;
+				//}
+				if(fabs(fk)<cutoff)
+				{	// get final plastic strain (this will include result for dezzp
+					dep = p->dfdsPsigma;
+					ScaleTensor(&dep,lambdak);
+					break;
+				}
 			}
 		}
 	}

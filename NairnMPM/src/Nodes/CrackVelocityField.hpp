@@ -26,8 +26,12 @@ typedef struct {
 #define MASS_MOMENTUM_CALL 1
 #define UPDATE_MOMENTUM_CALL 2
 #define UPDATE_STRAINS_LAST_CALL 4
-#define UPDATE_GRID_STRAINS_CALL 8
+#define XPIC_TRANSPORT_CALL 8
 #define GRID_FORCES_CALL 16
+#define XPIC_STRAIN_UPDATE 32
+#define XPIC_PARTICLE_UPDATE 64
+// sum previous two
+#define XPIC_UPDATE 96
 
 #include "Nodes/MatVelocityField.hpp"
 
@@ -85,8 +89,8 @@ class CrackVelocityField
 		virtual void IncrementDelvaTask5(int,double,GridToParticleExtrap *) const;
 
 		// XPIC methods
-		virtual void XPICSupport(int,int,NodalPoint *,double,int,int,double) = 0;
-		virtual void AddVStarNext(int,Vector *,double,double);
+		virtual void XPICSupport(int,int,NodalPoint *,double,int) = 0;
+		virtual void AddVStarNext(int,Vector *,double);
 		virtual Vector *GetVStarPrev(int) const;
 		virtual double GetMaterialMass(int) const;
 	
@@ -104,6 +108,9 @@ class CrackVelocityField
 	
 		// methods
 		virtual void MaterialContactOnCVF(MaterialContactNode *,double,int);
+		virtual void MaterialXPICIncrementOnCVF(NodalPoint *ndptr,FMPMContact *,double,int);
+		virtual Vector GetCMatMomentumIncrement(bool &,double *) const = 0;
+		virtual void ChangeVelocityIncrement(Vector *,double,int) = 0;
 		virtual void GetVolumeGradient(int,const NodalPoint *,Vector *,double) const;
 		virtual void GridValueCalculation(int) = 0;
         virtual void AdjustForSymmetry(NodalPoint *,Vector *,bool) const;

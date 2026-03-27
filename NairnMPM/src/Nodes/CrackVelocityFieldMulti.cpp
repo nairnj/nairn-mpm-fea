@@ -263,15 +263,21 @@ void CrackVelocityFieldMulti::UpdateMomentum(double timestep)
     }
 }
 
-#pragma mark XPIC METHODS
+#pragma mark FMPM/XPIC METHODS
 
 // Support XPIC calculations
-void CrackVelocityFieldMulti::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int m,int k,double vsign)
-{	if(xpicCalculation==COPY_VSTARNEXT) xpicOption = fieldNum;	// vfld
-	for(int i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidSourceField(mvf[i],fieldNum))
-		{	if(xpicCalculation==COPY_VSTARNEXT) m = i;		// matfld
-			mvf[i]->XPICSupport(xpicCalculation,xpicOption,real,timestep,m,k,vsign);
+void CrackVelocityFieldMulti::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int iarg)
+{	if(xpicCalculation==COPY_VSTARNEXT)
+	{	// pass fieldNum in xpicOption and material field in iarg
+		for(int i=0;i<maxMaterialFields;i++)
+		{	if(MatVelocityField::ActiveNonrigidSourceField(mvf[i],fieldNum))
+				mvf[i]->XPICSupport(COPY_VSTARNEXT,fieldNum,real,timestep,i);
+		}
+	}
+	else
+	{	for(int i=0;i<maxMaterialFields;i++)
+		{	if(MatVelocityField::ActiveNonrigidSourceField(mvf[i],fieldNum))
+				mvf[i]->XPICSupport(xpicCalculation,xpicOption,real,timestep,iarg);
 		}
 	}
 }
@@ -282,15 +288,15 @@ void CrackVelocityFieldMulti::XPICSupport(int xpicCalculation,int xpicOption,Nod
 
 	Input parameters:
 		material mass, displacement and/or position, volume gradient (if needed)
+		callType == MASS_MOMENTUM_CALL, UPDATE_MOMENTUM_CALL, UPDATE_STRAINS_LAST_CALL
 
 	Output changes are only allowed on this node (to be thread safe for parallel)
-		changes on mvf[]: pk, ftot (if postUpdate is TRUE)
+		changes on mvf[]: pk, ftot (if callType == MASS_MOMENTUM_CALL)
  
 	ndptr is parent node to this crack velocity field
  
-	On first call in time step, first and last are pointers to Cracknode * because those
+	On first call in time step, first and last are pointers to MaterialContactNode * because those
 		objects are created for later interface calculations
-	postUpdate is TRUE when called between momentum update and particle update and otherwise is false
 	throws std::bad_alloc
 */
 void CrackVelocityFieldMulti::MaterialContactOnCVF(MaterialContactNode *mcn,double deltime,int callType)
@@ -333,19 +339,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(MaterialContactNode *mcn,doub
 	{	RigidMaterialContactOnCVF(rigidMat,multiRigid,mcn,deltime,callType);
 	}
 	else
-	{
-#ifdef THREE_MAT_CONTACT
-		// Must specify lumping methods in multimaterial command (only in XML for now)
-		if(numMats>2 && mpmgrid.lumpingMethod==EXPLICIT_PAIRS)
-		{	int handled = MaterialContactThree(mcn,deltime,callType,activeMat,numMats);
-			if(DisplayThreeMatWarnings(handled))
-				MaterialContactOnCVFLumped(mcn,deltime,callType,activeMat,numMats,Pc,Mc);
-		}
-		else
-			MaterialContactOnCVFLumped(mcn,deltime,callType,activeMat,numMats,Pc,Mc);
-#else
-		MaterialContactOnCVFLumped(mcn,deltime,callType,activeMat,numMats,Pc,Mc);
-#endif // end THREE_MAT_CONTACT
+	{	MaterialContactOnCVFLumped(mcn,deltime,callType,activeMat,numMats,Pc,Mc);
 	}
 	
 	delete [] activeMat;
@@ -353,13 +347,19 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(MaterialContactNode *mcn,doub
 }
 
 // Contact for each material lumped with the other materials
+// callType == MASS_MOMENTUM_CALL, UPDATE_MOMENTUM_CALL, or UPDATE_STRAINS_LAST_CALL
 void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mcn,double deltime,
 									int callType,int *activeMat,int numMats,Vector Pc,double Mc)
 {
 	// get the node
 	NodalPoint *ndptr = mcn->GetTheNode();
 	
-	double qrate = 0.;
+	// When called in momentum update: Changes it causes are:
+	// 1. contact transport calculations
+	// 2. finds Delta fi input to contact law calculations and delta a = delta Fi/mred
+	bool postUpdate = callType==UPDATE_MOMENTUM_CALL || callType==XPIC_PARTICLE_UPDATE ;
+
+    double qrate = 0.;
 	int i;
 	
 	// loop materials or pairs of materials
@@ -367,6 +367,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 	int miMax = doingPairs ? numMats-1 : numMats ;
 	
 	// Get center of mass displacememnt used in this mode
+	// (Note: LR for contact never uses dispc or dispcForInterface, could be skipped?)
 	Vector dispc = GetCMDisplacement(ndptr,false,mpmgrid.contactByDisplacements);
 	ScaleVector(&dispc,1./Mc);
 	Vector dispcForInterface = dispc;
@@ -378,9 +379,14 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 	
 	MatVelocityField *mvfi,*mvfj;
 	for(int mi=0;mi<miMax;mi++)
-	{	// known active field - get volume from mvf->volume
+	{
+#pragma mark Nonrigid Contact: Get values and Delta Pmi
+		// known active field - get volume from mvf->volume
 		i = activeMat[mi];
 		mvfi = mvf[i];
+		// pointer to ccContact (NULL if not FMPM(k>2))
+		FMPMContact *mmCache = mcn->GetContactInfo(fieldNum,i);
+		
 		double massi = mvfi->mass;
 		double voli = mvfi->GetContactVolume();
 		double volj = GetContactVolumeNonrigid(false) - voli;
@@ -393,13 +399,17 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 		if(mpmgrid.volumeGradientIndex>=0) ZeroVector(&gradj);
 		double maxOtherMaterialVolume = 0.;
 		for(int kj=0;kj<numMats;kj++)
-		{	if(kj==mi) continue;
+		{	// skip the current material
+			if(kj==mi) continue;
+			
+			// get material number from list of active materials
 			int jj = activeMat[kj];
 			double matVolume = mvf[jj]->GetContactVolume();
 			if(matVolume>maxOtherMaterialVolume)
 			{	maxOtherMaterialVolume = matVolume;
 				j = jj;
 			}
+			
 			// Finding  - Sum grad V_j
 			if(mpmgrid.volumeGradientIndex>=0)
 			{	Vector normj;
@@ -410,18 +420,23 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 		
 		// problem if paired material not found, but it will always be found
 		if(j<0) continue;
+		
+		// paired material number when doing pairs or -1 if not
+		int paired = doingPairs ? j : -1 ;
+		
+		// velocity field and contact law
 		mvfj = mvf[j];
 		ContactLaw *theContactLaw = mpmgrid.GetMaterialContactLaw(i,j);
 		
 		// compared to lumped mass (or other material)
-		double mred = (Mc-massi)/Mc;		// final mred = massi*(Mc-massi)/Mc, but found later when needed
 		double massRatio = massi/Mc;
+		double mred = 1.-massRatio;		// final mred = massi*(Mc-massi)/Mc, but found later when needed
 		
 		// some variables
 		Vector norm,delta;					// normal and COD (later if needed)
 		double dotn,deln = 0.;				// normal force and cod components
 		Vector delMats,*delMatsPtr=NULL;	// for distances to materials in get normal call
-		double contactArea = -1.,mredDelWf = -1.,contactGridN = 1.;
+		double contactArea = -1.,mredDelWf = -1.;
 		
 		// Determine if in contact
 		bool comContact = false;
@@ -429,31 +444,36 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 		// find mi(vc-vi) = (mi/mc)pc-pi = (mi pc - mc pi)/mc or momentum change to match ctr of mass momentum
 		// second version might be less prone to round-off error if low or high massRatio
 		Vector delPi;
-		CopyScaleVector(&delPi,&mvfi->pk,-1.);
-		AddScaledVector(&delPi,&Pc,massRatio);
-		//CopyScaleVector(&delPi,&Pc,massi);
-		//AddScaledVector(&delPi,&mvfi->pk,-Mc);
-		//ScaleVector(&delPi,1./Mc);
+		CopyScaleVector(&delPi,&mvfi->pk,-1.);				// -pi
+		AddScaledVector(&delPi,&Pc,massRatio);				// + mi*pc/mc
 		AdjustForSymmetry(ndptr, &delPi, false);
 		
+#pragma mark Nonrigid Contact: Get normal, normal separation, and contact area
+		
 		// If needed, determine if the surfaces are in contact
-		if(theContactLaw->IgnoreContact() || comContact)
+		if(theContactLaw->IgnoreContact())
 		{	// always in contact and use center of mass to stick
 			comContact = true;
 		}
 		
 		else
-		{	// Ignore very small mass nodes - may not be needed
-			if(massRatio<MASS_MIN || massRatio>MASS_MAX)
-			{	continue;
+		{	// Ignore very small mass nodes
+			//   Seems unneeded for contact, but problem for interface
+			//   when both mred and A are close to zero
+			if(theContactLaw->IsImperfectInterface())
+			{	if(massRatio<MASS_MIN || massRatio>MASS_MAX)
+				{	MaterialContactNode::ContactSetLowMass(mmCache,true,paired);
+					continue;
+				}
 			}
-
+			
 			// Get normal vector by various options
 			bool hasDeln = false;
 			if(!NonRigidCustomNormal(ndptr,i,j,norm))
 			{	norm = GetNormalVector(mcn,i,-1,voli,&gradj,volj,1.,hasDeln,&delMats);
 				if(hasDeln)
-				{	deln = delMats.x;
+				{	// LR finds separation and distance to the node
+					deln = delMats.x;
 					delMatsPtr = &delMats;
 				}
 				
@@ -461,11 +481,15 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 				if(norm.x!=norm.x || norm.y!=norm.y || norm.z!=norm.z) continue;
 			}
 			
-			// Get dotn = sticking force (actual (vc-vi) = delPi/mi and (vb-va) = delPi/mred (when mred is done)
+			// save for archiving (ambiguous is has crack fields)
+			mcn->contactNorm = norm;
+			
+			// Get dotn = sticking force
+			// actual (vc-vi) = delPi/mi and (vb-va) = delPi/mred (when mred is done)
 			dotn=DotVectors(&delPi,&norm);
 			
 			// Get deln (if not done by LR). Also get delta and contactArea if needed
-			// Note that all interface need contactArea; they use delta later to get tangDel
+			// Note that all interfaces need contactArea; they use delta later to get tangDel
 			if(!hasDeln || theContactLaw->ContactLawNeedsContactArea())
 			{	// Get displacement for material a
 				Vector dispa;
@@ -480,17 +504,18 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 				ScaleVector(&delta,1./mred);
 				
 				// get deln = delta.n and correct it if simulation is extrapolating positions
+				// Note: skipped for LR that already has deln
 				if(!hasDeln)
 				{	// get dispb = delta + xia = xib-xia+xia = xib (already adjusted for symmetry)
 					Vector dispb = delta;
 					AddVector(&dispb,&dispa);
-					deln = contact.MaterialSeparation(DotVectors(&dispb,&norm),DotVectors(&dispa,&norm),&norm,ndptr,
-													  mpmgrid.contactByDisplacements,mpmgrid.positionCutoff);
+					deln = crackContact.MaterialSeparation(DotVectors(&dispb,&norm),DotVectors(&dispa,&norm),&norm,ndptr,
+														   mpmgrid.contactByDisplacements,mpmgrid.positionCutoff);
 				}
 				
 				// for interfaces or contact laws that need, get area here
 				if(theContactLaw->ContactLawNeedsContactArea())
-				{	contactArea = GetContactArea(ndptr,voli,volj,&norm,&contactGridN,delMatsPtr);
+				{	contactArea = GetContactArea(ndptr,voli,volj,&norm,delMatsPtr);
 					
 					if(!mpmgrid.contactByDisplacements && theContactLaw->IsImperfectInterface())
 					{	// recalculate delta using displacements if needed for an interface
@@ -507,48 +532,78 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 			mred *= massi;
         }
 			
-		// Here inContact is usually true, but may be false for imperfet interface or for
-		// any other contact law that want to continue (e.g., friction with adhesion)
+#pragma mark Nonrigid Contact: Implement contact law
+		// Paramters calculated above
+		// ndptr: node be analyzed
+		// delPi: momentum change for material i to move to com velocity
+		// delta: separation vector
+		// norm: normal vector
+		// deln: delta.n or normal separation between materials
+		// dotn: delPi.n
+		// contactArea: contact area (if needed)
+		// comContact: flag to ingnore contact and move to com velocity field
+		// masses: massi, Mc, mred
+		// paired: second material or -1 if looping over all materials
+		// fieldNum: this instance's crack velocity field number (0 to 3)
+		// activeField[mi]: material field number (material velocity field is mvf[activeField[mi]]
+		// theContactLaw: contact law
+		// postUpdate: current calculations are after updating momentum
+		// mredDelWf: heating when conduction is on
+		// getHeating
+		
+		// cache contact parmaeters
+		Vector *useNorm = comContact ? NULL : &norm ;
+		MaterialContactNode::SetContactInfo(mmCache,deln,paired,&delPi,useNorm,theContactLaw,contactArea);
+		
 		if(comContact)
 		{	// Use delPi found above and no further change needed, no other data needed either
 		}
 		else if(theContactLaw->IsFrictionalContact())
-		{	// Handle frictional law
+		{
+#pragma mark Nonrigid Contact: ... contact mechanics calculations
+			// Handle frictional law
 			
-			// Find dF = (ma Fb - mb Fa)/Mc = (ma Fc - Mc Fa)/Mc = (ma Fc/Mc) - Fa (when needed)
+			// Find dF = (ma Fb - mb Fa)/Mc = (ma (Fc-Fa) - (Mc-ma) Fa)
+			//    = (ma Fc - Mc Fa)/Mc = (ma Fc/Mc) - Fa (when needed)
 			// note that dacc = dF/mred
 			bool getHeating = false;
 			Vector delFi;
 			Vector *delFiPtr = NULL;
-			if(callType==UPDATE_MOMENTUM_CALL)
+			if(postUpdate)
 			{	delFi = GetCMatFtot();
 				ScaleVector(&delFi, massi/Mc);
 				AddScaledVector(&delFi, mvfi->GetFtotPtr(), -1.);
 				delFiPtr = &delFi;
-				// second order heating needs acceleration too
+				if(mmCache!=NULL) mmCache->startDelFi = delFi;
+				
+				// second order heating uses acceleration too
 				if(ConductionTask::matContactHeating) getHeating = true;
 			}
 			
-			// get change in momentum, but false return means friction law want no change (i.e, continue as if not in contact)
+			// get change in momentum, but false return means friction law wants no change
+			// (i.e, continue as if not in contact)
 			if(!theContactLaw->GetFrictionalDeltaMomentum(&delPi,&norm,dotn,deln,&mredDelWf,mred,getHeating,
-														  contactArea,deltime,delFiPtr,ndptr))
-
-			{	continue;
+														  contactArea,deltime,delFiPtr,ndptr,false))
+			{
+				continue;
 			}
 		}
 		else
-		{	// Handle imperfect interface
+		{
+#pragma mark Nonrigid Contact: ... imperfect interface calculations
+			// Handle imperfect interface
 			
 			// tangential COD
 			Vector tangDel;
-			double delt = GetTangentCOD(&norm,&delta,&tangDel);
+			double delt = GetTangentCOD(&norm,&delta,&tangDel,mmCache);
 			
-			// Find delFi = (ma Fb - mb Fa)/Mc = (ma Fc - Mc Fa)/Mc = (ma Fc/Mc) - Fa (when needed)
+			// Find delFi = (ma Fc/Mc) - Fa (see above, when needed)
 			Vector fImp;
-			if(callType==UPDATE_MOMENTUM_CALL)
+			if(postUpdate)
 			{	fImp = GetCMatFtot();
 				ScaleVector(&fImp, massi/Mc);
 				AddScaledVector(&fImp, mvfi->GetFtotPtr(), -1.);
+				if(mmCache!=NULL) mmCache->startDelFi = fImp;
 			}
 			else
 				ZeroVector(&fImp);
@@ -556,8 +611,8 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 			// Get interface force, energy, and altered delPi
 			double rawEnergy;
 			theContactLaw->GetInterfaceForces(&norm,&fImp,&rawEnergy,contactArea,&delPi,dotn,mred,
-											  &tangDel,deln,delt,contactGridN);
-			if(callType==UPDATE_MOMENTUM_CALL)
+											  &tangDel,deln,delt,postUpdate);
+			if(postUpdate)
 			{	// add force (if any) to momentum change
 				AddScaledVector(&delPi, &fImp, timestep);
 				
@@ -568,7 +623,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 		}
 		
 #ifdef CHECK_NAN
-		if(delPi.x!=delPi.x || delPi.y!=delPi.y || delPi.z!=delPi.z)
+		if(IsNanVector(&delPi,true))
 		{
 #pragma omp critical (output)
 			{	cout << "\n# CrackVelocityFieldMulti::MaterialContactOnCVF: bad delPi";
@@ -580,10 +635,11 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 		}
 #endif
 		
-		// Apply momentum change to the velocity fields
-
+#pragma mark Nonrigid Contact: Apply momentum change
+		
 		// change momenta
 		mvfi->ChangeMatMomentum(&delPi,callType,deltime);
+		MaterialContactNode::ContactSetDelPi(mmCache,&delPi,mredDelWf);
 		
 		// special case two materials for efficiency (and if both will find normal the same way)
 		if(doingPairs)
@@ -596,17 +652,16 @@ void CrackVelocityFieldMulti::MaterialContactOnCVFLumped(MaterialContactNode *mc
 		}
 		else
 		{	// separate lumped materials
-		
+			
 			// friction when more than two materials (only true when in momentum update and conduction is on)
 			if(mredDelWf>0.)
 			{   qrate += mredDelWf/massi;
 			}
 		}
-
 	}
 	
 	// total friction, scale and absolute value
-	if(callType==UPDATE_MOMENTUM_CALL && ConductionTask::matContactHeating && qrate!=0.)
+	if(postUpdate && ConductionTask::matContactHeating && qrate!=0.)
 	{	// add to flux
 		conduction->AddFluxCondition(ndptr,fabs(qrate/deltime),true);
 		
@@ -622,6 +677,10 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 										MaterialContactNode *mcn,double deltime,int callType)
 {
 	// multiRigid means more than one rigid material
+	
+	// When called in momemtum update
+	bool postUpdate = callType==UPDATE_MOMENTUM_CALL || callType==XPIC_PARTICLE_UPDATE ;
+
 	int i;
 	double rigidVolume = mvf[rigidFld]->GetContactVolume();
 	if(multiRigid)
@@ -660,7 +719,11 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 	for(i=0;i<maxMaterialFields;i++)
 	{	// skip if inactive or if a rigid material
 		if(!MatVelocityField::ActiveField(mvf[i]) || mvf[i]->IsRigidField()) continue;
-		
+
+#pragma mark Rigid Contact: Get values and Delta Pmi
+		// pointer to Contact info (NULL if not FMPM/XPIC(k>1))
+		FMPMContact *mmCache = mcn->GetContactInfo(fieldNum,i);
+
 		// First determine contact law with rigid material
 		ContactLaw *theContactLaw = mpmgrid.GetMaterialContactLaw(i,rigidFld);
 		
@@ -670,7 +733,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 		double dotn,deln=0.;			// normal force and cod
 		bool hasDeln;					// might be needed for Yang correction
 		Vector delMats,*delMatsPtr=NULL;		// for distances to the node in get normal calls
-		double contactArea = -1.,mredDelWf = -1.,contactGridN = 1.;
+		double contactArea = -1.,mredDelWf = -1.;
  	
 		// some variables
 		double massi=mvf[i]->mass;
@@ -684,6 +747,8 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
         AddScaledVector(&delPi,&rvel,massi);
 		AdjustForSymmetry(ndptr,&delPi,false);
 		
+#pragma mark Rigid Contact: Get normal, normal separation, and contact area
+		
 		// if needed, determine if the surfaces are in contact
 		bool comContact = false;
 		if(theContactLaw->IgnoreContact())
@@ -692,10 +757,15 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 		}
 		
 		else
-		{   // Ignore very small interactions
-			double volRatio=voli/(rigidVolume+GetContactVolumeNonrigid(false));
-			if(volRatio<MASS_MIN || volRatio>MASS_MAX)
-			{	continue;
+		{	// Ignore very small mass nodes
+			//   Seems unneeded for contact, but problem for interface
+			//   when both mred and A are close to zero
+			if(theContactLaw->IsImperfectInterface())
+			{	double volRatio=voli/(rigidVolume+GetContactVolumeNonrigid(false));
+				if(volRatio<MASS_MIN || volRatio>MASS_MAX)
+				{	MaterialContactNode::ContactSetLowMass(mmCache,true,rigidFld+maxMaterialFields);
+					continue;
+				}
 			}
 			
 			// Get normal vector, dotn, and deln
@@ -714,8 +784,12 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 				}
 				
 				// nan here means volume gradients zero as gradient normal to a symmetry plane
-				if(norm.x!=norm.x || norm.y!=norm.y || norm.z!=norm.z) continue;
+				// If happens in FMPM, would be a problem
+				if(IsNanVector(&norm,true)) continue;
 			}
+			
+			// save for archiving  (ambiguous is has crack fields)
+			mcn->contactNorm = norm;
 			
 			// get approach direction momentum from delPi.n (actual (vc-vi) = delPi/mi)
 			dotn=DotVectors(&delPi,&norm);
@@ -732,13 +806,13 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 				
 				// get deln = delta.n corrected if simulation is extrapolating positions or displacements
 				if(!hasDeln)
-				{	deln = contact.MaterialSeparation(DotVectors(&dispRigid,&norm),DotVectors(&dispi,&norm),&norm,ndptr,
+				{	deln = crackContact.MaterialSeparation(DotVectors(&dispRigid,&norm),DotVectors(&dispi,&norm),&norm,ndptr,
 													  mpmgrid.contactByDisplacements,mpmgrid.positionCutoff);
 				}
 				
 				if(theContactLaw->ContactLawNeedsContactArea())
 				{	// interface and some laws will need contact area
-					contactArea = GetContactArea(ndptr,voli,rigidVolume,&norm,&contactGridN,delMatsPtr);
+					contactArea = GetContactArea(ndptr,voli,rigidVolume,&norm,delMatsPtr);
 					
 					// get COD if might be nneded by an interface
 					if(!mpmgrid.contactByDisplacements && mpmgrid.hasImperfectInterface)
@@ -753,164 +827,86 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 			}
 		}
 		
-		// Here inContact is usually true, but may be false for imperfect interface or for
-		// any other contact law that wants to continue (e.g., friction with adhesion)
+#pragma mark Rigid Contact: Implement contact law
+		// Paramters calculated above
+		// ndptr: node be analyzed
+		// delPi: momentum change for material i to move to com velocity
+		// delta: separation vector
+		// norm: normal vector
+		// deln: delta.n or normal separation between materials
+		// dotn: delPi.n
+		// contactArea: contact area (if needed)
+		// comContact: flag to ingnore contact and move to com velocity field
+		// masses: massi=mred
+		// fieldNum: this instance's crack velocity field number (0 to 3)
+		// activeField[mi]: material field number (material velocity field is mvf[activeField[mi]]
+		// theContactLaw: contact law
+		// postUpdate: current calculations are after updating momentum
+		// mredDelWf: heating when conduction is on
+		// getHeating
+
+		// cache contact parmaeters
+		Vector *useNorm = comContact ? NULL : &norm ;
+		// XPIC increment code will do rigid contact with rigidFld = (paired-maxMaterialFields) if
+		//		paired >= maxMaterialFields
+		int paired = rigidFld+maxMaterialFields;
+		MaterialContactNode::SetContactInfo(mmCache,deln,paired,&delPi,useNorm,theContactLaw,contactArea);
+
 		if(comContact)
 		{	// Use delPi found above and no further change needed, no other data needed either
 		}
 		else if(theContactLaw->IsFrictionalContact())
-		{	// Handle frictional law
+		{
+#pragma mark Rigid Contact: ... contact mechanics calculations
+
+			// Handle frictional law
 			
 			bool getHeating = false;
 			Vector delFi;
 			Vector *delFiPtr = NULL;
-			if(callType==UPDATE_MOMENTUM_CALL)
+			if(postUpdate)
 			{	// Find dF = (ma Fb - mb Fa)/Mc = -Fa for rigid material (infinite mb)
 				// May not be correct for rigid block, but not sure what else to do
 				// note that dacc = dF/mred = -Fa/ma
 				delFi = mvf[i]->GetFtot();
 				ScaleVector(&delFi, -1.);
 				delFiPtr = &delFi;
+				if(mmCache!=NULL) mmCache->startDelFi = delFi;
+
 				// second order heating needs acceleration too
 				if(ConductionTask::matContactHeating) getHeating = true;
 			}
 			
 			// get change in momentum, but false return means friction law wants no change (i.e, continue as if not in contact)
 			if(!theContactLaw->GetFrictionalDeltaMomentum(&delPi,&norm,dotn,deln,&mredDelWf,mred,getHeating,
-														  contactArea,deltime,delFiPtr,ndptr))
+														  contactArea,deltime,delFiPtr,ndptr,false))
 			{	continue;
 			}
 
-//#define YANG_CORRECTION
-//#define USE_DELN_INSTEAD
-#ifdef YANG_CORRECTION
-			// To fully implement have commands to set this parameters with enum for decayFunction
-			// options decayFunction=0 turns it off and > last function reverts to truncation at contrainStart
-			double constrainStart = 0;
-			int decayFunction = 6;
-			double kDecay = 8.;					// sigmoidal seems worse than linear so maybe not needed
-			
-			if(decayFunction>0)
-			{	// The following section is inspired by Yang theses (U of W with Peter Arduino) which scaled
-				//    force (i.e. delPi) depending on distance from node to edge of the rigid material
-				//    Yang defined a rigid body. Here rigid body is collection of rigid particles
-				// It scales delPi by a factor from 0 to 1 as function of distance of the rigid particle
-				//    to the nodal point. It might be an approach to soften the contact phenomenon,
-				//    or made it should be softened based on distance between the materials?
-				// Here modified to various functions and allow full contraint cutoff to differ from zero
-				// Wang thesis recommends contrainStart=0 and decayFunction=2 (or (1-r/h)^2)
-				// Shock examples are improved with contrainStart=-1 and decayFunction=1 (or 1-r/h)
-#ifdef USE_DELN_INSTEAD
-				double db = deln/contactGridN;
-				
-				// decay function = 1 (db<constrainStart, which must be negative), f(db) (db<0), 0 (db>=0)
-				if(db>=0.)
-				{	// not in contact so no contact force
-					ZeroVector(&delPi);
-				}
-#else
-				double db;
-				if(delMatsPtr!=NULL)
-				{	// using logistic regression
-					db = delMats.z/contactGridN;
-				}
-				else if(mpmgrid.contactByDisplacements)
-				{	// no correction here because don't have actual separation
-					db = constrainStart-1.;
-				}
-				else
-				{	// find extrapolated distance from rigid material to the node using contactPosition setting
-					// Rigid material is material b snf (a,b) contact pair
-					double pb = (dispRigid.x-ndptr->x)*norm.x + (dispRigid.y-ndptr->y)*norm.y + (dispRigid.z-ndptr->z)*norm.z;
-					pb /= contactGridN;
-					double r = mpmgrid.positionCutoff;
-					if(r>0.)
-					{	// contact position in units of cells
-						db = pb - 0.5*r;
-					}
-					else
-					{	// fit to non-linear power law
-						r = -r;
-						db = 2.*pow(pb/1.25,r) - 1.;
-					}
-				}
-				
-				// decay function = 1 (db<constrainStart), f(db) (db<1), 0 (db>1)
-				if(db>1.)
-				{	// more than grid cell away so no contact force
-					ZeroVector(&delPi);
-				}
-#endif
-				else if(db>constrainStart)
-				{	// rescale for step function (r/h = 0 when db=constrainStart and 1 when db=0)
-#ifdef USE_DELN_INSTEAD
-					double roverh = 1. - db/constrainStart;
-#else
-					double roverh = (db-constrainStart)/(1.-constrainStart);
-#endif
-					// various decay functions
-					double decay;
-					switch(decayFunction)
-					{	case 1://LINEAR_DECAY
-							decay = 1.-roverh;
-							break;
-						case 2://SQUARE_DECAY
-							// advocated in Yang's thesis
-							decay = (1.-roverh)*(1.-roverh);
-							break;
-						case 3://SQUARE2_DECAY
-							decay = 1.-roverh*roverh;
-							break;
-						case 4://CUBICSMOOTHSTEP_DECAY
-							decay = 1.-roverh*roverh*(3.-2.*roverh);
-							break;
-						case 5://Sigmoidal
-						{	double x = 2*roverh-1.;			// rescale to -1 to 1
-							double sx = 1./(1+exp(kDecay*x));
-							double sm1 = 1./(1+exp(-kDecay));
-							double s1 = 1./(1+exp(kDecay));
-							decay = (sx-s1)/(sm1-s1);
-							break;
-						}
-						case 6://Conserve constant velocity gradient for one side (set contrainStart to 0)
-							decay = pow((1.-roverh),2.5);
-							break;
-						default: //TRUNCATE_DECAY
-							decay = 0.;
-							break;
-					}
-//#pragma omp critical (debug)
-					//{	cout << "deln=" << deln << ", db=" << db << ", r/h=" << roverh << ", decay=" << decay << endl;
-					//}
-
-					// scale normal contact force only
-					double dpnorm = DotVectors(&delPi,&norm);
-					AddScaledVector(&delPi,&norm,(decay-1.)*dpnorm);
-				}
-				// else db<constrainStart and no change or fully constrained
-			}
-#endif
+			// Rigid correctsions from YANG thesis and an alternative have been removed
+			// They are last in revision 3967, but not updated for FMPM compaability
 		}
 		else
-		{	// Handle imperfect interface
+		{
+#pragma mark Rigid Contact: ... imperfect interface calculations
+			// tangential COD and tangent vector
 			Vector tangDel;
-			
-			// tangential COD
-			double delt = GetTangentCOD(&norm,&delta,&tangDel);
-			
+			double delt = GetTangentCOD(&norm,&delta,&tangDel,mmCache);
+
 			Vector fImp;
 			ZeroVector(&fImp);
-			if(callType==UPDATE_MOMENTUM_CALL)
+			if(postUpdate)
 			{	// Find delFi = (ma Fb - mb Fa)/Mc = (ma Fc - Mc Fa)/Mc = (ma Fc/Mc) - Fa = -Fa (when needed)
 				// not sure best for rigid black, but don't know what else to do
 				AddScaledVector(&fImp, mvf[i]->GetFtotPtr(), -1.);
+				if(mmCache!=NULL) mmCache->startDelFi = fImp;
 			}
 			
-			// Get interface force, energy, and posible change delPi
+			// Get interface force, energy, and posibly change delPi
 			double rawEnergy;
 			theContactLaw->GetInterfaceForces(&norm,&fImp,&rawEnergy,
-													contactArea,&delPi,dotn,mred,&tangDel,deln,delt,contactGridN);
-			if(callType==UPDATE_MOMENTUM_CALL)
+									contactArea,&delPi,dotn,mred,&tangDel,deln,delt,postUpdate);
+			if(postUpdate)
 			{	// add force (if any) to momentum change
 				AddScaledVector(&delPi, &fImp, timestep);
 				
@@ -921,7 +917,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 		}
 		
 #ifdef CHECK_NAN
-		if(delPi.x!=delPi.x || delPi.y!=delPi.y || delPi.z!=delPi.z)
+		if(IsNanVector(&delPi,true))
 		{
 #pragma omp critical (output)
 			{	cout << "\n# CrackVelocityFieldMulti::MaterialContactOnCVF: bad delPi";
@@ -935,11 +931,12 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 		
 		// Change momentum on field i
 		mvf[i]->ChangeMatMomentum(&delPi,callType,deltime);
-		
+		MaterialContactNode::ContactSetDelPi(mmCache,&delPi,mredDelWf);
+
 		// store contact force in rigid particle ftot
 		// There are three times this is called in an MPM Step, but to get correct force,
 		//    this calculation must only be done during momentum update
-		if(callType==UPDATE_MOMENTUM_CALL)
+		if(postUpdate)
 		{	mvf[rigidFld]->AddContactForce(&delPi);
 			
 			// if conduction on (and here means in momentum update) add frictional heating
@@ -1113,8 +1110,10 @@ Vector CrackVelocityFieldMulti::GetDisplacementVector(NodalPoint *ndptr,Vector *
 	return delta;
 }
 
-// Get tangDel and delt (only used in interface laws)
-double CrackVelocityFieldMulti::GetTangentCOD(Vector *norm,Vector *delta,Vector *tangDel)
+// Get tangDel (unit tangent vector, or zero)
+//    and delt = | delta.t | or always positive
+// Only called when modeling imperfect interfaces
+double CrackVelocityFieldMulti::GetTangentCOD(Vector *norm,Vector *delta,Vector *tangDel,FMPMContact *cache)
 {
 	// tangential vector in tangDel (might be zero vector if delta || to n)
 	double deln = DotVectors(delta,norm);
@@ -1125,18 +1124,25 @@ double CrackVelocityFieldMulti::GetTangentCOD(Vector *norm,Vector *delta,Vector 
 	double delt=sqrt(DotVectors(tangDel,tangDel));
 	if(!DbleEqual(delt,0.)) ScaleVector(tangDel,1./delt);
 	
+	// Cache for FMPM
+	MaterialContactNode::ContactInterfaceInfo(cache,delt,tangDel);
+	
 	// return tangDel in that vector and tangDel.t in double
 	return delt;
 }
 
 // Get interfacial contact area and also find tangDel and delt (only used in interface laws)
+// From Nairn (2013) on imperfect inteerface, area is scaled by distance to the contact node
+//		and cloest distance of the two materials. Future modification in ??
+//		was to scaled differently when using spline-based shape functions
 // Input is ndptr, voli, volb, norm
-// Ouput is hperp, and return contactArea
+// return contactArea
 // If tangDel!=NULL also find tangDel and delt = tangDel.t from delta and norm (otherwase delta not even used)
 // If delMats!=NULL, it is (deln, dAlpha, dBeta) for separation and distance of each material to node)
-double CrackVelocityFieldMulti::GetContactArea(NodalPoint *ndptr,double voli,double volb,Vector *norm,double *hperp,Vector *delMats)
+double CrackVelocityFieldMulti::GetContactArea(NodalPoint *ndptr,double voli,double volb,
+											   Vector *norm,Vector *delMats)
 {
-	// perpendicular distance to correct contact area and contact by positions
+	// perpendicular distance to correct contact area and contact by positions (hperp = dist.x)
 	Vector dist = mpmgrid.GetPerpendicularDistance(norm,ndptr);
 	
 	// Get raw surface area, it is divided by hperp to get contact area
@@ -1146,16 +1152,18 @@ double CrackVelocityFieldMulti::GetContactArea(NodalPoint *ndptr,double voli,dou
 	{	// Scale voltot=voli+volb to voltot*sqrt(2*vmin/voltot) = sqrt(2*vmin*vtot)
 		// dist weightings to allow for unequal element sizes
 		// This is approach in my paper and estimates distance from interface to the node
+		// Note that in 2D voli=t Ai and volb=t Ab reducing to Eq. in Nairn (2013)
 		if(ElementBase::GetShapeFunctionOrder()==1)
 			surfaceArea = sqrt(2.*fmin(voli*dist.y,volb*dist.z)*(voli+volb))/dist.x;
 		else
-		{	// spline functions
+		{	// spline shape functions only
 			double Vcell = voli+volb;
 			
 			// get linear d function and convert for splines
 			double ds = 1. - sqrt(2.*fmin(voli*dist.y,volb*dist.z)/Vcell);
 			double d = fmax(1.193*ds,-4.3248 + ds*(18.5999 - ds*(23.43 - 10.6304*ds)));
 			
+			// scale by S(d) spline function on grid where d in cell suze units
 			if(d<0.5)
 				surfaceArea = 0.75 - d*d;
 			else
@@ -1177,7 +1185,7 @@ double CrackVelocityFieldMulti::GetContactArea(NodalPoint *ndptr,double voli,dou
 		// Find material closest to node in cell units (d>0)
 		double d = fmin(dAlpha,dBeta)/dist.x;
 		
-		// get linear or quadratic weighting factor = S(d)
+		// scale by S(d) using linear or spline function on grid where d in cell suze units
 		if(ElementBase::GetShapeFunctionOrder()==1)
 			surfaceArea = fmax(0.,1.-d);
 		else
@@ -1197,7 +1205,6 @@ double CrackVelocityFieldMulti::GetContactArea(NodalPoint *ndptr,double voli,dou
 	if(fmobj->IsAxisymmetric()) surfaceArea *= ndptr->x;
 	
 	// output results
-	*hperp = dist.x;
 	return surfaceArea;
 }
 
@@ -1260,10 +1267,7 @@ void CrackVelocityFieldMulti::ReflectVelocityBC(Vector *norm,CrackVelocityField 
     {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	if(MatVelocityField::ActiveNonrigidField(rmvf[i]))
 			{	double rvel;
-				if(passType==UPDATE_GRID_STRAINS_CALL)
-					rvel = vel0 + reflectRatio*(vel0 - DotVectors(norm,rmvf[i]->vk));
-				else
-					rvel = vel0 + reflectRatio*(vel0 - DotVectors(norm,&rmvf[i]->pk)/rmvf[i]->mass);
+				rvel = vel0 + reflectRatio*(vel0 - DotVectors(norm,&rmvf[i]->pk)/rmvf[i]->mass);
 				mvf[i]->AddVelocityBC(norm,rvel,passType,deltime,freaction);
 			}
 		}
@@ -1318,6 +1322,267 @@ Vector CrackVelocityFieldMulti::GetCMatFtot(void)
 			AddVector(&fk,mvf[i]->GetFtotPtr());
 	}
 	return fk;
+}
+
+#pragma mark FMPM CONTACT EXTRAS
+
+// Called by XPIC/FMPM increment only for multimaterial nodes.
+// contact gives FMPMContact[i] for contact with material field i
+// contactType==1 (for materials) or 2+rigidFld (for contact with rigid material)
+// callType is XPIC_STRAIN_UPDATE or XPIC_PARTICLE_UPDATE
+void CrackVelocityFieldMulti::MaterialXPICIncrementOnCVF(NodalPoint *ndptr,FMPMContact *contact,double dtime,int callType)
+{
+	bool hasCOM = false;
+	Vector Pc;
+	double Mc=0.;
+	ZeroVector(&Pc);
+
+	// prepare for first order heating
+	bool getHeating = ConductionTask::matContactHeating && callType==XPIC_PARTICLE_UPDATE ;
+	double qrate = 0.;
+	
+	for(int i=0;i<maxMaterialFields;i++)
+	{	// skip inactive fields and rigid fields
+		if(!MatVelocityField::ActiveField(mvf[i]) || mvf[i]->IsRigidField()) continue;
+		
+		// skip low mass
+		bool isPaired = contact[i].paired>=0 ? true : false ;
+		if(contact[i].skipLowMass)
+		{	// done if paired and nonrigid contact
+			if(isPaired && contact[i].paired<maxMaterialFields) break;
+			continue;
+		}
+
+#pragma mark Incremental Contact: Get cached values and Delta Pmi for increment
+		double mred;
+		Vector delPi;
+		if(contact[i].paired<maxMaterialFields)
+		{	// node with only non-rigid materials (<0 or a material number)
+			
+			// get lumped mass and momentum using incremental velocity
+			if(!hasCOM)
+			{	for(int ii=0;ii<maxMaterialFields;ii++)
+				{	if(MatVelocityField::ActiveField(mvf[ii]))
+					{	AddScaledVector(&Pc,&mvf[ii]->vk[VSTARPREV_VEC],mvf[ii]->mass);
+						Mc += mvf[ii]->mass;
+					}
+				}
+				hasCOM = true;
+			}
+			
+			// reduced mass mi*(Mc-mi)/Mc = mi*(1-mi/Mc)
+			mred = mvf[i]->mass*(1.-mvf[i]->mass/Mc);
+			
+			// momentum change for material i to move to total COM conditions
+			// delPi = (mi(Pc-Pi)-(Mc-mi)Pi)/Mc = (mi Pc - Mc Pi)/Mc = mi Pc/Mc - Pi
+			delPi = SetScaledVector(&Pc,mvf[i]->mass/Mc);
+			AddScaledVector(&delPi,&mvf[i]->vk[VSTARPREV_VEC],-mvf[i]->mass);
+		}
+		else
+		{	// contact this material and rigid material paired-maxMaterialField
+			isPaired = false;
+			int rigidFld = contact[i].paired-maxMaterialFields;
+			
+			// reduced mass is mass of the nonrigid material
+			mred = mvf[i]->mass;
+			
+			// delPi from increment is -ma*(va-vrigid) = -ma*va + ma*vrigid
+			Vector rvel;
+			CopyScaleVector(&rvel, &mvf[rigidFld]->pk, 1./mvf[rigidFld]->mass);
+			delPi = SetScaledVector(&mvf[i]->vk[VSTARPREV_VEC],-mred);
+			AddScaledVector(&delPi,&rvel,mred);
+		}
+		
+		// add prior velocities
+		AddVector(&delPi,&contact[i].priorDelPiZero);
+	 
+		// save to be next increment prior delPi
+		contact[i].priorDelPiZero = delPi;
+		
+		// Variables
+		double mredDelWf = -1.;
+		double dotn,deln,contactArea;
+		
+		// contact law
+		ContactLaw *theContactLaw = contact[i].theContactLaw;
+		
+		// set to COM velocity
+		if(!contact[i].comContact)
+		{	// cached terms only need when actual contact
+			
+			// normal velocity
+			dotn = DotVectors(&delPi,&contact[i].norm);
+			
+			// normal COD
+			deln = contact[i].deltaDotn;
+			
+			// area (only if the law needed it)
+			contactArea = contact[i].contactArea;
+		}
+
+#pragma mark Incremental Contact: Implement contact law
+
+		// get contact momentum change
+		if(contact[i].comContact)
+		{	// Use delPi found above and no further change needed, no other data needed either
+		}
+		else if(theContactLaw->IsFrictionalContact())
+		{	// get change in momentum, but false return means friction law wants no change
+			// (i.e, continue as if not in contact)
+			if(!theContactLaw->GetFrictionalDeltaMomentum(&delPi,&contact[i].norm,dotn,deln,
+								&mredDelWf,mred,getHeating,contactArea,timestep,&contact[i].startDelFi,ndptr,false))
+  			{
+				// not in contact so delPi is zero and mredDelWf<0
+				// previous DelPi(0) was set above and no change to total delPi
+				// ... but if new total delPi is not zero, need to undo it (and heating too if has any)
+				if(!IsZeroVector(&contact[i].netDelPi,fmobj->IsThreeD()))
+				{	ZeroVector(&delPi);
+					// drop to below to undo prior corrections
+				}
+				else
+				{	// if paired then done for this crack velocity field
+					if(isPaired) break;
+					
+					// otherwise continue;
+					continue;
+				}
+			}
+		}
+		else
+		{	// Handle imperfect interface
+			double delt = contact[i].deltaDott;
+			
+			// Get interface force, energy, and posibly change delPi
+			double rawEnergy;
+			Vector fImp = contact[i].startDelFi;
+			bool postUpdate = callType==XPIC_PARTICLE_UPDATE;
+			theContactLaw->GetInterfaceForces(&contact[i].norm,&fImp,&rawEnergy,
+									contactArea,&delPi,dotn,mred,&contact[i].tangDel,
+									deln,delt,postUpdate);
+			if(postUpdate)
+			{	// add force (if any) to momentum change
+				AddScaledVector(&delPi, &fImp, timestep);
+				
+				// Add interface energy. (Legacy units g-mm^2/sec^2 or multiply by 1e-9 to get J - kg-m^2/sec^2)
+#pragma omp atomic
+				NodalPoint::interfaceEnergy += rawEnergy;
+			}
+		}
+
+		// Get delPi to apply by subtracting sum of prior delPi (then reset net delPi)
+		Vector newDelPi = delPi;
+		SubVector(&delPi,&contact[i].netDelPi);
+		contact[i].netDelPi = newDelPi;
+ 		if(getHeating)
+		{	double newMredDelWf;
+			if(mredDelWf>0.)
+			{	// found heat, save it and then adjust to increment
+				newMredDelWf = mredDelWf;
+				mredDelWf -= contact[i].priorMredDelWf;
+			}
+			else
+			{	// no heating, save as zero and adjust to increment
+				newMredDelWf = 0.;
+				mredDelWf = -contact[i].priorMredDelWf;
+			}
+			contact[i].priorMredDelWf = newMredDelWf;
+		}
+ 		
+		// new velocity (massi*vi + delPi)/massi = vi + delPi/massi (force only for XPIC)
+		AddScaledVector(&mvf[i]->vk[VSTARPREV_VEC],&delPi,1./mvf[i]->mass);
+		if(callType==XPIC_PARTICLE_UPDATE && !bodyFrc.UsingFMPM())
+			mvf[i]->AddFtotScaled(&delPi, 1./dtime);
+		
+		// other material (force only for XPIC)
+		if(isPaired)
+		{	int j = contact[i].paired;
+			
+			// new velocity (massj*vj - delPi)/massj = vj - delPi/massj (force only for XPIC)
+			AddScaledVector(&mvf[j]->vk[VSTARPREV_VEC],&delPi,-1./mvf[j]->mass);
+			if(callType==XPIC_PARTICLE_UPDATE && !bodyFrc.UsingFMPM())
+				mvf[j]->AddFtotScaled(&delPi, -1./dtime);
+
+			if(getHeating && mredDelWf!=0.)
+			{	qrate += mredDelWf/mred;
+			}
+
+			// and now done for this crack velocity field
+			break;
+		}
+		else if(getHeating && mredDelWf!=0.)
+		{	qrate += mredDelWf/mvf[i]->mass;
+		}
+	}
+
+	// total friction, scale by time step
+	if(getHeating && qrate!=0.)
+	{	// add to flux
+		conduction->AddFluxCondition(ndptr,qrate/dtime,true);
+		
+#pragma omp atomic
+		NodalPoint::frictionWork += qrate;
+	}
+}
+
+// get center of mass incremental XPIC/FMPM momentum for all nonrigid material fields in this crack velocity field
+// Only counts materials that account for cracks
+Vector CrackVelocityFieldMulti::GetCMatMomentumIncrement(bool &hasParticles,double *foundMass) const
+{	Vector pk;
+	ZeroVector(&pk);
+	hasParticles = false;
+	*foundMass = 0;
+	for(int i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField::ActiveNonrigidSeesCracksField(mvf[i],true))
+		{	AddScaledVector(&pk,&mvf[i]->vk[VSTARPREV_VEC],mvf[i]->mass);
+			*foundMass += mvf[i]->mass;
+			hasParticles = true;
+		}
+	}
+	return pk;
+}
+
+// change incremental velocity by delP/M in each material
+//     Material i velocity increment becomes dvi + dP/M
+//     Material i momentum changes to mi dvi + mi dP/M
+//     Sum of momentum changes is Sum mi dP/M = dP
+void CrackVelocityFieldMulti::ChangeVelocityIncrement(Vector *delP,double dtime,int callType)
+{
+	int i;
+	
+	// special case for only one material (and it must be nonrigid and seeing cracks)
+	if(numberMaterials==1)
+	{	for(i=0;i<maxMaterialFields;i++)
+		{	if(MatVelocityField::ActiveNonrigidSeesCracksField(mvf[i],true))
+			{	// Add force for XPIC, FMPM does not need material force for updates
+				if(callType==XPIC_PARTICLE_UPDATE && !bodyFrc.UsingFMPM())
+					mvf[i]->AddFtotScaled(delP, 1./dtime);
+			
+				// set new velocity
+				AddScaledVector(&mvf[i]->vk[VSTARPREV_VEC],delP,1./mvf[i]->mass);
+				break;
+			}
+		}
+	}
+	
+	// more than one material
+	else
+	{	// get velocity change, which is same for all materials
+		Vector deltaV;
+		double totMass = GetTotalMass(true);
+		CopyScaleVector(&deltaV, delP, 1./totMass);
+		
+		// loop over all materials
+		for(i=0;i<maxMaterialFields;i++)
+		{	if(MatVelocityField::ActiveNonrigidSeesCracksField(mvf[i],true))
+			{	// Add force for XPIC, FMPM does not need material force for updates
+				if(callType==XPIC_PARTICLE_UPDATE && !bodyFrc.UsingFMPM())
+					mvf[i]->AddFtotScaled(&deltaV, mvf[i]->mass/dtime);
+		
+				// set new velocity
+				AddVector(&mvf[i]->vk[VSTARPREV_VEC],&deltaV);
+			}
+		}
+	}
 }
 
 #pragma mark ACCESSORS
@@ -1475,7 +1740,7 @@ void CrackVelocityFieldMulti::ChangeCrackMomentum(Vector *delP,int callType,doub
 	int i;
 	
 #ifdef CHECK_NAN
-	if(delP->x!=delP->x || delP->y!=delP->y || delP->z!=delP->z)
+	if(IsNanVector(delP,true))
 	{
 #pragma omp critical (output)
 		{	cout << "\n# CrackVelocityFieldMulti::ChangeCrackMomentum: bad delP";
@@ -1489,7 +1754,7 @@ void CrackVelocityFieldMulti::ChangeCrackMomentum(Vector *delP,int callType,doub
 	// special case for only one material (and it must be nonrigid)
 	if(numberMaterials==1)
 	{	for(i=0;i<maxMaterialFields;i++)
-		{	if(MatVelocityField::ActiveField(mvf[i]))
+		{	if(MatVelocityField::ActiveNonrigidSeesCracksField(mvf[i],true))
 			{	mvf[i]->ChangeMatMomentum(delP,callType,deltime);
 				break;
 			}

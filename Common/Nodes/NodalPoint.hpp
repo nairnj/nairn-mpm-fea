@@ -102,7 +102,7 @@ class NodalPoint : public LinkedObject
 		void SurfaceCrossesCracks(Vector *,Vector *,CrackField *) const;
 		int SurfaceCrossesOneCrack(Vector *,Vector *,int) const;
 		int SurfaceCrossesOtherCrack(Vector *,Vector *,int) const;
-		bool GetCenterOfMassVelocity(Vector *,bool);
+		bool GetCenterOfMassVelocity(Vector *);
 	
 		// specific task methods
 		void PrepareForFields(void);
@@ -132,9 +132,13 @@ class NodalPoint : public LinkedObject
         void CalcStrainField(void);
 		void Interpolate(NodalPoint *,NodalPoint *,double,int,int *);
 		int HasCrackContact(void);
-		void CrackContact(int,double,int);
-		void CrackContactThree(int,int,double);
+		void CrackContact(int,double,int,CrackNode *);
+		void CrackContactThree(int,int,double,CrackNode *);
 		void MaterialContactOnNode(double,int,MaterialContactNode *);
+		void MaterialXPICIncrementOnNode(FMPMContact *[4],double,int);
+		void CrackXPICIncrementOnNode(FMPMContact *,double,int);
+		void AdjustXPICIncrement(int,int,double,int,FMPMContact *);
+
         void GetMatVolumeGradient(int,Vector *) const;
         void ZeroVelocityBC(Vector *,int,double,Vector *);
         void AddVelocityBC(Vector *,double,int,double,Vector *);
@@ -149,8 +153,8 @@ class NodalPoint : public LinkedObject
 		void MirrorIgnoredCrackFields(void);
 	
 		// XPIC
-		void XPICSupport(int,int,NodalPoint *,double,int,int,double);
-		void AddVStarNext(short,int,Vector *,double,double);
+		void XPICSupport(int,int,NodalPoint *,double,int);
+		void AddVStarNext(short,int,Vector *,double);
 		virtual Vector *GetVStarPrev(short,int) const;
 		double GetMaterialMass(short,int) const;
 	
@@ -178,7 +182,7 @@ class NodalPoint : public LinkedObject
 #ifdef MPM_CODE
         // methods - MPM only
 		void AverageStrain(DispField *,DispField *,DispField *,double);
-        void AdjustContact(short,short,Vector *,int,int,double);
+        void AdjustContact(short,short,Vector *,int,int,double,CrackNode *);
 #endif
 
 };

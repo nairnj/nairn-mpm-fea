@@ -9,9 +9,7 @@
 #include "stdafx.h"
 #include "Read_XML/PointController.hpp"
 
-/********************************************************************************
-	LineController: Constructors and Destructor
-********************************************************************************/
+#pragma mark LineController: Constructors and Destructor
 
 PointController::PointController(int block,int node) : ShapeController(block)
 {
@@ -22,9 +20,7 @@ PointController::PointController(int block,int node) : ShapeController(block)
 // bothing to check
 bool PointController::FinishSetup(void) { return TRUE; }
 
-/********************************************************************************
-	LineController: methods
-********************************************************************************/
+#pragma mark LineController: methods
 
 // return next node for this line
 int PointController::nextNode(void)

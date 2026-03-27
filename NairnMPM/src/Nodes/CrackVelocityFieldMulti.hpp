@@ -54,6 +54,9 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 
 		// standard mathod
 		virtual void MaterialContactOnCVF(MaterialContactNode *,double,int);
+		virtual void MaterialXPICIncrementOnCVF(NodalPoint *,FMPMContact *,double,int);
+		virtual Vector GetCMatMomentumIncrement(bool &,double *) const;
+		virtual void ChangeVelocityIncrement(Vector *,double,int);
 		void MaterialContactOnCVFLumped(MaterialContactNode *,double,int,int *,int,Vector,double);
 		virtual void RigidMaterialContactOnCVF(int,bool,MaterialContactNode *mcn,double,int);
 	
@@ -93,11 +96,11 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void Describe(void) const;
 
 		// XPIC methods
-		virtual void XPICSupport(int,int,NodalPoint *,double,int,int,double);
+		virtual void XPICSupport(int,int,NodalPoint *,double,int);
 	
 		// class methods
-		static double GetTangentCOD(Vector *,Vector *,Vector *);
-		static double GetContactArea(NodalPoint *,double,double,Vector *,double *,Vector *);
+		static double GetTangentCOD(Vector *,Vector *,Vector *,FMPMContact *);
+		static double GetContactArea(NodalPoint *,double,double,Vector *,Vector *);
 	
 		virtual void MirrorFieldsThatIgnoreCracks(CrackVelocityFieldMulti *);
 		virtual bool HasFieldsThatIgnoreCracks(void) const;

@@ -142,6 +142,7 @@ bool UpdateStrainsLastContactTask::Execute(int taskOption)
 	}
 	
 	// contact and mnomenta BCs
+	// contact and BCs
 	UpdateMomentaTask::ContactAndMomentaBCs(UPDATE_STRAINS_LAST_CALL);
 
 	// update strains based on current velocities

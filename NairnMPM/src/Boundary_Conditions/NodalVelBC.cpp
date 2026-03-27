@@ -304,16 +304,18 @@ void NodalVelBC::GridVelocityBCValues(void)
 /*****************************************************************************
  Impose specified momenta, force, or velocity at selected nodes.
  The passTypes are
-	MASS_MOMENTUM_CALL: after momentum extrapolation, use lumped mass
+	_MASS_MOMENTUM_CALL_ : after momentum extrapolation, use lumped mass
 		matrix method to change pk
-	GRID_FORCES_CALL: After force extrapolation, use lumped method
+	_GRID_FORCES_CALL_ : After force extrapolation, use lumped method
 		to get grid forces corresponding to lumped momentum change
-	UPDATE_MOMENTUM_CALL: after momentum update, use lumped mass matrix
+	_UPDATE_MOMENTUM_CALL_ : after momentum update, use lumped mass matrix
 		method to change pk and ftot. It is usually small change
 		caused by contact or mirroring (might not be needed)
-	UPDATE_STRAINS_LAST_CALL: prior to USL+ or USAVG+ use lumped mass
+	_UPDATE_STRAINS_LAST_CALL_ : prior to USL+ or USAVG+ use lumped mass
 		matrix method to change pk
-	UPDATE_GRID_STRAINS_CALL: For FMPM(k>1) impose velocity BCs in vk[0]
+	_XPIC_STRAIN_UPDATE or XPIC_PARTICLE_UPDATE_ : For FMPM and XPIC (k>1) only
+		and impose velocity BCs in vk[VSTARPREV-VEC]. It zeros only and
+		never calls VelocityBCLoop
  Be sure to precheck simulation wants this calculation BEFORE calling
 */
 void NodalVelBC::GridVelocityConditions(int passType)
@@ -322,12 +324,16 @@ void NodalVelBC::GridVelocityConditions(int passType)
 	if(firstVelocityBC==NULL) return;
 	
 	switch(passType)
-	{	case UPDATE_GRID_STRAINS_CALL:
-			// Only called for FMPM(k>1) after grid velocities are found by XPIC
-			// BC options 0 and 1 impose BCs in these velocties now
-			VelocityBCLoop(UPDATE_GRID_STRAINS_CALL);
+	{	case XPIC_STRAIN_UPDATE:
+		case XPIC_PARTICLE_UPDATE:
+		{	// Only called for FMPM and XPIC (k>1) while finding grid velocities
+			// Each increment sets zero velociy in controlled directions
+			NodalVelBC *nextBC=firstVelocityBC;
+			while(nextBC!=NULL)
+				nextBC = nextBC->ZeroVelocityBC(mtime,passType);
 			break;
-		
+		}
+	
 		case MASS_MOMENTUM_CALL:
 		{
 #if ADJUST_COPIED_PK == 1

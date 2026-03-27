@@ -211,8 +211,8 @@ void CrackVelocityField::CopyGridForces(NodalPoint *real)
 #pragma mark TASK 5 METHODS
 
 // add to vStarNext
-void CrackVelocityField::AddVStarNext(int matfld,Vector *vStarPrevj,double weight,double weightContact)
-{	mvf[matfld]->AddVStarNext(vStarPrevj,weight,weightContact);
+void CrackVelocityField::AddVStarNext(int matfld,Vector *vStarPrevj,double weight)
+{	mvf[matfld]->AddVStarNext(vStarPrevj,weight);
 }
 
 // Get vStarPrev pointer
@@ -351,6 +351,11 @@ bool CrackVelocityField::GetCMVelocityTask8(Vector *velCM,Vector *accCM) const
 // Called in multimaterial mode to check contact at nodes with multiple materials
 void CrackVelocityField::MaterialContactOnCVF(MaterialContactNode *mcn,double deltime,int callType)
 {	
+}
+
+// Not used in single material mode
+void CrackVelocityField::MaterialXPICIncrementOnCVF(NodalPoint *ndptr,FMPMContact *contact,double dtime,int callType)
+{
 }
 
 // retrieve mass gradient (overridden in CrackVelocityFieldMulti where it is needed

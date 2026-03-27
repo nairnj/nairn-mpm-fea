@@ -23,7 +23,7 @@ class MatPtLoadBC;
 enum { CONTACT_EQUILIBRATED=0, CONTACT_CONVECTED };
 
 // One for conduction, one for diffusion (or poroelastity), and
-// one for each other task available in code (currently phase field diffusion)
+// one for each other tasks available in code (currently phase field diffusion)
 #define MAX_TRANSPORT_TASKS 3
 #define MAX_DIFFUSION_TASKS 2
 

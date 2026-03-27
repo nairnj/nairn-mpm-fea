@@ -31,17 +31,17 @@ enum { IN_CONTACT=0,SEPARATED };
 class CrackSurfaceContact
 {
     public:
-		int crackContactLawID;
-		bool crackContactByDisplacements;	// true if crack contact using displacements, false if need to adjust normal COD
-		double crackPositionCutoff;			// cut off for normal contact when using position for cracks
+		int contactLawID;
+		bool contactByDisplacements;	// true if crack contact using displacements, false if need to adjust normal COD
+		double positionCutoff;			// cut off for normal contact when using position for cracks
 	
         // constructors and destructors
         CrackSurfaceContact();
     
         // methods
 		short HasContact(int);
-		bool GetDeltaMomentum(NodalPoint *np,Vector *,CrackVelocityField *,CrackVelocityField *,Vector *,int,int,double,int *);
-		double MaterialSeparation(double,double,Vector *,NodalPoint *,bool,double);
+		bool GetDeltaMomentum(NodalPoint *np,Vector *,CrackVelocityField *,CrackVelocityField *,
+							  Vector *,int,int,double,int *,FMPMContact *);
 		void Output(void);
 		void CustomCrackContactOutput(int &,int);
 		bool GetMoveOnlySurfaces(void) const;
@@ -49,12 +49,15 @@ class CrackSurfaceContact
 		bool GetPreventPlaneCrosses(void) const;
 		void SetPreventPlaneCrosses(bool);
 	
+		// Used for material and crack contact
+		double MaterialSeparation(double,double,Vector *,NodalPoint *,bool,double);
+
 	private:
-		ContactLaw **crackContactLaw;
+		ContactLaw **contactLaw;
 		bool moveOnlySurfaces;
         bool preventPlaneCrosses;
 };
 
-extern CrackSurfaceContact contact;
+extern CrackSurfaceContact crackContact;
     
 #endif

@@ -94,7 +94,7 @@ bool GridForcesTask::Execute(int taskOption)
 					ndptr->AddFtotTask3(vfld,matfld,&theFrc);
 
 #ifdef CHECK_NAN
-                    if(theFrc.x!=theFrc.x || theFrc.y!=theFrc.y || theFrc.z!=theFrc.z)
+					if(IsNanVector(&theFrc,true))
                     {
 #pragma omp critical (output)
 						{	cout << "\n# GridForcesTask::Execute: bad nodal force vfld = " << vfld << ", matfld = " << matfld;

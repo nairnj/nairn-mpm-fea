@@ -10,9 +10,7 @@
 #include "Cracks/ContourPoint.hpp"
 #include "Nodes/NodalPoint.hpp"
 
-/*******************************************************************
-	ContourPoint: Constructors and Destructors
-*******************************************************************/
+#pragma mark ContourPoint: Constructors and Destructors
 
 // Constructors
 ContourPoint::ContourPoint()
@@ -25,6 +23,7 @@ ContourPoint::ContourPoint(NodalPoint *aNode)
     nextPoint=NULL;
     orient=ANGLED;
 	phantomNode = false;
+	subtractJ = false;
     
     // other crack info
     otherCrack = NULL;
@@ -43,9 +42,7 @@ ContourPoint::~ContourPoint()
 	}
 }
 
-/*******************************************************************
-	ContourPoint: Methods
-*******************************************************************/
+#pragma mark ContourPoint: Methods
 
 // set next point and find orientation
 // return ANGLED (-1) if line not along x or y axis

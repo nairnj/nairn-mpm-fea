@@ -205,7 +205,7 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 		
 		// get cracking strain increments for an elastic update
 		// by using ezzres, this works in plane strain (where deT(2,2)=0), 3D, and axisymmetric
-		// plane stress is different here, but not yet supported elsewhere
+		// plane stress is different here
 		double den;
 		if(np==PLANE_STRESS_MPM)
 		{	den = deT(0,0)-ezzres + nu*(deT(1,1)-ezzres) ;
@@ -302,6 +302,7 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 		AddTensor(&de,&dec);
 		
 		// give subclass material chance to update history variables that change in elastic updates
+		// very few use it
 		plasticLaw->ElasticUpdateFinished(mptr,np,delTime,0);
 	}
 	
@@ -436,7 +437,7 @@ void IsoPlasticSoftening::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double del
 		AddTensor(eplast,&dep);
 		
 		// Task 4f: Update Internal Variables
-		//----------------------------------
+		//-----------------------------------
 		plasticLaw->UpdatePlasticInternal(mptr,np,&alpha,0);
 	}
 	

@@ -94,7 +94,8 @@ class NairnMPM : public CommonAnalysis
 		bool HasPoroelasticity(void);
 #endif
 		bool HasFluidTransport(void);
-	
+		bool HasContactNodes(void) const;
+
 		// archiver access while reading
 		virtual void ArchiveNodalPoints(int);
 		virtual void ArchiveElements(int);

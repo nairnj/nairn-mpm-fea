@@ -12,9 +12,7 @@
 
 KeypointsController *keyPts=NULL;
 
-/********************************************************************************
-	KeypointsController: contructor and destructor
-********************************************************************************/
+#pragma mark KeypointsController: contructor and destructor
 
 // delete keypoints
 KeypointsController::~KeypointsController(void)
@@ -28,9 +26,7 @@ KeypointsController::~KeypointsController(void)
 	}
 }
 
-/********************************************************************************
-	KeypointsController: methods
-********************************************************************************/
+#pragma mark KeypointsController: methods
 
 // Check name before use
 int KeypointsController::ValidName(char *keyName)

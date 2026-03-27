@@ -18,9 +18,7 @@
 
 NodesController *theNodes=NULL;
 
-/********************************************************************************
-	NodesController: methods
-********************************************************************************/
+#pragma mark NodesController: methods
 
 #ifdef MPM_CODE
 

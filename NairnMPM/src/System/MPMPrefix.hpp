@@ -38,20 +38,12 @@
 // If 2 is best, probably better to copy after contact and BCs are done (or not copy at all?)
 #define ADJUST_COPIED_PK 1
 
-// This option adds new terms in multimaterial mode
-// 0: no changes for contact, 1: Correction in paper applied to delta p^\alpha only, 2: future
-#define MM_XPIC 1
-
 // MOVECRACKS_EARLY: move cracks right after particle update instead of after custom tasks
 //		Issues: does it affect J calculation?
 #define MOVECRACKS_EARLY
 
-// Special handling of three materials in contact (it is mentioned in contact paper)
-// This method is not currently recommend. See contact paper on its use. The default method
-// when this is commented out is for each material to do contact with other materials lumped
-// together. Most of the code is in CrackVelocityFieldMulti3.cpp
-// For those interested in trying it our, uncomment this directive.
-// Warning: Only implemened for CoulombFriction and AdhesiveFriction contact laws
+// Last available in Revision 3936
+// Warning: Not recommended and only implemened for CoulombFriction and AdhesiveFriction contact laws
 //#define THREE_MAT_CONTACT
 
 // Uncomment to allow a method to increase the speed of multiple cracks

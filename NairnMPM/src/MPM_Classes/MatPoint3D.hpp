@@ -30,7 +30,7 @@ class MatPoint3D : public MPMBase
         virtual void SetVelocity(Vector *);
         virtual double thickness(void);
 		virtual void UpdateStrain(double,int,int,void *,int,bool);
-        virtual Matrix3 ExtraVelocityGradient(void);
+        virtual Matrix3 ExtrapVelocityGradient(int);
 		virtual void PerformConstitutiveLaw(Matrix3,double,int,void *,ResidualStrains *,Tensor *);
 		virtual void GetFintPlusFext(Vector *,double,double,double,double);
 		virtual void MoveParticle(GridToParticleExtrap *);

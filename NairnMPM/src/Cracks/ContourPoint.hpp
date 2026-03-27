@@ -30,6 +30,7 @@ class ContourPoint
         Vector norm;
         double ds;
 		bool phantomNode;
+		bool subtractJ;
     
         // other crack into
         CrackHeader *otherCrack;

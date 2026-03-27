@@ -477,7 +477,7 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,
 			else
 				normal->z = atan2(R(2,1),-R(2,0));		// gamma = atan2(Y3,-X3)
 #ifdef CHECK_NAN
-			if(normal->x!=normal->x || normal->y!=normal->y || normal->z!=normal->z)
+			if(IsNanVector(normal,true))
 			{
 #pragma omp critical (output)
 				{	cout << "\n# FailureSurface::ShouldInitiateFailure: bad 3D normals" << endl;

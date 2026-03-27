@@ -641,9 +641,6 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             else if(strcmp(aName,"Azimuth")==0)
 			{	azimuthAngle=scanInput;
 			}
-			else if(strcmp(aName,"Lumping")==0)
-			{	mpmgrid.lumpingMethod=(int)(scanInput+0.5);
-			}
 			// Note old Vmin and Dcheck are now ignored
 			delete [] aName;
             delete [] value;
@@ -1025,15 +1022,15 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"type")==0)
 			{	if(strcmp(value,"cm")==0 || strcmp(value,"CM")==0)
-					contact.SetMoveOnlySurfaces(FALSE);
+					crackContact.SetMoveOnlySurfaces(FALSE);
 				else
-					contact.SetMoveOnlySurfaces(TRUE);				
+					crackContact.SetMoveOnlySurfaces(TRUE);
             }
 			else if(strcmp(aName,"prevent")==0)
 			{	if(strcmp(value,"no")==0 || strcmp(value,"No")==0 || strcmp(value,"NO")==0)
-					contact.SetPreventPlaneCrosses(FALSE);
+					crackContact.SetPreventPlaneCrosses(FALSE);
 				else
-					contact.SetPreventPlaneCrosses(TRUE);				
+					crackContact.SetPreventPlaneCrosses(TRUE);
             }
 			delete [] value;
             delete [] aName;
@@ -1042,9 +1039,9 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 
     else if(strcmp(xName,"ContactPosition")==0)
 	{	if(block==CRACKHEADER)
-		{	contact.crackContactByDisplacements = false;
+		{	crackContact.contactByDisplacements = false;
 			input=DOUBLE_NUM;
-			inputPtr=(char *)&contact.crackPositionCutoff;
+			inputPtr=(char *)&crackContact.positionCutoff;
 		}
 		else if(block==MULTIMATERIAL)
 		{	mpmgrid.contactByDisplacements = false;
@@ -1772,8 +1769,8 @@ void MPMReadHandler::myEndElement(char *xName)
 	else if(strcmp(xName,"Cracks")==0)
     {	// install frictionless if not provded
         // but only if Cracks element is in the MPMHeader
-		if(contact.crackContactLawID<0)
-		{	contact.crackContactLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,NULL,0.,"Cracks default");
+		if(crackContact.contactLawID<0)
+		{	crackContact.contactLawID = ContactLaw::ConvertOldStyleToContactLaw(matCtrl,NULL,0.,"Cracks default");
 		}
     	block=MPMHEADER;
     }
@@ -1802,7 +1799,7 @@ void MPMReadHandler::myEndElement(char *xName)
 		
 		// assign law to appropriate place
 		if(block==CRACKHEADER)
-		{	contact.crackContactLawID = finalLawID;
+		{	crackContact.contactLawID = finalLawID;
 		}
 		else if(block==MULTIMATERIAL)
 		{	mpmgrid.materialContactLawID = finalLawID;

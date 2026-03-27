@@ -2,9 +2,9 @@
     TractionLaw.cpp
     nairn-mpm-fea
  
-    Thie abstract class is parent for all cohesive laws (and coheive beamn laws.
-    The only propertiies are stress1, stress2 that can be set with
-    sigmaI and sigmaII inpiut commands (initialized to -1)
+    This abstract class is parent for all cohesive laws (and cohesive beam laws).
+    The only properties are stress1, stress2 that can be set with
+    sigmaI and sigmaII input commands (initialized to -1)
     
     Created by John Nairn on Feb 22 2008.
     Copyright (c) 2008 John A. Nairn, All rights reserved.
@@ -86,7 +86,9 @@ void TractionLaw::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,Vect
 }
 
 // Return current traction law strain energy (Int T.du).
-//	This energy is needed for J integral (and only used in J Integral)
+// This energy is needed for J integral (and only used in J Integral)
+// It is called by CrackSegment::SegmentTractionEnergy(), which is called
+//		CrackSegment::TractionEnergy()
 // units of F/L
 double TractionLaw::CrackWorkEnergy(CrackSegment *cs,double nCod,double tCod)
 {	return 0.;

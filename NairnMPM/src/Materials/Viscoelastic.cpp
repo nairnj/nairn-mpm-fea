@@ -151,8 +151,12 @@ void Viscoelastic::PrintMechanicalProperties(void) const
     // WLF properties
     if(Tref>=0.)
     {   PrintProperty("Tref",Tref,"K");
-        PrintProperty("C1",C1base10,"");
-        PrintProperty("C2",C2,"");
+		if(C1base10>0.)
+		{	PrintProperty("C1",C1base10,"");
+			PrintProperty("C2",C2,"");
+		}
+		else
+			PrintProperty("Delta(H)/R",-C1base10,"");
         cout << endl;
     }
     else if(mref<0.)
@@ -458,7 +462,7 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 	
 	// Moisture terms input as log ac = -Cm1base(m-mref)/(Cm2base+m-mref)
     // ... convert to use ln ac = - Cm1*(c-cref)/(Cm2+c) where c = m/csat and cref=mref/csat
-    // ... Cm1 = Cm1bas*ln(10) and Cm2 = (Cm2base-mref)/csat
+    // ... Cm1 = Cm1base*ln(10) and Cm2 = (Cm2base-mref)/csat
     // log ac =
 	Cm1 = log(10.)*Cm1base10;
 	Cm2 = (Cm2base10-mref)/concSaturation;
@@ -1210,7 +1214,7 @@ double Viscoelastic::GetEffectiveIncrement(MPMBase *mptr,ResidualStrains *res,do
 	
     // When here have
     // lnR = ln aT(T)ac(c)/(aT(T+dT)ac(c+dc)) and mlogaold = -ln aT(T)ac(c)
-    
+
     // return the effective increment = dt*scale/(aT ac)
     return dRealTime*GetDtScale(lnR)*exp(mlogaold);
 }

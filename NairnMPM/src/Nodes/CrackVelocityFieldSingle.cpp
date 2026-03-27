@@ -90,12 +90,13 @@ void CrackVelocityFieldSingle::UpdateMomentum(double timestep)
 #pragma mark TASK 5 XPIC METHODS
 
 // Support XPIC calculations
-void CrackVelocityFieldSingle::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int m,int k,double vsign)
+void CrackVelocityFieldSingle::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int iarg)
 {	if(xpicCalculation==COPY_VSTARNEXT)
-	{	xpicOption = fieldNum;			// vfld
-		m = 0;							// matfld
+	{	// change xpicOption to fieldNum and iarg to matnum (which is zero in single material mode)
+		mvf[0]->XPICSupport(xpicCalculation,fieldNum,real,timestep,0);
 	}
-	mvf[0]->XPICSupport(xpicCalculation,xpicOption,real,timestep,m,k,vsign);
+	else
+		mvf[0]->XPICSupport(xpicCalculation,xpicOption,real,timestep,iarg);
 }
 
 #pragma mark TASK 6 METHODS
@@ -135,10 +136,7 @@ void CrackVelocityFieldSingle::ReflectVelocityBC(Vector *norm,CrackVelocityField
 	{	MatVelocityField **rmvf = rcvf->GetMaterialVelocityFields();
 		if(rmvf[0]->numberPoints>0)
 		{	double rvel;
-			if(passType==UPDATE_GRID_STRAINS_CALL)
-				rvel = vel0 + reflectRatio*(vel0 - DotVectors(norm,rmvf[0]->vk));
-			else
-				rvel = vel0 + reflectRatio*(vel0 - DotVectors(norm,&rmvf[0]->pk)/rmvf[0]->mass);
+			rvel = vel0 + reflectRatio*(vel0 - DotVectors(norm,&rmvf[0]->pk)/rmvf[0]->mass);
 			mvf[0]->AddVelocityBC(norm,rvel,passType,deltime,freaction);
 		}
 	}
@@ -169,6 +167,30 @@ Vector CrackVelocityFieldSingle::GetCMatFtot(void)
 		ZeroVector(&fk);
 		return fk;
 	}
+}
+
+#pragma mark FMPM CONTACT EXTRAS
+
+// get center of mass incremental XPIC/FMPM momentum for all nonrigid material fields in this crack velocity field
+// Only counts materials that account for cracks
+Vector CrackVelocityFieldSingle::GetCMatMomentumIncrement(bool &hasParticles,double *fieldMass) const
+{	hasParticles = mvf[0]->numberPoints>0 ;
+	*fieldMass = mvf[0]->mass;
+	Vector pk = mvf[0]->vk[VSTARPREV_VEC];
+	ScaleVector(&pk,mvf[0]->mass);
+	return pk;
+}
+
+// change incremental velocity dP/mass
+// Result is dva = dva + delP/mass
+void CrackVelocityFieldSingle::ChangeVelocityIncrement(Vector *delP,double dtime,int callType)
+{
+	// Add force for XPIC, FMPM does not need material force for updates
+	if(callType==XPIC_PARTICLE_UPDATE && !bodyFrc.UsingFMPM())
+		mvf[0]->AddFtotScaled(delP, 1./dtime);
+	
+	// set new velocity
+	AddScaledVector(&mvf[0]->vk[VSTARPREV_VEC],delP,1./mvf[0]->mass);
 }
 
 #pragma mark ACCESSORS

@@ -52,6 +52,7 @@ class CustomThermalRamp : public CustomTask
 		double kcon,ksig;		// sigmoidal settings
 		double normExp;			// exponential normalization
 		Expression *scaleFxn;
+		bool posIndependent;	// true if scaleFxn depends only on time
 	
 		// for imaged ramp
 		char *bmpFile;

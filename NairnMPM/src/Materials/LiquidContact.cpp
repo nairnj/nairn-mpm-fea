@@ -86,21 +86,13 @@ void LiquidContact::PrintContactLaw(void) const
 	else
 		cout << "(invalid ID " << liquidPhaseID << ")" << endl;
 	
-	if(Dc<0.)
-		cout << "   Stress found by perfect interface methods" << endl;
-	else
-	{	cout << "   Stress found by linear imperfect interface with Dc = ";
-		cout << Dc*UnitsController::Scaling(1.e-6) << " " << UnitsController::Label(INTERFACEPARAM_UNITS) << endl;
-	}
-	if(displacementOnly>0.1)
-		cout << "   Detection by only negative separation" << endl;
-	else if(displacementOnly<0.)
-	{	const char *label = UnitsController::Label(PRESSURE_UNITS);
-		cout << "   Detection by negative separation and stress < " <<
-					-displacementOnly*UnitsController::Scaling(1.e-6) << " " << label << endl;
-	}
-	else
-		cout << "   Detection by negative separation and stress < 0" << endl;
+	cout << "   Detection by negative separation and stress < 0" << endl;
+	
+	// features last used in revision 3941
+	if(displacementOnly>0.1 || displacementOnly<0.)
+		cout << "    (displacementOnly option entered - no longer used)" << endl;
+	if(Dc>=0.)
+		cout << "    (Dc option entered - no longer used)" << endl;
 }
 
 #pragma mark LiquidContact:Step Methods
@@ -112,9 +104,6 @@ void LiquidContact::PrintContactLaw(void) const
 double LiquidContact::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred,
 								 double contactArea,bool &inContact,double deltime) const
 {
-	// Exit if not in contact
-	if(!inContact) return 0.;
-	
 	double x1,y1,x2,y2,xk,yk;
 	
 	// constants
@@ -190,5 +179,5 @@ double LiquidContact::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred,
 // return unique, short name for this material
 const char *LiquidContact::MaterialType(void) const { return "Liquid/Wall Shear-Rate Dependent Contact"; }
 
-// Give details aobut frictional contact
+// needs contact area
 bool LiquidContact::ContactLawNeedsContactArea(void) const { return true; }

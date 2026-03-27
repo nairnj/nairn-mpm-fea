@@ -158,9 +158,9 @@ void GridPatch::MassAndMomentumReduction(void)
 }
 
 // Support XPIC calculations (always xpicCalculation==COPY_VSTARNEXT, and k-pass in XPIC loop)
-void GridPatch::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int m,int k,double vsign)
+void GridPatch::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint *real,double timestep,int iarg)
 {	for(int i=0;i<numGhosts;i++)
-	ghosts[i]->XPICSupport(xpicCalculation,xpicOption,real,timestep,m,k,vsign);
+		ghosts[i]->XPICSupport(xpicCalculation,xpicOption,real,timestep,iarg);
 }
 
 // zero gTnext on ghost nodes
@@ -169,9 +169,9 @@ void GridPatch::InitializeForXPICTransport(TransportTask *nextTransport,int xpic
 		ghosts[i]->InitializeForXPICTransport(nextTransport,xpicOption);
 }
 
-void GridPatch::XPICReductionTransport(int k,TransportTask *nextTransport)
+void GridPatch::XPICReductionTransport(TransportTask *nextTransport)
 {	for(int i=0;i<numGhosts;i++)
-		ghosts[i]->XPICReductionTransport(k,nextTransport);
+		ghosts[i]->XPICReductionTransport(nextTransport);
 }
 
 // initialize ghost nodes for next time step

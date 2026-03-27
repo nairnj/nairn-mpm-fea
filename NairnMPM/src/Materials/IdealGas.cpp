@@ -28,7 +28,7 @@ IdealGas::IdealGas(char *matName,int matID) : HyperElastic(matName,matID)
     vdwb = -1.;
     vanderWaalsGas = false;
     mu0 = -1.;          // reference viscoty at T0
-    cSuth = -1.;        // Sutherlands constant
+    cSuth = 111.;        // Sutherlands constant for T0
     realPressure = false;
 }
 
@@ -111,6 +111,8 @@ const char *IdealGas::VerifyAndLoadProperties(int np)
 
     // P0 in specific units (F/L^2 L^3/mass)
     P0sp = P0/rho;
+	
+	// note global V0n and xn only to print properties
     
     if(vanderWaalsGas)
     {   if(vdwa<0. || vdwb<0.)
@@ -118,7 +120,7 @@ const char *IdealGas::VerifyAndLoadProperties(int np)
         
         // solve cubic equation by Newton's formula
         double abar = vdwa/(V0*V0),bbar=vdwb/V0;
-        double xn = 1.;
+        xn = 1.;
         for(int i=0;i<10;i++)
         {   // get f(x0) and f'(x0)
             double axbar = abar/(xn*xn);
@@ -139,6 +141,9 @@ const char *IdealGas::VerifyAndLoadProperties(int np)
         // P0', and aprime in specific units
         P0prime = (P0+aprime)*(1-bprime)/rho;
         aprime /= rho;
+		
+		// change Cv
+		heatCapacity /= xn ;
     }
     
     else
@@ -206,11 +211,18 @@ void IdealGas::PrintMechanicalProperties(void) const
         
         // b'
         PrintProperty("b'",bprime,"");
-        cout << endl;
+		
+		// P0'
+		PrintProperty("P0'",P0prime*rho*UnitsController::Scaling(1.e-6),"");
+		
+		// P0'
+		PrintProperty("xbar",xn,"");
+		cout << endl;
         
+		cout << "Critical conditions (need T>Tc):" << endl;
         // Tc
-        cout << "Valid for T>Tc = " << (8.*vdwa)/(27.*vdwb*UnitsController::GetGasConstant(1.)) << endl;
-        
+		PrintProperty("Tc",(8.*vdwa)/(27.*vdwb*UnitsController::GetGasConstant(1.)),"");
+		
         // Pc
         PrintProperty("Pc",vdwa*UnitsController::Scaling(1.e-6)/(27.*vdwb*vdwb), UnitsController::Label(PRESSURE_UNITS));
         

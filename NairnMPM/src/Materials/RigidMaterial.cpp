@@ -8,7 +8,7 @@
 	Rigid material in multimaterial mode
 		rho = 1 mm^3/mm^3 actually, but code thinks 1 g/mm^3 or rho=1 g/mm^3
     If Planar and 3D
-		mp = rho * vol (mm^3) / ptsperelement = particle volume in mm^3
+		mp = rho x vol (mm^3) / ptsperelement = particle volume in mm^3
         mp/rho = particle volume in mm^3 (because rho=1 g/mm^3)
     If axisymmetric
         mp = rho Ap rp / ptsperelement = particle volume per radian in mm^3
@@ -52,7 +52,7 @@ RigidMaterial::RigidMaterial(char *matName,int matID,int sd) : MaterialBase(matN
 // preliminary calculations (throw CommonException on problem)
 const char *RigidMaterial::VerifyAndLoadProperties(int np)
 {
-	// reset rho to 1 in case was  set in code
+	// reset rho to 1 in case was set in code
 	rho = 1.;
 	
 	// is rigid multimaterial, then nothing else allowed

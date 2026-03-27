@@ -123,7 +123,7 @@ const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
 	if(syzz==0. || syxx==0. || syyy==0. || tyxy==0. || tyxz==0. || tyyz==0.)
 		return "No yield stresses can be zero";
 
-	// check A is positive semi definite (watching for round off error is all the same)
+	// check A is positive semi definite (watching for round off error if all the same)
 	if(syzz>0. && syxx>0. && syyy>0. && syxx==syyy && syxx==syzz)
 	{	// OK if all the same
 	}
@@ -303,14 +303,17 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3
 		strial.xy = stnm1Mat.xy + r->C[3][3]*dgamxy;
 		
 		// sigma(zz)
-		if(np==PLANE_STRAIN_MPM)
-		{	strial.zz = stnm1Mat.zz + r->C[4][1]*dvxxeff + r->C[4][2]*dvyyeff + r->C[4][4]*dvzzeff;
+		if(np!=PLANE_STRESS_MPM)
+		{	// plane strain and axisymmetric
+			strial.zz = stnm1Mat.zz + r->C[4][1]*dvxxeff + r->C[4][2]*dvyyeff + r->C[4][4]*dvzzeff;
 			if(np==PLANE_STRAIN_MPM)
 			{	strial.zz += r->C[4][1]*r->alpha[5]*er(2,2) + r->C[4][2]*r->alpha[6]*er(2,2);
 			}
 		}
 		else
+		{	// plane stress
 			strial.zz = 0.;
+		}
 		
 		is2D = true;
 	}
@@ -361,8 +364,8 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 &de,Matrix3
 		resEnergy = strial.xx*er(0,0) + strial.yy*er(1,1) + strial.zz*er(2,2)
 						+ 2.*(strial.xy*er(0,1) + strial.xz*er(0,2) + strial.yz*er(1,2));
 	}
-	if(np==PLANE_STRESS_MPM)
-	{	// dezz-dexxres-dezzp from in-plane effective elaatic strains
+	else if(np==PLANE_STRESS_MPM)
+	{	// dezz-dexxres-dezzp from in-plane effective elastic strains
 		de.set(2,2,r->C[4][1]*(dvxxeff-dep.xx) + r->C[4][2]*(dvyyeff-dep.yy) + er(2,2) + dep.zz);
 		mptr->IncrementDeformationGradientZZ(de(2,2));
 		
@@ -750,7 +753,7 @@ void AnisoPlasticity::FillHillStyleProperties(int np,HillProperties &h,ElasticPr
 		}
 		
 		// Q = PZP matrix (scale by rho^2 and symmetric)
-		// same 2D and 3D (plane stress only used Q11, Q12, Q22, and Q66)
+		// same 2D and 3D (plane stress only uses Q11, Q12, Q22, and Q66)
 		h.Q11 = 8.*(h.G*h.G + h.G*h.H + h.H*h.H);
 		h.Q12 = 4.*(h.F*(h.G-h.H) - h.H*(h.G+2.*h.H));
 		h.Q13 = 4.*(-h.G*(h.F+h.G) + h.F*h.H - h.G*(h.G+h.H));

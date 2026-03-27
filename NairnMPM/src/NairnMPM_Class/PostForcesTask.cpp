@@ -90,9 +90,8 @@ bool PostForcesTask::Execute(int taskOption)
 		if(bfErr!=NULL) throw *bfErr;
 	}
 
-    // Impose BCs on ftot to get correct grid BCs for velocity
-	if(bodyFrc.GetXPICOrder()<=1 || bodyFrc.GridBCOption()!=GRIDBC_VELOCITY_ONLY)
-		NodalVelBC::GridVelocityConditions(GRID_FORCES_CALL);
+    // Impose BCs on ftot to get correct lumped mass grid BCs for velocity
+	NodalVelBC::GridVelocityConditions(GRID_FORCES_CALL);
 
 	// Transport force BCs
 	TransportTask::TransportForceBCs(timestep);

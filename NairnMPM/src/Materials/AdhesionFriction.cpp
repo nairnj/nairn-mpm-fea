@@ -115,10 +115,10 @@ void AdhesionFriction::PrintContactLaw(void) const
 double AdhesionFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double mred,
 									   double contactArea,bool &inContact,double deltime) const
 {
-	// check for adhesive failure when not in contact
-	if(!inContact || NAcDt<0.)
-	{	// If displacementOnly>0.1, then deln>0 and NAcDt may be + or -
-		// otherwise either deln>0 or N<displacementOnly or both
+	// When not in contact, either we stick or it is failed
+	if(!inContact)
+	{	// This block always returns a result
+		// either deln>0 or N<0 (i.e.tension) or both
 		double surface = 2.;
 		if(Sa>0. && Na>0.)
 		{	double shear = SStickAcDt/(Sa*contactArea*deltime);
@@ -128,19 +128,18 @@ double AdhesionFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double mre
 		}
 		
 		// If surface<1 than should stick
+		// i.e. (shear/Sa)^2 + (normal/Na)^2 < 1
+		// Note that if Sa<0 or Na<0, adhesion has always failed
 		if(surface<1.)
 		{	inContact = true;
-			return SStickAcDt+1.;
+			return SStickAcDt+1.;		// < stick induces stick response
 		}
 		
-		// It has failed, exit if was determined not in contact
-		if(!inContact) return 0;
-		
-		// Here means displacementOnly = 1 or < 0 with NAcDt>displacementOnly
-		// Fall through to code, which accounts for possibly negative NAcDt
+		// Adhesiion has failed, leave !inContact and return 0
+		return 0;
 	}
 	
-	// Here inContact is true and NAcDt>do (which may be negative)
+	// Here inContact is true and NAcDt>0
 	double Sslide = Sa>0. ? Sa*contactArea*deltime : 0. ;
 	
 	// Return frictional sliding
@@ -149,8 +148,8 @@ double AdhesionFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double mre
 	
 	// if static check for stick (here vrel=0)
 	if(frictionCoeffStatic>0.)
-	{	double Stest = Sslide + fmax(frictionCoeffStatic*NAcDt,0.);
-		if(Stest>SStickAcDt) return Stest;			// it will stick
+	{	double Stest = Sslide + frictionCoeffStatic*NAcDt;
+		if(SStickAcDt<=Stest) return Stest;			// it will stick, return >= stick
 	}
 	
 	// or add velocity dependent friction terms as needed needed
@@ -184,7 +183,7 @@ double AdhesionFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double mre
 	}
 	else if(kmu!=0.)
 	{	// sharp static/dynamic but linear velocity dependence and adhesion
-		// Note: published paper as 1+kmed*dn = 1 -rmred*NAcDt, but that is a misprint. Sign correct here
+		// Note: published paper has 1+kmed*dn = 1 -rmred*NAcDt, but that is a misprint. Sign correct here
 		double kmred = kmu/mred;
 		if(1.+kmred*NAcDt > 0.)
 			Sslide = fmax((Sslide + (frictionCoeff+kmred*SStickAcDt)*NAcDt)/(1. + kmred*NAcDt),0.);
@@ -199,103 +198,12 @@ double AdhesionFriction::GetSslideAcDt(double NAcDt,double SStickAcDt,double mre
 	}
 	else
 	{	// sharp static/dynamic with adhesion
-		Sslide += fmax(frictionCoeff*NAcDt,0.);
+		Sslide += frictionCoeff*NAcDt;
 	}
 		
 	// return result
 	return Sslide;
 }
-
-#ifdef THREE_MAT_CONTACT
-
-// Cannot handle velocity dependent coefficient until 3+ material code extended to non-linear laws
-// Technically cannot handle smooth static to dynamic, but does handle as if not smooth for 3+ pairs
-bool AdhesionFriction::CanHandleTwoPairContact(void) const
-{	if(kmu!=0.) return false;
-	return true;
-};
-
-// On call Smin=0 and Smax=Sstick, change if needed for this law
-// Should extend to velocity dependent shear
-void AdhesionFriction::BracketSSlide(double &Smin,double &Smax,double contactArea,double deltime)
-{
-	// Change min to adhesion term
-	if(Sa>0.) Smin = Sa*contactArea*deltime;
-	
-	if(frictionCoeff<=0.)
-	{	// frictionless (not often called here)
-		Smax = 0.;
-	}
-	else if(frictionCoeffStatic>frictionCoeff)
-	{	// adjust max is has static coefficient of friction
-		Smax *= frictionCoeffStatic/frictionCoeff;
-	}
-	
-}
-
-// Return d(Sslide Ac dt)/d(N Ac dt)
-// Assuming node is sliding and is in contact
-// Should extend to velocity dependent options
-double AdhesionFriction::GetDSslideAcDt(double NAcDt) const
-{
-	return frictionCoeff;
-}
-
-// Decide is this contact law might be in contact
-// Only used in three+ material contact code
-bool AdhesionFriction::ProvisionalInContact(Vector *delPi,Vector *norm,double dotn,double deltaDotn,
-												 double contactArea,double deltime) const
-{
-	// stick is always in contact
-	if(frictionStyle==STICK) return true;
-	
-	// frictionlaw but no adhesion - Check contact at start only
-	if(deltaDotn<0.)
-	{	// Get stress cutoff
-		double fnaDtMax = 0.;
-		if(displacementOnly>0.1)
-			fnaDtMax = dotn+1.;
-		else if(displacementOnly<0.)
-			fnaDtMax = -displacementOnly*contactArea*deltime;
-		if(dotn<fnaDtMax)
-			return true;
-	}
-	
-	// check adhesion, estimated from normal force
-	if(Sa>0. && Na>0.)
-	{	// Get force to stick  in tangential motion
-		double dott = 0.;
-	
-		// Tangengial stick from tangential direction unit vector
-		// tang||tang|| = delPi - dotn norm
-		Vector tang;
-		CopyVector(&tang,delPi);
-		AddScaledVector(&tang,norm,-dotn);
-		double tangMag = sqrt(DotVectors(&tang,&tang));
-		if(tangMag>0.)
-		{	ScaleVector(&tang,1./tangMag);
-			dott = DotVectors(delPi,&tang);
-			if(dott < 0.)
-			{	// make it positive for comparison to the positive frictional force Sslide
-				ScaleVector(&tang,-1.);
-				dott = -dott;
-			}
-		}
-		
-		// check adhesion
-		double shear = dott/(Sa*contactArea*deltime);
-		double normal = -dotn/(Na*contactArea*deltime);
-		double surface = shear*shear + normal*normal;
-		
-		// adhesion not exceeded, so call it in contact
-		if(surface<1.) return true;
-	}
-	
-	// separated and adhesion broken so no contact
-	return false;
-}
-
-#endif // end THREE_MAT_CONTACT
 
 #pragma mark AdhesionFriction::Accessors
 
@@ -304,8 +212,11 @@ const char *AdhesionFriction::MaterialType(void) const { return "Adhesion and Fr
 
 // needs area
 bool AdhesionFriction::ContactLawNeedsContactArea(void) const
-{	if(Sa>0. && Na>0.) return true;
-	return CoulombFriction::ContactLawNeedsContactArea();
+{	if(Sa>0. || Na>0.) return true;
+	return false;
 }
 
+// If no momentum change whenever separated, then return truw
+// here might stick dues to adhesion
+bool AdhesionFriction::HasFreeSeparation(void) const { return false; }
 

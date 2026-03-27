@@ -123,7 +123,8 @@ void CommonAnalysis::StartResultsOutput(void)
     snprintf(hline,hsize,"DOF per node: %d     ",nfree);
     cout << hline;
 	GetAnalysisType(np,hline);
-	cout << hline << endl << endl;
+	cout << hline;
+	cout << endl << endl;
 	
     //---------------------------------------------------
     // Nodes

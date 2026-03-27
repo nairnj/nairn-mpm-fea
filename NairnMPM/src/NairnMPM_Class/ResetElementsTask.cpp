@@ -203,6 +203,7 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
 	// check current element
 	if(theElements[mpt->ElemID()]->PtInElement(mpt->pos))
 	{	// it has not changed elements
+		mpt->KeepElemID();
 		return SAME_ELEMENT;
 	}
     

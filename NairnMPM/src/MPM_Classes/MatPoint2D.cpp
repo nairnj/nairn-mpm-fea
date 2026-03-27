@@ -37,7 +37,7 @@ MatPoint2D::MatPoint2D(int inElemNum,int theMatl,double angin,double thickin) : 
 void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld,bool postUpdate)
 {
     // get velocity gradient
-    Matrix3 dv = ExtraVelocityGradient();
+    Matrix3 dv = ExtrapVelocityGradient(ElemID());
     
     Tensor *gStressPtr=NULL;
 
@@ -54,7 +54,7 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 
 // Extrapolation spatial velocity gradient from current grid
 // velocties and gradient shape functions
-Matrix3 MatPoint2D::ExtraVelocityGradient(void)
+Matrix3 MatPoint2D::ExtrapVelocityGradient(int useElemID)
 {
 #ifdef CONST_ARRAYS
     double fn[MAX_SHAPE_NODES],xDeriv[MAX_SHAPE_NODES],yDeriv[MAX_SHAPE_NODES],zDeriv[MAX_SHAPE_NODES];
@@ -67,7 +67,7 @@ Matrix3 MatPoint2D::ExtraVelocityGradient(void)
     Matrix3 dv;
 
     // find shape functions and derviatives
-    const ElementBase *elemRef = theElements[ElemID()];
+    const ElementBase *elemRef = theElements[useElemID];
     int *nds = ndsArray;
     elemRef->GetShapeGradients(fn,&nds,xDeriv,yDeriv,zDeriv,this);
     int numnds = nds[0];
@@ -79,7 +79,7 @@ Matrix3 MatPoint2D::ExtraVelocityGradient(void)
     // Find strain rates at particle from current grid velocities
     //   and using the velocity field for that particle and each node and the right material
     for(int i=1;i<=numnds;i++)
-    {   vel = nd[nds[i]]->GetVelocity((short)vfld[i],matfld);
+	{	vel = nd[nds[i]]->GetVelocity((short)vfld[i],matfld);
         dv += Matrix3(vel.x*xDeriv[i],vel.x*yDeriv[i],vel.y*xDeriv[i],vel.y*yDeriv[i],0.);
     }
 
@@ -185,7 +185,7 @@ void MatPoint2D::MoveParticle(GridToParticleExtrap *gp)
 	acc = MakeVector(delV.x/timestep,delV.y/timestep,0.);
 		
 #ifdef CHECK_NAN
-	if(pos.x!=pos.x || pos.y!=pos.y || pos.z!=pos.z || vel.x!=vel.x || vel.y!=vel.y || vel.z!=vel.z)
+	if(IsNanVector(&pos,true) || IsNanVector(&vel,true))
 	{
 #pragma omp critical (output)
 		{	cout << "\n# MatPoint2D::MoveParticle: bad pos or vel" << endl;
@@ -246,7 +246,7 @@ void MatPoint2D::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double 
 	theFrc->z = 0.0;
 	
 #ifdef CHECK_NAN
-	if(theFrc->x!=theFrc->x || theFrc->y!=theFrc->y)
+	if(IsNanVector(theFrc,true))
 	{
 #pragma omp critical (output)
 		{	cout << "\n# MatPoint2D::GetFintPlusFext: bad nodal fint+fext";

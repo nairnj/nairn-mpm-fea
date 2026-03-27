@@ -12,9 +12,7 @@
 
 NodalDispBCController *dispBCCtrl=NULL;
 
-/********************************************************************************
-	NodalDispBCController: methods
-********************************************************************************/
+#pragma mark NodalDispBCController: methods
 
 // add object to linked list, but only if unique
 bool NodalDispBCController::AddObject(LinkedObject *obj)

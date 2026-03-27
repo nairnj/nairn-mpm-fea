@@ -129,7 +129,7 @@ int BoundaryCondition::GetNodeNum(double bctime)
         default:
             break;
     }
-    return nd[nodeNum]->NodeHasParticles() ? nodeNum : 0L ;
+	return nodeNum;
 }
 
 // just return the nodeNum

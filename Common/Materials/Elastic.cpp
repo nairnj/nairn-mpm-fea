@@ -221,7 +221,7 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
 #endif
 
     // 2D plane stress properties
-    // Stiffness element reduces but CTE and CME are not
+    // Stiffness elements reduced but CTE and CME are not
     if(np==PLANE_STRESS || np==PLANE_STRESS_MPM)
     {	xx=1.-v12*v21;
         C11=e1/xx;

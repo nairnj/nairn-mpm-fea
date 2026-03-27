@@ -17,7 +17,9 @@
 
 #define FORCE_STICK -1
 #define STABLE 0
-#define FORCE_DEBOND 1
+
+// Styles
+enum { NL_LINEAR_INTERFACE=0,MORSE_POTENTIAL,MAX_STYLES };
 
 class NonlinearInterface : public LinearInterface
 {
@@ -28,10 +30,11 @@ class NonlinearInterface : public LinearInterface
 		
 		// initialize
 		virtual char *InputContactProperty(char *,int &,double &);
+		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintContactLaw(void) const;
 		
 		// methods
-		virtual void GetInterfaceForces(Vector *,Vector *,double *,double,Vector *,double,double,Vector *,double,double,double) const;
+		virtual void GetInterfaceForces(Vector *,Vector *,double *,double,Vector *,double,double,Vector *,double,double,bool) const;
 	
 		// interface law to implement
 		virtual int CheckDtStability(double,double) const;
@@ -44,11 +47,17 @@ class NonlinearInterface : public LinearInterface
 		virtual double GetFnPrime(double,double) const;
 		virtual double GetFnEnergy(double,double) const;
 	
+		// for Morse Potential
+		double MorseForce(double,double,double) const;
+		double MorseSlope(double,double,double) const;
+		double MorseEnergy(double,double,double) const;
 		// accessors
 		virtual const char *MaterialType(void) const;
 	
 	protected:
-		int order;
+		int stylen,stylet;
+		double peakn,peakt;
+		double Det,alphat,Den,alphan;
 	
 };
 

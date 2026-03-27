@@ -31,9 +31,6 @@ enum {	UNKNOWN_GRID=-1,NOT_CARTESIAN=0,SQUARE_GRID,RECTANGULAR_GRID,VARIABLE_REC
 enum { MAXIMUM_VOLUME_GRADIENT=0,MAXIMUM_VOLUME,AVERAGE_MAT_VOLUME_GRADIENTS,EACH_MATERIALS_MASS_GRADIENT,
 	SPECIFIED_NORMAL,LINEAR_REGRESSION,LOGISTIC_REGRESSION };
 
-// method to deal with 3+ nodes
-enum { LUMP_OTHER_MATERIALS=0, EXPLICIT_PAIRS };
-
 class MeshInfo
 {
     public:
@@ -58,7 +55,6 @@ class MeshInfo
 		bool contactByDisplacements;	// true if MM contact using displacements, false if need to adjust normal COD
 		double rigidGradientBias;
 		Vector contactNormal;			// for SN method
-		int lumpingMethod;
 
 		// constructors
 		MeshInfo(void);

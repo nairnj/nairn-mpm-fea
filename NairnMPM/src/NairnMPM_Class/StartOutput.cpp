@@ -187,7 +187,7 @@ void NairnMPM::CMStartResultsOutput(void)
 		}
 		
 		// contact output and allocations
-		contact.Output();
+		crackContact.Output();
 		
 		// location for COD calculation - range is 0 to 3 segments from crack tip
 		// future may want to read this as parameter
@@ -217,7 +217,7 @@ void NairnMPM::CMStartResultsOutput(void)
     }
 	else
 	{	// turn off request for position extrapolation
-		contact.crackContactByDisplacements = true;
+		crackContact.contactByDisplacements = true;
 	}
     
     //---------------------------------------------------
@@ -415,6 +415,31 @@ void NairnMPM::OutputBCMassAndGrid(void)
 		mpmReservoir->output();
 	else
 		cout << "No reservoir available for unstructured grid" << endl;
+	
+	// velocity fields
+	cout << "Material velocity fields: " << maxMaterialFields << endl;;
+	if(maxMaterialFields>1)
+	{	cout << "  Material number>field number: ";
+		int lineLength = 32;
+		for(int i=0;i<maxMaterialFields;i++)
+		{	// output line
+			cout << (MaterialBase::GetFieldMatID(i)+1) << ">" << i;
+			
+			// trailer
+			if(i<maxMaterialFields-1)
+			{	lineLength += 5;
+				if(i>9) lineLength++;
+				if(MaterialBase::GetFieldMatID(i)>8) lineLength++;
+				if(lineLength<80)
+					cout << ", ";
+				else
+				{	cout << endl << "    ";
+					lineLength = 4;
+				}
+			}
+		}
+		cout << endl;
+	}
 	
 	// blank line
 	cout << endl;

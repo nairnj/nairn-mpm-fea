@@ -15,6 +15,7 @@
 #define _DATA_TYPES_
 
 class Matrix3;
+class ContactLaw;
 
 // vector 3D
 typedef struct {
@@ -84,6 +85,23 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 		int matID;
 		char *nextFriction;
 	} ContactPair;
+
+	// save contact calculations to use for FMPM increments
+	typedef struct {
+		double deltaDotn;			// normal cod
+		int paired;					// second material is inContact=1
+		bool comContact;			// using stick contact (center of mass)
+		Vector norm;				// calculated normal vector
+		Vector priorDelPiZero;		// prior delPi(0)
+		Vector netDelPi;			// total delPi
+		Vector startDelFi;			// force at start of the FMPM loop
+		double priorMredDelWf;		// prior mredDelWf
+		ContactLaw *theContactLaw;	// the law
+		double contactArea;			// contact area
+		bool skipLowMass;			// skip this node (used by imperfect interfaces)
+		Vector tangDel;				// tangent used for imperfect interface
+		double deltaDott;			// tangent sparation for imperfect interfaces
+	} FMPMContact;
 
 	// for each node in CPDI domain give its element,
 	// its naturual coordinates, weighting factor
@@ -216,6 +234,8 @@ Vector *AddVector(Vector *,const Vector *);
 Vector *SubVector(Vector *,const Vector *);
 Vector *AddScaledVector(Vector *,const Vector *,const double);
 Vector *CrossProduct(Vector *,const Vector *,const Vector *);
+bool IsZeroVector(const Vector *,const bool);
+bool IsNanVector(const Vector *,const bool);
 double CrossProduct2D(const Vector *,const Vector *);
 double DotVectors(const Vector *,const Vector *);
 double DotVectors2D(const Vector *,const Vector *);

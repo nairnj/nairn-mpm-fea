@@ -161,7 +161,13 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 		thisBuffer=-3;
     }
 	
-    else if(strcmp(pName,"pressure")==0)
+	else if(strcmp(pName,"contactnormal")==0)
+	{	q=VTK_CONTACTNORMAL;
+		// no buffer since no need to extrapolate
+		thisBuffer=-3;
+	}
+
+	else if(strcmp(pName,"pressure")==0)
     {	q=VTK_PRESSURE;
 		thisBuffer=1;
     }
