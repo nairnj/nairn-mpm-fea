@@ -752,7 +752,7 @@ void Expression::AddSubstringToken(ExprRange expr,bool aNum,bool beforeGroup)
 	
 	// get substring
 	char *subString = new char[expr.length+1];
-	for(int i=0;i<expr.length;i++)
+	for(unsigned int i=0;i<expr.length;i++)
 		subString[i] = exprStr[expr.location+i];
 	subString[expr.length]=0;
 	
@@ -776,7 +776,7 @@ void Expression::AddSubstringToken(ExprRange expr,bool aNum,bool beforeGroup)
 	}
 	else
 	{	// mush be valid variables name
-		for(int i=0;i<expr.length;i++)
+		for(unsigned int i=0;i<expr.length;i++)
 		{	char strChar = subString[i];
 			
 			// uppercase

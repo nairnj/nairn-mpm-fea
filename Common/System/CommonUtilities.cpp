@@ -1314,7 +1314,9 @@ double AreaOverVolume3D(Vector *norm,double dx,double dy,double dz)
  */
 
 #define MAX_ITERS 10
-#define DBL_EPSILON 2.2204460492503131e-16
+#ifndef DBL_EPSILON
+  #define DBL_EPSILON 2.2204460492503131e-16
+#endif
 
 static const double c[12] =
 {   -1.0,

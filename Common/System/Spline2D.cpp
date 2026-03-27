@@ -69,11 +69,11 @@ Spline2D::~Spline2D()
 int Spline2D::XYHermiteSpline(vector<double> sx,vector<double> sy,double dydx1,bool flip1,double dydxn,bool flipn)
 {
     // length based on x data
-    unsigned long n = sx.size();
+    unsigned long n = (unsigned long)sx.size();
     
     // cardinal knots of length n
     vector<double> cx;
-    for(int i=0;i<n;i++) cx.push_back((double)i);
+    for(unsigned long i=0;i<n;i++) cx.push_back((double)i);
     
     // clear knots (bx and by cleared when each axis is done)
     knots.clear();
@@ -111,11 +111,11 @@ int Spline2D::XYHermiteSpline(vector<double> sx,vector<double> sy,double dydx1,b
 int Spline2D::XYFreeSpline(vector<double> sx,vector<double> sy)
 {
     // length based on x data
-    unsigned long n = sx.size();
+    unsigned long n = (unsigned long)sx.size();
     
     // cardinal knots of length n
     vector<double> cx;
-    for(int i=0;i<n;i++) cx.push_back((double)i);
+    for(unsigned long i=0;i<n;i++) cx.push_back((double)i);
     
     // clear knots (bx and by cleared when each axis is done)
     knots.clear();
@@ -808,7 +808,7 @@ bool Spline2D::Lubksb(vector<vector<double>> &a,vector<int> &indx,vector<double>
 Spline2D *ParametricHermiteSpline(vector<double> sx,vector<double> sy,
                               double dydx1,bool flip1,double dydxn,bool flipn)
 {
-    unsigned long n = sx.size();
+    unsigned long n = (unsigned long)sx.size();
     if(sy.size()<n || n<4)
     {   // must have sy vector equal to long to x
         // must have n at least 4 (because doing cubinc splines)
@@ -834,7 +834,7 @@ Spline2D *ParametricHermiteSpline(vector<double> sx,vector<double> sy,
 // caller should delete the Spline2D object
 Spline2D *HermiteSpline(vector<double> sx,vector<double> sy,double dydx1,double dydxn)
 {
-    unsigned long n = sx.size();
+    unsigned long n = (unsigned long)sx.size();
     if(sy.size()<n || n<4)
     {   // must have sy vector equal to long to x
         // must have n at least 4 (because doing cubinc splines)
@@ -862,7 +862,7 @@ Spline2D *HermiteSpline(vector<double> sx,vector<double> sy,double dydx1,double 
 // caller should delete the Spline2D object
 Spline2D *ParametricFreeSpline(vector<double> sx,vector<double> sy)
 {
-    unsigned long n = sx.size();
+    unsigned long n = (unsigned long)sx.size();
     if(sy.size()<n || n<4)
     {   // must have sy vector equal to long to x
         // must have n at least 4 (because doing cubinc splines)
@@ -889,7 +889,7 @@ Spline2D *ParametricFreeSpline(vector<double> sx,vector<double> sy)
 // caller should delete the Spline2D object
 Spline2D *FreeSpline(vector<double> sx,vector<double> sy)
 {
-    unsigned long n = sx.size();
+    unsigned long n = (unsigned long)sx.size();
     if(sy.size()<n || n<4)
     {   // must have sy vector equal to long to x
         // must have n at least 4 (because doing cubinc splines)

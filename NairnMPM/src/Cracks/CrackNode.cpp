@@ -94,7 +94,7 @@ FMPMContact *CrackNode::GetContactInfo(int a,int b)
 bool CrackNode::ContactOnKnownNodes(double deltime,int passType)
 {
 	// anything to do?
-	long numCrackNodes = crackContactNodes.size();
+	long numCrackNodes = (long)crackContactNodes.size();
 	if(numCrackNodes==0) return false;
 	
 	// prepare for parallel
@@ -128,7 +128,7 @@ bool CrackNode::ContactOnKnownNodes(double deltime,int passType)
 // delete the contact node (which delink to node), clear vector of pointers
 void CrackNode::ReleaseContactNodes(void)
 {
-	long numCrackNodes = crackContactNodes.size();
+	long numCrackNodes = (long)crackContactNodes.size();
 	if(numCrackNodes==0) return;
 	
 	for(long i=0;i<numCrackNodes;i++)

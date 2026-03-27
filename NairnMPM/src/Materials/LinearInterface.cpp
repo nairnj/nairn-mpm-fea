@@ -162,7 +162,7 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 	bool stiffC = Dnc<0. || dnC > Cint2*m ;
 
 	// if both perfect then done, otherwise look for contact
-	if(stiffN && stiffC<0.)
+	if(stiffN && stiffC)
 	{	// perfect interface
 		// Set trn=0 (which is initialized above), and add normal momentum change back into delPi to make it perfect
 		AddScaledVector(delPi,norm,dPDotn);

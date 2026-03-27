@@ -247,7 +247,7 @@ void XPICExtrapolationTask::ImposeIncrementalContact(double dtime,int callType)
 	NodalPoint::interfaceEnergy=0.;
 	
 	// set incremental material contact nodes
-	long numContactNodes = MaterialContactNode::materialContactNodes.size();
+	long numContactNodes = (long)MaterialContactNode::materialContactNodes.size();
 	if(numContactNodes>0)
 	{	int numNodesPerProc = (int)((double)numContactNodes/(double)(fmobj->GetNumberOfProcessors()));
 #pragma omp parallel for if(numNodesPerProc>1)
@@ -256,7 +256,7 @@ void XPICExtrapolationTask::ImposeIncrementalContact(double dtime,int callType)
 	}
 	
 	// set incremental crack contact nodes
-	long numCrackNodes = CrackNode::crackContactNodes.size();
+	long numCrackNodes = (long)CrackNode::crackContactNodes.size();
 	if(numCrackNodes>0)
 	{	int numNodesPerProc = (int)((double)numCrackNodes/(double)(fmobj->GetNumberOfProcessors()));
 #pragma omp parallel for if(numNodesPerProc>1)

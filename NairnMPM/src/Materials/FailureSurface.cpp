@@ -234,7 +234,7 @@ int FailureSurface::ShouldInitiateFailure(Tensor *str,Vector *normal,int np,
 			{	// pick a region
 				double range = 1.5*(sigi+P);
 				if(range>=2.*taui)
-					region = 1.;
+					region = 1;
 				else if(range>=taui)
 					region = 2;
 				else if(range>=0.)

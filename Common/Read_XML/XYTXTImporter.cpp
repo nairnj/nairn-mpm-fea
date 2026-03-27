@@ -45,7 +45,7 @@ void XYTXTImporter::GetXYFileHeader(XYInfoHeader &info)
 	if(result != fileLength)
 	{	if(ferror(fp)==0)
 		{	// assume Windows has dropped CRs
-			fileLength = result;
+			fileLength = (long)result;
 		}
 		else
 			XYFileImportError("Error reading all data from a text file.");

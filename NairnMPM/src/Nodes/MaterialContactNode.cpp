@@ -196,7 +196,7 @@ vector<int> MaterialContactNode::ParticleLists(int vfld) { return lists[vfld]; }
 bool MaterialContactNode::ContactOnKnownNodes(double dtime,int passType)
 {
 	// anythiing to do?
-	long numContactNodes = materialContactNodes.size();
+	long numContactNodes = (long)materialContactNodes.size();
 	if(numContactNodes==0) return false;
 
 	// get list linking material points to contact nodes (if needed for regression methods)
@@ -238,7 +238,7 @@ bool MaterialContactNode::ContactOnKnownNodes(double dtime,int passType)
 void MaterialContactNode::GetMaterialContactData(void)
 {
 	// skip if no contact nodes
-	long numContactNodes = materialContactNodes.size();
+	long numContactNodes =(long)materialContactNodes.size();
 	if(numContactNodes==0) return;
 	
 #ifdef CONST_ARRAYS
@@ -352,7 +352,7 @@ void MaterialContactNode::GetMaterialContactData(void)
 // delete the contact node (which delink to node), clear vector of pointers
 void MaterialContactNode::ReleaseContactNodes(void)
 {
-	long numContactNodes = materialContactNodes.size();
+	long numContactNodes = (long)materialContactNodes.size();
 	if(numContactNodes==0) return;
 	
 	for(long i=0;i<numContactNodes;i++)
