@@ -26,12 +26,12 @@
     <maxHeapPercent>80</maxHeapPercent>
   </jre>
   <versionInfo>
-    <fileVersion>11.0.0.0</fileVersion>
-    <txtFileVersion>11.0</txtFileVersion>
+    <fileVersion>12.1.0.0</fileVersion>
+    <txtFileVersion>12.1</txtFileVersion>
     <fileDescription>Running and visualizing NairnMPM and NairnFEA calculations.</fileDescription>
-    <copyright>1998-2023, John A. Nairn</copyright>
-    <productVersion>11.0.0.0</productVersion>
-    <txtProductVersion>11.0</txtProductVersion>
+    <copyright>1998-2026, John A. Nairn</copyright>
+    <productVersion>12.1.0.0</productVersion>
+    <txtProductVersion>12.1</txtProductVersion>
     <productName>NairnFEAMPMViz</productName>
     <companyName></companyName>
     <internalName>NairnFEAMPMViz</internalName>
