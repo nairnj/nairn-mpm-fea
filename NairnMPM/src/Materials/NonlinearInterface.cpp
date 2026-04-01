@@ -108,7 +108,13 @@ void NonlinearInterface::PrintContactLaw(void) const
 	// normal
 	switch(stylen)
 	{	case NL_LINEAR_INTERFACE:
-			cout << "Normal direction is linear:" << endl;
+#if NL_ORDER==2
+			cout << "Normal direction is linear (second order):" << endl;
+#elif NL_ORDER==1
+			cout << "Normal direction is linear (first order):" << endl;
+#else
+			cout << "Normal direction is linear (zeroth order):" << endl;
+#endif
 			PrintProperty("Dn",Dnt*UnitsController::Scaling(1.e-6),label);
 			cout << endl;
 			break;
@@ -124,8 +130,14 @@ void NonlinearInterface::PrintContactLaw(void) const
 	// tangential
 	switch(stylet)
 	{	case NL_LINEAR_INTERFACE:
-			cout << "Tangential direction is linear:" << Dt*UnitsController::Scaling(1.e-6);
-			PrintProperty("Dt",Dnt*UnitsController::Scaling(1.e-6),label);
+#if NL_ORDER==2
+			cout << "Tangential direction is linear (second order):" << endl;
+#elif NL_ORDER==1
+			cout << "Tangential direction is linear (first order):" << endl;
+#else
+			cout << "Tangential direction is linear (zeroth order):" << endl;
+#endif
+			PrintProperty("Dt",Dt*UnitsController::Scaling(1.e-6),label);
 			cout << endl;
 			break;
 		case MORSE_POTENTIAL:
@@ -168,7 +180,7 @@ void NonlinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *ra
 	// Check for numerical stability: (d/m) = F'dt^2/mred = phi^2 (see contactetc notes)
 	double d = GetFtPrime(deltaDott,surfaceArea)*timestep;
 	if(CheckDtStability(d,m)!=STABLE)
-	{	// acceleration looks too high for stability, so revert to stick
+	{	// stiffness looks too high for stability, so revert to stick
 		// leave trt=0. (initialized above) and keep delPi at stick conditions
 	}
 	else if(postUpdate)
@@ -212,7 +224,7 @@ void NonlinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *ra
 	// Check for numerical stability: (d/m) = F'dt^2/mred = phi^2 (see contactetc notes)
 	d = GetFnPrime(deltaDotn,surfaceArea)*timestep;
 	if(CheckDnStability(d,m,deltaDotn)!=STABLE)
-	{	// acceleration looks too high for stability, so revert to stick
+	{	// stiffness looks too high for stability, so revert to stick
 		// Set trt=0 (which is initialized above), and add normal momentum change back into delPi to make it perfect
 		AddScaledVector(delPi,norm,dPDotn);
 	}
