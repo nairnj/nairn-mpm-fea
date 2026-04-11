@@ -33,8 +33,6 @@ XPICExtrapolationTask *XPICMechanicsTask=NULL;
 
 XPICExtrapolationTask::XPICExtrapolationTask(const char *name) : MPMTask(name)
 {
-	// It always does FMPM(2) at least
-	dynamicKmax = 2;
 }
 
 #pragma mark REQUIRED METHODS
@@ -147,7 +145,7 @@ bool XPICExtrapolationTask::Execute(int xpicOption)
 		
 		// Set Delta v(k) as vprev = vprev - vnext
 		// Set BC nodes to zero and do incremental material contact
-		GetDeltaV(timestep,xpicOption);
+		GetDeltaV(timestep,xpicOption,k);
 
 		// Increment v(k) += Delta v(k) (in code v* += vprev)
 		// Zero vnext on real nodes for next pass through the loop
@@ -220,12 +218,12 @@ void XPICExtrapolationTask::ReduceXPICData(GridPatch *patchPtr)
 
 // Get Delta v on all nodes (vprev-nvext), set BC node velocities to zero,
 //  and impose incrementl contact
-void XPICExtrapolationTask::GetDeltaV(double timestep,int xpicOption)
+void XPICExtrapolationTask::GetDeltaV(double timestep,int xpicOption,int ell)
 {
 	// Get Delta V =  (I-{S+}S)vprev = vprev-vnext (i.e., vnext = {S+}S vprev)
 #pragma omp parallel for
 	for(int i=1;i<=*nda;i++)
-		nd[nda[i]]->XPICSupport(GET_DELTAV,0,NULL,timestep,0);
+		nd[nda[i]]->XPICSupport(GET_DELTAV,0,NULL,timestep,ell);
 	
 	// Set BC nodes to zero in latest Delta v
 	NodalVelBC::GridVelocityConditions(xpicOption);
@@ -264,3 +262,4 @@ void XPICExtrapolationTask::ImposeIncrementalContact(double dtime,int callType)
 			CrackNode::crackContactNodes[i]->NodalXPICIncrement(dtime,callType);
 	}
 }
+

@@ -113,7 +113,7 @@ void XPICExtrapolationTaskTO::ReduceXPICData(GridPatch *patchPtr)
 }
 
 // Get Delta theta on all real nodes (gTPrev-gTNext) and set BC node transport to zero
-void XPICExtrapolationTaskTO::GetDeltaV(double timestep,int xpicOption)
+void XPICExtrapolationTaskTO::GetDeltaV(double timestep,int xpicOption,int ell)
 {	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
 	{	if(nextTransport->IsUsingTransportXPIC())

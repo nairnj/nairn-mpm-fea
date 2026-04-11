@@ -12,8 +12,6 @@
 #include "Materials/LinearInterface.hpp"
 #include "System/UnitsController.hpp"
 
-static int madeContact = 0;
-
 extern double timestep;
 
 #pragma mark LinearInterface::Constructors and Destructors
@@ -99,7 +97,6 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 	*rawEnergy = 0.;
 	double m = mred/timestep;
 	double sineTerm,cosineTerm;
-	double Cint2 = 2.25;
 	
     // Convert delPi to shear momentum only (delPi - dPDotn (n) = dPDott (t)), then
 	//   if shear force limited leave alone, otherwise set to zero
@@ -114,25 +111,26 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 	{	// get force and compare to maximum force
 
 		// The following code is documented in contactetc.tex
-		double dPDott=sqrt(DotVectors(delPi,delPi));
+		double dPDott=DotVectors(delPi,tangDel);
 		double d = Dt*surfaceArea*timestep;
 		
 		// Note that phi = sqrt(d*timestep/mred) = sqrt(d/m)
-		// We limit phi to less than Cint or to d < Cint2*m
-		// 2 is based on maximum time step for harmonic oscillator (lower might be better
+		// We limit phi to less than Cint or to d < LIN_CINT2*m
 		
-		if(d > Cint2*m)
+		if(d > LIN_CINT2*m)
 		{	// acceleration looks too high for stability, so revert to stick
 			// leave trt=0. (initialized above) and keep delPi at stick conditions
 		}
 		else if(postUpdate)
 		{	// exact solution method
 			double phi = GetTerms(d,m,sineTerm,cosineTerm);
-			double delFt = DotVectors(fImp,tangDel);
 
-			// get force and final discontinuity
+			// get force and initisl pt
+			double delFt = DotVectors(fImp,tangDel);
 			double pt = dPDott - delFt*timestep;
-			trt = Dt*surfaceArea*deltaDott*cosineTerm + 2.*pt*sineTerm + delFt*(1.-cosineTerm);
+			
+			// get force and final discontinuity
+			trt = Dt*surfaceArea*deltaDott*cosineTerm + 2.*pt*sineTerm/timestep + delFt*(1.-cosineTerm);
 			double dut = deltaDott*cos(phi) + pt*(1.-sineTerm)/m + delFt*timestep*cosineTerm/(2.*m);
 
 			// get total energy, because incremental approach does not seem to work
@@ -157,9 +155,9 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 	
 	// check for perfect directions
 	double dnA = Dnt*surfaceArea*timestep;
-	bool stiffN = Dnt<0. || dnA > Cint2*m ;
+	bool stiffN = Dnt<0. || dnA > LIN_CINT2*m ;
 	double dnC = Dnc*surfaceArea*timestep;
-	bool stiffC = Dnc<0. || dnC > Cint2*m ;
+	bool stiffC = Dnc<0. || dnC > LIN_CINT2*m ;
 
 	// if both perfect then done, otherwise look for contact
 	if(stiffN && stiffC)
@@ -180,7 +178,7 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 
 		// get force and final discontinuity
 		double pn = dPDotn - delFn*timestep;
-		trn = Di*surfaceArea*deltaDotn*cosineTerm + 2.*pn*sineTerm + delFn*(1.-cosineTerm);
+		trn = Di*surfaceArea*deltaDotn*cosineTerm + 2.*pn*sineTerm/timestep + delFn*(1.-cosineTerm);
 		double dun = deltaDotn*cos(phi) + pn*(1.-sineTerm)/m + delFn*timestep*cosineTerm/(2.*m);
 		
 		// we are done if moves in nonstiff direction
@@ -226,7 +224,7 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 
 			// get force and final discontinuity
 			double pn = dPDotn - delFn*timestep;
-			trn = Di*surfaceArea*deltaDotn*cosineTerm + 2.*pn*sineTerm + delFn*(1.-cosineTerm);
+			trn = Di*surfaceArea*deltaDotn*cosineTerm + 2.*pn*sineTerm/timestep + delFn*(1.-cosineTerm);
 			double dun = deltaDotn*cos(phi) + pn*(1.-sineTerm)/m + delFn*timestep*cosineTerm/(2.*m);
 				
 			// we are done if linear interface, start and stop positive or negative, if end at zero,
@@ -320,11 +318,6 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 				else
 					tc = asin(sinkt)/kap;
 			}
-			if(madeContact==0)
-			{	doutCritical("%FirstContact tc/dt Dinit",tc/timestep,Di);
-#pragma omp atomic
-				madeContact++;
-			}
 
 #pragma mark ... Post Contact Forces
 			// find pn^(c) = pn shifted to contact time
@@ -337,7 +330,7 @@ void LinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *rawEn
 			kap2 = Df*surfaceArea/mred;
 			
 			// check if opposite direction is perfect
-			if(Df<0. || kap2>Cint2)
+			if(Df<0. || kap2>LIN_CINT2)
 			{	// effective force to reach contact, but no energy because final discontinity is zero
 				// found from contactetc notes with delta(delta t)=0
 				//trn = (2./timestep)*(m*deltaDotn + dPDotn) - delFn;
@@ -398,9 +391,9 @@ double LinearInterface::GetTerms(double d,double m,double &sineTerm,double &cosi
 {
 	double phi = sqrt(d/m);
 	if(phi<0.02)
-	{	double phi2 = phi*phi;
-		sineTerm = phi2/6.;				// = 1-sin phi/phi within 1e-10
-		cosineTerm = 1. - 0.5*sineTerm;	// = sin phi/phi - (1-cos phi)/phi^2) within 1e-10
+	{	double phi26 = phi*phi/6.;
+		sineTerm = phi26*(1.-0.3*phi26);				// = 1-sin phi/phi within 1e-14
+		cosineTerm = 1. - 0.5*phi26*(1.-0.2*phi26);		// = 2*(1-cos phi)/phi^2 within 1e-14
 	}
 	else
 	{	sineTerm = 1. - sin(phi)/phi;

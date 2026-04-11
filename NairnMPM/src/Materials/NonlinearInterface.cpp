@@ -184,12 +184,15 @@ void NonlinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *ra
 		// leave trt=0. (initialized above) and keep delPi at stick conditions
 	}
 	else if(postUpdate)
-	{	// second order
-		double dPDott=sqrt(DotVectors(delPi,delPi));
-		double delFt = DotVectors(fImp,tangDel);
+	{	// key termsr
 		double phi2 = d/m;
 		double Ft0 = GetFt(deltaDott,surfaceArea);
+
+		double delFt = DotVectors(fImp,tangDel);
 		double fdiff = delFt - Ft0;
+		
+		// here delPi = dpDott * tangDel (dot to get magnitude)
+		double dPDott = DotVectors(delPi,tangDel);
 		double pt = dPDott - delFt*timestep;
 		
 		// force and discontinuity
@@ -229,10 +232,11 @@ void NonlinearInterface::GetInterfaceForces(Vector *norm,Vector *fImp,double *ra
 		AddScaledVector(delPi,norm,dPDotn);
 	}
 	else if(postUpdate)
-	{	// second order
-		double delFn = DotVectors(fImp,norm);
+	{	// key terms
 		double phi2 = d/m;
 		double Fn0 = GetFn(deltaDotn,surfaceArea);
+		
+		double delFn = DotVectors(fImp,norm);
 		double fdiff = delFn - Fn0;
 		double pn = dPDotn - delFn*timestep;
 		
@@ -280,7 +284,7 @@ int NonlinearInterface::CheckDtStability(double d,double m) const
 	}
 	
 	// see if stable (d/m <= Cint^2)
-	return d <= 2.25*m ? STABLE : FORCE_STICK ;
+	return d <= NL_CINT2*m ? STABLE : FORCE_STICK ;
 }
 
 // tangential force
@@ -343,7 +347,7 @@ int NonlinearInterface::CheckDnStability(double d,double m,double delta) const
 	}
 	
 	// see if stable (d/m <= Cint^2)
-	return d <= 2.25*m ? STABLE : FORCE_STICK ;
+	return d <= NL_CINT2*m ? STABLE : FORCE_STICK ;
 }
 
 // normal force

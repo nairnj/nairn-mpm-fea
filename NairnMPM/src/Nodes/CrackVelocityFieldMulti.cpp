@@ -814,7 +814,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiR
 				{	// interface and some laws will need contact area
 					contactArea = GetContactArea(ndptr,voli,rigidVolume,&norm,delMatsPtr);
 					
-					// get COD if might be nneded by an interface
+					// get COD if might be needed by an interface
 					if(!mpmgrid.contactByDisplacements && mpmgrid.hasImperfectInterface)
 					{	CopyScaleVector(&dispRigid,mvf[rigidFld]->GetContactDispPtr(true),1./actualRigidVolume);
 						AdjustForSymmetry(ndptr,&dispRigid,false);

@@ -15,6 +15,9 @@
 
 #include "Materials/ContactLaw.hpp"
 
+// square of Cint
+#define LIN_CINT2 0.5625
+
 class LinearInterface : public ContactLaw
 {
 	public:

@@ -35,12 +35,11 @@ class XPICExtrapolationTask : public MPMTask
 		virtual void InitializeXPICData(GridPatch *,int);
 		virtual void XPICDoubleLoop(MPMBase *,int,int *,double *,int);
 		virtual void ReduceXPICData(GridPatch *);
-		virtual void GetDeltaV(double,int);
+		virtual void GetDeltaV(double,int,int);
 		virtual void UpdateXStar(NodalPoint *,double);
 		virtual void ImposeIncrementalContact(double,int);
 	
 	protected:
-		int dynamicKmax;
 		double smallVelocity;
 	
 };

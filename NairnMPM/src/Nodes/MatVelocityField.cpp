@@ -38,8 +38,6 @@
 #include "Global_Quantities/BodyForce.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 
-//#define BLENDLUMPED 0.9
-
 // class statics
 int MatVelocityField::pkCopy=0;
 
@@ -355,11 +353,6 @@ void MatVelocityField::XPICSupport(int xpicCalculation,int xpicOption,NodalPoint
 			vk[VSTARPREV_VEC].y -= vk[VSTARNEXT_VEC].y;
 			vk[VSTARPREV_VEC].z -= vk[VSTARNEXT_VEC].z;
 
-#ifdef BLENDLUMPED
-			// scale with lumped
-			ScaleVector(&vk[VSTARPREV_VEC],BLENDLUMPED);
-#endif
-			
 			break;
 		}
 			

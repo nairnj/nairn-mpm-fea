@@ -18,6 +18,9 @@
 #define FORCE_STICK -1
 #define STABLE 0
 
+// square of Cint
+#define NL_CINT2 0.5625
+
 // Styles
 enum { NL_LINEAR_INTERFACE=0,MORSE_POTENTIAL,MAX_STYLES };
 
